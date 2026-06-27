@@ -3,6 +3,17 @@ import { getProductsFn, getCustomersFn, getCategoriesFn, getBrandsFn, getUnitsFn
 
 export async function initializeLocalDb() {
   try {
+    // One-time wipe to clear dummy data from previous versions
+    if (typeof window !== "undefined" && !localStorage.getItem("wiped_dummy_v1")) {
+      console.log("Wiping dummy data...");
+      await localDb.delete();
+      await localDb.open();
+      localStorage.setItem("wiped_dummy_v1", "true");
+      // Force reload to ensure everything is fresh
+      window.location.reload();
+      return;
+    }
+
     // Check if we already have data
     const productsCount = await localDb.products.count();
     
