@@ -14,7 +14,8 @@ import {
 import { AppSidebar } from "./AppSidebar";
 import { applyTheme, getInitialTheme, type Theme } from "@/lib/theme";
 import { SyncStatus } from "@/components/SyncStatus";
-import { notifications } from "@/lib/dummy";
+import { localDb } from "@/lib/db";
+import { useLiveQuery } from "dexie-react-hooks";
 import { cn } from "@/lib/utils";
 
 function pathToCrumbs(pathname: string) {
@@ -34,7 +35,8 @@ export function AppHeader() {
   const [theme, setTheme] = useState<Theme>("light");
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const crumbs = pathToCrumbs(pathname);
-  const unread = notifications.filter((n) => n.unread).length;
+  const notifications = useLiveQuery(() => localDb.notifications.toArray()) || [];
+  const unread = notifications.filter((n) => !n.read).length;
 
   useEffect(() => {
     const t = getInitialTheme();
@@ -136,9 +138,9 @@ export function AppHeader() {
                     )}
                   />
                   <span className="flex-1 text-sm font-medium">{n.title}</span>
-                  <span className="text-xs text-muted-foreground">{n.time}</span>
+                  <span className="text-xs text-muted-foreground">{new Date(n.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                 </div>
-                <span className="pl-3.5 text-xs text-muted-foreground">{n.body}</span>
+                <span className="pl-3.5 text-xs text-muted-foreground">{n.description}</span>
               </DropdownMenuItem>
             ))}
             <DropdownMenuSeparator />

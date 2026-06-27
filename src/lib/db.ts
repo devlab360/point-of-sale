@@ -9,6 +9,13 @@ export interface LocalPurchase { id: string; supplier: string; date: string | Da
 export interface LocalInventoryMovement { id?: number; productName: string; action: string; quantity: number; createdAt: string | Date; }
 export interface LocalAdjustment { id: string; ref: string; date: string | Date; reason: string; items: number; net: number; status: string; }
 export interface LocalTransfer { id: string; ref: string; date: string | Date; destination: string; items: number; status: string; }
+export interface LocalExpense { id: string; date: string; category: string; description: string; amount: number; status: string; }
+export interface LocalCoupon { id: string; code: string; type: string; discount: number; usageLimit: number; used: number; expires: string; status: string; }
+export interface LocalGiftCard { id: string; code: string; balance: number; customer?: string; issued: string; expires: string; status: string; }
+export interface LocalPromotion { id: string; title: string; type: string; value: number; conditions: string; startDate: string; endDate: string; status: string; }
+export interface LocalActivity { id: string; user: string; action: string; details: string; timestamp: string; type: string; }
+export interface LocalUser { id: string; name: string; role: string; email: string; lastActive: string; status: string; avatar?: string; }
+export interface LocalNotification { id: string; title: string; description: string; type: string; timestamp: string; read: boolean; }
 
 export interface LocalCustomer {
   id: string;
@@ -52,12 +59,19 @@ export class POSDatabase extends Dexie {
   inventoryMovements!: Table<LocalInventoryMovement, number>;
   adjustments!: Table<LocalAdjustment, string>;
   transfers!: Table<LocalTransfer, string>;
+  expenses!: Table<LocalExpense, string>;
+  coupons!: Table<LocalCoupon, string>;
+  giftCards!: Table<LocalGiftCard, string>;
+  promotions!: Table<LocalPromotion, string>;
+  activityLog!: Table<LocalActivity, string>;
+  users!: Table<LocalUser, string>;
+  notifications!: Table<LocalNotification, string>;
 
   constructor() {
     super("POSDatabase");
     
     // We only index fields we want to query by
-    this.version(5).stores({
+    this.version(6).stores({
       products: "id, name, sku, barcode, category",
       customers: "id, name, phone",
       offlineSales: "id, status, synced, date",
@@ -69,6 +83,13 @@ export class POSDatabase extends Dexie {
       inventoryMovements: "++id, productName, action",
       adjustments: "id, ref, date",
       transfers: "id, ref, date",
+      expenses: "id, date, category",
+      coupons: "id, code",
+      giftCards: "id, code",
+      promotions: "id, status",
+      activityLog: "id, timestamp",
+      users: "id, role, status",
+      notifications: "id, read"
     });
   }
 }
