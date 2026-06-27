@@ -5,11 +5,30 @@
 //     error logger plugins, and sandbox detection (port/host/strictPort).
 // You can pass additional config via defineConfig({ vite: { ... }, etc... }) if needed.
 import { defineConfig } from "@lovable.dev/vite-tanstack-config";
+import { VitePWA } from "vite-plugin-pwa";
 
 export default defineConfig({
+  vite: {
+    plugins: [
+      VitePWA({ 
+        registerType: 'autoUpdate',
+        devOptions: { enabled: true }, // Enable PWA in dev mode for testing offline
+        manifest: {
+          name: 'Grocer.Pro POS',
+          short_name: 'GrocerPOS',
+          theme_color: '#ffffff',
+          display: 'standalone',
+        },
+        workbox: {
+          globPatterns: ['**/*.{js,css,html,ico,png,svg,json}'],
+        }
+      })
+    ]
+  },
   tanstackStart: {
     // Redirect TanStack Start's bundled server entry to src/server.ts (our SSR error wrapper).
     // nitro/vite builds from this
     server: { entry: "server" },
   },
 });
+

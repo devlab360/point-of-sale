@@ -1,60 +1,67 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
-  Area,
-  AreaChart,
-  Bar,
-  BarChart,
-  CartesianGrid,
-  Cell,
-  Pie,
-  PieChart,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
+  Area, AreaChart, Bar, BarChart, CartesianGrid, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis,
 } from "recharts";
 import {
-  AlertTriangle,
-  ArrowUpRight,
-  DollarSign,
-  Package,
-  Receipt,
-  ShoppingBag,
-  TrendingUp,
-  Users,
+  AlertTriangle, ArrowUpRight, DollarSign, Package, Receipt, ShoppingBag, TrendingUp, Users,
 } from "lucide-react";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { StatCard } from "@/components/layout/StatCard";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import {
-  categoryShare,
-  monthly,
-  products,
-  recentSales,
-  salesByDay,
-} from "@/lib/dummy";
+import { localDb } from "@/lib/db";
+import { useLiveQuery } from "dexie-react-hooks";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
       { title: "Dashboard · Grocer.Pro" },
-      {
-        name: "description",
-        content:
-          "Real-time sales, revenue, low-stock alerts and operational KPIs for your store.",
-      },
+      { name: "description", content: "Real-time sales, revenue, low-stock alerts and operational KPIs for your store." },
     ],
   }),
   component: Dashboard,
 });
 
 const fmt = (n: number) => `$${n.toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
-const lowStock = products.filter((p) => p.stock <= p.reorderLevel).slice(0, 5);
-const topSelling = [...products].sort((a, b) => b.stock - a.stock).slice(0, 5);
 
 function Dashboard() {
+  const products = useLiveQuery(() => localDb.products.toArray()) || [];
+  const sales = useLiveQuery(() => localDb.offlineSales.toArray()) || [];
+  const customers = useLiveQuery(() => localDb.customers.toArray()) || [];
+
+  const lowStock = products.filter((p) => p.stock <= p.reorderLevel).slice(0, 5);
+  const topSelling = [...products].sort((a, b) => b.stock - a.stock).slice(0, 5);
+  const recentSales = [...sales].reverse().slice(0, 5);
+  
+  const todayRevenue = sales.reduce((sum, s) => sum + s.total, 0);
+  const todayProfit = todayRevenue * 0.3;
+  const todayOrders = sales.length;
+  
+  const salesByDay = Array.from({ length: 7 }).map((_, i) => {
+    const d = new Date();
+    d.setDate(d.getDate() - (6 - i));
+    const day = d.toLocaleDateString('default', { weekday: 'short' });
+    const daySales = sales.filter(s => new Date(s.date).toDateString() === d.toDateString());
+    return { day, sales: daySales.reduce((sum, s) => sum + s.total, 0) };
+  });
+
+  const categoryShare = [
+    { name: "Produce", value: 35, color: "var(--color-primary)" },
+    { name: "Dairy", value: 25, color: "var(--color-info)" },
+    { name: "Bakery", value: 20, color: "var(--color-warning)" },
+    { name: "Meat", value: 20, color: "var(--color-success)" },
+  ]; // Using mock for pie chart for visual since local categories may lack sales distribution
+
+  const monthly = Array.from({ length: 12 }).map((_, i) => {
+    const d = new Date();
+    d.setMonth(d.getMonth() - (11 - i));
+    const m = d.toLocaleString('default', { month: 'short' });
+    const monthSales = sales.filter(s => new Date(s.date).getMonth() === d.getMonth());
+    const revenue = monthSales.reduce((sum, s) => sum + s.total, 0);
+    return { m, revenue, profit: revenue * 0.3 };
+  });
+
   return (
     <div className="space-y-6 p-4 md:p-6 lg:p-8">
       <PageHeader
@@ -316,9 +323,9 @@ function Dashboard() {
               <tbody className="divide-y divide-border">
                 {recentSales.slice(0, 7).map((s) => (
                   <tr key={s.id} className="hover:bg-muted/30">
-                    <td className="px-5 py-3 font-medium">{s.id}</td>
-                    <td className="px-5 py-3">{s.customer}</td>
-                    <td className="px-5 py-3 text-muted-foreground">{s.payment}</td>
+                    <td className="px-5 py-3 font-medium">{s.id.slice(0, 8).toUpperCase()}</td>
+                    <td className="px-5 py-3">{s.customerName || "Walk-in"}</td>
+                    <td className="px-5 py-3 text-muted-foreground capitalize">{s.payment}</td>
                     <td className="px-5 py-3">
                       <StatusBadge status={s.status} />
                     </td>
@@ -359,8 +366,8 @@ function Dashboard() {
             ))}
           </ul>
           <div className="mt-5 grid grid-cols-2 gap-3 border-t border-border pt-4">
-            <Quick icon={Users} label="Customers" value="1,248" />
-            <Quick icon={Package} label="SKUs" value="540" />
+            <Quick icon={Users} label="Customers" value={customers.length.toString()} />
+            <Quick icon={Package} label="SKUs" value={products.length.toString()} />
           </div>
         </div>
       </div>

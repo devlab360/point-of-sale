@@ -1,12 +1,18 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { DataPage } from "@/components/layout/DataPage";
 import { Badge } from "@/components/ui/badge";
-import { recentSales } from "@/lib/dummy";
+import { localDb } from "@/lib/db";
+import { useLiveQuery } from "dexie-react-hooks";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/sales")({
   head: () => ({ meta: [{ title: "Sales · Grocer.Pro" }] }),
-  component: () => (
+  component: SalesPage,
+});
+
+function SalesPage() {
+  const sales = useLiveQuery(() => localDb.offlineSales.reverse().toArray()) || [];
+  return (
     <div className="p-4 md:p-6 lg:p-8">
       <DataPage title="Sales History" description="Every transaction across all your registers." primaryAction={{ label: "New Sale" }} searchPlaceholder="Search by invoice or customer...">
         <div className="overflow-hidden rounded-xl border border-border bg-card shadow-soft">
@@ -23,13 +29,13 @@ export const Route = createFileRoute("/sales")({
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
-              {recentSales.map((s) => (
+              {sales.map((s) => (
                 <tr key={s.id} className="hover:bg-muted/30">
-                  <td className="px-4 py-3 font-mono text-xs">{s.id}</td>
-                  <td className="px-4 py-3 font-semibold">{s.customer}</td>
+                  <td className="px-4 py-3 font-mono text-xs">{s.id.slice(0, 8).toUpperCase()}</td>
+                  <td className="px-4 py-3 font-semibold">{s.customerName || "Walk-in"}</td>
                   <td className="px-4 py-3 text-muted-foreground">{new Date(s.date).toLocaleString()}</td>
-                  <td className="px-4 py-3 text-right">{s.items}</td>
-                  <td className="px-4 py-3 text-muted-foreground">{s.payment}</td>
+                  <td className="px-4 py-3 text-right">{s.items.reduce((acc: number, item: any) => acc + item.quantity, 0)}</td>
+                  <td className="px-4 py-3 text-muted-foreground capitalize">{s.payment}</td>
                   <td className="px-4 py-3">
                     <Badge
                       className={cn(
@@ -44,10 +50,15 @@ export const Route = createFileRoute("/sales")({
                   <td className="number px-4 py-3 text-right font-semibold">${s.total.toFixed(2)}</td>
                 </tr>
               ))}
+              {sales.length === 0 && (
+                <tr>
+                  <td colSpan={7} className="py-8 text-center text-sm text-muted-foreground">No recent sales</td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
       </DataPage>
     </div>
-  ),
-});
+  );
+}

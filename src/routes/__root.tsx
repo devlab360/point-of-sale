@@ -12,6 +12,7 @@ import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { AppSidebar } from "@/components/layout/AppSidebar";
 import { AppHeader } from "@/components/layout/AppHeader";
+import { initializeLocalDb } from "@/lib/sync";
 import { Toaster } from "sonner";
 import { Button } from "@/components/ui/button";
 
@@ -125,6 +126,11 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  
+  useEffect(() => {
+    initializeLocalDb();
+  }, []);
+
   return (
     <QueryClientProvider client={queryClient}>
       <div className="flex h-screen w-full overflow-hidden bg-background text-foreground">

@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { AppSidebar } from "./AppSidebar";
 import { applyTheme, getInitialTheme, type Theme } from "@/lib/theme";
+import { SyncStatus } from "@/components/SyncStatus";
 import { notifications } from "@/lib/dummy";
 import { cn } from "@/lib/utils";
 

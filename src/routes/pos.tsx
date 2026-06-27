@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect, useRef } from "react";
 import {
   Banknote,
   CreditCard,
@@ -18,7 +18,10 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { categories, customers, products } from "@/lib/dummy";
+import { categories } from "@/lib/dummy";
+import { localDb } from "@/lib/db";
+import { useLiveQuery } from "dexie-react-hooks";
+import { v4 as uuidv4 } from "uuid";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
@@ -35,16 +38,60 @@ export const Route = createFileRoute("/pos")({
 type CartLine = { id: string; qty: number };
 
 function PosScreen() {
+  const products = useLiveQuery(() => localDb.products.toArray()) || [];
+  const customers = useLiveQuery(() => localDb.customers.toArray()) || [];
+
   const [activeCat, setActiveCat] = useState<string>("all");
   const [query, setQuery] = useState("");
-  const [cart, setCart] = useState<CartLine[]>([
-    { id: "p2", qty: 2 },
-    { id: "p3", qty: 1 },
-    { id: "p5", qty: 4 },
-  ]);
+  const [cart, setCart] = useState<CartLine[]>([]);
   const [discount, setDiscount] = useState(0);
   const [payment, setPayment] = useState<"cash" | "card" | "upi" | "split">("card");
-  const [customer, setCustomer] = useState(customers[0]);
+  const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(null);
+  const [printData, setPrintData] = useState<any>(null);
+
+  const activeCustomer = customers.find(c => c.id === selectedCustomerId) || customers[0] || { id: "walkin", name: "Walk-in Customer" };
+
+  // Global Barcode Scanner Listener
+  const barcodeRef = useRef("");
+  const lastKeyTimeRef = useRef(Date.now());
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Ignore if typing in an input or textarea
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+
+      const now = Date.now();
+      if (now - lastKeyTimeRef.current > 50) {
+        // If more than 50ms between keystrokes, it's a human typing, reset
+        barcodeRef.current = "";
+      }
+      lastKeyTimeRef.current = now;
+
+      if (e.key === "Enter") {
+        if (barcodeRef.current.length > 2) {
+          const barcode = barcodeRef.current;
+          const product = products.find((p) => p.barcode === barcode || p.sku === barcode);
+          if (product) {
+            setCart((c) => {
+              const exists = c.find((l) => l.id === product.id);
+              return exists
+                ? c.map((l) => (l.id === product.id ? { ...l, qty: l.qty + 1 } : l))
+                : [...c, { id: product.id, qty: 1 }];
+            });
+            toast.success(`Scanned: ${product.name}`);
+          } else {
+            toast.error(`Unknown barcode: ${barcode}`);
+          }
+        }
+        barcodeRef.current = "";
+      } else if (e.key.length === 1) {
+        barcodeRef.current += e.key;
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [products]);
 
   const filtered = useMemo(
     () =>
@@ -71,16 +118,18 @@ function PosScreen() {
     setCart((c) => (qty <= 0 ? c.filter((l) => l.id !== id) : c.map((l) => (l.id === id ? { ...l, qty } : l))));
 
   const lines = cart.map((l) => {
-    const p = products.find((p) => p.id === l.id)!;
+    const p = products.find((p) => p.id === l.id);
+    if (!p) return null;
     return { ...l, product: p, total: p.price * l.qty };
-  });
+  }).filter((Boolean as any) as <T>(x: T | null) => x is T);
   const subtotal = lines.reduce((s, l) => s + l.total, 0);
   const discountAmt = subtotal * (discount / 100);
   const taxAmt = (subtotal - discountAmt) * 0.08;
   const total = subtotal - discountAmt + taxAmt;
 
   return (
-    <div className="grid h-[calc(100vh-4rem)] grid-cols-1 lg:grid-cols-[1fr_420px]">
+    <>
+    <div className="print:hidden grid h-[calc(100vh-4rem)] grid-cols-1 lg:grid-cols-[1fr_420px]">
       <div className="flex min-h-0 flex-col bg-muted/30">
         <div className="flex flex-col gap-3 border-b border-border bg-background p-4 lg:flex-row lg:items-center">
           <div className="relative flex-1">
@@ -167,8 +216,12 @@ function PosScreen() {
             </div>
             <div className="mt-0.5 flex items-center gap-2 text-sm font-semibold">
               <User className="size-4 text-muted-foreground" />
-              {customer.name}
-              <button onClick={() => setCustomer(customers[(customers.indexOf(customer) + 1) % customers.length])} className="text-xs font-medium text-primary hover:underline">
+              {activeCustomer.name}
+              <button onClick={() => {
+                const currentIndex = customers.findIndex(c => c.id === activeCustomer.id);
+                const nextCustomer = customers[(currentIndex + 1) % customers.length];
+                if (nextCustomer) setSelectedCustomerId(nextCustomer.id);
+              }} className="text-xs font-medium text-primary hover:underline">
                 Change
               </button>
             </div>
@@ -287,20 +340,121 @@ function PosScreen() {
             <Button
               size="lg"
               className="h-12 text-base font-bold"
-              onClick={() => {
-                toast.success(`Payment of $${total.toFixed(2)} received`);
-                setCart([]);
+              disabled={lines.length === 0}
+              onClick={async () => {
+                if (lines.length === 0) return;
+                const saleId = uuidv4();
+                
+                const printObj = {
+                  id: saleId.substring(0, 8).toUpperCase(),
+                  customer: activeCustomer.name,
+                  date: new Date().toLocaleString(),
+                  lines,
+                  subtotal, discountAmt, taxAmt, total, payment
+                };
+                setPrintData(printObj);
+
+                await localDb.offlineSales.add({
+                  id: saleId,
+                  customerId: activeCustomer.id,
+                  customerName: activeCustomer.name,
+                  date: new Date().toISOString(),
+                  items: lines.reduce((acc, l) => acc + l.qty, 0),
+                  total: parseFloat(total.toFixed(2)),
+                  paymentMethod: payment,
+                  status: "completed",
+                  synced: false,
+                  saleItems: lines.map(l => ({
+                    productId: l.product.id,
+                    quantity: l.qty,
+                    price: l.product.price,
+                    total: parseFloat(l.total.toFixed(2))
+                  }))
+                });
+                
+                toast.success(`Payment received. Printing receipt...`);
+                setTimeout(() => {
+                  window.print();
+                  setCart([]);
+                  setPrintData(null);
+                }, 100);
               }}
             >
-              Charge ${total.toFixed(2)}
+              Pay & Print ${total.toFixed(2)}
             </Button>
-            <Button size="lg" variant="outline" className="h-12" aria-label="Print">
+            <Button size="lg" variant="outline" className="h-12" aria-label="Print" onClick={() => window.print()}>
               <Printer className="size-5" />
             </Button>
           </div>
         </div>
       </aside>
     </div>
+
+    {/* Thermal Receipt Print Layout (Hidden on screen, visible on print) */}
+    {printData && (
+      <div className="hidden print:block fixed inset-0 z-[100] bg-white text-black text-[12px] font-mono leading-tight p-4">
+        <div className="max-w-[300px] mx-auto">
+          <div className="text-center mb-4">
+            <h1 className="text-xl font-bold mb-1">GROCER.PRO</h1>
+            <p>123 Supermarket Ave</p>
+            <p>Tel: +1 234 567 8900</p>
+            <p>Receipt #: {printData.id}</p>
+            <p>{printData.date}</p>
+          </div>
+          
+          <div className="mb-2">Customer: {printData.customer}</div>
+          
+          <div className="border-t border-b border-black py-2 mb-2">
+            <table className="w-full">
+              <thead>
+                <tr className="text-left">
+                  <th className="font-normal w-full">Item</th>
+                  <th className="font-normal text-right pl-2">Qty</th>
+                  <th className="font-normal text-right pl-2">Amt</th>
+                </tr>
+              </thead>
+              <tbody>
+                {printData.lines.map((l: any, i: number) => (
+                  <tr key={i}>
+                    <td className="truncate max-w-[150px]">{l.product.name}</td>
+                    <td className="text-right pl-2">{l.qty}</td>
+                    <td className="text-right pl-2">${l.total.toFixed(2)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          
+          <div className="flex justify-between">
+            <span>Subtotal:</span>
+            <span>${printData.subtotal.toFixed(2)}</span>
+          </div>
+          {printData.discountAmt > 0 && (
+            <div className="flex justify-between">
+              <span>Discount:</span>
+              <span>-${printData.discountAmt.toFixed(2)}</span>
+            </div>
+          )}
+          <div className="flex justify-between mb-2">
+            <span>Tax (8%):</span>
+            <span>${printData.taxAmt.toFixed(2)}</span>
+          </div>
+          <div className="flex justify-between font-bold text-sm border-t border-black pt-1 mb-4">
+            <span>TOTAL:</span>
+            <span>${printData.total.toFixed(2)}</span>
+          </div>
+          
+          <div className="text-center mb-2">
+            <p>Payment: {printData.payment.toUpperCase()}</p>
+          </div>
+          <div className="text-center text-[10px]">
+            <p>Thank you for shopping with us!</p>
+            <p>Please come again.</p>
+          </div>
+        </div>
+      </div>
+    )}
+    </>
   );
 }
 

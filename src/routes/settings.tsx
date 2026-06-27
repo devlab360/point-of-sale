@@ -1,7 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/button";
-import { Check } from "lucide-react";
+import { Check, Trash2 } from "lucide-react";
+import { localDb } from "@/lib/db";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/settings")({
   head: () => ({ meta: [{ title: "Settings · Grocer.Pro" }] }),
@@ -16,9 +18,22 @@ const sections = [
   { id: "barcode", label: "Barcode" },
   { id: "currency", label: "Currency" },
   { id: "language", label: "Language" },
+  { id: "data", label: "Data Management" },
 ];
 
 function SettingsPage() {
+  const handleResetData = async () => {
+    if (confirm("Are you sure you want to completely wipe all local data? This action cannot be undone.")) {
+      try {
+        await localDb.delete();
+        toast.success("Database wiped successfully. Please refresh the page.");
+        setTimeout(() => window.location.reload(), 1500);
+      } catch (err) {
+        toast.error("Failed to delete database.");
+      }
+    }
+  };
+
   return (
     <div className="p-4 md:p-6 lg:p-8">
       <PageHeader title="Settings" description="Configure your store, taxes, printer and locale." />
@@ -60,7 +75,21 @@ function SettingsPage() {
               <ToggleRow label="Print store logo" on />
             </div>
           </Card>
-          <div className="flex justify-end gap-2">
+          <Card id="data" title="Data Management" desc="Manage local storage and offline sync data.">
+            <div className="flex flex-col gap-4">
+              <div className="flex items-center justify-between p-4 border border-destructive/20 bg-destructive/5 rounded-lg">
+                <div>
+                  <h4 className="font-semibold text-destructive">Wipe Local Database</h4>
+                  <p className="text-sm text-muted-foreground">Clear all offline products, categories, and sales.</p>
+                </div>
+                <Button variant="destructive" onClick={handleResetData}>
+                  <Trash2 className="size-4 mr-2" />
+                  Reset Database
+                </Button>
+              </div>
+            </div>
+          </Card>
+          <div className="flex justify-end pt-4">
             <Button variant="outline">Cancel</Button>
             <Button><Check className="size-4" /> Save changes</Button>
           </div>

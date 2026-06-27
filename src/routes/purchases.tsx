@@ -1,11 +1,17 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { DataPage } from "@/components/layout/DataPage";
 import { Badge } from "@/components/ui/badge";
-import { purchases } from "@/lib/dummy";
+import { localDb } from "@/lib/db";
+import { useLiveQuery } from "dexie-react-hooks";
 
 export const Route = createFileRoute("/purchases")({
   head: () => ({ meta: [{ title: "Purchases · Grocer.Pro" }] }),
-  component: () => (
+  component: PurchasesPage,
+});
+
+function PurchasesPage() {
+  const purchases = useLiveQuery(() => localDb.purchases.toArray()) || [];
+  return (
     <div className="p-4 md:p-6 lg:p-8">
       <DataPage
         title="Purchases"
@@ -52,5 +58,5 @@ export const Route = createFileRoute("/purchases")({
         </div>
       </DataPage>
     </div>
-  ),
-});
+  );
+}

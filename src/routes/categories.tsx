@@ -1,8 +1,15 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Pencil, Tag, Trash2 } from "lucide-react";
+import { Pencil, Tag, Trash2, Plus } from "lucide-react";
 import { DataPage } from "@/components/layout/DataPage";
-import { categories } from "@/lib/dummy";
+import { localDb } from "@/lib/db";
+import { useLiveQuery } from "dexie-react-hooks";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { useState } from "react";
+import { v4 as uuidv4 } from "uuid";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/categories")({
   head: () => ({ meta: [{ title: "Categories · Grocer.Pro" }] }),
@@ -10,12 +17,63 @@ export const Route = createFileRoute("/categories")({
 });
 
 function CategoriesPage() {
+  const categories = useLiveQuery(() => localDb.categories.toArray()) || [];
+  
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editingCat, setEditingCat] = useState<any>(null);
+  
+  const [name, setName] = useState("");
+  const [icon, setIcon] = useState("🛒");
+  const [color, setColor] = useState("var(--color-primary)");
+
+  const openNew = () => {
+    setEditingCat(null);
+    setName("");
+    setIcon("🛒");
+    setColor("var(--color-primary)");
+    setModalOpen(true);
+  };
+
+  const openEdit = (cat: any) => {
+    setEditingCat(cat);
+    setName(cat.name);
+    setIcon(cat.icon);
+    setColor(cat.color);
+    setModalOpen(true);
+  };
+
+  const save = async () => {
+    if (!name.trim()) return toast.error("Name is required");
+    
+    if (editingCat) {
+      await localDb.categories.update(editingCat.id, { name, icon, color });
+      toast.success("Category updated");
+    } else {
+      await localDb.categories.add({
+        id: uuidv4(),
+        name,
+        icon,
+        color,
+        count: 0
+      });
+      toast.success("Category created");
+    }
+    setModalOpen(false);
+  };
+
+  const deleteCat = async (id: string) => {
+    if (confirm("Are you sure you want to delete this category?")) {
+      await localDb.categories.delete(id);
+      toast.success("Category deleted");
+    }
+  };
+
   return (
     <div className="p-4 md:p-6 lg:p-8">
       <DataPage
         title="Categories"
         description="Group products into shoppable sections used across POS, reports, and promotions."
-        primaryAction={{ label: "New Category" }}
+        primaryAction={{ label: "New Category", onClick: openNew }}
       >
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {categories.map((c) => (
@@ -31,21 +89,53 @@ function CategoriesPage() {
               </div>
               <div className="min-w-0 flex-1">
                 <div className="truncate font-semibold">{c.name}</div>
-                <div className="text-xs text-muted-foreground">{c.count} products</div>
+                <div className="text-xs text-muted-foreground">{c.count || 0} products</div>
               </div>
               <div className="flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
-                <Button variant="ghost" size="icon" className="size-8">
+                <Button variant="ghost" size="icon" className="size-8" onClick={() => openEdit(c)}>
                   <Pencil className="size-4" />
                 </Button>
-                <Button variant="ghost" size="icon" className="size-8 text-destructive">
+                <Button variant="ghost" size="icon" className="size-8 text-destructive" onClick={() => deleteCat(c.id)}>
                   <Trash2 className="size-4" />
                 </Button>
               </div>
             </div>
           ))}
+          {categories.length === 0 && (
+            <div className="col-span-full py-12 text-center text-muted-foreground">
+              No categories found. Create one to get started!
+            </div>
+          )}
         </div>
       </DataPage>
+
+      <Dialog open={modalOpen} onOpenChange={setModalOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{editingCat ? "Edit Category" : "New Category"}</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="name">Name</Label>
+              <Input id="name" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Beverages" />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="icon">Emoji Icon</Label>
+                <Input id="icon" value={icon} onChange={(e) => setIcon(e.target.value)} placeholder="🥤" />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="color">Theme Color</Label>
+                <Input id="color" value={color} onChange={(e) => setColor(e.target.value)} placeholder="var(--color-primary)" />
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setModalOpen(false)}>Cancel</Button>
+            <Button onClick={save}>Save changes</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
-void Tag;

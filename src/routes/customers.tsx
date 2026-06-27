@@ -1,12 +1,18 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { DataPage } from "@/components/layout/DataPage";
 import { Badge } from "@/components/ui/badge";
-import { customers } from "@/lib/dummy";
+import { localDb } from "@/lib/db";
+import { useLiveQuery } from "dexie-react-hooks";
 import { Mail, Phone, Star } from "lucide-react";
 
 export const Route = createFileRoute("/customers")({
   head: () => ({ meta: [{ title: "Customers · Grocer.Pro" }] }),
-  component: () => (
+  component: CustomersPage,
+});
+
+function CustomersPage() {
+  const customers = useLiveQuery(() => localDb.customers.toArray()) || [];
+  return (
     <div className="p-4 md:p-6 lg:p-8">
       <DataPage title="Customers" description="Loyalty members, store credit balances, and lifetime value." primaryAction={{ label: "Add Customer" }}>
         <div className="overflow-hidden rounded-xl border border-border bg-card shadow-soft">
@@ -59,5 +65,5 @@ export const Route = createFileRoute("/customers")({
         </div>
       </DataPage>
     </div>
-  ),
-});
+  );
+}

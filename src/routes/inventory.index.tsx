@@ -1,7 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { products } from "@/lib/dummy";
+import { localDb } from "@/lib/db";
+import { useLiveQuery } from "dexie-react-hooks";
 import { cn } from "@/lib/utils";
 import { Download, Filter } from "lucide-react";
 
@@ -10,12 +11,16 @@ export const Route = createFileRoute("/inventory/")({
 });
 
 function StockList() {
+  const products = useLiveQuery(() => localDb.products.toArray()) || [];
+  const lowCount = products.filter(p => p.stock <= p.reorderLevel).length;
+  const outCount = products.filter(p => p.stock <= 0).length;
+
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="text-sm text-muted-foreground">
-          <span className="font-semibold text-foreground">540 SKUs</span> · 18 low ·{" "}
-          <span className="text-destructive">3 out of stock</span>
+          <span className="font-semibold text-foreground">{products.length} SKUs</span> · {lowCount} low ·{" "}
+          <span className="text-destructive">{outCount} out of stock</span>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" size="sm">
@@ -41,7 +46,7 @@ function StockList() {
           <tbody className="divide-y divide-border">
             {products.map((p) => {
               const low = p.stock <= p.reorderLevel;
-              const out = p.stock <= 4;
+              const out = p.stock <= 0;
               return (
                 <tr key={p.id} className="hover:bg-muted/30">
                   <td className="px-4 py-3">

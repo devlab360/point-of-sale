@@ -2,11 +2,12 @@ import { createFileRoute } from "@tanstack/react-router";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { StatCard } from "@/components/layout/StatCard";
 import { Button } from "@/components/ui/button";
+import { localDb } from "@/lib/db";
+import { useLiveQuery } from "dexie-react-hooks";
 import {
   BarChart3, DollarSign, FileText, Package, Percent, TrendingUp, ShoppingCart, Calendar, ChevronRight,
 } from "lucide-react";
 import { Bar, BarChart, CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import { monthly } from "@/lib/dummy";
 
 export const Route = createFileRoute("/reports")({
   head: () => ({ meta: [{ title: "Reports · Grocer.Pro" }] }),
@@ -25,14 +26,34 @@ const reports = [
 ];
 
 function ReportsPage() {
+  const sales = useLiveQuery(() => localDb.offlineSales.toArray()) || [];
+  
+  // Calculate dynamic stats
+  const mtdRevenue = sales.reduce((sum, s) => sum + s.total, 0);
+  // Assume a fixed 30% margin for profit calculation for now
+  const mtdProfit = mtdRevenue * 0.3;
+  const mtdOrders = sales.length;
+  const taxPayable = mtdRevenue * 0.08; // 8% average tax assumption
+  
+  // Generate a basic 12-month chart data
+  const monthly = Array.from({ length: 12 }).map((_, i) => {
+    const d = new Date();
+    d.setMonth(d.getMonth() - (11 - i));
+    const m = d.toLocaleString('default', { month: 'short' });
+    // Find sales for this month
+    const monthSales = sales.filter(s => new Date(s.date).getMonth() === d.getMonth());
+    const revenue = monthSales.reduce((sum, s) => sum + s.total, 0);
+    return { m, revenue, profit: revenue * 0.3 };
+  });
+
   return (
     <div className="space-y-6 p-4 md:p-6 lg:p-8">
       <PageHeader title="Reports" description="Insights across sales, inventory, tax and operations." actions={<Button size="sm">Export Pack</Button>} />
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard label="MTD Revenue" value="$184k" delta={12} icon={DollarSign} accent="primary" />
-        <StatCard label="MTD Profit" value="$52k" delta={9} icon={TrendingUp} accent="success" />
-        <StatCard label="MTD Orders" value="4,820" delta={7} icon={ShoppingCart} accent="info" />
-        <StatCard label="Tax Payable" value="$14,720" delta={-2} icon={Percent} accent="warning" />
+        <StatCard label="MTD Revenue" value={`$${(mtdRevenue / 1000).toFixed(1)}k`} delta={0} icon={DollarSign} accent="primary" />
+        <StatCard label="MTD Profit" value={`$${(mtdProfit / 1000).toFixed(1)}k`} delta={0} icon={TrendingUp} accent="success" />
+        <StatCard label="MTD Orders" value={mtdOrders.toString()} delta={0} icon={ShoppingCart} accent="info" />
+        <StatCard label="Tax Payable" value={`$${taxPayable.toFixed(0)}`} delta={0} icon={Percent} accent="warning" />
       </div>
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
         <div className="rounded-xl border border-border bg-card p-5 shadow-soft xl:col-span-2">

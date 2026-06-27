@@ -1,7 +1,16 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { DataPage } from "@/components/layout/DataPage";
-import { brands } from "@/lib/dummy";
+import { localDb } from "@/lib/db";
+import { useLiveQuery } from "dexie-react-hooks";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Pencil, Trash2 } from "lucide-react";
+import { useState } from "react";
+import { v4 as uuidv4 } from "uuid";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/brands")({
   head: () => ({ meta: [{ title: "Brands · Grocer.Pro" }] }),
@@ -9,12 +18,54 @@ export const Route = createFileRoute("/brands")({
 });
 
 function BrandsPage() {
+  const brands = useLiveQuery(() => localDb.brands.toArray()) || [];
+  
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editingBrand, setEditingBrand] = useState<any>(null);
+  const [name, setName] = useState("");
+
+  const openNew = () => {
+    setEditingBrand(null);
+    setName("");
+    setModalOpen(true);
+  };
+
+  const openEdit = (brand: any) => {
+    setEditingBrand(brand);
+    setName(brand.name);
+    setModalOpen(true);
+  };
+
+  const save = async () => {
+    if (!name.trim()) return toast.error("Name is required");
+    
+    if (editingBrand) {
+      await localDb.brands.update(editingBrand.id, { name });
+      toast.success("Brand updated");
+    } else {
+      await localDb.brands.add({
+        id: uuidv4(),
+        name,
+        products: 0,
+      });
+      toast.success("Brand created");
+    }
+    setModalOpen(false);
+  };
+
+  const deleteBrand = async (id: string) => {
+    if (confirm("Are you sure you want to delete this brand?")) {
+      await localDb.brands.delete(id);
+      toast.success("Brand deleted");
+    }
+  };
+
   return (
     <div className="p-4 md:p-6 lg:p-8">
       <DataPage
         title="Brands"
         description="Track suppliers' brands and surface them in product search and filters."
-        primaryAction={{ label: "Add Brand" }}
+        primaryAction={{ label: "Add Brand", onClick: openNew }}
       >
         <div className="overflow-hidden rounded-xl border border-border bg-card shadow-soft">
           <table className="w-full text-left text-sm">
@@ -23,29 +74,65 @@ function BrandsPage() {
                 <th className="px-4 py-3">Brand</th>
                 <th className="px-4 py-3">Products</th>
                 <th className="px-4 py-3">Status</th>
+                <th className="px-4 py-3 text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
               {brands.map((b) => (
-                <tr key={b.id} className="hover:bg-muted/30">
+                <tr key={b.id} className="hover:bg-muted/30 group">
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-3">
                       <div className="grid size-9 place-items-center rounded-lg bg-primary/10 text-sm font-bold text-primary">
-                        {b.name.slice(0, 2)}
+                        {b.name.slice(0, 2).toUpperCase()}
                       </div>
                       <span className="font-semibold">{b.name}</span>
                     </div>
                   </td>
-                  <td className="px-4 py-3 text-muted-foreground">{b.products}</td>
+                  <td className="px-4 py-3 text-muted-foreground">{b.products || 0}</td>
                   <td className="px-4 py-3">
                     <Badge className="bg-success/10 text-success hover:bg-success/15">Active</Badge>
                   </td>
+                  <td className="px-4 py-3 text-right">
+                    <div className="flex justify-end gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+                      <Button variant="ghost" size="icon" className="size-8" onClick={() => openEdit(b)}>
+                        <Pencil className="size-4" />
+                      </Button>
+                      <Button variant="ghost" size="icon" className="size-8 text-destructive" onClick={() => deleteBrand(b.id)}>
+                        <Trash2 className="size-4" />
+                      </Button>
+                    </div>
+                  </td>
                 </tr>
               ))}
+              {brands.length === 0 && (
+                <tr>
+                  <td colSpan={4} className="py-12 text-center text-muted-foreground">
+                    No brands found. Create one to get started!
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
       </DataPage>
+
+      <Dialog open={modalOpen} onOpenChange={setModalOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{editingBrand ? "Edit Brand" : "New Brand"}</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="name">Brand Name</Label>
+              <Input id="name" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Nestle" />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setModalOpen(false)}>Cancel</Button>
+            <Button onClick={save}>Save changes</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

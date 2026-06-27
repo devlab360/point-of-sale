@@ -9,9 +9,16 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DataPage } from "@/components/layout/DataPage";
-import { products } from "@/lib/dummy";
+import { localDb } from "@/lib/db";
+import { useLiveQuery } from "dexie-react-hooks";
 import { cn } from "@/lib/utils";
+import { v4 as uuidv4 } from "uuid";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/products")({
   head: () => ({
@@ -22,12 +29,67 @@ export const Route = createFileRoute("/products")({
 
 function ProductsPage() {
   const [view, setView] = useState<"grid" | "list">("list");
+  const products = useLiveQuery(() => localDb.products.toArray()) || [];
+  const categories = useLiveQuery(() => localDb.categories.toArray()) || [];
+  const brands = useLiveQuery(() => localDb.brands.toArray()) || [];
+  const units = useLiveQuery(() => localDb.units.toArray()) || [];
+
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editingProd, setEditingProd] = useState<any>(null);
+  
+  const [formData, setFormData] = useState({
+    name: "", sku: "", barcode: "", category: "", brand: "", unit: "",
+    price: 0, cost: 0, stock: 0, reorderLevel: 5, image: "https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&q=80&w=150&h=150"
+  });
+
+  const openNew = () => {
+    setEditingProd(null);
+    setFormData({
+      name: "", sku: "", barcode: "", category: "", brand: "", unit: "",
+      price: 0, cost: 0, stock: 0, reorderLevel: 5, image: "https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&q=80&w=150&h=150"
+    });
+    setModalOpen(true);
+  };
+
+  const openEdit = (p: any) => {
+    setEditingProd(p);
+    setFormData({
+      name: p.name, sku: p.sku, barcode: p.barcode, category: p.category,
+      brand: p.brand, unit: p.unit, price: p.price, cost: p.cost,
+      stock: p.stock, reorderLevel: p.reorderLevel, image: p.image
+    });
+    setModalOpen(true);
+  };
+
+  const save = async () => {
+    if (!formData.name) return toast.error("Name is required");
+    
+    if (editingProd) {
+      await localDb.products.update(editingProd.id, formData);
+      toast.success("Product updated");
+    } else {
+      await localDb.products.add({
+        id: uuidv4(),
+        ...formData,
+      });
+      toast.success("Product created");
+    }
+    setModalOpen(false);
+  };
+
+  const deleteProd = async (id: string) => {
+    if (confirm("Are you sure you want to delete this product?")) {
+      await localDb.products.delete(id);
+      toast.success("Product deleted");
+    }
+  };
+
   return (
     <div className="p-4 md:p-6 lg:p-8">
       <DataPage
         title="Products"
         description="Manage your full SKU catalog, pricing, and stock thresholds."
-        primaryAction={{ label: "Add Product" }}
+        primaryAction={{ label: "Add Product", onClick: openNew }}
         searchPlaceholder="Search by name, SKU, or barcode..."
         toolbar={
           <div className="inline-flex rounded-lg border border-border bg-muted/30 p-0.5">
@@ -54,14 +116,87 @@ function ProductsPage() {
           </div>
         }
       >
-        {view === "list" ? <TableView /> : <GridView />}
+        {view === "list" ? <TableView products={products} onEdit={openEdit} onDelete={deleteProd} /> : <GridView products={products} onEdit={openEdit} />}
         <Pagination total={products.length} />
       </DataPage>
+
+      <Dialog open={modalOpen} onOpenChange={setModalOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{editingProd ? "Edit Product" : "New Product"}</DialogTitle>
+          </DialogHeader>
+          <div className="grid grid-cols-2 gap-4 py-4">
+            <div className="grid gap-2 col-span-2">
+              <Label>Product Name</Label>
+              <Input value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} />
+            </div>
+            <div className="grid gap-2">
+              <Label>SKU</Label>
+              <Input value={formData.sku} onChange={e => setFormData({...formData, sku: e.target.value})} />
+            </div>
+            <div className="grid gap-2">
+              <Label>Barcode</Label>
+              <Input value={formData.barcode} onChange={e => setFormData({...formData, barcode: e.target.value})} />
+            </div>
+            <div className="grid gap-2">
+              <Label>Category</Label>
+              <Select value={formData.category} onValueChange={v => setFormData({...formData, category: v})}>
+                <SelectTrigger><SelectValue placeholder="Select Category" /></SelectTrigger>
+                <SelectContent>
+                  {categories.map(c => <SelectItem key={c.id} value={c.name}>{c.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid gap-2">
+              <Label>Brand</Label>
+              <Select value={formData.brand} onValueChange={v => setFormData({...formData, brand: v})}>
+                <SelectTrigger><SelectValue placeholder="Select Brand" /></SelectTrigger>
+                <SelectContent>
+                  {brands.map(b => <SelectItem key={b.id} value={b.name}>{b.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid gap-2">
+              <Label>Unit</Label>
+              <Select value={formData.unit} onValueChange={v => setFormData({...formData, unit: v})}>
+                <SelectTrigger><SelectValue placeholder="Select Unit" /></SelectTrigger>
+                <SelectContent>
+                  {units.map(u => <SelectItem key={u.id} value={u.short}>{u.name} ({u.short})</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid gap-2">
+              <Label>Price</Label>
+              <Input type="number" value={formData.price} onChange={e => setFormData({...formData, price: parseFloat(e.target.value)})} />
+            </div>
+            <div className="grid gap-2">
+              <Label>Cost</Label>
+              <Input type="number" value={formData.cost} onChange={e => setFormData({...formData, cost: parseFloat(e.target.value)})} />
+            </div>
+            <div className="grid gap-2">
+              <Label>Stock</Label>
+              <Input type="number" value={formData.stock} onChange={e => setFormData({...formData, stock: parseInt(e.target.value)})} />
+            </div>
+            <div className="grid gap-2">
+              <Label>Reorder Level</Label>
+              <Input type="number" value={formData.reorderLevel} onChange={e => setFormData({...formData, reorderLevel: parseInt(e.target.value)})} />
+            </div>
+            <div className="grid gap-2 col-span-2">
+              <Label>Image URL</Label>
+              <Input value={formData.image} onChange={e => setFormData({...formData, image: e.target.value})} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setModalOpen(false)}>Cancel</Button>
+            <Button onClick={save}>Save changes</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
 
-function TableView() {
+function TableView({ products, onEdit, onDelete }: { products: any[], onEdit: (p: any) => void, onDelete: (id: string) => void }) {
   return (
     <div className="overflow-hidden rounded-xl border border-border bg-card shadow-soft">
       <div className="overflow-x-auto">
@@ -121,14 +256,11 @@ function TableView() {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => onEdit(p)}>
                           <Pencil className="size-4" /> Edit
                         </DropdownMenuItem>
-                        <DropdownMenuItem>
-                          <Plus className="size-4" /> Restock
-                        </DropdownMenuItem>
-                        <DropdownMenuItem className="text-destructive">
-                          <Trash2 className="size-4" /> Archive
+                        <DropdownMenuItem className="text-destructive" onClick={() => onDelete(p.id)}>
+                          <Trash2 className="size-4" /> Delete
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
@@ -143,13 +275,14 @@ function TableView() {
   );
 }
 
-function GridView() {
+function GridView({ products, onEdit }: { products: any[], onEdit: (p: any) => void }) {
   return (
     <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
       {products.map((p) => (
         <div
           key={p.id}
-          className="overflow-hidden rounded-xl border border-border bg-card shadow-soft transition-shadow hover:shadow-elevated"
+          className="overflow-hidden rounded-xl border border-border bg-card shadow-soft transition-shadow hover:shadow-elevated cursor-pointer"
+          onClick={() => onEdit(p)}
         >
           <div className="aspect-square bg-muted p-6">
             <img src={p.image} alt="" className="size-full" />
@@ -173,7 +306,7 @@ function Pagination({ total }: { total: number }) {
     <div className="flex flex-col items-center justify-between gap-3 sm:flex-row">
       <div className="text-xs text-muted-foreground">
         Showing <span className="font-semibold text-foreground">1–{Math.min(total, 20)}</span> of{" "}
-        <span className="font-semibold text-foreground">540</span>
+        <span className="font-semibold text-foreground">{total}</span>
       </div>
       <div className="inline-flex items-center gap-1">
         <Button variant="outline" size="sm" disabled>

@@ -1,10 +1,17 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { DataPage } from "@/components/layout/DataPage";
-import { suppliers } from "@/lib/dummy";
+import { localDb } from "@/lib/db";
+import { useLiveQuery } from "dexie-react-hooks";
 
 export const Route = createFileRoute("/suppliers")({
   head: () => ({ meta: [{ title: "Suppliers · Grocer.Pro" }] }),
-  component: () => (
+  component: SuppliersPage,
+});
+
+function SuppliersPage() {
+  const suppliers = useLiveQuery(() => localDb.suppliers.toArray()) || [];
+
+  return (
     <div className="p-4 md:p-6 lg:p-8">
       <DataPage title="Suppliers" description="Wholesale and farm partners that fill your shelves." primaryAction={{ label: "Add Supplier" }}>
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
@@ -37,5 +44,5 @@ export const Route = createFileRoute("/suppliers")({
         </div>
       </DataPage>
     </div>
-  ),
-});
+  );
+}
