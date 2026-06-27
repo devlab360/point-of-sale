@@ -5,6 +5,7 @@ import { localDb } from "@/lib/db";
 import { useLiveQuery } from "dexie-react-hooks";
 import { cn } from "@/lib/utils";
 import { Download, Filter } from "lucide-react";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/inventory/")({
   component: StockList,
@@ -23,10 +24,20 @@ function StockList() {
           <span className="text-destructive">{outCount} out of stock</span>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" size="sm">
+          <Button variant="outline" size="sm" onClick={() => toast("Export not available offline yet.")}>
             <Filter className="size-4" /> Filters
           </Button>
-          <Button variant="outline" size="sm">
+          <Button variant="outline" size="sm" onClick={() => {
+            const csv = ["Product,SKU,Stock,Reorder,Value"];
+            products.forEach(p => csv.push(`${p.name},${p.sku},${p.stock},${p.reorderLevel},${p.stock * p.cost}`));
+            const blob = new Blob([csv.join("\n")], { type: "text/csv" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = `inventory-${new Date().toISOString().split('T')[0]}.csv`;
+            a.click();
+            toast.success("Inventory exported");
+          }}>
             <Download className="size-4" /> Export CSV
           </Button>
         </div>

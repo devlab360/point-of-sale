@@ -1,46 +1,145 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useState } from "react";
+import { useLiveQuery } from "dexie-react-hooks";
+import { localDb } from "@/lib/db";
+import { v4 as uuidv4 } from "uuid";
+import { toast } from "sonner";
+import { ArrowRightLeft } from "lucide-react";
 
 export const Route = createFileRoute("/inventory/transfers")({
-  component: () => (
+  component: TransfersPage,
+});
+
+function TransfersPage() {
+  const transfers = useLiveQuery(() => localDb.transfers.toArray()) || [];
+  const products = useLiveQuery(() => localDb.products.toArray()) || [];
+  const [open, setOpen] = useState(false);
+  const [formData, setFormData] = useState({ product: "", destination: "", items: 1 });
+
+  const handleSave = async () => {
+    if (!formData.product || !formData.destination || !formData.items) return toast.error("Please fill all fields");
+    
+    const prod = products.find(p => p.id === formData.product);
+    if (!prod) return;
+
+    if (prod.stock < formData.items) return toast.error("Not enough stock for transfer");
+
+    try {
+      await localDb.transaction("rw", localDb.transfers, localDb.inventoryMovements, localDb.products, async () => {
+        const transfer = {
+          id: uuidv4(),
+          ref: `TRF-${Math.floor(Math.random() * 10000)}`,
+          date: new Date().toISOString(),
+          destination: formData.destination,
+          items: Number(formData.items),
+          status: "completed"
+        };
+        await localDb.transfers.add(transfer);
+        await localDb.inventoryMovements.add({
+          productName: prod.name,
+          action: "transfer_out",
+          quantity: -Number(formData.items),
+          createdAt: new Date().toISOString()
+        });
+        await localDb.products.update(prod.id, { stock: prod.stock - Number(formData.items) });
+      });
+      toast.success("Transfer recorded successfully");
+      setOpen(false);
+      setFormData({ product: "", destination: "", items: 1 });
+    } catch (e) {
+      toast.error("Error saving transfer");
+    }
+  };
+
+  return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <p className="text-sm text-muted-foreground">Move stock between warehouses and store locations.</p>
-        <Button size="sm">New Transfer</Button>
+        <p className="text-sm text-muted-foreground">Move inventory between store locations or warehouses.</p>
+        <Dialog open={open} onOpenChange={setOpen}>
+          <DialogTrigger asChild>
+            <Button size="sm">New Transfer</Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>New Transfer</DialogTitle>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+              <div className="space-y-2">
+                <Label>Product</Label>
+                <Select value={formData.product} onValueChange={v => setFormData({ ...formData, product: v })}>
+                  <SelectTrigger><SelectValue placeholder="Select product" /></SelectTrigger>
+                  <SelectContent>
+                    {products.map(p => <SelectItem key={p.id} value={p.id}>{p.name} ({p.stock} in stock)</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Destination</Label>
+                <Select value={formData.destination} onValueChange={v => setFormData({ ...formData, destination: v })}>
+                  <SelectTrigger><SelectValue placeholder="Select destination" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Warehouse A">Warehouse A</SelectItem>
+                    <SelectItem value="Warehouse B">Warehouse B</SelectItem>
+                    <SelectItem value="Store 02">Store 02 (Uptown)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Quantity to transfer</Label>
+                <Input type="number" min="1" value={formData.items} onChange={e => setFormData({ ...formData, items: Number(e.target.value) })} />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
+              <Button onClick={handleSave}>Record Transfer</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-        {[
-          { id: "TRF-204", from: "Central Warehouse", to: "Downtown Store", items: 24, status: "in-transit" },
-          { id: "TRF-203", from: "Downtown Store", to: "Eastside Branch", items: 8, status: "completed" },
-          { id: "TRF-202", from: "Central Warehouse", to: "Eastside Branch", items: 42, status: "completed" },
-          { id: "TRF-201", from: "Eastside Branch", to: "Downtown Store", items: 6, status: "pending" },
-        ].map((t) => (
-          <div key={t.id} className="rounded-xl border border-border bg-card p-4 shadow-soft">
-            <div className="flex items-start justify-between">
-              <span className="font-mono text-xs text-muted-foreground">{t.id}</span>
-              <Badge
-                className={
-                  t.status === "completed"
-                    ? "bg-success/10 text-success hover:bg-success/15"
-                    : t.status === "in-transit"
-                      ? "bg-info/10 text-info hover:bg-info/15"
-                      : "bg-warning/15 text-warning-foreground hover:bg-warning/20"
-                }
-              >
-                {t.status}
-              </Badge>
-            </div>
-            <div className="mt-3 flex items-center gap-2 text-sm">
-              <span className="font-semibold">{t.from}</span>
-              <ArrowRight className="size-4 text-muted-foreground" />
-              <span className="font-semibold">{t.to}</span>
-            </div>
-            <div className="mt-2 text-xs text-muted-foreground">{t.items} items · created Jun 24, 2026</div>
-          </div>
-        ))}
+      <div className="overflow-hidden rounded-xl border border-border bg-card shadow-soft">
+        <table className="w-full text-left text-sm">
+          <thead className="bg-muted/50 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+            <tr>
+              <th className="px-4 py-3">Ref</th>
+              <th className="px-4 py-3">Date</th>
+              <th className="px-4 py-3">From / To</th>
+              <th className="px-4 py-3">Items transferred</th>
+              <th className="px-4 py-3">Status</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-border">
+            {transfers.length === 0 ? (
+              <tr>
+                <td colSpan={5} className="p-4 text-center text-muted-foreground">No transfers recorded</td>
+              </tr>
+            ) : (
+              transfers.map((r) => (
+                <tr key={r.ref} className="hover:bg-muted/30">
+                  <td className="px-4 py-3 font-mono text-xs">{r.ref}</td>
+                  <td className="px-4 py-3 text-muted-foreground">{new Date(r.date).toLocaleDateString()}</td>
+                  <td className="px-4 py-3">
+                    <div className="flex items-center gap-2">
+                      <span className="text-muted-foreground">Main Store</span>
+                      <ArrowRightLeft className="size-3 text-muted-foreground" />
+                      <span className="font-medium">{r.destination}</span>
+                    </div>
+                  </td>
+                  <td className="px-4 py-3 text-muted-foreground">{r.items}</td>
+                  <td className="px-4 py-3">
+                    <Badge className="bg-success/10 text-success hover:bg-success/15">{r.status}</Badge>
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
       </div>
     </div>
-  ),
-});
+  );
+}

@@ -6,7 +6,9 @@ export interface LocalBrand { id: string; name: string; products: number; }
 export interface LocalUnit { id: string; name: string; short: string; }
 export interface LocalSupplier { id: string; name: string; contact: string; phone: string; balance: number; items: number; }
 export interface LocalPurchase { id: string; supplier: string; date: string | Date; items: number; status: string; total: number; }
-export interface LocalInventoryMovement { id: number; productName: string; action: string; quantity: number; createdAt: string | Date; }
+export interface LocalInventoryMovement { id?: number; productName: string; action: string; quantity: number; createdAt: string | Date; }
+export interface LocalAdjustment { id: string; ref: string; date: string | Date; reason: string; items: number; net: number; status: string; }
+export interface LocalTransfer { id: string; ref: string; date: string | Date; destination: string; items: number; status: string; }
 
 export interface LocalCustomer {
   id: string;
@@ -48,12 +50,14 @@ export class POSDatabase extends Dexie {
   suppliers!: Table<LocalSupplier, string>;
   purchases!: Table<LocalPurchase, string>;
   inventoryMovements!: Table<LocalInventoryMovement, number>;
+  adjustments!: Table<LocalAdjustment, string>;
+  transfers!: Table<LocalTransfer, string>;
 
   constructor() {
     super("POSDatabase");
     
     // We only index fields we want to query by
-    this.version(4).stores({
+    this.version(5).stores({
       products: "id, name, sku, barcode, category",
       customers: "id, name, phone",
       offlineSales: "id, status, synced, date",
@@ -62,7 +66,9 @@ export class POSDatabase extends Dexie {
       units: "id, name",
       suppliers: "id, name",
       purchases: "id, supplier, date",
-      inventoryMovements: "id, productName, action",
+      inventoryMovements: "++id, productName, action",
+      adjustments: "id, ref, date",
+      transfers: "id, ref, date",
     });
   }
 }

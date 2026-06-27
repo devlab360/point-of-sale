@@ -1,42 +1,55 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { ArrowDownRight, ArrowUpRight } from "lucide-react";
-import { localDb } from "@/lib/db";
+import { Badge } from "@/components/ui/badge";
 import { useLiveQuery } from "dexie-react-hooks";
+import { localDb } from "@/lib/db";
+import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/inventory/history")({
-  component: InventoryHistory,
+  component: HistoryPage,
 });
 
-function InventoryHistory() {
+function HistoryPage() {
   const movements = useLiveQuery(() => localDb.inventoryMovements.reverse().toArray()) || [];
 
   return (
-    <div className="rounded-xl border border-border bg-card p-4 shadow-soft">
-      <ul className="divide-y divide-border">
-        {movements.map((r) => (
-          <li key={r.id} className="flex items-center gap-4 py-3">
-            <div
-              className={`grid size-9 place-items-center rounded-lg ${r.quantity > 0 ? "bg-success/10 text-success" : "bg-destructive/10 text-destructive"}`}
-            >
-              {r.quantity > 0 ? <ArrowUpRight className="size-4" /> : <ArrowDownRight className="size-4" />}
-            </div>
-            <div className="flex-1">
-              <div className="font-semibold">{r.productName}</div>
-              <div className="text-xs text-muted-foreground">{r.action}</div>
-            </div>
-            <div className={`number font-semibold ${r.quantity > 0 ? "text-success" : "text-destructive"}`}>
-              {r.quantity > 0 ? "+" : ""}
-              {r.quantity}
-            </div>
-            <div className="w-32 text-right text-xs text-muted-foreground">
-              {new Date(r.createdAt).toLocaleString()}
-            </div>
-          </li>
-        ))}
-        {movements.length === 0 && (
-          <div className="py-8 text-center text-sm text-muted-foreground">No inventory history yet</div>
-        )}
-      </ul>
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <p className="text-sm text-muted-foreground">Complete audit trail of all stock changes across the store.</p>
+      </div>
+      <div className="overflow-hidden rounded-xl border border-border bg-card shadow-soft">
+        <table className="w-full text-left text-sm">
+          <thead className="bg-muted/50 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+            <tr>
+              <th className="px-4 py-3">Date & Time</th>
+              <th className="px-4 py-3">Product</th>
+              <th className="px-4 py-3">Action</th>
+              <th className="px-4 py-3 text-right">Quantity</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-border">
+            {movements.length === 0 ? (
+              <tr>
+                <td colSpan={4} className="p-4 text-center text-muted-foreground">No stock history recorded yet</td>
+              </tr>
+            ) : (
+              movements.map((m, i) => (
+                <tr key={m.id || i} className="hover:bg-muted/30">
+                  <td className="px-4 py-3 text-muted-foreground">
+                    {new Date(m.createdAt).toLocaleString()}
+                  </td>
+                  <td className="px-4 py-3 font-semibold">{m.productName}</td>
+                  <td className="px-4 py-3">
+                    <Badge variant="outline" className="capitalize">{m.action.replace('_', ' ')}</Badge>
+                  </td>
+                  <td className={cn("number px-4 py-3 text-right font-semibold", m.quantity < 0 ? "text-destructive" : "text-success")}>
+                    {m.quantity > 0 ? "+" : ""}{m.quantity}
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }
