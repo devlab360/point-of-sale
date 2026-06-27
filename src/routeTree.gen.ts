@@ -9,12 +9,21 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as UsersRouteImport } from './routes/users'
 import { Route as UnitsRouteImport } from './routes/units'
+import { Route as SuppliersRouteImport } from './routes/suppliers'
 import { Route as SalesRouteImport } from './routes/sales'
+import { Route as ReportsRouteImport } from './routes/reports'
 import { Route as PurchasesRouteImport } from './routes/purchases'
+import { Route as PromotionsRouteImport } from './routes/promotions'
 import { Route as ProductsRouteImport } from './routes/products'
 import { Route as PosRouteImport } from './routes/pos'
+import { Route as LoyaltyRouteImport } from './routes/loyalty'
 import { Route as InventoryRouteImport } from './routes/inventory'
+import { Route as GiftCardsRouteImport } from './routes/gift-cards'
+import { Route as ExpensesRouteImport } from './routes/expenses'
+import { Route as CustomersRouteImport } from './routes/customers'
+import { Route as CouponsRouteImport } from './routes/coupons'
 import { Route as CategoriesRouteImport } from './routes/categories'
 import { Route as BrandsRouteImport } from './routes/brands'
 import { Route as IndexRouteImport } from './routes/index'
@@ -26,9 +35,19 @@ import { Route as InventoryTransfersRouteImport } from './routes/inventory.trans
 import { Route as InventoryHistoryRouteImport } from './routes/inventory.history'
 import { Route as InventoryAdjustmentsRouteImport } from './routes/inventory.adjustments'
 
+const UsersRoute = UsersRouteImport.update({
+  id: '/users',
+  path: '/users',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const UnitsRoute = UnitsRouteImport.update({
   id: '/units',
   path: '/units',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SuppliersRoute = SuppliersRouteImport.update({
+  id: '/suppliers',
+  path: '/suppliers',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SalesRoute = SalesRouteImport.update({
@@ -36,9 +55,19 @@ const SalesRoute = SalesRouteImport.update({
   path: '/sales',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ReportsRoute = ReportsRouteImport.update({
+  id: '/reports',
+  path: '/reports',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PurchasesRoute = PurchasesRouteImport.update({
   id: '/purchases',
   path: '/purchases',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PromotionsRoute = PromotionsRouteImport.update({
+  id: '/promotions',
+  path: '/promotions',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ProductsRoute = ProductsRouteImport.update({
@@ -51,9 +80,34 @@ const PosRoute = PosRouteImport.update({
   path: '/pos',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LoyaltyRoute = LoyaltyRouteImport.update({
+  id: '/loyalty',
+  path: '/loyalty',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const InventoryRoute = InventoryRouteImport.update({
   id: '/inventory',
   path: '/inventory',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const GiftCardsRoute = GiftCardsRouteImport.update({
+  id: '/gift-cards',
+  path: '/gift-cards',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ExpensesRoute = ExpensesRouteImport.update({
+  id: '/expenses',
+  path: '/expenses',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CustomersRoute = CustomersRouteImport.update({
+  id: '/customers',
+  path: '/customers',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CouponsRoute = CouponsRouteImport.update({
+  id: '/coupons',
+  path: '/coupons',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CategoriesRoute = CategoriesRouteImport.update({
@@ -111,12 +165,21 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/brands': typeof BrandsRoute
   '/categories': typeof CategoriesRoute
+  '/coupons': typeof CouponsRoute
+  '/customers': typeof CustomersRoute
+  '/expenses': typeof ExpensesRoute
+  '/gift-cards': typeof GiftCardsRoute
   '/inventory': typeof InventoryRouteWithChildren
+  '/loyalty': typeof LoyaltyRoute
   '/pos': typeof PosRoute
   '/products': typeof ProductsRoute
+  '/promotions': typeof PromotionsRoute
   '/purchases': typeof PurchasesRouteWithChildren
+  '/reports': typeof ReportsRoute
   '/sales': typeof SalesRouteWithChildren
+  '/suppliers': typeof SuppliersRoute
   '/units': typeof UnitsRoute
+  '/users': typeof UsersRoute
   '/inventory/adjustments': typeof InventoryAdjustmentsRoute
   '/inventory/history': typeof InventoryHistoryRoute
   '/inventory/transfers': typeof InventoryTransfersRoute
@@ -129,11 +192,20 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/brands': typeof BrandsRoute
   '/categories': typeof CategoriesRoute
+  '/coupons': typeof CouponsRoute
+  '/customers': typeof CustomersRoute
+  '/expenses': typeof ExpensesRoute
+  '/gift-cards': typeof GiftCardsRoute
+  '/loyalty': typeof LoyaltyRoute
   '/pos': typeof PosRoute
   '/products': typeof ProductsRoute
+  '/promotions': typeof PromotionsRoute
   '/purchases': typeof PurchasesRouteWithChildren
+  '/reports': typeof ReportsRoute
   '/sales': typeof SalesRouteWithChildren
+  '/suppliers': typeof SuppliersRoute
   '/units': typeof UnitsRoute
+  '/users': typeof UsersRoute
   '/inventory/adjustments': typeof InventoryAdjustmentsRoute
   '/inventory/history': typeof InventoryHistoryRoute
   '/inventory/transfers': typeof InventoryTransfersRoute
@@ -147,12 +219,21 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/brands': typeof BrandsRoute
   '/categories': typeof CategoriesRoute
+  '/coupons': typeof CouponsRoute
+  '/customers': typeof CustomersRoute
+  '/expenses': typeof ExpensesRoute
+  '/gift-cards': typeof GiftCardsRoute
   '/inventory': typeof InventoryRouteWithChildren
+  '/loyalty': typeof LoyaltyRoute
   '/pos': typeof PosRoute
   '/products': typeof ProductsRoute
+  '/promotions': typeof PromotionsRoute
   '/purchases': typeof PurchasesRouteWithChildren
+  '/reports': typeof ReportsRoute
   '/sales': typeof SalesRouteWithChildren
+  '/suppliers': typeof SuppliersRoute
   '/units': typeof UnitsRoute
+  '/users': typeof UsersRoute
   '/inventory/adjustments': typeof InventoryAdjustmentsRoute
   '/inventory/history': typeof InventoryHistoryRoute
   '/inventory/transfers': typeof InventoryTransfersRoute
@@ -167,12 +248,21 @@ export interface FileRouteTypes {
     | '/'
     | '/brands'
     | '/categories'
+    | '/coupons'
+    | '/customers'
+    | '/expenses'
+    | '/gift-cards'
     | '/inventory'
+    | '/loyalty'
     | '/pos'
     | '/products'
+    | '/promotions'
     | '/purchases'
+    | '/reports'
     | '/sales'
+    | '/suppliers'
     | '/units'
+    | '/users'
     | '/inventory/adjustments'
     | '/inventory/history'
     | '/inventory/transfers'
@@ -185,11 +275,20 @@ export interface FileRouteTypes {
     | '/'
     | '/brands'
     | '/categories'
+    | '/coupons'
+    | '/customers'
+    | '/expenses'
+    | '/gift-cards'
+    | '/loyalty'
     | '/pos'
     | '/products'
+    | '/promotions'
     | '/purchases'
+    | '/reports'
     | '/sales'
+    | '/suppliers'
     | '/units'
+    | '/users'
     | '/inventory/adjustments'
     | '/inventory/history'
     | '/inventory/transfers'
@@ -202,12 +301,21 @@ export interface FileRouteTypes {
     | '/'
     | '/brands'
     | '/categories'
+    | '/coupons'
+    | '/customers'
+    | '/expenses'
+    | '/gift-cards'
     | '/inventory'
+    | '/loyalty'
     | '/pos'
     | '/products'
+    | '/promotions'
     | '/purchases'
+    | '/reports'
     | '/sales'
+    | '/suppliers'
     | '/units'
+    | '/users'
     | '/inventory/adjustments'
     | '/inventory/history'
     | '/inventory/transfers'
@@ -221,21 +329,44 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   BrandsRoute: typeof BrandsRoute
   CategoriesRoute: typeof CategoriesRoute
+  CouponsRoute: typeof CouponsRoute
+  CustomersRoute: typeof CustomersRoute
+  ExpensesRoute: typeof ExpensesRoute
+  GiftCardsRoute: typeof GiftCardsRoute
   InventoryRoute: typeof InventoryRouteWithChildren
+  LoyaltyRoute: typeof LoyaltyRoute
   PosRoute: typeof PosRoute
   ProductsRoute: typeof ProductsRoute
+  PromotionsRoute: typeof PromotionsRoute
   PurchasesRoute: typeof PurchasesRouteWithChildren
+  ReportsRoute: typeof ReportsRoute
   SalesRoute: typeof SalesRouteWithChildren
+  SuppliersRoute: typeof SuppliersRoute
   UnitsRoute: typeof UnitsRoute
+  UsersRoute: typeof UsersRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/users': {
+      id: '/users'
+      path: '/users'
+      fullPath: '/users'
+      preLoaderRoute: typeof UsersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/units': {
       id: '/units'
       path: '/units'
       fullPath: '/units'
       preLoaderRoute: typeof UnitsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/suppliers': {
+      id: '/suppliers'
+      path: '/suppliers'
+      fullPath: '/suppliers'
+      preLoaderRoute: typeof SuppliersRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/sales': {
@@ -245,11 +376,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SalesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/reports': {
+      id: '/reports'
+      path: '/reports'
+      fullPath: '/reports'
+      preLoaderRoute: typeof ReportsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/purchases': {
       id: '/purchases'
       path: '/purchases'
       fullPath: '/purchases'
       preLoaderRoute: typeof PurchasesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/promotions': {
+      id: '/promotions'
+      path: '/promotions'
+      fullPath: '/promotions'
+      preLoaderRoute: typeof PromotionsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/products': {
@@ -266,11 +411,46 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PosRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/loyalty': {
+      id: '/loyalty'
+      path: '/loyalty'
+      fullPath: '/loyalty'
+      preLoaderRoute: typeof LoyaltyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/inventory': {
       id: '/inventory'
       path: '/inventory'
       fullPath: '/inventory'
       preLoaderRoute: typeof InventoryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/gift-cards': {
+      id: '/gift-cards'
+      path: '/gift-cards'
+      fullPath: '/gift-cards'
+      preLoaderRoute: typeof GiftCardsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/expenses': {
+      id: '/expenses'
+      path: '/expenses'
+      fullPath: '/expenses'
+      preLoaderRoute: typeof ExpensesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/customers': {
+      id: '/customers'
+      path: '/customers'
+      fullPath: '/customers'
+      preLoaderRoute: typeof CustomersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/coupons': {
+      id: '/coupons'
+      path: '/coupons'
+      fullPath: '/coupons'
+      preLoaderRoute: typeof CouponsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/categories': {
@@ -392,12 +572,21 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   BrandsRoute: BrandsRoute,
   CategoriesRoute: CategoriesRoute,
+  CouponsRoute: CouponsRoute,
+  CustomersRoute: CustomersRoute,
+  ExpensesRoute: ExpensesRoute,
+  GiftCardsRoute: GiftCardsRoute,
   InventoryRoute: InventoryRouteWithChildren,
+  LoyaltyRoute: LoyaltyRoute,
   PosRoute: PosRoute,
   ProductsRoute: ProductsRoute,
+  PromotionsRoute: PromotionsRoute,
   PurchasesRoute: PurchasesRouteWithChildren,
+  ReportsRoute: ReportsRoute,
   SalesRoute: SalesRouteWithChildren,
+  SuppliersRoute: SuppliersRoute,
   UnitsRoute: UnitsRoute,
+  UsersRoute: UsersRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
