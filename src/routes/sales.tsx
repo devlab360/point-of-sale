@@ -34,8 +34,8 @@ function SalesPage() {
                   <td className="px-4 py-3 font-mono text-xs">{s.id.slice(0, 8).toUpperCase()}</td>
                   <td className="px-4 py-3 font-semibold">{s.customerName || "Walk-in"}</td>
                   <td className="px-4 py-3 text-muted-foreground">{new Date(s.date).toLocaleString()}</td>
-                  <td className="px-4 py-3 text-right">{s.items.reduce((acc: number, item: any) => acc + item.quantity, 0)}</td>
-                  <td className="px-4 py-3 text-muted-foreground capitalize">{s.payment}</td>
+                  <td className="px-4 py-3 text-right">{typeof s.items === 'number' ? s.items : s.saleItems?.reduce((acc: number, item: any) => acc + item.quantity, 0) || 0}</td>
+                  <td className="px-4 py-3 text-muted-foreground capitalize">{s.paymentMethod || 'cash'}</td>
                   <td className="px-4 py-3">
                     <Badge
                       className={cn(
