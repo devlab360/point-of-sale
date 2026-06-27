@@ -9,38 +9,564 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as UsersRouteImport } from './routes/users'
+import { Route as UnitsRouteImport } from './routes/units'
+import { Route as SuppliersRouteImport } from './routes/suppliers'
+import { Route as SettingsRouteImport } from './routes/settings'
+import { Route as SalesRouteImport } from './routes/sales'
+import { Route as ReportsRouteImport } from './routes/reports'
+import { Route as PurchasesRouteImport } from './routes/purchases'
+import { Route as PromotionsRouteImport } from './routes/promotions'
+import { Route as ProfileRouteImport } from './routes/profile'
+import { Route as ProductsRouteImport } from './routes/products'
+import { Route as PosRouteImport } from './routes/pos'
+import { Route as NotificationsRouteImport } from './routes/notifications'
+import { Route as LoyaltyRouteImport } from './routes/loyalty'
+import { Route as InventoryRouteImport } from './routes/inventory'
+import { Route as HelpRouteImport } from './routes/help'
+import { Route as GiftCardsRouteImport } from './routes/gift-cards'
+import { Route as ExpensesRouteImport } from './routes/expenses'
+import { Route as CustomersRouteImport } from './routes/customers'
+import { Route as CouponsRouteImport } from './routes/coupons'
+import { Route as CategoriesRouteImport } from './routes/categories'
+import { Route as BrandsRouteImport } from './routes/brands'
+import { Route as ActivityRouteImport } from './routes/activity'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as InventoryIndexRouteImport } from './routes/inventory.index'
+import { Route as SalesReturnsRouteImport } from './routes/sales.returns'
+import { Route as PurchasesReturnsRouteImport } from './routes/purchases.returns'
+import { Route as PurchasesNewRouteImport } from './routes/purchases.new'
+import { Route as InventoryTransfersRouteImport } from './routes/inventory.transfers'
+import { Route as InventoryHistoryRouteImport } from './routes/inventory.history'
+import { Route as InventoryAdjustmentsRouteImport } from './routes/inventory.adjustments'
 
+const UsersRoute = UsersRouteImport.update({
+  id: '/users',
+  path: '/users',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const UnitsRoute = UnitsRouteImport.update({
+  id: '/units',
+  path: '/units',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SuppliersRoute = SuppliersRouteImport.update({
+  id: '/suppliers',
+  path: '/suppliers',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SettingsRoute = SettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SalesRoute = SalesRouteImport.update({
+  id: '/sales',
+  path: '/sales',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ReportsRoute = ReportsRouteImport.update({
+  id: '/reports',
+  path: '/reports',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PurchasesRoute = PurchasesRouteImport.update({
+  id: '/purchases',
+  path: '/purchases',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PromotionsRoute = PromotionsRouteImport.update({
+  id: '/promotions',
+  path: '/promotions',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProfileRoute = ProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProductsRoute = ProductsRouteImport.update({
+  id: '/products',
+  path: '/products',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PosRoute = PosRouteImport.update({
+  id: '/pos',
+  path: '/pos',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const NotificationsRoute = NotificationsRouteImport.update({
+  id: '/notifications',
+  path: '/notifications',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoyaltyRoute = LoyaltyRouteImport.update({
+  id: '/loyalty',
+  path: '/loyalty',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const InventoryRoute = InventoryRouteImport.update({
+  id: '/inventory',
+  path: '/inventory',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const HelpRoute = HelpRouteImport.update({
+  id: '/help',
+  path: '/help',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const GiftCardsRoute = GiftCardsRouteImport.update({
+  id: '/gift-cards',
+  path: '/gift-cards',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ExpensesRoute = ExpensesRouteImport.update({
+  id: '/expenses',
+  path: '/expenses',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CustomersRoute = CustomersRouteImport.update({
+  id: '/customers',
+  path: '/customers',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CouponsRoute = CouponsRouteImport.update({
+  id: '/coupons',
+  path: '/coupons',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CategoriesRoute = CategoriesRouteImport.update({
+  id: '/categories',
+  path: '/categories',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BrandsRoute = BrandsRouteImport.update({
+  id: '/brands',
+  path: '/brands',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ActivityRoute = ActivityRouteImport.update({
+  id: '/activity',
+  path: '/activity',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const InventoryIndexRoute = InventoryIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => InventoryRoute,
+} as any)
+const SalesReturnsRoute = SalesReturnsRouteImport.update({
+  id: '/returns',
+  path: '/returns',
+  getParentRoute: () => SalesRoute,
+} as any)
+const PurchasesReturnsRoute = PurchasesReturnsRouteImport.update({
+  id: '/returns',
+  path: '/returns',
+  getParentRoute: () => PurchasesRoute,
+} as any)
+const PurchasesNewRoute = PurchasesNewRouteImport.update({
+  id: '/new',
+  path: '/new',
+  getParentRoute: () => PurchasesRoute,
+} as any)
+const InventoryTransfersRoute = InventoryTransfersRouteImport.update({
+  id: '/transfers',
+  path: '/transfers',
+  getParentRoute: () => InventoryRoute,
+} as any)
+const InventoryHistoryRoute = InventoryHistoryRouteImport.update({
+  id: '/history',
+  path: '/history',
+  getParentRoute: () => InventoryRoute,
+} as any)
+const InventoryAdjustmentsRoute = InventoryAdjustmentsRouteImport.update({
+  id: '/adjustments',
+  path: '/adjustments',
+  getParentRoute: () => InventoryRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/activity': typeof ActivityRoute
+  '/brands': typeof BrandsRoute
+  '/categories': typeof CategoriesRoute
+  '/coupons': typeof CouponsRoute
+  '/customers': typeof CustomersRoute
+  '/expenses': typeof ExpensesRoute
+  '/gift-cards': typeof GiftCardsRoute
+  '/help': typeof HelpRoute
+  '/inventory': typeof InventoryRouteWithChildren
+  '/loyalty': typeof LoyaltyRoute
+  '/notifications': typeof NotificationsRoute
+  '/pos': typeof PosRoute
+  '/products': typeof ProductsRoute
+  '/profile': typeof ProfileRoute
+  '/promotions': typeof PromotionsRoute
+  '/purchases': typeof PurchasesRouteWithChildren
+  '/reports': typeof ReportsRoute
+  '/sales': typeof SalesRouteWithChildren
+  '/settings': typeof SettingsRoute
+  '/suppliers': typeof SuppliersRoute
+  '/units': typeof UnitsRoute
+  '/users': typeof UsersRoute
+  '/inventory/adjustments': typeof InventoryAdjustmentsRoute
+  '/inventory/history': typeof InventoryHistoryRoute
+  '/inventory/transfers': typeof InventoryTransfersRoute
+  '/purchases/new': typeof PurchasesNewRoute
+  '/purchases/returns': typeof PurchasesReturnsRoute
+  '/sales/returns': typeof SalesReturnsRoute
+  '/inventory/': typeof InventoryIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/activity': typeof ActivityRoute
+  '/brands': typeof BrandsRoute
+  '/categories': typeof CategoriesRoute
+  '/coupons': typeof CouponsRoute
+  '/customers': typeof CustomersRoute
+  '/expenses': typeof ExpensesRoute
+  '/gift-cards': typeof GiftCardsRoute
+  '/help': typeof HelpRoute
+  '/loyalty': typeof LoyaltyRoute
+  '/notifications': typeof NotificationsRoute
+  '/pos': typeof PosRoute
+  '/products': typeof ProductsRoute
+  '/profile': typeof ProfileRoute
+  '/promotions': typeof PromotionsRoute
+  '/purchases': typeof PurchasesRouteWithChildren
+  '/reports': typeof ReportsRoute
+  '/sales': typeof SalesRouteWithChildren
+  '/settings': typeof SettingsRoute
+  '/suppliers': typeof SuppliersRoute
+  '/units': typeof UnitsRoute
+  '/users': typeof UsersRoute
+  '/inventory/adjustments': typeof InventoryAdjustmentsRoute
+  '/inventory/history': typeof InventoryHistoryRoute
+  '/inventory/transfers': typeof InventoryTransfersRoute
+  '/purchases/new': typeof PurchasesNewRoute
+  '/purchases/returns': typeof PurchasesReturnsRoute
+  '/sales/returns': typeof SalesReturnsRoute
+  '/inventory': typeof InventoryIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/activity': typeof ActivityRoute
+  '/brands': typeof BrandsRoute
+  '/categories': typeof CategoriesRoute
+  '/coupons': typeof CouponsRoute
+  '/customers': typeof CustomersRoute
+  '/expenses': typeof ExpensesRoute
+  '/gift-cards': typeof GiftCardsRoute
+  '/help': typeof HelpRoute
+  '/inventory': typeof InventoryRouteWithChildren
+  '/loyalty': typeof LoyaltyRoute
+  '/notifications': typeof NotificationsRoute
+  '/pos': typeof PosRoute
+  '/products': typeof ProductsRoute
+  '/profile': typeof ProfileRoute
+  '/promotions': typeof PromotionsRoute
+  '/purchases': typeof PurchasesRouteWithChildren
+  '/reports': typeof ReportsRoute
+  '/sales': typeof SalesRouteWithChildren
+  '/settings': typeof SettingsRoute
+  '/suppliers': typeof SuppliersRoute
+  '/units': typeof UnitsRoute
+  '/users': typeof UsersRoute
+  '/inventory/adjustments': typeof InventoryAdjustmentsRoute
+  '/inventory/history': typeof InventoryHistoryRoute
+  '/inventory/transfers': typeof InventoryTransfersRoute
+  '/purchases/new': typeof PurchasesNewRoute
+  '/purchases/returns': typeof PurchasesReturnsRoute
+  '/sales/returns': typeof SalesReturnsRoute
+  '/inventory/': typeof InventoryIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/activity'
+    | '/brands'
+    | '/categories'
+    | '/coupons'
+    | '/customers'
+    | '/expenses'
+    | '/gift-cards'
+    | '/help'
+    | '/inventory'
+    | '/loyalty'
+    | '/notifications'
+    | '/pos'
+    | '/products'
+    | '/profile'
+    | '/promotions'
+    | '/purchases'
+    | '/reports'
+    | '/sales'
+    | '/settings'
+    | '/suppliers'
+    | '/units'
+    | '/users'
+    | '/inventory/adjustments'
+    | '/inventory/history'
+    | '/inventory/transfers'
+    | '/purchases/new'
+    | '/purchases/returns'
+    | '/sales/returns'
+    | '/inventory/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/activity'
+    | '/brands'
+    | '/categories'
+    | '/coupons'
+    | '/customers'
+    | '/expenses'
+    | '/gift-cards'
+    | '/help'
+    | '/loyalty'
+    | '/notifications'
+    | '/pos'
+    | '/products'
+    | '/profile'
+    | '/promotions'
+    | '/purchases'
+    | '/reports'
+    | '/sales'
+    | '/settings'
+    | '/suppliers'
+    | '/units'
+    | '/users'
+    | '/inventory/adjustments'
+    | '/inventory/history'
+    | '/inventory/transfers'
+    | '/purchases/new'
+    | '/purchases/returns'
+    | '/sales/returns'
+    | '/inventory'
+  id:
+    | '__root__'
+    | '/'
+    | '/activity'
+    | '/brands'
+    | '/categories'
+    | '/coupons'
+    | '/customers'
+    | '/expenses'
+    | '/gift-cards'
+    | '/help'
+    | '/inventory'
+    | '/loyalty'
+    | '/notifications'
+    | '/pos'
+    | '/products'
+    | '/profile'
+    | '/promotions'
+    | '/purchases'
+    | '/reports'
+    | '/sales'
+    | '/settings'
+    | '/suppliers'
+    | '/units'
+    | '/users'
+    | '/inventory/adjustments'
+    | '/inventory/history'
+    | '/inventory/transfers'
+    | '/purchases/new'
+    | '/purchases/returns'
+    | '/sales/returns'
+    | '/inventory/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  ActivityRoute: typeof ActivityRoute
+  BrandsRoute: typeof BrandsRoute
+  CategoriesRoute: typeof CategoriesRoute
+  CouponsRoute: typeof CouponsRoute
+  CustomersRoute: typeof CustomersRoute
+  ExpensesRoute: typeof ExpensesRoute
+  GiftCardsRoute: typeof GiftCardsRoute
+  HelpRoute: typeof HelpRoute
+  InventoryRoute: typeof InventoryRouteWithChildren
+  LoyaltyRoute: typeof LoyaltyRoute
+  NotificationsRoute: typeof NotificationsRoute
+  PosRoute: typeof PosRoute
+  ProductsRoute: typeof ProductsRoute
+  ProfileRoute: typeof ProfileRoute
+  PromotionsRoute: typeof PromotionsRoute
+  PurchasesRoute: typeof PurchasesRouteWithChildren
+  ReportsRoute: typeof ReportsRoute
+  SalesRoute: typeof SalesRouteWithChildren
+  SettingsRoute: typeof SettingsRoute
+  SuppliersRoute: typeof SuppliersRoute
+  UnitsRoute: typeof UnitsRoute
+  UsersRoute: typeof UsersRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/users': {
+      id: '/users'
+      path: '/users'
+      fullPath: '/users'
+      preLoaderRoute: typeof UsersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/units': {
+      id: '/units'
+      path: '/units'
+      fullPath: '/units'
+      preLoaderRoute: typeof UnitsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/suppliers': {
+      id: '/suppliers'
+      path: '/suppliers'
+      fullPath: '/suppliers'
+      preLoaderRoute: typeof SuppliersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/settings': {
+      id: '/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof SettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sales': {
+      id: '/sales'
+      path: '/sales'
+      fullPath: '/sales'
+      preLoaderRoute: typeof SalesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reports': {
+      id: '/reports'
+      path: '/reports'
+      fullPath: '/reports'
+      preLoaderRoute: typeof ReportsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/purchases': {
+      id: '/purchases'
+      path: '/purchases'
+      fullPath: '/purchases'
+      preLoaderRoute: typeof PurchasesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/promotions': {
+      id: '/promotions'
+      path: '/promotions'
+      fullPath: '/promotions'
+      preLoaderRoute: typeof PromotionsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/profile': {
+      id: '/profile'
+      path: '/profile'
+      fullPath: '/profile'
+      preLoaderRoute: typeof ProfileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/products': {
+      id: '/products'
+      path: '/products'
+      fullPath: '/products'
+      preLoaderRoute: typeof ProductsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pos': {
+      id: '/pos'
+      path: '/pos'
+      fullPath: '/pos'
+      preLoaderRoute: typeof PosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/notifications': {
+      id: '/notifications'
+      path: '/notifications'
+      fullPath: '/notifications'
+      preLoaderRoute: typeof NotificationsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/loyalty': {
+      id: '/loyalty'
+      path: '/loyalty'
+      fullPath: '/loyalty'
+      preLoaderRoute: typeof LoyaltyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/inventory': {
+      id: '/inventory'
+      path: '/inventory'
+      fullPath: '/inventory'
+      preLoaderRoute: typeof InventoryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/help': {
+      id: '/help'
+      path: '/help'
+      fullPath: '/help'
+      preLoaderRoute: typeof HelpRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/gift-cards': {
+      id: '/gift-cards'
+      path: '/gift-cards'
+      fullPath: '/gift-cards'
+      preLoaderRoute: typeof GiftCardsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/expenses': {
+      id: '/expenses'
+      path: '/expenses'
+      fullPath: '/expenses'
+      preLoaderRoute: typeof ExpensesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/customers': {
+      id: '/customers'
+      path: '/customers'
+      fullPath: '/customers'
+      preLoaderRoute: typeof CustomersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/coupons': {
+      id: '/coupons'
+      path: '/coupons'
+      fullPath: '/coupons'
+      preLoaderRoute: typeof CouponsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/categories': {
+      id: '/categories'
+      path: '/categories'
+      fullPath: '/categories'
+      preLoaderRoute: typeof CategoriesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/brands': {
+      id: '/brands'
+      path: '/brands'
+      fullPath: '/brands'
+      preLoaderRoute: typeof BrandsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/activity': {
+      id: '/activity'
+      path: '/activity'
+      fullPath: '/activity'
+      preLoaderRoute: typeof ActivityRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -48,22 +574,125 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/inventory/': {
+      id: '/inventory/'
+      path: '/'
+      fullPath: '/inventory/'
+      preLoaderRoute: typeof InventoryIndexRouteImport
+      parentRoute: typeof InventoryRoute
+    }
+    '/sales/returns': {
+      id: '/sales/returns'
+      path: '/returns'
+      fullPath: '/sales/returns'
+      preLoaderRoute: typeof SalesReturnsRouteImport
+      parentRoute: typeof SalesRoute
+    }
+    '/purchases/returns': {
+      id: '/purchases/returns'
+      path: '/returns'
+      fullPath: '/purchases/returns'
+      preLoaderRoute: typeof PurchasesReturnsRouteImport
+      parentRoute: typeof PurchasesRoute
+    }
+    '/purchases/new': {
+      id: '/purchases/new'
+      path: '/new'
+      fullPath: '/purchases/new'
+      preLoaderRoute: typeof PurchasesNewRouteImport
+      parentRoute: typeof PurchasesRoute
+    }
+    '/inventory/transfers': {
+      id: '/inventory/transfers'
+      path: '/transfers'
+      fullPath: '/inventory/transfers'
+      preLoaderRoute: typeof InventoryTransfersRouteImport
+      parentRoute: typeof InventoryRoute
+    }
+    '/inventory/history': {
+      id: '/inventory/history'
+      path: '/history'
+      fullPath: '/inventory/history'
+      preLoaderRoute: typeof InventoryHistoryRouteImport
+      parentRoute: typeof InventoryRoute
+    }
+    '/inventory/adjustments': {
+      id: '/inventory/adjustments'
+      path: '/adjustments'
+      fullPath: '/inventory/adjustments'
+      preLoaderRoute: typeof InventoryAdjustmentsRouteImport
+      parentRoute: typeof InventoryRoute
+    }
   }
 }
 
+interface InventoryRouteChildren {
+  InventoryAdjustmentsRoute: typeof InventoryAdjustmentsRoute
+  InventoryHistoryRoute: typeof InventoryHistoryRoute
+  InventoryTransfersRoute: typeof InventoryTransfersRoute
+  InventoryIndexRoute: typeof InventoryIndexRoute
+}
+
+const InventoryRouteChildren: InventoryRouteChildren = {
+  InventoryAdjustmentsRoute: InventoryAdjustmentsRoute,
+  InventoryHistoryRoute: InventoryHistoryRoute,
+  InventoryTransfersRoute: InventoryTransfersRoute,
+  InventoryIndexRoute: InventoryIndexRoute,
+}
+
+const InventoryRouteWithChildren = InventoryRoute._addFileChildren(
+  InventoryRouteChildren,
+)
+
+interface PurchasesRouteChildren {
+  PurchasesNewRoute: typeof PurchasesNewRoute
+  PurchasesReturnsRoute: typeof PurchasesReturnsRoute
+}
+
+const PurchasesRouteChildren: PurchasesRouteChildren = {
+  PurchasesNewRoute: PurchasesNewRoute,
+  PurchasesReturnsRoute: PurchasesReturnsRoute,
+}
+
+const PurchasesRouteWithChildren = PurchasesRoute._addFileChildren(
+  PurchasesRouteChildren,
+)
+
+interface SalesRouteChildren {
+  SalesReturnsRoute: typeof SalesReturnsRoute
+}
+
+const SalesRouteChildren: SalesRouteChildren = {
+  SalesReturnsRoute: SalesReturnsRoute,
+}
+
+const SalesRouteWithChildren = SalesRoute._addFileChildren(SalesRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  ActivityRoute: ActivityRoute,
+  BrandsRoute: BrandsRoute,
+  CategoriesRoute: CategoriesRoute,
+  CouponsRoute: CouponsRoute,
+  CustomersRoute: CustomersRoute,
+  ExpensesRoute: ExpensesRoute,
+  GiftCardsRoute: GiftCardsRoute,
+  HelpRoute: HelpRoute,
+  InventoryRoute: InventoryRouteWithChildren,
+  LoyaltyRoute: LoyaltyRoute,
+  NotificationsRoute: NotificationsRoute,
+  PosRoute: PosRoute,
+  ProductsRoute: ProductsRoute,
+  ProfileRoute: ProfileRoute,
+  PromotionsRoute: PromotionsRoute,
+  PurchasesRoute: PurchasesRouteWithChildren,
+  ReportsRoute: ReportsRoute,
+  SalesRoute: SalesRouteWithChildren,
+  SettingsRoute: SettingsRoute,
+  SuppliersRoute: SuppliersRoute,
+  UnitsRoute: UnitsRoute,
+  UsersRoute: UsersRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
