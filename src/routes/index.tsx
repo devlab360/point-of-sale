@@ -31,7 +31,21 @@ function Dashboard() {
   const customers = useLiveQuery(() => localDb.customers.toArray()) || [];
 
   const lowStock = products.filter((p) => p.stock <= p.reorderLevel).slice(0, 5);
-  const topSelling = [...products].sort((a, b) => b.stock - a.stock).slice(0, 5);
+  
+  const productSalesMap = new Map<string, number>();
+  sales.forEach(sale => {
+    if (sale.saleItems) {
+      sale.saleItems.forEach(item => {
+        productSalesMap.set(item.productId, (productSalesMap.get(item.productId) || 0) + item.quantity);
+      });
+    }
+  });
+  
+  const topSelling = [...products]
+    .map(p => ({ ...p, sold: productSalesMap.get(p.id) || 0 }))
+    .sort((a, b) => b.sold - a.sold)
+    .slice(0, 5);
+    
   const recentSales = [...sales].reverse().slice(0, 5);
   
   const todayRevenue = sales.reduce((sum, s) => sum + s.total, 0);
@@ -84,32 +98,32 @@ function Dashboard() {
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard
           label="Today's Sales"
-          value="$12,450.80"
-          delta={14}
-          hint="vs. yesterday"
+          value={fmt(todayRevenue)}
+          delta={0}
+          hint="Calculated locally"
           icon={DollarSign}
           accent="primary"
         />
         <StatCard
           label="Today's Orders"
-          value="184"
-          delta={6}
-          hint="24 pending"
+          value={todayOrders.toString()}
+          delta={0}
+          hint="Calculated locally"
           icon={Receipt}
           accent="info"
         />
         <StatCard
           label="Net Profit"
-          value="$3,820.40"
-          delta={9}
-          hint="30.7% margin"
+          value={fmt(todayProfit)}
+          delta={0}
+          hint="Estimated 30%"
           icon={TrendingUp}
           accent="success"
         />
         <StatCard
           label="Low Stock Items"
-          value="18"
-          delta={-12}
+          value={lowStock.length.toString()}
+          delta={0}
           hint="Action required"
           icon={AlertTriangle}
           accent="warning"
@@ -325,7 +339,7 @@ function Dashboard() {
                   <tr key={s.id} className="hover:bg-muted/30">
                     <td className="px-5 py-3 font-medium">{s.id.slice(0, 8).toUpperCase()}</td>
                     <td className="px-5 py-3">{s.customerName || "Walk-in"}</td>
-                    <td className="px-5 py-3 text-muted-foreground capitalize">{s.payment}</td>
+                    <td className="px-5 py-3 text-muted-foreground capitalize">{s.paymentMethod || s.payment || "cash"}</td>
                     <td className="px-5 py-3">
                       <StatusBadge status={s.status} />
                     </td>
