@@ -19,6 +19,17 @@ import { useLiveQuery } from "dexie-react-hooks";
 import { cn } from "@/lib/utils";
 import { v4 as uuidv4 } from "uuid";
 import { toast } from "sonner";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+
 
 export const Route = createFileRoute("/products")({
   head: () => ({
@@ -41,6 +52,8 @@ function ProductsPage() {
     name: "", sku: "", barcode: "", category: "", brand: "", unit: "",
     price: 0, cost: 0, stock: 0, reorderLevel: 5, image: "https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&q=80&w=150&h=150"
   });
+  const [deleteId, setDeleteId] = useState<string | null>(null);
+
 
   const openNew = () => {
     setEditingProd(null);
@@ -64,25 +77,39 @@ function ProductsPage() {
   const save = async () => {
     if (!formData.name) return toast.error("Name is required");
     
-    if (editingProd) {
-      await localDb.products.update(editingProd.id, formData);
-      toast.success("Product updated");
-    } else {
-      await localDb.products.add({
-        id: uuidv4(),
-        ...formData,
-      });
-      toast.success("Product created");
+    try {
+      if (editingProd) {
+        await localDb.products.update(editingProd.id, formData);
+        toast.success("Product updated");
+      } else {
+        await localDb.products.add({
+          id: uuidv4(),
+          ...formData,
+        });
+        toast.success("Product created");
+      }
+      setModalOpen(false);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "An error occurred");
     }
-    setModalOpen(false);
   };
 
-  const deleteProd = async (id: string) => {
-    if (confirm("Are you sure you want to delete this product?")) {
-      await localDb.products.delete(id);
+  const deleteProd = (id: string) => {
+    setDeleteId(id);
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteId) return;
+    try {
+      await localDb.products.delete(deleteId);
       toast.success("Product deleted");
+    } catch (error) {
+      toast.error("Failed to delete product");
+    } finally {
+      setDeleteId(null);
     }
   };
+
 
   return (
     <div className="p-4 md:p-6 lg:p-8">
@@ -192,9 +219,27 @@ function ProductsPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the product.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
+
 
 function TableView({ products, onEdit, onDelete }: { products: any[], onEdit: (p: any) => void, onDelete: (id: string) => void }) {
   return (

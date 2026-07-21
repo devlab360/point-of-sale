@@ -38,6 +38,13 @@ export function AppHeader() {
   const notifications = useLiveQuery(() => localDb.notifications.toArray()) || [];
   const unread = notifications.filter((n) => !n.read).length;
 
+  const profile = useLiveQuery(() => localDb.users.get("me")) || {
+    name: "Admin",
+    email: "admin@grocer.pro",
+  };
+  const initials = (profile.name || "U").split(" ").filter(Boolean).map((n) => n[0]).join("").substring(0, 2).toUpperCase();
+
+
   useEffect(() => {
     const t = getInitialTheme();
     setTheme(t);
@@ -154,13 +161,14 @@ export function AppHeader() {
 
         <DropdownMenu>
           <DropdownMenuTrigger className="ml-1 grid size-9 place-items-center rounded-full bg-gradient-to-br from-primary to-info text-sm font-bold text-primary-foreground">
-            SM
+            {initials}
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-56">
             <DropdownMenuLabel>
-              <div className="text-sm font-semibold">Sarah Miller</div>
-              <div className="text-xs font-normal text-muted-foreground">sarah@grocer.pro</div>
+              <div className="text-sm font-semibold">{profile.name}</div>
+              <div className="text-xs font-normal text-muted-foreground">{profile.email}</div>
             </DropdownMenuLabel>
+
             <DropdownMenuSeparator />
             <DropdownMenuItem asChild>
               <Link to="/profile">Profile</Link>

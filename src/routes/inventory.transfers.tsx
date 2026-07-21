@@ -19,6 +19,7 @@ export const Route = createFileRoute("/inventory/transfers")({
 function TransfersPage() {
   const transfers = useLiveQuery(() => localDb.transfers.toArray()) || [];
   const products = useLiveQuery(() => localDb.products.toArray()) || [];
+  const locations = useLiveQuery(() => localDb.locations.toArray()) || [];
   const [open, setOpen] = useState(false);
   const [formData, setFormData] = useState({ product: "", destination: "", items: 1 });
 
@@ -84,9 +85,14 @@ function TransfersPage() {
                 <Select value={formData.destination} onValueChange={v => setFormData({ ...formData, destination: v })}>
                   <SelectTrigger><SelectValue placeholder="Select destination" /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Warehouse A">Warehouse A</SelectItem>
-                    <SelectItem value="Warehouse B">Warehouse B</SelectItem>
-                    <SelectItem value="Store 02">Store 02 (Uptown)</SelectItem>
+                    {locations.length > 0 ? (
+                      locations.map(loc => <SelectItem key={loc.id} value={loc.name}>{loc.name}</SelectItem>)
+                    ) : (
+                      <>
+                        <SelectItem value="Warehouse A">Warehouse A (Fallback)</SelectItem>
+                        <SelectItem value="Store 02">Store 02 (Fallback)</SelectItem>
+                      </>
+                    )}
                   </SelectContent>
                 </Select>
               </div>

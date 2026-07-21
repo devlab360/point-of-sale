@@ -10,6 +10,16 @@ import { Pencil, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { v4 as uuidv4 } from "uuid";
 import { toast } from "sonner";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export const Route = createFileRoute("/units")({
   head: () => ({ meta: [{ title: "Units · Grocer.Pro" }] }),
@@ -23,6 +33,8 @@ function UnitsPage() {
   const [editingUnit, setEditingUnit] = useState<any>(null);
   const [name, setName] = useState("");
   const [short, setShort] = useState("");
+  const [deleteId, setDeleteId] = useState<string | null>(null);
+
 
   const openNew = () => {
     setEditingUnit(null);
@@ -41,26 +53,36 @@ function UnitsPage() {
   const save = async () => {
     if (!name.trim() || !short.trim()) return toast.error("Name and Short code are required");
     
-    if (editingUnit) {
-      await localDb.units.update(editingUnit.id, { name, short });
-      toast.success("Unit updated");
-    } else {
-      await localDb.units.add({
-        id: uuidv4(),
-        name,
-        short,
-      });
-      toast.success("Unit created");
+    try {
+      if (editingUnit) {
+        await localDb.units.update(editingUnit.id, { name, short });
+        toast.success("Unit updated");
+      } else {
+        await localDb.units.add({
+          id: uuidv4(),
+          name,
+          short,
+        });
+        toast.success("Unit created");
+      }
+      setModalOpen(false);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "An error occurred");
     }
-    setModalOpen(false);
   };
 
-  const deleteUnit = async (id: string) => {
-    if (confirm("Are you sure you want to delete this unit?")) {
-      await localDb.units.delete(id);
+  const confirmDelete = async () => {
+    if (!deleteId) return;
+    try {
+      await localDb.units.delete(deleteId);
       toast.success("Unit deleted");
+    } catch (error) {
+      toast.error("Failed to delete unit");
+    } finally {
+      setDeleteId(null);
     }
   };
+
 
   return (
     <div className="p-4 md:p-6 lg:p-8">
@@ -88,7 +110,8 @@ function UnitsPage() {
                       <Button variant="ghost" size="icon" className="size-8" onClick={() => openEdit(u)}>
                         <Pencil className="size-4" />
                       </Button>
-                      <Button variant="ghost" size="icon" className="size-8 text-destructive" onClick={() => deleteUnit(u.id)}>
+                      <Button variant="ghost" size="icon" className="size-8 text-destructive" onClick={() => setDeleteId(u.id)}>
+
                         <Trash2 className="size-4" />
                       </Button>
                     </div>
@@ -130,6 +153,24 @@ function UnitsPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the unit.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
+

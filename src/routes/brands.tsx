@@ -11,6 +11,17 @@ import { Pencil, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { v4 as uuidv4 } from "uuid";
 import { toast } from "sonner";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+
 
 export const Route = createFileRoute("/brands")({
   head: () => ({ meta: [{ title: "Brands · Grocer.Pro" }] }),
@@ -23,6 +34,8 @@ function BrandsPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [editingBrand, setEditingBrand] = useState<any>(null);
   const [name, setName] = useState("");
+  const [deleteId, setDeleteId] = useState<string | null>(null);
+
 
   const openNew = () => {
     setEditingBrand(null);
@@ -39,26 +52,36 @@ function BrandsPage() {
   const save = async () => {
     if (!name.trim()) return toast.error("Name is required");
     
-    if (editingBrand) {
-      await localDb.brands.update(editingBrand.id, { name });
-      toast.success("Brand updated");
-    } else {
-      await localDb.brands.add({
-        id: uuidv4(),
-        name,
-        products: 0,
-      });
-      toast.success("Brand created");
+    try {
+      if (editingBrand) {
+        await localDb.brands.update(editingBrand.id, { name });
+        toast.success("Brand updated");
+      } else {
+        await localDb.brands.add({
+          id: uuidv4(),
+          name,
+          products: 0,
+        });
+        toast.success("Brand created");
+      }
+      setModalOpen(false);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "An error occurred");
     }
-    setModalOpen(false);
   };
 
-  const deleteBrand = async (id: string) => {
-    if (confirm("Are you sure you want to delete this brand?")) {
-      await localDb.brands.delete(id);
+  const confirmDelete = async () => {
+    if (!deleteId) return;
+    try {
+      await localDb.brands.delete(deleteId);
       toast.success("Brand deleted");
+    } catch (error) {
+      toast.error("Failed to delete brand");
+    } finally {
+      setDeleteId(null);
     }
   };
+
 
   return (
     <div className="p-4 md:p-6 lg:p-8">
@@ -97,7 +120,8 @@ function BrandsPage() {
                       <Button variant="ghost" size="icon" className="size-8" onClick={() => openEdit(b)}>
                         <Pencil className="size-4" />
                       </Button>
-                      <Button variant="ghost" size="icon" className="size-8 text-destructive" onClick={() => deleteBrand(b.id)}>
+                      <Button variant="ghost" size="icon" className="size-8 text-destructive" onClick={() => setDeleteId(b.id)}>
+
                         <Trash2 className="size-4" />
                       </Button>
                     </div>
@@ -133,6 +157,24 @@ function BrandsPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the brand.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
+

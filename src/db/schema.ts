@@ -101,3 +101,22 @@ export const inventoryMovements = pgTable("inventory_movements", {
   quantity: integer("quantity").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
+
+export const settings = pgTable("settings", {
+  id: text("id").primaryKey(),
+  storeName: text("store_name").notNull(),
+  taxId: text("tax_id"),
+  address: text("address"),
+  phone: text("phone"),
+  email: text("email"),
+  standardRate: numeric("standard_rate", { precision: 5, scale: 2 }).notNull().default("0"),
+  reducedRate: numeric("reduced_rate", { precision: 5, scale: 2 }).notNull().default("0"),
+  pricesIncludeTax: boolean("prices_include_tax").notNull().default(false),
+  showTaxBreakdown: boolean("show_tax_breakdown").notNull().default(true),
+  headerNote: text("header_note"),
+  footerNote: text("footer_note"),
+  emailReceiptDefault: boolean("email_receipt_default").notNull().default(true),
+  printStoreLogo: boolean("print_store_logo").notNull().default(true),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});

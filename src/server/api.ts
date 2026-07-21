@@ -12,8 +12,7 @@ export const getProductsFn = createServerFn({ method: "GET" })
       return allProducts;
     } catch (error) {
       console.error("Failed to fetch products:", error);
-      // Return empty array on failure (so offline mode can fallback to Dexie)
-      return []; 
+      throw new Error("Failed to fetch products from server");
     }
   });
 
@@ -25,7 +24,7 @@ export const getCustomersFn = createServerFn({ method: "GET" })
       return allCustomers;
     } catch (error) {
       console.error("Failed to fetch customers:", error);
-      return [];
+      throw new Error("Failed to fetch customers from server");
     }
   });
 
@@ -34,7 +33,7 @@ export const syncSalesFn = createServerFn({ method: "POST" })
   .validator((data: { sales: OfflineSale[] }) => data)
   .handler(async ({ data }) => {
     const { sales: offlineSales } = data;
-    
+
     if (!offlineSales.length) return { success: true, syncedIds: [] };
 
     const syncedIds: string[] = [];
@@ -63,14 +62,14 @@ export const syncSalesFn = createServerFn({ method: "POST" })
             price: item.price.toString(),
             total: item.total.toString(),
           });
-          
+
           // Optionally: Update inventory in PostgreSQL
           // await db.update(products).set({ stock: sql`stock - ${item.quantity}` }).where(eq(products.id, item.productId));
         }
 
         syncedIds.push(sale.id);
       }
-      
+
       return { success: true, syncedIds };
     } catch (error) {
       console.error("Failed to sync sales:", error);

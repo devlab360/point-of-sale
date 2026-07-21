@@ -1,9 +1,34 @@
+import { useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { DataPage } from "@/components/layout/DataPage";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { MoreVertical, Edit2, Trash2 } from "lucide-react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { localDb } from "@/lib/db";
+import { v4 as uuidv4 } from "uuid";
 import { toast } from "sonner";
+import type { LocalPromotion } from "@/lib/db";
 
 export const Route = createFileRoute("/promotions")({
   head: () => ({ meta: [{ title: "Promotions · Grocer.Pro" }] }),
@@ -12,13 +37,70 @@ export const Route = createFileRoute("/promotions")({
 
 function PromotionsPage() {
   const promotions = useLiveQuery(() => localDb.promotions.toArray()) || [];
+  const [isAddOpen, setIsAddOpen] = useState(false);
+  const [editItem, setEditItem] = useState<LocalPromotion | null>(null);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
+
+  const handleSave = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    try {
+      const formData = new FormData(e.currentTarget);
+      const title = formData.get("title") as string;
+      const type = formData.get("type") as string;
+      const valueStr = formData.get("value") as string;
+      const conditions = formData.get("conditions") as string;
+      const startDate = formData.get("startDate") as string;
+      const endDate = formData.get("endDate") as string;
+      const status = formData.get("status") as string;
+
+      if (!title || !type || !valueStr || !startDate || !endDate) {
+        toast.error("Please fill out all required fields");
+        return;
+      }
+
+      const value = parseFloat(valueStr);
+
+      if (editItem) {
+        await localDb.promotions.update(editItem.id, { title, type, value, conditions, startDate, endDate, status });
+        toast.success("Promotion updated successfully");
+        setEditItem(null);
+      } else {
+        await localDb.promotions.add({
+          id: uuidv4(),
+          title,
+          type,
+          value,
+          conditions,
+          startDate,
+          endDate,
+          status,
+        });
+        toast.success("Promotion added successfully");
+        setIsAddOpen(false);
+      }
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "An error occurred");
+    }
+  };
+
+  const handleDelete = async () => {
+    if (deleteId) {
+      try {
+        await localDb.promotions.delete(deleteId);
+        toast.success("Promotion deleted");
+        setDeleteId(null);
+      } catch (error) {
+        toast.error("Failed to delete promotion");
+      }
+    }
+  };
 
   return (
     <div className="p-4 md:p-6 lg:p-8">
       <DataPage 
         title="Promotions" 
         description="Time-limited offers and bundles." 
-        primaryAction={{ label: "New Promotion", onClick: () => toast.info("Promotion creation requires backend") }}
+        primaryAction={{ label: "New Promotion", onClick: () => setIsAddOpen(true) }}
       >
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           {promotions.length === 0 ? (
@@ -27,13 +109,27 @@ function PromotionsPage() {
             </div>
           ) : (
             promotions.map((p) => (
-              <div key={p.id} className="rounded-xl border border-border bg-card p-5 shadow-soft">
-                <div className="flex items-start justify-between">
+              <div key={p.id} className="relative rounded-xl border border-border bg-card p-5 shadow-soft">
+                <div className="absolute right-4 top-4 flex items-center gap-2">
+                  <Badge className={p.status === "active" ? "bg-success/10 text-success hover:bg-success/15" : "bg-info/10 text-info hover:bg-info/15"}>{p.status}</Badge>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon" className="size-8">
+                        <MoreVertical className="size-4 text-muted-foreground" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => setEditItem(p)}><Edit2 className="mr-2 size-4" /> Edit</DropdownMenuItem>
+                      <DropdownMenuItem className="text-destructive focus:bg-destructive/10 focus:text-destructive" onClick={() => setDeleteId(p.id)}><Trash2 className="mr-2 size-4" /> Delete</DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+                
+                <div className="flex items-start justify-between pr-24">
                   <div>
                     <h3 className="font-semibold">{p.title}</h3>
                     <p className="mt-0.5 text-xs text-muted-foreground">Scope: {p.type}</p>
                   </div>
-                  <Badge className={p.status === "active" ? "bg-success/10 text-success hover:bg-success/15" : "bg-info/10 text-info hover:bg-info/15"}>{p.status}</Badge>
                 </div>
                 <div className="mt-4 rounded-lg bg-primary/5 px-3 py-2 text-sm font-semibold text-primary">
                   {p.value}% OFF - {p.conditions}
@@ -44,6 +140,86 @@ function PromotionsPage() {
           )}
         </div>
       </DataPage>
+
+      <Dialog open={isAddOpen || !!editItem} onOpenChange={(open) => {
+        if (!open) {
+          setIsAddOpen(false);
+          setEditItem(null);
+        }
+      }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{editItem ? "Edit Promotion" : "Add Promotion"}</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleSave} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="title">Promotion Title</Label>
+              <Input id="title" name="title" required defaultValue={editItem?.title} placeholder="e.g. Summer Sale" />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="type">Scope Type</Label>
+                <Select name="type" defaultValue={editItem?.type || "storewide"}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="storewide">Storewide</SelectItem>
+                    <SelectItem value="category">Specific Category</SelectItem>
+                    <SelectItem value="product">Specific Product</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="value">Discount Value (%)</Label>
+                <Input id="value" name="value" type="number" step="0.01" required defaultValue={editItem?.value} />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="conditions">Conditions</Label>
+              <Input id="conditions" name="conditions" required defaultValue={editItem?.conditions} placeholder="e.g. Min spend $50" />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="startDate">Start Date</Label>
+                <Input id="startDate" name="startDate" type="date" required defaultValue={editItem ? new Date(editItem.startDate).toISOString().split('T')[0] : ""} />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="endDate">End Date</Label>
+                <Input id="endDate" name="endDate" type="date" required defaultValue={editItem ? new Date(editItem.endDate).toISOString().split('T')[0] : ""} />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="status">Status</Label>
+              <Select name="status" defaultValue={editItem?.status || "active"}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="active">Active</SelectItem>
+                  <SelectItem value="scheduled">Scheduled</SelectItem>
+                  <SelectItem value="expired">Expired</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => { setIsAddOpen(false); setEditItem(null); }}>Cancel</Button>
+              <Button type="submit">Save Promotion</Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the promotion.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Delete</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

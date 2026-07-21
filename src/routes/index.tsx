@@ -29,6 +29,8 @@ function Dashboard() {
   const products = useLiveQuery(() => localDb.products.toArray()) || [];
   const sales = useLiveQuery(() => localDb.offlineSales.toArray()) || [];
   const customers = useLiveQuery(() => localDb.customers.toArray()) || [];
+  const currentUser = useLiveQuery(() => localDb.users.get("me"));
+  const userName = currentUser?.name || "Admin";
 
   const lowStock = products.filter((p) => p.stock <= p.reorderLevel).slice(0, 5);
   
@@ -79,7 +81,7 @@ function Dashboard() {
   return (
     <div className="space-y-6 p-4 md:p-6 lg:p-8">
       <PageHeader
-        title="Welcome back, Sarah 👋"
+        title={`Welcome back, ${userName} 👋`}
         description="Here's what's happening at Downtown · Station 04 today."
         actions={
           <>

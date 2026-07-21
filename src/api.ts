@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { db } from "./db";
-import { products, customers, sales, saleItems, categories, brands, units, suppliers, purchases, inventoryMovements } from "./db/schema";
+import { products, customers, sales, saleItems, categories, brands, units, suppliers, purchases, inventoryMovements, settings } from "./db/schema";
 import { eq, desc } from "drizzle-orm";
 import type { OfflineSale } from "./lib/db";
 
@@ -149,5 +149,16 @@ export const getInventoryMovementsFn = createServerFn({ method: "GET" })
     } catch (error) {
       console.error("Failed to fetch inventory movements:", error);
       return [];
+    }
+  });
+
+export const getSettingsFn = createServerFn({ method: "GET" })
+  .handler(async () => {
+    try {
+      const result = await db.select().from(settings).limit(1);
+      return result[0] || null;
+    } catch (error) {
+      console.error("Failed to fetch settings:", error);
+      return null;
     }
   });
