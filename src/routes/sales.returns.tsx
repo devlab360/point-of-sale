@@ -1,5 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { DataPage } from "@/components/layout/DataPage";
+import { EmptyState } from "@/components/ui/empty-state";
+import { PaginationControls } from "@/components/ui/pagination-controls";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,14 +14,15 @@ import {
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { MoreVertical, Trash2 } from "lucide-react";
+import { MoreVertical, Trash2, Undo2 } from "lucide-react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { localDb } from "@/lib/db";
 import type { LocalSaleReturn, OfflineSale } from "@/lib/db";
 import { v4 as uuidv4 } from "uuid";
 import { toast } from "sonner";
-import { useState } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { cn } from "@/lib/utils";
+import { useDebounce } from "@/hooks/useDebounce";
 
 export const Route = createFileRoute("/sales/returns")({
   head: () => ({ meta: [{ title: "Sales Returns · Grocer.Pro" }] }),
@@ -33,6 +36,36 @@ function SalesReturnsPage() {
 
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+
+  const [search, setSearch] = useState("");
+  const debouncedSearch = useDebounce(search, 300);
+  const [page, setPage] = useState(1);
+  const itemsPerPage = 10;
+
+  const filteredReturns = useMemo(() => {
+    let list = returns;
+    if (debouncedSearch) {
+      const lower = debouncedSearch.toLowerCase();
+      list = list.filter(r => 
+        r.ref.toLowerCase().includes(lower) || 
+        r.saleId.toLowerCase().includes(lower) || 
+        r.customerName.toLowerCase().includes(lower)
+      );
+    }
+    return list;
+  }, [returns, debouncedSearch]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [debouncedSearch]);
+
+  useEffect(() => {
+    const maxPage = Math.max(1, Math.ceil(filteredReturns.length / itemsPerPage));
+    if (page > maxPage) setPage(maxPage);
+  }, [filteredReturns.length, page]);
+
+  const totalPages = Math.ceil(filteredReturns.length / itemsPerPage);
+  const paginatedReturns = filteredReturns.slice((page - 1) * itemsPerPage, page * itemsPerPage);
 
   // Form state
   const [saleId, setSaleId] = useState("");
@@ -121,56 +154,66 @@ function SalesReturnsPage() {
         description="Refunds and exchanges issued to customers."
         primaryAction={{ label: "Process Return", onClick: () => setIsAddOpen(true) }}
         searchPlaceholder="Search by ref or customer..."
+        searchValue={search}
+        onSearchChange={setSearch}
+        hideToolbar={returns.length === 0}
       >
-        <div className="overflow-hidden rounded-xl border border-border bg-card shadow-soft">
-          <table className="w-full text-left text-sm">
-            <thead className="bg-muted/50 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-              <tr>
-                <th className="px-4 py-3">Ref</th>
-                <th className="px-4 py-3">Invoice</th>
-                <th className="px-4 py-3">Customer</th>
-                <th className="px-4 py-3">Reason</th>
-                <th className="px-4 py-3">Date</th>
-                <th className="px-4 py-3">Status</th>
-                <th className="px-4 py-3 text-right">Refund</th>
-                <th className="px-4 py-3"></th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border">
-              {returns.length === 0 ? (
-                <tr><td colSpan={8} className="py-8 text-center text-muted-foreground">No sales returns recorded.</td></tr>
-              ) : (
-                returns.map(r => (
-                  <tr key={r.id} className="hover:bg-muted/30">
-                    <td className="px-4 py-3 font-mono text-xs font-semibold">{r.ref}</td>
-                    <td className="px-4 py-3 font-mono text-xs text-muted-foreground">{r.saleId.slice(0, 8).toUpperCase()}</td>
-                    <td className="px-4 py-3 font-semibold">{r.customerName}</td>
-                    <td className="px-4 py-3 text-muted-foreground">{r.reason}</td>
-                    <td className="px-4 py-3 text-muted-foreground">{new Date(r.date).toLocaleDateString()}</td>
-                    <td className="px-4 py-3">
-                      <Badge className={cn(r.status === "approved" && "bg-success/10 text-success hover:bg-success/15", r.status === "pending" && "bg-warning/15 text-warning-foreground")}>
-                        {r.status}
-                      </Badge>
-                    </td>
-                    <td className="number px-4 py-3 text-right font-semibold">${r.total.toFixed(2)}</td>
-                    <td className="px-4 py-3">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon"><MoreVertical className="size-4" /></Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem className="text-destructive" onClick={() => setDeleteId(r.id)}>
-                            <Trash2 className="size-4 mr-2" /> Delete
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </td>
+        {filteredReturns.length === 0 ? (
+          <EmptyState 
+            icon={Undo2} 
+            title="No returns found" 
+            description={search ? "Try adjusting your search." : "No sales returns have been recorded yet."} 
+          />
+        ) : (
+          <div className="space-y-4">
+            <div className="overflow-hidden rounded-xl border border-border bg-card shadow-soft">
+              <table className="w-full text-left text-sm">
+                <thead className="bg-muted/50 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                  <tr>
+                    <th className="px-4 py-3">Ref</th>
+                    <th className="px-4 py-3">Invoice</th>
+                    <th className="px-4 py-3">Customer</th>
+                    <th className="px-4 py-3">Reason</th>
+                    <th className="px-4 py-3">Date</th>
+                    <th className="px-4 py-3">Status</th>
+                    <th className="px-4 py-3 text-right">Refund</th>
+                    <th className="px-4 py-3"></th>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {paginatedReturns.map(r => (
+                    <tr key={r.id} className="hover:bg-muted/30">
+                      <td className="px-4 py-3 font-mono text-xs font-semibold">{r.ref}</td>
+                      <td className="px-4 py-3 font-mono text-xs text-muted-foreground">{r.saleId.slice(0, 8).toUpperCase()}</td>
+                      <td className="px-4 py-3 font-semibold">{r.customerName}</td>
+                      <td className="px-4 py-3 text-muted-foreground">{r.reason}</td>
+                      <td className="px-4 py-3 text-muted-foreground">{new Date(r.date).toLocaleDateString()}</td>
+                      <td className="px-4 py-3">
+                        <Badge className={cn(r.status === "approved" && "bg-success/10 text-success hover:bg-success/15", r.status === "pending" && "bg-warning/15 text-warning-foreground")}>
+                          {r.status}
+                        </Badge>
+                      </td>
+                      <td className="number px-4 py-3 text-right font-semibold">${r.total.toFixed(2)}</td>
+                      <td className="px-4 py-3">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon"><MoreVertical className="size-4" /></Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem className="text-destructive" onClick={() => setDeleteId(r.id)}>
+                              <Trash2 className="size-4 mr-2" /> Delete
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <PaginationControls currentPage={page} totalPages={totalPages} onPageChange={setPage} />
+          </div>
+        )}
       </DataPage>
 
       {/* Process Return Dialog */}

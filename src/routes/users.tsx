@@ -1,6 +1,9 @@
-import { useState } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { DataPage } from "@/components/layout/DataPage";
+import { EmptyState } from "@/components/ui/empty-state";
+import { PaginationControls } from "@/components/ui/pagination-controls";
+import { useDebounce } from "@/hooks/useDebounce";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -36,10 +39,40 @@ export const Route = createFileRoute("/users")({
 });
 
 function UsersPage() {
-  const users = useLiveQuery(() => localDb.users.toArray()) || [];
+  const rawUsers = useLiveQuery(() => localDb.users.toArray()) || [];
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [editItem, setEditItem] = useState<LocalUser | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+
+  const [search, setSearch] = useState("");
+  const debouncedSearch = useDebounce(search, 300);
+  const [page, setPage] = useState(1);
+  const itemsPerPage = 10;
+
+  const users = useMemo(() => {
+    let filtered = rawUsers;
+    if (debouncedSearch) {
+      const lower = debouncedSearch.toLowerCase();
+      filtered = filtered.filter(u =>
+        u.name.toLowerCase().includes(lower) ||
+        u.email.toLowerCase().includes(lower) ||
+        u.role.toLowerCase().includes(lower)
+      );
+    }
+    return filtered;
+  }, [rawUsers, debouncedSearch]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [debouncedSearch]);
+
+  useEffect(() => {
+    const maxPage = Math.max(1, Math.ceil(users.length / itemsPerPage));
+    if (page > maxPage) setPage(maxPage);
+  }, [users.length, page]);
+
+  const totalPages = Math.ceil(users.length / itemsPerPage);
+  const paginatedUsers = users.slice((page - 1) * itemsPerPage, page * itemsPerPage);
 
   const handleSave = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -94,61 +127,70 @@ function UsersPage() {
         title="Employees" 
         description="Cashiers, managers, and back-office staff." 
         primaryAction={{ label: "Invite Employee", onClick: () => setIsAddOpen(true) }}
+        searchPlaceholder="Search employees..."
+        searchValue={search}
+        onSearchChange={setSearch}
+        hideToolbar={rawUsers.length === 0}
       >
-        <div className="overflow-hidden rounded-xl border border-border bg-card shadow-soft">
-          <table className="w-full text-left text-sm">
-            <thead className="bg-muted/50 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-              <tr>
-                <th className="px-4 py-3">Employee</th>
-                <th className="px-4 py-3">Role</th>
-                <th className="px-4 py-3">Last Active</th>
-                <th className="px-4 py-3">Status</th>
-                <th className="px-4 py-3 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border">
-              {users.length === 0 ? (
-                <tr>
-                  <td colSpan={5} className="p-8 text-center text-muted-foreground">No employees added yet.</td>
-                </tr>
-              ) : (
-                users.map((e) => (
-                  <tr key={e.id} className="hover:bg-muted/30">
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-3">
-                        <div className="grid size-9 place-items-center rounded-full bg-gradient-to-br from-primary to-info text-xs font-bold text-primary-foreground">
-                          {e.name.split(" ").map((n) => n[0]).join("").slice(0, 2)}
-                        </div>
-                        <div>
-                          <div className="font-semibold">{e.name}</div>
-                          <div className="text-xs text-muted-foreground">{e.email}</div>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3"><Badge variant="secondary"><Shield className="mr-1 size-3" />{e.role}</Badge></td>
-                    <td className="px-4 py-3 text-muted-foreground">{e.lastActive ? new Date(e.lastActive).toLocaleString() : "Never"}</td>
-                    <td className="px-4 py-3">
-                      <Badge className={e.status === "active" ? "bg-success/10 text-success hover:bg-success/15" : "bg-warning/15 text-warning-foreground hover:bg-warning/20"}>{e.status}</Badge>
-                    </td>
-                    <td className="px-4 py-3 text-right">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="size-8">
-                            <MoreVertical className="size-4 text-muted-foreground" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => setEditItem(e)}><Edit2 className="mr-2 size-4" /> Edit</DropdownMenuItem>
-                          <DropdownMenuItem className="text-destructive focus:bg-destructive/10 focus:text-destructive" onClick={() => setDeleteId(e.id)}><Trash2 className="mr-2 size-4" /> Delete</DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </td>
+        {users.length === 0 ? (
+          <EmptyState
+            icon={Shield}
+            title="No employees found"
+            description={search ? "Try adjusting your search." : "You haven't added any employees yet."}
+          />
+        ) : (
+          <div className="space-y-4">
+            <div className="overflow-hidden rounded-xl border border-border bg-card shadow-soft">
+              <table className="w-full text-left text-sm">
+                <thead className="bg-muted/50 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                  <tr>
+                    <th className="px-4 py-3">Employee</th>
+                    <th className="px-4 py-3">Role</th>
+                    <th className="px-4 py-3">Last Active</th>
+                    <th className="px-4 py-3">Status</th>
+                    <th className="px-4 py-3 text-right">Actions</th>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {paginatedUsers.map((e) => (
+                    <tr key={e.id} className="hover:bg-muted/30">
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-3">
+                          <div className="grid size-9 place-items-center rounded-full bg-gradient-to-br from-primary to-info text-xs font-bold text-primary-foreground">
+                            {e.name.split(" ").map((n) => n[0]).join("").slice(0, 2)}
+                          </div>
+                          <div>
+                            <div className="font-semibold">{e.name}</div>
+                            <div className="text-xs text-muted-foreground">{e.email}</div>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3"><Badge variant="secondary"><Shield className="mr-1 size-3" />{e.role}</Badge></td>
+                      <td className="px-4 py-3 text-muted-foreground">{e.lastActive ? new Date(e.lastActive).toLocaleString() : "Never"}</td>
+                      <td className="px-4 py-3">
+                        <Badge className={e.status === "active" ? "bg-success/10 text-success hover:bg-success/15" : "bg-warning/15 text-warning-foreground hover:bg-warning/20"}>{e.status}</Badge>
+                      </td>
+                      <td className="px-4 py-3 text-right">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="size-8">
+                              <MoreVertical className="size-4 text-muted-foreground" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => setEditItem(e)}><Edit2 className="mr-2 size-4" /> Edit</DropdownMenuItem>
+                            <DropdownMenuItem className="text-destructive focus:bg-destructive/10 focus:text-destructive" onClick={() => setDeleteId(e.id)}><Trash2 className="mr-2 size-4" /> Delete</DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <PaginationControls currentPage={page} totalPages={totalPages} onPageChange={setPage} />
+          </div>
+        )}
       </DataPage>
 
       <Dialog open={isAddOpen || !!editItem} onOpenChange={(open) => {

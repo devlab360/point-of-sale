@@ -1,6 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Grid3x3, List, MoreHorizontal, Pencil, Plus, Trash2 } from "lucide-react";
-import { useState } from "react";
+import { Grid3x3, List, MoreHorizontal, Pencil, Plus, Trash2, PackageSearch } from "lucide-react";
+import { useState, useMemo, useEffect } from "react";
+import { EmptyState } from "@/components/ui/empty-state";
+import { PaginationControls } from "@/components/ui/pagination-controls";
+import { useDebounce } from "@/hooks/useDebounce";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -40,7 +43,38 @@ export const Route = createFileRoute("/products")({
 
 function ProductsPage() {
   const [view, setView] = useState<"grid" | "list">("list");
-  const products = useLiveQuery(() => localDb.products.toArray()) || [];
+  const rawProducts = useLiveQuery(() => localDb.products.toArray()) || [];
+  
+  const [search, setSearch] = useState("");
+  const debouncedSearch = useDebounce(search, 300);
+  const [page, setPage] = useState(1);
+  const itemsPerPage = 10;
+
+  const products = useMemo(() => {
+    let filtered = rawProducts;
+    if (debouncedSearch) {
+      const lower = debouncedSearch.toLowerCase();
+      filtered = filtered.filter(
+        (p) =>
+          p.name.toLowerCase().includes(lower) ||
+          p.sku.toLowerCase().includes(lower) ||
+          p.barcode.toLowerCase().includes(lower)
+      );
+    }
+    return filtered;
+  }, [rawProducts, debouncedSearch]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [debouncedSearch]);
+
+  useEffect(() => {
+    const maxPage = Math.max(1, Math.ceil(products.length / itemsPerPage));
+    if (page > maxPage) setPage(maxPage);
+  }, [products.length, page]);
+
+  const totalPages = Math.ceil(products.length / itemsPerPage);
+  const paginatedProducts = products.slice((page - 1) * itemsPerPage, page * itemsPerPage);
   const categories = useLiveQuery(() => localDb.categories.toArray()) || [];
   const brands = useLiveQuery(() => localDb.brands.toArray()) || [];
   const units = useLiveQuery(() => localDb.units.toArray()) || [];
@@ -118,6 +152,9 @@ function ProductsPage() {
         description="Manage your full SKU catalog, pricing, and stock thresholds."
         primaryAction={{ label: "Add Product", onClick: openNew }}
         searchPlaceholder="Search by name, SKU, or barcode..."
+        searchValue={search}
+        onSearchChange={setSearch}
+        hideToolbar={rawProducts.length === 0}
         toolbar={
           <div className="inline-flex rounded-lg border border-border bg-muted/30 p-0.5">
             <button
@@ -143,8 +180,18 @@ function ProductsPage() {
           </div>
         }
       >
-        {view === "list" ? <TableView products={products} onEdit={openEdit} onDelete={deleteProd} /> : <GridView products={products} onEdit={openEdit} />}
-        <Pagination total={products.length} />
+        {products.length === 0 ? (
+          <EmptyState 
+            icon={PackageSearch} 
+            title="No products found" 
+            description={search ? "Try adjusting your search." : "You haven't added any products yet."} 
+          />
+        ) : (
+          <div className="space-y-4">
+            {view === "list" ? <TableView products={paginatedProducts} onEdit={openEdit} onDelete={deleteProd} /> : <GridView products={paginatedProducts} onEdit={openEdit} />}
+            <PaginationControls currentPage={page} totalPages={totalPages} onPageChange={setPage} />
+          </div>
+        )}
       </DataPage>
 
       <Dialog open={modalOpen} onOpenChange={setModalOpen}>
@@ -346,34 +393,6 @@ function GridView({ products, onEdit }: { products: any[], onEdit: (p: any) => v
   );
 }
 
-function Pagination({ total }: { total: number }) {
-  return (
-    <div className="flex flex-col items-center justify-between gap-3 sm:flex-row">
-      <div className="text-xs text-muted-foreground">
-        Showing <span className="font-semibold text-foreground">1–{Math.min(total, 20)}</span> of{" "}
-        <span className="font-semibold text-foreground">{total}</span>
-      </div>
-      <div className="inline-flex items-center gap-1">
-        <Button variant="outline" size="sm" disabled>
-          Previous
-        </Button>
-        {[1, 2, 3, "…", 27].map((n, i) => (
-          <Button
-            key={i}
-            variant={n === 1 ? "default" : "ghost"}
-            size="sm"
-            className="size-8 p-0"
-            disabled={n === "…"}
-          >
-            {n}
-          </Button>
-        ))}
-        <Button variant="outline" size="sm">
-          Next
-        </Button>
-      </div>
-    </div>
-  );
-}
+// Removed fake Pagination component
 // avoid unused
 void Link;

@@ -5,12 +5,15 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogT
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useState } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { localDb } from "@/lib/db";
 import { v4 as uuidv4 } from "uuid";
 import { toast } from "sonner";
-import { ArrowRightLeft } from "lucide-react";
+import { ArrowRightLeft, Search } from "lucide-react";
+import { EmptyState } from "@/components/ui/empty-state";
+import { PaginationControls } from "@/components/ui/pagination-controls";
+import { useDebounce } from "@/hooks/useDebounce";
 
 export const Route = createFileRoute("/inventory/transfers")({
   component: TransfersPage,
@@ -22,6 +25,32 @@ function TransfersPage() {
   const locations = useLiveQuery(() => localDb.locations.toArray()) || [];
   const [open, setOpen] = useState(false);
   const [formData, setFormData] = useState({ product: "", destination: "", items: 1 });
+
+  const [search, setSearch] = useState("");
+  const debouncedSearch = useDebounce(search, 300);
+  const [page, setPage] = useState(1);
+  const itemsPerPage = 10;
+
+  const filteredTransfers = useMemo(() => {
+    let list = transfers;
+    if (debouncedSearch) {
+      const lower = debouncedSearch.toLowerCase();
+      list = list.filter(t => t.ref.toLowerCase().includes(lower) || t.destination.toLowerCase().includes(lower));
+    }
+    return list;
+  }, [transfers, debouncedSearch]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [debouncedSearch]);
+
+  useEffect(() => {
+    const maxPage = Math.max(1, Math.ceil(filteredTransfers.length / itemsPerPage));
+    if (page > maxPage) setPage(maxPage);
+  }, [filteredTransfers.length, page]);
+
+  const totalPages = Math.ceil(filteredTransfers.length / itemsPerPage);
+  const paginatedTransfers = filteredTransfers.slice((page - 1) * itemsPerPage, page * itemsPerPage);
 
   const handleSave = async () => {
     if (!formData.product || !formData.destination || !formData.items) return toast.error("Please fill all fields");
@@ -108,44 +137,65 @@ function TransfersPage() {
           </DialogContent>
         </Dialog>
       </div>
-      <div className="overflow-hidden rounded-xl border border-border bg-card shadow-soft">
-        <table className="w-full text-left text-sm">
-          <thead className="bg-muted/50 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-            <tr>
-              <th className="px-4 py-3">Ref</th>
-              <th className="px-4 py-3">Date</th>
-              <th className="px-4 py-3">From / To</th>
-              <th className="px-4 py-3">Items transferred</th>
-              <th className="px-4 py-3">Status</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-border">
-            {transfers.length === 0 ? (
-              <tr>
-                <td colSpan={5} className="p-4 text-center text-muted-foreground">No transfers recorded</td>
-              </tr>
-            ) : (
-              transfers.map((r) => (
-                <tr key={r.ref} className="hover:bg-muted/30">
-                  <td className="px-4 py-3 font-mono text-xs">{r.ref}</td>
-                  <td className="px-4 py-3 text-muted-foreground">{new Date(r.date).toLocaleDateString()}</td>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-2">
-                      <span className="text-muted-foreground">Main Store</span>
-                      <ArrowRightLeft className="size-3 text-muted-foreground" />
-                      <span className="font-medium">{r.destination}</span>
-                    </div>
-                  </td>
-                  <td className="px-4 py-3 text-muted-foreground">{r.items}</td>
-                  <td className="px-4 py-3">
-                    <Badge className="bg-success/10 text-success hover:bg-success/15">{r.status}</Badge>
-                  </td>
+
+      {transfers.length > 0 && (
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+          <div className="relative flex-1">
+            <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+            <input
+              type="text"
+              placeholder="Search transfers..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="h-9 w-full rounded-lg border border-border bg-background pl-9 pr-3 text-sm placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/20"
+            />
+          </div>
+        </div>
+      )}
+
+      {filteredTransfers.length === 0 ? (
+        <EmptyState
+          icon={ArrowRightLeft}
+          title="No transfers found"
+          description={search ? "Try adjusting your search." : "No transfers recorded."}
+        />
+      ) : (
+        <div className="space-y-4">
+          <div className="overflow-hidden rounded-xl border border-border bg-card shadow-soft">
+            <table className="w-full text-left text-sm">
+              <thead className="bg-muted/50 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                <tr>
+                  <th className="px-4 py-3">Ref</th>
+                  <th className="px-4 py-3">Date</th>
+                  <th className="px-4 py-3">From / To</th>
+                  <th className="px-4 py-3">Items transferred</th>
+                  <th className="px-4 py-3">Status</th>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {paginatedTransfers.map((r) => (
+                  <tr key={r.ref} className="hover:bg-muted/30">
+                    <td className="px-4 py-3 font-mono text-xs">{r.ref}</td>
+                    <td className="px-4 py-3 text-muted-foreground">{new Date(r.date).toLocaleDateString()}</td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-2">
+                        <span className="text-muted-foreground">Main Store</span>
+                        <ArrowRightLeft className="size-3 text-muted-foreground" />
+                        <span className="font-medium">{r.destination}</span>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3 text-muted-foreground">{r.items}</td>
+                    <td className="px-4 py-3">
+                      <Badge className="bg-success/10 text-success hover:bg-success/15">{r.status}</Badge>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <PaginationControls currentPage={page} totalPages={totalPages} onPageChange={setPage} />
+        </div>
+      )}
     </div>
   );
 }

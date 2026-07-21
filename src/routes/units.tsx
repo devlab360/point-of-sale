@@ -1,13 +1,16 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { DataPage } from "@/components/layout/DataPage";
+import { EmptyState } from "@/components/ui/empty-state";
+import { PaginationControls } from "@/components/ui/pagination-controls";
 import { localDb } from "@/lib/db";
 import { useLiveQuery } from "dexie-react-hooks";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Pencil, Trash2 } from "lucide-react";
-import { useState } from "react";
+import { Pencil, Trash2, Scale } from "lucide-react";
+import { useState, useMemo, useEffect } from "react";
+import { useDebounce } from "@/hooks/useDebounce";
 import { v4 as uuidv4 } from "uuid";
 import { toast } from "sonner";
 import {
@@ -27,13 +30,39 @@ export const Route = createFileRoute("/units")({
 });
 
 function UnitsPage() {
-  const units = useLiveQuery(() => localDb.units.toArray()) || [];
+  const rawUnits = useLiveQuery(() => localDb.units.toArray()) || [];
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editingUnit, setEditingUnit] = useState<any>(null);
   const [name, setName] = useState("");
   const [short, setShort] = useState("");
   const [deleteId, setDeleteId] = useState<string | null>(null);
+
+  const [search, setSearch] = useState("");
+  const debouncedSearch = useDebounce(search, 300);
+  const [page, setPage] = useState(1);
+  const itemsPerPage = 10;
+
+  const units = useMemo(() => {
+    let filtered = rawUnits;
+    if (debouncedSearch) {
+      const lower = debouncedSearch.toLowerCase();
+      filtered = filtered.filter(u => u.name.toLowerCase().includes(lower) || u.short.toLowerCase().includes(lower));
+    }
+    return filtered;
+  }, [rawUnits, debouncedSearch]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [debouncedSearch]);
+
+  useEffect(() => {
+    const maxPage = Math.max(1, Math.ceil(units.length / itemsPerPage));
+    if (page > maxPage) setPage(maxPage);
+  }, [units.length, page]);
+
+  const totalPages = Math.ceil(units.length / itemsPerPage);
+  const paginatedUnits = units.slice((page - 1) * itemsPerPage, page * itemsPerPage);
 
 
   const openNew = () => {
@@ -90,44 +119,51 @@ function UnitsPage() {
         title="Units of Measure"
         description="Define how products are sold — piece, kilogram, litre, pack and more."
         primaryAction={{ label: "New Unit", onClick: openNew }}
+        searchPlaceholder="Search units..."
+        searchValue={search}
+        onSearchChange={setSearch}
+        hideToolbar={rawUnits.length === 0}
       >
-        <div className="overflow-hidden rounded-xl border border-border bg-card shadow-soft">
-          <table className="w-full text-left text-sm">
-            <thead className="bg-muted/50 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-              <tr>
-                <th className="px-4 py-3">Unit</th>
-                <th className="px-4 py-3">Short code</th>
-                <th className="px-4 py-3 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border">
-              {units.map((u) => (
-                <tr key={u.id} className="hover:bg-muted/30 group">
-                  <td className="px-4 py-3 font-semibold">{u.name}</td>
-                  <td className="px-4 py-3 font-mono text-muted-foreground">{u.short}</td>
-                  <td className="px-4 py-3 text-right">
-                    <div className="flex justify-end gap-1 opacity-0 transition-opacity group-hover:opacity-100">
-                      <Button variant="ghost" size="icon" className="size-8" onClick={() => openEdit(u)}>
-                        <Pencil className="size-4" />
-                      </Button>
-                      <Button variant="ghost" size="icon" className="size-8 text-destructive" onClick={() => setDeleteId(u.id)}>
-
-                        <Trash2 className="size-4" />
-                      </Button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-              {units.length === 0 && (
-                <tr>
-                  <td colSpan={3} className="py-12 text-center text-muted-foreground">
-                    No units found. Create one to get started!
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+        {units.length === 0 ? (
+          <EmptyState 
+            icon={Scale} 
+            title="No units found" 
+            description={search ? "Try adjusting your search." : "You haven't created any units yet."} 
+          />
+        ) : (
+          <div className="space-y-4">
+            <div className="overflow-hidden rounded-xl border border-border bg-card shadow-soft">
+              <table className="w-full text-left text-sm">
+                <thead className="bg-muted/50 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                  <tr>
+                    <th className="px-4 py-3">Unit</th>
+                    <th className="px-4 py-3">Short code</th>
+                    <th className="px-4 py-3 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {paginatedUnits.map((u) => (
+                    <tr key={u.id} className="hover:bg-muted/30 group">
+                      <td className="px-4 py-3 font-semibold">{u.name}</td>
+                      <td className="px-4 py-3 font-mono text-muted-foreground">{u.short}</td>
+                      <td className="px-4 py-3 text-right">
+                        <div className="flex justify-end gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+                          <Button variant="ghost" size="icon" className="size-8" onClick={() => openEdit(u)}>
+                            <Pencil className="size-4" />
+                          </Button>
+                          <Button variant="ghost" size="icon" className="size-8 text-destructive" onClick={() => setDeleteId(u.id)}>
+                            <Trash2 className="size-4" />
+                          </Button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <PaginationControls currentPage={page} totalPages={totalPages} onPageChange={setPage} />
+          </div>
+        )}
       </DataPage>
 
       <Dialog open={modalOpen} onOpenChange={setModalOpen}>

@@ -1,6 +1,9 @@
-import { useState } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { DataPage } from "@/components/layout/DataPage";
+import { EmptyState } from "@/components/ui/empty-state";
+import { PaginationControls } from "@/components/ui/pagination-controls";
+import { useDebounce } from "@/hooks/useDebounce";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -23,7 +26,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { localDb } from "@/lib/db";
 import { useLiveQuery } from "dexie-react-hooks";
-import { MoreVertical, Edit2, Trash2 } from "lucide-react";
+import { MoreVertical, Edit2, Trash2, Truck } from "lucide-react";
 import { v4 as uuidv4 } from "uuid";
 import { toast } from "sonner";
 import type { LocalSupplier } from "@/lib/db";
@@ -34,10 +37,40 @@ export const Route = createFileRoute("/suppliers")({
 });
 
 function SuppliersPage() {
-  const suppliers = useLiveQuery(() => localDb.suppliers.toArray()) || [];
+  const rawSuppliers = useLiveQuery(() => localDb.suppliers.toArray()) || [];
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [editItem, setEditItem] = useState<LocalSupplier | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+
+  const [search, setSearch] = useState("");
+  const debouncedSearch = useDebounce(search, 300);
+  const [page, setPage] = useState(1);
+  const itemsPerPage = 9; // 3-column grid, 3 rows
+
+  const suppliers = useMemo(() => {
+    let filtered = rawSuppliers;
+    if (debouncedSearch) {
+      const lower = debouncedSearch.toLowerCase();
+      filtered = filtered.filter(s =>
+        s.name.toLowerCase().includes(lower) ||
+        s.contact?.toLowerCase().includes(lower) ||
+        s.email?.toLowerCase().includes(lower)
+      );
+    }
+    return filtered;
+  }, [rawSuppliers, debouncedSearch]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [debouncedSearch]);
+
+  useEffect(() => {
+    const maxPage = Math.max(1, Math.ceil(suppliers.length / itemsPerPage));
+    if (page > maxPage) setPage(maxPage);
+  }, [suppliers.length, page]);
+
+  const totalPages = Math.ceil(suppliers.length / itemsPerPage);
+  const paginatedSuppliers = suppliers.slice((page - 1) * itemsPerPage, page * itemsPerPage);
 
   const handleSave = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -93,55 +126,64 @@ function SuppliersPage() {
         title="Suppliers" 
         description="Wholesale and farm partners that fill your shelves." 
         primaryAction={{ label: "Add Supplier", onClick: () => setIsAddOpen(true) }}
+        searchPlaceholder="Search suppliers..."
+        searchValue={search}
+        onSearchChange={setSearch}
+        hideToolbar={rawSuppliers.length === 0}
       >
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {suppliers.length === 0 ? (
-            <div className="col-span-full py-12 text-center text-muted-foreground">
-              No suppliers found.
-            </div>
-          ) : (
-            suppliers.map((s) => (
-              <div key={s.id} className="relative rounded-xl border border-border bg-card p-5 shadow-soft">
-                <div className="absolute right-4 top-4 flex items-center gap-2">
-                  {s.balance > 0 ? (
-                    <span className="rounded-md bg-warning/15 px-2 py-0.5 text-xs font-semibold text-warning-foreground">${s.balance} due</span>
-                  ) : (
-                    <span className="rounded-md bg-success/10 px-2 py-0.5 text-xs font-semibold text-success">Settled</span>
-                  )}
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon" className="size-8">
-                        <MoreVertical className="size-4 text-muted-foreground" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => setEditItem(s)}><Edit2 className="mr-2 size-4" /> Edit</DropdownMenuItem>
-                      <DropdownMenuItem className="text-destructive focus:bg-destructive/10 focus:text-destructive" onClick={() => setDeleteId(s.id)}><Trash2 className="mr-2 size-4" /> Delete</DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
+        {suppliers.length === 0 ? (
+          <EmptyState
+            icon={Truck}
+            title="No suppliers found"
+            description={search ? "Try adjusting your search." : "You haven't added any suppliers yet."}
+          />
+        ) : (
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+              {paginatedSuppliers.map((s) => (
+                <div key={s.id} className="relative rounded-xl border border-border bg-card p-5 shadow-soft">
+                  <div className="absolute right-4 top-4 flex items-center gap-2">
+                    {s.balance > 0 ? (
+                      <span className="rounded-md bg-warning/15 px-2 py-0.5 text-xs font-semibold text-warning-foreground">${s.balance} due</span>
+                    ) : (
+                      <span className="rounded-md bg-success/10 px-2 py-0.5 text-xs font-semibold text-success">Settled</span>
+                    )}
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon" className="size-8">
+                          <MoreVertical className="size-4 text-muted-foreground" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => setEditItem(s)}><Edit2 className="mr-2 size-4" /> Edit</DropdownMenuItem>
+                        <DropdownMenuItem className="text-destructive focus:bg-destructive/10 focus:text-destructive" onClick={() => setDeleteId(s.id)}><Trash2 className="mr-2 size-4" /> Delete</DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
 
-                <div className="flex items-center justify-between">
-                  <div className="grid size-11 place-items-center rounded-xl bg-primary/10 font-bold text-primary">
-                    {s.name.slice(0, 2)}
+                  <div className="flex items-center justify-between">
+                    <div className="grid size-11 place-items-center rounded-xl bg-primary/10 font-bold text-primary">
+                      {s.name.slice(0, 2)}
+                    </div>
+                  </div>
+                  <h3 className="mt-3 font-semibold">{s.name}</h3>
+                  <p className="text-xs text-muted-foreground">{s.contact} {s.email && `· ${s.email}`}</p>
+                  <div className="mt-4 grid grid-cols-2 gap-2 border-t border-border pt-3 text-xs text-muted-foreground">
+                    <div>
+                      <div className="number font-bold text-foreground">{s.items}</div>
+                      <div>Items supplied</div>
+                    </div>
+                    <div>
+                      <div className="font-semibold text-foreground">{s.phone}</div>
+                      <div>Phone</div>
+                    </div>
                   </div>
                 </div>
-                <h3 className="mt-3 font-semibold">{s.name}</h3>
-                <p className="text-xs text-muted-foreground">{s.contact} {s.email && `· ${s.email}`}</p>
-                <div className="mt-4 grid grid-cols-2 gap-2 border-t border-border pt-3 text-xs text-muted-foreground">
-                  <div>
-                    <div className="number font-bold text-foreground">{s.items}</div>
-                    <div>Items supplied</div>
-                  </div>
-                  <div>
-                    <div className="font-semibold text-foreground">{s.phone}</div>
-                    <div>Phone</div>
-                  </div>
-                </div>
-              </div>
-            ))
-          )}
-        </div>
+              ))}
+            </div>
+            <PaginationControls currentPage={page} totalPages={totalPages} onPageChange={setPage} />
+          </div>
+        )}
       </DataPage>
 
       <Dialog open={isAddOpen || !!editItem} onOpenChange={(open) => {

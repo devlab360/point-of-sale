@@ -1,6 +1,9 @@
-import { useState } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { DataPage } from "@/components/layout/DataPage";
+import { EmptyState } from "@/components/ui/empty-state";
+import { PaginationControls } from "@/components/ui/pagination-controls";
+import { useDebounce } from "@/hooks/useDebounce";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,7 +26,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { MoreVertical, Edit2, Trash2 } from "lucide-react";
+import { MoreVertical, Edit2, Trash2, Megaphone } from "lucide-react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { localDb } from "@/lib/db";
 import { v4 as uuidv4 } from "uuid";
@@ -40,6 +43,32 @@ function PromotionsPage() {
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [editItem, setEditItem] = useState<LocalPromotion | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+
+  const [search, setSearch] = useState("");
+  const debouncedSearch = useDebounce(search, 300);
+  const [page, setPage] = useState(1);
+  const itemsPerPage = 10;
+
+  const filteredPromotions = useMemo(() => {
+    let list = promotions;
+    if (debouncedSearch) {
+      const lower = debouncedSearch.toLowerCase();
+      list = list.filter(p => p.title.toLowerCase().includes(lower));
+    }
+    return list;
+  }, [promotions, debouncedSearch]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [debouncedSearch]);
+
+  useEffect(() => {
+    const maxPage = Math.max(1, Math.ceil(filteredPromotions.length / itemsPerPage));
+    if (page > maxPage) setPage(maxPage);
+  }, [filteredPromotions.length, page]);
+
+  const totalPages = Math.ceil(filteredPromotions.length / itemsPerPage);
+  const paginatedPromotions = filteredPromotions.slice((page - 1) * itemsPerPage, page * itemsPerPage);
 
   const handleSave = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -99,46 +128,55 @@ function PromotionsPage() {
     <div className="p-4 md:p-6 lg:p-8">
       <DataPage 
         title="Promotions" 
-        description="Time-limited offers and bundles." 
+        description="Run automated discounts and store-wide sales." 
         primaryAction={{ label: "New Promotion", onClick: () => setIsAddOpen(true) }}
+        searchPlaceholder="Search promotions by title..."
+        searchValue={search}
+        onSearchChange={setSearch}
+        hideToolbar={promotions.length === 0}
       >
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-          {promotions.length === 0 ? (
-            <div className="col-span-full py-12 text-center text-muted-foreground">
-              No promotions active.
-            </div>
-          ) : (
-            promotions.map((p) => (
-              <div key={p.id} className="relative rounded-xl border border-border bg-card p-5 shadow-soft">
-                <div className="absolute right-4 top-4 flex items-center gap-2">
-                  <Badge className={p.status === "active" ? "bg-success/10 text-success hover:bg-success/15" : "bg-info/10 text-info hover:bg-info/15"}>{p.status}</Badge>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon" className="size-8">
-                        <MoreVertical className="size-4 text-muted-foreground" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => setEditItem(p)}><Edit2 className="mr-2 size-4" /> Edit</DropdownMenuItem>
-                      <DropdownMenuItem className="text-destructive focus:bg-destructive/10 focus:text-destructive" onClick={() => setDeleteId(p.id)}><Trash2 className="mr-2 size-4" /> Delete</DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
-                
-                <div className="flex items-start justify-between pr-24">
-                  <div>
-                    <h3 className="font-semibold">{p.title}</h3>
-                    <p className="mt-0.5 text-xs text-muted-foreground">Scope: {p.type}</p>
+        {filteredPromotions.length === 0 ? (
+          <EmptyState
+            icon={Megaphone}
+            title="No promotions found"
+            description={search ? "Try adjusting your search." : "No promotions active."}
+          />
+        ) : (
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              {paginatedPromotions.map((p) => (
+                <div key={p.id} className="relative rounded-xl border border-border bg-card p-5 shadow-soft">
+                  <div className="absolute right-4 top-4 flex items-center gap-2">
+                    <Badge className={p.status === "active" ? "bg-success/10 text-success hover:bg-success/15" : "bg-info/10 text-info hover:bg-info/15"}>{p.status}</Badge>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon" className="size-8">
+                          <MoreVertical className="size-4 text-muted-foreground" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => setEditItem(p)}><Edit2 className="mr-2 size-4" /> Edit</DropdownMenuItem>
+                        <DropdownMenuItem className="text-destructive focus:bg-destructive/10 focus:text-destructive" onClick={() => setDeleteId(p.id)}><Trash2 className="mr-2 size-4" /> Delete</DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </div>
+                  
+                  <div className="flex items-start justify-between pr-24">
+                    <div>
+                      <h3 className="font-semibold">{p.title}</h3>
+                      <p className="mt-0.5 text-xs text-muted-foreground">Scope: {p.type}</p>
+                    </div>
+                  </div>
+                  <div className="mt-4 rounded-lg bg-primary/5 px-3 py-2 text-sm font-semibold text-primary">
+                    {p.type === "percentage" ? `${p.value}%` : `$${p.value.toFixed(2)}`} OFF - {p.conditions}
+                  </div>
+                  <div className="mt-3 text-xs text-muted-foreground">Runs {new Date(p.startDate).toLocaleDateString()} → {new Date(p.endDate).toLocaleDateString()}</div>
                 </div>
-                <div className="mt-4 rounded-lg bg-primary/5 px-3 py-2 text-sm font-semibold text-primary">
-                  {p.value}% OFF - {p.conditions}
-                </div>
-                <div className="mt-3 text-xs text-muted-foreground">Runs {new Date(p.startDate).toLocaleDateString()} → {new Date(p.endDate).toLocaleDateString()}</div>
-              </div>
-            ))
-          )}
-        </div>
+              ))}
+            </div>
+            <PaginationControls currentPage={page} totalPages={totalPages} onPageChange={setPage} />
+          </div>
+        )}
       </DataPage>
 
       <Dialog open={isAddOpen || !!editItem} onOpenChange={(open) => {

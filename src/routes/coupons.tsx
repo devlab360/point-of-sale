@@ -1,6 +1,9 @@
-import { useState } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { DataPage } from "@/components/layout/DataPage";
+import { EmptyState } from "@/components/ui/empty-state";
+import { PaginationControls } from "@/components/ui/pagination-controls";
+import { useDebounce } from "@/hooks/useDebounce";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,7 +26,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { MoreVertical, Edit2, Trash2 } from "lucide-react";
+import { MoreVertical, Edit2, Trash2, Ticket } from "lucide-react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { localDb } from "@/lib/db";
 import { v4 as uuidv4 } from "uuid";
@@ -40,6 +43,32 @@ function CouponsPage() {
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [editItem, setEditItem] = useState<LocalCoupon | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+
+  const [search, setSearch] = useState("");
+  const debouncedSearch = useDebounce(search, 300);
+  const [page, setPage] = useState(1);
+  const itemsPerPage = 10;
+
+  const filteredCoupons = useMemo(() => {
+    let list = coupons;
+    if (debouncedSearch) {
+      const lower = debouncedSearch.toLowerCase();
+      list = list.filter(c => c.code.toLowerCase().includes(lower));
+    }
+    return list;
+  }, [coupons, debouncedSearch]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [debouncedSearch]);
+
+  useEffect(() => {
+    const maxPage = Math.max(1, Math.ceil(filteredCoupons.length / itemsPerPage));
+    if (page > maxPage) setPage(maxPage);
+  }, [filteredCoupons.length, page]);
+
+  const totalPages = Math.ceil(filteredCoupons.length / itemsPerPage);
+  const paginatedCoupons = filteredCoupons.slice((page - 1) * itemsPerPage, page * itemsPerPage);
 
   const handleSave = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -101,55 +130,64 @@ function CouponsPage() {
         title="Coupons" 
         description="Discount codes redeemable at POS and online." 
         primaryAction={{ label: "New Coupon", onClick: () => setIsAddOpen(true) }}
+        searchPlaceholder="Search by coupon code..."
+        searchValue={search}
+        onSearchChange={setSearch}
+        hideToolbar={coupons.length === 0}
       >
-        <div className="overflow-hidden rounded-xl border border-border bg-card shadow-soft">
-          <table className="w-full text-left text-sm">
-            <thead className="bg-muted/50 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-              <tr>
-                <th className="px-4 py-3">Code</th>
-                <th className="px-4 py-3">Type</th>
-                <th className="px-4 py-3">Discount</th>
-                <th className="px-4 py-3">Uses</th>
-                <th className="px-4 py-3">Expires</th>
-                <th className="px-4 py-3">Status</th>
-                <th className="px-4 py-3 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border">
-              {coupons.length === 0 ? (
-                <tr>
-                  <td colSpan={7} className="p-8 text-center text-muted-foreground">No coupons created yet.</td>
-                </tr>
-              ) : (
-                coupons.map((c) => (
-                  <tr key={c.id} className="hover:bg-muted/30">
-                    <td className="px-4 py-3"><code className="rounded bg-muted px-2 py-1 text-xs font-bold">{c.code}</code></td>
-                    <td className="px-4 py-3 text-muted-foreground">{c.type}</td>
-                    <td className="px-4 py-3 font-semibold text-primary">{c.discount}%</td>
-                    <td className="px-4 py-3 text-muted-foreground">{c.used} / {c.usageLimit}</td>
-                    <td className="px-4 py-3 text-muted-foreground">{new Date(c.expires).toLocaleDateString()}</td>
-                    <td className="px-4 py-3">
-                      <Badge className={c.status === "active" ? "bg-success/10 text-success hover:bg-success/15" : c.status === "expiring" ? "bg-warning/15 text-warning-foreground hover:bg-warning/20" : "bg-muted text-muted-foreground hover:bg-muted"}>{c.status}</Badge>
-                    </td>
-                    <td className="px-4 py-3 text-right">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="size-8">
-                            <MoreVertical className="size-4 text-muted-foreground" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => setEditItem(c)}><Edit2 className="mr-2 size-4" /> Edit</DropdownMenuItem>
-                          <DropdownMenuItem className="text-destructive focus:bg-destructive/10 focus:text-destructive" onClick={() => setDeleteId(c.id)}><Trash2 className="mr-2 size-4" /> Delete</DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </td>
+        {filteredCoupons.length === 0 ? (
+          <EmptyState
+            icon={Ticket}
+            title="No coupons found"
+            description={search ? "Try adjusting your search." : "No coupons created yet."}
+          />
+        ) : (
+          <div className="space-y-4">
+            <div className="overflow-hidden rounded-xl border border-border bg-card shadow-soft">
+              <table className="w-full text-left text-sm">
+                <thead className="bg-muted/50 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                  <tr>
+                    <th className="px-4 py-3">Code</th>
+                    <th className="px-4 py-3">Type</th>
+                    <th className="px-4 py-3">Discount</th>
+                    <th className="px-4 py-3">Uses</th>
+                    <th className="px-4 py-3">Expires</th>
+                    <th className="px-4 py-3">Status</th>
+                    <th className="px-4 py-3 text-right">Actions</th>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {paginatedCoupons.map((c) => (
+                    <tr key={c.id} className="hover:bg-muted/30">
+                      <td className="px-4 py-3"><code className="rounded bg-muted px-2 py-1 text-xs font-bold">{c.code}</code></td>
+                      <td className="px-4 py-3 text-muted-foreground">{c.type}</td>
+                      <td className="px-4 py-3 font-semibold text-primary">{c.type === "percentage" ? `${c.discount}%` : `$${c.discount.toFixed(2)}`}</td>
+                      <td className="px-4 py-3 text-muted-foreground">{c.used} / {c.usageLimit}</td>
+                      <td className="px-4 py-3 text-muted-foreground">{new Date(c.expires).toLocaleDateString()}</td>
+                      <td className="px-4 py-3">
+                        <Badge className={c.status === "active" ? "bg-success/10 text-success hover:bg-success/15" : c.status === "expiring" ? "bg-warning/15 text-warning-foreground hover:bg-warning/20" : "bg-muted text-muted-foreground hover:bg-muted"}>{c.status}</Badge>
+                      </td>
+                      <td className="px-4 py-3 text-right">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="size-8">
+                              <MoreVertical className="size-4 text-muted-foreground" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => setEditItem(c)}><Edit2 className="mr-2 size-4" /> Edit</DropdownMenuItem>
+                            <DropdownMenuItem className="text-destructive focus:bg-destructive/10 focus:text-destructive" onClick={() => setDeleteId(c.id)}><Trash2 className="mr-2 size-4" /> Delete</DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <PaginationControls currentPage={page} totalPages={totalPages} onPageChange={setPage} />
+          </div>
+        )}
       </DataPage>
 
       <Dialog open={isAddOpen || !!editItem} onOpenChange={(open) => {

@@ -1,5 +1,8 @@
-import { useState } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { createFileRoute } from "@tanstack/react-router";
+import { EmptyState } from "@/components/ui/empty-state";
+import { PaginationControls } from "@/components/ui/pagination-controls";
+import { useDebounce } from "@/hooks/useDebounce";
 import { DataPage } from "@/components/layout/DataPage";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -25,7 +28,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { localDb } from "@/lib/db";
 import { useLiveQuery } from "dexie-react-hooks";
-import { Mail, Phone, Star, MoreVertical, Edit2, Trash2 } from "lucide-react";
+import { Mail, Phone, Star, MoreVertical, Edit2, Trash2, Users } from "lucide-react";
 import { v4 as uuidv4 } from "uuid";
 import { toast } from "sonner";
 import type { LocalCustomer } from "@/lib/db";
@@ -36,10 +39,42 @@ export const Route = createFileRoute("/customers")({
 });
 
 function CustomersPage() {
-  const customers = useLiveQuery(() => localDb.customers.toArray()) || [];
+  const rawCustomers = useLiveQuery(() => localDb.customers.toArray()) || [];
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [editItem, setEditItem] = useState<LocalCustomer | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+
+  const [search, setSearch] = useState("");
+  const debouncedSearch = useDebounce(search, 300);
+  const [page, setPage] = useState(1);
+  const itemsPerPage = 10;
+
+  const customers = useMemo(() => {
+    let filtered = rawCustomers;
+    if (debouncedSearch) {
+      const lower = debouncedSearch.toLowerCase();
+      filtered = filtered.filter(
+        (c) =>
+          c.name.toLowerCase().includes(lower) ||
+          c.email?.toLowerCase().includes(lower) ||
+          c.phone?.toLowerCase().includes(lower)
+      );
+    }
+    return filtered;
+  }, [rawCustomers, debouncedSearch]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [debouncedSearch]);
+
+  // Handle invalid pages after deletion
+  useEffect(() => {
+    const maxPage = Math.max(1, Math.ceil(customers.length / itemsPerPage));
+    if (page > maxPage) setPage(maxPage);
+  }, [customers.length, page]);
+
+  const totalPages = Math.ceil(customers.length / itemsPerPage);
+  const paginatedCustomers = customers.slice((page - 1) * itemsPerPage, page * itemsPerPage);
 
   const handleSave = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -97,8 +132,19 @@ function CustomersPage() {
         title="Customers" 
         description="Loyalty members, store credit balances, and lifetime value." 
         primaryAction={{ label: "Add Customer", onClick: () => setIsAddOpen(true) }}
+        searchValue={search}
+        onSearchChange={setSearch}
+        hideToolbar={rawCustomers.length === 0}
       >
-        <div className="overflow-hidden rounded-xl border border-border bg-card shadow-soft">
+        {customers.length === 0 ? (
+          <EmptyState 
+            icon={Users} 
+            title="No customers found" 
+            description={search ? "Try adjusting your search." : "You haven't added any customers yet."} 
+          />
+        ) : (
+          <div className="space-y-4">
+            <div className="overflow-hidden rounded-xl border border-border bg-card shadow-soft">
           <table className="w-full text-left text-sm">
             <thead className="bg-muted/50 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
               <tr>
@@ -113,12 +159,7 @@ function CustomersPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
-              {customers.length === 0 ? (
-                <tr>
-                  <td colSpan={8} className="p-8 text-center text-muted-foreground">No customers found.</td>
-                </tr>
-              ) : (
-                customers.map((c) => (
+                {paginatedCustomers.map((c) => (
                   <tr key={c.id} className="hover:bg-muted/30">
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-3">
@@ -162,10 +203,13 @@ function CustomersPage() {
                     </td>
                   </tr>
                 ))
-              )}
+              }
             </tbody>
           </table>
         </div>
+        <PaginationControls currentPage={page} totalPages={totalPages} onPageChange={setPage} />
+        </div>
+        )}
       </DataPage>
 
       <Dialog open={isAddOpen || !!editItem} onOpenChange={(open) => {

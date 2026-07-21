@@ -1,6 +1,9 @@
-import { useState } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { DataPage } from "@/components/layout/DataPage";
+import { EmptyState } from "@/components/ui/empty-state";
+import { PaginationControls } from "@/components/ui/pagination-controls";
+import { useDebounce } from "@/hooks/useDebounce";
 import { Badge } from "@/components/ui/badge";
 import { StatCard } from "@/components/layout/StatCard";
 import { Button } from "@/components/ui/button";
@@ -37,20 +40,49 @@ export const Route = createFileRoute("/expenses")({
 });
 
 function ExpensesPage() {
-  const expenses = useLiveQuery(() => localDb.expenses.toArray()) || [];
+  const rawExpenses = useLiveQuery(() => localDb.expenses.toArray()) || [];
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [editItem, setEditItem] = useState<LocalExpense | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
-  const total = expenses.reduce((acc, e) => acc + e.amount, 0);
-  const pending = expenses.filter(e => e.status !== "paid").length;
-  
+  const [search, setSearch] = useState("");
+  const debouncedSearch = useDebounce(search, 300);
+  const [page, setPage] = useState(1);
+  const itemsPerPage = 10;
+
+  const expenses = useMemo(() => {
+    let filtered = rawExpenses;
+    if (debouncedSearch) {
+      const lower = debouncedSearch.toLowerCase();
+      filtered = filtered.filter(e =>
+        e.category.toLowerCase().includes(lower) ||
+        e.description.toLowerCase().includes(lower)
+      );
+    }
+    return filtered;
+  }, [rawExpenses, debouncedSearch]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [debouncedSearch]);
+
+  useEffect(() => {
+    const maxPage = Math.max(1, Math.ceil(expenses.length / itemsPerPage));
+    if (page > maxPage) setPage(maxPage);
+  }, [expenses.length, page]);
+
+  const totalPages = Math.ceil(expenses.length / itemsPerPage);
+  const paginatedExpenses = expenses.slice((page - 1) * itemsPerPage, page * itemsPerPage);
+
+  const total = rawExpenses.reduce((acc, e) => acc + e.amount, 0);
+  const pending = rawExpenses.filter(e => e.status !== "paid").length;
+
   // Calculate largest category
-  const categories = expenses.reduce((acc, e) => {
+  const catMap = rawExpenses.reduce((acc, e) => {
     acc[e.category] = (acc[e.category] || 0) + e.amount;
     return acc;
   }, {} as Record<string, number>);
-  const largestCategory = Object.entries(categories).sort((a, b) => b[1] - a[1])[0]?.[0] || "N/A";
+  const largestCategory = Object.entries(catMap).sort((a, b) => b[1] - a[1])[0]?.[0] || "N/A";
 
   const handleSave = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -109,55 +141,64 @@ function ExpensesPage() {
         <StatCard label="Largest Category" value={largestCategory} hint="By amount" icon={Receipt} accent="info" />
         <StatCard label="Pending" value={pending.toString()} icon={TrendingDown} accent="warning" />
       </div>
-      <DataPage 
-        title="Expenses" 
-        description="Track operating costs across all categories." 
+      <DataPage
+        title="Expenses"
+        description="Track operating costs across all categories."
         primaryAction={{ label: "Add Expense", onClick: () => setIsAddOpen(true) }}
+        searchPlaceholder="Search by category or description..."
+        searchValue={search}
+        onSearchChange={setSearch}
+        hideToolbar={rawExpenses.length === 0}
       >
-        <div className="overflow-hidden rounded-xl border border-border bg-card shadow-soft">
-          <table className="w-full text-left text-sm">
-            <thead className="bg-muted/50 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-              <tr>
-                <th className="px-4 py-3">Date</th>
-                <th className="px-4 py-3">Category</th>
-                <th className="px-4 py-3">Description</th>
-                <th className="px-4 py-3">Status</th>
-                <th className="px-4 py-3 text-right">Amount</th>
-                <th className="px-4 py-3 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border">
-              {expenses.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="p-8 text-center text-muted-foreground">No expenses recorded yet.</td>
-                </tr>
-              ) : (
-                expenses.map((e) => (
-                  <tr key={e.id} className="hover:bg-muted/30">
-                    <td className="px-4 py-3 text-muted-foreground">{new Date(e.date).toLocaleDateString()}</td>
-                    <td className="px-4 py-3"><Badge variant="secondary">{e.category}</Badge></td>
-                    <td className="px-4 py-3 font-semibold">{e.description}</td>
-                    <td className="px-4 py-3"><Badge className={e.status === "paid" ? "bg-success/10 text-success hover:bg-success/15" : "bg-warning/15 text-warning-foreground hover:bg-warning/20"}>{e.status}</Badge></td>
-                    <td className="number px-4 py-3 text-right font-semibold">${e.amount.toLocaleString()}</td>
-                    <td className="px-4 py-3 text-right">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="size-8">
-                            <MoreVertical className="size-4 text-muted-foreground" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => setEditItem(e)}><Edit2 className="mr-2 size-4" /> Edit</DropdownMenuItem>
-                          <DropdownMenuItem className="text-destructive focus:bg-destructive/10 focus:text-destructive" onClick={() => setDeleteId(e.id)}><Trash2 className="mr-2 size-4" /> Delete</DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </td>
+        {expenses.length === 0 ? (
+          <EmptyState
+            icon={Wallet}
+            title="No expenses found"
+            description={search ? "Try adjusting your search." : "No expenses have been recorded yet."}
+          />
+        ) : (
+          <div className="space-y-4">
+            <div className="overflow-hidden rounded-xl border border-border bg-card shadow-soft">
+              <table className="w-full text-left text-sm">
+                <thead className="bg-muted/50 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                  <tr>
+                    <th className="px-4 py-3">Date</th>
+                    <th className="px-4 py-3">Category</th>
+                    <th className="px-4 py-3">Description</th>
+                    <th className="px-4 py-3">Status</th>
+                    <th className="px-4 py-3 text-right">Amount</th>
+                    <th className="px-4 py-3 text-right">Actions</th>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {paginatedExpenses.map((e) => (
+                    <tr key={e.id} className="hover:bg-muted/30">
+                      <td className="px-4 py-3 text-muted-foreground">{new Date(e.date).toLocaleDateString()}</td>
+                      <td className="px-4 py-3"><Badge variant="secondary">{e.category}</Badge></td>
+                      <td className="px-4 py-3 font-semibold">{e.description}</td>
+                      <td className="px-4 py-3"><Badge className={e.status === "paid" ? "bg-success/10 text-success hover:bg-success/15" : "bg-warning/15 text-warning-foreground hover:bg-warning/20"}>{e.status}</Badge></td>
+                      <td className="number px-4 py-3 text-right font-semibold">${e.amount.toLocaleString()}</td>
+                      <td className="px-4 py-3 text-right">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="size-8">
+                              <MoreVertical className="size-4 text-muted-foreground" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => setEditItem(e)}><Edit2 className="mr-2 size-4" /> Edit</DropdownMenuItem>
+                            <DropdownMenuItem className="text-destructive focus:bg-destructive/10 focus:text-destructive" onClick={() => setDeleteId(e.id)}><Trash2 className="mr-2 size-4" /> Delete</DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <PaginationControls currentPage={page} totalPages={totalPages} onPageChange={setPage} />
+          </div>
+        )}
       </DataPage>
 
       <Dialog open={isAddOpen || !!editItem} onOpenChange={(open) => {

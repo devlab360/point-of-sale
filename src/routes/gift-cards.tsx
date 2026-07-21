@@ -1,6 +1,9 @@
-import { useState } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { DataPage } from "@/components/layout/DataPage";
+import { EmptyState } from "@/components/ui/empty-state";
+import { PaginationControls } from "@/components/ui/pagination-controls";
+import { useDebounce } from "@/hooks/useDebounce";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -39,6 +42,32 @@ function GiftCardsPage() {
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [editItem, setEditItem] = useState<LocalGiftCard | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+
+  const [search, setSearch] = useState("");
+  const debouncedSearch = useDebounce(search, 300);
+  const [page, setPage] = useState(1);
+  const itemsPerPage = 9;
+
+  const filteredCards = useMemo(() => {
+    let list = giftCards;
+    if (debouncedSearch) {
+      const lower = debouncedSearch.toLowerCase();
+      list = list.filter(c => c.code.toLowerCase().includes(lower) || c.customer?.toLowerCase().includes(lower));
+    }
+    return list;
+  }, [giftCards, debouncedSearch]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [debouncedSearch]);
+
+  useEffect(() => {
+    const maxPage = Math.max(1, Math.ceil(filteredCards.length / itemsPerPage));
+    if (page > maxPage) setPage(maxPage);
+  }, [filteredCards.length, page]);
+
+  const totalPages = Math.ceil(filteredCards.length / itemsPerPage);
+  const paginatedCards = filteredCards.slice((page - 1) * itemsPerPage, page * itemsPerPage);
 
   const handleSave = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -97,44 +126,53 @@ function GiftCardsPage() {
         title="Gift Cards" 
         description="Issued cards, balances, and expirations." 
         primaryAction={{ label: "Issue Gift Card", onClick: () => setIsAddOpen(true) }}
+        searchPlaceholder="Search by code or customer..."
+        searchValue={search}
+        onSearchChange={setSearch}
+        hideToolbar={giftCards.length === 0}
       >
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {giftCards.length === 0 ? (
-            <div className="col-span-full py-12 text-center text-muted-foreground">
-              No gift cards issued yet.
+        {filteredCards.length === 0 ? (
+          <EmptyState
+            icon={Gift}
+            title="No gift cards found"
+            description={search ? "Try adjusting your search." : "No gift cards issued yet."}
+          />
+        ) : (
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+              {paginatedCards.map((g) => (
+                <div key={g.id} className="relative overflow-hidden rounded-xl border border-border bg-gradient-to-br from-primary/15 via-card to-info/10 p-5 shadow-soft">
+                  <div className="absolute right-4 top-4 z-10 flex items-center gap-2">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon" className="size-8">
+                          <MoreVertical className="size-4 text-muted-foreground" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => setEditItem(g)}><Edit2 className="mr-2 size-4" /> Edit</DropdownMenuItem>
+                        <DropdownMenuItem className="text-destructive focus:bg-destructive/10 focus:text-destructive" onClick={() => setDeleteId(g.id)}><Trash2 className="mr-2 size-4" /> Delete</DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+                  
+                  <div className="flex items-start justify-between pr-10">
+                    <Gift className="size-7 text-primary" />
+                    <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${g.status === "active" ? "bg-success/15 text-success" : "bg-muted text-muted-foreground"}`}>{g.status}</span>
+                  </div>
+                  <div className="mt-6 font-mono text-xs text-muted-foreground">{g.code}</div>
+                  <div className="mt-1 text-xs text-muted-foreground">To: <span className="font-semibold text-foreground">{g.customer || "Walk-in"}</span></div>
+                  <div className="mt-4 flex items-baseline justify-between">
+                    <span className="text-xs uppercase tracking-wider text-muted-foreground">Balance</span>
+                    <span className="number text-2xl font-bold">${g.balance.toFixed(2)}</span>
+                  </div>
+                  <div className="mt-1 text-xs text-muted-foreground">expires {new Date(g.expires).toLocaleDateString()}</div>
+                </div>
+              ))}
             </div>
-          ) : (
-            giftCards.map((g) => (
-              <div key={g.id} className="relative overflow-hidden rounded-xl border border-border bg-gradient-to-br from-primary/15 via-card to-info/10 p-5 shadow-soft">
-                <div className="absolute right-4 top-4 z-10 flex items-center gap-2">
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon" className="size-8">
-                        <MoreVertical className="size-4 text-muted-foreground" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => setEditItem(g)}><Edit2 className="mr-2 size-4" /> Edit</DropdownMenuItem>
-                      <DropdownMenuItem className="text-destructive focus:bg-destructive/10 focus:text-destructive" onClick={() => setDeleteId(g.id)}><Trash2 className="mr-2 size-4" /> Delete</DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
-                
-                <div className="flex items-start justify-between pr-10">
-                  <Gift className="size-7 text-primary" />
-                  <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${g.status === "active" ? "bg-success/15 text-success" : "bg-muted text-muted-foreground"}`}>{g.status}</span>
-                </div>
-                <div className="mt-6 font-mono text-xs text-muted-foreground">{g.code}</div>
-                <div className="mt-1 text-xs text-muted-foreground">To: <span className="font-semibold text-foreground">{g.customer || "Walk-in"}</span></div>
-                <div className="mt-4 flex items-baseline justify-between">
-                  <span className="text-xs uppercase tracking-wider text-muted-foreground">Balance</span>
-                  <span className="number text-2xl font-bold">${g.balance.toFixed(2)}</span>
-                </div>
-                <div className="mt-1 text-xs text-muted-foreground">expires {new Date(g.expires).toLocaleDateString()}</div>
-              </div>
-            ))
-          )}
-        </div>
+            <PaginationControls currentPage={page} totalPages={totalPages} onPageChange={setPage} />
+          </div>
+        )}
       </DataPage>
 
       <Dialog open={isAddOpen || !!editItem} onOpenChange={(open) => {

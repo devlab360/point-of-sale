@@ -1,13 +1,16 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Pencil, Tag, Trash2, Plus } from "lucide-react";
+import { Pencil, Tag, Trash2, Plus, LayoutGrid } from "lucide-react";
 import { DataPage } from "@/components/layout/DataPage";
+import { EmptyState } from "@/components/ui/empty-state";
+import { PaginationControls } from "@/components/ui/pagination-controls";
 import { localDb } from "@/lib/db";
 import { useLiveQuery } from "dexie-react-hooks";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useState } from "react";
+import { useState, useMemo, useEffect } from "react";
+import { useDebounce } from "@/hooks/useDebounce";
 import { v4 as uuidv4 } from "uuid";
 import { toast } from "sonner";
 import {
@@ -28,8 +31,16 @@ export const Route = createFileRoute("/categories")({
 });
 
 function CategoriesPage() {
-  const categories = useLiveQuery(() => localDb.categories.toArray()) || [];
+  const rawCategories = useLiveQuery(() => localDb.categories.toArray()) || [];
+  const products = useLiveQuery(() => localDb.products.toArray()) || [];
   
+  const categoriesWithCounts = useMemo(() => {
+    return rawCategories.map(c => ({
+      ...c,
+      count: products.filter(p => p.category === c.name).length
+    }));
+  }, [rawCategories, products]);
+
   const [modalOpen, setModalOpen] = useState(false);
   const [editingCat, setEditingCat] = useState<any>(null);
   
@@ -37,6 +48,32 @@ function CategoriesPage() {
   const [icon, setIcon] = useState("🛒");
   const [color, setColor] = useState("var(--color-primary)");
   const [deleteId, setDeleteId] = useState<string | null>(null);
+
+  const [search, setSearch] = useState("");
+  const debouncedSearch = useDebounce(search, 300);
+  const [page, setPage] = useState(1);
+  const itemsPerPage = 10;
+
+  const categories = useMemo(() => {
+    let filtered = categoriesWithCounts;
+    if (debouncedSearch) {
+      const lower = debouncedSearch.toLowerCase();
+      filtered = filtered.filter(c => c.name.toLowerCase().includes(lower));
+    }
+    return filtered;
+  }, [categoriesWithCounts, debouncedSearch]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [debouncedSearch]);
+
+  useEffect(() => {
+    const maxPage = Math.max(1, Math.ceil(categories.length / itemsPerPage));
+    if (page > maxPage) setPage(maxPage);
+  }, [categories.length, page]);
+
+  const totalPages = Math.ceil(categories.length / itemsPerPage);
+  const paginatedCategories = categories.slice((page - 1) * itemsPerPage, page * itemsPerPage);
 
 
   const openNew = () => {
@@ -97,40 +134,49 @@ function CategoriesPage() {
         title="Categories"
         description="Group products into shoppable sections used across POS, reports, and promotions."
         primaryAction={{ label: "New Category", onClick: openNew }}
+        searchPlaceholder="Search categories..."
+        searchValue={search}
+        onSearchChange={setSearch}
+        hideToolbar={rawCategories.length === 0}
       >
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {categories.map((c) => (
-            <div
-              key={c.id}
-              className="group flex items-center gap-4 rounded-xl border border-border bg-card p-4 shadow-soft transition-shadow hover:shadow-elevated"
-            >
-              <div
-                className="grid size-12 shrink-0 place-items-center rounded-xl text-2xl"
-                style={{ background: `color-mix(in oklch, ${c.color} 18%, transparent)` }}
-              >
-                {c.icon}
-              </div>
-              <div className="min-w-0 flex-1">
-                <div className="truncate font-semibold">{c.name}</div>
-                <div className="text-xs text-muted-foreground">{c.count || 0} products</div>
-              </div>
-              <div className="flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
-                <Button variant="ghost" size="icon" className="size-8" onClick={() => openEdit(c)}>
-                  <Pencil className="size-4" />
-                </Button>
-                <Button variant="ghost" size="icon" className="size-8 text-destructive" onClick={() => setDeleteId(c.id)}>
-
-                  <Trash2 className="size-4" />
-                </Button>
-              </div>
+        {categories.length === 0 ? (
+          <EmptyState 
+            icon={LayoutGrid} 
+            title="No categories found" 
+            description={search ? "Try adjusting your search." : "You haven't created any categories yet."} 
+          />
+        ) : (
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              {paginatedCategories.map((c) => (
+                <div
+                  key={c.id}
+                  className="group flex items-center gap-4 rounded-xl border border-border bg-card p-4 shadow-soft transition-shadow hover:shadow-elevated"
+                >
+                  <div
+                    className="grid size-12 shrink-0 place-items-center rounded-xl text-2xl"
+                    style={{ background: `color-mix(in oklch, ${c.color} 18%, transparent)` }}
+                  >
+                    {c.icon}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate font-semibold">{c.name}</div>
+                    <div className="text-xs text-muted-foreground">{c.count || 0} products</div>
+                  </div>
+                  <div className="flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+                    <Button variant="ghost" size="icon" className="size-8" onClick={() => openEdit(c)}>
+                      <Pencil className="size-4" />
+                    </Button>
+                    <Button variant="ghost" size="icon" className="size-8 text-destructive" onClick={() => setDeleteId(c.id)}>
+                      <Trash2 className="size-4" />
+                    </Button>
+                  </div>
+                </div>
+              ))}
             </div>
-          ))}
-          {categories.length === 0 && (
-            <div className="col-span-full py-12 text-center text-muted-foreground">
-              No categories found. Create one to get started!
-            </div>
-          )}
-        </div>
+            <PaginationControls currentPage={page} totalPages={totalPages} onPageChange={setPage} />
+          </div>
+        )}
       </DataPage>
 
       <Dialog open={modalOpen} onOpenChange={setModalOpen}>
