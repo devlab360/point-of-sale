@@ -88,7 +88,10 @@ function ProductsPage() {
   const [formData, setFormData] = useState({
     name: "", sku: "", barcode: "", category: "", brand: "", unit: "",
     price: 0, cost: 0, stock: 0, reorderLevel: 5, image: "https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&q=80&w=150&h=150",
-    expiryDate: ""
+    expiryDate: "", wholesalePrice: 0, dealerPrice: 0, minWholesaleQty: 1,
+    hasSerial: false, serialsInput: "",
+    hasBatch: false, batchNoInput: "", batchExpiryInput: "", batchStockInput: 0,
+    locationRack: "", locationShelf: "", locationBin: ""
   });
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
@@ -111,7 +114,10 @@ function ProductsPage() {
     setFormData({
       name: "", sku: "", barcode: "", category: "", brand: "", unit: "",
       price: 0, cost: 0, stock: 0, reorderLevel: 5, image: "https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&q=80&w=150&h=150",
-      expiryDate: ""
+      expiryDate: "", wholesalePrice: 0, dealerPrice: 0, minWholesaleQty: 1,
+      hasSerial: false, serialsInput: "",
+      hasBatch: false, batchNoInput: "", batchExpiryInput: "", batchStockInput: 0,
+      locationRack: "", locationShelf: "", locationBin: ""
     });
     setModalOpen(true);
   };
@@ -122,7 +128,19 @@ function ProductsPage() {
       name: p.name, sku: p.sku, barcode: p.barcode, category: p.category,
       brand: p.brand, unit: p.unit, price: p.price, cost: p.cost,
       stock: p.stock, reorderLevel: p.reorderLevel, image: p.image,
-      expiryDate: p.expiryDate || ""
+      expiryDate: p.expiryDate || "",
+      wholesalePrice: p.wholesalePrice || 0,
+      dealerPrice: p.dealerPrice || 0,
+      minWholesaleQty: p.minWholesaleQty || 1,
+      hasSerial: !!p.hasSerial,
+      serialsInput: (p.serials || []).join(", "),
+      hasBatch: !!p.hasBatch,
+      batchNoInput: p.batches?.[0]?.batchNo || "",
+      batchExpiryInput: p.batches?.[0]?.expiryDate || "",
+      batchStockInput: p.batches?.[0]?.stock || 0,
+      locationRack: p.locationRack || "",
+      locationShelf: p.locationShelf || "",
+      locationBin: p.locationBin || ""
     });
     setModalOpen(true);
   };
@@ -130,21 +148,39 @@ function ProductsPage() {
   const save = async () => {
     if (!formData.name) return toast.error("Name is required");
     
+    // Parse serials
+    const serialsList = formData.hasSerial
+      ? formData.serialsInput.split(/[\n,]+/).map(s => s.trim()).filter(Boolean)
+      : [];
+
+    const computedStock = formData.hasSerial && serialsList.length > 0 ? serialsList.length : formData.stock;
+
+    const batchesList = formData.hasBatch && formData.batchNoInput
+      ? [{ batchNo: formData.batchNoInput, expiryDate: formData.batchExpiryInput, stock: formData.batchStockInput || computedStock }]
+      : [];
+
+    const payload = {
+      ...formData,
+      stock: computedStock,
+      serials: serialsList,
+      batches: batchesList,
+      synced: false
+    };
+
     try {
       if (editingProd) {
-        await localDb.products.update(editingProd.id, { ...formData, synced: false });
+        await localDb.products.update(editingProd.id, payload);
         toast.success("Product updated");
       } else {
         await localDb.products.add({
           id: uuidv4(),
-          ...formData,
-          synced: false
+          ...payload
         });
         toast.success("Product created");
       }
       setModalOpen(false);
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "An error occurred");
+    } catch (e) {
+      toast.error("Failed to save product");
     }
   };
 
@@ -265,12 +301,20 @@ function ProductsPage() {
               </Select>
             </div>
             <div className="grid gap-2">
-              <Label>Price</Label>
-              <Input type="number" value={formData.price} onChange={e => setFormData({...formData, price: parseFloat(e.target.value)})} />
+              <Label>Retail Price *</Label>
+              <Input type="number" step="0.01" value={formData.price} onChange={e => setFormData({...formData, price: parseFloat(e.target.value) || 0})} />
             </div>
             <div className="grid gap-2">
-              <Label>Cost</Label>
-              <Input type="number" value={formData.cost} onChange={e => setFormData({...formData, cost: parseFloat(e.target.value)})} />
+              <Label>Wholesale Price (Optional)</Label>
+              <Input type="number" step="0.01" placeholder="e.g. 45.00" value={formData.wholesalePrice || ""} onChange={e => setFormData({...formData, wholesalePrice: parseFloat(e.target.value) || 0})} />
+            </div>
+            <div className="grid gap-2">
+              <Label>Dealer Price (Optional)</Label>
+              <Input type="number" step="0.01" placeholder="e.g. 40.00" value={formData.dealerPrice || ""} onChange={e => setFormData({...formData, dealerPrice: parseFloat(e.target.value) || 0})} />
+            </div>
+            <div className="grid gap-2">
+              <Label>Cost Price</Label>
+              <Input type="number" step="0.01" value={formData.cost} onChange={e => setFormData({...formData, cost: parseFloat(e.target.value) || 0})} />
             </div>
             <div className="grid gap-2">
               <Label>Stock</Label>
@@ -291,6 +335,82 @@ function ProductsPage() {
             <div className="grid gap-2 col-span-2">
               <Label>Image URL</Label>
               <Input value={formData.image} onChange={e => setFormData({...formData, image: e.target.value})} />
+            </div>
+
+            {/* Warehouse Rack / Shelf Location Fields */}
+            <div className="grid grid-cols-3 gap-2 col-span-2 rounded-xl border p-3 bg-muted/20">
+              <div>
+                <Label className="text-xs">Rack No.</Label>
+                <Input placeholder="e.g. A-12" value={formData.locationRack} onChange={e => setFormData({...formData, locationRack: e.target.value})} className="h-8 text-xs" />
+              </div>
+              <div>
+                <Label className="text-xs">Shelf No.</Label>
+                <Input placeholder="e.g. Shelf 3" value={formData.locationShelf} onChange={e => setFormData({...formData, locationShelf: e.target.value})} className="h-8 text-xs" />
+              </div>
+              <div>
+                <Label className="text-xs">Bin Position</Label>
+                <Input placeholder="e.g. Bin B" value={formData.locationBin} onChange={e => setFormData({...formData, locationBin: e.target.value})} className="h-8 text-xs" />
+              </div>
+            </div>
+
+            {/* Electronics IMEI / Serial Tracking Toggle */}
+            <div className="col-span-2 rounded-xl border border-primary/20 bg-primary/5 p-3 space-y-3">
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="hasSerial"
+                  checked={formData.hasSerial}
+                  onChange={(e) => setFormData({ ...formData, hasSerial: e.target.checked })}
+                  className="rounded border-primary text-primary"
+                />
+                <Label htmlFor="hasSerial" className="font-semibold text-xs text-primary cursor-pointer">
+                  Track Serial / IMEI Numbers (Mobile & Electronics)
+                </Label>
+              </div>
+              {formData.hasSerial && (
+                <div className="space-y-1 pl-6">
+                  <Label className="text-xs">Enter Available IMEI / Serial Numbers (Comma or Newline separated)</Label>
+                  <textarea
+                    rows={2}
+                    value={formData.serialsInput}
+                    onChange={(e) => setFormData({ ...formData, serialsInput: e.target.value })}
+                    placeholder="e.g. IMEI88301, IMEI88302, IMEI88303"
+                    className="w-full rounded-md border border-input bg-background p-2 text-xs font-mono"
+                  />
+                </div>
+              )}
+            </div>
+
+            {/* Pharmacy Batch & Expiry Tracking Toggle */}
+            <div className="col-span-2 rounded-xl border border-info/20 bg-info/5 p-3 space-y-3">
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="hasBatch"
+                  checked={formData.hasBatch}
+                  onChange={(e) => setFormData({ ...formData, hasBatch: e.target.checked })}
+                  className="rounded border-info text-info"
+                />
+                <Label htmlFor="hasBatch" className="font-semibold text-xs text-info cursor-pointer">
+                  Track Batches & Batch Expiry (Pharmacy & FMCG Food)
+                </Label>
+              </div>
+              {formData.hasBatch && (
+                <div className="grid grid-cols-3 gap-2 pl-6">
+                  <div>
+                    <Label className="text-xs">Batch Number</Label>
+                    <Input placeholder="e.g. BATCH-2026A" value={formData.batchNoInput} onChange={e => setFormData({...formData, batchNoInput: e.target.value})} className="h-8 text-xs" />
+                  </div>
+                  <div>
+                    <Label className="text-xs">Batch Expiry</Label>
+                    <Input type="date" value={formData.batchExpiryInput} onChange={e => setFormData({...formData, batchExpiryInput: e.target.value})} className="h-8 text-xs" />
+                  </div>
+                  <div>
+                    <Label className="text-xs">Batch Stock Qty</Label>
+                    <Input type="number" value={formData.batchStockInput} onChange={e => setFormData({...formData, batchStockInput: parseInt(e.target.value) || 0})} className="h-8 text-xs" />
+                  </div>
+                </div>
+              )}
             </div>
           </div>
           <DialogFooter>
@@ -406,17 +526,42 @@ function TableView({ products, onEdit, onDelete, onPrint }: { products: any[], o
                   </td>
                   <td className="px-4 py-3 font-mono text-xs text-muted-foreground">{p.sku}</td>
                   <td className="px-4 py-3 text-muted-foreground">{p.category}</td>
-                  <td className="number px-4 py-3 text-right font-semibold">{formatCurrency(p.price)}</td>
+                  <td className="number px-4 py-3 text-right">
+                    <div className="font-semibold">{formatCurrency(p.price)}</div>
+                    {(p.wholesalePrice > 0 || p.dealerPrice > 0) && (
+                      <div className="flex flex-col items-end gap-0.5 text-[10px] text-muted-foreground mt-0.5">
+                        {p.wholesalePrice > 0 && <span className="text-info font-medium">WS: {formatCurrency(p.wholesalePrice)}</span>}
+                        {p.dealerPrice > 0 && <span className="text-warning font-medium">Dealer: {formatCurrency(p.dealerPrice)}</span>}
+                      </div>
+                    )}
+                  </td>
                   <td className="px-4 py-3 text-right">
                     <span className={cn("number font-semibold", low && "text-destructive")}>{p.stock}</span>
                     <span className="ml-1 text-xs text-muted-foreground">{p.unit}</span>
                   </td>
                   <td className="px-4 py-3">
-                    {low ? (
-                      <Badge variant="destructive">Low stock</Badge>
-                    ) : (
-                      <Badge className="bg-success/10 text-success hover:bg-success/15">In stock</Badge>
-                    )}
+                    <div className="flex flex-col gap-1 items-start">
+                      {low ? (
+                        <Badge variant="destructive">Low stock</Badge>
+                      ) : (
+                        <Badge className="bg-success/10 text-success hover:bg-success/15">In stock</Badge>
+                      )}
+                      {p.hasSerial && (
+                        <span className="rounded bg-primary/10 px-1.5 py-0.5 text-[9px] font-bold text-primary">
+                          IMEI: {p.serials?.length || 0} Avail
+                        </span>
+                      )}
+                      {p.hasBatch && p.batches?.[0] && (
+                        <span className="rounded bg-info/10 px-1.5 py-0.5 text-[9px] font-bold text-info">
+                          Batch: {p.batches[0].batchNo} ({p.batches[0].expiryDate})
+                        </span>
+                      )}
+                      {p.locationRack && (
+                        <span className="rounded bg-muted border px-1.5 py-0.5 text-[9px] font-mono text-muted-foreground font-bold">
+                          Rack: {p.locationRack} {p.locationShelf ? `· ${p.locationShelf}` : ""}
+                        </span>
+                      )}
+                    </div>
                   </td>
                   <td className="px-4 py-3 text-right">
                     <DropdownMenu>

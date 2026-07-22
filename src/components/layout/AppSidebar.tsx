@@ -31,6 +31,13 @@ import {
   Undo2,
   ChevronDown,
   LogOut,
+  FileText,
+  BookOpen,
+  Wrench,
+  Repeat,
+  KeyRound,
+  UserCheck,
+  ShieldAlert,
 } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
@@ -68,11 +75,13 @@ const groups: Group[] = [
     ],
   },
   {
-    label: "Trade",
+    label: "Trade & B2B",
     items: [
       { to: "/purchases", label: "Purchases", icon: ShoppingCart, roles: ["admin", "manager"] },
       { to: "/purchases/returns", label: "Purchase Returns", icon: Undo2, roles: ["admin", "manager"] },
-      { to: "/sales", label: "Sales", icon: ReceiptText },
+      { to: "/sales", label: "Sales Invoices", icon: ReceiptText },
+      { to: "/quotations", label: "Quotations", icon: FileText, roles: ["admin", "manager"] },
+      { to: "/delivery-challans", label: "Delivery Challans", icon: Truck, roles: ["admin", "manager"] },
       { to: "/sales/returns", label: "Sales Returns", icon: Undo2 },
     ],
   },
@@ -85,10 +94,19 @@ const groups: Group[] = [
     ],
   },
   {
-    label: "Finance",
+    label: "Finance & Accounts",
     items: [
+      { to: "/accounts", label: "Chart of Accounts", icon: BookOpen, roles: ["admin", "manager"] },
       { to: "/expenses", label: "Expenses", icon: Wallet, roles: ["admin", "manager"] },
-      { to: "/reports", label: "Reports", icon: BarChart3, roles: ["admin", "manager"] },
+      { to: "/reports", label: "Financial Reports", icon: BarChart3, roles: ["admin", "manager"] },
+    ],
+  },
+  {
+    label: "Services & Verticals",
+    items: [
+      { to: "/repairs", label: "Repair Job Sheets", icon: Wrench, roles: ["admin", "manager"] },
+      { to: "/subscriptions", label: "Subscriptions", icon: Repeat, roles: ["admin", "manager"] },
+      { to: "/rentals", label: "Equipment Rentals", icon: KeyRound, roles: ["admin", "manager"] },
     ],
   },
   {
@@ -103,6 +121,8 @@ const groups: Group[] = [
   {
     label: "System",
     items: [
+      { to: "/super-admin", label: "Super Admin SaaS", icon: ShieldAlert, roles: ["admin"] },
+      { to: "/portal", label: "Client Portal", icon: UserCheck },
       { to: "/settings", label: "Settings", icon: Settings, roles: ["admin"] },
       { to: "/notifications", label: "Notifications", icon: Bell },
       { to: "/activity", label: "Activity Log", icon: Activity, roles: ["admin", "manager"] },
@@ -124,9 +144,14 @@ export function AppSidebar({ onNavigate }: { onNavigate?: () => void }) {
   const settings = useLiveQuery(() => localDb.settings.get("default"));
   const initials = (user?.name || "U").split(" ").filter(Boolean).map((n) => n[0]).join("").substring(0, 2).toUpperCase();
 
+  const isSuperAdminUser = user?.email?.toLowerCase() === "superadmin@grocer.pro" || user?.email?.toLowerCase().includes("superadmin");
+
   const filteredGroups = groups.map(group => ({
     ...group,
-    items: group.items.filter(item => !item.roles || (user && item.roles.includes(user.role.toLowerCase())))
+    items: group.items.filter(item => {
+      if (item.to === "/super-admin" && !isSuperAdminUser) return false;
+      return !item.roles || (user && item.roles.includes(user.role.toLowerCase()));
+    })
   })).filter(group => group.items.length > 0);
 
   return (

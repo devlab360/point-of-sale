@@ -12,15 +12,21 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as UsersRouteImport } from './routes/users'
 import { Route as UnitsRouteImport } from './routes/units'
 import { Route as SuppliersRouteImport } from './routes/suppliers'
+import { Route as SuperAdminRouteImport } from './routes/super-admin'
+import { Route as SubscriptionsRouteImport } from './routes/subscriptions'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as SalesRouteImport } from './routes/sales'
 import { Route as ReportsRouteImport } from './routes/reports'
+import { Route as RepairsRouteImport } from './routes/repairs'
+import { Route as RentalsRouteImport } from './routes/rentals'
 import { Route as RegisterRouteImport } from './routes/register'
+import { Route as QuotationsRouteImport } from './routes/quotations'
 import { Route as PurchasesRouteImport } from './routes/purchases'
 import { Route as PromotionsRouteImport } from './routes/promotions'
 import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as ProductsRouteImport } from './routes/products'
 import { Route as PosRouteImport } from './routes/pos'
+import { Route as PortalRouteImport } from './routes/portal'
 import { Route as NotificationsRouteImport } from './routes/notifications'
 import { Route as LoyaltyRouteImport } from './routes/loyalty'
 import { Route as LoginRouteImport } from './routes/login'
@@ -28,11 +34,13 @@ import { Route as InventoryRouteImport } from './routes/inventory'
 import { Route as HelpRouteImport } from './routes/help'
 import { Route as GiftCardsRouteImport } from './routes/gift-cards'
 import { Route as ExpensesRouteImport } from './routes/expenses'
+import { Route as DeliveryChallansRouteImport } from './routes/delivery-challans'
 import { Route as CustomersRouteImport } from './routes/customers'
 import { Route as CouponsRouteImport } from './routes/coupons'
 import { Route as CategoriesRouteImport } from './routes/categories'
 import { Route as BrandsRouteImport } from './routes/brands'
 import { Route as ActivityRouteImport } from './routes/activity'
+import { Route as AccountsRouteImport } from './routes/accounts'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as InventoryIndexRouteImport } from './routes/inventory.index'
 import { Route as SalesReturnsRouteImport } from './routes/sales.returns'
@@ -58,6 +66,16 @@ const SuppliersRoute = SuppliersRouteImport.update({
   path: '/suppliers',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SuperAdminRoute = SuperAdminRouteImport.update({
+  id: '/super-admin',
+  path: '/super-admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SubscriptionsRoute = SubscriptionsRouteImport.update({
+  id: '/subscriptions',
+  path: '/subscriptions',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SettingsRoute = SettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
@@ -73,9 +91,24 @@ const ReportsRoute = ReportsRouteImport.update({
   path: '/reports',
   getParentRoute: () => rootRouteImport,
 } as any)
+const RepairsRoute = RepairsRouteImport.update({
+  id: '/repairs',
+  path: '/repairs',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RentalsRoute = RentalsRouteImport.update({
+  id: '/rentals',
+  path: '/rentals',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const RegisterRoute = RegisterRouteImport.update({
   id: '/register',
   path: '/register',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const QuotationsRoute = QuotationsRouteImport.update({
+  id: '/quotations',
+  path: '/quotations',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PurchasesRoute = PurchasesRouteImport.update({
@@ -101,6 +134,11 @@ const ProductsRoute = ProductsRouteImport.update({
 const PosRoute = PosRouteImport.update({
   id: '/pos',
   path: '/pos',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PortalRoute = PortalRouteImport.update({
+  id: '/portal',
+  path: '/portal',
   getParentRoute: () => rootRouteImport,
 } as any)
 const NotificationsRoute = NotificationsRouteImport.update({
@@ -138,6 +176,11 @@ const ExpensesRoute = ExpensesRouteImport.update({
   path: '/expenses',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DeliveryChallansRoute = DeliveryChallansRouteImport.update({
+  id: '/delivery-challans',
+  path: '/delivery-challans',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const CustomersRoute = CustomersRouteImport.update({
   id: '/customers',
   path: '/customers',
@@ -161,6 +204,11 @@ const BrandsRoute = BrandsRouteImport.update({
 const ActivityRoute = ActivityRouteImport.update({
   id: '/activity',
   path: '/activity',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AccountsRoute = AccountsRouteImport.update({
+  id: '/accounts',
+  path: '/accounts',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -211,11 +259,13 @@ const InventoryAdjustmentsRoute = InventoryAdjustmentsRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/accounts': typeof AccountsRoute
   '/activity': typeof ActivityRoute
   '/brands': typeof BrandsRoute
   '/categories': typeof CategoriesRoute
   '/coupons': typeof CouponsRoute
   '/customers': typeof CustomersRoute
+  '/delivery-challans': typeof DeliveryChallansRoute
   '/expenses': typeof ExpensesRoute
   '/gift-cards': typeof GiftCardsRoute
   '/help': typeof HelpRoute
@@ -223,15 +273,21 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/loyalty': typeof LoyaltyRoute
   '/notifications': typeof NotificationsRoute
+  '/portal': typeof PortalRoute
   '/pos': typeof PosRoute
   '/products': typeof ProductsRoute
   '/profile': typeof ProfileRoute
   '/promotions': typeof PromotionsRoute
   '/purchases': typeof PurchasesRouteWithChildren
+  '/quotations': typeof QuotationsRoute
   '/register': typeof RegisterRoute
+  '/rentals': typeof RentalsRoute
+  '/repairs': typeof RepairsRoute
   '/reports': typeof ReportsRoute
   '/sales': typeof SalesRouteWithChildren
   '/settings': typeof SettingsRoute
+  '/subscriptions': typeof SubscriptionsRoute
+  '/super-admin': typeof SuperAdminRoute
   '/suppliers': typeof SuppliersRoute
   '/units': typeof UnitsRoute
   '/users': typeof UsersRoute
@@ -246,26 +302,34 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/accounts': typeof AccountsRoute
   '/activity': typeof ActivityRoute
   '/brands': typeof BrandsRoute
   '/categories': typeof CategoriesRoute
   '/coupons': typeof CouponsRoute
   '/customers': typeof CustomersRoute
+  '/delivery-challans': typeof DeliveryChallansRoute
   '/expenses': typeof ExpensesRoute
   '/gift-cards': typeof GiftCardsRoute
   '/help': typeof HelpRoute
   '/login': typeof LoginRoute
   '/loyalty': typeof LoyaltyRoute
   '/notifications': typeof NotificationsRoute
+  '/portal': typeof PortalRoute
   '/pos': typeof PosRoute
   '/products': typeof ProductsRoute
   '/profile': typeof ProfileRoute
   '/promotions': typeof PromotionsRoute
   '/purchases': typeof PurchasesRouteWithChildren
+  '/quotations': typeof QuotationsRoute
   '/register': typeof RegisterRoute
+  '/rentals': typeof RentalsRoute
+  '/repairs': typeof RepairsRoute
   '/reports': typeof ReportsRoute
   '/sales': typeof SalesRouteWithChildren
   '/settings': typeof SettingsRoute
+  '/subscriptions': typeof SubscriptionsRoute
+  '/super-admin': typeof SuperAdminRoute
   '/suppliers': typeof SuppliersRoute
   '/units': typeof UnitsRoute
   '/users': typeof UsersRoute
@@ -281,11 +345,13 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/accounts': typeof AccountsRoute
   '/activity': typeof ActivityRoute
   '/brands': typeof BrandsRoute
   '/categories': typeof CategoriesRoute
   '/coupons': typeof CouponsRoute
   '/customers': typeof CustomersRoute
+  '/delivery-challans': typeof DeliveryChallansRoute
   '/expenses': typeof ExpensesRoute
   '/gift-cards': typeof GiftCardsRoute
   '/help': typeof HelpRoute
@@ -293,15 +359,21 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/loyalty': typeof LoyaltyRoute
   '/notifications': typeof NotificationsRoute
+  '/portal': typeof PortalRoute
   '/pos': typeof PosRoute
   '/products': typeof ProductsRoute
   '/profile': typeof ProfileRoute
   '/promotions': typeof PromotionsRoute
   '/purchases': typeof PurchasesRouteWithChildren
+  '/quotations': typeof QuotationsRoute
   '/register': typeof RegisterRoute
+  '/rentals': typeof RentalsRoute
+  '/repairs': typeof RepairsRoute
   '/reports': typeof ReportsRoute
   '/sales': typeof SalesRouteWithChildren
   '/settings': typeof SettingsRoute
+  '/subscriptions': typeof SubscriptionsRoute
+  '/super-admin': typeof SuperAdminRoute
   '/suppliers': typeof SuppliersRoute
   '/units': typeof UnitsRoute
   '/users': typeof UsersRoute
@@ -318,11 +390,13 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/accounts'
     | '/activity'
     | '/brands'
     | '/categories'
     | '/coupons'
     | '/customers'
+    | '/delivery-challans'
     | '/expenses'
     | '/gift-cards'
     | '/help'
@@ -330,15 +404,21 @@ export interface FileRouteTypes {
     | '/login'
     | '/loyalty'
     | '/notifications'
+    | '/portal'
     | '/pos'
     | '/products'
     | '/profile'
     | '/promotions'
     | '/purchases'
+    | '/quotations'
     | '/register'
+    | '/rentals'
+    | '/repairs'
     | '/reports'
     | '/sales'
     | '/settings'
+    | '/subscriptions'
+    | '/super-admin'
     | '/suppliers'
     | '/units'
     | '/users'
@@ -353,26 +433,34 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/accounts'
     | '/activity'
     | '/brands'
     | '/categories'
     | '/coupons'
     | '/customers'
+    | '/delivery-challans'
     | '/expenses'
     | '/gift-cards'
     | '/help'
     | '/login'
     | '/loyalty'
     | '/notifications'
+    | '/portal'
     | '/pos'
     | '/products'
     | '/profile'
     | '/promotions'
     | '/purchases'
+    | '/quotations'
     | '/register'
+    | '/rentals'
+    | '/repairs'
     | '/reports'
     | '/sales'
     | '/settings'
+    | '/subscriptions'
+    | '/super-admin'
     | '/suppliers'
     | '/units'
     | '/users'
@@ -387,11 +475,13 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/accounts'
     | '/activity'
     | '/brands'
     | '/categories'
     | '/coupons'
     | '/customers'
+    | '/delivery-challans'
     | '/expenses'
     | '/gift-cards'
     | '/help'
@@ -399,15 +489,21 @@ export interface FileRouteTypes {
     | '/login'
     | '/loyalty'
     | '/notifications'
+    | '/portal'
     | '/pos'
     | '/products'
     | '/profile'
     | '/promotions'
     | '/purchases'
+    | '/quotations'
     | '/register'
+    | '/rentals'
+    | '/repairs'
     | '/reports'
     | '/sales'
     | '/settings'
+    | '/subscriptions'
+    | '/super-admin'
     | '/suppliers'
     | '/units'
     | '/users'
@@ -423,11 +519,13 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AccountsRoute: typeof AccountsRoute
   ActivityRoute: typeof ActivityRoute
   BrandsRoute: typeof BrandsRoute
   CategoriesRoute: typeof CategoriesRoute
   CouponsRoute: typeof CouponsRoute
   CustomersRoute: typeof CustomersRoute
+  DeliveryChallansRoute: typeof DeliveryChallansRoute
   ExpensesRoute: typeof ExpensesRoute
   GiftCardsRoute: typeof GiftCardsRoute
   HelpRoute: typeof HelpRoute
@@ -435,15 +533,21 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   LoyaltyRoute: typeof LoyaltyRoute
   NotificationsRoute: typeof NotificationsRoute
+  PortalRoute: typeof PortalRoute
   PosRoute: typeof PosRoute
   ProductsRoute: typeof ProductsRoute
   ProfileRoute: typeof ProfileRoute
   PromotionsRoute: typeof PromotionsRoute
   PurchasesRoute: typeof PurchasesRouteWithChildren
+  QuotationsRoute: typeof QuotationsRoute
   RegisterRoute: typeof RegisterRoute
+  RentalsRoute: typeof RentalsRoute
+  RepairsRoute: typeof RepairsRoute
   ReportsRoute: typeof ReportsRoute
   SalesRoute: typeof SalesRouteWithChildren
   SettingsRoute: typeof SettingsRoute
+  SubscriptionsRoute: typeof SubscriptionsRoute
+  SuperAdminRoute: typeof SuperAdminRoute
   SuppliersRoute: typeof SuppliersRoute
   UnitsRoute: typeof UnitsRoute
   UsersRoute: typeof UsersRoute
@@ -473,6 +577,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SuppliersRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/super-admin': {
+      id: '/super-admin'
+      path: '/super-admin'
+      fullPath: '/super-admin'
+      preLoaderRoute: typeof SuperAdminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/subscriptions': {
+      id: '/subscriptions'
+      path: '/subscriptions'
+      fullPath: '/subscriptions'
+      preLoaderRoute: typeof SubscriptionsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/settings': {
       id: '/settings'
       path: '/settings'
@@ -494,11 +612,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ReportsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/repairs': {
+      id: '/repairs'
+      path: '/repairs'
+      fullPath: '/repairs'
+      preLoaderRoute: typeof RepairsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/rentals': {
+      id: '/rentals'
+      path: '/rentals'
+      fullPath: '/rentals'
+      preLoaderRoute: typeof RentalsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/register': {
       id: '/register'
       path: '/register'
       fullPath: '/register'
       preLoaderRoute: typeof RegisterRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/quotations': {
+      id: '/quotations'
+      path: '/quotations'
+      fullPath: '/quotations'
+      preLoaderRoute: typeof QuotationsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/purchases': {
@@ -534,6 +673,13 @@ declare module '@tanstack/react-router' {
       path: '/pos'
       fullPath: '/pos'
       preLoaderRoute: typeof PosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/portal': {
+      id: '/portal'
+      path: '/portal'
+      fullPath: '/portal'
+      preLoaderRoute: typeof PortalRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/notifications': {
@@ -585,6 +731,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ExpensesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/delivery-challans': {
+      id: '/delivery-challans'
+      path: '/delivery-challans'
+      fullPath: '/delivery-challans'
+      preLoaderRoute: typeof DeliveryChallansRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/customers': {
       id: '/customers'
       path: '/customers'
@@ -618,6 +771,13 @@ declare module '@tanstack/react-router' {
       path: '/activity'
       fullPath: '/activity'
       preLoaderRoute: typeof ActivityRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/accounts': {
+      id: '/accounts'
+      path: '/accounts'
+      fullPath: '/accounts'
+      preLoaderRoute: typeof AccountsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -730,11 +890,13 @@ const SalesRouteWithChildren = SalesRoute._addFileChildren(SalesRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AccountsRoute: AccountsRoute,
   ActivityRoute: ActivityRoute,
   BrandsRoute: BrandsRoute,
   CategoriesRoute: CategoriesRoute,
   CouponsRoute: CouponsRoute,
   CustomersRoute: CustomersRoute,
+  DeliveryChallansRoute: DeliveryChallansRoute,
   ExpensesRoute: ExpensesRoute,
   GiftCardsRoute: GiftCardsRoute,
   HelpRoute: HelpRoute,
@@ -742,15 +904,21 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   LoyaltyRoute: LoyaltyRoute,
   NotificationsRoute: NotificationsRoute,
+  PortalRoute: PortalRoute,
   PosRoute: PosRoute,
   ProductsRoute: ProductsRoute,
   ProfileRoute: ProfileRoute,
   PromotionsRoute: PromotionsRoute,
   PurchasesRoute: PurchasesRouteWithChildren,
+  QuotationsRoute: QuotationsRoute,
   RegisterRoute: RegisterRoute,
+  RentalsRoute: RentalsRoute,
+  RepairsRoute: RepairsRoute,
   ReportsRoute: ReportsRoute,
   SalesRoute: SalesRouteWithChildren,
   SettingsRoute: SettingsRoute,
+  SubscriptionsRoute: SubscriptionsRoute,
+  SuperAdminRoute: SuperAdminRoute,
   SuppliersRoute: SuppliersRoute,
   UnitsRoute: UnitsRoute,
   UsersRoute: UsersRoute,

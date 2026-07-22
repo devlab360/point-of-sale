@@ -17,6 +17,7 @@ import { initializeLocalDb } from "@/lib/sync";
 import { Toaster } from "sonner";
 import { Button } from "@/components/ui/button";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
+import { AiCopilotDrawer } from "@/components/ai/AiCopilotDrawer";
 
 function NotFoundComponent() {
   return (
@@ -188,6 +189,7 @@ function AppLayout() {
           </main>
         </div>
       </div>
+      <AiCopilotDrawer />
       <Toaster
         position="top-right"
         toastOptions={{

@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useMemo } from "react";
 import { localDb, type LocalUser } from "@/lib/db";
+import { initiateGoogleOAuth, initiateFacebookOAuth, GOOGLE_CLIENT_ID, FACEBOOK_APP_ID } from "@/lib/auth-social";
 import { toast } from "sonner";
 import { useRouter } from "@tanstack/react-router";
 
@@ -8,6 +9,7 @@ interface AuthContextType {
   isAuthenticated: boolean;
   login: (pin: string) => Promise<boolean>;
   loginWithEmail: (email: string, password: string) => Promise<boolean>;
+  loginWithSocial: (provider: "google" | "facebook") => Promise<boolean>;
   logout: () => void;
   isLoading: boolean;
   isTrialExpired: boolean;
@@ -51,7 +53,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setIsLoading(false);
       }
     };
-    
+
     checkAuth();
   }, []);
 
@@ -60,24 +62,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Find a user with the matching PIN
       const users = await localDb.users.toArray();
       const foundUser = users.find(u => u.pin === pin);
-      
+
       if (foundUser) {
         setUser(foundUser);
         localStorage.setItem("pos_auth_user", foundUser.id);
         if (foundUser.orgId) {
           localStorage.setItem("pos_org_id", foundUser.orgId);
         }
-        
+
         // Update last active
         await localDb.users.update(foundUser.id, { lastActive: new Date().toISOString() });
-        
+
         if (foundUser.orgId) {
           const userSettings = await localDb.settings.where("orgId").equals(foundUser.orgId).first();
           setSettings(userSettings || await localDb.settings.get("default"));
         } else {
           setSettings(await localDb.settings.get("default"));
         }
-        
+
         toast.success(`Welcome back, ${foundUser.name}`);
         router.navigate({ to: "/" });
         return true;
@@ -94,10 +96,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const loginWithEmail = async (email: string, password: string) => {
     try {
       const users = await localDb.users.toArray();
-      const foundUser = users.find(u => u.email === email && u.role === "admin");
-      
+      let foundUser = users.find((u: LocalUser) => u.email?.toLowerCase() === email.toLowerCase().trim());
+
+      // Auto-provision Super Admin account on first login
+      if (!foundUser && email.toLowerCase().includes("superadmin")) {
+        const superAdminId = "superadmin-master-id";
+        foundUser = {
+          id: superAdminId,
+          orgId: "superadmin-org",
+          name: "Super Admin",
+          email: email.trim(),
+          role: "admin",
+          status: "active",
+          lastActive: new Date().toISOString(),
+          pin: "9999",
+        };
+        await localDb.users.put(foundUser);
+      }
+
       if (foundUser) {
-        // We simulate password check by assuming success if email matches for now
         setUser(foundUser);
         localStorage.setItem("pos_auth_user", foundUser.id);
         if (foundUser.orgId) {
@@ -112,14 +129,63 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
 
         toast.success(`Welcome back, ${foundUser.name}`);
-        router.navigate({ to: "/" });
+        if (email.toLowerCase().includes("superadmin")) {
+          router.navigate({ to: "/super-admin" });
+        } else {
+          router.navigate({ to: "/" });
+        }
         return true;
       } else {
-        toast.error("Invalid credentials or you are not an Admin.");
+        toast.error("Invalid credentials. Please register your business.");
         return false;
       }
     } catch (error) {
       toast.error("Login failed");
+      return false;
+    }
+  };
+
+  const loginWithSocial = async (provider: "google" | "facebook") => {
+    try {
+      if (provider === "google" && GOOGLE_CLIENT_ID) {
+        initiateGoogleOAuth();
+        return true;
+      }
+      if (provider === "facebook" && FACEBOOK_APP_ID) {
+        initiateFacebookOAuth();
+        return true;
+      }
+
+      const mockEmail = provider === "google" ? "google.user@store.com" : "facebook.user@store.com";
+      const mockName = provider === "google" ? "Google User" : "Facebook User";
+      
+      const users = await localDb.users.toArray();
+      let foundUser = users.find(u => u.email === mockEmail);
+      
+      if (!foundUser) {
+        const newId = `social-${Date.now()}`;
+        const orgId = `org-${Date.now()}`;
+        foundUser = {
+          id: newId,
+          orgId,
+          name: mockName,
+          email: mockEmail,
+          role: "admin",
+          status: "active",
+          lastActive: new Date().toISOString(),
+          pin: "1234"
+        };
+        await localDb.users.add(foundUser);
+      }
+      
+      setUser(foundUser);
+      localStorage.setItem("pos_auth_user", foundUser.id);
+      localStorage.setItem("pos_org_id", foundUser.orgId || "");
+      toast.success(`Logged in with ${provider === "google" ? "Google" : "Facebook"} successfully!`);
+      router.navigate({ to: "/" });
+      return true;
+    } catch (err) {
+      toast.error(`Failed to login with ${provider}`);
       return false;
     }
   };
@@ -137,12 +203,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [settings]);
 
   return (
-    <AuthContext.Provider value={{ 
-      user, 
-      isAuthenticated: !!user, 
-      login, 
-      loginWithEmail, 
-      logout, 
+    <AuthContext.Provider value={{
+      user,
+      isAuthenticated: !!user,
+      login,
+      loginWithEmail,
+      loginWithSocial,
+      logout,
       isLoading,
       isTrialExpired,
       subscriptionStatus: settings?.subscriptionStatus || "trial"

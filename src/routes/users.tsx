@@ -70,7 +70,7 @@ function UsersPage() {
   const [editPermissions, setEditPermissions] = useState<string[]>([]);
   const [editRole, setEditRole] = useState<string>("cashier");
   const [deleteId, setDeleteId] = useState<string | null>(null);
-  
+
   const { user } = useAuth();
   const router = useRouter();
 
@@ -117,13 +117,13 @@ function UsersPage() {
   };
 
   const toggleInvitePermission = (permId: string) => {
-    setInvitePermissions(prev => 
+    setInvitePermissions(prev =>
       prev.includes(permId) ? prev.filter(p => p !== permId) : [...prev, permId]
     );
   };
 
   const toggleEditPermission = (permId: string) => {
-    setEditPermissions(prev => 
+    setEditPermissions(prev =>
       prev.includes(permId) ? prev.filter(p => p !== permId) : [...prev, permId]
     );
   };
@@ -182,11 +182,16 @@ function UsersPage() {
       const name = formData.get("name") as string;
       const status = formData.get("status") as string;
 
-      await localDb.users.update(editItem.id, { 
-        name, 
-        role: editRole, 
+      const commissionRate = parseFloat(formData.get("commissionRate") as string) || 0;
+      const monthlyTarget = parseFloat(formData.get("monthlyTarget") as string) || 0;
+
+      await localDb.users.update(editItem.id, {
+        name,
+        role: editRole,
         status,
-        permissions: editPermissions
+        permissions: editPermissions,
+        commissionRate,
+        monthlyTarget,
       });
       toast.success("Employee updated successfully");
       setEditItem(null);
@@ -209,9 +214,9 @@ function UsersPage() {
 
   return (
     <div className="p-4 md:p-6 lg:p-8">
-      <DataPage 
-        title="Employees" 
-        description="Manage your team and approve new members." 
+      <DataPage
+        title="Employees"
+        description="Manage your team and approve new members."
         primaryAction={{ label: "Invite Employee", onClick: () => { setIsInviteOpen(true); setGeneratedLink(""); } }}
         searchPlaceholder="Search employees..."
         searchValue={search}
@@ -263,16 +268,16 @@ function UsersPage() {
                             ))
                           )}
                           {(e.permissions || DEFAULT_ROLE_PERMISSIONS[e.role] || []).length > 3 && (e.permissions || DEFAULT_ROLE_PERMISSIONS[e.role] || []).length !== AVAILABLE_PERMISSIONS.length && (
-                            <span className="text-[10px] text-muted-foreground self-center">+{ (e.permissions || DEFAULT_ROLE_PERMISSIONS[e.role] || []).length - 3 } more</span>
+                            <span className="text-[10px] text-muted-foreground self-center">+{(e.permissions || DEFAULT_ROLE_PERMISSIONS[e.role] || []).length - 3} more</span>
                           )}
                         </div>
                       </td>
                       <td className="px-4 py-3 text-muted-foreground">{e.lastActive ? new Date(e.lastActive).toLocaleString() : "Never"}</td>
                       <td className="px-4 py-3">
                         <Badge className={
-                          e.status === "active" ? "bg-success/10 text-success hover:bg-success/15" : 
-                          e.status === "pending" ? "bg-warning/15 text-warning-foreground hover:bg-warning/20" :
-                          "bg-destructive/15 text-destructive hover:bg-destructive/20"
+                          e.status === "active" ? "bg-success/10 text-success hover:bg-success/15" :
+                            e.status === "pending" ? "bg-warning/15 text-warning-foreground hover:bg-warning/20" :
+                              "bg-destructive/15 text-destructive hover:bg-destructive/20"
                         }>
                           {e.status}
                         </Badge>
@@ -317,7 +322,7 @@ function UsersPage() {
           <DialogHeader>
             <DialogTitle>Invite Employee</DialogTitle>
           </DialogHeader>
-          
+
           {!generatedLink ? (
             <form onSubmit={handleGenerateInvite} className="space-y-4">
               <div className="space-y-2">
@@ -338,18 +343,17 @@ function UsersPage() {
                   {AVAILABLE_PERMISSIONS.map(p => {
                     const checked = invitePermissions.includes(p.id);
                     return (
-                      <div 
-                        key={p.id} 
+                      <div
+                        key={p.id}
                         onClick={() => toggleInvitePermission(p.id)}
-                        className={`flex items-start gap-2.5 p-2 rounded-md border cursor-pointer transition-all ${
-                          checked ? "bg-primary/5 border-primary/40 text-foreground" : "bg-card border-border/60 text-muted-foreground hover:border-border"
-                        }`}
+                        className={`flex items-start gap-2.5 p-2 rounded-md border cursor-pointer transition-all ${checked ? "bg-primary/5 border-primary/40 text-foreground" : "bg-card border-border/60 text-muted-foreground hover:border-border"
+                          }`}
                       >
-                        <input 
-                          type="checkbox" 
-                          checked={checked} 
-                          onChange={() => {}} 
-                          className="mt-0.5 size-4 rounded border-input text-primary accent-primary" 
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          onChange={() => { }}
+                          className="mt-0.5 size-4 rounded border-input text-primary accent-primary"
                         />
                         <div>
                           <div className="text-xs font-semibold">{p.label}</div>
@@ -425,24 +429,35 @@ function UsersPage() {
               </div>
             </div>
 
+            {/* Salesman Commission & Target Settings */}
+            <div className="grid grid-cols-2 gap-4 border-t pt-3">
+              <div className="space-y-2">
+                <Label htmlFor="commissionRate">Sales Commission (%)</Label>
+                <Input id="commissionRate" name="commissionRate" type="number" step="0.1" defaultValue={editItem?.commissionRate || 2.5} placeholder="e.g. 2.5" />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="monthlyTarget">Monthly Sales Target</Label>
+                <Input id="monthlyTarget" name="monthlyTarget" type="number" defaultValue={editItem?.monthlyTarget || 10000} placeholder="e.g. 10000" />
+              </div>
+            </div>
+
             <div className="space-y-2">
               <Label className="flex items-center gap-1.5"><KeyRound className="size-3.5 text-primary" /> Permissions</Label>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 border border-border rounded-lg p-3 bg-muted/20 max-h-[220px] overflow-y-auto">
                 {AVAILABLE_PERMISSIONS.map(p => {
                   const checked = editPermissions.includes(p.id);
                   return (
-                    <div 
-                      key={p.id} 
+                    <div
+                      key={p.id}
                       onClick={() => toggleEditPermission(p.id)}
-                      className={`flex items-start gap-2.5 p-2 rounded-md border cursor-pointer transition-all ${
-                        checked ? "bg-primary/5 border-primary/40 text-foreground" : "bg-card border-border/60 text-muted-foreground hover:border-border"
-                      }`}
+                      className={`flex items-start gap-2.5 p-2 rounded-md border cursor-pointer transition-all ${checked ? "bg-primary/5 border-primary/40 text-foreground" : "bg-card border-border/60 text-muted-foreground hover:border-border"
+                        }`}
                     >
-                      <input 
-                        type="checkbox" 
-                        checked={checked} 
-                        onChange={() => {}} 
-                        className="mt-0.5 size-4 rounded border-input text-primary accent-primary" 
+                      <input
+                        type="checkbox"
+                        checked={checked}
+                        onChange={() => { }}
+                        className="mt-0.5 size-4 rounded border-input text-primary accent-primary"
                       />
                       <div>
                         <div className="text-xs font-semibold">{p.label}</div>

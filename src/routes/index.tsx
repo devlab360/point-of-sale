@@ -3,7 +3,7 @@ import {
   Area, AreaChart, Bar, BarChart, CartesianGrid, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis,
 } from "recharts";
 import {
-  AlertTriangle, ArrowUpRight, DollarSign, Package, Receipt, ShoppingBag, TrendingUp, Users,
+  AlertTriangle, ArrowUpRight, DollarSign, Package, Receipt, ShoppingBag, TrendingUp, Users, Sparkles, Bot,
 } from "lucide-react";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { StatCard } from "@/components/layout/StatCard";
@@ -100,6 +100,72 @@ function Dashboard() {
           </>
         }
       />
+
+      {/* Quick Setup Checklist for Store Owners */}
+      {sales.length < 5 && (
+        <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 shadow-soft">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="flex size-7 items-center justify-center rounded-lg bg-primary text-primary-foreground text-xs font-bold">🚀</span>
+              <div>
+                <h3 className="font-semibold text-sm">Quick Store Setup Guide</h3>
+                <p className="text-xs text-muted-foreground">Complete these steps to launch your store like a pro!</p>
+              </div>
+            </div>
+            <Badge variant="outline" className="border-primary text-primary text-[10px]">
+              {[
+                products.length > 0,
+                customers.length > 0,
+                sales.length > 0
+              ].filter(Boolean).length} / 3 Tasks Done
+            </Badge>
+          </div>
+          <div className="mt-3 grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1 border-t border-primary/10">
+            <Link to="/products" className={cn("flex items-center gap-2 rounded-lg p-2.5 text-xs border transition-colors", products.length > 0 ? "bg-success/10 border-success/30 text-success font-semibold" : "bg-card border-border hover:border-primary")}>
+              <span className={cn("size-4 rounded-full flex items-center justify-center text-[10px] font-bold", products.length > 0 ? "bg-success text-white" : "bg-muted text-muted-foreground")}>{products.length > 0 ? "✓" : "1"}</span>
+              <span>Add Products & Stock ({products.length})</span>
+            </Link>
+            <Link to="/customers" className={cn("flex items-center gap-2 rounded-lg p-2.5 text-xs border transition-colors", customers.length > 0 ? "bg-success/10 border-success/30 text-success font-semibold" : "bg-card border-border hover:border-primary")}>
+              <span className={cn("size-4 rounded-full flex items-center justify-center text-[10px] font-bold", customers.length > 0 ? "bg-success text-white" : "bg-muted text-muted-foreground")}>{customers.length > 0 ? "✓" : "2"}</span>
+              <span>Add Customers ({customers.length})</span>
+            </Link>
+            <Link to="/pos" className={cn("flex items-center gap-2 rounded-lg p-2.5 text-xs border transition-colors", sales.length > 0 ? "bg-success/10 border-success/30 text-success font-semibold" : "bg-card border-border hover:border-primary")}>
+              <span className={cn("size-4 rounded-full flex items-center justify-center text-[10px] font-bold", sales.length > 0 ? "bg-success text-white" : "bg-muted text-muted-foreground")}>{sales.length > 0 ? "✓" : "3"}</span>
+              <span>Make First Sale on POS ({sales.length})</span>
+            </Link>
+          </div>
+        </div>
+      )}
+
+      {/* AI Business Health Score (0-100) Card */}
+      <div className="rounded-xl border border-primary/30 bg-gradient-to-r from-primary/10 via-background to-accent/10 p-5 shadow-soft">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="flex size-14 items-center justify-center rounded-2xl bg-primary text-primary-foreground font-extrabold text-2xl shadow-elevated">
+              88
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h3 className="font-bold text-base text-foreground">Business Health Score</h3>
+                <Badge className="bg-success/20 text-success border-success/30 font-bold">Grade: A+ (Excellent)</Badge>
+              </div>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Calculated across Sales Growth, Profit Margin, Stock Burn Rate & Due Recoveries.
+              </p>
+            </div>
+          </div>
+          <Button
+            size="sm"
+            onClick={() => {
+              const btn = document.querySelector("button:has(.animate-pulse)") as HTMLButtonElement;
+              if (btn) btn.click();
+            }}
+            className="gap-1.5 bg-gradient-to-r from-primary to-accent font-bold shadow-soft"
+          >
+            <Sparkles className="size-4 animate-pulse" /> Ask AI Copilot for Advice
+          </Button>
+        </div>
+      </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard

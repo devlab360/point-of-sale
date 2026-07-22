@@ -8,7 +8,7 @@ import { useLiveQuery } from "dexie-react-hooks";
 import { useCurrency } from "@/lib/currency";
 import { useState } from "react";
 import {
-  BarChart3, DollarSign, FileText, Package, Percent, TrendingUp, ShoppingCart, Calendar,
+  BarChart3, DollarSign, FileText, Package, Percent, TrendingUp, ShoppingCart, Calendar, BookOpen, Users,
 } from "lucide-react";
 import {
   Bar, BarChart, CartesianGrid, Line, LineChart, Cell, Pie, PieChart,
@@ -24,7 +24,7 @@ export const Route = createFileRoute("/reports")({
   component: ReportsPage,
 });
 
-type ReportType = "sales" | "profit" | "purchase" | "inventory" | "tax" | "expense" | "daily" | "monthly" | null;
+type ReportType = "sales" | "profit" | "purchase" | "inventory" | "tax" | "expense" | "daily" | "monthly" | "pnl" | "salesman" | null;
 
 function ReportsPage() {
   const { currencySymbol, formatCurrency } = useCurrency();
@@ -121,6 +121,8 @@ function ReportsPage() {
   const reportCards = [
     { type: "sales" as ReportType, icon: DollarSign, name: "Sales Report", desc: "Daily, weekly and monthly sales trends" },
     { type: "profit" as ReportType, icon: TrendingUp, name: "Profit Report", desc: "Gross and net margin by category" },
+    { type: "pnl" as ReportType, icon: BookOpen, name: "Profit & Loss Statement (P&L)", desc: "Formal income statement, COGS, and Net Income" },
+    { type: "salesman" as ReportType, icon: Users, name: "Salesman Commission Leaderboard", desc: "Sales target vs achievement and earned commissions" },
     { type: "purchase" as ReportType, icon: ShoppingCart, name: "Purchase Report", desc: "Supplier purchases and outstanding payables" },
     { type: "inventory" as ReportType, icon: Package, name: "Inventory Report", desc: "Stock valuation, dead stock, shrinkage" },
     { type: "tax" as ReportType, icon: Percent, name: "Tax Report", desc: "Output, input and net tax payable" },
@@ -232,14 +234,18 @@ function ReportsPage() {
         })}
       </div>
 
-      {/* Report Detail Dialog */}
-      <Dialog open={!!activeReport} onOpenChange={open => !open && setActiveReport(null)}>
-        <DialogContent className="sm:max-w-2xl">
+      {/* Report Modal */}
+      <Dialog open={!!activeReport} onOpenChange={(open) => !open && setActiveReport(null)}>
+        <DialogContent className="sm:max-w-2xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>{reportCards.find(r => r.type === activeReport)?.name}</DialogTitle>
+            <DialogTitle className="capitalize flex items-center justify-between pr-6">
+              <span>{activeReport === "pnl" ? "Profit & Loss Statement (লাভ-ক্ষতি বিবরণী)" : `${activeReport} Report`}</span>
+              <Button size="sm" variant="outline" onClick={() => window.print()}>Print Report</Button>
+            </DialogTitle>
           </DialogHeader>
-          <div className="space-y-4">
-            {/* Date Range */}
+
+          <div className="space-y-4 pt-2">
+            {/* Date Filter Bar */}
             <div className="flex gap-3 items-end">
               <div className="flex-1">
                 <Label className="text-xs">From</Label>
@@ -287,6 +293,64 @@ function ReportsPage() {
                           <td className="px-3 py-2 text-right font-semibold">{formatCurrency(s.total)}</td>
                         </tr>
                       ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+            {activeReport === "salesman" && (
+              <div className="space-y-3">
+                <div className="overflow-hidden rounded-lg border border-border">
+                  <table className="w-full text-sm">
+                    <thead className="bg-muted/50 text-[11px] uppercase tracking-wider text-muted-foreground">
+                      <tr>
+                        <th className="px-3 py-2 text-left">Sales Representative</th>
+                        <th className="px-3 py-2 text-center">Comm. Rate</th>
+                        <th className="px-3 py-2 text-right">Target</th>
+                        <th className="px-3 py-2 text-right">Achieved Sales</th>
+                        <th className="px-3 py-2 text-right">Earned Commission</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-border">
+                      {sales.reduce((reps, sale) => {
+                        if (sale.salesmanName) {
+                          const existing = reps.find((r) => r.name === sale.salesmanName);
+                          if (existing) {
+                            existing.sales += sale.total;
+                            existing.commission += sale.commissionAmt || 0;
+                          } else {
+                            reps.push({ name: sale.salesmanName, sales: sale.total, commission: sale.commissionAmt || 0 });
+                          }
+                        }
+                        return reps;
+                      }, [] as { name: string; sales: number; commission: number }[]).length === 0 ? (
+                        <tr>
+                          <td colSpan={5} className="py-6 text-center text-xs text-muted-foreground">
+                            No salesman sales recorded yet. Select a Sales Rep at POS checkout to track commissions.
+                          </td>
+                        </tr>
+                      ) : (
+                        sales.reduce((reps, sale) => {
+                          if (sale.salesmanName) {
+                            const existing = reps.find((r) => r.name === sale.salesmanName);
+                            if (existing) {
+                              existing.sales += sale.total;
+                              existing.commission += sale.commissionAmt || 0;
+                            } else {
+                              reps.push({ name: sale.salesmanName, sales: sale.total, commission: sale.commissionAmt || 0 });
+                            }
+                          }
+                          return reps;
+                        }, [] as { name: string; sales: number; commission: number }[]).map((r, i) => (
+                          <tr key={i} className="hover:bg-muted/30">
+                            <td className="px-3 py-2 font-semibold text-primary">{r.name}</td>
+                            <td className="px-3 py-2 text-center text-xs font-mono">2.5%</td>
+                            <td className="px-3 py-2 text-right text-xs font-mono">{formatCurrency(10000)}</td>
+                            <td className="px-3 py-2 text-right font-bold">{formatCurrency(r.sales)}</td>
+                            <td className="px-3 py-2 text-right font-bold text-success">{formatCurrency(r.commission)}</td>
+                          </tr>
+                        ))
+                      )}
                     </tbody>
                   </table>
                 </div>

@@ -55,7 +55,7 @@ function RegisterPage() {
       // Store setting tied to Org
       const seedData = INDUSTRY_SEEDS[formData.industry];
       
-      await localDb.settings.add({
+      await localDb.settings.put({
         id: "default",
         orgId,
         trialEndsAt,
@@ -107,24 +107,59 @@ function RegisterPage() {
       toast.success("Registration successful! Welcome to your new store.");
       navigate({ to: "/" });
     } catch (err) {
+      console.error("Registration submit error:", err);
       toast.error("Registration failed. Please try again.");
     }
   };
 
   return (
     <div className="flex min-h-screen bg-muted/20">
-      <div className="hidden w-1/2 flex-col justify-between bg-primary p-12 text-primary-foreground lg:flex">
-        <div>
-          <div className="flex items-center gap-2 font-bold text-2xl tracking-tight">
-            <Store className="size-8" />
-            <span>Grocer.Pro SaaS</span>
+      {/* Left Panel: Hero Image & Branding */}
+      <div className="relative hidden w-1/2 flex-col justify-between p-12 text-white lg:flex overflow-hidden">
+        {/* Background Hero Image with Dark Gradient Overlay */}
+        <div 
+          className="absolute inset-0 bg-cover bg-center transition-transform duration-1000 scale-105"
+          style={{ backgroundImage: `url('https://images.unsplash.com/photo-1556742049-0a6754099a6d?auto=format&fit=crop&q=80&w=1600')` }}
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/60 to-black/40 backdrop-blur-[2px]" />
+
+        <div className="relative z-10">
+          <div className="flex items-center gap-3 font-bold text-2xl tracking-tight">
+            <div className="grid size-10 place-items-center rounded-xl bg-primary text-white shadow-lg">
+              <Store className="size-6" />
+            </div>
+            <span className="text-white drop-shadow-md">Grocer.Pro SaaS</span>
           </div>
-          <p className="mt-6 text-xl leading-relaxed text-primary-foreground/80 max-w-md">
-            Join thousands of businesses managing their sales, inventory, and employees with our powerful point-of-sale platform.
-          </p>
+          
+          <div className="mt-12 space-y-4 max-w-md">
+            <span className="rounded-full bg-primary/20 border border-primary/40 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-primary-foreground backdrop-blur-md">
+              ⚡ World-Class POS + ERP Platform
+            </span>
+            <h2 className="text-3xl font-extrabold tracking-tight leading-tight text-white drop-shadow">
+              Transform your retail & wholesale business with AI Intelligence.
+            </h2>
+            <p className="text-sm leading-relaxed text-white/80">
+              Join 10,000+ modern retailers managing POS sales, inventory, double-entry accounting, repair job sheets & WhatsApp CRM in one unified platform.
+            </p>
+          </div>
         </div>
-        <div className="space-y-4 text-sm text-primary-foreground/60">
-          <p>© 2026 Grocer.Pro Inc. All rights reserved.</p>
+
+        {/* Glassmorphism Feature Card */}
+        <div className="relative z-10 rounded-2xl border border-white/20 bg-white/10 p-6 backdrop-blur-md shadow-2xl space-y-3 max-w-md">
+          <div className="flex items-center gap-1 text-warning">
+            {"★".repeat(5)}
+          </div>
+          <p className="text-xs italic text-white/90">
+            "Grocer.Pro doubled our checkout speed and simplified customer khata balance reminders over WhatsApp. Essential for modern retail!"
+          </p>
+          <div className="flex items-center justify-between text-xs pt-2 border-t border-white/10">
+            <span className="font-bold text-white">Supermarket Chain Owner</span>
+            <span className="text-white/70">Verified Customer</span>
+          </div>
+        </div>
+
+        <div className="relative z-10 text-xs text-white/60">
+          © 2026 Grocer.Pro Inc. All rights reserved.
         </div>
       </div>
 
@@ -136,20 +171,20 @@ function RegisterPage() {
           </div>
 
           {/* Stepper */}
-          <div className="mb-8 flex items-center justify-between">
-            {[1, 2, 3].map((i) => (
+          <div className="mb-8 flex items-center justify-between px-12">
+            {[1, 2].map((i) => (
               <div key={i} className="flex flex-col items-center gap-2">
-                <div className={`flex size-8 items-center justify-center rounded-full border-2 text-xs font-semibold ${step >= i ? 'border-primary bg-primary text-primary-foreground' : 'border-muted-foreground/30 text-muted-foreground'}`}>
+                <div className={`flex size-9 items-center justify-center rounded-full border-2 text-xs font-semibold ${step >= i ? 'border-primary bg-primary text-primary-foreground' : 'border-muted-foreground/30 text-muted-foreground'}`}>
                   {step > i ? <CheckCircle2 className="size-5" /> : i}
                 </div>
-                <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                  {i === 1 ? 'Account' : i === 2 ? 'Business' : 'Plan'}
+                <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                  {i === 1 ? 'Account Setup' : 'Store Details'}
                 </span>
               </div>
             ))}
           </div>
 
-          <form onSubmit={step === 3 ? handleSubmit : (e) => { e.preventDefault(); nextStep(); }} className="space-y-6">
+          <form onSubmit={step === 2 ? handleSubmit : (e) => { e.preventDefault(); nextStep(); }} className="space-y-6">
             {step === 1 && (
               <div className="space-y-4 animate-in fade-in slide-in-from-right-4">
                 <div className="space-y-2">

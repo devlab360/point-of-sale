@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -32,6 +33,8 @@ import { useCurrency } from "@/lib/currency";
 import { Mail, Phone, Star, MoreVertical, Edit2, Trash2, Users } from "lucide-react";
 import { v4 as uuidv4 } from "uuid";
 import { toast } from "sonner";
+import { sendWhatsAppDueReminder } from "@/lib/whatsapp";
+import { cn } from "@/lib/utils";
 import type { LocalCustomer } from "@/lib/db";
 
 export const Route = createFileRoute("/customers")({
@@ -40,13 +43,19 @@ export const Route = createFileRoute("/customers")({
 });
 
 function CustomersPage() {
-  const { formatCurrency } = useCurrency();
+  const { formatCurrency, currencySymbol } = useCurrency();
   const rawCustomers = useLiveQuery(() => localDb.customers.toArray()) || [];
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [editItem, setEditItem] = useState<LocalCustomer | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [settleItem, setSettleItem] = useState<LocalCustomer | null>(null);
   const [settleAmount, setSettleAmount] = useState("");
+  const [ledgerCustomer, setLedgerCustomer] = useState<LocalCustomer | null>(null);
+
+  const customerLedgerEntries = useLiveQuery(() => {
+    if (!ledgerCustomer) return [];
+    return localDb.customerLedgers.where("customerId").equals(ledgerCustomer.id).toArray();
+  }, [ledgerCustomer]) || [];
 
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search, 300);
@@ -88,6 +97,8 @@ function CustomersPage() {
       const email = formData.get("email") as string;
       const phone = formData.get("phone") as string;
       const status = formData.get("status") as string;
+      const type = (formData.get("type") as any) || "retail";
+      const creditLimit = parseFloat(formData.get("creditLimit") as string) || 5000;
 
       if (!name) {
         toast.error("Name is required");
@@ -95,7 +106,7 @@ function CustomersPage() {
       }
 
       if (editItem) {
-        await localDb.customers.update(editItem.id, { name, email, phone, status });
+        await localDb.customers.update(editItem.id, { name, email, phone, status, type, creditLimit });
         toast.success("Customer updated successfully");
         setEditItem(null);
       } else {
@@ -105,6 +116,8 @@ function CustomersPage() {
           email,
           phone,
           status,
+          type,
+          creditLimit,
           visits: 0,
           totalSpent: 0,
           loyaltyPoints: 0,
@@ -141,10 +154,23 @@ function CustomersPage() {
       return;
     }
     try {
+      const newBalance = Math.max(0, settleItem.credit - amount);
       await localDb.customers.update(settleItem.id, {
-        credit: settleItem.credit - amount,
+        credit: newBalance,
         synced: false
       });
+
+      await localDb.customerLedgers.add({
+        id: uuidv4(),
+        customerId: settleItem.id,
+        date: new Date().toISOString(),
+        type: "payment",
+        amount: amount,
+        balanceAfter: newBalance,
+        referenceNo: `PAY-${Date.now().toString().slice(-6)}`,
+        note: "Customer due settlement payment"
+      });
+
       toast.success(`Successfully settled ${formatCurrency(amount)}`);
       setSettleItem(null);
     } catch (error) {
@@ -208,13 +234,20 @@ function CustomersPage() {
                     <td className={`number px-4 py-3 text-right ${c.credit > 0 ? "text-destructive font-bold" : "text-muted-foreground"}`}>{formatCurrency(c.credit)}</td>
                     <td className="number px-4 py-3 text-right font-semibold text-success">{formatCurrency(c.walletBalance || 0)}</td>
                     <td className="px-4 py-3">
-                      {c.status === "vip" ? (
-                        <Badge className="bg-warning/15 text-warning-foreground hover:bg-warning/20"><Star className="mr-1 size-3 fill-current" /> VIP</Badge>
-                      ) : c.status === "new" ? (
-                        <Badge className="bg-info/10 text-info hover:bg-info/15">New</Badge>
-                      ) : (
-                        <Badge variant="secondary">Regular</Badge>
-                      )}
+                      <div className="flex flex-col gap-1 items-start">
+                        {c.type === "wholesale" ? (
+                          <Badge className="bg-primary/15 text-primary border-primary/20">Wholesale</Badge>
+                        ) : c.type === "dealer" ? (
+                          <Badge className="bg-warning/15 text-warning-foreground border-warning/20">Dealer</Badge>
+                        ) : c.type === "corporate" ? (
+                          <Badge className="bg-info/15 text-info border-info/20">Corporate</Badge>
+                        ) : (
+                          <Badge variant="outline" className="text-muted-foreground">Retail</Badge>
+                        )}
+                        {c.status === "vip" ? (
+                          <span className="text-[10px] font-semibold text-warning">★ VIP</span>
+                        ) : null}
+                      </div>
                     </td>
                     <td className="px-4 py-3 text-right">
                       <DropdownMenu>
@@ -225,6 +258,9 @@ function CustomersPage() {
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                           <DropdownMenuItem onClick={() => setEditItem(c)}><Edit2 className="mr-2 size-4" /> Edit</DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => setLedgerCustomer(c)}>
+                            <Users className="mr-2 size-4 text-primary" /> View Khata / Ledger
+                          </DropdownMenuItem>
                           {c.credit > 0 && (
                             <DropdownMenuItem onClick={() => { setSettleItem(c); setSettleAmount(c.credit.toString()); }}>
                               <Star className="mr-2 size-4" /> Settle Balance
@@ -270,16 +306,34 @@ function CustomersPage() {
                 <Input id="phone" name="phone" required defaultValue={editItem?.phone || ""} />
               </div>
             </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="type">Customer Type / Pricing Tier</Label>
+                <Select name="type" defaultValue={editItem?.type || "retail"}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="retail">Retail Customer</SelectItem>
+                    <SelectItem value="wholesale">Wholesale Customer</SelectItem>
+                    <SelectItem value="dealer">Dealer</SelectItem>
+                    <SelectItem value="corporate">Corporate Client</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="status">Tier Status</Label>
+                <Select name="status" defaultValue={editItem?.status || "regular"}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="new">New</SelectItem>
+                    <SelectItem value="regular">Regular</SelectItem>
+                    <SelectItem value="vip">VIP</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
             <div className="space-y-2">
-              <Label htmlFor="status">Tier Status</Label>
-              <Select name="status" defaultValue={editItem?.status || "regular"}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="new">New</SelectItem>
-                  <SelectItem value="regular">Regular</SelectItem>
-                  <SelectItem value="vip">VIP</SelectItem>
-                </SelectContent>
-              </Select>
+              <Label htmlFor="creditLimit">Credit Limit ({useCurrency().currencySymbol})</Label>
+              <Input id="creditLimit" name="creditLimit" type="number" step="100" defaultValue={editItem?.creditLimit || 5000} placeholder="e.g. 5000" />
             </div>
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => { setIsAddOpen(false); setEditItem(null); }}>Cancel</Button>
@@ -331,6 +385,104 @@ function CustomersPage() {
           </form>
         </DialogContent>
       </Dialog>
+      {/* Customer Khata Ledger Statement Side Drawer */}
+      <Sheet open={!!ledgerCustomer} onOpenChange={(open) => !open && setLedgerCustomer(null)}>
+        <SheetContent side="right" className="w-full sm:max-w-2xl overflow-y-auto p-6 bg-background border-l border-border shadow-elevated">
+          <SheetHeader className="flex flex-row items-center justify-between border-b pb-4 pr-8">
+            <div>
+              <SheetTitle className="text-xl font-bold flex items-center gap-2">
+                <span>Khata Statement (লেজার খাতা)</span>
+              </SheetTitle>
+              <p className="text-xs text-muted-foreground mt-0.5">{ledgerCustomer?.name} · {ledgerCustomer?.phone}</p>
+            </div>
+            <div className="flex gap-2">
+              {ledgerCustomer?.phone && ledgerCustomer?.credit > 0 && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="bg-emerald-500/10 text-emerald-600 border-emerald-500/30 hover:bg-emerald-500/20 font-semibold"
+                  onClick={() => sendWhatsAppDueReminder(ledgerCustomer.phone || "", ledgerCustomer.name, ledgerCustomer.credit, currencySymbol)}
+                >
+                  📲 WhatsApp Reminder
+                </Button>
+              )}
+              <Button size="sm" variant="outline" onClick={() => window.print()}>
+                Print Statement
+              </Button>
+              <Button size="sm" onClick={() => { if (ledgerCustomer) { setSettleItem(ledgerCustomer); setSettleAmount(ledgerCustomer.credit.toString()); } }}>
+                + Settle Due
+              </Button>
+            </div>
+          </SheetHeader>
+
+          <div className="space-y-6 pt-4">
+            {/* Ledger KPI Summary */}
+            <div className="grid grid-cols-3 gap-3">
+              <div className="rounded-xl border border-destructive/20 bg-destructive/10 p-3 text-center">
+                <div className="text-[11px] text-muted-foreground font-medium">Total Outstanding Due</div>
+                <div className="text-xl font-bold text-destructive mt-0.5">{formatCurrency(ledgerCustomer?.credit || 0)}</div>
+              </div>
+              <div className="rounded-xl border border-border bg-muted/40 p-3 text-center">
+                <div className="text-[11px] text-muted-foreground font-medium">Credit Limit</div>
+                <div className="text-xl font-bold mt-0.5">{formatCurrency(ledgerCustomer?.creditLimit || 5000)}</div>
+              </div>
+              <div className="rounded-xl border border-success/20 bg-success/10 p-3 text-center">
+                <div className="text-[11px] text-muted-foreground font-medium">Available Credit</div>
+                <div className="text-xl font-bold text-success mt-0.5">
+                  {formatCurrency(Math.max(0, (ledgerCustomer?.creditLimit || 5000) - (ledgerCustomer?.credit || 0)))}
+                </div>
+              </div>
+            </div>
+
+            {/* Ledger Table */}
+            <div className="space-y-3">
+              <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Transaction History Statement</h4>
+              <div className="overflow-hidden rounded-xl border border-border shadow-soft">
+                <table className="w-full text-sm">
+                  <thead className="bg-muted/50 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                    <tr>
+                      <th className="px-3 py-2.5 text-left">Date</th>
+                      <th className="px-3 py-2.5 text-left">Type</th>
+                      <th className="px-3 py-2.5 text-left">Ref #</th>
+                      <th className="px-3 py-2.5 text-right">Debit (+Due)</th>
+                      <th className="px-3 py-2.5 text-right">Credit (-Paid)</th>
+                      <th className="px-3 py-2.5 text-right">Balance</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border">
+                    {customerLedgerEntries.length === 0 ? (
+                      <tr>
+                        <td colSpan={6} className="py-8 text-center text-xs text-muted-foreground">
+                          No transactions recorded in ledger yet.
+                        </td>
+                      </tr>
+                    ) : (
+                      customerLedgerEntries.map((l) => (
+                        <tr key={l.id} className="hover:bg-muted/30">
+                          <td className="px-3 py-2.5 text-xs text-muted-foreground">{new Date(l.date).toLocaleString()}</td>
+                          <td className="px-3 py-2.5 font-medium capitalize">
+                            <span className={cn("inline-block rounded px-1.5 py-0.5 text-[10px] font-bold uppercase", l.type === 'invoice' ? 'bg-destructive/10 text-destructive' : 'bg-success/10 text-success')}>
+                              {l.type}
+                            </span>
+                          </td>
+                          <td className="px-3 py-2.5 font-mono text-xs">{l.referenceNo || "-"}</td>
+                          <td className="px-3 py-2.5 text-right font-semibold text-destructive">
+                            {l.type === 'invoice' ? formatCurrency(l.amount) : "-"}
+                          </td>
+                          <td className="px-3 py-2.5 text-right font-semibold text-success">
+                            {l.type === 'payment' || l.type === 'return' ? formatCurrency(l.amount) : "-"}
+                          </td>
+                          <td className="px-3 py-2.5 text-right font-bold">{formatCurrency(l.balanceAfter)}</td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }

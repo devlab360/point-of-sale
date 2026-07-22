@@ -18,6 +18,7 @@ import {
   Users,
   X,
   MessageCircle,
+  Keyboard,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { localDb } from "@/lib/db";
@@ -87,6 +88,8 @@ function PosScreen() {
 
   // Dialogs
   const [showCustomerSearch, setShowCustomerSearch] = useState(false);
+  const [showAddCustomer, setShowAddCustomer] = useState(false);
+  const [showShortcutsHelp, setShowShortcutsHelp] = useState(false);
   const [customerQuery, setCustomerQuery] = useState("");
   const [showHeld, setShowHeld] = useState(false);
   const [showCoupon, setShowCoupon] = useState(false);
@@ -137,7 +140,10 @@ function PosScreen() {
   const receiptHeader = settings?.headerNote || "Thank you for shopping with us!";
   const receiptFooter = settings?.footerNote || "Please come again.";
 
-  const activeCustomer = customers.find(c => c.id === selectedCustomerId) || { id: "walkin", name: "Walk-in Customer" };
+  const users = useLiveQuery(() => localDb.users.toArray()) || [];
+  const [selectedSalesmanId, setSelectedSalesmanId] = useState("");
+
+  const activeCustomer = customers.find(c => c.id === selectedCustomerId) || { id: "walkin", name: "Walk-in Customer", type: "retail" };
 
   // Barcode scanner
   const barcodeRef = useRef("");
@@ -164,6 +170,8 @@ function PosScreen() {
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [products]);
+
+
 
   const filtered = useMemo(
     () => products.filter(p =>
@@ -198,7 +206,26 @@ function PosScreen() {
   const lines = cart.map(l => {
     const p = products.find(p => p.id === l.id);
     if (!p) return null;
-    return { ...l, product: p, total: p.price * l.qty };
+    
+    let unitPrice = p.price;
+    let priceTierLabel = "";
+    if (activeCustomer.type === "wholesale" && p.wholesalePrice && p.wholesalePrice > 0) {
+      unitPrice = p.wholesalePrice;
+      priceTierLabel = "Wholesale";
+    } else if (activeCustomer.type === "dealer" && p.dealerPrice && p.dealerPrice > 0) {
+      unitPrice = p.dealerPrice;
+      priceTierLabel = "Dealer";
+    }
+
+    const selectedSerial = p.hasSerial && p.serials?.[0] ? p.serials[0] : undefined;
+    
+    // FEFO (First-Expired First-Out) Auto Batch Picker for Pharmacy & FMCG
+    const fefoSortedBatches = p.hasBatch && p.batches
+      ? [...p.batches].sort((a, b) => new Date(a.expiryDate || '2099-12-31').getTime() - new Date(b.expiryDate || '2099-12-31').getTime())
+      : [];
+    const selectedBatch = fefoSortedBatches[0]?.batchNo ? `${fefoSortedBatches[0].batchNo} (${fefoSortedBatches[0].expiryDate})` : undefined;
+
+    return { ...l, product: p, unitPrice, priceTierLabel, selectedSerial, selectedBatch, total: unitPrice * l.qty };
   }).filter((Boolean as any) as <T>(x: T | null) => x is T);
 
   const subtotal = lines.reduce((s, l) => s + l.total, 0);
@@ -208,6 +235,31 @@ function PosScreen() {
   const taxAmt = taxableAmt * taxRate;
   const total = taxableAmt + taxAmt;
   const changeDue = payment === "cash" && cashTendered ? parseFloat(cashTendered) - total : 0;
+
+  // Keyboard Shortcuts Listener (F1, F2, F8, F9, ?)
+  useEffect(() => {
+    const handleKeyboardShortcuts = (e: KeyboardEvent) => {
+      if (e.key === "F1") {
+        e.preventDefault();
+        const searchInput = document.querySelector<HTMLInputElement>('input[placeholder*="Search products"]');
+        searchInput?.focus();
+      } else if (e.key === "F2") {
+        e.preventDefault();
+        setShowAddCustomer(true);
+      } else if (e.key === "F8") {
+        e.preventDefault();
+        holdInvoice();
+      } else if (e.key === "F9") {
+        e.preventDefault();
+        if (lines.length > 0) setConfirmCheckout(true);
+      } else if (e.key === "?" && !["INPUT", "TEXTAREA"].includes((e.target as HTMLElement).tagName)) {
+        e.preventDefault();
+        setShowShortcutsHelp(true);
+      }
+    };
+    window.addEventListener("keydown", handleKeyboardShortcuts);
+    return () => window.removeEventListener("keydown", handleKeyboardShortcuts);
+  }, [lines, total]);
 
   const holdInvoice = async () => {
     if (cart.length === 0) return toast.error("Cart is empty");
@@ -248,6 +300,46 @@ function PosScreen() {
     toast.success(`Coupon "${coupon.code}" applied — ${coupon.type === "percentage" ? coupon.discount + "%" : currencySymbol + coupon.discount} off`);
   };
 
+  const handleQuickAddCustomer = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    const name = (formData.get("name") as string || "").trim();
+    const phone = (formData.get("phone") as string || "").trim();
+    const email = (formData.get("email") as string || "").trim();
+    const status = (formData.get("status") as string) || "new";
+    const type = (formData.get("type") as any) || "retail";
+
+    if (!name) {
+      toast.error("Customer name is required");
+      return;
+    }
+
+    try {
+      const id = uuidv4();
+      await localDb.customers.add({
+        id,
+        name,
+        phone,
+        email,
+        status,
+        type,
+        visits: 0,
+        totalSpent: 0,
+        loyaltyPoints: 0,
+        credit: 0,
+        walletBalance: 0,
+        synced: false
+      });
+
+      setSelectedCustomerId(id);
+      setShowAddCustomer(false);
+      setShowCustomerSearch(false);
+      toast.success(`Customer "${name}" added & selected for current bill!`);
+    } catch (err) {
+      toast.error("Failed to add customer. Please try again.");
+    }
+  };
+
   const handleCheckout = async () => {
     if (lines.length === 0) return;
     
@@ -275,8 +367,16 @@ function PosScreen() {
         toast.error(`${payment === "credit" ? "Credit" : "Wallet"} payments require a registered customer`);
         return;
       }
+      const cust = customers.find(c => c.id === activeCustomer.id);
+      if (payment === "credit" && cust) {
+        const existingCredit = cust.credit || 0;
+        const creditLimit = cust.creditLimit || 5000;
+        if (existingCredit + total > creditLimit) {
+          toast.error(`Credit limit exceeded! Current Due (${formatCurrency(existingCredit)}) + Sale (${formatCurrency(total)}) exceeds limit of ${formatCurrency(creditLimit)}`);
+          return;
+        }
+      }
       if (payment === "wallet") {
-        const cust = customers.find(c => c.id === activeCustomer.id);
         if (!cust || (cust.walletBalance || 0) < total) {
           toast.error("Insufficient wallet balance");
           return;
@@ -300,6 +400,10 @@ function PosScreen() {
       }
 
       // 1. Save sale to local DB
+      const salesman = users.find(u => u.id === selectedSalesmanId);
+      const commissionRate = salesman?.commissionRate || 2.5;
+      const commissionAmt = (total * commissionRate) / 100;
+
       await localDb.offlineSales.add({
         id: saleId,
         customerId: activeCustomer.id !== "walkin" ? activeCustomer.id : undefined,
@@ -312,6 +416,9 @@ function PosScreen() {
         total: parseFloat(total.toFixed(2)),
         paymentMethod: payment,
         payments: paymentsArr,
+        salesmanId: salesman?.id,
+        salesmanName: salesman?.name,
+        commissionAmt,
         status: "completed",
         synced: false,
         syncRetryCount: 0,
@@ -324,14 +431,53 @@ function PosScreen() {
         })),
       });
 
-      // 2. Deduct stock
-      for (const line of lines) {
-        await localDb.products.update(line.product.id, {
-          stock: Math.max(0, line.product.stock - line.qty),
+      if (salesman) {
+        await localDb.users.update(salesman.id, {
+          earnedCommission: (salesman.earnedCommission || 0) + commissionAmt
         });
+      }
+
+      // Automated Real-Time GL Double-Entry Voucher Posting
+      try {
+        const accounts = await localDb.accounts.toArray();
+        const cashAcc = accounts.find(a => a.code === "1001");
+        const salesAcc = accounts.find(a => a.code === "4001");
+        if (cashAcc && salesAcc) {
+          await localDb.vouchers.add({
+            id: uuidv4(),
+            voucherNo: `GL-${saleId.slice(0, 6).toUpperCase()}`,
+            date: new Date().toISOString(),
+            type: "receipt",
+            debitAccountId: cashAcc.id,
+            creditAccountId: salesAcc.id,
+            debitAccountName: cashAcc.name,
+            creditAccountName: salesAcc.name,
+            amount: total,
+            narration: `Automated POS Sale Invoice #${invNum}`,
+          });
+          await localDb.accounts.update(cashAcc.id, { balance: cashAcc.balance + total });
+          await localDb.accounts.update(salesAcc.id, { balance: salesAcc.balance + total });
+        }
+      } catch (e) {
+        // Silent fallback
+      }
+
+      // 2. Deduct stock & remove sold IMEI/Serial
+      for (const line of lines) {
+        const currentProd = await localDb.products.get(line.product.id);
+        if (currentProd) {
+          const updatedSerials = currentProd.hasSerial && currentProd.serials && line.selectedSerial
+            ? currentProd.serials.filter(s => s !== line.selectedSerial)
+            : currentProd.serials;
+
+          await localDb.products.update(line.product.id, {
+            stock: Math.max(0, currentProd.stock - line.qty),
+            serials: updatedSerials,
+          });
+        }
         await localDb.inventoryMovements.add({
           productName: line.product.name,
-          action: "sale",
+          action: line.selectedSerial ? `sale (IMEI: ${line.selectedSerial})` : "sale",
           quantity: -line.qty,
           createdAt: new Date().toISOString(),
         });
@@ -346,6 +492,17 @@ function PosScreen() {
           let newWallet = cust.walletBalance || 0;
           if (payment === "credit") {
             newCredit += total;
+            // Record Customer Ledger (Khata) entry
+            await localDb.customerLedgers.add({
+              id: uuidv4(),
+              customerId: activeCustomer.id,
+              date: new Date().toISOString(),
+              type: "invoice",
+              amount: total,
+              balanceAfter: newCredit,
+              referenceNo: invNum,
+              note: `POS Credit Sale Invoice #${invNum}`
+            });
           } else if (payment === "wallet") {
             newWallet -= total;
           }
@@ -421,9 +578,20 @@ function PosScreen() {
               <input
                 value={query}
                 onChange={e => setQuery(e.target.value)}
-                placeholder="Search products by name, SKU or barcode..."
+                placeholder="Search products by name, SKU or barcode... (F1)"
                 className="h-11 w-full rounded-xl border border-border bg-card pl-10 pr-3 text-sm focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/20"
               />
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-11 gap-1.5 text-xs"
+                onClick={() => setShowShortcutsHelp(true)}
+                title="Keyboard Shortcuts (?)"
+              >
+                <Keyboard className="size-4 text-primary" /> Shortcuts
+              </Button>
             </div>
             <div className="relative w-full lg:w-72">
               <ScanBarcode className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-primary" />
@@ -493,11 +661,41 @@ function PosScreen() {
             <div>
               <div className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Current Order</div>
               <div className="mt-0.5 flex items-center gap-2 text-sm font-semibold">
-                <User className="size-4 text-muted-foreground" />
-                <span className="max-w-[140px] truncate">{activeCustomer.name}</span>
+                <User className="size-4 text-muted-foreground shrink-0" />
+                <span className="max-w-[110px] truncate">{activeCustomer.name}</span>
+                {activeCustomer.type === "wholesale" && (
+                  <span className="rounded bg-primary/15 px-1.5 py-0.5 text-[9px] font-bold text-primary uppercase">Wholesale</span>
+                )}
+                {activeCustomer.type === "dealer" && (
+                  <span className="rounded bg-warning/15 px-1.5 py-0.5 text-[9px] font-bold text-warning-foreground uppercase">Dealer</span>
+                )}
                 <button onClick={() => setShowCustomerSearch(true)} className="text-xs font-medium text-primary hover:underline">
                   Change
                 </button>
+                <button 
+                  onClick={() => setShowAddCustomer(true)} 
+                  className="ml-auto flex items-center gap-1 rounded-md bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary hover:bg-primary/20 transition-colors"
+                  title="Create new customer"
+                >
+                  <Plus className="size-3" /> New
+                </button>
+              </div>
+
+              {/* Sales Representative Select */}
+              <div className="mt-1.5 flex items-center gap-1 text-xs">
+                <span className="text-muted-foreground text-[10px] uppercase font-bold">Sales Rep:</span>
+                <select
+                  value={selectedSalesmanId}
+                  onChange={(e) => setSelectedSalesmanId(e.target.value)}
+                  className="h-6 rounded border border-input bg-background px-1 text-[11px] font-medium"
+                >
+                  <option value="">-- Self / Default --</option>
+                  {users.map((u) => (
+                    <option key={u.id} value={u.id}>
+                      {u.name} ({u.commissionRate || 2.5}%)
+                    </option>
+                  ))}
+                </select>
               </div>
             </div>
             <div className="flex gap-1">
@@ -529,7 +727,24 @@ function PosScreen() {
                       <div className="flex items-start justify-between gap-2">
                         <div className="min-w-0">
                           <div className="truncate text-sm font-semibold">{l.product.name}</div>
-                          <div className="text-[11px] text-muted-foreground">{formatCurrency(l.product.price)} / {l.product.unit}</div>
+                          <div className="text-[11px] text-muted-foreground flex flex-wrap items-center gap-1.5 mt-0.5">
+                            <span>{formatCurrency(l.unitPrice)} / {l.product.unit}</span>
+                            {l.priceTierLabel && (
+                              <span className="rounded bg-primary/10 px-1 py-0.2 text-[9px] font-bold text-primary uppercase">
+                                {l.priceTierLabel} Rate
+                              </span>
+                            )}
+                            {l.selectedSerial && (
+                              <span className="rounded bg-muted px-1 py-0.2 font-mono text-[9px] font-bold text-foreground">
+                                SN: {l.selectedSerial}
+                              </span>
+                            )}
+                            {l.selectedBatch && (
+                              <span className="rounded bg-info/10 px-1 py-0.2 text-[9px] font-bold text-info">
+                                Batch: {l.selectedBatch}
+                              </span>
+                            )}
+                          </div>
                         </div>
                         <button onClick={() => updateQty(l.id, 0)} className="rounded p-1 text-muted-foreground opacity-0 hover:bg-destructive/10 hover:text-destructive group-hover:opacity-100" aria-label="Remove">
                           <Trash2 className="size-3.5" />
@@ -607,18 +822,44 @@ function PosScreen() {
 
             {/* Cash tendered */}
             {payment === "cash" && (
-              <div className="mt-2 flex items-center gap-2">
-                <Label className="text-xs shrink-0">Cash Received:</Label>
-                <input
-                  type="number"
-                  value={cashTendered}
-                  onChange={e => setCashTendered(e.target.value)}
-                  placeholder={`Min ${formatCurrency(total)}`}
-                  className="h-8 flex-1 rounded-lg border border-border bg-muted/30 px-2 text-sm font-mono outline-none focus:border-ring"
-                />
-                {changeDue > 0 && (
-                  <span className="text-xs font-bold text-success whitespace-nowrap">Change: {formatCurrency(changeDue)}</span>
-                )}
+              <div className="mt-2 space-y-2">
+                <div className="flex items-center gap-2">
+                  <Label className="text-xs shrink-0">Cash Received:</Label>
+                  <input
+                    type="number"
+                    value={cashTendered}
+                    onChange={e => setCashTendered(e.target.value)}
+                    placeholder={`Min ${formatCurrency(total)}`}
+                    className="h-8 flex-1 rounded-lg border border-border bg-muted/30 px-2 text-sm font-mono outline-none focus:border-ring"
+                  />
+                  {changeDue > 0 && (
+                    <span className="text-xs font-bold text-success whitespace-nowrap">Change: {formatCurrency(changeDue)}</span>
+                  )}
+                </div>
+                {/* 1-Click Quick Cash Denominations */}
+                <div className="flex flex-wrap gap-1.5 pt-1">
+                  <button
+                    type="button"
+                    onClick={() => setCashTendered(total.toFixed(2))}
+                    className="rounded-md bg-primary/10 px-2 py-1 text-xs font-semibold text-primary hover:bg-primary/20 transition-colors"
+                  >
+                    Exact ({formatCurrency(total)})
+                  </button>
+                  {[10, 50, 100, 500, 1000].map((denom) => {
+                    const roundVal = Math.ceil(total / denom) * denom;
+                    if (roundVal <= total && roundVal !== total) return null;
+                    return (
+                      <button
+                        key={denom}
+                        type="button"
+                        onClick={() => setCashTendered(roundVal.toString())}
+                        className="rounded-md border border-border bg-muted/40 px-2 py-1 text-xs font-mono font-medium hover:bg-muted transition-colors"
+                      >
+                        {formatCurrency(roundVal)}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
             )}
 
@@ -657,7 +898,12 @@ function PosScreen() {
       {/* Customer Search Dialog */}
       <Dialog open={showCustomerSearch} onOpenChange={setShowCustomerSearch}>
         <DialogContent className="sm:max-w-md">
-          <DialogHeader><DialogTitle>Select Customer</DialogTitle></DialogHeader>
+          <DialogHeader className="flex flex-row items-center justify-between pr-6">
+            <DialogTitle>Select Customer</DialogTitle>
+            <Button size="sm" onClick={() => setShowAddCustomer(true)} className="h-8 gap-1 text-xs">
+              <Plus className="size-3.5" /> Add Customer
+            </Button>
+          </DialogHeader>
           <div className="relative mb-3">
             <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
             <Input value={customerQuery} onChange={e => setCustomerQuery(e.target.value)} placeholder="Search by name or phone..." className="pl-9" autoFocus />
@@ -687,6 +933,99 @@ function PosScreen() {
                   </div>
                 </button>
               ))}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Quick Add Customer Dialog */}
+      <Dialog open={showAddCustomer} onOpenChange={setShowAddCustomer}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <User className="size-5 text-primary" />
+              <span>Quick Add Customer</span>
+            </DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleQuickAddCustomer} className="space-y-4 pt-2">
+            <div className="space-y-2">
+              <Label htmlFor="custName">Full Name *</Label>
+              <Input id="custName" name="name" required placeholder="e.g. Rahul Sharma" autoFocus />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="custPhone">Phone Number *</Label>
+                <Input id="custPhone" name="phone" required placeholder="e.g. +91 9876543210" />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="custEmail">Email (Optional)</Label>
+                <Input id="custEmail" name="email" type="email" placeholder="rahul@example.com" />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="custType">Pricing Tier / Type</Label>
+                <select
+                  id="custType"
+                  name="type"
+                  defaultValue="retail"
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                >
+                  <option value="retail">Retail Customer</option>
+                  <option value="wholesale">Wholesale Customer</option>
+                  <option value="dealer">Dealer</option>
+                  <option value="corporate">Corporate Client</option>
+                </select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="custStatus">Customer Status</Label>
+                <select
+                  id="custStatus"
+                  name="status"
+                  defaultValue="new"
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                >
+                  <option value="new">New Customer</option>
+                  <option value="regular">Regular</option>
+                  <option value="vip">VIP</option>
+                </select>
+              </div>
+            </div>
+            <DialogFooter className="pt-2">
+              <Button type="button" variant="outline" onClick={() => setShowAddCustomer(false)}>
+                Cancel
+              </Button>
+              <Button type="submit">
+                Save & Select Customer
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Keyboard Shortcuts Dialog */}
+      <Dialog open={showShortcutsHelp} onOpenChange={setShowShortcutsHelp}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Keyboard className="size-5 text-primary" />
+              <span>POS Keyboard Shortcuts</span>
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-2 py-2">
+            {[
+              { key: "F1", desc: "Focus Product Search / Barcode Scan" },
+              { key: "F2", desc: "Quick Add New Customer" },
+              { key: "F8", desc: "Hold Current Bill" },
+              { key: "F9", desc: "Checkout / Pay & Print" },
+              { key: "?", desc: "Open Shortcuts Help Modal" },
+            ].map((s) => (
+              <div key={s.key} className="flex items-center justify-between rounded-lg border border-border bg-muted/30 px-3 py-2 text-xs">
+                <span className="font-medium text-foreground">{s.desc}</span>
+                <kbd className="rounded bg-muted px-2 py-1 font-mono text-[11px] font-bold shadow-xs border border-border">
+                  {s.key}
+                </kbd>
+              </div>
+            ))}
           </div>
         </DialogContent>
       </Dialog>
@@ -811,7 +1150,11 @@ function PosScreen() {
                 <tbody>
                   {printData.lines.map((l: any, i: number) => (
                     <tr key={i}>
-                      <td className="truncate max-w-[150px]">{l.product.name}</td>
+                      <td className="truncate max-w-[150px]">
+                        <div>{l.product.name}</div>
+                        {l.selectedSerial && <div className="text-[9px] font-mono">SN: {l.selectedSerial}</div>}
+                        {l.selectedBatch && <div className="text-[9px] font-mono">Batch: {l.selectedBatch}</div>}
+                      </td>
                       <td className="text-right pl-2">{l.qty}</td>
                       <td className="text-right pl-2">{currencySymbol}{l.total.toFixed(2)}</td>
                     </tr>

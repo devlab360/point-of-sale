@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -43,6 +44,12 @@ function SuppliersPage() {
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [editItem, setEditItem] = useState<LocalSupplier | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [ledgerSupplier, setLedgerSupplier] = useState<LocalSupplier | null>(null);
+
+  const supplierLedgerEntries = useLiveQuery(() => {
+    if (!ledgerSupplier) return [];
+    return localDb.supplierLedgers.where("supplierId").equals(ledgerSupplier.id).toArray();
+  }, [ledgerSupplier]) || [];
 
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search, 300);
@@ -158,6 +165,7 @@ function SuppliersPage() {
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuItem onClick={() => setEditItem(s)}><Edit2 className="mr-2 size-4" /> Edit</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => setLedgerSupplier(s)}><Truck className="mr-2 size-4 text-primary" /> View Khata / Ledger</DropdownMenuItem>
                         <DropdownMenuItem className="text-destructive focus:bg-destructive/10 focus:text-destructive" onClick={() => setDeleteId(s.id)}><Trash2 className="mr-2 size-4" /> Delete</DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
@@ -239,6 +247,73 @@ function SuppliersPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      {/* Supplier Khata Ledger Statement Side Drawer */}
+      <Sheet open={!!ledgerSupplier} onOpenChange={(open) => !open && setLedgerSupplier(null)}>
+        <SheetContent side="right" className="w-full sm:max-w-2xl overflow-y-auto p-6 bg-background border-l border-border shadow-elevated">
+          <SheetHeader className="flex flex-row items-center justify-between border-b pb-4 pr-8">
+            <div>
+              <SheetTitle className="text-xl font-bold flex items-center gap-2">
+                <span>Supplier Khata Statement (সাপ্লায়ার লেজার)</span>
+              </SheetTitle>
+              <p className="text-xs text-muted-foreground mt-0.5">{ledgerSupplier?.name} · {ledgerSupplier?.contact}</p>
+            </div>
+            <Button size="sm" variant="outline" onClick={() => window.print()}>
+              Print Statement
+            </Button>
+          </SheetHeader>
+
+          <div className="space-y-6 pt-4">
+            {/* Ledger KPI Summary */}
+            <div className="rounded-xl border border-warning/20 bg-warning/10 p-4 text-center">
+              <div className="text-xs text-muted-foreground font-medium">Total Balance Payable / Due</div>
+              <div className="text-2xl font-bold text-warning-foreground mt-0.5">{formatCurrency(ledgerSupplier?.balance || 0)}</div>
+            </div>
+
+            {/* Ledger Table */}
+            <div className="space-y-3">
+              <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Purchase & Payment History</h4>
+              <div className="overflow-hidden rounded-xl border border-border shadow-soft">
+                <table className="w-full text-sm">
+                  <thead className="bg-muted/50 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                    <tr>
+                      <th className="px-3 py-2.5 text-left">Date</th>
+                      <th className="px-3 py-2.5 text-left">Type</th>
+                      <th className="px-3 py-2.5 text-left">Ref #</th>
+                      <th className="px-3 py-2.5 text-right">Debit (+Payable)</th>
+                      <th className="px-3 py-2.5 text-right">Credit (-Paid)</th>
+                      <th className="px-3 py-2.5 text-right">Balance</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border">
+                    {supplierLedgerEntries.length === 0 ? (
+                      <tr>
+                        <td colSpan={6} className="py-8 text-center text-xs text-muted-foreground">
+                          No transactions recorded in supplier ledger yet.
+                        </td>
+                      </tr>
+                    ) : (
+                      supplierLedgerEntries.map((l) => (
+                        <tr key={l.id} className="hover:bg-muted/30">
+                          <td className="px-3 py-2.5 text-xs text-muted-foreground">{new Date(l.date).toLocaleString()}</td>
+                          <td className="px-3 py-2.5 font-medium capitalize">{l.type}</td>
+                          <td className="px-3 py-2.5 font-mono text-xs">{l.referenceNo || "-"}</td>
+                          <td className="px-3 py-2.5 text-right font-semibold text-warning-foreground">
+                            {l.type === 'purchase' ? formatCurrency(l.amount) : "-"}
+                          </td>
+                          <td className="px-3 py-2.5 text-right font-semibold text-success">
+                            {l.type === 'payment' || l.type === 'return' ? formatCurrency(l.amount) : "-"}
+                          </td>
+                          <td className="px-3 py-2.5 text-right font-bold">{formatCurrency(l.balanceAfter)}</td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }
