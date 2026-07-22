@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { DatePicker } from "@/components/ui/date-picker";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import {
   DropdownMenu,
@@ -29,6 +30,7 @@ import {
 import { MoreVertical, Edit2, Trash2, Megaphone } from "lucide-react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { localDb } from "@/lib/db";
+import { useCurrency } from "@/lib/currency";
 import { v4 as uuidv4 } from "uuid";
 import { toast } from "sonner";
 import type { LocalPromotion } from "@/lib/db";
@@ -39,10 +41,14 @@ export const Route = createFileRoute("/promotions")({
 });
 
 function PromotionsPage() {
+  const { formatCurrency } = useCurrency();
   const promotions = useLiveQuery(() => localDb.promotions.toArray()) || [];
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [editItem, setEditItem] = useState<LocalPromotion | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+
+  const [startDate, setStartDate] = useState<string>("");
+  const [endDate, setEndDate] = useState<string>("");
 
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search, 300);
@@ -168,7 +174,7 @@ function PromotionsPage() {
                     </div>
                   </div>
                   <div className="mt-4 rounded-lg bg-primary/5 px-3 py-2 text-sm font-semibold text-primary">
-                    {p.type === "percentage" ? `${p.value}%` : `$${p.value.toFixed(2)}`} OFF - {p.conditions}
+                    {p.type === "percentage" ? `${p.value}%` : formatCurrency(p.value)} OFF - {p.conditions}
                   </div>
                   <div className="mt-3 text-xs text-muted-foreground">Runs {new Date(p.startDate).toLocaleDateString()} → {new Date(p.endDate).toLocaleDateString()}</div>
                 </div>
@@ -218,11 +224,19 @@ function PromotionsPage() {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="startDate">Start Date</Label>
-                <Input id="startDate" name="startDate" type="date" required defaultValue={editItem ? new Date(editItem.startDate).toISOString().split('T')[0] : ""} />
+                <DatePicker 
+                  name="startDate" 
+                  date={startDate || (editItem ? editItem.startDate : "")} 
+                  onDateChange={(d) => setStartDate(d ? d.toISOString().split("T")[0] : "")} 
+                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="endDate">End Date</Label>
-                <Input id="endDate" name="endDate" type="date" required defaultValue={editItem ? new Date(editItem.endDate).toISOString().split('T')[0] : ""} />
+                <DatePicker 
+                  name="endDate" 
+                  date={endDate || (editItem ? editItem.endDate : "")} 
+                  onDateChange={(d) => setEndDate(d ? d.toISOString().split("T")[0] : "")} 
+                />
               </div>
             </div>
             <div className="space-y-2">

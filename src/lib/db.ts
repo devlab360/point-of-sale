@@ -43,6 +43,8 @@ export interface LocalSetting {
   orgId?: string;
   trialEndsAt?: string;
   subscriptionStatus?: string;
+  currencySymbol?: string;
+  currencyCode?: string;
   storeName: string;
   taxId: string;
   address: string;

@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { localDb } from "@/lib/db";
 import { useLiveQuery } from "dexie-react-hooks";
+import { useCurrency } from "@/lib/currency";
 import { cn } from "@/lib/utils";
 import { Eye, Printer, Plus, Search, Receipt } from "lucide-react";
 import { useState, useMemo, useEffect } from "react";
@@ -21,6 +22,7 @@ export const Route = createFileRoute("/sales")({
 
 function SalesPage() {
   const navigate = useNavigate();
+  const { currencySymbol, formatCurrency } = useCurrency();
   const sales = useLiveQuery(() => localDb.offlineSales.reverse().toArray()) || [];
   const settings = useLiveQuery(() => localDb.settings.get("default"));
 
@@ -120,7 +122,7 @@ function SalesPage() {
                           {s.status}
                         </Badge>
                       </td>
-                      <td className="number px-4 py-3 text-right font-semibold">${s.total.toFixed(2)}</td>
+                      <td className="number px-4 py-3 text-right font-semibold">{formatCurrency(s.total)}</td>
                       <td className="px-4 py-3">
                         <div className="flex gap-1">
                           <Button variant="ghost" size="icon" title="View details" onClick={() => setViewSale(s)}>
@@ -170,18 +172,18 @@ function SalesPage() {
                       <tr key={i}>
                         <td className="px-3 py-2">{item.productName}</td>
                         <td className="px-3 py-2 text-right">{item.quantity}</td>
-                        <td className="px-3 py-2 text-right">${item.price.toFixed(2)}</td>
-                        <td className="px-3 py-2 text-right font-semibold">${item.total.toFixed(2)}</td>
+                        <td className="px-3 py-2 text-right">{formatCurrency(item.price)}</td>
+                        <td className="px-3 py-2 text-right font-semibold">{formatCurrency(item.total)}</td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
               </div>
               <div className="space-y-1 rounded-lg bg-muted/40 p-3 text-sm">
-                {viewSale.subtotal !== undefined && <div className="flex justify-between"><span className="text-muted-foreground">Subtotal</span><span>${viewSale.subtotal.toFixed(2)}</span></div>}
-                {viewSale.discountAmt !== undefined && viewSale.discountAmt > 0 && <div className="flex justify-between text-destructive"><span>Discount</span><span>-${viewSale.discountAmt.toFixed(2)}</span></div>}
-                {viewSale.taxAmt !== undefined && <div className="flex justify-between"><span className="text-muted-foreground">Tax</span><span>${viewSale.taxAmt.toFixed(2)}</span></div>}
-                <div className="flex justify-between border-t border-border pt-1 font-bold"><span>Total</span><span>${viewSale.total.toFixed(2)}</span></div>
+                {viewSale.subtotal !== undefined && <div className="flex justify-between"><span className="text-muted-foreground">Subtotal</span><span>{formatCurrency(viewSale.subtotal)}</span></div>}
+                {viewSale.discountAmt !== undefined && viewSale.discountAmt > 0 && <div className="flex justify-between text-destructive"><span>Discount</span><span>-{formatCurrency(viewSale.discountAmt)}</span></div>}
+                {viewSale.taxAmt !== undefined && <div className="flex justify-between"><span className="text-muted-foreground">Tax</span><span>{formatCurrency(viewSale.taxAmt)}</span></div>}
+                <div className="flex justify-between border-t border-border pt-1 font-bold"><span>Total</span><span>{formatCurrency(viewSale.total)}</span></div>
               </div>
               <Button className="w-full" onClick={() => { setViewSale(null); printReceipt(viewSale); }}>
                 <Printer className="size-4 mr-2" /> Reprint Receipt
@@ -207,10 +209,10 @@ function SalesPage() {
             </div>
             <div className="border-t border-b border-black py-2 mb-2">
               {viewSale.saleItems?.map((item, i) => (
-                <div key={i} className="flex justify-between"><span className="truncate max-w-[160px]">{item.productName} x{item.quantity}</span><span>${item.total.toFixed(2)}</span></div>
+                <div key={i} className="flex justify-between"><span className="truncate max-w-[160px]">{item.productName} x{item.quantity}</span><span>{currencySymbol}{item.total.toFixed(2)}</span></div>
               ))}
             </div>
-            <div className="flex justify-between font-bold"><span>TOTAL:</span><span>${viewSale.total.toFixed(2)}</span></div>
+            <div className="flex justify-between font-bold"><span>TOTAL:</span><span>{currencySymbol}{viewSale.total.toFixed(2)}</span></div>
             <p className="mt-3 text-center text-[10px]">Thank you for your business!</p>
           </div>
         </div>

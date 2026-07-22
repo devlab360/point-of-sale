@@ -28,6 +28,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { localDb } from "@/lib/db";
 import { useLiveQuery } from "dexie-react-hooks";
+import { useCurrency } from "@/lib/currency";
 import { Mail, Phone, Star, MoreVertical, Edit2, Trash2, Users } from "lucide-react";
 import { v4 as uuidv4 } from "uuid";
 import { toast } from "sonner";
@@ -39,6 +40,7 @@ export const Route = createFileRoute("/customers")({
 });
 
 function CustomersPage() {
+  const { formatCurrency } = useCurrency();
   const rawCustomers = useLiveQuery(() => localDb.customers.toArray()) || [];
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [editItem, setEditItem] = useState<LocalCustomer | null>(null);
@@ -143,7 +145,7 @@ function CustomersPage() {
         credit: settleItem.credit - amount,
         synced: false
       });
-      toast.success(`Successfully settled $${amount.toFixed(2)}`);
+      toast.success(`Successfully settled ${formatCurrency(amount)}`);
       setSettleItem(null);
     } catch (error) {
       toast.error("Failed to settle balance");
@@ -201,10 +203,10 @@ function CustomersPage() {
                       </div>
                     </td>
                     <td className="number px-4 py-3 text-right">{c.visits}</td>
-                    <td className="number px-4 py-3 text-right font-semibold">${c.totalSpent.toFixed(0)}</td>
+                    <td className="number px-4 py-3 text-right font-semibold">{formatCurrency(c.totalSpent)}</td>
                     <td className="number px-4 py-3 text-right">{c.loyaltyPoints.toLocaleString()}</td>
-                    <td className={`number px-4 py-3 text-right ${c.credit > 0 ? "text-destructive font-bold" : "text-muted-foreground"}`}>${c.credit}</td>
-                    <td className="number px-4 py-3 text-right font-semibold text-success">${c.walletBalance || 0}</td>
+                    <td className={`number px-4 py-3 text-right ${c.credit > 0 ? "text-destructive font-bold" : "text-muted-foreground"}`}>{formatCurrency(c.credit)}</td>
+                    <td className="number px-4 py-3 text-right font-semibold text-success">{formatCurrency(c.walletBalance || 0)}</td>
                     <td className="px-4 py-3">
                       {c.status === "vip" ? (
                         <Badge className="bg-warning/15 text-warning-foreground hover:bg-warning/20"><Star className="mr-1 size-3 fill-current" /> VIP</Badge>

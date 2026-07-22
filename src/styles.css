@@ -186,3 +186,28 @@
   font-variant-numeric: tabular-nums;
   font-feature-settings: "tnum";
 }
+
+/* Custom Calendar & Date Picker Theme Support */
+input[type="date"] {
+  color-scheme: light;
+  accent-color: var(--color-primary);
+}
+
+.dark input[type="date"] {
+  color-scheme: dark;
+  accent-color: var(--color-primary);
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  opacity: 0.7;
+  border-radius: 4px;
+  padding: 2px;
+  transition: opacity 0.2s ease, transform 0.2s ease, background-color 0.2s ease;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator:hover {
+  opacity: 1;
+  background-color: color-mix(in oklch, var(--color-primary) 15%, transparent);
+  transform: scale(1.05);
+}

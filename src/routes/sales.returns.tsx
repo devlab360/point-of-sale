@@ -17,6 +17,7 @@ import {
 import { MoreVertical, Trash2, Undo2 } from "lucide-react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { localDb } from "@/lib/db";
+import { useCurrency } from "@/lib/currency";
 import type { LocalSaleReturn, OfflineSale } from "@/lib/db";
 import { v4 as uuidv4 } from "uuid";
 import { toast } from "sonner";
@@ -30,6 +31,7 @@ export const Route = createFileRoute("/sales/returns")({
 });
 
 function SalesReturnsPage() {
+  const { formatCurrency } = useCurrency();
   const returns = useLiveQuery(() => localDb.salesReturns.reverse().toArray()) || [];
   const sales = useLiveQuery(() => localDb.offlineSales.reverse().toArray()) || [];
   const products = useLiveQuery(() => localDb.products.toArray()) || [];
@@ -206,7 +208,7 @@ function SalesReturnsPage() {
                           {r.status}
                         </Badge>
                       </td>
-                      <td className="number px-4 py-3 text-right font-semibold">${r.total.toFixed(2)}</td>
+                      <td className="number px-4 py-3 text-right font-semibold">{formatCurrency(r.total)}</td>
                       <td className="px-4 py-3">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
@@ -260,7 +262,7 @@ function SalesReturnsPage() {
                       <label key={item.productId} className="flex items-center gap-3 cursor-pointer">
                         <input type="checkbox" checked={checked} onChange={e => toggleItem(item, e.target.checked)} className="size-4 rounded" />
                         <span className="flex-1 text-sm">{item.productName}</span>
-                        <span className="text-sm font-semibold">{item.quantity}x · ${item.total.toFixed(2)}</span>
+                        <span className="text-sm font-semibold">{item.quantity}x · {formatCurrency(item.total)}</span>
                       </label>
                     );
                   })}
@@ -289,7 +291,7 @@ function SalesReturnsPage() {
                   </div>
                 )}
                 <div className="rounded-lg bg-muted/40 p-3 text-sm">
-                  Refund total: <strong>${selectedItems.reduce((s, i) => s + i.total, 0).toFixed(2)}</strong>
+                  Refund total: <strong>{formatCurrency(selectedItems.reduce((s, i) => s + i.total, 0))}</strong>
                 </div>
               </div>
             )}

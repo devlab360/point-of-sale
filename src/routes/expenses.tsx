@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { DatePicker } from "@/components/ui/date-picker";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import {
   DropdownMenu,
@@ -30,6 +31,7 @@ import {
 import { Wallet, TrendingDown, Receipt, MoreVertical, Edit2, Trash2 } from "lucide-react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { localDb } from "@/lib/db";
+import { useCurrency } from "@/lib/currency";
 import { v4 as uuidv4 } from "uuid";
 import { toast } from "sonner";
 import type { LocalExpense } from "@/lib/db";
@@ -40,10 +42,12 @@ export const Route = createFileRoute("/expenses")({
 });
 
 function ExpensesPage() {
+  const { formatCurrency } = useCurrency();
   const rawExpenses = useLiveQuery(() => localDb.expenses.toArray()) || [];
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [editItem, setEditItem] = useState<LocalExpense | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [expenseDate, setExpenseDate] = useState<string>("");
 
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search, 300);
@@ -137,7 +141,7 @@ function ExpensesPage() {
   return (
     <div className="space-y-6 p-4 md:p-6 lg:p-8">
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <StatCard label="Total Expenses" value={`$${total.toLocaleString()}`} icon={Wallet} accent="primary" />
+        <StatCard label="Total Expenses" value={formatCurrency(total)} icon={Wallet} accent="primary" />
         <StatCard label="Largest Category" value={largestCategory} hint="By amount" icon={Receipt} accent="info" />
         <StatCard label="Pending" value={pending.toString()} icon={TrendingDown} accent="warning" />
       </div>
@@ -177,7 +181,7 @@ function ExpensesPage() {
                       <td className="px-4 py-3"><Badge variant="secondary">{e.category}</Badge></td>
                       <td className="px-4 py-3 font-semibold">{e.description}</td>
                       <td className="px-4 py-3"><Badge className={e.status === "paid" ? "bg-success/10 text-success hover:bg-success/15" : "bg-warning/15 text-warning-foreground hover:bg-warning/20"}>{e.status}</Badge></td>
-                      <td className="number px-4 py-3 text-right font-semibold">${e.amount.toLocaleString()}</td>
+                      <td className="number px-4 py-3 text-right font-semibold">{formatCurrency(e.amount)}</td>
                       <td className="px-4 py-3 text-right">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
@@ -215,7 +219,11 @@ function ExpensesPage() {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="date">Date</Label>
-                <Input id="date" name="date" type="date" required defaultValue={editItem ? new Date(editItem.date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]} />
+                <DatePicker 
+                  name="date" 
+                  date={expenseDate || (editItem ? editItem.date : new Date().toISOString().split('T')[0])} 
+                  onDateChange={(d) => setExpenseDate(d ? d.toISOString().split("T")[0] : "")} 
+                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="category">Category</Label>

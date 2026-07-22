@@ -2,8 +2,10 @@ import { createFileRoute } from "@tanstack/react-router";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { StatCard } from "@/components/layout/StatCard";
 import { Button } from "@/components/ui/button";
+import { DatePicker } from "@/components/ui/date-picker";
 import { localDb } from "@/lib/db";
 import { useLiveQuery } from "dexie-react-hooks";
+import { useCurrency } from "@/lib/currency";
 import { useState } from "react";
 import {
   BarChart3, DollarSign, FileText, Package, Percent, TrendingUp, ShoppingCart, Calendar,
@@ -25,6 +27,7 @@ export const Route = createFileRoute("/reports")({
 type ReportType = "sales" | "profit" | "purchase" | "inventory" | "tax" | "expense" | "daily" | "monthly" | null;
 
 function ReportsPage() {
+  const { currencySymbol, formatCurrency } = useCurrency();
   const sales = useLiveQuery(() => localDb.offlineSales.toArray()) || [];
   const products = useLiveQuery(() => localDb.products.toArray()) || [];
   const expenses = useLiveQuery(() => localDb.expenses.toArray()) || [];
@@ -141,10 +144,10 @@ function ReportsPage() {
 
       {/* KPI Stats */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard label="MTD Revenue" value={`$${(mtdRevenue / 1000).toFixed(1)}k`} delta={0} icon={DollarSign} accent="primary" />
-        <StatCard label="MTD Profit" value={`$${(mtdProfit / 1000).toFixed(1)}k`} delta={0} icon={TrendingUp} accent="success" />
+        <StatCard label="MTD Revenue" value={formatCurrency(mtdRevenue)} delta={0} icon={DollarSign} accent="primary" />
+        <StatCard label="MTD Profit" value={formatCurrency(mtdProfit)} delta={0} icon={TrendingUp} accent="success" />
         <StatCard label="MTD Orders" value={mtdOrders.toString()} delta={0} icon={ShoppingCart} accent="info" />
-        <StatCard label="Tax Payable" value={`$${taxPayable.toFixed(0)}`} delta={0} icon={Percent} accent="warning" />
+        <StatCard label="Tax Payable" value={formatCurrency(taxPayable)} delta={0} icon={Percent} accent="warning" />
       </div>
 
       {/* Charts */}
@@ -157,8 +160,8 @@ function ReportsPage() {
               <LineChart data={monthly} margin={{ top: 8, right: 8, left: -16, bottom: 0 }}>
                 <CartesianGrid stroke="var(--color-border)" vertical={false} />
                 <XAxis dataKey="m" axisLine={false} tickLine={false} tick={{ fill: "var(--color-muted-foreground)", fontSize: 11 }} />
-                <YAxis axisLine={false} tickLine={false} tick={{ fill: "var(--color-muted-foreground)", fontSize: 11 }} tickFormatter={v => `$${v}`} />
-                <Tooltip contentStyle={{ background: "var(--color-popover)", border: "1px solid var(--color-border)", borderRadius: 12, fontSize: 12 }} formatter={(v: number) => `$${v.toFixed(2)}`} />
+                <YAxis axisLine={false} tickLine={false} tick={{ fill: "var(--color-muted-foreground)", fontSize: 11 }} tickFormatter={v => `${currencySymbol}${v}`} />
+                <Tooltip contentStyle={{ background: "var(--color-popover)", border: "1px solid var(--color-border)", borderRadius: 12, fontSize: 12 }} formatter={(v: number) => formatCurrency(v)} />
                 <Line type="monotone" dataKey="revenue" stroke="var(--color-primary)" strokeWidth={2.5} dot={false} name="Revenue" />
                 <Line type="monotone" dataKey="profit" stroke="var(--color-success)" strokeWidth={2.5} dot={false} name="Profit" />
               </LineChart>
@@ -199,8 +202,8 @@ function ReportsPage() {
             <BarChart data={weekly} margin={{ top: 8, right: 8, left: -16, bottom: 0 }}>
               <CartesianGrid stroke="var(--color-border)" vertical={false} />
               <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fill: "var(--color-muted-foreground)", fontSize: 11 }} />
-              <YAxis axisLine={false} tickLine={false} tick={{ fill: "var(--color-muted-foreground)", fontSize: 11 }} tickFormatter={v => `$${v}`} />
-              <Tooltip cursor={{ fill: "var(--color-muted)" }} contentStyle={{ background: "var(--color-popover)", border: "1px solid var(--color-border)", borderRadius: 12, fontSize: 12 }} formatter={(v: number) => `$${v.toFixed(2)}`} />
+              <YAxis axisLine={false} tickLine={false} tick={{ fill: "var(--color-muted-foreground)", fontSize: 11 }} tickFormatter={v => `${currencySymbol}${v}`} />
+              <Tooltip cursor={{ fill: "var(--color-muted)" }} contentStyle={{ background: "var(--color-popover)", border: "1px solid var(--color-border)", borderRadius: 12, fontSize: 12 }} formatter={(v: number) => formatCurrency(v)} />
               <Bar dataKey="sales" fill="var(--color-primary)" radius={[6, 6, 0, 0]} name="Revenue" />
             </BarChart>
           </ResponsiveContainer>
@@ -240,13 +243,25 @@ function ReportsPage() {
             <div className="flex gap-3 items-end">
               <div className="flex-1">
                 <Label className="text-xs">From</Label>
-                <Input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)} className="mt-1" />
+                <div className="mt-1">
+                  <DatePicker 
+                    date={dateFrom} 
+                    onDateChange={(d) => setDateFrom(d ? d.toISOString().split("T")[0] : "")} 
+                    placeholder="From Date"
+                  />
+                </div>
               </div>
               <div className="flex-1">
                 <Label className="text-xs">To</Label>
-                <Input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)} className="mt-1" />
+                <div className="mt-1">
+                  <DatePicker 
+                    date={dateTo} 
+                    onDateChange={(d) => setDateTo(d ? d.toISOString().split("T")[0] : "")} 
+                    placeholder="To Date"
+                  />
+                </div>
               </div>
-              <Button variant="outline" size="sm" onClick={() => exportCSV(activeReport || "sales")}>
+              <Button variant="outline" size="sm" className="h-10" onClick={() => exportCSV(activeReport || "sales")}>
                 Export CSV
               </Button>
             </div>
@@ -255,8 +270,8 @@ function ReportsPage() {
               <div className="space-y-3">
                 <div className="grid grid-cols-3 gap-3">
                   <div className="rounded-lg bg-muted/40 p-3 text-center"><div className="text-2xl font-bold">{mtdOrders}</div><div className="text-xs text-muted-foreground">Total Orders</div></div>
-                  <div className="rounded-lg bg-muted/40 p-3 text-center"><div className="text-2xl font-bold">${mtdRevenue.toFixed(0)}</div><div className="text-xs text-muted-foreground">Revenue</div></div>
-                  <div className="rounded-lg bg-muted/40 p-3 text-center"><div className="text-2xl font-bold">${(mtdRevenue / Math.max(mtdOrders, 1)).toFixed(0)}</div><div className="text-xs text-muted-foreground">Avg Order</div></div>
+                  <div className="rounded-lg bg-muted/40 p-3 text-center"><div className="text-2xl font-bold">{formatCurrency(mtdRevenue)}</div><div className="text-xs text-muted-foreground">Revenue</div></div>
+                  <div className="rounded-lg bg-muted/40 p-3 text-center"><div className="text-2xl font-bold">{formatCurrency(mtdRevenue / Math.max(mtdOrders, 1))}</div><div className="text-xs text-muted-foreground">Avg Order</div></div>
                 </div>
                 <div className="overflow-hidden rounded-lg border border-border max-h-64 overflow-y-auto">
                   <table className="w-full text-sm">
@@ -269,7 +284,7 @@ function ReportsPage() {
                           <td className="px-3 py-2 font-mono text-xs">{s.id.slice(0, 8).toUpperCase()}</td>
                           <td className="px-3 py-2">{s.customerName || "Walk-in"}</td>
                           <td className="px-3 py-2 text-muted-foreground">{new Date(s.date).toLocaleDateString()}</td>
-                          <td className="px-3 py-2 text-right font-semibold">${s.total.toFixed(2)}</td>
+                          <td className="px-3 py-2 text-right font-semibold">{formatCurrency(s.total)}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -290,12 +305,12 @@ function ReportsPage() {
                         <td className="px-3 py-2">{p.name}</td>
                         <td className="px-3 py-2 text-right">{p.stock}</td>
                         <td className="px-3 py-2 text-right">{p.reorderLevel}</td>
-                        <td className="px-3 py-2 text-right font-semibold">${(p.stock * p.cost).toFixed(2)}</td>
+                        <td className="px-3 py-2 text-right font-semibold">{formatCurrency(p.stock * p.cost)}</td>
                       </tr>
                     ))}
                   </tbody>
                   <tfoot className="border-t border-border bg-muted/30">
-                    <tr><td className="px-3 py-2 font-bold">Total</td><td colSpan={2}></td><td className="px-3 py-2 text-right font-bold">${stockValue.toFixed(2)}</td></tr>
+                    <tr><td className="px-3 py-2 font-bold">Total</td><td colSpan={2}></td><td className="px-3 py-2 text-right font-bold">{formatCurrency(stockValue)}</td></tr>
                   </tfoot>
                 </table>
               </div>
@@ -305,7 +320,7 @@ function ReportsPage() {
               <div className="space-y-3">
                 <div className="rounded-lg bg-muted/40 p-3 flex justify-between">
                   <span className="font-semibold">Total Expenses</span>
-                  <span className="font-bold text-destructive">${totalExpenses.toFixed(2)}</span>
+                  <span className="font-bold text-destructive">{formatCurrency(totalExpenses)}</span>
                 </div>
                 <div className="overflow-hidden rounded-lg border border-border max-h-64 overflow-y-auto">
                   <table className="w-full text-sm">
@@ -318,7 +333,7 @@ function ReportsPage() {
                           <td className="px-3 py-2">{e.date}</td>
                           <td className="px-3 py-2">{e.category}</td>
                           <td className="px-3 py-2 text-muted-foreground">{e.description}</td>
-                          <td className="px-3 py-2 text-right font-semibold">${e.amount.toFixed(2)}</td>
+                          <td className="px-3 py-2 text-right font-semibold">{formatCurrency(e.amount)}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -330,10 +345,10 @@ function ReportsPage() {
             {activeReport === "tax" && (
               <div className="space-y-3">
                 <div className="grid grid-cols-2 gap-3">
-                  <div className="rounded-lg bg-muted/40 p-3"><div className="text-xs text-muted-foreground">Gross Revenue</div><div className="text-xl font-bold">${mtdRevenue.toFixed(2)}</div></div>
-                  <div className="rounded-lg bg-destructive/10 p-3"><div className="text-xs text-muted-foreground">Tax Payable (8%)</div><div className="text-xl font-bold text-destructive">${taxPayable.toFixed(2)}</div></div>
-                  <div className="rounded-lg bg-muted/40 p-3"><div className="text-xs text-muted-foreground">Input Tax (Est.)</div><div className="text-xl font-bold">${(purchases.reduce((s, p) => s + p.total, 0) * 0.08).toFixed(2)}</div></div>
-                  <div className="rounded-lg bg-success/10 p-3"><div className="text-xs text-muted-foreground">Net Tax Due</div><div className="text-xl font-bold text-success">${(taxPayable - purchases.reduce((s, p) => s + p.total, 0) * 0.08).toFixed(2)}</div></div>
+                  <div className="rounded-lg bg-muted/40 p-3"><div className="text-xs text-muted-foreground">Gross Revenue</div><div className="text-xl font-bold">{formatCurrency(mtdRevenue)}</div></div>
+                  <div className="rounded-lg bg-destructive/10 p-3"><div className="text-xs text-muted-foreground">Tax Payable (8%)</div><div className="text-xl font-bold text-destructive">{formatCurrency(taxPayable)}</div></div>
+                  <div className="rounded-lg bg-muted/40 p-3"><div className="text-xs text-muted-foreground">Input Tax (Est.)</div><div className="text-xl font-bold">{formatCurrency(purchases.reduce((s, p) => s + p.total, 0) * 0.08)}</div></div>
+                  <div className="rounded-lg bg-success/10 p-3"><div className="text-xs text-muted-foreground">Net Tax Due</div><div className="text-xl font-bold text-success">{formatCurrency(taxPayable - purchases.reduce((s, p) => s + p.total, 0) * 0.08)}</div></div>
                 </div>
               </div>
             )}
@@ -365,7 +380,7 @@ function ReportsPage() {
                         <td className="px-3 py-2 font-mono text-xs">{p.id.slice(0, 8).toUpperCase()}</td>
                         <td className="px-3 py-2">{p.supplier}</td>
                         <td className="px-3 py-2 text-muted-foreground">{new Date(p.date).toLocaleDateString()}</td>
-                        <td className="px-3 py-2 text-right font-semibold">${p.total.toFixed(2)}</td>
+                        <td className="px-3 py-2 text-right font-semibold">{formatCurrency(p.total)}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -383,8 +398,8 @@ function ReportsPage() {
                   return (
                     <div className="grid grid-cols-3 gap-3">
                       <div className="rounded-lg bg-muted/40 p-3 text-center"><div className="text-2xl font-bold">{todaySales.length}</div><div className="text-xs text-muted-foreground">Orders</div></div>
-                      <div className="rounded-lg bg-muted/40 p-3 text-center"><div className="text-2xl font-bold">${todayRevenue.toFixed(0)}</div><div className="text-xs text-muted-foreground">Revenue</div></div>
-                      <div className="rounded-lg bg-muted/40 p-3 text-center"><div className="text-2xl font-bold">${(todayRevenue * 0.3).toFixed(0)}</div><div className="text-xs text-muted-foreground">Est. Profit</div></div>
+                      <div className="rounded-lg bg-muted/40 p-3 text-center"><div className="text-2xl font-bold">{formatCurrency(todayRevenue)}</div><div className="text-xs text-muted-foreground">Revenue</div></div>
+                      <div className="rounded-lg bg-muted/40 p-3 text-center"><div className="text-2xl font-bold">{formatCurrency(todayRevenue * 0.3)}</div><div className="text-xs text-muted-foreground">Est. Profit</div></div>
                     </div>
                   );
                 })()}

@@ -15,6 +15,7 @@ import {
 import { MoreVertical, Trash2 } from "lucide-react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { localDb } from "@/lib/db";
+import { useCurrency } from "@/lib/currency";
 import type { LocalPurchaseReturn } from "@/lib/db";
 import { v4 as uuidv4 } from "uuid";
 import { toast } from "sonner";
@@ -27,6 +28,7 @@ export const Route = createFileRoute("/purchases/returns")({
 });
 
 function PurchaseReturnsPage() {
+  const { formatCurrency } = useCurrency();
   const returns = useLiveQuery(() => localDb.purchaseReturns.reverse().toArray()) || [];
   const purchases = useLiveQuery(() => localDb.purchases.toArray()) || [];
   const products = useLiveQuery(() => localDb.products.toArray()) || [];
@@ -158,7 +160,7 @@ function PurchaseReturnsPage() {
                         {r.status}
                       </Badge>
                     </td>
-                    <td className="number px-4 py-3 text-right font-semibold">${r.total.toFixed(2)}</td>
+                    <td className="number px-4 py-3 text-right font-semibold">{formatCurrency(r.total)}</td>
                     <td className="px-4 py-3">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
@@ -247,7 +249,7 @@ function PurchaseReturnsPage() {
               ))}
               {returnItems.length > 0 && (
                 <div className="rounded-lg bg-muted/40 p-2 text-sm text-right">
-                  Total: <strong>${returnItems.reduce((s, i) => s + i.total, 0).toFixed(2)}</strong>
+                  Total: <strong>{formatCurrency(returnItems.reduce((s, i) => s + i.total, 0))}</strong>
                 </div>
               )}
             </div>

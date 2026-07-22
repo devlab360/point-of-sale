@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { DatePicker } from "@/components/ui/date-picker";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import {
   DropdownMenu,
@@ -28,6 +29,7 @@ import {
 import { Gift, MoreVertical, Edit2, Trash2 } from "lucide-react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { localDb } from "@/lib/db";
+import { useCurrency } from "@/lib/currency";
 import { v4 as uuidv4 } from "uuid";
 import { toast } from "sonner";
 import type { LocalGiftCard } from "@/lib/db";
@@ -38,10 +40,12 @@ export const Route = createFileRoute("/gift-cards")({
 });
 
 function GiftCardsPage() {
+  const { formatCurrency } = useCurrency();
   const giftCards = useLiveQuery(() => localDb.giftCards.toArray()) || [];
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [editItem, setEditItem] = useState<LocalGiftCard | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [expiresDate, setExpiresDate] = useState<string>("");
 
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search, 300);
@@ -164,7 +168,7 @@ function GiftCardsPage() {
                   <div className="mt-1 text-xs text-muted-foreground">To: <span className="font-semibold text-foreground">{g.customer || "Walk-in"}</span></div>
                   <div className="mt-4 flex items-baseline justify-between">
                     <span className="text-xs uppercase tracking-wider text-muted-foreground">Balance</span>
-                    <span className="number text-2xl font-bold">${g.balance.toFixed(2)}</span>
+                    <span className="number text-2xl font-bold">{formatCurrency(g.balance)}</span>
                   </div>
                   <div className="mt-1 text-xs text-muted-foreground">expires {new Date(g.expires).toLocaleDateString()}</div>
                 </div>
@@ -213,7 +217,11 @@ function GiftCardsPage() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="expires">Expiry Date</Label>
-              <Input id="expires" name="expires" type="date" required defaultValue={editItem ? new Date(editItem.expires).toISOString().split('T')[0] : ""} />
+              <DatePicker 
+                name="expires" 
+                date={expiresDate || (editItem ? editItem.expires : "")} 
+                onDateChange={(d) => setExpiresDate(d ? d.toISOString().split("T")[0] : "")} 
+              />
             </div>
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => { setIsAddOpen(false); setEditItem(null); }}>Cancel</Button>

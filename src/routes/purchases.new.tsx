@@ -5,6 +5,7 @@ import { Plus, Trash2, Camera, Loader2 } from "lucide-react";
 import { useState, useRef } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { localDb } from "@/lib/db";
+import { useCurrency } from "@/lib/currency";
 import { v4 as uuidv4 } from "uuid";
 import { toast } from "sonner";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -16,6 +17,7 @@ export const Route = createFileRoute("/purchases/new")({
 });
 
 function NewPurchase() {
+  const { formatCurrency } = useCurrency();
   const navigate = useNavigate();
   const suppliers = useLiveQuery(() => localDb.suppliers.toArray()) || [];
   const products = useLiveQuery(() => localDb.products.toArray()) || [];
@@ -189,7 +191,7 @@ function NewPurchase() {
                       <td className="px-3 py-2 text-right">
                         <Input type="number" step="0.01" className="h-8 text-right" value={l.cost} onChange={e => handleUpdateLine(i, "cost", Number(e.target.value))} />
                       </td>
-                      <td className="number px-3 py-2 text-right font-semibold">${(l.qty * l.cost).toFixed(2)}</td>
+                      <td className="number px-3 py-2 text-right font-semibold">{formatCurrency(l.qty * l.cost)}</td>
                       <td className="px-3 py-2">
                         <Button variant="ghost" size="icon" className="size-8 text-destructive" onClick={() => setLines(lines.filter((_, idx) => idx !== i))}>
                           <Trash2 className="size-4" />
@@ -215,12 +217,12 @@ function NewPurchase() {
           <div className="rounded-xl border border-border bg-card p-5 shadow-soft">
             <h3 className="mb-4 font-semibold">Summary</h3>
             <div className="space-y-2 text-sm">
-              <div className="flex justify-between text-muted-foreground"><span>Subtotal</span><span className="number font-medium">${subtotal.toFixed(2)}</span></div>
-              <div className="flex justify-between text-muted-foreground"><span>Tax (8%)</span><span className="number font-medium">${tax.toFixed(2)}</span></div>
+              <div className="flex justify-between text-muted-foreground"><span>Subtotal</span><span className="number font-medium">{formatCurrency(subtotal)}</span></div>
+              <div className="flex justify-between text-muted-foreground"><span>Tax (8%)</span><span className="number font-medium">{formatCurrency(tax)}</span></div>
               <div className="my-2 border-t border-border" />
               <div className="flex justify-between">
                 <span className="font-semibold">Total</span>
-                <span className="number text-xl font-bold">${total.toFixed(2)}</span>
+                <span className="number text-xl font-bold">{formatCurrency(total)}</span>
               </div>
             </div>
           </div>

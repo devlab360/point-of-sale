@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { localDb } from "@/lib/db";
 import { useLiveQuery } from "dexie-react-hooks";
 import { cn } from "@/lib/utils";
+import { useCurrency } from "@/lib/currency";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -23,9 +24,12 @@ export const Route = createFileRoute("/")({
   component: Dashboard,
 });
 
-const fmt = (n: number) => `$${n.toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
+
 
 function Dashboard() {
+  const { currencySymbol, formatCurrency } = useCurrency();
+  const fmt = (n: number) => `${currencySymbol}${n.toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
+
   const products = useLiveQuery(() => localDb.products.toArray()) || [];
   const sales = useLiveQuery(() => localDb.offlineSales.toArray()) || [];
   const customers = useLiveQuery(() => localDb.customers.toArray()) || [];
@@ -346,7 +350,7 @@ function Dashboard() {
                       <StatusBadge status={s.status} />
                     </td>
                     <td className="number px-5 py-3 text-right font-semibold">
-                      ${s.total.toFixed(2)}
+                      {formatCurrency(s.total)}
                     </td>
                   </tr>
                 ))}
@@ -374,7 +378,7 @@ function Dashboard() {
                 <div className="min-w-0 flex-1">
                   <div className="truncate text-sm font-semibold">{p.name}</div>
                   <div className="text-xs text-muted-foreground">
-                    {(p.stock * 0.6).toFixed(0)} sold · ${(p.stock * p.price * 0.6).toFixed(0)}
+                    {(p.stock * 0.6).toFixed(0)} sold · {formatCurrency(p.stock * p.price * 0.6)}
                   </div>
                 </div>
                 <ArrowUpRight className="size-4 text-success" />

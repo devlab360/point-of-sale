@@ -26,6 +26,7 @@ import { v4 as uuidv4 } from "uuid";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
+import { useCurrency } from "@/lib/currency";
 import {
   Dialog,
   DialogContent,
@@ -60,6 +61,7 @@ type CartLine = { id: string; qty: number };
 type PaymentMode = "cash" | "card" | "upi" | "split" | "credit" | "wallet";
 
 function PosScreen() {
+  const { currencySymbol, formatCurrency } = useCurrency();
   const products = useLiveQuery(() => localDb.products.toArray()) || [];
   const customers = useLiveQuery(() => localDb.customers.toArray()) || [];
   const categories = useLiveQuery(() => localDb.categories.toArray()) || [];
@@ -243,7 +245,7 @@ function PosScreen() {
     if (coupon.used >= coupon.usageLimit) { toast.error("Coupon usage limit reached"); return; }
     setAppliedCoupon(coupon);
     setShowCoupon(false);
-    toast.success(`Coupon "${coupon.code}" applied — ${coupon.type === "percentage" ? coupon.discount + "%" : "$" + coupon.discount} off`);
+    toast.success(`Coupon "${coupon.code}" applied — ${coupon.type === "percentage" ? coupon.discount + "%" : currencySymbol + coupon.discount} off`);
   };
 
   const handleCheckout = async () => {
@@ -257,7 +259,7 @@ function PosScreen() {
       const csh = parseFloat(splitCash) || 0;
       const crd = parseFloat(splitCard) || 0;
       if (csh + crd < total) {
-        toast.error(`Split payment total ($${(csh + crd).toFixed(2)}) is less than total due ($${total.toFixed(2)})`);
+        toast.error(`Split payment total (${formatCurrency(csh + crd)}) is less than total due (${formatCurrency(total)})`);
         return;
       }
       cashComponent = csh;
@@ -403,7 +405,7 @@ function PosScreen() {
     if (!saleComplete) return;
     const cust = customers.find(c => c.name === saleComplete.customer);
     const phone = cust?.phone || "";
-    const text = `*${saleComplete.storeName}*\nReceipt: #${saleComplete.id}\nDate: ${saleComplete.date}\nTotal: $${saleComplete.total.toFixed(2)}\n\nThank you for shopping with us!`;
+    const text = `*${saleComplete.storeName}*\nReceipt: #${saleComplete.id}\nDate: ${saleComplete.date}\nTotal: ${currencySymbol}${saleComplete.total.toFixed(2)}\n\nThank you for shopping with us!`;
     const url = `https://wa.me/${phone.replace(/\D/g, '')}?text=${encodeURIComponent(text)}`;
     window.open(url, '_blank');
   };
@@ -470,7 +472,7 @@ function PosScreen() {
                         <div className="line-clamp-1 text-sm font-semibold">{p.name}</div>
                         <div className="mt-0.5 truncate text-[11px] text-muted-foreground">{p.brand} · {p.unit}</div>
                         <div className="mt-2 flex items-center justify-between">
-                          <span className="number text-base font-bold text-foreground">${p.price.toFixed(2)}</span>
+                          <span className="number text-base font-bold text-foreground">{formatCurrency(p.price)}</span>
                           <span className="grid size-7 place-items-center rounded-lg bg-muted text-muted-foreground transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
                             <Plus className="size-4" />
                           </span>
@@ -527,7 +529,7 @@ function PosScreen() {
                       <div className="flex items-start justify-between gap-2">
                         <div className="min-w-0">
                           <div className="truncate text-sm font-semibold">{l.product.name}</div>
-                          <div className="text-[11px] text-muted-foreground">${l.product.price.toFixed(2)} / {l.product.unit}</div>
+                          <div className="text-[11px] text-muted-foreground">{formatCurrency(l.product.price)} / {l.product.unit}</div>
                         </div>
                         <button onClick={() => updateQty(l.id, 0)} className="rounded p-1 text-muted-foreground opacity-0 hover:bg-destructive/10 hover:text-destructive group-hover:opacity-100" aria-label="Remove">
                           <Trash2 className="size-3.5" />
@@ -539,7 +541,7 @@ function PosScreen() {
                           <span className="number w-8 text-center text-sm font-semibold">{l.qty}</span>
                           <button onClick={() => updateQty(l.id, l.qty + 1)} className="grid size-7 place-items-center text-sm hover:bg-muted">+</button>
                         </div>
-                        <span className="number text-sm font-bold">${l.total.toFixed(2)}</span>
+                        <span className="number text-sm font-bold">{formatCurrency(l.total)}</span>
                       </div>
                     </div>
                   </li>
@@ -583,13 +585,13 @@ function PosScreen() {
 
             {/* Totals */}
             <div className="space-y-1.5 rounded-lg bg-muted/40 p-3 text-sm">
-              <Row label="Subtotal" value={`$${subtotal.toFixed(2)}`} />
-              {discountAmt > 0 && <Row label={`Discount`} value={`-$${discountAmt.toFixed(2)}`} negative />}
-              <Row label={`Tax (${(taxRate * 100).toFixed(0)}%)`} value={`$${taxAmt.toFixed(2)}`} />
+              <Row label="Subtotal" value={formatCurrency(subtotal)} />
+              {discountAmt > 0 && <Row label={`Discount`} value={`-${formatCurrency(discountAmt)}`} negative />}
+              <Row label={`Tax (${(taxRate * 100).toFixed(0)}%)`} value={formatCurrency(taxAmt)} />
               <div className="my-1 border-t border-border" />
               <div className="flex items-baseline justify-between">
                 <span className="text-sm font-semibold">Total</span>
-                <span className="number text-2xl font-bold tracking-tight text-foreground">${total.toFixed(2)}</span>
+                <span className="number text-2xl font-bold tracking-tight text-foreground">{formatCurrency(total)}</span>
               </div>
             </div>
 
@@ -611,11 +613,11 @@ function PosScreen() {
                   type="number"
                   value={cashTendered}
                   onChange={e => setCashTendered(e.target.value)}
-                  placeholder={`Min $${total.toFixed(2)}`}
+                  placeholder={`Min ${formatCurrency(total)}`}
                   className="h-8 flex-1 rounded-lg border border-border bg-muted/30 px-2 text-sm font-mono outline-none focus:border-ring"
                 />
                 {changeDue > 0 && (
-                  <span className="text-xs font-bold text-success whitespace-nowrap">Change: ${changeDue.toFixed(2)}</span>
+                  <span className="text-xs font-bold text-success whitespace-nowrap">Change: {formatCurrency(changeDue)}</span>
                 )}
               </div>
             )}
@@ -748,8 +750,8 @@ function PosScreen() {
           <AlertDialogHeader>
             <AlertDialogTitle>Confirm Payment</AlertDialogTitle>
             <AlertDialogDescription>
-              Collect <strong>${total.toFixed(2)}</strong> via <strong>{payment.toUpperCase()}</strong> from <strong>{activeCustomer.name}</strong>.
-              {changeDue > 0 && <> Change due: <strong>${changeDue.toFixed(2)}</strong></>}
+              Collect <strong>{formatCurrency(total)}</strong> via <strong>{payment.toUpperCase()}</strong> from <strong>{activeCustomer.name}</strong>.
+              {changeDue > 0 && <> Change due: <strong>{formatCurrency(changeDue)}</strong></>}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -811,21 +813,21 @@ function PosScreen() {
                     <tr key={i}>
                       <td className="truncate max-w-[150px]">{l.product.name}</td>
                       <td className="text-right pl-2">{l.qty}</td>
-                      <td className="text-right pl-2">${l.total.toFixed(2)}</td>
+                      <td className="text-right pl-2">{currencySymbol}{l.total.toFixed(2)}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
             <div className="space-y-0.5 text-[11px]">
-              <div className="flex justify-between"><span>Subtotal:</span><span>${printData.subtotal.toFixed(2)}</span></div>
-              {printData.discountAmt > 0 && <div className="flex justify-between"><span>Discount:</span><span>-${printData.discountAmt.toFixed(2)}</span></div>}
-              <div className="flex justify-between"><span>Tax:</span><span>${printData.taxAmt.toFixed(2)}</span></div>
+              <div className="flex justify-between"><span>Subtotal:</span><span>{currencySymbol}{printData.subtotal.toFixed(2)}</span></div>
+              {printData.discountAmt > 0 && <div className="flex justify-between"><span>Discount:</span><span>-{currencySymbol}{printData.discountAmt.toFixed(2)}</span></div>}
+              <div className="flex justify-between"><span>Tax:</span><span>{currencySymbol}{printData.taxAmt.toFixed(2)}</span></div>
               <div className="flex justify-between font-bold border-t border-black pt-1 mt-1">
-                <span>TOTAL:</span><span>${printData.total.toFixed(2)}</span>
+                <span>TOTAL:</span><span>{currencySymbol}{printData.total.toFixed(2)}</span>
               </div>
-              {printData.cashTendered && <div className="flex justify-between"><span>Cash:</span><span>${printData.cashTendered.toFixed(2)}</span></div>}
-              {printData.changeDue > 0 && <div className="flex justify-between font-bold"><span>Change:</span><span>${printData.changeDue.toFixed(2)}</span></div>}
+              {printData.cashTendered && <div className="flex justify-between"><span>Cash:</span><span>{currencySymbol}{printData.cashTendered.toFixed(2)}</span></div>}
+              {printData.changeDue > 0 && <div className="flex justify-between font-bold"><span>Change:</span><span>{currencySymbol}{printData.changeDue.toFixed(2)}</span></div>}
             </div>
             <div className="text-center text-[10px] mt-4">
               <p>{printData.receiptFooter}</p>

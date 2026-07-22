@@ -26,6 +26,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { localDb } from "@/lib/db";
 import { useLiveQuery } from "dexie-react-hooks";
+import { useCurrency } from "@/lib/currency";
 import { MoreVertical, Edit2, Trash2, Truck } from "lucide-react";
 import { v4 as uuidv4 } from "uuid";
 import { toast } from "sonner";
@@ -37,6 +38,7 @@ export const Route = createFileRoute("/suppliers")({
 });
 
 function SuppliersPage() {
+  const { formatCurrency } = useCurrency();
   const rawSuppliers = useLiveQuery(() => localDb.suppliers.toArray()) || [];
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [editItem, setEditItem] = useState<LocalSupplier | null>(null);
@@ -144,7 +146,7 @@ function SuppliersPage() {
                 <div key={s.id} className="relative rounded-xl border border-border bg-card p-5 shadow-soft">
                   <div className="absolute right-4 top-4 flex items-center gap-2">
                     {s.balance > 0 ? (
-                      <span className="rounded-md bg-warning/15 px-2 py-0.5 text-xs font-semibold text-warning-foreground">${s.balance} due</span>
+                      <span className="rounded-md bg-warning/15 px-2 py-0.5 text-xs font-semibold text-warning-foreground">{formatCurrency(s.balance)} due</span>
                     ) : (
                       <span className="rounded-md bg-success/10 px-2 py-0.5 text-xs font-semibold text-success">Settled</span>
                     )}

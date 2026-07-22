@@ -60,6 +60,8 @@ function RegisterPage() {
         orgId,
         trialEndsAt,
         subscriptionStatus: "trial",
+        currencySymbol: "$",
+        currencyCode: "USD",
         storeName: formData.companyName,
         taxId: "",
         address: "",

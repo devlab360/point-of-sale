@@ -22,6 +22,7 @@ import { CheckoutModal } from "@/components/CheckoutModal";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRouter, useSearch } from "@tanstack/react-router";
 import { differenceInDays } from "date-fns";
+import { CURRENCY_OPTIONS } from "@/lib/currency";
 
 
 export const Route = createFileRoute("/settings")({
@@ -37,6 +38,8 @@ export const Route = createFileRoute("/settings")({
 const defaultSettings: LocalSetting = {
   id: "default",
   storeName: "Grocer.Pro Downtown",
+  currencySymbol: "$",
+  currencyCode: "USD",
   taxId: "US-84-2918471",
   address: "142 Market Street, San Francisco, CA 94103",
   phone: "+1 415 555 0188",
@@ -155,6 +158,31 @@ function SettingsPage() {
                 </Field>
                 <Field label="Email">
                   <input className="inp" value={settings.email} onChange={(e) => handleChange("email", e.target.value)} />
+                </Field>
+                <Field label="Store Currency Preset">
+                  <select 
+                    className="inp" 
+                    value={settings.currencySymbol || "$"} 
+                    onChange={(e) => {
+                      const opt = CURRENCY_OPTIONS.find(o => o.symbol === e.target.value);
+                      handleChange("currencySymbol", e.target.value);
+                      if (opt) handleChange("currencyCode", opt.code);
+                    }}
+                  >
+                    {CURRENCY_OPTIONS.map((c) => (
+                      <option key={c.symbol + c.code} value={c.symbol}>
+                        {c.label}
+                      </option>
+                    ))}
+                  </select>
+                </Field>
+                <Field label="Custom Currency Symbol">
+                  <input 
+                    className="inp font-bold" 
+                    value={settings.currencySymbol || "$"} 
+                    onChange={(e) => handleChange("currencySymbol", e.target.value)} 
+                    placeholder="e.g. $, ৳, ₹, €, £, AED" 
+                  />
                 </Field>
               </div>
             </Card>

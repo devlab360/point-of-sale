@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { DatePicker } from "@/components/ui/date-picker";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import {
   DropdownMenu,
@@ -29,6 +30,7 @@ import {
 import { MoreVertical, Edit2, Trash2, Ticket } from "lucide-react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { localDb } from "@/lib/db";
+import { useCurrency } from "@/lib/currency";
 import { v4 as uuidv4 } from "uuid";
 import { toast } from "sonner";
 import type { LocalCoupon } from "@/lib/db";
@@ -39,10 +41,12 @@ export const Route = createFileRoute("/coupons")({
 });
 
 function CouponsPage() {
+  const { formatCurrency } = useCurrency();
   const coupons = useLiveQuery(() => localDb.coupons.toArray()) || [];
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [editItem, setEditItem] = useState<LocalCoupon | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [expiresDate, setExpiresDate] = useState<string>("");
 
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search, 300);
@@ -161,7 +165,7 @@ function CouponsPage() {
                     <tr key={c.id} className="hover:bg-muted/30">
                       <td className="px-4 py-3"><code className="rounded bg-muted px-2 py-1 text-xs font-bold">{c.code}</code></td>
                       <td className="px-4 py-3 text-muted-foreground">{c.type}</td>
-                      <td className="px-4 py-3 font-semibold text-primary">{c.type === "percentage" ? `${c.discount}%` : `$${c.discount.toFixed(2)}`}</td>
+                      <td className="px-4 py-3 font-semibold text-primary">{c.type === "percentage" ? `${c.discount}%` : formatCurrency(c.discount)}</td>
                       <td className="px-4 py-3 text-muted-foreground">{c.used} / {c.usageLimit}</td>
                       <td className="px-4 py-3 text-muted-foreground">{new Date(c.expires).toLocaleDateString()}</td>
                       <td className="px-4 py-3">
@@ -230,7 +234,11 @@ function CouponsPage() {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="expires">Expiry Date</Label>
-                <Input id="expires" name="expires" type="date" required defaultValue={editItem ? new Date(editItem.expires).toISOString().split('T')[0] : ""} />
+                <DatePicker 
+                  name="expires" 
+                  date={expiresDate || (editItem ? editItem.expires : "")} 
+                  onDateChange={(d) => setExpiresDate(d ? d.toISOString().split("T")[0] : "")} 
+                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="status">Status</Label>

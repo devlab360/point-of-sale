@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { localDb } from "@/lib/db";
 import { useLiveQuery } from "dexie-react-hooks";
+import { useCurrency } from "@/lib/currency";
 import { Eye, Plus, ShoppingCart } from "lucide-react";
 import { useState, useMemo, useEffect } from "react";
 import type { LocalPurchase } from "@/lib/db";
@@ -21,6 +22,7 @@ export const Route = createFileRoute("/purchases")({
 
 function PurchasesPage() {
   const navigate = useNavigate();
+  const { formatCurrency } = useCurrency();
   const rawPurchases = useLiveQuery(() => localDb.purchases.toArray()) || [];
   const [query, setQuery] = useState("");
   const debouncedQuery = useDebounce(query, 300);
@@ -100,7 +102,7 @@ function PurchasesPage() {
                           {p.status}
                         </Badge>
                       </td>
-                      <td className="number px-4 py-3 text-right font-semibold">${p.total.toFixed(2)}</td>
+                      <td className="number px-4 py-3 text-right font-semibold">{formatCurrency(p.total)}</td>
                       <td className="px-4 py-3">
                         <Button variant="ghost" size="icon" title="View details" onClick={() => setViewPurchase(p)}>
                           <Eye className="size-4" />
@@ -135,7 +137,7 @@ function PurchasesPage() {
               </div>
               <div className="rounded-lg bg-muted/40 p-3 flex justify-between font-semibold">
                 <span>Total Amount</span>
-                <span>${viewPurchase.total.toFixed(2)}</span>
+                <span>{formatCurrency(viewPurchase.total)}</span>
               </div>
             </div>
           )}

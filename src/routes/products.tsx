@@ -20,6 +20,8 @@ import { DataPage } from "@/components/layout/DataPage";
 import { localDb } from "@/lib/db";
 import { useLiveQuery } from "dexie-react-hooks";
 import { cn } from "@/lib/utils";
+import { useCurrency } from "@/lib/currency";
+import { DatePicker } from "@/components/ui/date-picker";
 import { v4 as uuidv4 } from "uuid";
 import { toast } from "sonner";
 import {
@@ -42,6 +44,7 @@ export const Route = createFileRoute("/products")({
 });
 
 function ProductsPage() {
+  const { formatCurrency } = useCurrency();
   const [view, setView] = useState<"grid" | "list">("list");
   const rawProducts = useLiveQuery(() => localDb.products.toArray()) || [];
   
@@ -279,7 +282,11 @@ function ProductsPage() {
             </div>
             <div className="grid gap-2">
               <Label>Expiry Date (Optional)</Label>
-              <Input type="date" value={formData.expiryDate} onChange={e => setFormData({...formData, expiryDate: e.target.value})} />
+              <DatePicker 
+                date={formData.expiryDate} 
+                onDateChange={(d) => setFormData({ ...formData, expiryDate: d ? d.toISOString().split("T")[0] : "" })} 
+                placeholder="Select expiry date"
+              />
             </div>
             <div className="grid gap-2 col-span-2">
               <Label>Image URL</Label>
@@ -348,7 +355,7 @@ function ProductsPage() {
               <div className="scale-75 -my-2 origin-center">
                 <Barcode value={printProduct.barcode || printProduct.sku} width={1.5} height={40} displayValue={true} />
               </div>
-              <div className="text-[12px] font-bold mt-1">${printProduct.price.toFixed(2)}</div>
+              <div className="text-[12px] font-bold mt-1">{formatCurrency(printProduct.price)}</div>
             </div>
           ))}
         </div>
@@ -359,6 +366,7 @@ function ProductsPage() {
 
 
 function TableView({ products, onEdit, onDelete, onPrint }: { products: any[], onEdit: (p: any) => void, onDelete: (id: string) => void, onPrint: (p: any) => void }) {
+  const { formatCurrency } = useCurrency();
   return (
     <div className="overflow-hidden rounded-xl border border-border bg-card shadow-soft">
       <div className="overflow-x-auto">
@@ -398,7 +406,7 @@ function TableView({ products, onEdit, onDelete, onPrint }: { products: any[], o
                   </td>
                   <td className="px-4 py-3 font-mono text-xs text-muted-foreground">{p.sku}</td>
                   <td className="px-4 py-3 text-muted-foreground">{p.category}</td>
-                  <td className="number px-4 py-3 text-right font-semibold">${p.price.toFixed(2)}</td>
+                  <td className="number px-4 py-3 text-right font-semibold">{formatCurrency(p.price)}</td>
                   <td className="px-4 py-3 text-right">
                     <span className={cn("number font-semibold", low && "text-destructive")}>{p.stock}</span>
                     <span className="ml-1 text-xs text-muted-foreground">{p.unit}</span>
@@ -441,6 +449,7 @@ function TableView({ products, onEdit, onDelete, onPrint }: { products: any[], o
 }
 
 function GridView({ products, onEdit, onPrint }: { products: any[], onEdit: (p: any) => void, onPrint: (p: any) => void }) {
+  const { formatCurrency } = useCurrency();
   return (
     <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
       {products.map((p) => (
@@ -460,7 +469,7 @@ function GridView({ products, onEdit, onPrint }: { products: any[], onEdit: (p: 
             <div className="text-sm font-semibold">{p.name}</div>
             <div className="mt-0.5 text-xs text-muted-foreground">{p.sku}</div>
             <div className="mt-2.5 flex items-center justify-between">
-              <span className="number text-base font-bold">${p.price.toFixed(2)}</span>
+              <span className="number text-base font-bold">{formatCurrency(p.price)}</span>
               <span className="text-xs text-muted-foreground">{p.stock} in stock</span>
             </div>
           </div>
