@@ -15,6 +15,7 @@ import { Route as SuppliersRouteImport } from './routes/suppliers'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as SalesRouteImport } from './routes/sales'
 import { Route as ReportsRouteImport } from './routes/reports'
+import { Route as RegisterRouteImport } from './routes/register'
 import { Route as PurchasesRouteImport } from './routes/purchases'
 import { Route as PromotionsRouteImport } from './routes/promotions'
 import { Route as ProfileRouteImport } from './routes/profile'
@@ -22,6 +23,7 @@ import { Route as ProductsRouteImport } from './routes/products'
 import { Route as PosRouteImport } from './routes/pos'
 import { Route as NotificationsRouteImport } from './routes/notifications'
 import { Route as LoyaltyRouteImport } from './routes/loyalty'
+import { Route as LoginRouteImport } from './routes/login'
 import { Route as InventoryRouteImport } from './routes/inventory'
 import { Route as HelpRouteImport } from './routes/help'
 import { Route as GiftCardsRouteImport } from './routes/gift-cards'
@@ -36,6 +38,7 @@ import { Route as InventoryIndexRouteImport } from './routes/inventory.index'
 import { Route as SalesReturnsRouteImport } from './routes/sales.returns'
 import { Route as PurchasesReturnsRouteImport } from './routes/purchases.returns'
 import { Route as PurchasesNewRouteImport } from './routes/purchases.new'
+import { Route as InviteTokenRouteImport } from './routes/invite/$token'
 import { Route as InventoryTransfersRouteImport } from './routes/inventory.transfers'
 import { Route as InventoryHistoryRouteImport } from './routes/inventory.history'
 import { Route as InventoryAdjustmentsRouteImport } from './routes/inventory.adjustments'
@@ -68,6 +71,11 @@ const SalesRoute = SalesRouteImport.update({
 const ReportsRoute = ReportsRouteImport.update({
   id: '/reports',
   path: '/reports',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RegisterRoute = RegisterRouteImport.update({
+  id: '/register',
+  path: '/register',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PurchasesRoute = PurchasesRouteImport.update({
@@ -103,6 +111,11 @@ const NotificationsRoute = NotificationsRouteImport.update({
 const LoyaltyRoute = LoyaltyRouteImport.update({
   id: '/loyalty',
   path: '/loyalty',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
 const InventoryRoute = InventoryRouteImport.update({
@@ -175,6 +188,11 @@ const PurchasesNewRoute = PurchasesNewRouteImport.update({
   path: '/new',
   getParentRoute: () => PurchasesRoute,
 } as any)
+const InviteTokenRoute = InviteTokenRouteImport.update({
+  id: '/invite/$token',
+  path: '/invite/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const InventoryTransfersRoute = InventoryTransfersRouteImport.update({
   id: '/transfers',
   path: '/transfers',
@@ -202,6 +220,7 @@ export interface FileRoutesByFullPath {
   '/gift-cards': typeof GiftCardsRoute
   '/help': typeof HelpRoute
   '/inventory': typeof InventoryRouteWithChildren
+  '/login': typeof LoginRoute
   '/loyalty': typeof LoyaltyRoute
   '/notifications': typeof NotificationsRoute
   '/pos': typeof PosRoute
@@ -209,6 +228,7 @@ export interface FileRoutesByFullPath {
   '/profile': typeof ProfileRoute
   '/promotions': typeof PromotionsRoute
   '/purchases': typeof PurchasesRouteWithChildren
+  '/register': typeof RegisterRoute
   '/reports': typeof ReportsRoute
   '/sales': typeof SalesRouteWithChildren
   '/settings': typeof SettingsRoute
@@ -218,6 +238,7 @@ export interface FileRoutesByFullPath {
   '/inventory/adjustments': typeof InventoryAdjustmentsRoute
   '/inventory/history': typeof InventoryHistoryRoute
   '/inventory/transfers': typeof InventoryTransfersRoute
+  '/invite/$token': typeof InviteTokenRoute
   '/purchases/new': typeof PurchasesNewRoute
   '/purchases/returns': typeof PurchasesReturnsRoute
   '/sales/returns': typeof SalesReturnsRoute
@@ -233,6 +254,7 @@ export interface FileRoutesByTo {
   '/expenses': typeof ExpensesRoute
   '/gift-cards': typeof GiftCardsRoute
   '/help': typeof HelpRoute
+  '/login': typeof LoginRoute
   '/loyalty': typeof LoyaltyRoute
   '/notifications': typeof NotificationsRoute
   '/pos': typeof PosRoute
@@ -240,6 +262,7 @@ export interface FileRoutesByTo {
   '/profile': typeof ProfileRoute
   '/promotions': typeof PromotionsRoute
   '/purchases': typeof PurchasesRouteWithChildren
+  '/register': typeof RegisterRoute
   '/reports': typeof ReportsRoute
   '/sales': typeof SalesRouteWithChildren
   '/settings': typeof SettingsRoute
@@ -249,6 +272,7 @@ export interface FileRoutesByTo {
   '/inventory/adjustments': typeof InventoryAdjustmentsRoute
   '/inventory/history': typeof InventoryHistoryRoute
   '/inventory/transfers': typeof InventoryTransfersRoute
+  '/invite/$token': typeof InviteTokenRoute
   '/purchases/new': typeof PurchasesNewRoute
   '/purchases/returns': typeof PurchasesReturnsRoute
   '/sales/returns': typeof SalesReturnsRoute
@@ -266,6 +290,7 @@ export interface FileRoutesById {
   '/gift-cards': typeof GiftCardsRoute
   '/help': typeof HelpRoute
   '/inventory': typeof InventoryRouteWithChildren
+  '/login': typeof LoginRoute
   '/loyalty': typeof LoyaltyRoute
   '/notifications': typeof NotificationsRoute
   '/pos': typeof PosRoute
@@ -273,6 +298,7 @@ export interface FileRoutesById {
   '/profile': typeof ProfileRoute
   '/promotions': typeof PromotionsRoute
   '/purchases': typeof PurchasesRouteWithChildren
+  '/register': typeof RegisterRoute
   '/reports': typeof ReportsRoute
   '/sales': typeof SalesRouteWithChildren
   '/settings': typeof SettingsRoute
@@ -282,6 +308,7 @@ export interface FileRoutesById {
   '/inventory/adjustments': typeof InventoryAdjustmentsRoute
   '/inventory/history': typeof InventoryHistoryRoute
   '/inventory/transfers': typeof InventoryTransfersRoute
+  '/invite/$token': typeof InviteTokenRoute
   '/purchases/new': typeof PurchasesNewRoute
   '/purchases/returns': typeof PurchasesReturnsRoute
   '/sales/returns': typeof SalesReturnsRoute
@@ -300,6 +327,7 @@ export interface FileRouteTypes {
     | '/gift-cards'
     | '/help'
     | '/inventory'
+    | '/login'
     | '/loyalty'
     | '/notifications'
     | '/pos'
@@ -307,6 +335,7 @@ export interface FileRouteTypes {
     | '/profile'
     | '/promotions'
     | '/purchases'
+    | '/register'
     | '/reports'
     | '/sales'
     | '/settings'
@@ -316,6 +345,7 @@ export interface FileRouteTypes {
     | '/inventory/adjustments'
     | '/inventory/history'
     | '/inventory/transfers'
+    | '/invite/$token'
     | '/purchases/new'
     | '/purchases/returns'
     | '/sales/returns'
@@ -331,6 +361,7 @@ export interface FileRouteTypes {
     | '/expenses'
     | '/gift-cards'
     | '/help'
+    | '/login'
     | '/loyalty'
     | '/notifications'
     | '/pos'
@@ -338,6 +369,7 @@ export interface FileRouteTypes {
     | '/profile'
     | '/promotions'
     | '/purchases'
+    | '/register'
     | '/reports'
     | '/sales'
     | '/settings'
@@ -347,6 +379,7 @@ export interface FileRouteTypes {
     | '/inventory/adjustments'
     | '/inventory/history'
     | '/inventory/transfers'
+    | '/invite/$token'
     | '/purchases/new'
     | '/purchases/returns'
     | '/sales/returns'
@@ -363,6 +396,7 @@ export interface FileRouteTypes {
     | '/gift-cards'
     | '/help'
     | '/inventory'
+    | '/login'
     | '/loyalty'
     | '/notifications'
     | '/pos'
@@ -370,6 +404,7 @@ export interface FileRouteTypes {
     | '/profile'
     | '/promotions'
     | '/purchases'
+    | '/register'
     | '/reports'
     | '/sales'
     | '/settings'
@@ -379,6 +414,7 @@ export interface FileRouteTypes {
     | '/inventory/adjustments'
     | '/inventory/history'
     | '/inventory/transfers'
+    | '/invite/$token'
     | '/purchases/new'
     | '/purchases/returns'
     | '/sales/returns'
@@ -396,6 +432,7 @@ export interface RootRouteChildren {
   GiftCardsRoute: typeof GiftCardsRoute
   HelpRoute: typeof HelpRoute
   InventoryRoute: typeof InventoryRouteWithChildren
+  LoginRoute: typeof LoginRoute
   LoyaltyRoute: typeof LoyaltyRoute
   NotificationsRoute: typeof NotificationsRoute
   PosRoute: typeof PosRoute
@@ -403,12 +440,14 @@ export interface RootRouteChildren {
   ProfileRoute: typeof ProfileRoute
   PromotionsRoute: typeof PromotionsRoute
   PurchasesRoute: typeof PurchasesRouteWithChildren
+  RegisterRoute: typeof RegisterRoute
   ReportsRoute: typeof ReportsRoute
   SalesRoute: typeof SalesRouteWithChildren
   SettingsRoute: typeof SettingsRoute
   SuppliersRoute: typeof SuppliersRoute
   UnitsRoute: typeof UnitsRoute
   UsersRoute: typeof UsersRoute
+  InviteTokenRoute: typeof InviteTokenRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -453,6 +492,13 @@ declare module '@tanstack/react-router' {
       path: '/reports'
       fullPath: '/reports'
       preLoaderRoute: typeof ReportsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/register': {
+      id: '/register'
+      path: '/register'
+      fullPath: '/register'
+      preLoaderRoute: typeof RegisterRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/purchases': {
@@ -502,6 +548,13 @@ declare module '@tanstack/react-router' {
       path: '/loyalty'
       fullPath: '/loyalty'
       preLoaderRoute: typeof LoyaltyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/inventory': {
@@ -602,6 +655,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PurchasesNewRouteImport
       parentRoute: typeof PurchasesRoute
     }
+    '/invite/$token': {
+      id: '/invite/$token'
+      path: '/invite/$token'
+      fullPath: '/invite/$token'
+      preLoaderRoute: typeof InviteTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/inventory/transfers': {
       id: '/inventory/transfers'
       path: '/transfers'
@@ -679,6 +739,7 @@ const rootRouteChildren: RootRouteChildren = {
   GiftCardsRoute: GiftCardsRoute,
   HelpRoute: HelpRoute,
   InventoryRoute: InventoryRouteWithChildren,
+  LoginRoute: LoginRoute,
   LoyaltyRoute: LoyaltyRoute,
   NotificationsRoute: NotificationsRoute,
   PosRoute: PosRoute,
@@ -686,12 +747,14 @@ const rootRouteChildren: RootRouteChildren = {
   ProfileRoute: ProfileRoute,
   PromotionsRoute: PromotionsRoute,
   PurchasesRoute: PurchasesRouteWithChildren,
+  RegisterRoute: RegisterRoute,
   ReportsRoute: ReportsRoute,
   SalesRoute: SalesRouteWithChildren,
   SettingsRoute: SettingsRoute,
   SuppliersRoute: SuppliersRoute,
   UnitsRoute: UnitsRoute,
   UsersRoute: UsersRoute,
+  InviteTokenRoute: InviteTokenRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

@@ -15,12 +15,16 @@ export interface Product {
   reorderLevel: number;
   image: string;
   status?: string;
+  expiryDate?: string;
+  synced?: boolean;
+  syncRetryCount?: number;
+  orgId?: string;
 }
 
-export interface LocalCategory { id: string; name: string; color: string; icon: string; count: number; }
-export interface LocalBrand { id: string; name: string; products: number; }
-export interface LocalUnit { id: string; name: string; short: string; }
-export interface LocalSupplier { id: string; name: string; contact: string; phone: string; email?: string; balance: number; items: number; }
+export interface LocalCategory { id: string; orgId?: string; name: string; color: string; icon: string; count: number; }
+export interface LocalBrand { id: string; orgId?: string; name: string; products: number; }
+export interface LocalUnit { id: string; orgId?: string; name: string; short: string; }
+export interface LocalSupplier { id: string; orgId?: string; name: string; contact: string; phone: string; email?: string; balance: number; items: number; }
 export interface LocalLocation { id: string; name: string; type: string; status: string; }
 export interface LocalPurchase { id: string; supplier: string; date: string | Date; items: number; status: string; total: number; }
 export interface LocalInventoryMovement { id?: number; productName: string; action: string; quantity: number; createdAt: string | Date; }
@@ -31,10 +35,14 @@ export interface LocalCoupon { id: string; code: string; type: string; discount:
 export interface LocalGiftCard { id: string; code: string; balance: number; initialBalance?: number; customer?: string; issued?: string; expires: string; status: string; }
 export interface LocalPromotion { id: string; title: string; type: string; value: number; conditions: string; startDate: string; endDate: string; status: string; }
 export interface LocalActivity { id: string; user: string; action: string; details: string; timestamp: string; type: string; }
-export interface LocalUser { id: string; name: string; role: string; email: string; lastActive: string; status: string; avatar?: string; phone?: string; location?: string; joined?: string; }
+export interface LocalUser { id: string; orgId?: string; name: string; role: string; email: string; lastActive: string; status: string; avatar?: string; phone?: string; location?: string; joined?: string; pin?: string; permissions?: string[]; }
 export interface LocalNotification { id: string; title: string; description: string; type: string; timestamp: string; read: boolean; }
+export interface LocalInvitation { id: string; orgId: string; token: string; role: string; permissions?: string[]; status: string; createdAt: string; expiresAt: string; }
 export interface LocalSetting {
   id: string;
+  orgId?: string;
+  trialEndsAt?: string;
+  subscriptionStatus?: string;
   storeName: string;
   taxId: string;
   address: string;
@@ -52,6 +60,7 @@ export interface LocalSetting {
 
 export interface LocalCustomer {
   id: string;
+  orgId?: string;
   name: string;
   email: string | null;
   phone: string | null;
@@ -59,11 +68,15 @@ export interface LocalCustomer {
   visits: number;
   totalSpent: number;
   credit: number;
+  walletBalance?: number;
   status: string;
+  synced?: boolean;
+  syncRetryCount?: number;
 }
 
 export interface OfflineSale {
   id: string;
+  orgId?: string;
   customerId?: string;
   customerName?: string;
   date: string;
@@ -73,6 +86,7 @@ export interface OfflineSale {
   discountAmt?: number;
   taxAmt?: number;
   paymentMethod: string;
+  payments?: { method: string; amount: number }[];
   status: string;
   synced: boolean;
   syncRetryCount?: number;
@@ -122,6 +136,29 @@ export interface LocalPurchaseReturn {
   stockRestored: boolean;
 }
 
+export interface LocalShift {
+  id: string;
+  userId: string;
+  userName: string;
+  openTime: string;
+  closeTime?: string;
+  startingCash: number;
+  expectedCash: number;
+  actualCash?: number;
+  difference?: number;
+  status: "open" | "closed";
+  notes?: string;
+}
+
+export interface LocalCashMovement {
+  id: string;
+  shiftId: string;
+  type: "pay-in" | "pay-out";
+  amount: number;
+  reason: string;
+  timestamp: string;
+}
+
 export class POSDatabase extends Dexie {
   products!: Table<Product, string>;
   customers!: Table<LocalCustomer, string>;
@@ -146,11 +183,14 @@ export class POSDatabase extends Dexie {
   salesReturns!: Table<LocalSaleReturn, string>;
   purchaseReturns!: Table<LocalPurchaseReturn, string>;
   locations!: Table<LocalLocation, string>;
+  shifts!: Table<LocalShift, string>;
+  cashMovements!: Table<LocalCashMovement, string>;
+  invitations!: Table<LocalInvitation, string>;
 
   constructor() {
     super("POSDatabase");
 
-    this.version(7).stores({
+    this.version(8).stores({
       products: "id, name, sku, barcode, category",
       customers: "id, name, phone",
       offlineSales: "id, status, synced, date",
@@ -223,6 +263,65 @@ export class POSDatabase extends Dexie {
       salesReturns: "id, ref, saleId, date, status",
       purchaseReturns: "id, ref, purchaseId, date, status",
       locations: "id, name, type, status",
+    });
+
+    // Version 11: adds orgId index to all stores
+    this.version(11).stores({
+      products: "id, orgId, name, sku, barcode, category",
+      customers: "id, orgId, name, phone",
+      offlineSales: "id, orgId, status, synced, date",
+      categories: "id, orgId, name",
+      brands: "id, orgId, name",
+      units: "id, orgId, name",
+      suppliers: "id, orgId, name",
+      purchases: "id, orgId, supplier, date",
+      inventoryMovements: "++id, orgId, productName, action",
+      adjustments: "id, orgId, ref, date",
+      transfers: "id, orgId, ref, date",
+      expenses: "id, orgId, date, category",
+      coupons: "id, orgId, code",
+      giftCards: "id, orgId, code",
+      promotions: "id, orgId, status",
+      activityLog: "id, orgId, user, action",
+      users: "id, orgId, role, email",
+      notifications: "id, orgId, read",
+      settings: "id, orgId",
+      heldInvoices: "id, orgId, savedAt",
+      salesReturns: "id, orgId, ref, date",
+      purchaseReturns: "id, orgId, ref, date",
+      locations: "id, orgId, name",
+      shifts: "id, orgId, userId, status",
+      cashMovements: "id, orgId, shiftId, type, timestamp",
+    });
+
+    // Version 12: adds invitations
+    this.version(12).stores({
+      products: "id, orgId, name, sku, barcode, category",
+      customers: "id, orgId, name, phone",
+      offlineSales: "id, orgId, status, synced, date",
+      categories: "id, orgId, name",
+      brands: "id, orgId, name",
+      units: "id, orgId, name",
+      suppliers: "id, orgId, name",
+      purchases: "id, orgId, supplier, date",
+      inventoryMovements: "++id, orgId, productName, action",
+      adjustments: "id, orgId, ref, date",
+      transfers: "id, orgId, ref, date",
+      expenses: "id, orgId, date, category",
+      coupons: "id, orgId, code",
+      giftCards: "id, orgId, code",
+      promotions: "id, orgId, status",
+      activityLog: "id, orgId, user, action",
+      users: "id, orgId, role, email",
+      notifications: "id, orgId, read",
+      settings: "id, orgId",
+      heldInvoices: "id, orgId, savedAt",
+      salesReturns: "id, orgId, ref, date",
+      purchaseReturns: "id, orgId, ref, date",
+      locations: "id, orgId, name",
+      shifts: "id, orgId, userId, status",
+      cashMovements: "id, orgId, shiftId, type, timestamp",
+      invitations: "id, orgId, token, status",
     });
   }
 }

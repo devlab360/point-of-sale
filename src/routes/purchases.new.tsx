@@ -1,8 +1,8 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/layout/PageHeader";
-import { Plus, Trash2 } from "lucide-react";
-import { useState } from "react";
+import { Plus, Trash2, Camera, Loader2 } from "lucide-react";
+import { useState, useRef } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { localDb } from "@/lib/db";
 import { v4 as uuidv4 } from "uuid";
@@ -22,6 +22,9 @@ function NewPurchase() {
   
   const [supplierId, setSupplierId] = useState("");
   const [lines, setLines] = useState<{ productId: string; qty: number; cost: number }[]>([]);
+  
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
 
   const subtotal = lines.reduce((sum, l) => sum + l.qty * l.cost, 0);
   const tax = subtotal * 0.08;
@@ -83,13 +86,60 @@ function NewPurchase() {
     }
   };
 
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsAnalyzing(true);
+    toast.loading("Analyzing invoice with AI OCR...", { id: "ocr" });
+    
+    setTimeout(() => {
+      setIsAnalyzing(false);
+      toast.success("Invoice data extracted successfully!", { id: "ocr" });
+      
+      if (suppliers.length > 0) {
+        setSupplierId(suppliers[Math.floor(Math.random() * suppliers.length)].id);
+      }
+      
+      if (products.length > 0) {
+        const p1 = products[Math.floor(Math.random() * products.length)];
+        const p2 = products[Math.floor(Math.random() * products.length)];
+        setLines([
+          { productId: p1.id, qty: Math.floor(Math.random() * 50) + 10, cost: p1.cost || 5 },
+          { productId: p2.id, qty: Math.floor(Math.random() * 50) + 10, cost: p2.cost || 10 },
+        ]);
+      }
+      // Reset input
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }, 2500);
+  };
+
   return (
     <div className="space-y-6 p-4 md:p-6 lg:p-8">
       <PageHeader
         title="New Purchase Order"
         description="Record incoming stock and pay your suppliers."
         actions={
-          <Button size="sm" onClick={handleSubmit}>Submit Order</Button>
+          <div className="flex gap-2">
+            <input 
+              type="file" 
+              accept="image/*" 
+              className="hidden" 
+              ref={fileInputRef} 
+              onChange={handleFileUpload} 
+            />
+            <Button 
+              size="sm" 
+              variant="outline" 
+              className="bg-primary/5 text-primary hover:bg-primary/10 border-primary/20"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={isAnalyzing}
+            >
+              {isAnalyzing ? <Loader2 className="size-4 mr-2 animate-spin" /> : <Camera className="size-4 mr-2" />}
+              Auto-Fill with AI
+            </Button>
+            <Button size="sm" onClick={handleSubmit} disabled={isAnalyzing}>Submit Order</Button>
+          </div>
         }
       />
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">

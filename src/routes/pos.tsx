@@ -17,6 +17,7 @@ import {
   User,
   Users,
   X,
+  MessageCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { localDb } from "@/lib/db";
@@ -24,6 +25,7 @@ import { useLiveQuery } from "dexie-react-hooks";
 import { v4 as uuidv4 } from "uuid";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { useAuth } from "@/contexts/AuthContext";
 import {
   Dialog,
   DialogContent,
@@ -55,7 +57,7 @@ export const Route = createFileRoute("/pos")({
 });
 
 type CartLine = { id: string; qty: number };
-type PaymentMode = "cash" | "card" | "upi" | "split";
+type PaymentMode = "cash" | "card" | "upi" | "split" | "credit" | "wallet";
 
 function PosScreen() {
   const products = useLiveQuery(() => localDb.products.toArray()) || [];
@@ -64,6 +66,12 @@ function PosScreen() {
   const heldInvoices = useLiveQuery(() => localDb.heldInvoices.orderBy("savedAt").reverse().toArray()) || [];
   const settings = useLiveQuery(() => localDb.settings.get("default"));
   const coupons = useLiveQuery(() => localDb.coupons.toArray()) || [];
+  const { user } = useAuth();
+  
+  const activeShift = useLiveQuery(() => {
+    if (!user) return undefined;
+    return localDb.shifts.where("userId").equals(user.id).filter(s => s.status === "open").first();
+  }, [user]);
 
   const [activeCat, setActiveCat] = useState<string>("all");
   const [query, setQuery] = useState("");
@@ -73,6 +81,7 @@ function PosScreen() {
   const [payment, setPayment] = useState<PaymentMode>("card");
   const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(null);
   const [printData, setPrintData] = useState<any>(null);
+  const [saleComplete, setSaleComplete] = useState<any>(null);
 
   // Dialogs
   const [showCustomerSearch, setShowCustomerSearch] = useState(false);
@@ -85,6 +94,39 @@ function PosScreen() {
   const [splitCash, setSplitCash] = useState("");
   const [splitCard, setSplitCard] = useState("");
   const [confirmCheckout, setConfirmCheckout] = useState(false);
+  
+  // Shift
+  const [showOpenRegister, setShowOpenRegister] = useState(false);
+  const [startingCash, setStartingCash] = useState("");
+
+  useEffect(() => {
+    if (activeShift === null) {
+      setShowOpenRegister(true);
+    } else if (activeShift) {
+      setShowOpenRegister(false);
+    }
+  }, [activeShift]);
+
+  const handleOpenRegister = async () => {
+    if (!user) return;
+    const amount = parseFloat(startingCash);
+    if (isNaN(amount) || amount < 0) {
+      toast.error("Please enter a valid starting float");
+      return;
+    }
+    const shiftId = uuidv4();
+    await localDb.shifts.add({
+      id: shiftId,
+      userId: user.id,
+      userName: user.name,
+      openTime: new Date().toISOString(),
+      startingCash: amount,
+      expectedCash: amount,
+      status: "open",
+    });
+    toast.success("Register opened successfully");
+    setShowOpenRegister(false);
+  };
 
   const taxRate = settings ? settings.standardRate / 100 : 0.08;
   const storeName = settings?.storeName || "GROCER.PRO";
@@ -206,11 +248,55 @@ function PosScreen() {
 
   const handleCheckout = async () => {
     if (lines.length === 0) return;
+    
+    // Validate split payment
+    let cashComponent = 0;
+    let paymentsArr: { method: string; amount: number }[] = [];
+    
+    if (payment === "split") {
+      const csh = parseFloat(splitCash) || 0;
+      const crd = parseFloat(splitCard) || 0;
+      if (csh + crd < total) {
+        toast.error(`Split payment total ($${(csh + crd).toFixed(2)}) is less than total due ($${total.toFixed(2)})`);
+        return;
+      }
+      cashComponent = csh;
+      paymentsArr = [
+        { method: "cash", amount: csh },
+        { method: "card", amount: crd }
+      ];
+    } else if (payment === "cash") {
+      cashComponent = total;
+      paymentsArr = [{ method: "cash", amount: total }];
+    } else if (payment === "credit" || payment === "wallet") {
+      if (activeCustomer.id === "walkin") {
+        toast.error(`${payment === "credit" ? "Credit" : "Wallet"} payments require a registered customer`);
+        return;
+      }
+      if (payment === "wallet") {
+        const cust = customers.find(c => c.id === activeCustomer.id);
+        if (!cust || (cust.walletBalance || 0) < total) {
+          toast.error("Insufficient wallet balance");
+          return;
+        }
+      }
+      paymentsArr = [{ method: payment, amount: total }];
+    } else {
+      paymentsArr = [{ method: payment, amount: total }];
+    }
+
     setConfirmCheckout(false);
     const saleId = uuidv4();
     const invNum = saleId.substring(0, 8).toUpperCase();
 
     try {
+      // 0. Update Shift Cash
+      if (activeShift && cashComponent > 0) {
+        await localDb.shifts.update(activeShift.id, {
+          expectedCash: activeShift.expectedCash + cashComponent
+        });
+      }
+
       // 1. Save sale to local DB
       await localDb.offlineSales.add({
         id: saleId,
@@ -223,6 +309,7 @@ function PosScreen() {
         taxAmt: parseFloat(taxAmt.toFixed(2)),
         total: parseFloat(total.toFixed(2)),
         paymentMethod: payment,
+        payments: paymentsArr,
         status: "completed",
         synced: false,
         syncRetryCount: 0,
@@ -248,15 +335,25 @@ function PosScreen() {
         });
       }
 
-      // 3. Award loyalty points (1 point per $1 spent)
+      // 3. Award loyalty points and handle Credit/Wallet
       if (activeCustomer.id !== "walkin") {
         const pointsEarned = Math.floor(total);
         const cust = customers.find(c => c.id === activeCustomer.id);
         if (cust) {
+          let newCredit = cust.credit;
+          let newWallet = cust.walletBalance || 0;
+          if (payment === "credit") {
+            newCredit += total;
+          } else if (payment === "wallet") {
+            newWallet -= total;
+          }
           await localDb.customers.update(activeCustomer.id, {
             loyaltyPoints: cust.loyaltyPoints + pointsEarned,
             totalSpent: cust.totalSpent + total,
             visits: cust.visits + 1,
+            credit: newCredit,
+            walletBalance: newWallet,
+            synced: false
           });
         }
       }
@@ -294,12 +391,21 @@ function PosScreen() {
       setAppliedCoupon(null);
       setCashTendered("");
 
-      toast.success(`Sale #${invNum} complete! Printing receipt...`);
-      setTimeout(() => { window.print(); setPrintData(null); }, 200);
+      setSaleComplete(printObj);
+      toast.success(`Sale #${invNum} complete!`);
     } catch (e) {
       console.error(e);
       toast.error("Failed to complete sale. Please try again.");
     }
+  };
+
+  const sendWhatsApp = () => {
+    if (!saleComplete) return;
+    const cust = customers.find(c => c.name === saleComplete.customer);
+    const phone = cust?.phone || "";
+    const text = `*${saleComplete.storeName}*\nReceipt: #${saleComplete.id}\nDate: ${saleComplete.date}\nTotal: $${saleComplete.total.toFixed(2)}\n\nThank you for shopping with us!`;
+    const url = `https://wa.me/${phone.replace(/\D/g, '')}?text=${encodeURIComponent(text)}`;
+    window.open(url, '_blank');
   };
 
   return (
@@ -488,11 +594,13 @@ function PosScreen() {
             </div>
 
             {/* Payment Method */}
-            <div className="mt-3 grid grid-cols-4 gap-2">
+            <div className="mt-3 grid grid-cols-3 gap-2">
               <PayBtn icon={Banknote} label="Cash" active={payment === "cash"} onClick={() => setPayment("cash")} />
               <PayBtn icon={CreditCard} label="Card" active={payment === "card"} onClick={() => setPayment("card")} />
               <PayBtn icon={Smartphone} label="UPI" active={payment === "upi"} onClick={() => setPayment("upi")} />
               <PayBtn icon={Users} label="Split" active={payment === "split"} onClick={() => setPayment("split")} />
+              <PayBtn icon={Receipt} label="Credit" active={payment === "credit"} onClick={() => setPayment("credit")} />
+              <PayBtn icon={Banknote} label="Wallet" active={payment === "wallet"} onClick={() => setPayment("wallet")} />
             </div>
 
             {/* Cash tendered */}
@@ -651,6 +759,28 @@ function PosScreen() {
         </AlertDialogContent>
       </AlertDialog>
 
+      {/* Sale Complete Dialog */}
+      <Dialog open={!!saleComplete} onOpenChange={(open) => {
+        if (!open) { setSaleComplete(null); setPrintData(null); }
+      }}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader><DialogTitle>Sale Complete</DialogTitle></DialogHeader>
+          <div className="flex flex-col gap-3 py-4">
+            <Button onClick={() => window.print()} className="w-full">
+              <Printer className="mr-2 size-4" /> Print Receipt
+            </Button>
+            {saleComplete?.customer !== "Walk-in Customer" && (
+              <Button onClick={sendWhatsApp} className="w-full bg-[#25D366] hover:bg-[#128C7E] text-white">
+                <MessageCircle className="mr-2 size-4" /> Send WhatsApp Receipt
+              </Button>
+            )}
+            <Button variant="outline" onClick={() => { setSaleComplete(null); setPrintData(null); }} className="w-full">
+              New Sale
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {/* Thermal Receipt (print only) */}
       {printData && (
         <div className="hidden print:block fixed inset-0 z-[100] bg-white text-black text-[12px] font-mono leading-tight p-4">
@@ -703,6 +833,38 @@ function PosScreen() {
           </div>
         </div>
       )}
+
+      {/* Open Register Dialog */}
+      <Dialog open={showOpenRegister} onOpenChange={(open) => {
+        if (!open && !activeShift) return; // Prevent closing if no shift
+        setShowOpenRegister(open);
+      }}>
+        <DialogContent className="sm:max-w-md [&>button]:hidden">
+          <DialogHeader>
+            <DialogTitle>Open Register</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <p className="text-sm text-muted-foreground">
+              Your register is currently closed. Please declare the starting cash amount (float) in the drawer to open the register.
+            </p>
+            <div className="space-y-2">
+              <Label>Starting Cash</Label>
+              <Input
+                type="number"
+                placeholder="0.00"
+                value={startingCash}
+                onChange={(e) => setStartingCash(e.target.value)}
+                autoFocus
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button onClick={handleOpenRegister} className="w-full">
+              Open Register
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

@@ -11,9 +11,19 @@ export function SyncStatus() {
   const [isSyncing, setIsSyncing] = useState(false);
   
   const pendingSalesCount = useLiveQuery(
-    () => localDb.offlineSales.where("synced").equals("false").count(),
+    () => localDb.offlineSales.filter(s => s.synced === false).count(),
     []
   ) || 0;
+  const pendingProductsCount = useLiveQuery(
+    () => localDb.products.filter(p => p.synced === false).count(),
+    []
+  ) || 0;
+  const pendingCustomersCount = useLiveQuery(
+    () => localDb.customers.filter(c => c.synced === false).count(),
+    []
+  ) || 0;
+  
+  const totalPending = pendingSalesCount + pendingProductsCount + pendingCustomersCount;
 
   useEffect(() => {
     const handleOnline = () => setIsOnline(true);
@@ -45,7 +55,7 @@ export function SyncStatus() {
     }
   };
 
-  if (pendingSalesCount === 0 && isOnline) {
+  if (totalPending === 0 && isOnline) {
     return (
       <div className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 rounded-full border border-emerald-200 dark:border-emerald-500/20">
         <Cloud className="size-3.5" />
@@ -57,7 +67,7 @@ export function SyncStatus() {
   return (
     <button 
       onClick={handleManualSync}
-      disabled={isSyncing || (!isOnline && pendingSalesCount === 0)}
+      disabled={isSyncing || (!isOnline && totalPending === 0)}
       className={cn(
         "flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-full border transition-colors",
         !isOnline 
@@ -71,9 +81,10 @@ export function SyncStatus() {
         <RefreshCw className={cn("size-3.5", isSyncing && "animate-spin")} />
       )}
       {!isOnline ? "Offline" : "Syncing"}
-      {pendingSalesCount > 0 && (
+      {totalPending > 0 && (
         <span className="ml-1 inline-flex h-4 items-center justify-center rounded-full bg-foreground/10 px-1.5 text-[10px] font-bold">
-          {pendingSalesCount} pending
+          <span className="hidden sm:inline">{totalPending} pending sync</span>
+          <span className="sm:hidden">{totalPending}</span>
         </span>
       )}
     </button>

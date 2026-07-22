@@ -1,7 +1,29 @@
 import { pgTable, text, serial, integer, numeric, timestamp, boolean } from "drizzle-orm/pg-core";
 
+export const organizations = pgTable("organizations", {
+  id: text("id").primaryKey(),
+  name: text("name").notNull(),
+  industry: text("industry").notNull(),
+  plan: text("plan").notNull().default("free"), // free, basic, pro
+  status: text("status").notNull().default("active"),
+  subscriptionStatus: text("subscription_status").notNull().default("trial"), // trial, active, expired
+  trialEndsAt: timestamp("trial_ends_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const invitations = pgTable("invitations", {
+  id: text("id").primaryKey(),
+  organizationId: text("organization_id").notNull().references(() => organizations.id),
+  token: text("token").notNull(),
+  role: text("role").notNull().default("cashier"),
+  status: text("status").notNull().default("pending"), // pending, accepted, expired
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  expiresAt: timestamp("expires_at").notNull(),
+});
+
 export const categories = pgTable("categories", {
   id: text("id").primaryKey(),
+  organizationId: text("organization_id").notNull().references(() => organizations.id),
   name: text("name").notNull(),
   color: text("color").notNull().default("oklch(0.7 0.1 200)"),
   icon: text("icon").notNull().default("📦"),
@@ -10,18 +32,21 @@ export const categories = pgTable("categories", {
 
 export const brands = pgTable("brands", {
   id: text("id").primaryKey(),
+  organizationId: text("organization_id").notNull().references(() => organizations.id),
   name: text("name").notNull(),
   products: integer("products").notNull().default(0),
 });
 
 export const units = pgTable("units", {
   id: text("id").primaryKey(),
+  organizationId: text("organization_id").notNull().references(() => organizations.id),
   name: text("name").notNull(),
   short: text("short").notNull(),
 });
 
 export const suppliers = pgTable("suppliers", {
   id: text("id").primaryKey(),
+  organizationId: text("organization_id").notNull().references(() => organizations.id),
   name: text("name").notNull(),
   contact: text("contact").notNull(),
   phone: text("phone").notNull(),
@@ -31,6 +56,7 @@ export const suppliers = pgTable("suppliers", {
 
 export const products = pgTable("products", {
   id: text("id").primaryKey(),
+  organizationId: text("organization_id").notNull().references(() => organizations.id),
   name: text("name").notNull(),
   sku: text("sku").notNull().unique(),
   barcode: text("barcode").notNull().unique(),
@@ -49,6 +75,7 @@ export const products = pgTable("products", {
 
 export const customers = pgTable("customers", {
   id: text("id").primaryKey(),
+  organizationId: text("organization_id").notNull().references(() => organizations.id),
   name: text("name").notNull(),
   email: text("email"),
   phone: text("phone"),
@@ -56,6 +83,7 @@ export const customers = pgTable("customers", {
   totalSpent: numeric("total_spent", { precision: 12, scale: 2 }).default("0"),
   loyaltyPoints: integer("loyalty_points").default(0),
   credit: numeric("credit", { precision: 10, scale: 2 }).default("0"),
+  walletBalance: numeric("wallet_balance", { precision: 10, scale: 2 }).default("0"),
   status: text("status").default("regular"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
@@ -63,6 +91,7 @@ export const customers = pgTable("customers", {
 
 export const sales = pgTable("sales", {
   id: text("id").primaryKey(),
+  organizationId: text("organization_id").notNull().references(() => organizations.id),
   customerId: text("customer_id").references(() => customers.id),
   customerName: text("customer_name"), // Storing name directly for walk-in customers
   date: timestamp("date").defaultNow().notNull(),
@@ -76,6 +105,7 @@ export const sales = pgTable("sales", {
 
 export const saleItems = pgTable("sale_items", {
   id: serial("id").primaryKey(),
+  organizationId: text("organization_id").notNull().references(() => organizations.id),
   saleId: text("sale_id").notNull().references(() => sales.id),
   productId: text("product_id").notNull().references(() => products.id),
   quantity: integer("quantity").notNull(),
@@ -85,6 +115,7 @@ export const saleItems = pgTable("sale_items", {
 
 export const purchases = pgTable("purchases", {
   id: text("id").primaryKey(),
+  organizationId: text("organization_id").notNull().references(() => organizations.id),
   supplier: text("supplier").notNull(),
   date: timestamp("date").defaultNow().notNull(),
   items: integer("items").notNull(),
@@ -96,6 +127,7 @@ export const purchases = pgTable("purchases", {
 
 export const inventoryMovements = pgTable("inventory_movements", {
   id: serial("id").primaryKey(),
+  organizationId: text("organization_id").notNull().references(() => organizations.id),
   productName: text("product_name").notNull(),
   action: text("action").notNull(),
   quantity: integer("quantity").notNull(),
@@ -104,6 +136,7 @@ export const inventoryMovements = pgTable("inventory_movements", {
 
 export const settings = pgTable("settings", {
   id: text("id").primaryKey(),
+  organizationId: text("organization_id").notNull().references(() => organizations.id),
   storeName: text("store_name").notNull(),
   taxId: text("tax_id"),
   address: text("address"),

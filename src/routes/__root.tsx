@@ -3,6 +3,7 @@ import {
   Outlet,
   createRootRouteWithContext,
   useRouter,
+  useRouterState,
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
@@ -15,6 +16,7 @@ import { AppHeader } from "@/components/layout/AppHeader";
 import { initializeLocalDb } from "@/lib/sync";
 import { Toaster } from "sonner";
 import { Button } from "@/components/ui/button";
+import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 
 function NotFoundComponent() {
   return (
@@ -133,13 +135,55 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <AppLayout />
+      </AuthProvider>
+    </QueryClientProvider>
+  );
+}
+
+function AppLayout() {
+  const { isAuthenticated, isLoading, isTrialExpired } = useAuth();
+  const location = useRouterState({ select: (s) => s.location });
+  const router = useRouter();
+
+  const publicRoutes = ["/login", "/register"];
+  const isPublicRoute = publicRoutes.includes(location.pathname) || location.pathname.startsWith("/invite");
+
+  useEffect(() => {
+    if (!isLoading) {
+      if (!isAuthenticated && !isPublicRoute) {
+        router.navigate({ to: "/login", replace: true });
+      } else if (isAuthenticated && isPublicRoute) {
+        router.navigate({ to: "/", replace: true });
+      } else if (isAuthenticated && isTrialExpired && location.pathname !== "/settings") {
+        router.navigate({ to: "/settings", search: { tab: "billing" }, replace: true });
+      }
+    }
+  }, [isLoading, isAuthenticated, isTrialExpired, location.pathname, router]);
+
+  if (isLoading) {
+    return (
+      <div className="flex h-screen w-full items-center justify-center bg-background">
+        <div className="size-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
+      </div>
+    );
+  }
+
+  // Hide sidebar and header on public pages
+  if (isPublicRoute) {
+    return <Outlet />;
+  }
+
+  return (
+    <>
       <div className="flex h-screen w-full overflow-hidden bg-background text-foreground">
         <aside className="hidden w-64 shrink-0 border-r border-sidebar-border lg:flex">
           <AppSidebar />
         </aside>
         <div className="flex min-w-0 flex-1 flex-col">
           <AppHeader />
-          <main className="flex-1 overflow-y-auto">
+          <main className="flex-1 overflow-y-auto bg-muted/20">
             <Outlet />
           </main>
         </div>
@@ -152,6 +196,6 @@ function RootComponent() {
           },
         }}
       />
-    </QueryClientProvider>
+    </>
   );
 }

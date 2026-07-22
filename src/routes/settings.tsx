@@ -2,11 +2,12 @@ import { createFileRoute } from "@tanstack/react-router";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Check, Trash2 } from "lucide-react";
-import { localDb } from "@/lib/db";
+import { localDb, type LocalSetting } from "@/lib/db";
 import { toast } from "sonner";
 import { useLiveQuery } from "dexie-react-hooks";
 import { useEffect, useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -17,14 +18,23 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { CheckoutModal } from "@/components/CheckoutModal";
+import { useAuth } from "@/contexts/AuthContext";
+import { useRouter, useSearch } from "@tanstack/react-router";
+import { differenceInDays } from "date-fns";
 
 
 export const Route = createFileRoute("/settings")({
   head: () => ({ meta: [{ title: "Settings · Grocer.Pro" }] }),
+  validateSearch: (search: Record<string, unknown>): { tab?: string } => {
+    return {
+      tab: typeof search.tab === "string" ? search.tab : undefined,
+    };
+  },
   component: SettingsPage,
 });
 
-const defaultSettings = {
+const defaultSettings: LocalSetting = {
   id: "default",
   storeName: "Grocer.Pro Downtown",
   taxId: "US-84-2918471",
@@ -45,6 +55,20 @@ function SettingsPage() {
   const dbSettings = useLiveQuery(() => localDb.settings.get("default"));
   const [settings, setSettings] = useState(defaultSettings);
   const [confirmReset, setConfirmReset] = useState(false);
+
+  const { user, isTrialExpired, subscriptionStatus } = useAuth();
+  const search = Route.useSearch();
+  const router = useRouter();
+  
+  const [activeTab, setActiveTab] = useState(isTrialExpired ? "billing" : (search.tab || "store"));
+  const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
+
+  useEffect(() => {
+    if (user && user.role !== "admin") {
+      toast.error("Unauthorized. Admin access required.");
+      router.navigate({ to: "/" });
+    }
+  }, [user, router]);
 
   useEffect(() => {
     if (dbSettings) {
@@ -81,6 +105,7 @@ function SettingsPage() {
 
   const sections = [
     { id: "store", label: "Store Information" },
+    { id: "billing", label: "Billing & Plan" },
     { id: "tax", label: "Taxes" },
     { id: "receipt", label: "Receipt" },
     { id: "data", label: "Data Management" },
@@ -88,9 +113,18 @@ function SettingsPage() {
 
   return (
     <div className="p-4 md:p-6 lg:p-8">
+      {isTrialExpired && (
+        <div className="mb-6 rounded-lg border border-destructive bg-destructive/10 p-4 text-destructive flex items-center justify-between">
+          <div>
+            <h3 className="font-bold text-lg">Trial Expired</h3>
+            <p className="text-sm">Your 7-day free trial has ended. Please subscribe to continue using the application.</p>
+          </div>
+          <Button onClick={() => setIsCheckoutOpen(true)} variant="destructive">Subscribe Now</Button>
+        </div>
+      )}
       <PageHeader title="Settings" description="Configure your store, taxes, printer and locale." />
       
-      <Tabs defaultValue="store" className="mt-6 flex flex-col lg:flex-row gap-6">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-6 flex flex-col lg:flex-row gap-6">
         <TabsList className="flex flex-col h-auto w-full lg:w-[220px] items-stretch justify-start bg-transparent p-0 space-y-1">
           {sections.map((s) => (
             <TabsTrigger
@@ -122,6 +156,50 @@ function SettingsPage() {
                 <Field label="Email">
                   <input className="inp" value={settings.email} onChange={(e) => handleChange("email", e.target.value)} />
                 </Field>
+              </div>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="billing" className="mt-0 outline-none">
+            <Card title="Subscription Plan" desc="Manage your SaaS subscription and billing.">
+              <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div>
+                    <h3 className="font-semibold text-lg">Pro Plan (Monthly)</h3>
+                    {subscriptionStatus === "trial" ? (
+                      <p className="text-sm text-muted-foreground mt-1">
+                        {settings.trialEndsAt ? (() => {
+                          const days = differenceInDays(new Date(settings.trialEndsAt), new Date());
+                          if (days < 0) return <span className="text-destructive font-semibold">Trial Expired</span>;
+                          return `${days} days remaining in trial`;
+                        })() : "Trial active"}
+                      </p>
+                    ) : (
+                      <p className="text-sm text-muted-foreground mt-1">Active Subscription</p>
+                    )}
+                  </div>
+                  <div className="text-left sm:text-right">
+                    <div className="text-2xl font-bold">$29.00<span className="text-sm font-normal text-muted-foreground">/mo</span></div>
+                    <div className="text-sm mt-1">
+                      {subscriptionStatus === "trial" ? (
+                        <Badge variant="outline" className="bg-warning/10 text-warning border-warning/20">Trial</Badge>
+                      ) : (
+                        <Badge variant="outline" className="bg-success/10 text-success border-success/20">Active</Badge>
+                      )}
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="mt-6 flex gap-4">
+                  {subscriptionStatus === "trial" ? (
+                    <Button onClick={() => setIsCheckoutOpen(true)} className="bg-primary">Upgrade to Pro</Button>
+                  ) : (
+                    <>
+                      <Button variant="default">Update Payment Method</Button>
+                      <Button variant="outline" className="text-destructive hover:bg-destructive/10 hover:text-destructive">Cancel Subscription</Button>
+                    </>
+                  )}
+                </div>
               </div>
             </Card>
           </TabsContent>
@@ -197,6 +275,14 @@ function SettingsPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <CheckoutModal 
+        open={isCheckoutOpen} 
+        onOpenChange={setIsCheckoutOpen} 
+        onSuccess={() => {
+          setTimeout(() => window.location.reload(), 500); // Reload to clear trial guard globally
+        }} 
+      />
 
       <style>{`.inp{display:block;width:100%;border-radius:.5rem;border:1px solid var(--color-border);background:var(--color-background);padding:.5rem .75rem;font-size:.875rem;outline:none}.inp:focus{border-color:var(--color-ring);box-shadow:0 0 0 3px color-mix(in oklch, var(--color-ring) 20%, transparent)}`}</style>
     </div>

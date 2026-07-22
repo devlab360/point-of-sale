@@ -43,6 +43,8 @@ function CustomersPage() {
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [editItem, setEditItem] = useState<LocalCustomer | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [settleItem, setSettleItem] = useState<LocalCustomer | null>(null);
+  const [settleAmount, setSettleAmount] = useState("");
 
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search, 300);
@@ -104,7 +106,9 @@ function CustomersPage() {
           visits: 0,
           totalSpent: 0,
           loyaltyPoints: 0,
-          credit: 0
+          credit: 0,
+          walletBalance: 0,
+          synced: false
         });
         toast.success("Customer added successfully");
         setIsAddOpen(false);
@@ -123,6 +127,26 @@ function CustomersPage() {
       } catch (error) {
         toast.error("Failed to delete customer");
       }
+    }
+  };
+
+  const handleSettle = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!settleItem) return;
+    const amount = parseFloat(settleAmount);
+    if (isNaN(amount) || amount <= 0 || amount > settleItem.credit) {
+      toast.error("Please enter a valid amount up to the outstanding balance.");
+      return;
+    }
+    try {
+      await localDb.customers.update(settleItem.id, {
+        credit: settleItem.credit - amount,
+        synced: false
+      });
+      toast.success(`Successfully settled $${amount.toFixed(2)}`);
+      setSettleItem(null);
+    } catch (error) {
+      toast.error("Failed to settle balance");
     }
   };
 
@@ -154,6 +178,7 @@ function CustomersPage() {
                 <th className="px-4 py-3 text-right">Lifetime</th>
                 <th className="px-4 py-3 text-right">Points</th>
                 <th className="px-4 py-3 text-right">Credit</th>
+                <th className="px-4 py-3 text-right">Wallet</th>
                 <th className="px-4 py-3">Tier</th>
                 <th className="px-4 py-3 text-right">Actions</th>
               </tr>
@@ -178,7 +203,8 @@ function CustomersPage() {
                     <td className="number px-4 py-3 text-right">{c.visits}</td>
                     <td className="number px-4 py-3 text-right font-semibold">${c.totalSpent.toFixed(0)}</td>
                     <td className="number px-4 py-3 text-right">{c.loyaltyPoints.toLocaleString()}</td>
-                    <td className={`number px-4 py-3 text-right ${c.credit > 0 ? "text-warning-foreground" : "text-muted-foreground"}`}>${c.credit}</td>
+                    <td className={`number px-4 py-3 text-right ${c.credit > 0 ? "text-destructive font-bold" : "text-muted-foreground"}`}>${c.credit}</td>
+                    <td className="number px-4 py-3 text-right font-semibold text-success">${c.walletBalance || 0}</td>
                     <td className="px-4 py-3">
                       {c.status === "vip" ? (
                         <Badge className="bg-warning/15 text-warning-foreground hover:bg-warning/20"><Star className="mr-1 size-3 fill-current" /> VIP</Badge>
@@ -197,6 +223,11 @@ function CustomersPage() {
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                           <DropdownMenuItem onClick={() => setEditItem(c)}><Edit2 className="mr-2 size-4" /> Edit</DropdownMenuItem>
+                          {c.credit > 0 && (
+                            <DropdownMenuItem onClick={() => { setSettleItem(c); setSettleAmount(c.credit.toString()); }}>
+                              <Star className="mr-2 size-4" /> Settle Balance
+                            </DropdownMenuItem>
+                          )}
                           <DropdownMenuItem className="text-destructive focus:bg-destructive/10 focus:text-destructive" onClick={() => setDeleteId(c.id)}><Trash2 className="mr-2 size-4" /> Delete</DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
@@ -225,16 +256,16 @@ function CustomersPage() {
           <form onSubmit={handleSave} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="name">Full Name</Label>
-              <Input id="name" name="name" required defaultValue={editItem?.name} />
+              <Input id="name" name="name" required defaultValue={editItem?.name || ""} />
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
-                <Input id="email" name="email" type="email" required defaultValue={editItem?.email} />
+                <Input id="email" name="email" type="email" required defaultValue={editItem?.email || ""} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="phone">Phone</Label>
-                <Input id="phone" name="phone" required defaultValue={editItem?.phone} />
+                <Input id="phone" name="phone" required defaultValue={editItem?.phone || ""} />
               </div>
             </div>
             <div className="space-y-2">
@@ -270,6 +301,34 @@ function CustomersPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <Dialog open={!!settleItem} onOpenChange={(open) => !open && setSettleItem(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Settle Balance</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleSettle} className="space-y-4">
+            <div className="text-sm text-muted-foreground">
+              Outstanding Balance for <strong>{settleItem?.name}</strong> is <strong className="text-destructive">${settleItem?.credit}</strong>.
+            </div>
+            <div className="space-y-2">
+              <Label>Payment Amount</Label>
+              <Input 
+                type="number" 
+                step="0.01" 
+                max={settleItem?.credit}
+                value={settleAmount} 
+                onChange={e => setSettleAmount(e.target.value)} 
+                required 
+              />
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setSettleItem(null)}>Cancel</Button>
+              <Button type="submit">Record Payment</Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

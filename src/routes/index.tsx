@@ -341,7 +341,7 @@ function Dashboard() {
                   <tr key={s.id} className="hover:bg-muted/30">
                     <td className="px-5 py-3 font-medium">{s.id.slice(0, 8).toUpperCase()}</td>
                     <td className="px-5 py-3">{s.customerName || "Walk-in"}</td>
-                    <td className="px-5 py-3 text-muted-foreground capitalize">{s.paymentMethod || s.payment || "cash"}</td>
+                    <td className="px-5 py-3 text-muted-foreground capitalize">{s.paymentMethod || "cash"}</td>
                     <td className="px-5 py-3">
                       <StatusBadge status={s.status} />
                     </td>

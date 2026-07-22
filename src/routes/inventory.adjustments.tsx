@@ -31,7 +31,7 @@ function AdjustmentsPage() {
   const paginatedAdjustments = adjustments.slice((page - 1) * itemsPerPage, page * itemsPerPage);
 
   const handleSave = async () => {
-    if (!formData.product || !formData.reason || formData.net === undefined || formData.net === null || formData.net === "") return toast.error("Please fill all fields");
+    if (!formData.product || !formData.reason || formData.net === undefined || formData.net === null || isNaN(formData.net)) return toast.error("Please fill all fields");
     if (formData.net === 0) return toast.error("Adjustment quantity cannot be zero");
     
     const prod = products.find(p => p.id === formData.product);

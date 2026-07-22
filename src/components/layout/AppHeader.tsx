@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Bell, Command, Menu, Moon, Plus, Search, Sun } from "lucide-react";
+import { Bell, Command, Menu, Moon, Plus, Search, Sun, LogOut, Wallet } from "lucide-react";
 import { Link, useRouterState } from "@tanstack/react-router";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
@@ -17,6 +17,9 @@ import { SyncStatus } from "@/components/SyncStatus";
 import { localDb } from "@/lib/db";
 import { useLiveQuery } from "dexie-react-hooks";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "sonner";
+import { v4 as uuidv4 } from "uuid";
 
 function pathToCrumbs(pathname: string) {
   if (pathname === "/") return [{ label: "Dashboard", to: "/" }];
@@ -38,7 +41,13 @@ export function AppHeader() {
   const notifications = useLiveQuery(() => localDb.notifications.toArray()) || [];
   const unread = notifications.filter((n) => !n.read).length;
 
-  const profile = useLiveQuery(() => localDb.users.get("me")) || {
+  const { user, logout } = useAuth();
+  const activeShift = useLiveQuery(() => {
+    if (!user) return undefined;
+    return localDb.shifts.where("userId").equals(user.id).filter(s => s.status === "open").first();
+  }, [user]);
+
+  const profile = user || {
     name: "Admin",
     email: "admin@grocer.pro",
   };
@@ -55,6 +64,32 @@ export function AppHeader() {
     const next: Theme = theme === "dark" ? "light" : "dark";
     setTheme(next);
     applyTheme(next);
+  };
+
+  const handleCloseRegister = async () => {
+    if (!activeShift) return;
+    
+    // In a real app, this would open a modal to count cash. For now, auto-close.
+    const actualCash = window.prompt(`Closing Register.\nExpected Cash: $${activeShift.expectedCash.toFixed(2)}\nEnter actual cash in drawer:`, activeShift.expectedCash.toString());
+    
+    if (actualCash === null) return;
+    
+    const parsedCash = parseFloat(actualCash);
+    if (isNaN(parsedCash)) {
+      toast.error("Invalid amount");
+      return;
+    }
+    
+    const difference = parsedCash - activeShift.expectedCash;
+    
+    await localDb.shifts.update(activeShift.id, {
+      status: "closed",
+      closeTime: new Date().toISOString(),
+      actualCash: parsedCash,
+      difference: difference
+    });
+    
+    toast.success(`Register closed. Discrepancy: $${difference.toFixed(2)}`);
   };
 
   return (
@@ -104,6 +139,8 @@ export function AppHeader() {
             <Command className="size-3" />K
           </kbd>
         </div>
+
+        <SyncStatus />
 
         <Button asChild size="sm" className="hidden sm:flex">
           <Link to="/pos">
@@ -170,17 +207,27 @@ export function AppHeader() {
             </DropdownMenuLabel>
 
             <DropdownMenuSeparator />
+            <DropdownMenuSeparator />
             <DropdownMenuItem asChild>
               <Link to="/profile">Profile</Link>
             </DropdownMenuItem>
-            <DropdownMenuItem asChild>
-              <Link to="/settings">Settings</Link>
-            </DropdownMenuItem>
+            {user?.role === "admin" && (
+              <DropdownMenuItem asChild>
+                <Link to="/settings">Settings</Link>
+              </DropdownMenuItem>
+            )}
             <DropdownMenuItem asChild>
               <Link to="/help">Help center</Link>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem className="text-destructive">Sign out</DropdownMenuItem>
+            {activeShift && (
+              <DropdownMenuItem onClick={handleCloseRegister} className="text-warning flex items-center gap-2 font-medium">
+                <Wallet className="size-4" /> Close Register
+              </DropdownMenuItem>
+            )}
+            <DropdownMenuItem onClick={logout} className="text-destructive flex items-center gap-2 font-medium">
+              <LogOut className="size-4" /> Sign out
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>

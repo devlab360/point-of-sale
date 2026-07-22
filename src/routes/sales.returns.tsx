@@ -33,6 +33,7 @@ function SalesReturnsPage() {
   const returns = useLiveQuery(() => localDb.salesReturns.reverse().toArray()) || [];
   const sales = useLiveQuery(() => localDb.offlineSales.reverse().toArray()) || [];
   const products = useLiveQuery(() => localDb.products.toArray()) || [];
+  const customers = useLiveQuery(() => localDb.customers.toArray()) || [];
 
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
@@ -70,6 +71,7 @@ function SalesReturnsPage() {
   // Form state
   const [saleId, setSaleId] = useState("");
   const [reason, setReason] = useState("");
+  const [refundMethod, setRefundMethod] = useState<"cash" | "wallet">("cash");
   const [selectedItems, setSelectedItems] = useState<{ productId: string; productName: string; quantity: number; price: number; total: number }[]>([]);
 
   const selectedSale: OfflineSale | undefined = sales.find(s => s.id === saleId);
@@ -112,6 +114,16 @@ function SalesReturnsPage() {
 
       await localDb.salesReturns.add(newReturn);
 
+      if (refundMethod === "wallet" && selectedSale?.customerId) {
+        const cust = customers.find(c => c.id === selectedSale?.customerId);
+        if (cust) {
+          await localDb.customers.update(cust.id, {
+            walletBalance: (cust.walletBalance || 0) + parseFloat(returnTotal.toFixed(2)),
+            synced: false
+          });
+        }
+      }
+
       // Restore stock
       for (const item of selectedItems) {
         const product = products.find(p => p.id === item.productId);
@@ -131,6 +143,7 @@ function SalesReturnsPage() {
       setSaleId("");
       setReason("");
       setSelectedItems([]);
+      setRefundMethod("cash");
     } catch (err) {
       toast.error("Failed to process return");
     }
@@ -261,8 +274,23 @@ function SalesReturnsPage() {
             </div>
 
             {selectedItems.length > 0 && (
-              <div className="rounded-lg bg-muted/40 p-3 text-sm">
-                Refund total: <strong>${selectedItems.reduce((s, i) => s + i.total, 0).toFixed(2)}</strong>
+              <div className="space-y-3">
+                {selectedSale?.customerId && (
+                  <div className="space-y-1">
+                    <Label>Refund Method</Label>
+                    <select
+                      value={refundMethod}
+                      onChange={e => setRefundMethod(e.target.value as any)}
+                      className="h-10 w-full rounded-lg border border-border bg-background px-3 text-sm outline-none focus:border-ring"
+                    >
+                      <option value="cash">Cash / Original Payment Method</option>
+                      <option value="wallet">Store Wallet Credit</option>
+                    </select>
+                  </div>
+                )}
+                <div className="rounded-lg bg-muted/40 p-3 text-sm">
+                  Refund total: <strong>${selectedItems.reduce((s, i) => s + i.total, 0).toFixed(2)}</strong>
+                </div>
               </div>
             )}
           </div>

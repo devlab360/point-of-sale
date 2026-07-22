@@ -1,5 +1,5 @@
 import { localDb } from "./db";
-import { getProductsFn, getCustomersFn, getCategoriesFn, getBrandsFn, getUnitsFn, getSuppliersFn, getPurchasesFn, getInventoryMovementsFn, syncSalesFn } from "../api";
+import { getProductsFn, getCustomersFn, getCategoriesFn, getBrandsFn, getUnitsFn, getSuppliersFn, getPurchasesFn, getInventoryMovementsFn, syncSalesFn, syncProductsFn, syncCustomersFn } from "../api";
 
 export async function initializeLocalDb() {
   try {
@@ -14,6 +14,20 @@ export async function initializeLocalDb() {
     }
 
     const productsCount = await localDb.products.count();
+    const usersCount = await localDb.users.count();
+
+    if (usersCount === 0) {
+      await localDb.users.add({
+        id: "admin-1",
+        name: "Admin User",
+        role: "admin",
+        email: "admin@grocer.pro",
+        lastActive: new Date().toISOString(),
+        status: "active",
+        pin: "1234"
+      });
+      console.log("Seeded default admin user (PIN: 1234)");
+    }
 
     if (productsCount === 0) {
       let apiProducts: any[] = [];
@@ -26,23 +40,24 @@ export async function initializeLocalDb() {
       let apiMovements: any[] = [];
 
       try {
-        apiProducts = await getProductsFn();
-        apiCustomers = await getCustomersFn();
-        apiCategories = await getCategoriesFn();
-        apiBrands = await getBrandsFn();
-        apiUnits = await getUnitsFn();
-        apiSuppliers = await getSuppliersFn();
-        apiPurchases = await getPurchasesFn();
-        apiMovements = await getInventoryMovementsFn();
+        const orgId = localStorage.getItem("pos_org_id") || "default";
+        apiProducts = await getProductsFn({ data: { orgId } });
+        apiCustomers = await getCustomersFn({ data: { orgId } });
+        apiCategories = await getCategoriesFn({ data: { orgId } });
+        apiBrands = await getBrandsFn({ data: { orgId } });
+        apiUnits = await getUnitsFn({ data: { orgId } });
+        apiSuppliers = await getSuppliersFn({ data: { orgId } });
+        apiPurchases = await getPurchasesFn({ data: { orgId } });
+        apiMovements = await getInventoryMovementsFn({ data: { orgId } });
       } catch (e) {
         console.warn("API not reachable, starting with empty local database.");
       }
 
-      await localDb.transaction("rw",
+      await localDb.transaction("rw", [
         localDb.products, localDb.customers,
         localDb.categories, localDb.brands, localDb.units, localDb.suppliers,
-        localDb.purchases, localDb.inventoryMovements,
-        async () => {
+        localDb.purchases, localDb.inventoryMovements
+      ], async () => {
           if (apiProducts.length) await localDb.products.bulkAdd(apiProducts);
           if (apiCustomers.length) await localDb.customers.bulkAdd(apiCustomers);
           if (apiCategories.length) await localDb.categories.bulkAdd(apiCategories);
@@ -94,6 +109,43 @@ export async function backgroundSync() {
         }
       }
     }
+
+    // Sync Products
+    const pendingProducts = await localDb.products.filter(p => p.synced === false).toArray();
+    if (pendingProducts.length > 0) {
+      const res = await syncProductsFn({ data: { products: pendingProducts } });
+      if (res.success && res.syncedIds.length > 0) {
+        await localDb.transaction("rw", localDb.products, async () => {
+          for (const id of res.syncedIds) {
+            await localDb.products.update(id, { synced: true, syncRetryCount: 0 });
+          }
+        });
+      }
+      const failedIds = pendingProducts.map(p => p.id).filter(id => !res.syncedIds.includes(id));
+      for (const id of failedIds) {
+        const prod = await localDb.products.get(id);
+        if (prod) await localDb.products.update(id, { syncRetryCount: (prod.syncRetryCount || 0) + 1 });
+      }
+    }
+
+    // Sync Customers
+    const pendingCustomers = await localDb.customers.filter(c => c.synced === false).toArray();
+    if (pendingCustomers.length > 0) {
+      const res = await syncCustomersFn({ data: { customers: pendingCustomers } });
+      if (res.success && res.syncedIds.length > 0) {
+        await localDb.transaction("rw", localDb.customers, async () => {
+          for (const id of res.syncedIds) {
+            await localDb.customers.update(id, { synced: true, syncRetryCount: 0 });
+          }
+        });
+      }
+      const failedIds = pendingCustomers.map(c => c.id).filter(id => !res.syncedIds.includes(id));
+      for (const id of failedIds) {
+        const cust = await localDb.customers.get(id);
+        if (cust) await localDb.customers.update(id, { syncRetryCount: (cust.syncRetryCount || 0) + 1 });
+      }
+    }
+
   } catch (error) {
     console.error("Background sync failed:", error);
   }
