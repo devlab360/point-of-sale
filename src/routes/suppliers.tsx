@@ -32,6 +32,7 @@ import { MoreVertical, Edit2, Trash2, Truck } from "lucide-react";
 import { v4 as uuidv4 } from "uuid";
 import { toast } from "sonner";
 import type { LocalSupplier } from "@/lib/db";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 export const Route = createFileRoute("/suppliers")({
   head: () => ({ meta: [{ title: "Suppliers · Grocer.Pro" }] }),
@@ -40,6 +41,7 @@ export const Route = createFileRoute("/suppliers")({
 
 function SuppliersPage() {
   const { formatCurrency } = useCurrency();
+  const { t } = useLanguage();
   const rawSuppliers = useLiveQuery(() => localDb.suppliers.toArray()) || [];
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [editItem, setEditItem] = useState<LocalSupplier | null>(null);
@@ -54,7 +56,7 @@ function SuppliersPage() {
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search, 300);
   const [page, setPage] = useState(1);
-  const itemsPerPage = 9; // 3-column grid, 3 rows
+  const [pageSize, setPageSize] = useState(9);
 
   const suppliers = useMemo(() => {
     let filtered = rawSuppliers;
@@ -73,13 +75,11 @@ function SuppliersPage() {
     setPage(1);
   }, [debouncedSearch]);
 
-  useEffect(() => {
-    const maxPage = Math.max(1, Math.ceil(suppliers.length / itemsPerPage));
-    if (page > maxPage) setPage(maxPage);
-  }, [suppliers.length, page]);
-
-  const totalPages = Math.ceil(suppliers.length / itemsPerPage);
-  const paginatedSuppliers = suppliers.slice((page - 1) * itemsPerPage, page * itemsPerPage);
+  const totalPages = Math.ceil(suppliers.length / pageSize);
+  const paginatedSuppliers = useMemo(() => {
+    const start = (page - 1) * pageSize;
+    return suppliers.slice(start, start + pageSize);
+  }, [suppliers, page, pageSize]);
 
   const handleSave = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -132,19 +132,19 @@ function SuppliersPage() {
   return (
     <div className="p-4 md:p-6 lg:p-8">
       <DataPage 
-        title="Suppliers" 
-        description="Wholesale and farm partners that fill your shelves." 
-        primaryAction={{ label: "Add Supplier", onClick: () => setIsAddOpen(true) }}
-        searchPlaceholder="Search suppliers..."
+        title={t("suppliers") || "Suppliers"} 
+        description={t("manageSuppliers") || "Manage vendor relationships, purchase history, and outstanding balances."} 
+        primaryAction={{ label: t("addSupplier") || "Add Supplier", onClick: () => { setEditItem(null); setIsAddOpen(true); } }}
+        searchPlaceholder={t("searchSuppliers") || "Search by name, contact, or email..."}
         searchValue={search}
         onSearchChange={setSearch}
         hideToolbar={rawSuppliers.length === 0}
       >
         {suppliers.length === 0 ? (
-          <EmptyState
-            icon={Truck}
-            title="No suppliers found"
-            description={search ? "Try adjusting your search." : "You haven't added any suppliers yet."}
+          <EmptyState 
+            icon={Truck} 
+            title={t("noSuppliersFound") || "No suppliers found"} 
+            description={search ? (t("adjustSearch") || "Try adjusting your search.") : (t("noSuppliersYet") || "You haven't added any suppliers yet.")} 
           />
         ) : (
           <div className="space-y-4">
@@ -153,9 +153,9 @@ function SuppliersPage() {
                 <div key={s.id} className="relative rounded-xl border border-border bg-card p-5 shadow-soft">
                   <div className="absolute right-4 top-4 flex items-center gap-2">
                     {s.balance > 0 ? (
-                      <span className="rounded-md bg-warning/15 px-2 py-0.5 text-xs font-semibold text-warning-foreground">{formatCurrency(s.balance)} due</span>
+                      <span className="rounded-md bg-warning/15 px-2 py-0.5 text-xs font-semibold text-warning-foreground">{formatCurrency(s.balance)} {t("due") || "due"}</span>
                     ) : (
-                      <span className="rounded-md bg-success/10 px-2 py-0.5 text-xs font-semibold text-success">Settled</span>
+                      <span className="rounded-md bg-success/10 px-2 py-0.5 text-xs font-semibold text-success">{t("settled") || "Settled"}</span>
                     )}
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
@@ -181,17 +181,25 @@ function SuppliersPage() {
                   <div className="mt-4 grid grid-cols-2 gap-2 border-t border-border pt-3 text-xs text-muted-foreground">
                     <div>
                       <div className="number font-bold text-foreground">{s.items}</div>
-                      <div>Items supplied</div>
+                      <div>{t("itemsSupplied") || "Items supplied"}</div>
                     </div>
                     <div>
                       <div className="font-semibold text-foreground">{s.phone}</div>
-                      <div>Phone</div>
+                      <div>{t("phone") || "Phone"}</div>
                     </div>
                   </div>
                 </div>
               ))}
             </div>
-            <PaginationControls currentPage={page} totalPages={totalPages} onPageChange={setPage} />
+            {suppliers.length > 0 && (
+              <PaginationControls
+                currentPage={page}
+                totalPages={totalPages}
+                pageSize={pageSize}
+                onPageChange={setPage}
+                onPageSizeChange={setPageSize}
+              />
+            )}
           </div>
         )}
       </DataPage>
@@ -209,20 +217,20 @@ function SuppliersPage() {
           <form onSubmit={handleSave} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="name">Supplier Name</Label>
-              <Input id="name" name="name" required defaultValue={editItem?.name} />
+              <Input id="name" name="name" placeholder="e.g. Supplier Company Name" required defaultValue={editItem?.name} />
             </div>
             <div className="space-y-2">
               <Label htmlFor="contact">Contact Person</Label>
-              <Input id="contact" name="contact" required defaultValue={editItem?.contact} />
+              <Input id="contact" name="contact" placeholder="e.g. Contact Person Name" required defaultValue={editItem?.contact} />
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
-                <Input id="email" name="email" type="email" defaultValue={editItem?.email} />
+                <Input id="email" name="email" type="email" placeholder="e.g. supplier@example.com" required defaultValue={editItem?.email} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="phone">Phone</Label>
-                <Input id="phone" name="phone" required defaultValue={editItem?.phone} />
+                <Input id="phone" name="phone" type="tel" placeholder="e.g. +880 1700 000000" required defaultValue={editItem?.phone} />
               </div>
             </div>
             <DialogFooter>

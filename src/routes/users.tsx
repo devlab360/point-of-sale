@@ -399,7 +399,7 @@ function UsersPage() {
           <form onSubmit={handleSaveEdit} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="name">Full Name</Label>
-              <Input id="name" name="name" required defaultValue={editItem?.name} />
+              <Input id="name" name="name" placeholder="e.g. Employee Full Name" required defaultValue={editItem?.name} />
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
@@ -433,11 +433,11 @@ function UsersPage() {
             <div className="grid grid-cols-2 gap-4 border-t pt-3">
               <div className="space-y-2">
                 <Label htmlFor="commissionRate">Sales Commission (%)</Label>
-                <Input id="commissionRate" name="commissionRate" type="number" step="0.1" defaultValue={editItem?.commissionRate || 2.5} placeholder="e.g. 2.5" />
+                <Input id="commissionRate" name="commissionRate" type="number" min="0" step="0.1" defaultValue={editItem?.commissionRate || 2.5} placeholder="e.g. 2.5" required />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="monthlyTarget">Monthly Sales Target</Label>
-                <Input id="monthlyTarget" name="monthlyTarget" type="number" defaultValue={editItem?.monthlyTarget || 10000} placeholder="e.g. 10000" />
+                <Input id="monthlyTarget" name="monthlyTarget" type="number" min="0" defaultValue={editItem?.monthlyTarget || 10000} placeholder="e.g. 10000" required />
               </div>
             </div>
 

@@ -1,8 +1,9 @@
-import { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { DataPage } from "@/components/layout/DataPage";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PaginationControls } from "@/components/ui/pagination-controls";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import { useDebounce } from "@/hooks/useDebounce";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -42,7 +43,7 @@ function DeliveryChallansPage() {
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search, 300);
   const [page, setPage] = useState(1);
-  const itemsPerPage = 10;
+  const [pageSize, setPageSize] = useState(10);
 
   // Form State
   const [selectedCustomerId, setSelectedCustomerId] = useState("");
@@ -63,11 +64,19 @@ function DeliveryChallansPage() {
           c.transportName?.toLowerCase().includes(lower)
       );
     }
-    return filtered.reverse();
+    return [...filtered].reverse();
   }, [rawChallans, debouncedSearch]);
 
-  const totalPages = Math.max(1, Math.ceil(filteredChallans.length / itemsPerPage));
-  const paginated = filteredChallans.slice((page - 1) * itemsPerPage, page * itemsPerPage);
+  const totalPages = Math.ceil(filteredChallans.length / pageSize);
+  const paginated = useMemo(() => {
+    const start = (page - 1) * pageSize;
+    return filteredChallans.slice(start, start + pageSize);
+  }, [filteredChallans, page, pageSize]);
+
+  // Reset page when search changes
+  useEffect(() => {
+    setPage(1);
+  }, [debouncedSearch]);
 
   const addItemToChallan = (productId: string) => {
     const p = products.find((prod) => prod.id === productId);
@@ -283,9 +292,15 @@ function DeliveryChallansPage() {
                   ))}
                 </tbody>
               </table>
+              </div>
+              <PaginationControls 
+                currentPage={page} 
+                totalPages={totalPages} 
+                pageSize={pageSize}
+                onPageChange={setPage} 
+                onPageSizeChange={setPageSize}
+              />
             </div>
-            <PaginationControls currentPage={page} totalPages={totalPages} onPageChange={setPage} />
-          </div>
         )}
       </DataPage>
 
@@ -300,21 +315,14 @@ function DeliveryChallansPage() {
           </DialogHeader>
           <form onSubmit={handleCreateChallan} className="space-y-4 pt-2">
             <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2 col-span-2 sm:col-span-1">
+              <div className="space-y-2">
                 <Label>Select Customer *</Label>
-                <select
+                <SearchableSelect
+                  options={customers.map(c => ({ value: c.id, label: `${c.name} - ${c.phone}` }))}
                   value={selectedCustomerId}
-                  onChange={(e) => setSelectedCustomerId(e.target.value)}
-                  required
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                >
-                  <option value="">-- Choose Customer --</option>
-                  {customers.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.name} ({c.phone || "No Phone"})
-                    </option>
-                  ))}
-                </select>
+                  onChange={setSelectedCustomerId}
+                  placeholder="Select Customer..."
+                />
               </div>
               <div className="space-y-2">
                 <Label>Transport Company</Label>
@@ -335,23 +343,15 @@ function DeliveryChallansPage() {
 
             {/* Line Items Selection */}
             <div className="space-y-2 border-t pt-3">
-              <Label>Add Goods / Products to Challan</Label>
-              <select
-                onChange={(e) => {
-                  if (e.target.value) {
-                    addItemToChallan(e.target.value);
-                    e.target.value = "";
-                  }
+              <Label>Search & Add Products</Label>
+              <SearchableSelect
+                options={products.map(p => ({ value: p.id, label: p.name, sublabel: `Stock: ${p.stock} ${p.unit} | Price: ${formatCurrency(p.price)}` }))}
+                value=""
+                onChange={(val) => {
+                  if (val) addItemToChallan(val);
                 }}
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-              >
-                <option value="">+ Click to Select & Add Goods Item</option>
-                {products.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.name} (Available Stock: {p.stock} {p.unit})
-                  </option>
-                ))}
-              </select>
+                placeholder="Search products by name or code..."
+              />
             </div>
 
             {/* Line Items Table */}
@@ -374,9 +374,11 @@ function DeliveryChallansPage() {
                           <Input
                             type="number"
                             min="1"
+                            required
+                            placeholder="1"
                             value={item.quantity}
                             onChange={(e) => updateLineQty(item.productId, parseInt(e.target.value) || 1)}
-                            className="h-7 w-20 text-center text-xs mx-auto"
+                            className="h-7 w-16 text-center text-xs"
                           />
                         </td>
                         <td className="p-2 text-left text-muted-foreground font-semibold">{item.unit}</td>

@@ -18,6 +18,7 @@ import { localDb } from "@/lib/db";
 import { useLiveQuery } from "dexie-react-hooks";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
+import { useLanguage, LANGUAGES } from "@/contexts/LanguageContext";
 import { toast } from "sonner";
 import { v4 as uuidv4 } from "uuid";
 
@@ -42,6 +43,9 @@ export function AppHeader() {
   const unread = notifications.filter((n) => !n.read).length;
 
   const { user, logout } = useAuth();
+  const { language, setLanguage, t } = useLanguage();
+  const activeLanguageObj = LANGUAGES.find((l) => l.code === language) || LANGUAGES[0];
+
   const activeShift = useLiveQuery(() => {
     if (!user) return undefined;
     return localDb.shifts.where("userId").equals(user.id).filter(s => s.status === "open").first();
@@ -148,6 +152,29 @@ export function AppHeader() {
           </Link>
         </Button>
 
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="sm" className="h-9 px-2 text-xs font-semibold gap-1" title="Select Language">
+              <span>{activeLanguageObj.flag}</span>
+              <span className="hidden sm:inline">{activeLanguageObj.code.toUpperCase()}</span>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuLabel className="text-xs">Select Language</DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            {LANGUAGES.map((l) => (
+              <DropdownMenuItem
+                key={l.code}
+                onClick={() => setLanguage(l.code)}
+                className={`flex items-center justify-between text-xs cursor-pointer ${language === l.code ? "font-bold text-primary bg-primary/10" : ""}`}
+              >
+                <span>{l.flag} {l.nativeName} ({l.label})</span>
+                {language === l.code && <span className="text-primary font-bold">✓</span>}
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
+
         <Button variant="ghost" size="icon" onClick={toggleTheme} aria-label="Toggle theme">
           <Sun className="size-5 dark:hidden" />
           <Moon className="hidden size-5 dark:block" />
@@ -209,24 +236,24 @@ export function AppHeader() {
             <DropdownMenuSeparator />
             <DropdownMenuSeparator />
             <DropdownMenuItem asChild>
-              <Link to="/profile">Profile</Link>
+              <Link to="/profile">{t("profile") || "Profile"}</Link>
             </DropdownMenuItem>
             {user?.role === "admin" && (
               <DropdownMenuItem asChild>
-                <Link to="/settings">Settings</Link>
+                <Link to="/settings">{t("settings") || "Settings"}</Link>
               </DropdownMenuItem>
             )}
             <DropdownMenuItem asChild>
-              <Link to="/help">Help center</Link>
+              <Link to="/help">{t("help") || "Help center"}</Link>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             {activeShift && (
               <DropdownMenuItem onClick={handleCloseRegister} className="text-warning flex items-center gap-2 font-medium">
-                <Wallet className="size-4" /> Close Register
+                <Wallet className="size-4" /> {t("closeRegister") || "Close Register"}
               </DropdownMenuItem>
             )}
             <DropdownMenuItem onClick={logout} className="text-destructive flex items-center gap-2 font-medium">
-              <LogOut className="size-4" /> Sign out
+              <LogOut className="size-4" /> {t("logout") || "Sign out"}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

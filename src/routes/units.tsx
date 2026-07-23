@@ -175,11 +175,11 @@ function UnitsPage() {
             <div className="grid grid-cols-2 gap-4">
               <div className="grid gap-2">
                 <Label htmlFor="name">Name</Label>
-                <Input id="name" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Kilogram" />
+                <Input id="name" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Kilogram" required />
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="short">Short Code</Label>
-                <Input id="short" value={short} onChange={(e) => setShort(e.target.value)} placeholder="e.g. kg" />
+                <Input id="short" value={short} onChange={(e) => setShort(e.target.value)} placeholder="e.g. kg" required />
               </div>
             </div>
           </div>

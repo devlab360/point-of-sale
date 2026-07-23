@@ -219,7 +219,7 @@ function RepairsPage() {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Customer Name *</Label>
-                <Input placeholder="e.g. Rahim Ahmed" value={customerName} onChange={(e) => setCustomerName(e.target.value)} required />
+                <Input placeholder="e.g. Customer Name" value={customerName} onChange={(e) => setCustomerName(e.target.value)} required />
               </div>
               <div className="space-y-2">
                 <Label>Phone Number *</Label>
@@ -230,11 +230,11 @@ function RepairsPage() {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Device / Model Name *</Label>
-                <Input placeholder="e.g. iPhone 13 Pro / Dell Laptop" value={deviceName} onChange={(e) => setDeviceName(e.target.value)} required />
+                <Input placeholder="e.g. Device / Model Name" value={deviceName} onChange={(e) => setDeviceName(e.target.value)} required />
               </div>
               <div className="space-y-2">
                 <Label>Serial / IMEI Number</Label>
-                <Input placeholder="e.g. IMEI3549201928" value={serialOrImei} onChange={(e) => setSerialOrImei(e.target.value)} />
+                <Input placeholder="e.g. Serial or IMEI Number" value={serialOrImei} onChange={(e) => setSerialOrImei(e.target.value)} />
               </div>
             </div>
 
@@ -242,7 +242,7 @@ function RepairsPage() {
               <Label>Problem / Fault Description *</Label>
               <textarea
                 rows={2}
-                placeholder="e.g. Display glass cracked, touch working. Battery draining fast."
+                placeholder="e.g. Describe the device issue or fault"
                 value={problemDescription}
                 onChange={(e) => setProblemDescription(e.target.value)}
                 required
@@ -252,12 +252,12 @@ function RepairsPage() {
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Estimated Repair Cost</Label>
-                <Input type="number" placeholder="0.00" value={estimatedCost} onChange={(e) => setEstimatedCost(e.target.value)} />
+                <Label>Estimated Cost</Label>
+                <Input type="number" min="0" step="0.01" placeholder="0.00" value={estimatedCost} onChange={(e) => setEstimatedCost(e.target.value)} />
               </div>
               <div className="space-y-2">
-                <Label>Advance Deposit Paid</Label>
-                <Input type="number" placeholder="0.00" value={advancePaid} onChange={(e) => setAdvancePaid(e.target.value)} />
+                <Label>Advance Paid</Label>
+                <Input type="number" min="0" step="0.01" placeholder="0.00" value={advancePaid} onChange={(e) => setAdvancePaid(e.target.value)} />
               </div>
             </div>
 

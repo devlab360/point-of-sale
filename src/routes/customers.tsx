@@ -2,6 +2,7 @@ import { useState, useMemo, useEffect } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PaginationControls } from "@/components/ui/pagination-controls";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import { useDebounce } from "@/hooks/useDebounce";
 import { DataPage } from "@/components/layout/DataPage";
 import { Badge } from "@/components/ui/badge";
@@ -36,6 +37,7 @@ import { toast } from "sonner";
 import { sendWhatsAppDueReminder } from "@/lib/whatsapp";
 import { cn } from "@/lib/utils";
 import type { LocalCustomer } from "@/lib/db";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 export const Route = createFileRoute("/customers")({
   head: () => ({ meta: [{ title: "Customers · Grocer.Pro" }] }),
@@ -44,6 +46,7 @@ export const Route = createFileRoute("/customers")({
 
 function CustomersPage() {
   const { formatCurrency, currencySymbol } = useCurrency();
+  const { t } = useLanguage();
   const rawCustomers = useLiveQuery(() => localDb.customers.toArray()) || [];
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [editItem, setEditItem] = useState<LocalCustomer | null>(null);
@@ -60,7 +63,10 @@ function CustomersPage() {
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search, 300);
   const [page, setPage] = useState(1);
-  const itemsPerPage = 10;
+  const [pageSize, setPageSize] = useState(10);
+  
+  const [typeFilter, setTypeFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
 
   const customers = useMemo(() => {
     let filtered = rawCustomers;
@@ -73,21 +79,24 @@ function CustomersPage() {
           c.phone?.toLowerCase().includes(lower)
       );
     }
+    if (typeFilter) {
+      filtered = filtered.filter((c) => c.type === typeFilter);
+    }
+    if (statusFilter) {
+      filtered = filtered.filter((c) => c.status === statusFilter);
+    }
     return filtered;
-  }, [rawCustomers, debouncedSearch]);
+  }, [rawCustomers, debouncedSearch, typeFilter, statusFilter]);
 
   useEffect(() => {
     setPage(1);
-  }, [debouncedSearch]);
+  }, [debouncedSearch, typeFilter, statusFilter]);
 
-  // Handle invalid pages after deletion
-  useEffect(() => {
-    const maxPage = Math.max(1, Math.ceil(customers.length / itemsPerPage));
-    if (page > maxPage) setPage(maxPage);
-  }, [customers.length, page]);
-
-  const totalPages = Math.ceil(customers.length / itemsPerPage);
-  const paginatedCustomers = customers.slice((page - 1) * itemsPerPage, page * itemsPerPage);
+  const totalPages = Math.ceil(customers.length / pageSize);
+  const paginatedCustomers = useMemo(() => {
+    const start = (page - 1) * pageSize;
+    return customers.slice(start, start + pageSize);
+  }, [customers, page, pageSize]);
 
   const handleSave = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -181,18 +190,54 @@ function CustomersPage() {
   return (
     <div className="p-4 md:p-6 lg:p-8">
       <DataPage 
-        title="Customers" 
-        description="Loyalty members, store credit balances, and lifetime value." 
-        primaryAction={{ label: "Add Customer", onClick: () => setIsAddOpen(true) }}
+        title={t("customers") || "Customers"}
+        description={t("manageCustomers") || "Manage customer relationships, loyalty, and ledgers."}
+        primaryAction={{ label: t("addCustomer") || "Add Customer", onClick: () => { setEditItem(null); setIsAddOpen(true); } }}
+        searchPlaceholder={t("searchCustomers") || "Search by name, email, or phone..."}
         searchValue={search}
         onSearchChange={setSearch}
         hideToolbar={rawCustomers.length === 0}
+        filtersContent={
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Customer Type</Label>
+              <SearchableSelect 
+                options={[
+                  { value: "", label: "All Types" },
+                  { value: "retail", label: "Retail" },
+                  { value: "wholesale", label: "Wholesale" },
+                  { value: "dealer", label: "Dealer" },
+                  { value: "distributor", label: "Distributor" }
+                ]} 
+                value={typeFilter} 
+                onChange={setTypeFilter} 
+                placeholder="Filter by Type"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Status</Label>
+              <SearchableSelect 
+                options={[
+                  { value: "", label: "All Statuses" },
+                  { value: "active", label: "Active" },
+                  { value: "inactive", label: "Inactive" }
+                ]} 
+                value={statusFilter} 
+                onChange={setStatusFilter} 
+                placeholder="Filter by Status"
+              />
+            </div>
+            <Button variant="outline" className="w-full" onClick={() => { setTypeFilter(""); setStatusFilter(""); }}>
+              Reset Filters
+            </Button>
+          </div>
+        }
       >
         {customers.length === 0 ? (
           <EmptyState 
             icon={Users} 
-            title="No customers found" 
-            description={search ? "Try adjusting your search." : "You haven't added any customers yet."} 
+            title={t("noCustomersFound") || "No customers found"} 
+            description={search ? (t("adjustSearch") || "Try adjusting your search.") : (t("noCustomersYet") || "You haven't added any customers yet.")} 
           />
         ) : (
           <div className="space-y-4">
@@ -200,15 +245,15 @@ function CustomersPage() {
           <table className="w-full text-left text-sm">
             <thead className="bg-muted/50 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
               <tr>
-                <th className="px-4 py-3">Customer</th>
-                <th className="px-4 py-3">Contact</th>
-                <th className="px-4 py-3 text-right">Visits</th>
-                <th className="px-4 py-3 text-right">Lifetime</th>
-                <th className="px-4 py-3 text-right">Points</th>
-                <th className="px-4 py-3 text-right">Credit</th>
-                <th className="px-4 py-3 text-right">Wallet</th>
-                <th className="px-4 py-3">Tier</th>
-                <th className="px-4 py-3 text-right">Actions</th>
+                <th className="px-4 py-3">{t("customer") || "Customer"}</th>
+                <th className="px-4 py-3">{t("contact") || "Contact"}</th>
+                <th className="px-4 py-3 text-right">{t("visits") || "Visits"}</th>
+                <th className="px-4 py-3 text-right">{t("lifetime") || "Lifetime"}</th>
+                <th className="px-4 py-3 text-right">{t("points") || "Points"}</th>
+                <th className="px-4 py-3 text-right">{t("credit") || "Credit"}</th>
+                <th className="px-4 py-3 text-right">{t("wallet") || "Wallet"}</th>
+                <th className="px-4 py-3">{t("tier") || "Tier"}</th>
+                <th className="px-4 py-3 text-right">{t("actions") || "Actions"}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
@@ -275,9 +320,17 @@ function CustomersPage() {
               }
             </tbody>
           </table>
-        </div>
-        <PaginationControls currentPage={page} totalPages={totalPages} onPageChange={setPage} />
-        </div>
+            </div>
+            {customers.length > 0 && (
+              <PaginationControls
+                currentPage={page}
+                totalPages={totalPages}
+                pageSize={pageSize}
+                onPageChange={setPage}
+                onPageSizeChange={setPageSize}
+              />
+            )}
+          </div>
         )}
       </DataPage>
 
@@ -291,49 +344,66 @@ function CustomersPage() {
           <DialogHeader>
             <DialogTitle>{editItem ? "Edit Customer" : "Add Customer"}</DialogTitle>
           </DialogHeader>
-          <form onSubmit={handleSave} className="space-y-4">
+          <form id="customer-form" onSubmit={handleSave} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="name">Full Name</Label>
-              <Input id="name" name="name" required defaultValue={editItem?.name || ""} />
+              <Input id="name" name="name" placeholder="e.g. Customer Name" required defaultValue={editItem?.name || ""} />
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
-                <Input id="email" name="email" type="email" required defaultValue={editItem?.email || ""} />
+                <Input id="email" name="email" type="email" placeholder="e.g. email@example.com" defaultValue={editItem?.email || ""} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="phone">Phone</Label>
-                <Input id="phone" name="phone" required defaultValue={editItem?.phone || ""} />
+                <Input id="phone" name="phone" type="tel" placeholder="e.g. +880 1700 000000" defaultValue={editItem?.phone || ""} />
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="type">Customer Type / Pricing Tier</Label>
-                <Select name="type" defaultValue={editItem?.type || "retail"}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="retail">Retail Customer</SelectItem>
-                    <SelectItem value="wholesale">Wholesale Customer</SelectItem>
-                    <SelectItem value="dealer">Dealer</SelectItem>
-                    <SelectItem value="corporate">Corporate Client</SelectItem>
-                  </SelectContent>
-                </Select>
+                <Label htmlFor="type">{t("customerType") || "Customer Type"}</Label>
+                <SearchableSelect
+                  options={[
+                    { value: "retail", label: "Retail (B2C)" },
+                    { value: "wholesale", label: "Wholesale (B2B)" },
+                    { value: "dealer", label: "Dealer" },
+                    { value: "distributor", label: "Distributor" }
+                  ]}
+                  value={editItem?.type || "retail"}
+                  onChange={val => {
+                    const input = document.createElement("input");
+                    input.type = "hidden";
+                    input.name = "type";
+                    input.value = val;
+                    document.getElementById("customer-form")?.appendChild(input);
+                    if (editItem) setEditItem({ ...editItem, type: val as any });
+                  }}
+                  placeholder="Select Type"
+                />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="status">Tier Status</Label>
-                <Select name="status" defaultValue={editItem?.status || "regular"}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="new">New</SelectItem>
-                    <SelectItem value="regular">Regular</SelectItem>
-                    <SelectItem value="vip">VIP</SelectItem>
-                  </SelectContent>
-                </Select>
+                <Label htmlFor="status">{t("status") || "Status"}</Label>
+                <SearchableSelect
+                  options={[
+                    { value: "active", label: "Active" },
+                    { value: "inactive", label: "Inactive" }
+                  ]}
+                  value={editItem?.status || "active"}
+                  onChange={val => {
+                    const input = document.createElement("input");
+                    input.type = "hidden";
+                    input.name = "status";
+                    input.value = val;
+                    document.getElementById("customer-form")?.appendChild(input);
+                    if (editItem) setEditItem({ ...editItem, status: val });
+                  }}
+                  placeholder="Select Status"
+                />
               </div>
             </div>
             <div className="space-y-2">
               <Label htmlFor="creditLimit">Credit Limit ({useCurrency().currencySymbol})</Label>
-              <Input id="creditLimit" name="creditLimit" type="number" step="100" defaultValue={editItem?.creditLimit || 5000} placeholder="e.g. 5000" />
+              <Input id="creditLimit" name="creditLimit" type="number" min="0" step="0.01" placeholder="e.g. 5000" required defaultValue={editItem?.creditLimit || 5000} />
             </div>
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => { setIsAddOpen(false); setEditItem(null); }}>Cancel</Button>

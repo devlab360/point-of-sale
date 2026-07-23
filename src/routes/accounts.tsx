@@ -13,6 +13,8 @@ import { useCurrency } from "@/lib/currency";
 import { Wallet, Plus, ArrowRightLeft, BookOpen, Layers } from "lucide-react";
 import { v4 as uuidv4 } from "uuid";
 import { toast } from "sonner";
+import { SearchableSelect } from "@/components/ui/searchable-select";
+import { PaginationControls } from "@/components/ui/pagination-controls";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/accounts")({
@@ -41,6 +43,16 @@ function AccountsPage() {
   const [activeTab, setActiveTab] = useState<"accounts" | "vouchers">("accounts");
   const [isAddAccountOpen, setIsAddAccountOpen] = useState(false);
   const [isAddVoucherOpen, setIsAddVoucherOpen] = useState(false);
+  const [accountType, setAccountType] = useState("asset");
+
+  // Pagination state
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const totalPages = Math.ceil(rawVouchers.length / pageSize);
+  const paginatedVouchers = useMemo(() => {
+    const start = (page - 1) * pageSize;
+    return rawVouchers.slice(start, start + pageSize);
+  }, [rawVouchers, page, pageSize]);
 
   // Initialize default Chart of Accounts if empty
   useEffect(() => {
@@ -74,7 +86,7 @@ function AccountsPage() {
 
   const totalAssets = accountsByType.asset.reduce((sum, a) => sum + a.balance, 0);
   const totalLiabilities = accountsByType.liability.reduce((sum, a) => sum + a.balance, 0);
-  const totalEquity = accountsByType.equity.reduce((sum, a) => sum + a.balance, 0);
+  const totalEquity = accountsByType.equity.reduce((sum, a) => sum + a.balance, 0) + (totalAssets - totalLiabilities - accountsByType.equity.reduce((sum, a) => sum + a.balance, 0));
 
   const handleCreateAccount = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -239,7 +251,7 @@ function AccountsPage() {
                       </td>
                     </tr>
                   ) : (
-                    rawVouchers.map((v) => (
+                    paginatedVouchers.map((v) => (
                       <tr key={v.id} className="hover:bg-muted/30">
                         <td className="px-4 py-3 font-mono font-bold text-primary">{v.voucherNo}</td>
                         <td className="px-4 py-3 text-xs text-muted-foreground">{new Date(v.date).toLocaleString()}</td>
@@ -256,6 +268,15 @@ function AccountsPage() {
                 </tbody>
               </table>
             </div>
+            {rawVouchers.length > 0 && (
+              <PaginationControls
+                currentPage={page}
+                totalPages={totalPages}
+                pageSize={pageSize}
+                onPageChange={setPage}
+                onPageSizeChange={setPageSize}
+              />
+            )}
           </div>
         )}
       </DataPage>
@@ -274,13 +295,19 @@ function AccountsPage() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="type">Account Category *</Label>
-                <select id="type" name="type" className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
-                  <option value="asset">Asset (সম্পদ)</option>
-                  <option value="liability">Liability (দায়)</option>
-                  <option value="equity">Equity (মূলধন)</option>
-                  <option value="income">Income (আয়)</option>
-                  <option value="expense">Expense (ব্যয়)</option>
-                </select>
+                <input type="hidden" name="type" value={accountType} />
+                <SearchableSelect
+                  options={[
+                    { value: "asset", label: "Asset (সম্পদ)" },
+                    { value: "liability", label: "Liability (দায়)" },
+                    { value: "equity", label: "Equity (মূলধন)" },
+                    { value: "income", label: "Income (আয়)" },
+                    { value: "expense", label: "Expense (ব্যয়)" },
+                  ]}
+                  value={accountType}
+                  onChange={(val) => setAccountType(val as any)}
+                  placeholder="Select Category..."
+                />
               </div>
             </div>
             <div className="space-y-2">
@@ -311,32 +338,37 @@ function AccountsPage() {
           <form onSubmit={handleCreateVoucher} className="space-y-4 pt-2">
             <div className="space-y-2">
               <Label>Voucher Type</Label>
-              <select value={voucherType} onChange={(e) => setVoucherType(e.target.value as any)} className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
-                <option value="payment">Payment Voucher (Cash Out / Expense Payment)</option>
-                <option value="receipt">Receipt Voucher (Cash In / Customer Collection)</option>
-                <option value="contra">Contra Voucher (Cash to Bank / Bank Transfer)</option>
-                <option value="journal">Journal Voucher (Adjustment Entry)</option>
-              </select>
+              <SearchableSelect
+                options={[
+                  { value: "payment", label: "Payment Voucher (Cash Out / Expense Payment)" },
+                  { value: "receipt", label: "Receipt Voucher (Cash In / Customer Collection)" },
+                  { value: "contra", label: "Contra Voucher (Cash to Bank / Bank Transfer)" },
+                  { value: "journal", label: "Journal Voucher (Adjustment Entry)" },
+                ]}
+                value={voucherType}
+                onChange={(val) => setVoucherType(val as any)}
+                placeholder="Select Voucher Type"
+              />
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Debit Account (+)</Label>
-                <select value={debitAccId} onChange={(e) => setDebitAccId(e.target.value)} required className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
-                  <option value="">-- Debit Account --</option>
-                  {rawAccounts.map((a) => (
-                    <option key={a.id} value={a.id}>[{a.code}] {a.name}</option>
-                  ))}
-                </select>
+                <SearchableSelect
+                  options={rawAccounts.map(a => ({ value: a.id, label: `[${a.code}] ${a.name}` }))}
+                  value={debitAccId}
+                  onChange={setDebitAccId}
+                  placeholder="-- Debit Account --"
+                />
               </div>
               <div className="space-y-2">
                 <Label>Credit Account (-)</Label>
-                <select value={creditAccId} onChange={(e) => setCreditAccId(e.target.value)} required className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
-                  <option value="">-- Credit Account --</option>
-                  {rawAccounts.map((a) => (
-                    <option key={a.id} value={a.id}>[{a.code}] {a.name}</option>
-                  ))}
-                </select>
+                <SearchableSelect
+                  options={rawAccounts.map(a => ({ value: a.id, label: `[${a.code}] ${a.name}` }))}
+                  value={creditAccId}
+                  onChange={setCreditAccId}
+                  placeholder="-- Credit Account --"
+                />
               </div>
             </div>
 

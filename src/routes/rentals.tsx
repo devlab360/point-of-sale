@@ -3,6 +3,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { DataPage } from "@/components/layout/DataPage";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PaginationControls } from "@/components/ui/pagination-controls";
+import { DatePicker } from "@/components/ui/date-picker";
 import { useDebounce } from "@/hooks/useDebounce";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -193,30 +194,40 @@ function RentalsPage() {
           <form onSubmit={handleCreateRental} className="space-y-4 pt-2">
             <div className="space-y-2">
               <Label>Customer Name *</Label>
-              <Input placeholder="e.g. Tanvir Ahmed" value={customerName} onChange={(e) => setCustomerName(e.target.value)} required />
+              <Input placeholder="e.g. Customer Name" value={customerName} onChange={(e) => setCustomerName(e.target.value)} required />
             </div>
             <div className="space-y-2">
               <Label>Rented Equipment / Item *</Label>
-              <Input placeholder="e.g. Sony A7IV Camera + 24-70mm Lens" value={itemName} onChange={(e) => setItemName(e.target.value)} required />
+              <Input placeholder="e.g. Item Name" value={itemName} onChange={(e) => setItemName(e.target.value)} required />
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Rent Start Date</Label>
-                <Input type="date" value={rentStartDate} onChange={(e) => setRentStartDate(e.target.value)} required />
+                <Label>Rent Start Date *</Label>
+                <div className="mt-1">
+                  <DatePicker 
+                    date={rentStartDate ? new Date(rentStartDate) : undefined} 
+                    onDateChange={(d) => setRentStartDate(d ? d.toISOString().split("T")[0] : "")} 
+                  />
+                </div>
               </div>
               <div className="space-y-2">
-                <Label>Expected Return Date</Label>
-                <Input type="date" value={expectedReturnDate} onChange={(e) => setExpectedReturnDate(e.target.value)} required />
+                <Label>Expected Return Date *</Label>
+                <div className="mt-1">
+                  <DatePicker 
+                    date={expectedReturnDate ? new Date(expectedReturnDate) : undefined} 
+                    onDateChange={(d) => setExpectedReturnDate(d ? d.toISOString().split("T")[0] : "")} 
+                  />
+                </div>
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Daily Rate *</Label>
-                <Input type="number" placeholder="0.00" value={dailyRate} onChange={(e) => setDailyRate(e.target.value)} required />
+                <Input type="number" min="0" step="0.01" placeholder="0.00" value={dailyRate} onChange={(e) => setDailyRate(e.target.value)} required />
               </div>
               <div className="space-y-2">
-                <Label>Security Deposit</Label>
-                <Input type="number" placeholder="0.00" value={securityDeposit} onChange={(e) => setSecurityDeposit(e.target.value)} />
+                <Label>Security Deposit Amount</Label>
+                <Input type="number" min="0" step="0.01" placeholder="0.00" value={securityDeposit} onChange={(e) => setSecurityDeposit(e.target.value)} />
               </div>
             </div>
             <DialogFooter>

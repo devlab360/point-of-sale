@@ -12,6 +12,9 @@ import type { LocalPurchase } from "@/lib/db";
 import { DataPage } from "@/components/layout/DataPage";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PaginationControls } from "@/components/ui/pagination-controls";
+import { SearchableSelect } from "@/components/ui/searchable-select";
+import { Label } from "@/components/ui/label";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { useDebounce } from "@/hooks/useDebounce";
 import { cn } from "@/lib/utils";
 
@@ -23,11 +26,15 @@ export const Route = createFileRoute("/purchases")({
 function PurchasesPage() {
   const navigate = useNavigate();
   const { formatCurrency } = useCurrency();
+  const { t } = useLanguage();
   const rawPurchases = useLiveQuery(() => localDb.purchases.toArray()) || [];
   const [query, setQuery] = useState("");
   const debouncedQuery = useDebounce(query, 300);
   const [page, setPage] = useState(1);
-  const itemsPerPage = 10;
+  const [pageSize, setPageSize] = useState(10);
+  
+  const [statusFilter, setStatusFilter] = useState("");
+  
   const [viewPurchase, setViewPurchase] = useState<LocalPurchase | null>(null);
 
   const filtered = useMemo(() => {
@@ -39,37 +46,59 @@ function PurchasesPage() {
         p.id.toLowerCase().includes(lower)
       );
     }
+    if (statusFilter) {
+      list = list.filter(p => p.status === statusFilter);
+    }
     return list;
-  }, [rawPurchases, debouncedQuery]);
+  }, [rawPurchases, debouncedQuery, statusFilter]);
 
   useEffect(() => {
     setPage(1);
-  }, [debouncedQuery]);
+  }, [debouncedQuery, statusFilter]);
 
-  useEffect(() => {
-    const maxPage = Math.max(1, Math.ceil(filtered.length / itemsPerPage));
-    if (page > maxPage) setPage(maxPage);
-  }, [filtered.length, page]);
-
-  const totalPages = Math.ceil(filtered.length / itemsPerPage);
-  const paginatedPurchases = filtered.slice((page - 1) * itemsPerPage, page * itemsPerPage);
+  const totalPages = Math.ceil(filtered.length / pageSize);
+  const paginatedPurchases = useMemo(() => {
+    const start = (page - 1) * pageSize;
+    return filtered.slice(start, start + pageSize);
+  }, [filtered, page, pageSize]);
 
   return (
     <div className="p-4 md:p-6 lg:p-8">
       <DataPage
-        title="Purchases"
-        description="Inbound stock from your suppliers and wholesalers."
-        primaryAction={{ label: "New Purchase", onClick: () => navigate({ to: "/purchases/new" }), icon: Plus }}
-        searchPlaceholder="Search by supplier or PO..."
+        title={t("purchases") || "Purchases"}
+        description={t("managePurchases") || "Inbound inventory from suppliers and purchase orders."}
+        primaryAction={{ label: t("newPurchase") || "New Purchase", onClick: () => navigate({ to: "/purchases/new" }), icon: Plus }}
+        searchPlaceholder={t("searchPurchases") || "Search by PO or supplier..."}
         searchValue={query}
         onSearchChange={setQuery}
         hideToolbar={rawPurchases.length === 0}
+        filtersContent={
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Status</Label>
+              <SearchableSelect 
+                options={[
+                  { value: "", label: "All Statuses" },
+                  { value: "received", label: "Received" },
+                  { value: "partial", label: "Partial" },
+                  { value: "pending", label: "Pending" }
+                ]} 
+                value={statusFilter} 
+                onChange={setStatusFilter} 
+                placeholder="Filter by Status"
+              />
+            </div>
+            <Button variant="outline" className="w-full" onClick={() => setStatusFilter("")}>
+              Reset Filters
+            </Button>
+          </div>
+        }
       >
         {filtered.length === 0 ? (
           <EmptyState
             icon={ShoppingCart}
-            title="No purchases found"
-            description={query ? "Try adjusting your search." : "No purchase orders have been created yet."}
+            title={t("noPurchasesFound") || "No purchases found"}
+            description={query ? (t("adjustSearch") || "Try adjusting your search.") : (t("noPurchasesYet") || "No purchase orders have been created yet.")}
           />
         ) : (
           <div className="space-y-4">
@@ -77,12 +106,12 @@ function PurchasesPage() {
               <table className="w-full text-left text-sm">
                 <thead className="bg-muted/50 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
                   <tr>
-                    <th className="px-4 py-3">PO</th>
-                    <th className="px-4 py-3">Supplier</th>
-                    <th className="px-4 py-3">Date</th>
-                    <th className="px-4 py-3 text-right">Items</th>
-                    <th className="px-4 py-3">Status</th>
-                    <th className="px-4 py-3 text-right">Total</th>
+                    <th className="px-4 py-3">{t("po") || "PO"}</th>
+                    <th className="px-4 py-3">{t("supplier") || "Supplier"}</th>
+                    <th className="px-4 py-3">{t("date") || "Date"}</th>
+                    <th className="px-4 py-3 text-right">{t("items") || "Items"}</th>
+                    <th className="px-4 py-3">{t("status") || "Status"}</th>
+                    <th className="px-4 py-3 text-right">{t("total") || "Total"}</th>
                     <th className="px-4 py-3"></th>
                   </tr>
                 </thead>
@@ -113,7 +142,15 @@ function PurchasesPage() {
                 </tbody>
               </table>
             </div>
-            <PaginationControls currentPage={page} totalPages={totalPages} onPageChange={setPage} />
+            {filtered.length > 0 && (
+              <PaginationControls
+                currentPage={page}
+                totalPages={totalPages}
+                pageSize={pageSize}
+                onPageChange={setPage}
+                onPageSizeChange={setPageSize}
+              />
+            )}
           </div>
         )}
       </DataPage>

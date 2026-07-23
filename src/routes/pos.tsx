@@ -28,6 +28,8 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCurrency } from "@/lib/currency";
+import { SearchableSelect } from "@/components/ui/searchable-select";
+import { useLanguage } from "@/contexts/LanguageContext";
 import {
   Dialog,
   DialogContent,
@@ -63,6 +65,7 @@ type PaymentMode = "cash" | "card" | "upi" | "split" | "credit" | "wallet";
 
 function PosScreen() {
   const { currencySymbol, formatCurrency } = useCurrency();
+  const { t } = useLanguage();
   const products = useLiveQuery(() => localDb.products.toArray()) || [];
   const customers = useLiveQuery(() => localDb.customers.toArray()) || [];
   const categories = useLiveQuery(() => localDb.categories.toArray()) || [];
@@ -684,18 +687,17 @@ function PosScreen() {
               {/* Sales Representative Select */}
               <div className="mt-1.5 flex items-center gap-1 text-xs">
                 <span className="text-muted-foreground text-[10px] uppercase font-bold">Sales Rep:</span>
-                <select
+                <SearchableSelect
                   value={selectedSalesmanId}
-                  onChange={(e) => setSelectedSalesmanId(e.target.value)}
-                  className="h-6 rounded border border-input bg-background px-1 text-[11px] font-medium"
-                >
-                  <option value="">-- Self / Default --</option>
-                  {users.map((u) => (
-                    <option key={u.id} value={u.id}>
-                      {u.name} ({u.commissionRate || 2.5}%)
-                    </option>
-                  ))}
-                </select>
+                  onChange={(val) => setSelectedSalesmanId(val)}
+                  options={[
+                    { value: "", label: "-- Self / Default --" },
+                    ...users.map((u) => ({
+                      value: u.id,
+                      label: `${u.name} (${u.commissionRate || 2.5}%)`
+                    }))
+                  ]}
+                />
               </div>
             </div>
             <div className="flex gap-1">
@@ -949,7 +951,7 @@ function PosScreen() {
           <form onSubmit={handleQuickAddCustomer} className="space-y-4 pt-2">
             <div className="space-y-2">
               <Label htmlFor="custName">Full Name *</Label>
-              <Input id="custName" name="name" required placeholder="e.g. Rahul Sharma" autoFocus />
+              <Input id="custName" name="name" required placeholder="e.g. Customer Full Name" autoFocus />
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
@@ -958,36 +960,36 @@ function PosScreen() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="custEmail">Email (Optional)</Label>
-                <Input id="custEmail" name="email" type="email" placeholder="rahul@example.com" />
+                <Input id="custEmail" name="email" type="email" placeholder="e.g. customer@example.com" />
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="custType">Pricing Tier / Type</Label>
-                <select
-                  id="custType"
-                  name="type"
-                  defaultValue="retail"
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-                >
-                  <option value="retail">Retail Customer</option>
-                  <option value="wholesale">Wholesale Customer</option>
-                  <option value="dealer">Dealer</option>
-                  <option value="corporate">Corporate Client</option>
-                </select>
+                <SearchableSelect
+                  value="retail"
+                  onChange={() => {}}
+                  options={[
+                    { value: "retail", label: "Retail Customer" },
+                    { value: "wholesale", label: "Wholesale Customer" },
+                    { value: "dealer", label: "Dealer" },
+                    { value: "corporate", label: "Corporate Client" },
+                  ]}
+                />
+                <input type="hidden" name="type" value="retail" id="custType" />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="custStatus">Customer Status</Label>
-                <select
-                  id="custStatus"
-                  name="status"
-                  defaultValue="new"
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-                >
-                  <option value="new">New Customer</option>
-                  <option value="regular">Regular</option>
-                  <option value="vip">VIP</option>
-                </select>
+                <SearchableSelect
+                  value="new"
+                  onChange={() => {}}
+                  options={[
+                    { value: "new", label: "New Customer" },
+                    { value: "regular", label: "Regular" },
+                    { value: "vip", label: "VIP" },
+                  ]}
+                />
+                <input type="hidden" name="status" value="new" id="custStatus" />
               </div>
             </div>
             <DialogFooter className="pt-2">

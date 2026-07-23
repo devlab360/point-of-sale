@@ -17,6 +17,7 @@ import { initializeLocalDb } from "@/lib/sync";
 import { Toaster } from "sonner";
 import { Button } from "@/components/ui/button";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
+import { LanguageProvider } from "@/contexts/LanguageContext";
 import { AiCopilotDrawer } from "@/components/ai/AiCopilotDrawer";
 
 function NotFoundComponent() {
@@ -136,32 +137,36 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <AppLayout />
-      </AuthProvider>
+      <LanguageProvider>
+        <AuthProvider>
+          <AppLayout />
+        </AuthProvider>
+      </LanguageProvider>
     </QueryClientProvider>
   );
 }
 
 function AppLayout() {
-  const { isAuthenticated, isLoading, isTrialExpired } = useAuth();
+  const { isAuthenticated, isLoading, isTrialExpired, isEmailVerified } = useAuth();
   const location = useRouterState({ select: (s) => s.location });
   const router = useRouter();
 
-  const publicRoutes = ["/login", "/register"];
+  const publicRoutes = ["/login", "/register", "/verify-email"];
   const isPublicRoute = publicRoutes.includes(location.pathname) || location.pathname.startsWith("/invite");
 
   useEffect(() => {
     if (!isLoading) {
       if (!isAuthenticated && !isPublicRoute) {
         router.navigate({ to: "/login", replace: true });
-      } else if (isAuthenticated && isPublicRoute) {
+      } else if (isAuthenticated && !isEmailVerified && location.pathname !== "/verify-email") {
+        router.navigate({ to: "/verify-email", replace: true });
+      } else if (isAuthenticated && isPublicRoute && isEmailVerified) {
         router.navigate({ to: "/", replace: true });
       } else if (isAuthenticated && isTrialExpired && location.pathname !== "/settings") {
         router.navigate({ to: "/settings", search: { tab: "billing" }, replace: true });
       }
     }
-  }, [isLoading, isAuthenticated, isTrialExpired, location.pathname, router]);
+  }, [isLoading, isAuthenticated, isEmailVerified, isTrialExpired, location.pathname, router]);
 
   if (isLoading) {
     return (

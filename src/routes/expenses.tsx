@@ -1,8 +1,11 @@
 import { useState, useMemo, useEffect } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { DataPage } from "@/components/layout/DataPage";
-import { EmptyState } from "@/components/ui/empty-state";
+import { DatePicker } from "@/components/ui/date-picker";
 import { PaginationControls } from "@/components/ui/pagination-controls";
+import { SearchableSelect } from "@/components/ui/searchable-select";
+import { EmptyState } from "@/components/ui/empty-state";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { useDebounce } from "@/hooks/useDebounce";
 import { Badge } from "@/components/ui/badge";
 import { StatCard } from "@/components/layout/StatCard";
@@ -10,7 +13,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { DatePicker } from "@/components/ui/date-picker";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import {
   DropdownMenu,
@@ -43,6 +45,7 @@ export const Route = createFileRoute("/expenses")({
 
 function ExpensesPage() {
   const { formatCurrency } = useCurrency();
+  const { t } = useLanguage();
   const rawExpenses = useLiveQuery(() => localDb.expenses.toArray()) || [];
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [editItem, setEditItem] = useState<LocalExpense | null>(null);
@@ -52,7 +55,10 @@ function ExpensesPage() {
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search, 300);
   const [page, setPage] = useState(1);
-  const itemsPerPage = 10;
+  const [pageSize, setPageSize] = useState(10);
+  
+  const [categoryFilter, setCategoryFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
 
   const expenses = useMemo(() => {
     let filtered = rawExpenses;
@@ -63,20 +69,26 @@ function ExpensesPage() {
         e.description.toLowerCase().includes(lower)
       );
     }
+    if (categoryFilter) {
+      filtered = filtered.filter(e => e.category === categoryFilter);
+    }
+    if (statusFilter) {
+      filtered = filtered.filter(e => e.status === statusFilter);
+    }
     return filtered;
-  }, [rawExpenses, debouncedSearch]);
+  }, [rawExpenses, debouncedSearch, categoryFilter, statusFilter]);
 
   useEffect(() => {
     setPage(1);
-  }, [debouncedSearch]);
+  }, [debouncedSearch, categoryFilter, statusFilter]);
 
-  useEffect(() => {
-    const maxPage = Math.max(1, Math.ceil(expenses.length / itemsPerPage));
-    if (page > maxPage) setPage(maxPage);
-  }, [expenses.length, page]);
+  const totalPages = Math.ceil(expenses.length / pageSize);
+  const paginatedExpenses = useMemo(() => {
+    const start = (page - 1) * pageSize;
+    return expenses.slice(start, start + pageSize);
+  }, [expenses, page, pageSize]);
 
-  const totalPages = Math.ceil(expenses.length / itemsPerPage);
-  const paginatedExpenses = expenses.slice((page - 1) * itemsPerPage, page * itemsPerPage);
+  const uniqueCategories = useMemo(() => Array.from(new Set(rawExpenses.map(e => e.category))), [rawExpenses]);
 
   const total = rawExpenses.reduce((acc, e) => acc + e.amount, 0);
   const pending = rawExpenses.filter(e => e.status !== "paid").length;
@@ -141,24 +153,56 @@ function ExpensesPage() {
   return (
     <div className="space-y-6 p-4 md:p-6 lg:p-8">
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <StatCard label="Total Expenses" value={formatCurrency(total)} icon={Wallet} accent="primary" />
-        <StatCard label="Largest Category" value={largestCategory} hint="By amount" icon={Receipt} accent="info" />
-        <StatCard label="Pending" value={pending.toString()} icon={TrendingDown} accent="warning" />
+        <StatCard label={t("totalExpenses") || "Total Expenses"} value={formatCurrency(total)} icon={Wallet} accent="primary" />
+        <StatCard label={t("largestCategory") || "Largest Category"} value={largestCategory} hint="By amount" icon={Receipt} accent="info" />
+        <StatCard label={t("pending") || "Pending"} value={pending.toString()} icon={TrendingDown} accent="warning" />
       </div>
       <DataPage
-        title="Expenses"
-        description="Track operating costs across all categories."
-        primaryAction={{ label: "Add Expense", onClick: () => setIsAddOpen(true) }}
-        searchPlaceholder="Search by category or description..."
+        title={t("expenses") || "Expenses"}
+        description={t("manageExpenses") || "Track operating costs across all categories."}
+        primaryAction={{ label: t("addExpense") || "Add Expense", onClick: () => setIsAddOpen(true) }}
+        searchPlaceholder={t("searchExpenses") || "Search by category or description..."}
         searchValue={search}
         onSearchChange={setSearch}
         hideToolbar={rawExpenses.length === 0}
+        filtersContent={
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Category</Label>
+              <SearchableSelect 
+                options={[
+                  { value: "", label: "All Categories" },
+                  ...uniqueCategories.map(c => ({ value: c, label: c }))
+                ]} 
+                value={categoryFilter} 
+                onChange={setCategoryFilter} 
+                placeholder="Filter by Category"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Status</Label>
+              <SearchableSelect 
+                options={[
+                  { value: "", label: "All Statuses" },
+                  { value: "paid", label: "Paid" },
+                  { value: "pending", label: "Pending" }
+                ]} 
+                value={statusFilter} 
+                onChange={setStatusFilter} 
+                placeholder="Filter by Status"
+              />
+            </div>
+            <Button variant="outline" className="w-full" onClick={() => { setCategoryFilter(""); setStatusFilter(""); }}>
+              Reset Filters
+            </Button>
+          </div>
+        }
       >
         {expenses.length === 0 ? (
           <EmptyState
             icon={Wallet}
-            title="No expenses found"
-            description={search ? "Try adjusting your search." : "No expenses have been recorded yet."}
+            title={t("noExpensesFound") || "No expenses found"}
+            description={search ? (t("adjustSearch") || "Try adjusting your search.") : (t("noExpensesYet") || "No expenses have been recorded yet.")}
           />
         ) : (
           <div className="space-y-4">
@@ -166,12 +210,12 @@ function ExpensesPage() {
               <table className="w-full text-left text-sm">
                 <thead className="bg-muted/50 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
                   <tr>
-                    <th className="px-4 py-3">Date</th>
-                    <th className="px-4 py-3">Category</th>
-                    <th className="px-4 py-3">Description</th>
-                    <th className="px-4 py-3">Status</th>
-                    <th className="px-4 py-3 text-right">Amount</th>
-                    <th className="px-4 py-3 text-right">Actions</th>
+                    <th className="px-4 py-3">{t("date") || "Date"}</th>
+                    <th className="px-4 py-3">{t("category") || "Category"}</th>
+                    <th className="px-4 py-3">{t("description") || "Description"}</th>
+                    <th className="px-4 py-3">{t("status") || "Status"}</th>
+                    <th className="px-4 py-3 text-right">{t("amount") || "Amount"}</th>
+                    <th className="px-4 py-3 text-right">{t("actions") || "Actions"}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
@@ -200,7 +244,15 @@ function ExpensesPage() {
                 </tbody>
               </table>
             </div>
-            <PaginationControls currentPage={page} totalPages={totalPages} onPageChange={setPage} />
+            {expenses.length > 0 && (
+              <PaginationControls
+                currentPage={page}
+                totalPages={totalPages}
+                pageSize={pageSize}
+                onPageChange={setPage}
+                onPageSizeChange={setPageSize}
+              />
+            )}
           </div>
         )}
       </DataPage>
@@ -215,7 +267,7 @@ function ExpensesPage() {
           <DialogHeader>
             <DialogTitle>{editItem ? "Edit Expense" : "Add Expense"}</DialogTitle>
           </DialogHeader>
-          <form onSubmit={handleSave} className="space-y-4">
+          <form id="expense-form" onSubmit={handleSave} className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="date">Date</Label>
@@ -232,22 +284,31 @@ function ExpensesPage() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="description">Description</Label>
-              <Input id="description" name="description" required defaultValue={editItem?.description} />
+              <Input id="description" name="description" placeholder="e.g. Electricity bill for July" required defaultValue={editItem?.description} />
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="amount">Amount ($)</Label>
-                <Input id="amount" name="amount" type="number" step="0.01" required defaultValue={editItem?.amount} />
+                <Input id="amount" name="amount" type="number" min="0" step="0.01" placeholder="e.g. 150.00" required defaultValue={editItem?.amount} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="status">Status</Label>
-                <Select name="status" defaultValue={editItem?.status || "pending"}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="pending">Pending</SelectItem>
-                    <SelectItem value="paid">Paid</SelectItem>
-                  </SelectContent>
-                </Select>
+                <SearchableSelect
+                  options={[
+                    { value: "pending", label: "Pending" },
+                    { value: "paid", label: "Paid" }
+                  ]}
+                  value={editItem?.status || "pending"}
+                  onChange={val => {
+                    const input = document.createElement("input");
+                    input.type = "hidden";
+                    input.name = "status";
+                    input.value = val;
+                    document.getElementById("expense-form")?.appendChild(input);
+                    if (editItem) setEditItem({ ...editItem, status: val as any });
+                  }}
+                  placeholder="Select Status"
+                />
               </div>
             </div>
             <DialogFooter>

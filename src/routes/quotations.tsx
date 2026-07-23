@@ -1,8 +1,10 @@
-import { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { DataPage } from "@/components/layout/DataPage";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PaginationControls } from "@/components/ui/pagination-controls";
+import { SearchableSelect } from "@/components/ui/searchable-select";
+import { DatePicker } from "@/components/ui/date-picker";
 import { useDebounce } from "@/hooks/useDebounce";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -42,7 +44,7 @@ function QuotationsPage() {
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search, 300);
   const [page, setPage] = useState(1);
-  const itemsPerPage = 10;
+  const [pageSize, setPageSize] = useState(10);
 
   // Form State
   const [selectedCustomerId, setSelectedCustomerId] = useState("");
@@ -64,11 +66,18 @@ function QuotationsPage() {
           q.customerName.toLowerCase().includes(lower)
       );
     }
-    return filtered.reverse();
+    return [...filtered].reverse();
   }, [rawQuotations, debouncedSearch]);
 
-  const totalPages = Math.max(1, Math.ceil(filteredQuotations.length / itemsPerPage));
-  const paginated = filteredQuotations.slice((page - 1) * itemsPerPage, page * itemsPerPage);
+  const totalPages = Math.ceil(filteredQuotations.length / pageSize);
+  const paginated = useMemo(() => {
+    const start = (page - 1) * pageSize;
+    return filteredQuotations.slice(start, start + pageSize);
+  }, [filteredQuotations, page, pageSize]);
+
+  React.useEffect(() => {
+    setPage(1);
+  }, [debouncedSearch]);
 
   const addItemToQuotation = (productId: string) => {
     const p = products.find((prod) => prod.id === productId);
@@ -281,7 +290,13 @@ function QuotationsPage() {
                 </tbody>
               </table>
             </div>
-            <PaginationControls currentPage={page} totalPages={totalPages} onPageChange={setPage} />
+            <PaginationControls 
+              currentPage={page} 
+              totalPages={totalPages} 
+              pageSize={pageSize}
+              onPageChange={setPage} 
+              onPageSizeChange={setPageSize}
+            />
           </div>
         )}
       </DataPage>
@@ -299,45 +314,35 @@ function QuotationsPage() {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Select Customer *</Label>
-                <select
+                <SearchableSelect
+                  options={customers.map(c => ({ value: c.id, label: `${c.name} - ${c.phone || 'No phone'}` }))}
                   value={selectedCustomerId}
-                  onChange={(e) => setSelectedCustomerId(e.target.value)}
-                  required
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                >
-                  <option value="">-- Choose Customer --</option>
-                  {customers.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.name} ({c.type ? c.type.toUpperCase() : "RETAIL"})
-                    </option>
-                  ))}
-                </select>
+                  onChange={setSelectedCustomerId}
+                  placeholder="Select Customer..."
+                />
               </div>
               <div className="space-y-2">
                 <Label>Valid Until *</Label>
-                <Input type="date" value={validUntil} onChange={(e) => setValidUntil(e.target.value)} required />
+                <div className="mt-1">
+                  <DatePicker 
+                    date={validUntil} 
+                    onDateChange={(d) => setValidUntil(d ? d.toISOString().split("T")[0] : "")} 
+                  />
+                </div>
               </div>
             </div>
 
             {/* Line Items Selection */}
             <div className="space-y-2 border-t pt-3">
-              <Label>Add Products to Quotation</Label>
-              <select
-                onChange={(e) => {
-                  if (e.target.value) {
-                    addItemToQuotation(e.target.value);
-                    e.target.value = "";
-                  }
+              <Label>Search & Add Products</Label>
+              <SearchableSelect
+                options={products.map(p => ({ value: p.id, label: p.name, sublabel: `Stock: ${p.stock} | Price: ${formatCurrency(p.price)}` }))}
+                value=""
+                onChange={(val) => {
+                  if (val) addItemToQuotation(val);
                 }}
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-              >
-                <option value="">+ Click to Select & Add Product</option>
-                {products.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.name} - Retail: {currencySymbol}{p.price} {p.wholesalePrice ? `| Wholesale: ${currencySymbol}${p.wholesalePrice}` : ""}
-                  </option>
-                ))}
-              </select>
+                placeholder="Search products by name or code..."
+              />
             </div>
 
             {/* Line Items Table */}
@@ -361,6 +366,8 @@ function QuotationsPage() {
                           <Input
                             type="number"
                             min="1"
+                            required
+                            placeholder="1"
                             value={item.quantity}
                             onChange={(e) => updateLineQty(item.productId, parseInt(e.target.value) || 1)}
                             className="h-7 w-16 text-center text-xs"
@@ -370,6 +377,9 @@ function QuotationsPage() {
                           <Input
                             type="number"
                             step="0.01"
+                            min="0"
+                            required
+                            placeholder="0.00"
                             value={item.price}
                             onChange={(e) => updateLinePrice(item.productId, parseFloat(e.target.value) || 0)}
                             className="h-7 w-24 text-right text-xs"

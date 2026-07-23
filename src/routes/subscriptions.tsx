@@ -1,8 +1,10 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { DataPage } from "@/components/layout/DataPage";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PaginationControls } from "@/components/ui/pagination-controls";
+import { SearchableSelect } from "@/components/ui/searchable-select";
+import { DatePicker } from "@/components/ui/date-picker";
 import { useDebounce } from "@/hooks/useDebounce";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -21,6 +23,7 @@ import { useCurrency } from "@/lib/currency";
 import { Repeat, Plus, MoreVertical, Trash2, CheckCircle2, PauseCircle } from "lucide-react";
 import { v4 as uuidv4 } from "uuid";
 import { toast } from "sonner";
+import React from "react";
 
 export const Route = createFileRoute("/subscriptions")({
   head: () => ({ meta: [{ title: "Subscriptions & Recurring Billing · Grocer.Pro" }] }),
@@ -36,7 +39,7 @@ function SubscriptionsPage() {
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search, 300);
   const [page, setPage] = useState(1);
-  const itemsPerPage = 10;
+  const [pageSize, setPageSize] = useState(10);
 
   // Form State
   const [customerName, setCustomerName] = useState("");
@@ -57,11 +60,18 @@ function SubscriptionsPage() {
           s.planName.toLowerCase().includes(lower)
       );
     }
-    return filtered.reverse();
+    return [...filtered].reverse();
   }, [rawSubs, debouncedSearch]);
 
-  const totalPages = Math.max(1, Math.ceil(filteredSubs.length / itemsPerPage));
-  const paginated = filteredSubs.slice((page - 1) * itemsPerPage, page * itemsPerPage);
+  const totalPages = Math.ceil(filteredSubs.length / pageSize);
+  const paginated = useMemo(() => {
+    const start = (page - 1) * pageSize;
+    return filteredSubs.slice(start, start + pageSize);
+  }, [filteredSubs, page, pageSize]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [debouncedSearch]);
 
   const handleCreateSub = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -175,7 +185,13 @@ function SubscriptionsPage() {
                 </tbody>
               </table>
             </div>
-            <PaginationControls currentPage={page} totalPages={totalPages} onPageChange={setPage} />
+            <PaginationControls 
+              currentPage={page} 
+              totalPages={totalPages} 
+              pageSize={pageSize}
+              onPageChange={setPage} 
+              onPageSizeChange={setPageSize}
+            />
           </div>
         )}
       </DataPage>
@@ -192,30 +208,40 @@ function SubscriptionsPage() {
           <form onSubmit={handleCreateSub} className="space-y-4 pt-2">
             <div className="space-y-2">
               <Label>Customer Name *</Label>
-              <Input placeholder="e.g. Acme Software Ltd" value={customerName} onChange={(e) => setCustomerName(e.target.value)} required />
+              <Input placeholder="e.g. Customer Name" value={customerName} onChange={(e) => setCustomerName(e.target.value)} required />
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Plan / Service Name *</Label>
-                <Input placeholder="e.g. 50 Mbps Fiber Net" value={planName} onChange={(e) => setPlanName(e.target.value)} required />
+                <Input placeholder="e.g. Plan / Service Name" value={planName} onChange={(e) => setPlanName(e.target.value)} required />
               </div>
               <div className="space-y-2">
                 <Label>Billing Cycle</Label>
-                <select value={billingCycle} onChange={(e) => setBillingCycle(e.target.value as any)} className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
-                  <option value="monthly">Monthly</option>
-                  <option value="weekly">Weekly</option>
-                  <option value="yearly">Yearly</option>
-                </select>
+                <SearchableSelect
+                  options={[
+                    { value: "monthly", label: "Monthly" },
+                    { value: "weekly", label: "Weekly" },
+                    { value: "yearly", label: "Yearly" },
+                  ]}
+                  value={billingCycle}
+                  onChange={(val) => setBillingCycle(val as any)}
+                  placeholder="Select Billing Cycle"
+                />
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Recurring Amount *</Label>
-                <Input type="number" placeholder="0.00" value={amount} onChange={(e) => setAmount(e.target.value)} required />
+                <Input type="number" min="0" step="0.01" placeholder="0.00" value={amount} onChange={(e) => setAmount(e.target.value)} required />
               </div>
               <div className="space-y-2">
-                <Label>Next Renewal Date</Label>
-                <Input type="date" value={nextBillingDate} onChange={(e) => setNextBillingDate(e.target.value)} />
+                <Label>Next Billing Date</Label>
+                <div className="mt-1">
+                  <DatePicker 
+                    date={nextBillingDate ? new Date(nextBillingDate) : undefined} 
+                    onDateChange={(d) => setNextBillingDate(d ? d.toISOString().split("T")[0] : "")} 
+                  />
+                </div>
               </div>
             </div>
             <DialogFooter>

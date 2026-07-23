@@ -6,6 +6,7 @@ import { PaginationControls } from "@/components/ui/pagination-controls";
 import { useDebounce } from "@/hooks/useDebounce";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -24,6 +25,7 @@ import { useCurrency } from "@/lib/currency";
 import { DatePicker } from "@/components/ui/date-picker";
 import { v4 as uuidv4 } from "uuid";
 import { toast } from "sonner";
+import { useLanguage } from "@/contexts/LanguageContext";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -45,13 +47,18 @@ export const Route = createFileRoute("/products")({
 
 function ProductsPage() {
   const { formatCurrency } = useCurrency();
+  const { t } = useLanguage();
   const [view, setView] = useState<"grid" | "list">("list");
   const rawProducts = useLiveQuery(() => localDb.products.toArray()) || [];
   
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search, 300);
   const [page, setPage] = useState(1);
-  const itemsPerPage = 10;
+  const [pageSize, setPageSize] = useState(10);
+  
+  const [categoryFilter, setCategoryFilter] = useState("");
+  const [brandFilter, setBrandFilter] = useState("");
+  const [stockFilter, setStockFilter] = useState("");
 
   const products = useMemo(() => {
     let filtered = rawProducts;
@@ -64,20 +71,33 @@ function ProductsPage() {
           p.barcode.toLowerCase().includes(lower)
       );
     }
+    if (categoryFilter) {
+      filtered = filtered.filter(p => p.category === categoryFilter);
+    }
+    if (brandFilter) {
+      filtered = filtered.filter(p => p.brand === brandFilter);
+    }
+    if (stockFilter === "in-stock") {
+      filtered = filtered.filter(p => p.stock > (p.reorderLevel || 0));
+    } else if (stockFilter === "low-stock") {
+      filtered = filtered.filter(p => p.stock > 0 && p.stock <= (p.reorderLevel || 5));
+    } else if (stockFilter === "out-of-stock") {
+      filtered = filtered.filter(p => p.stock <= 0);
+    }
+    
     return filtered;
-  }, [rawProducts, debouncedSearch]);
+  }, [rawProducts, debouncedSearch, categoryFilter, brandFilter, stockFilter]);
 
   useEffect(() => {
     setPage(1);
-  }, [debouncedSearch]);
+  }, [debouncedSearch, categoryFilter, brandFilter, stockFilter]);
 
-  useEffect(() => {
-    const maxPage = Math.max(1, Math.ceil(products.length / itemsPerPage));
-    if (page > maxPage) setPage(maxPage);
-  }, [products.length, page]);
+  const totalPages = Math.ceil(products.length / pageSize);
+  const paginatedProducts = useMemo(() => {
+    const start = (page - 1) * pageSize;
+    return products.slice(start, start + pageSize);
+  }, [products, page, pageSize]);
 
-  const totalPages = Math.ceil(products.length / itemsPerPage);
-  const paginatedProducts = products.slice((page - 1) * itemsPerPage, page * itemsPerPage);
   const categories = useLiveQuery(() => localDb.categories.toArray()) || [];
   const brands = useLiveQuery(() => localDb.brands.toArray()) || [];
   const units = useLiveQuery(() => localDb.units.toArray()) || [];
@@ -209,10 +229,10 @@ function ProductsPage() {
   return (
     <div className="p-4 md:p-6 lg:p-8">
       <DataPage
-        title="Products"
-        description="Manage your full SKU catalog, pricing, and stock thresholds."
-        primaryAction={{ label: "Add Product", onClick: openNew }}
-        searchPlaceholder="Search by name, SKU, or barcode..."
+        title={t("products") || "Products"}
+        description={t("manageCatalog") || "Manage your full SKU catalog, pricing, and stock thresholds."}
+        primaryAction={{ label: t("addProduct") || "Add Product", onClick: openNew }}
+        searchPlaceholder={t("searchProducts") || "Search by name, SKU, or barcode..."}
         searchValue={search}
         onSearchChange={setSearch}
         hideToolbar={rawProducts.length === 0}
@@ -240,17 +260,70 @@ function ProductsPage() {
             </button>
           </div>
         }
+        filtersContent={
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Category</Label>
+              <SearchableSelect 
+                options={[
+                  { value: "", label: "All Categories" },
+                  ...categories.map(c => ({ value: c.id, label: c.name }))
+                ]} 
+                value={categoryFilter} 
+                onChange={setCategoryFilter} 
+                placeholder="Filter by Category"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Brand</Label>
+              <SearchableSelect 
+                options={[
+                  { value: "", label: "All Brands" },
+                  ...brands.map(b => ({ value: b.id, label: b.name }))
+                ]} 
+                value={brandFilter} 
+                onChange={setBrandFilter} 
+                placeholder="Filter by Brand"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Stock Status</Label>
+              <SearchableSelect 
+                options={[
+                  { value: "", label: "All Statuses" },
+                  { value: "in-stock", label: "In Stock" },
+                  { value: "low-stock", label: "Low Stock" },
+                  { value: "out-of-stock", label: "Out of Stock" },
+                ]} 
+                value={stockFilter} 
+                onChange={setStockFilter} 
+                placeholder="Filter by Stock"
+              />
+            </div>
+            <Button variant="outline" className="w-full" onClick={() => { setCategoryFilter(""); setBrandFilter(""); setStockFilter(""); }}>
+              Reset Filters
+            </Button>
+          </div>
+        }
       >
         {products.length === 0 ? (
           <EmptyState 
             icon={PackageSearch} 
-            title="No products found" 
-            description={search ? "Try adjusting your search." : "You haven't added any products yet."} 
+            title={t("noProductsFound") || "No products found"} 
+            description={search ? (t("adjustSearch") || "Try adjusting your search.") : (t("noProductsYet") || "You haven't added any products yet.")} 
           />
         ) : (
           <div className="space-y-4">
             {view === "list" ? <TableView products={paginatedProducts} onEdit={openEdit} onDelete={deleteProd} onPrint={(p) => { setPrintProduct(p); setPrintCount(1); }} /> : <GridView products={paginatedProducts} onEdit={openEdit} onPrint={(p) => { setPrintProduct(p); setPrintCount(1); }} />}
-            <PaginationControls currentPage={page} totalPages={totalPages} onPageChange={setPage} />
+            {products.length > 0 && (
+              <PaginationControls
+                currentPage={page}
+                totalPages={totalPages}
+                pageSize={pageSize}
+                onPageChange={setPage}
+                onPageSizeChange={setPageSize}
+              />
+            )}
           </div>
         )}
       </DataPage>
@@ -263,66 +336,66 @@ function ProductsPage() {
           <div className="grid grid-cols-2 gap-4 py-4">
             <div className="grid gap-2 col-span-2">
               <Label>Product Name</Label>
-              <Input value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} />
+              <Input placeholder="e.g. Item Name" required value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} />
             </div>
             <div className="grid gap-2">
               <Label>SKU</Label>
-              <Input value={formData.sku} onChange={e => setFormData({...formData, sku: e.target.value})} />
+              <Input placeholder="e.g. SKU-001" required value={formData.sku} onChange={e => setFormData({...formData, sku: e.target.value})} />
             </div>
             <div className="grid gap-2">
               <Label>Barcode</Label>
-              <Input value={formData.barcode} onChange={e => setFormData({...formData, barcode: e.target.value})} />
+              <Input placeholder="e.g. 123456789012" value={formData.barcode} onChange={e => setFormData({...formData, barcode: e.target.value})} />
             </div>
-            <div className="grid gap-2">
-              <Label>Category</Label>
-              <Select value={formData.category} onValueChange={v => setFormData({...formData, category: v})}>
-                <SelectTrigger><SelectValue placeholder="Select Category" /></SelectTrigger>
-                <SelectContent>
-                  {categories.map(c => <SelectItem key={c.id} value={c.name}>{c.name}</SelectItem>)}
-                </SelectContent>
-              </Select>
+            <div className="space-y-2">
+              <Label htmlFor="category">{t("category") || "Category"}</Label>
+              <SearchableSelect
+                options={categories.map(c => ({ value: c.id, label: c.name }))}
+                value={formData.category}
+                onChange={val => setFormData({ ...formData, category: val })}
+                placeholder={t("selectCategory") || "Select category..."}
+              />
             </div>
-            <div className="grid gap-2">
-              <Label>Brand</Label>
-              <Select value={formData.brand} onValueChange={v => setFormData({...formData, brand: v})}>
-                <SelectTrigger><SelectValue placeholder="Select Brand" /></SelectTrigger>
-                <SelectContent>
-                  {brands.map(b => <SelectItem key={b.id} value={b.name}>{b.name}</SelectItem>)}
-                </SelectContent>
-              </Select>
+            <div className="space-y-2">
+              <Label htmlFor="brand">{t("brand") || "Brand"}</Label>
+              <SearchableSelect
+                options={brands.map(b => ({ value: b.id, label: b.name }))}
+                value={formData.brand}
+                onChange={val => setFormData({ ...formData, brand: val })}
+                placeholder={t("selectBrand") || "Select brand..."}
+              />
             </div>
-            <div className="grid gap-2">
-              <Label>Unit</Label>
-              <Select value={formData.unit} onValueChange={v => setFormData({...formData, unit: v})}>
-                <SelectTrigger><SelectValue placeholder="Select Unit" /></SelectTrigger>
-                <SelectContent>
-                  {units.map(u => <SelectItem key={u.id} value={u.short}>{u.name} ({u.short})</SelectItem>)}
-                </SelectContent>
-              </Select>
+            <div className="space-y-2">
+              <Label htmlFor="unit">{t("unitType") || "Unit Type"}</Label>
+              <SearchableSelect
+                options={units.map(u => ({ value: u.id, label: u.name }))}
+                value={formData.unit}
+                onChange={val => setFormData({ ...formData, unit: val })}
+                placeholder={t("selectUnit") || "Select unit..."}
+              />
             </div>
             <div className="grid gap-2">
               <Label>Retail Price *</Label>
-              <Input type="number" step="0.01" value={formData.price} onChange={e => setFormData({...formData, price: parseFloat(e.target.value) || 0})} />
+              <Input type="number" min="0" step="0.01" placeholder="0.00" required value={formData.price} onChange={e => setFormData({...formData, price: parseFloat(e.target.value) || 0})} />
             </div>
             <div className="grid gap-2">
               <Label>Wholesale Price (Optional)</Label>
-              <Input type="number" step="0.01" placeholder="e.g. 45.00" value={formData.wholesalePrice || ""} onChange={e => setFormData({...formData, wholesalePrice: parseFloat(e.target.value) || 0})} />
+              <Input type="number" min="0" step="0.01" placeholder="e.g. 45.00" value={formData.wholesalePrice || ""} onChange={e => setFormData({...formData, wholesalePrice: parseFloat(e.target.value) || 0})} />
             </div>
             <div className="grid gap-2">
               <Label>Dealer Price (Optional)</Label>
-              <Input type="number" step="0.01" placeholder="e.g. 40.00" value={formData.dealerPrice || ""} onChange={e => setFormData({...formData, dealerPrice: parseFloat(e.target.value) || 0})} />
+              <Input type="number" min="0" step="0.01" placeholder="e.g. 40.00" value={formData.dealerPrice || ""} onChange={e => setFormData({...formData, dealerPrice: parseFloat(e.target.value) || 0})} />
             </div>
             <div className="grid gap-2">
               <Label>Cost Price</Label>
-              <Input type="number" step="0.01" value={formData.cost} onChange={e => setFormData({...formData, cost: parseFloat(e.target.value) || 0})} />
+              <Input type="number" min="0" step="0.01" placeholder="0.00" required value={formData.cost} onChange={e => setFormData({...formData, cost: parseFloat(e.target.value) || 0})} />
             </div>
             <div className="grid gap-2">
               <Label>Stock</Label>
-              <Input type="number" value={formData.stock} onChange={e => setFormData({...formData, stock: parseInt(e.target.value)})} />
+              <Input type="number" min="0" placeholder="0" required value={formData.stock} onChange={e => setFormData({...formData, stock: parseInt(e.target.value)})} />
             </div>
             <div className="grid gap-2">
               <Label>Reorder Level</Label>
-              <Input type="number" value={formData.reorderLevel} onChange={e => setFormData({...formData, reorderLevel: parseInt(e.target.value)})} />
+              <Input type="number" min="0" placeholder="e.g. 5" required value={formData.reorderLevel} onChange={e => setFormData({...formData, reorderLevel: parseInt(e.target.value)})} />
             </div>
             <div className="grid gap-2">
               <Label>Expiry Date (Optional)</Label>
@@ -334,22 +407,22 @@ function ProductsPage() {
             </div>
             <div className="grid gap-2 col-span-2">
               <Label>Image URL</Label>
-              <Input value={formData.image} onChange={e => setFormData({...formData, image: e.target.value})} />
+              <Input type="url" placeholder="https://example.com/image.jpg" value={formData.image} onChange={e => setFormData({...formData, image: e.target.value})} />
             </div>
 
             {/* Warehouse Rack / Shelf Location Fields */}
             <div className="grid grid-cols-3 gap-2 col-span-2 rounded-xl border p-3 bg-muted/20">
               <div>
                 <Label className="text-xs">Rack No.</Label>
-                <Input placeholder="e.g. A-12" value={formData.locationRack} onChange={e => setFormData({...formData, locationRack: e.target.value})} className="h-8 text-xs" />
+                <Input placeholder="e.g. A2" value={formData.locationRack} onChange={e => setFormData({...formData, locationRack: e.target.value})} className="h-8 text-xs" />
               </div>
               <div>
                 <Label className="text-xs">Shelf No.</Label>
-                <Input placeholder="e.g. Shelf 3" value={formData.locationShelf} onChange={e => setFormData({...formData, locationShelf: e.target.value})} className="h-8 text-xs" />
+                <Input placeholder="e.g. 3" value={formData.locationShelf} onChange={e => setFormData({...formData, locationShelf: e.target.value})} className="h-8 text-xs" />
               </div>
               <div>
                 <Label className="text-xs">Bin Position</Label>
-                <Input placeholder="e.g. Bin B" value={formData.locationBin} onChange={e => setFormData({...formData, locationBin: e.target.value})} className="h-8 text-xs" />
+                <Input placeholder="e.g. B4" value={formData.locationBin} onChange={e => setFormData({...formData, locationBin: e.target.value})} className="h-8 text-xs" />
               </div>
             </div>
 
@@ -374,7 +447,7 @@ function ProductsPage() {
                     rows={2}
                     value={formData.serialsInput}
                     onChange={(e) => setFormData({ ...formData, serialsInput: e.target.value })}
-                    placeholder="e.g. IMEI88301, IMEI88302, IMEI88303"
+                    placeholder="e.g. SN-001, SN-002, SN-003"
                     className="w-full rounded-md border border-input bg-background p-2 text-xs font-mono"
                   />
                 </div>
@@ -403,11 +476,16 @@ function ProductsPage() {
                   </div>
                   <div>
                     <Label className="text-xs">Batch Expiry</Label>
-                    <Input type="date" value={formData.batchExpiryInput} onChange={e => setFormData({...formData, batchExpiryInput: e.target.value})} className="h-8 text-xs" />
+                    <div className="mt-1">
+                      <DatePicker 
+                        date={formData.batchExpiryInput} 
+                        onDateChange={(d) => setFormData({...formData, batchExpiryInput: d ? d.toISOString().split("T")[0] : ""})} 
+                      />
+                    </div>
                   </div>
                   <div>
                     <Label className="text-xs">Batch Stock Qty</Label>
-                    <Input type="number" value={formData.batchStockInput} onChange={e => setFormData({...formData, batchStockInput: parseInt(e.target.value) || 0})} className="h-8 text-xs" />
+                    <Input type="number" min="0" placeholder="0" required value={formData.batchStockInput} onChange={e => setFormData({...formData, batchStockInput: parseInt(e.target.value) || 0})} className="h-8 text-xs" />
                   </div>
                 </div>
               )}
@@ -487,6 +565,7 @@ function ProductsPage() {
 
 function TableView({ products, onEdit, onDelete, onPrint }: { products: any[], onEdit: (p: any) => void, onDelete: (id: string) => void, onPrint: (p: any) => void }) {
   const { formatCurrency } = useCurrency();
+  const { t } = useLanguage();
   return (
     <div className="overflow-hidden rounded-xl border border-border bg-card shadow-soft">
       <div className="overflow-x-auto">
@@ -496,12 +575,12 @@ function TableView({ products, onEdit, onDelete, onPrint }: { products: any[], o
               <th className="px-4 py-3">
                 <input type="checkbox" className="rounded border-border" />
               </th>
-              <th className="px-4 py-3">Product</th>
-              <th className="px-4 py-3">SKU</th>
-              <th className="px-4 py-3">Category</th>
-              <th className="px-4 py-3 text-right">Price</th>
-              <th className="px-4 py-3 text-right">Stock</th>
-              <th className="px-4 py-3">Status</th>
+              <th className="px-4 py-3">{t("product") || "Product"}</th>
+              <th className="px-4 py-3">{t("sku") || "SKU"}</th>
+              <th className="px-4 py-3">{t("category") || "Category"}</th>
+              <th className="px-4 py-3 text-right">{t("price") || "Price"}</th>
+              <th className="px-4 py-3 text-right">{t("stock") || "Stock"}</th>
+              <th className="px-4 py-3">{t("status") || "Status"}</th>
               <th className="px-4 py-3"></th>
             </tr>
           </thead>

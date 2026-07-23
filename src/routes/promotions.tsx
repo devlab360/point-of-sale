@@ -198,7 +198,7 @@ function PromotionsPage() {
           <form onSubmit={handleSave} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="title">Promotion Title</Label>
-              <Input id="title" name="title" required defaultValue={editItem?.title} placeholder="e.g. Summer Sale" />
+              <Input id="title" name="title" required defaultValue={editItem?.title} placeholder="e.g. Campaign Name" />
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
@@ -214,12 +214,12 @@ function PromotionsPage() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="value">Discount Value (%)</Label>
-                <Input id="value" name="value" type="number" step="0.01" required defaultValue={editItem?.value} />
+                <Input id="value" name="value" type="number" min="0" step="0.01" placeholder="e.g. 10.00" required defaultValue={editItem?.value} />
               </div>
             </div>
             <div className="space-y-2">
               <Label htmlFor="conditions">Conditions</Label>
-              <Input id="conditions" name="conditions" required defaultValue={editItem?.conditions} placeholder="e.g. Min spend $50" />
+              <Input id="conditions" name="conditions" required defaultValue={editItem?.conditions} placeholder="e.g. Conditions or Rules" />
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">

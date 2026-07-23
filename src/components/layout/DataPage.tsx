@@ -2,6 +2,8 @@ import type { ReactNode } from "react";
 import { Download, Filter, Plus, Search, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "./PageHeader";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 type Props = {
   title: string;
@@ -13,6 +15,7 @@ type Props = {
   searchValue?: string;
   onSearchChange?: (value: string) => void;
   hideToolbar?: boolean;
+  filtersContent?: ReactNode;
 };
 
 export function DataPage({
@@ -25,8 +28,10 @@ export function DataPage({
   searchValue,
   onSearchChange,
   hideToolbar = false,
+  filtersContent,
 }: Props) {
   const Icon = primaryAction?.icon ?? Plus;
+  const { t } = useLanguage();
   return (
     <div className="space-y-6">
       <PageHeader
@@ -63,9 +68,27 @@ export function DataPage({
           </div>
           <div className="flex flex-wrap items-center gap-2">
             {toolbar}
-            <Button variant="outline" size="sm">
-              <Filter className="size-4" /> Filters
-            </Button>
+            {filtersContent ? (
+              <Sheet>
+                <SheetTrigger asChild>
+                  <Button variant="outline" size="sm">
+                    <Filter className="size-4" /> {t("filters") || "Filters"}
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="right" className="w-[300px] sm:w-[400px]">
+                  <SheetHeader>
+                    <SheetTitle>{t("filters") || "Filters"}</SheetTitle>
+                  </SheetHeader>
+                  <div className="mt-6">
+                    {filtersContent}
+                  </div>
+                </SheetContent>
+              </Sheet>
+            ) : (
+              <Button variant="outline" size="sm" disabled>
+                <Filter className="size-4" /> {t("filters") || "Filters"}
+              </Button>
+            )}
           </div>
         </div>
       )}

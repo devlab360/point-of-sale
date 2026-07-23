@@ -8,10 +8,20 @@ import {
   PaginationPrevious,
 } from "@/components/ui/pagination";
 
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+
 interface PaginationControlsProps {
   currentPage: number;
   totalPages: number;
   onPageChange: (page: number) => void;
+  pageSize?: number;
+  onPageSizeChange?: (size: number) => void;
   className?: string;
 }
 
@@ -19,9 +29,11 @@ export function PaginationControls({
   currentPage,
   totalPages,
   onPageChange,
+  pageSize,
+  onPageSizeChange,
   className,
 }: PaginationControlsProps) {
-  if (totalPages <= 1) return null;
+  if (totalPages <= 1 && !onPageSizeChange) return null;
 
   const maxVisiblePages = 5;
   const pages: (number | string)[] = [];
@@ -95,6 +107,22 @@ export function PaginationControls({
           />
         </PaginationItem>
       </PaginationContent>
+      {onPageSizeChange && pageSize && (
+        <div className="ml-4 flex items-center space-x-2">
+          <span className="text-xs text-muted-foreground whitespace-nowrap">Items per page:</span>
+          <Select value={pageSize.toString()} onValueChange={(val) => onPageSizeChange(Number(val))}>
+            <SelectTrigger className="h-8 w-[70px] text-xs">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="10">10</SelectItem>
+              <SelectItem value="25">25</SelectItem>
+              <SelectItem value="50">50</SelectItem>
+              <SelectItem value="100">100</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      )}
     </Pagination>
   );
 }

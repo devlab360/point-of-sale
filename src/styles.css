@@ -211,3 +211,28 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
   background-color: color-mix(in oklch, var(--color-primary) 15%, transparent);
   transform: scale(1.05);
 }
+
+/* Custom Slim Scrollbar */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: color-mix(in oklch, var(--color-muted-foreground) 35%, transparent);
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: color-mix(in oklch, var(--color-primary) 60%, transparent);
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in oklch, var(--color-muted-foreground) 35%, transparent) transparent;
+}
+

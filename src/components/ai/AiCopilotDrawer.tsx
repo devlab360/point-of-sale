@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -105,6 +105,38 @@ export function AiCopilotDrawer() {
     },
   ]);
 
+  const [btnPos, setBtnPos] = useState({ x: 0, y: 0 });
+  const [isDragging, setIsDragging] = useState(false);
+  const dragRef = useRef({ startX: 0, startY: 0, hasMoved: false });
+
+  const onPointerDown = (e: React.PointerEvent<HTMLButtonElement>) => {
+    dragRef.current = { startX: e.clientX - btnPos.x, startY: e.clientY - btnPos.y, hasMoved: false };
+    setIsDragging(true);
+    e.currentTarget.setPointerCapture(e.pointerId);
+  };
+
+  const onPointerMove = (e: React.PointerEvent<HTMLButtonElement>) => {
+    if (!isDragging) return;
+    dragRef.current.hasMoved = true;
+    setBtnPos({
+      x: e.clientX - dragRef.current.startX,
+      y: e.clientY - dragRef.current.startY,
+    });
+  };
+
+  const onPointerUp = (e: React.PointerEvent<HTMLButtonElement>) => {
+    setIsDragging(false);
+    e.currentTarget.releasePointerCapture(e.pointerId);
+  };
+
+  const handleClick = (e: React.MouseEvent) => {
+    if (dragRef.current.hasMoved) {
+      e.preventDefault();
+      return;
+    }
+    setIsOpen(true);
+  };
+
   const processUserQuery = (queryText: string) => {
     const q = queryText.toLowerCase().trim();
     if (!q) return;
@@ -190,17 +222,21 @@ export function AiCopilotDrawer() {
     <>
       {/* Floating AI Button (Bottom Right) */}
       <button
-        onClick={() => setIsOpen(true)}
-        className="fixed bottom-6 right-6 z-50 flex items-center gap-2 rounded-full bg-gradient-to-r from-primary to-accent px-4 py-3 text-sm font-bold text-primary-foreground shadow-elevated transition-transform hover:scale-105 active:scale-95"
+        onPointerDown={onPointerDown}
+        onPointerMove={onPointerMove}
+        onPointerUp={onPointerUp}
+        onClick={handleClick}
+        style={{ transform: `translate(${btnPos.x}px, ${btnPos.y}px)`, cursor: isDragging ? 'grabbing' : 'grab', touchAction: 'none' }}
+        className="fixed bottom-6 right-6 z-50 flex items-center gap-2 rounded-full bg-primary hover:bg-primary/90 px-4 py-3 text-sm font-bold text-primary-foreground shadow-md border border-primary/20 transition-colors"
       >
         <Sparkles className="size-5 animate-pulse" />
         <span className="hidden sm:inline">AI Copilot</span>
-        <Badge variant="secondary" className="text-[9px] bg-background/20 text-white">Ctrl+K</Badge>
+        <Badge variant="secondary" className="text-[9px] bg-background/20 text-white ml-1 pointer-events-none">Ctrl+K</Badge>
       </button>
 
       {/* AI Assistant Sheet Drawer */}
       <Sheet open={isOpen} onOpenChange={setIsOpen}>
-        <SheetContent side="right" className="w-full sm:max-w-md p-0 flex flex-col h-full bg-background border-l border-border shadow-elevated">
+        <SheetContent side="right" className="w-full sm:max-w-xl p-0 flex flex-col h-full bg-background border-l border-border shadow-2xl">
           <SheetHeader className="p-4 border-b bg-gradient-to-r from-primary/10 via-background to-accent/10">
             <SheetTitle className="flex items-center gap-2 text-primary font-bold">
               <Bot className="size-5" />

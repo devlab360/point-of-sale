@@ -4,10 +4,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { Store, User, Briefcase, CreditCard, CheckCircle2, ChevronRight, ChevronLeft } from "lucide-react";
+import { Briefcase, Building2, CheckCircle2, ChevronLeft, ChevronRight, Store, User } from "lucide-react";
 import { localDb } from "@/lib/db";
 import { v4 as uuidv4 } from "uuid";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import { INDUSTRY_SEEDS } from "@/lib/industry-seeds";
+import { sendVerificationEmail, generateVerificationOtp } from "@/lib/email-service";
 
 export const Route = createFileRoute("/register")({
   head: () => ({ meta: [{ title: "Register · Grocer.Pro SaaS" }] }),
@@ -77,6 +79,8 @@ function RegisterPage() {
         printStoreLogo: true,
       });
 
+      const verificationOtp = generateVerificationOtp();
+
       // Add Owner User
       await localDb.users.add({
         id: ownerId,
@@ -84,9 +88,11 @@ function RegisterPage() {
         name: formData.ownerName,
         email: formData.email,
         role: "admin",
-        status: "active",
+        status: "pending_verification",
         lastActive: new Date().toISOString(),
-        pin: "1234" // Default pin for simulation
+        pin: "1234",
+        emailVerified: false,
+        emailVerificationToken: verificationOtp,
       });
 
       // Seed Industry Data
@@ -104,8 +110,9 @@ function RegisterPage() {
       localStorage.setItem("pos_auth_user", ownerId);
       localStorage.setItem("pos_org_id", orgId);
       
-      toast.success("Registration successful! Welcome to your new store.");
-      navigate({ to: "/" });
+      await sendVerificationEmail(formData.email, verificationOtp);
+      toast.success("Registration successful! Please verify your email to start your trial.");
+      navigate({ to: "/verify-email" });
     } catch (err) {
       console.error("Registration submit error:", err);
       toast.error("Registration failed. Please try again.");
@@ -191,12 +198,12 @@ function RegisterPage() {
                   <Label>Full Name</Label>
                   <div className="relative">
                     <User className="absolute left-3 top-3 size-4 text-muted-foreground" />
-                    <Input name="ownerName" value={formData.ownerName} onChange={handleChange} required className="pl-10" placeholder="John Doe" />
+                    <Input name="ownerName" value={formData.ownerName} onChange={handleChange} required className="pl-10" placeholder="e.g. Your Full Name" />
                   </div>
                 </div>
                 <div className="space-y-2">
                   <Label>Email Address</Label>
-                  <Input type="email" name="email" value={formData.email} onChange={handleChange} required placeholder="john@example.com" />
+                  <Input type="email" name="email" value={formData.email} onChange={handleChange} required placeholder="e.g. you@example.com" />
                 </div>
                 <div className="space-y-2">
                   <Label>Password</Label>
@@ -211,25 +218,21 @@ function RegisterPage() {
                   <Label>Company / Store Name</Label>
                   <div className="relative">
                     <Briefcase className="absolute left-3 top-3 size-4 text-muted-foreground" />
-                    <Input name="companyName" value={formData.companyName} onChange={handleChange} required className="pl-10" placeholder="My Awesome Store" />
+                    <Input name="companyName" value={formData.companyName} onChange={handleChange} required className="pl-10" placeholder="e.g. Store or Company Name" />
                   </div>
                 </div>
                 <div className="space-y-2">
                   <Label>Phone Number</Label>
-                  <Input type="tel" name="phone" value={formData.phone} onChange={handleChange} required placeholder="+1 234 567 890" />
+                  <Input type="tel" name="phone" value={formData.phone} onChange={handleChange} required placeholder="e.g. +880 1700 000000" />
                 </div>
                 <div className="space-y-2">
                   <Label>Industry</Label>
-                  <select
-                    name="industry"
+                  <SearchableSelect
+                    options={INDUSTRIES.map(ind => ({ value: ind, label: ind }))}
                     value={formData.industry}
-                    onChange={handleChange}
-                    required
-                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-                  >
-                    <option value="" disabled>Select your industry</option>
-                    {INDUSTRIES.map(ind => <option key={ind} value={ind}>{ind}</option>)}
-                  </select>
+                    onChange={(val) => setFormData(p => ({ ...p, industry: val }))}
+                    placeholder="Select your industry"
+                  />
                 </div>
               </div>
             )}

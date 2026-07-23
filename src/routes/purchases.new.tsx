@@ -21,10 +21,10 @@ function NewPurchase() {
   const navigate = useNavigate();
   const suppliers = useLiveQuery(() => localDb.suppliers.toArray()) || [];
   const products = useLiveQuery(() => localDb.products.toArray()) || [];
-  
+
   const [supplierId, setSupplierId] = useState("");
   const [lines, setLines] = useState<{ productId: string; qty: number; cost: number }[]>([]);
-  
+
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
 
@@ -64,7 +64,7 @@ function NewPurchase() {
           status: "received",
           total: total
         });
-        
+
         for (const line of lines) {
           const prod = products.find(p => p.id === line.productId);
           if (prod) {
@@ -74,7 +74,7 @@ function NewPurchase() {
               quantity: line.qty,
               createdAt: new Date().toISOString()
             });
-            await localDb.products.update(prod.id, { 
+            await localDb.products.update(prod.id, {
               stock: prod.stock + line.qty,
               cost: line.cost // Update unit cost based on new purchase
             });
@@ -94,15 +94,15 @@ function NewPurchase() {
 
     setIsAnalyzing(true);
     toast.loading("Analyzing invoice with AI OCR...", { id: "ocr" });
-    
+
     setTimeout(() => {
       setIsAnalyzing(false);
       toast.success("Invoice data extracted successfully!", { id: "ocr" });
-      
+
       if (suppliers.length > 0) {
         setSupplierId(suppliers[Math.floor(Math.random() * suppliers.length)].id);
       }
-      
+
       if (products.length > 0) {
         const p1 = products[Math.floor(Math.random() * products.length)];
         const p2 = products[Math.floor(Math.random() * products.length)];
@@ -123,16 +123,16 @@ function NewPurchase() {
         description="Record incoming stock and pay your suppliers."
         actions={
           <div className="flex gap-2">
-            <input 
-              type="file" 
-              accept="image/*" 
-              className="hidden" 
-              ref={fileInputRef} 
-              onChange={handleFileUpload} 
+            <input
+              type="file"
+              accept="image/*"
+              className="hidden"
+              ref={fileInputRef}
+              onChange={handleFileUpload}
             />
-            <Button 
-              size="sm" 
-              variant="outline" 
+            <Button
+              size="sm"
+              variant="outline"
               className="bg-primary/5 text-primary hover:bg-primary/10 border-primary/20"
               onClick={() => fileInputRef.current?.click()}
               disabled={isAnalyzing}
@@ -186,10 +186,10 @@ function NewPurchase() {
                         </Select>
                       </td>
                       <td className="px-3 py-2 text-right">
-                        <Input type="number" min="1" className="h-8 text-right" value={l.qty} onChange={e => handleUpdateLine(i, "qty", Number(e.target.value))} />
+                        <Input type="number" min="1" required placeholder="1" className="h-8 text-right" value={l.qty} onChange={e => handleUpdateLine(i, "qty", Number(e.target.value))} />
                       </td>
                       <td className="px-3 py-2 text-right">
-                        <Input type="number" step="0.01" className="h-8 text-right" value={l.cost} onChange={e => handleUpdateLine(i, "cost", Number(e.target.value))} />
+                        <Input type="number" min="0" step="0.01" required placeholder="0.00" className="h-8 text-right" value={l.cost} onChange={e => handleUpdateLine(i, "cost", Number(e.target.value))} />
                       </td>
                       <td className="number px-3 py-2 text-right font-semibold">{formatCurrency(l.qty * l.cost)}</td>
                       <td className="px-3 py-2">

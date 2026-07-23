@@ -1,4 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,7 +14,9 @@ import type { OfflineSale } from "@/lib/db";
 import { DataPage } from "@/components/layout/DataPage";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PaginationControls } from "@/components/ui/pagination-controls";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import { useDebounce } from "@/hooks/useDebounce";
+import { Label } from "@/components/ui/label";
 
 export const Route = createFileRoute("/sales")({
   head: () => ({ meta: [{ title: "Sales · Grocer.Pro" }] }),
@@ -22,6 +25,7 @@ export const Route = createFileRoute("/sales")({
 
 function SalesPage() {
   const navigate = useNavigate();
+  const { t } = useLanguage();
   const { currencySymbol, formatCurrency } = useCurrency();
   const sales = useLiveQuery(() => localDb.offlineSales.reverse().toArray()) || [];
   const settings = useLiveQuery(() => localDb.settings.get("default"));
@@ -29,7 +33,11 @@ function SalesPage() {
   const [query, setQuery] = useState("");
   const debouncedQuery = useDebounce(query, 300);
   const [page, setPage] = useState(1);
-  const itemsPerPage = 10;
+  const [pageSize, setPageSize] = useState(10);
+  
+  const [statusFilter, setStatusFilter] = useState("");
+  const [paymentFilter, setPaymentFilter] = useState("");
+  const [syncFilter, setSyncFilter] = useState("");
   const [viewSale, setViewSale] = useState<OfflineSale | null>(null);
 
   const storeName = settings?.storeName || "GROCER.PRO";
@@ -39,26 +47,34 @@ function SalesPage() {
   const filtered = useMemo(() => {
     let list = sales;
     if (debouncedQuery) {
-      const lower = debouncedQuery.toLowerCase();
+      const q = debouncedQuery.toLowerCase();
       list = list.filter(s =>
-        s.id.toLowerCase().includes(lower) ||
-        (s.customerName || "walk-in").toLowerCase().includes(lower)
+        s.id.toLowerCase().includes(q) ||
+        s.customerName?.toLowerCase().includes(q)
       );
     }
+    if (statusFilter) {
+      list = list.filter(s => s.status === statusFilter);
+    }
+    if (paymentFilter) {
+      list = list.filter(s => s.paymentMethod === paymentFilter);
+    }
+    if (syncFilter) {
+      const isSynced = syncFilter === "synced";
+      list = list.filter(s => s.synced === isSynced);
+    }
     return list;
-  }, [sales, debouncedQuery]);
+  }, [sales, debouncedQuery, statusFilter, paymentFilter, syncFilter]);
 
   useEffect(() => {
     setPage(1);
-  }, [debouncedQuery]);
+  }, [debouncedQuery, statusFilter, paymentFilter, syncFilter]);
 
-  useEffect(() => {
-    const maxPage = Math.max(1, Math.ceil(filtered.length / itemsPerPage));
-    if (page > maxPage) setPage(maxPage);
-  }, [filtered.length, page]);
-
-  const totalPages = Math.ceil(filtered.length / itemsPerPage);
-  const paginatedSales = filtered.slice((page - 1) * itemsPerPage, page * itemsPerPage);
+  const totalPages = Math.ceil(filtered.length / pageSize);
+  const paginatedSales = useMemo(() => {
+    const start = (page - 1) * pageSize;
+    return filtered.slice(start, start + pageSize);
+  }, [filtered, page, pageSize]);
 
   const printReceipt = (s: OfflineSale) => {
     setViewSale(s);
@@ -68,20 +84,69 @@ function SalesPage() {
   return (
     <div className="space-y-6 p-4 md:p-6 lg:p-8">
       <DataPage
-        title="Sales History"
-        description="Every transaction across all your registers."
-        primaryAction={{ label: "New Sale", onClick: () => navigate({ to: "/pos" }), icon: Plus }}
-        searchPlaceholder="Search by invoice or customer..."
+        title={t("salesHistory") || "Sales History"}
+        description={t("manageSales") || "Every transaction across all your registers."}
+        primaryAction={{ label: t("newSale") || "New Sale", onClick: () => navigate({ to: "/pos" }), icon: Plus }}
+        searchPlaceholder={t("searchSales") || "Search by invoice or customer..."}
         searchValue={query}
         onSearchChange={setQuery}
         hideToolbar={sales.length === 0}
+        filtersContent={
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Status</Label>
+              <SearchableSelect 
+                options={[
+                  { value: "", label: "All Statuses" },
+                  { value: "completed", label: "Completed" },
+                  { value: "pending", label: "Pending" },
+                  { value: "refunded", label: "Refunded" }
+                ]} 
+                value={statusFilter} 
+                onChange={setStatusFilter} 
+                placeholder="Filter by Status"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Payment Method</Label>
+              <SearchableSelect 
+                options={[
+                  { value: "", label: "All Methods" },
+                  { value: "cash", label: "Cash" },
+                  { value: "card", label: "Card" },
+                  { value: "mobile", label: "Mobile Banking" },
+                  { value: "wallet", label: "Wallet" }
+                ]} 
+                value={paymentFilter} 
+                onChange={setPaymentFilter} 
+                placeholder="Filter by Payment"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Sync Status</Label>
+              <SearchableSelect 
+                options={[
+                  { value: "", label: "All Sync Status" },
+                  { value: "synced", label: "Synced" },
+                  { value: "pending", label: "Pending Sync" }
+                ]} 
+                value={syncFilter} 
+                onChange={setSyncFilter} 
+                placeholder="Filter by Sync"
+              />
+            </div>
+            <Button variant="outline" className="w-full" onClick={() => { setStatusFilter(""); setPaymentFilter(""); setSyncFilter(""); }}>
+              Reset Filters
+            </Button>
+          </div>
+        }
       >
         {/* We override the primaryAction onClick to use a Link instead, since DataPage only takes a callback, or we can just keep the button as child. Wait, DataPage's primaryAction just takes onClick. We can just pass the Link inside children, or adapt DataPage. Actually, DataPage primaryAction is fine. */}
         {filtered.length === 0 ? (
           <EmptyState 
             icon={Receipt} 
-            title="No sales found" 
-            description={debouncedQuery ? "Try adjusting your search." : "No transactions have been recorded yet."} 
+            title={t("noSalesFound") || "No sales found"} 
+            description={debouncedQuery ? (t("adjustSearch") || "Try adjusting your search.") : (t("noSalesYet") || "No transactions have been recorded yet.")} 
           />
         ) : (
           <div className="space-y-4">
@@ -89,14 +154,14 @@ function SalesPage() {
               <table className="w-full text-left text-sm">
                 <thead className="bg-muted/50 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
                   <tr>
-                    <th className="px-4 py-3">Invoice</th>
-                    <th className="px-4 py-3">Customer</th>
-                    <th className="px-4 py-3">Date</th>
-                    <th className="px-4 py-3 text-right">Items</th>
-                    <th className="px-4 py-3">Payment</th>
-                    <th className="px-4 py-3">Sync</th>
-                    <th className="px-4 py-3">Status</th>
-                    <th className="px-4 py-3 text-right">Total</th>
+                    <th className="px-4 py-3">{t("invoice") || "Invoice"}</th>
+                    <th className="px-4 py-3">{t("customer") || "Customer"}</th>
+                    <th className="px-4 py-3">{t("date") || "Date"}</th>
+                    <th className="px-4 py-3 text-right">{t("items") || "Items"}</th>
+                    <th className="px-4 py-3">{t("payment") || "Payment"}</th>
+                    <th className="px-4 py-3">{t("sync") || "Sync"}</th>
+                    <th className="px-4 py-3">{t("status") || "Status"}</th>
+                    <th className="px-4 py-3 text-right">{t("total") || "Total"}</th>
                     <th className="px-4 py-3"></th>
                   </tr>
                 </thead>
@@ -138,7 +203,15 @@ function SalesPage() {
                 </tbody>
               </table>
             </div>
-            <PaginationControls currentPage={page} totalPages={totalPages} onPageChange={setPage} />
+            {filtered.length > 0 && (
+              <PaginationControls
+                currentPage={page}
+                totalPages={totalPages}
+                pageSize={pageSize}
+                onPageChange={setPage}
+                onPageSizeChange={setPageSize}
+              />
+            )}
           </div>
         )}
       </DataPage>

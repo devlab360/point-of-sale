@@ -4,6 +4,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { SearchableSelect } from "@/components/ui/searchable-select";
+import { PaginationControls } from "@/components/ui/pagination-controls";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
@@ -19,7 +21,7 @@ import { useCurrency } from "@/lib/currency";
 import type { LocalPurchaseReturn } from "@/lib/db";
 import { v4 as uuidv4 } from "uuid";
 import { toast } from "sonner";
-import { useState } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/purchases/returns")({
@@ -29,17 +31,39 @@ export const Route = createFileRoute("/purchases/returns")({
 
 function PurchaseReturnsPage() {
   const { formatCurrency } = useCurrency();
-  const returns = useLiveQuery(() => localDb.purchaseReturns.reverse().toArray()) || [];
+  const rawReturns = useLiveQuery(() => localDb.purchaseReturns.toArray()) || [];
   const purchases = useLiveQuery(() => localDb.purchases.toArray()) || [];
   const products = useLiveQuery(() => localDb.products.toArray()) || [];
 
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
 
   const [purchaseId, setPurchaseId] = useState("");
   const [supplier, setSupplier] = useState("");
   const [reason, setReason] = useState("");
   const [returnItems, setReturnItems] = useState<{ productId: string; productName: string; quantity: number; cost: number; total: number }[]>([]);
+
+  const filteredReturns = useMemo(() => {
+    let res = rawReturns;
+    if (search) {
+      const q = search.toLowerCase();
+      res = res.filter(r => r.ref.toLowerCase().includes(q) || r.supplier.toLowerCase().includes(q) || r.reason.toLowerCase().includes(q));
+    }
+    return [...res].reverse();
+  }, [rawReturns, search]);
+
+  const totalPages = Math.ceil(filteredReturns.length / pageSize);
+  const paginatedReturns = useMemo(() => {
+    const start = (page - 1) * pageSize;
+    return filteredReturns.slice(start, start + pageSize);
+  }, [filteredReturns, page, pageSize]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [search]);
 
   const addReturnItem = () => {
     setReturnItems(prev => [...prev, { productId: "", productName: "", quantity: 1, cost: 0, total: 0 }]);
@@ -145,10 +169,10 @@ function PurchaseReturnsPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
-              {returns.length === 0 ? (
+              {filteredReturns.length === 0 ? (
                 <tr><td colSpan={8} className="py-8 text-center text-muted-foreground">No purchase returns recorded.</td></tr>
               ) : (
-                returns.map(r => (
+                paginatedReturns.map(r => (
                   <tr key={r.id} className="hover:bg-muted/30">
                     <td className="px-4 py-3 font-mono text-xs font-semibold">{r.ref}</td>
                     <td className="px-4 py-3 font-semibold">{r.supplier}</td>
@@ -179,6 +203,15 @@ function PurchaseReturnsPage() {
             </tbody>
           </table>
         </div>
+        {filteredReturns.length > 0 && (
+          <PaginationControls
+            currentPage={page}
+            totalPages={totalPages}
+            pageSize={pageSize}
+            onPageChange={setPage}
+            onPageSizeChange={setPageSize}
+          />
+        )}
       </DataPage>
 
       {/* New Purchase Return Dialog */}
@@ -189,22 +222,19 @@ function PurchaseReturnsPage() {
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="space-y-1">
                 <Label>Purchase Order</Label>
-                <select
+                <SearchableSelect
+                  options={purchases.map(p => ({
+                    value: p.id,
+                    label: `${p.id.slice(0, 8).toUpperCase()} · ${p.supplier}`
+                  }))}
                   value={purchaseId}
-                  onChange={e => {
-                    setPurchaseId(e.target.value);
-                    const p = purchases.find(p => p.id === e.target.value);
+                  onChange={val => {
+                    setPurchaseId(val);
+                    const p = purchases.find(pr => pr.id === val);
                     if (p) setSupplier(p.supplier);
                   }}
-                  className="h-10 w-full rounded-lg border border-border bg-background px-3 text-sm outline-none focus:border-ring"
-                >
-                  <option value="">— select purchase —</option>
-                  {purchases.map(p => (
-                    <option key={p.id} value={p.id}>
-                      {p.id.slice(0, 8).toUpperCase()} · {p.supplier}
-                    </option>
-                  ))}
-                </select>
+                  placeholder="— select purchase —"
+                />
               </div>
               <div className="space-y-1">
                 <Label>Supplier</Label>
@@ -223,16 +253,14 @@ function PurchaseReturnsPage() {
               </div>
               {returnItems.map((item, idx) => (
                 <div key={idx} className="grid grid-cols-[1fr_80px_80px_auto] gap-2 items-end">
-                  <div>
+                  <div className="min-w-[120px]">
                     <Label className="text-xs">Product</Label>
-                    <select
+                    <SearchableSelect
+                      options={products.map(p => ({ value: p.id, label: p.name }))}
                       value={item.productId}
-                      onChange={e => updateReturnItem(idx, "productId", e.target.value)}
-                      className="mt-1 h-9 w-full rounded-lg border border-border bg-background px-2 text-sm outline-none"
-                    >
-                      <option value="">Select product</option>
-                      {products.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
-                    </select>
+                      onChange={val => updateReturnItem(idx, "productId", val)}
+                      placeholder="Select product"
+                    />
                   </div>
                   <div>
                     <Label className="text-xs">Qty</Label>

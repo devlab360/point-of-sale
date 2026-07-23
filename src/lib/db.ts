@@ -45,13 +45,14 @@ export interface LocalCoupon { id: string; code: string; type: string; discount:
 export interface LocalGiftCard { id: string; code: string; balance: number; initialBalance?: number; customer?: string; issued?: string; expires: string; status: string; }
 export interface LocalPromotion { id: string; title: string; type: string; value: number; conditions: string; startDate: string; endDate: string; status: string; }
 export interface LocalActivity { id: string; user: string; action: string; details: string; timestamp: string; type: string; }
-export interface LocalUser { id: string; orgId?: string; name: string; role: string; email: string; lastActive: string; status: string; avatar?: string; phone?: string; location?: string; joined?: string; pin?: string; permissions?: string[]; commissionRate?: number; monthlyTarget?: number; earnedCommission?: number; }
+export interface LocalUser { id: string; orgId?: string; name: string; role: string; email: string; lastActive: string; status: string; avatar?: string; phone?: string; location?: string; joined?: string; pin?: string; permissions?: string[]; commissionRate?: number; monthlyTarget?: number; earnedCommission?: number; emailVerified?: boolean; emailVerificationToken?: string; countryCode?: string; timeZone?: string; dateFormat?: string; language?: string; }
 export interface LocalNotification { id: string; title: string; description: string; type: string; timestamp: string; read: boolean; }
 export interface LocalInvitation { id: string; orgId: string; token: string; role: string; permissions?: string[]; status: string; createdAt: string; expiresAt: string; }
 export interface LocalSetting {
   id: string;
   orgId?: string;
   trialEndsAt?: string;
+  trialDays?: number;
   subscriptionStatus?: string;
   currencySymbol?: string;
   currencyCode?: string;
@@ -68,6 +69,10 @@ export interface LocalSetting {
   footerNote: string;
   emailReceiptDefault: boolean;
   printStoreLogo: boolean;
+  countryCode?: string;
+  timeZone?: string;
+  dateFormat?: string;
+  language?: string;
 }
 
 export interface LocalCustomer {
@@ -597,6 +602,45 @@ export class POSDatabase extends Dexie {
       promotions: "id, orgId, status",
       activityLog: "id, orgId, user, action",
       users: "id, orgId, role, email",
+      notifications: "id, orgId, read",
+      settings: "id, orgId",
+      heldInvoices: "id, orgId, savedAt",
+      salesReturns: "id, orgId, ref, date",
+      purchaseReturns: "id, orgId, ref, date",
+      locations: "id, orgId, name",
+      shifts: "id, orgId, userId, status",
+      cashMovements: "id, orgId, shiftId, type, timestamp",
+      invitations: "id, orgId, token, status",
+      customerLedgers: "id, orgId, customerId, date",
+      supplierLedgers: "id, orgId, supplierId, date",
+      quotations: "id, orgId, quotationNo, status, date",
+      deliveryChallans: "id, orgId, challanNo, status, date",
+      accounts: "id, orgId, code, type",
+      vouchers: "id, orgId, voucherNo, type, date",
+      repairs: "id, orgId, ticketNo, status, date",
+      subscriptions: "id, orgId, subscriptionNo, status",
+      rentals: "id, orgId, rentalNo, status",
+    });
+
+    // Version 17: adds indexes for verification tokens
+    this.version(17).stores({
+      products: "id, orgId, name, sku, barcode, category",
+      customers: "id, orgId, name, phone",
+      offlineSales: "id, orgId, status, synced, date",
+      categories: "id, orgId, name",
+      brands: "id, orgId, name",
+      units: "id, orgId, name",
+      suppliers: "id, orgId, name",
+      purchases: "id, orgId, supplier, date",
+      inventoryMovements: "++id, orgId, productName, action",
+      adjustments: "id, orgId, ref, date",
+      transfers: "id, orgId, ref, date",
+      expenses: "id, orgId, date, category",
+      coupons: "id, orgId, code",
+      giftCards: "id, orgId, code",
+      promotions: "id, orgId, status",
+      activityLog: "id, orgId, user, action",
+      users: "id, orgId, role, email, emailVerificationToken",
       notifications: "id, orgId, read",
       settings: "id, orgId",
       heldInvoices: "id, orgId, savedAt",

@@ -2,9 +2,10 @@ import { localDb } from "./db";
 import { getProductsFn, getCustomersFn, getCategoriesFn, getBrandsFn, getUnitsFn, getSuppliersFn, getPurchasesFn, getInventoryMovementsFn, syncSalesFn, syncProductsFn, syncCustomersFn } from "../api";
 
 export async function initializeLocalDb() {
+  if (typeof window === "undefined") return;
   try {
     // One-time wipe to clear dummy data from previous versions
-    if (typeof window !== "undefined" && !localStorage.getItem("wiped_dummy_v1")) {
+    if (!localStorage.getItem("wiped_dummy_v1")) {
       console.log("Wiping dummy data...");
       await localDb.delete();
       await localDb.open();

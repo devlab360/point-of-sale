@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { DataPage } from "@/components/layout/DataPage";
 import { EmptyState } from "@/components/ui/empty-state";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import { PaginationControls } from "@/components/ui/pagination-controls";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -24,6 +25,7 @@ import { toast } from "sonner";
 import { useState, useMemo, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { useDebounce } from "@/hooks/useDebounce";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 export const Route = createFileRoute("/sales/returns")({
   head: () => ({ meta: [{ title: "Sales Returns · Grocer.Pro" }] }),
@@ -32,6 +34,7 @@ export const Route = createFileRoute("/sales/returns")({
 
 function SalesReturnsPage() {
   const { formatCurrency } = useCurrency();
+  const { t } = useLanguage();
   const returns = useLiveQuery(() => localDb.salesReturns.reverse().toArray()) || [];
   const sales = useLiveQuery(() => localDb.offlineSales.reverse().toArray()) || [];
   const products = useLiveQuery(() => localDb.products.toArray()) || [];
@@ -43,15 +46,15 @@ function SalesReturnsPage() {
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search, 300);
   const [page, setPage] = useState(1);
-  const itemsPerPage = 10;
+  const [pageSize, setPageSize] = useState(10);
 
   const filteredReturns = useMemo(() => {
     let list = returns;
     if (debouncedSearch) {
       const lower = debouncedSearch.toLowerCase();
-      list = list.filter(r => 
-        r.ref.toLowerCase().includes(lower) || 
-        r.saleId.toLowerCase().includes(lower) || 
+      list = list.filter(r =>
+        r.ref.toLowerCase().includes(lower) ||
+        r.saleId.toLowerCase().includes(lower) ||
         r.customerName.toLowerCase().includes(lower)
       );
     }
@@ -62,13 +65,11 @@ function SalesReturnsPage() {
     setPage(1);
   }, [debouncedSearch]);
 
-  useEffect(() => {
-    const maxPage = Math.max(1, Math.ceil(filteredReturns.length / itemsPerPage));
-    if (page > maxPage) setPage(maxPage);
-  }, [filteredReturns.length, page]);
-
-  const totalPages = Math.ceil(filteredReturns.length / itemsPerPage);
-  const paginatedReturns = filteredReturns.slice((page - 1) * itemsPerPage, page * itemsPerPage);
+  const totalPages = Math.ceil(filteredReturns.length / pageSize);
+  const paginatedReturns = useMemo(() => {
+    const start = (page - 1) * pageSize;
+    return filteredReturns.slice(start, start + pageSize);
+  }, [filteredReturns, page, pageSize]);
 
   // Form state
   const [saleId, setSaleId] = useState("");
@@ -165,19 +166,19 @@ function SalesReturnsPage() {
   return (
     <div className="p-4 md:p-6 lg:p-8">
       <DataPage
-        title="Sales Returns"
-        description="Refunds and exchanges issued to customers."
-        primaryAction={{ label: "Process Return", onClick: () => setIsAddOpen(true) }}
-        searchPlaceholder="Search by ref or customer..."
+        title={t("salesReturns") || "Sales Returns"}
+        description={t("manageReturns") || "Refunds and exchanges issued to customers."}
+        primaryAction={{ label: t("processReturn") || "Process Return", onClick: () => setIsAddOpen(true) }}
+        searchPlaceholder={t("searchReturns") || "Search by ref or customer..."}
         searchValue={search}
         onSearchChange={setSearch}
         hideToolbar={returns.length === 0}
       >
         {filteredReturns.length === 0 ? (
-          <EmptyState 
-            icon={Undo2} 
-            title="No returns found" 
-            description={search ? "Try adjusting your search." : "No sales returns have been recorded yet."} 
+          <EmptyState
+            icon={Undo2}
+            title={t("noReturnsFound") || "No returns found"}
+            description={search ? (t("adjustSearch") || "Try adjusting your search.") : (t("noReturnsYet") || "No sales returns have been recorded yet.")}
           />
         ) : (
           <div className="space-y-4">
@@ -185,13 +186,13 @@ function SalesReturnsPage() {
               <table className="w-full text-left text-sm">
                 <thead className="bg-muted/50 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
                   <tr>
-                    <th className="px-4 py-3">Ref</th>
-                    <th className="px-4 py-3">Invoice</th>
-                    <th className="px-4 py-3">Customer</th>
-                    <th className="px-4 py-3">Reason</th>
-                    <th className="px-4 py-3">Date</th>
-                    <th className="px-4 py-3">Status</th>
-                    <th className="px-4 py-3 text-right">Refund</th>
+                    <th className="px-4 py-3">{t("ref") || "Ref"}</th>
+                    <th className="px-4 py-3">{t("invoice") || "Invoice"}</th>
+                    <th className="px-4 py-3">{t("customer") || "Customer"}</th>
+                    <th className="px-4 py-3">{t("reason") || "Reason"}</th>
+                    <th className="px-4 py-3">{t("date") || "Date"}</th>
+                    <th className="px-4 py-3">{t("status") || "Status"}</th>
+                    <th className="px-4 py-3 text-right">{t("refund") || "Refund"}</th>
                     <th className="px-4 py-3"></th>
                   </tr>
                 </thead>
@@ -226,7 +227,13 @@ function SalesReturnsPage() {
                 </tbody>
               </table>
             </div>
-            <PaginationControls currentPage={page} totalPages={totalPages} onPageChange={setPage} />
+            <PaginationControls
+              currentPage={page}
+              totalPages={totalPages}
+              pageSize={pageSize}
+              onPageChange={setPage}
+              onPageSizeChange={setPageSize}
+            />
           </div>
         )}
       </DataPage>
@@ -238,18 +245,16 @@ function SalesReturnsPage() {
           <div className="space-y-4">
             <div className="space-y-1">
               <Label>Select Invoice</Label>
-              <select
+              <SearchableSelect
+                options={sales.map(s => ({
+                  value: s.id,
+                  label: `#${s.id.slice(0, 8).toUpperCase()} · ${s.customerName || "Walk-in"}`,
+                  sublabel: `Total: ${formatCurrency(s.total)}`
+                }))}
                 value={saleId}
-                onChange={e => { setSaleId(e.target.value); setSelectedItems([]); }}
-                className="h-10 w-full rounded-lg border border-border bg-background px-3 text-sm outline-none focus:border-ring"
-              >
-                <option value="">— choose an invoice —</option>
-                {sales.map(s => (
-                  <option key={s.id} value={s.id}>
-                    #{s.id.slice(0, 8).toUpperCase()} · {s.customerName || "Walk-in"} · ${s.total.toFixed(2)}
-                  </option>
-                ))}
-              </select>
+                onChange={val => { setSaleId(val); setSelectedItems([]); }}
+                placeholder="— choose an invoice —"
+              />
             </div>
 
             {selectedSale && (
@@ -280,14 +285,15 @@ function SalesReturnsPage() {
                 {selectedSale?.customerId && (
                   <div className="space-y-1">
                     <Label>Refund Method</Label>
-                    <select
+                    <SearchableSelect
+                      options={[
+                        { value: "cash", label: "Cash / Original Payment Method" },
+                        { value: "wallet", label: "Store Wallet Credit" }
+                      ]}
                       value={refundMethod}
-                      onChange={e => setRefundMethod(e.target.value as any)}
-                      className="h-10 w-full rounded-lg border border-border bg-background px-3 text-sm outline-none focus:border-ring"
-                    >
-                      <option value="cash">Cash / Original Payment Method</option>
-                      <option value="wallet">Store Wallet Credit</option>
-                    </select>
+                      onChange={val => setRefundMethod(val as any)}
+                      placeholder="Select Refund Method"
+                    />
                   </div>
                 )}
                 <div className="rounded-lg bg-muted/40 p-3 text-sm">

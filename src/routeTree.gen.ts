@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as VerifyEmailRouteImport } from './routes/verify-email'
 import { Route as UsersRouteImport } from './routes/users'
 import { Route as UnitsRouteImport } from './routes/units'
 import { Route as SuppliersRouteImport } from './routes/suppliers'
@@ -51,6 +52,11 @@ import { Route as InventoryTransfersRouteImport } from './routes/inventory.trans
 import { Route as InventoryHistoryRouteImport } from './routes/inventory.history'
 import { Route as InventoryAdjustmentsRouteImport } from './routes/inventory.adjustments'
 
+const VerifyEmailRoute = VerifyEmailRouteImport.update({
+  id: '/verify-email',
+  path: '/verify-email',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const UsersRoute = UsersRouteImport.update({
   id: '/users',
   path: '/users',
@@ -291,6 +297,7 @@ export interface FileRoutesByFullPath {
   '/suppliers': typeof SuppliersRoute
   '/units': typeof UnitsRoute
   '/users': typeof UsersRoute
+  '/verify-email': typeof VerifyEmailRoute
   '/inventory/adjustments': typeof InventoryAdjustmentsRoute
   '/inventory/history': typeof InventoryHistoryRoute
   '/inventory/transfers': typeof InventoryTransfersRoute
@@ -333,6 +340,7 @@ export interface FileRoutesByTo {
   '/suppliers': typeof SuppliersRoute
   '/units': typeof UnitsRoute
   '/users': typeof UsersRoute
+  '/verify-email': typeof VerifyEmailRoute
   '/inventory/adjustments': typeof InventoryAdjustmentsRoute
   '/inventory/history': typeof InventoryHistoryRoute
   '/inventory/transfers': typeof InventoryTransfersRoute
@@ -377,6 +385,7 @@ export interface FileRoutesById {
   '/suppliers': typeof SuppliersRoute
   '/units': typeof UnitsRoute
   '/users': typeof UsersRoute
+  '/verify-email': typeof VerifyEmailRoute
   '/inventory/adjustments': typeof InventoryAdjustmentsRoute
   '/inventory/history': typeof InventoryHistoryRoute
   '/inventory/transfers': typeof InventoryTransfersRoute
@@ -422,6 +431,7 @@ export interface FileRouteTypes {
     | '/suppliers'
     | '/units'
     | '/users'
+    | '/verify-email'
     | '/inventory/adjustments'
     | '/inventory/history'
     | '/inventory/transfers'
@@ -464,6 +474,7 @@ export interface FileRouteTypes {
     | '/suppliers'
     | '/units'
     | '/users'
+    | '/verify-email'
     | '/inventory/adjustments'
     | '/inventory/history'
     | '/inventory/transfers'
@@ -507,6 +518,7 @@ export interface FileRouteTypes {
     | '/suppliers'
     | '/units'
     | '/users'
+    | '/verify-email'
     | '/inventory/adjustments'
     | '/inventory/history'
     | '/inventory/transfers'
@@ -551,11 +563,19 @@ export interface RootRouteChildren {
   SuppliersRoute: typeof SuppliersRoute
   UnitsRoute: typeof UnitsRoute
   UsersRoute: typeof UsersRoute
+  VerifyEmailRoute: typeof VerifyEmailRoute
   InviteTokenRoute: typeof InviteTokenRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/verify-email': {
+      id: '/verify-email'
+      path: '/verify-email'
+      fullPath: '/verify-email'
+      preLoaderRoute: typeof VerifyEmailRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/users': {
       id: '/users'
       path: '/users'
@@ -922,6 +942,7 @@ const rootRouteChildren: RootRouteChildren = {
   SuppliersRoute: SuppliersRoute,
   UnitsRoute: UnitsRoute,
   UsersRoute: UsersRoute,
+  VerifyEmailRoute: VerifyEmailRoute,
   InviteTokenRoute: InviteTokenRoute,
 }
 export const routeTree = rootRouteImport

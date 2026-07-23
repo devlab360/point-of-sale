@@ -23,6 +23,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useRouter, useSearch } from "@tanstack/react-router";
 import { differenceInDays } from "date-fns";
 import { CURRENCY_OPTIONS } from "@/lib/currency";
+import { useLanguage } from "@/contexts/LanguageContext";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 
 
 export const Route = createFileRoute("/settings")({
@@ -62,6 +64,7 @@ function SettingsPage() {
   const { user, isTrialExpired, subscriptionStatus } = useAuth();
   const search = Route.useSearch();
   const router = useRouter();
+  const { t } = useLanguage();
   
   const [activeTab, setActiveTab] = useState(isTrialExpired ? "billing" : (search.tab || "store"));
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
@@ -107,10 +110,10 @@ function SettingsPage() {
 
 
   const sections = [
-    { id: "store", label: "Store Information" },
-    { id: "billing", label: "Billing & Plan" },
-    { id: "tax", label: "Taxes" },
-    { id: "receipt", label: "Receipt" },
+    { id: "store", label: t("storeInfo") || "Store Information" },
+    { id: "billing", label: t("billing") || "Billing & Plan" },
+    { id: "tax", label: t("taxes") || "Taxes" },
+    { id: "receipt", label: t("receipts") || "Receipt" },
     { id: "data", label: "Data Management" },
   ];
 
@@ -159,22 +162,19 @@ function SettingsPage() {
                 <Field label="Email">
                   <input className="inp" value={settings.email} onChange={(e) => handleChange("email", e.target.value)} />
                 </Field>
-                <Field label="Store Currency Preset">
-                  <select 
-                    className="inp" 
+                <Field label={t("currency") || "Store Currency Preset"}>
+                  <SearchableSelect 
                     value={settings.currencySymbol || "$"} 
-                    onChange={(e) => {
-                      const opt = CURRENCY_OPTIONS.find(o => o.symbol === e.target.value);
-                      handleChange("currencySymbol", e.target.value);
+                    onChange={(val) => {
+                      const opt = CURRENCY_OPTIONS.find(o => o.symbol === val);
+                      handleChange("currencySymbol", val);
                       if (opt) handleChange("currencyCode", opt.code);
                     }}
-                  >
-                    {CURRENCY_OPTIONS.map((c) => (
-                      <option key={c.symbol + c.code} value={c.symbol}>
-                        {c.label}
-                      </option>
-                    ))}
-                  </select>
+                    options={CURRENCY_OPTIONS.map((c) => ({
+                      value: c.symbol,
+                      label: c.label
+                    }))}
+                  />
                 </Field>
                 <Field label="Custom Currency Symbol">
                   <input 
