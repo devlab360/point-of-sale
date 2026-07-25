@@ -2,7 +2,7 @@ import { Link, useNavigate, createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Input, PasswordInput } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Store, UserCircle2, KeyRound } from "lucide-react";
 
@@ -63,7 +63,7 @@ function LoginPage() {
             </div>
             <div className="space-y-2">
               <Label>Password</Label>
-              <Input type="password" required value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" />
+              <PasswordInput required value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" />
             </div>
             <Button type="submit" className="w-full mt-2">Sign In</Button>
             

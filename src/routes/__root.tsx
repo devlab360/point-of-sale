@@ -12,13 +12,23 @@ import { useEffect, type ReactNode } from "react";
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { AppSidebar } from "@/components/layout/AppSidebar";
+import { APP_GROUPS } from "@/lib/menu-config";
 import { AppHeader } from "@/components/layout/AppHeader";
 import { initializeLocalDb } from "@/lib/sync";
 import { Toaster } from "sonner";
 import { Button } from "@/components/ui/button";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
+import { getTrialDaysLeft } from "@/lib/utils";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { AiCopilotDrawer } from "@/components/ai/AiCopilotDrawer";
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+} from "@/components/ui/alert-dialog";
 
 function NotFoundComponent() {
   return (
@@ -130,7 +140,7 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
-  
+
   useEffect(() => {
     initializeLocalDb();
   }, []);
@@ -147,7 +157,7 @@ function RootComponent() {
 }
 
 function AppLayout() {
-  const { isAuthenticated, isLoading, isTrialExpired, isEmailVerified } = useAuth();
+  const { isAuthenticated, isLoading, isTrialExpired, isEmailVerified, user, saasPlan, saasOrg, settings, subscriptionStatus } = useAuth();
   const location = useRouterState({ select: (s) => s.location });
   const router = useRouter();
 
@@ -162,8 +172,6 @@ function AppLayout() {
         router.navigate({ to: "/verify-email", replace: true });
       } else if (isAuthenticated && isPublicRoute && isEmailVerified) {
         router.navigate({ to: "/", replace: true });
-      } else if (isAuthenticated && isTrialExpired && location.pathname !== "/settings") {
-        router.navigate({ to: "/settings", search: { tab: "billing" }, replace: true });
       }
     }
   }, [isLoading, isAuthenticated, isEmailVerified, isTrialExpired, location.pathname, router]);
@@ -181,16 +189,145 @@ function AppLayout() {
     return <Outlet />;
   }
 
-  return (
-    <>
+  // Route Security Middleware (SaaS Feature Flags)
+  const isSuperAdmin = user?.email?.toLowerCase().includes("superadmin");
+  const isSuspended = saasOrg?.status === "suspended" && !isSuperAdmin;
+  let unauthorizedMessage = null;
+
+  if (isAuthenticated && !isSuperAdmin) {
+    if (location.pathname.startsWith("/super-admin")) {
+      unauthorizedMessage = "You do not have permission to access the Super Admin dashboard.";
+    } else if (saasPlan && Array.isArray(saasPlan.features)) {
+      const essentialRoutes = ["/", "/profile", "/settings", "/notifications", "/help"];
+      if (!essentialRoutes.includes(location.pathname)) {
+        const allItems = APP_GROUPS.flatMap(g => g.items);
+        const matchingItems = allItems.filter(item => 
+          location.pathname === item.to || location.pathname.startsWith(item.to + "/")
+        );
+        if (matchingItems.length > 0) {
+          const isAllowed = matchingItems.some(item => 
+            essentialRoutes.includes(item.to) || saasPlan.features.includes(item.to)
+          );
+          if (!isAllowed) {
+            const blockedItem = matchingItems.sort((a, b) => b.to.length - a.to.length)[0];
+            unauthorizedMessage = `The "${blockedItem.label}" feature is not available on your current plan (${saasPlan.name || 'Current Plan'}). Please upgrade your subscription to access this feature.`;
+          }
+        }
+      }
+    }
+  }
+
+  if (unauthorizedMessage) {
+    return (
       <div className="flex h-screen w-full overflow-hidden bg-background text-foreground">
         <aside className="hidden w-64 shrink-0 border-r border-sidebar-border lg:flex">
           <AppSidebar />
         </aside>
         <div className="flex min-w-0 flex-1 flex-col">
           <AppHeader />
-          <main className="flex-1 overflow-y-auto bg-muted/20">
-            <Outlet />
+          <main className="flex-1 overflow-y-auto bg-muted/20 flex flex-col items-center justify-center p-6 text-center">
+            <div className="max-w-md space-y-4">
+              <div className="mx-auto flex size-12 items-center justify-center rounded-full bg-destructive/10">
+                <svg className="size-6 text-destructive" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+              </div>
+              <h2 className="text-xl font-bold">Access Denied</h2>
+              <p className="text-muted-foreground">{unauthorizedMessage}</p>
+              <Button onClick={() => router.navigate({ to: "/" })} className="mt-4">
+                Return to Dashboard
+              </Button>
+            </div>
+          </main>
+        </div>
+      </div>
+    );
+  }
+
+  // Calculate trial days left
+  const expiryDateStr = saasOrg?.planExpiryDate || settings?.trialEndsAt;
+  const trialDaysLeft = (subscriptionStatus === "trial" && !isTrialExpired) ? getTrialDaysLeft(expiryDateStr) : 0;
+
+  return (
+    <>
+      {isAuthenticated && isSuspended && (
+        <AlertDialog open={true}>
+          <AlertDialogContent className="max-w-md pointer-events-auto border-border/50 bg-background/80 backdrop-blur-xl shadow-[0_0_50px_-12px_rgba(255,0,0,0.15)] overflow-hidden rounded-2xl">
+            <div className="absolute inset-0 bg-gradient-to-br from-destructive/10 to-transparent z-[-1]" />
+            <AlertDialogHeader className="relative">
+              <div className="mx-auto mb-4 flex size-16 items-center justify-center rounded-2xl bg-destructive/10 border border-destructive/20 shadow-inner">
+                <svg className="size-8 text-destructive drop-shadow-sm" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+              </div>
+              <AlertDialogTitle className="text-center text-2xl font-bold tracking-tight">Account Suspended</AlertDialogTitle>
+              <AlertDialogDescription className="text-center text-sm mt-3 text-foreground/70 leading-relaxed px-2">
+                Your account has been suspended by the administrator. Please contact support for more information.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+          </AlertDialogContent>
+        </AlertDialog>
+      )}
+
+      {isAuthenticated && isTrialExpired && !isSuspended && location.pathname !== "/settings" && (
+        <AlertDialog open={true}>
+          <AlertDialogContent className="max-w-md pointer-events-auto border-border/50 bg-background/80 backdrop-blur-xl shadow-[0_0_50px_-12px_rgba(255,0,0,0.15)] overflow-hidden rounded-2xl">
+            {/* Background decorative glow */}
+            <div className="absolute inset-0 bg-gradient-to-br from-destructive/10 to-transparent z-[-1]" />
+            <div className="absolute -top-24 -right-24 size-48 rounded-full bg-destructive/20 blur-5xl z-[-1]" />
+
+            <AlertDialogHeader className="relative">
+              <div className="mx-auto mb-4 flex size-16 items-center justify-center rounded-2xl bg-destructive/10 border border-destructive/20 shadow-inner">
+                <svg className="size-8 text-destructive drop-shadow-sm" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+              </div>
+              <AlertDialogTitle className="text-center text-2xl font-bold tracking-tight">Trial Expired</AlertDialogTitle>
+              <AlertDialogDescription className="text-center text-sm mt-3 text-foreground/70 leading-relaxed px-2">
+                Your free trial has ended. Please upgrade to a premium plan to unlock your store and continue using all our powerful POS features.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter className="sm:justify-center mt-8">
+              <Button
+                size="lg"
+                onClick={() => {
+                  if (location.pathname !== "/settings") {
+                    router.navigate({ to: "/settings", search: { tab: "billing" } });
+                  }
+                }}
+                className="w-full font-semibold shadow-lg hover:shadow-primary/25 transition-all bg-primary hover:bg-primary/90 text-primary-foreground h-12"
+              >
+                Unlock My Store
+              </Button>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      )}
+
+      <div className="flex h-screen w-full overflow-hidden bg-background text-foreground">
+        <aside className="hidden w-64 shrink-0 border-r border-sidebar-border lg:flex">
+          <AppSidebar />
+        </aside>
+        <div className="flex min-w-0 flex-1 flex-col relative">
+          {saasOrg?.status === "trial" && trialDaysLeft > 0 && (
+            <div className="bg-primary text-primary-foreground px-4 py-2 text-center text-sm font-medium flex items-center justify-center gap-4 z-50">
+              <span>Your trial ends in {trialDaysLeft} days.</span>
+              <Button size="sm" variant="secondary" className="h-7 text-xs" onClick={() => router.navigate({ to: "/settings", search: { tab: "billing" } })}>
+                Upgrade Now
+              </Button>
+            </div>
+          )}
+          <AppHeader />
+          <main className="flex-1 overflow-y-auto bg-muted/20 relative">
+            {isAuthenticated && (isSuspended || (isTrialExpired && location.pathname !== "/settings")) ? (
+              <div className="flex h-full w-full items-center justify-center opacity-10 select-none pointer-events-none">
+                <svg className="size-32 text-destructive" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                </svg>
+              </div>
+            ) : (
+              <Outlet />
+            )}
           </main>
         </div>
       </div>

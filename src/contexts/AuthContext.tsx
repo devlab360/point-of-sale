@@ -1,8 +1,10 @@
 import React, { createContext, useContext, useState, useEffect, useMemo } from "react";
+import { useLiveQuery } from "dexie-react-hooks";
 import { localDb, type LocalUser } from "@/lib/db";
 import { initiateGoogleOAuth, initiateFacebookOAuth, GOOGLE_CLIENT_ID, FACEBOOK_APP_ID } from "@/lib/auth-social";
 import { toast } from "sonner";
 import { useRouter } from "@tanstack/react-router";
+import { getSuperAdminDataFn, pullEverythingFn } from "@/sync-api";
 
 interface AuthContextType {
   user: LocalUser | null;
@@ -15,6 +17,9 @@ interface AuthContextType {
   isEmailVerified: boolean;
   isTrialExpired: boolean;
   subscriptionStatus: string;
+  saasOrg: any;
+  saasPlan: any;
+  settings?: any;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -23,7 +28,59 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<LocalUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [settings, setSettings] = useState<any>(null);
+  const [saasOrgState, setSaasOrgState] = useState<any>(null);
+  const [saasPlanState, setSaasPlanState] = useState<any>(null);
   const router = useRouter();
+
+  const liveSaasOrg = useLiveQuery(
+    () => (user?.orgId ? localDb.saasOrganizations.get(user.orgId) : undefined),
+    [user?.orgId]
+  );
+  const saasOrg = liveSaasOrg || saasOrgState;
+
+  const liveSaasPlan = useLiveQuery(
+    () => {
+      const planId = saasOrg?.currentPlanId;
+      if (!planId) return undefined;
+      return localDb.saasPlans.get(planId);
+    },
+    [saasOrg?.currentPlanId]
+  );
+  const saasPlan = liveSaasPlan || saasPlanState;
+
+  useEffect(() => {
+    if (user?.orgId && !user.email?.toLowerCase().includes("superadmin")) {
+      const syncCloudPlans = async () => {
+        try {
+          const org = await localDb.saasOrganizations.get(user.orgId!);
+          const syncKey = org?.syncKey || "default-sync-key";
+          const pullResult = await pullEverythingFn({ data: { orgId: user.orgId!, syncKey } });
+          if (pullResult.success && pullResult.data) {
+            const serverPlans = pullResult.data.saasPlans || [];
+            if (serverPlans.length > 0) {
+              const formattedPlans = serverPlans.map((p: any) => ({
+                id: p.id,
+                name: p.name,
+                price: Number(p.price || 0),
+                features: Array.isArray(p.features) ? p.features : [],
+                limits: p.limits || { maxUsers: 5, maxProducts: 500, maxBranches: 2, maxInvoicesPerMonth: 1000 },
+                isTrialDefault: p.isTrialDefault ?? false,
+                synced: true,
+              }));
+              await localDb.saasPlans.bulkPut(formattedPlans);
+            }
+            const serverOrgs = pullResult.data.organizations || [];
+            if (serverOrgs.length > 0) {
+              await localDb.saasOrganizations.bulkPut(serverOrgs.map((o: any) => ({ ...o, synced: true })));
+            }
+          }
+        } catch (e) {
+          console.warn("Could not sync plans from cloud on auth:", e);
+        }
+      };
+      syncCloudPlans();
+    }
+  }, [user?.orgId]);
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -35,14 +92,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             setUser(foundUser);
             if (foundUser.orgId) {
               const userSettings = await localDb.settings.where("orgId").equals(foundUser.orgId).first();
-              if (userSettings) setSettings(userSettings);
-              else {
-                const defaultSetting = await localDb.settings.get("default");
-                setSettings(defaultSetting);
+              setSettings(userSettings || await localDb.settings.get("default"));
+              
+              const org = await localDb.saasOrganizations.get(foundUser.orgId);
+              if (org) {
+                setSaasOrgState(org);
+                const plan = await localDb.saasPlans.get(org.currentPlanId);
+                if (plan) setSaasPlanState(plan);
               }
             } else {
-              const defaultSetting = await localDb.settings.get("default");
-              setSettings(defaultSetting);
+              setSettings(await localDb.settings.get("default"));
             }
           } else {
             localStorage.removeItem("pos_auth_user");
@@ -77,6 +136,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (foundUser.orgId) {
           const userSettings = await localDb.settings.where("orgId").equals(foundUser.orgId).first();
           setSettings(userSettings || await localDb.settings.get("default"));
+          const org = await localDb.saasOrganizations.get(foundUser.orgId);
+          if (org) {
+            setSaasOrgState(org);
+            const plan = await localDb.saasPlans.get(org.currentPlanId);
+            if (plan) setSaasPlanState(plan);
+          }
+          
+          // Log SaaS Session
+          const sessionId = crypto.randomUUID();
+          localStorage.setItem("pos_saas_session", sessionId);
+          await localDb.saasSessions.add({
+            id: sessionId,
+            orgId: foundUser.orgId,
+            userId: foundUser.id,
+            loginAt: new Date().toISOString(),
+            status: "live",
+            device: navigator.userAgent
+          });
         } else {
           setSettings(await localDb.settings.get("default"));
         }
@@ -96,26 +173,104 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const loginWithEmail = async (email: string, password: string) => {
     try {
-      const users = await localDb.users.toArray();
-      let foundUser = users.find((u: LocalUser) => u.email?.toLowerCase() === email.toLowerCase().trim());
+      const SUPER_ADMIN_EMAIL = import.meta.env.VITE_SUPER_ADMIN_EMAIL || "superadmin@pos.com";
+      const SUPER_ADMIN_PASS = import.meta.env.VITE_SUPER_ADMIN_PASSWORD || "admin123";
 
-      // Auto-provision Super Admin account on first login
-      if (!foundUser && email.toLowerCase().includes("superadmin")) {
+      // Super Admin special login
+      if (email.toLowerCase().trim() === SUPER_ADMIN_EMAIL.toLowerCase()) {
+        if (password !== SUPER_ADMIN_PASS) {
+          toast.error("Invalid super admin credentials");
+          return false;
+        }
         const superAdminId = "superadmin-master-id";
-        foundUser = {
+        const superAdminUser: LocalUser = {
           id: superAdminId,
           orgId: "superadmin-org",
           name: "Super Admin",
-          email: email.trim(),
+          email: SUPER_ADMIN_EMAIL,
           role: "admin",
           status: "active",
           lastActive: new Date().toISOString(),
-          pin: "9999",
+          pin: SUPER_ADMIN_PASS,
         };
-        await localDb.users.put(foundUser);
+        await localDb.users.put(superAdminUser);
+        setUser(superAdminUser);
+        localStorage.setItem("pos_auth_user", superAdminId);
+        localStorage.setItem("pos_org_id", "superadmin-org");
+        toast.success("Welcome, Super Admin!");
+        router.navigate({ to: "/super-admin" });
+        return true;
       }
 
-      if (foundUser) {
+      // Regular user: first check local DB
+      const allUsers = await localDb.users.toArray();
+      let foundUser = allUsers.find((u: LocalUser) => u.email?.toLowerCase() === email.toLowerCase().trim());
+
+      // If not found locally, try fetching from Neon DB
+      if (!foundUser) {
+        try {
+          const ADMIN_KEY = import.meta.env.VITE_SUPER_ADMIN_PASSWORD || "admin123";
+          const remoteResult = await getSuperAdminDataFn({ data: { adminKey: ADMIN_KEY } }) as any;
+          if (remoteResult.success && remoteResult.data) {
+            const remoteUser = remoteResult.data.users.find((u: any) => u.email?.toLowerCase() === email.toLowerCase().trim());
+            if (remoteUser) {
+              // Cache user locally
+              const localUserData: LocalUser = {
+                id: remoteUser.id,
+                orgId: remoteUser.organizationId,
+                name: remoteUser.name,
+                email: remoteUser.email,
+                role: remoteUser.role,
+                status: remoteUser.status,
+                lastActive: new Date().toISOString(),
+                pin: remoteUser.pin,
+                emailVerified: remoteUser.emailVerified ?? true,
+              };
+              await localDb.users.put(localUserData);
+              // Also cache organization
+              const remoteOrg = remoteResult.data.organizations.find((o: any) => o.id === remoteUser.organizationId);
+              if (remoteOrg) {
+                await localDb.saasOrganizations.put({
+                  id: remoteOrg.id,
+                  name: remoteOrg.name,
+                  ownerEmail: remoteOrg.ownerEmail,
+                  status: remoteOrg.status,
+                  currentPlanId: remoteOrg.currentPlanId,
+                  planExpiryDate: remoteOrg.planExpiryDate,
+                  syncKey: remoteOrg.syncKey,
+                  isOnline: remoteOrg.isOnline ?? true,
+                });
+              }
+              if (remoteResult.data.plans && remoteResult.data.plans.length > 0) {
+                const formattedPlans = remoteResult.data.plans.map((p: any) => ({
+                  id: p.id,
+                  name: p.name,
+                  price: Number(p.price || 0),
+                  features: Array.isArray(p.features) ? p.features : [],
+                  limits: p.limits || { maxUsers: 5, maxProducts: 500, maxBranches: 2, maxInvoicesPerMonth: 1000 },
+                  isTrialDefault: p.isTrialDefault ?? false,
+                  synced: true,
+                }));
+                await localDb.saasPlans.bulkPut(formattedPlans);
+              }
+              foundUser = localUserData;
+            }
+          }
+        } catch (e) {
+          console.warn("Could not fetch user from cloud, offline mode");
+        }
+      }
+
+      if (!foundUser) {
+        toast.error("No account found. Please register your business.");
+        return false;
+      }
+
+      // Verify password (stored as PIN)
+      if (foundUser.pin && foundUser.pin !== password) {
+        toast.error("Incorrect password");
+        return false;
+      }
         setUser(foundUser);
         localStorage.setItem("pos_auth_user", foundUser.id);
         if (foundUser.orgId) {
@@ -125,21 +280,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (foundUser.orgId) {
           const userSettings = await localDb.settings.where("orgId").equals(foundUser.orgId).first();
           setSettings(userSettings || await localDb.settings.get("default"));
+          const org = await localDb.saasOrganizations.get(foundUser.orgId);
+          if (org) {
+            setSaasOrgState(org);
+            const plan = await localDb.saasPlans.get(org.currentPlanId);
+            if (plan) setSaasPlanState(plan);
+          }
+          
+          // Log SaaS Session
+          const sessionId = crypto.randomUUID();
+          localStorage.setItem("pos_saas_session", sessionId);
+          await localDb.saasSessions.add({
+            id: sessionId,
+            orgId: foundUser.orgId,
+            userId: foundUser.id,
+            loginAt: new Date().toISOString(),
+            status: "live",
+            device: navigator.userAgent
+          });
         } else {
           setSettings(await localDb.settings.get("default"));
         }
 
-        toast.success(`Welcome back, ${foundUser.name}`);
-        if (email.toLowerCase().includes("superadmin")) {
-          router.navigate({ to: "/super-admin" });
-        } else {
-          router.navigate({ to: "/" });
-        }
-        return true;
-      } else {
-        toast.error("Invalid credentials. Please register your business.");
-        return false;
-      }
+      toast.success(`Welcome back, ${foundUser.name}`);
+      router.navigate({ to: "/" });
+      return true;
     } catch (error) {
       toast.error("Login failed");
       return false;
@@ -191,18 +356,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const logout = () => {
+  const logout = async () => {
+    const sessionId = localStorage.getItem("pos_saas_session");
+    if (sessionId) {
+      await localDb.saasSessions.update(sessionId, { logoutAt: new Date().toISOString(), status: "ended" });
+      localStorage.removeItem("pos_saas_session");
+    }
     setUser(null);
+    setSaasOrgState(null);
+    setSaasPlanState(null);
     localStorage.removeItem("pos_auth_user");
     router.navigate({ to: "/login" });
   };
 
   const isTrialExpired = useMemo(() => {
     if (user?.email?.toLowerCase().includes("superadmin")) return false;
-    if (!settings || !settings.trialEndsAt) return false;
-    if (settings.subscriptionStatus === "active") return false;
-    return new Date() > new Date(settings.trialEndsAt);
-  }, [settings, user]);
+    const subStatus = saasOrg?.status || settings?.subscriptionStatus || "trial";
+    if (subStatus === "active") return false;
+    const expiryDateStr = saasOrg?.planExpiryDate || settings?.trialEndsAt;
+    if (!expiryDateStr) return false;
+    return new Date() > new Date(expiryDateStr);
+  }, [saasOrg, settings, user]);
 
   return (
     <AuthContext.Provider value={{
@@ -215,7 +389,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       isLoading,
       isEmailVerified: user ? (user.emailVerified !== false || user.email?.toLowerCase().includes("superadmin")) : true,
       isTrialExpired,
-      subscriptionStatus: settings?.subscriptionStatus || "trial"
+      subscriptionStatus: saasOrg?.status || settings?.subscriptionStatus || "trial",
+      saasOrg,
+      saasPlan,
+      settings
     }}>
       {children}
     </AuthContext.Provider>

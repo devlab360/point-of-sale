@@ -37,7 +37,7 @@ function Dashboard() {
   const userName = currentUser?.name || "Admin";
 
   const lowStock = products.filter((p) => p.stock <= p.reorderLevel).slice(0, 5);
-  
+
   const productSalesMap = new Map<string, number>();
   sales.forEach(sale => {
     if (sale.saleItems) {
@@ -46,18 +46,18 @@ function Dashboard() {
       });
     }
   });
-  
+
   const topSelling = [...products]
     .map(p => ({ ...p, sold: productSalesMap.get(p.id) || 0 }))
     .sort((a, b) => b.sold - a.sold)
     .slice(0, 5);
-    
+
   const recentSales = [...sales].reverse().slice(0, 5);
-  
+
   const todayRevenue = sales.reduce((sum, s) => sum + s.total, 0);
   const todayProfit = todayRevenue * 0.3;
   const todayOrders = sales.length;
-  
+
   const salesByDay = Array.from({ length: 7 }).map((_, i) => {
     const d = new Date();
     d.setDate(d.getDate() - (6 - i));

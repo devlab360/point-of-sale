@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -24,10 +24,18 @@ function VerifyEmailPage() {
   const [isSending, setIsSending] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
 
+  // Guard to ensure we only auto-send the OTP once per page load
+  const hasSentRef = useRef(false);
+
   const trialDays = getTrialDaysFromEnv();
 
-  const handleSendOtp = async () => {
+  const handleSendOtp = async (force = false) => {
     if (!user?.email) return;
+    // Prevent sending if already sending or already sent (unless forced by Resend button)
+    if (isSending) return;
+    if (!force && hasSentRef.current) return;
+
+    hasSentRef.current = true;
     setIsSending(true);
     const code = generateVerificationOtp();
     setGeneratedCode(code);
@@ -39,10 +47,12 @@ function VerifyEmailPage() {
   useEffect(() => {
     if (user?.emailVerified) {
       navigate({ to: "/" });
-    } else if (user && !generatedCode) {
+    } else if (user && !hasSentRef.current) {
       handleSendOtp();
     }
-  }, [user]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id]); // Only re-run if the user ID changes, not on every user object update
+
 
   const handleVerify = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -52,12 +62,13 @@ function VerifyEmailPage() {
     const currentUser = await localDb.users.get(user.id);
     const validToken = currentUser?.emailVerificationToken || generatedCode;
 
-    if (otp.trim() === validToken.trim() || otp === "123456") {
+    if (otp.trim() === validToken.trim()) {
       const trialEndsAt = new Date(Date.now() + trialDays * 24 * 60 * 60 * 1000).toISOString();
 
       await localDb.users.update(user.id, {
         emailVerified: true,
         status: "active",
+        synced: false,
       });
 
       if (user.orgId) {
@@ -67,6 +78,28 @@ function VerifyEmailPage() {
             trialEndsAt,
             subscriptionStatus: "trial",
             trialDays,
+            synced: false,
+          });
+        }
+
+        // Also update SaaS Organizations so Super Admin sees the exact expiry
+        const org = await localDb.saasOrganizations.get(user.orgId);
+        if (org) {
+          await localDb.saasOrganizations.update(org.id, {
+            planExpiryDate: trialEndsAt,
+            synced: false,
+          });
+        } else {
+          // Backward compatibility for users created before saasOrganizations table existed
+          await localDb.saasOrganizations.add({
+            id: user.orgId,
+            name: setting?.storeName || "My Shop",
+            ownerEmail: user.email,
+            status: "trial",
+            currentPlanId: "basic",
+            planExpiryDate: trialEndsAt,
+            isOnline: true,
+            synced: false,
           });
         }
       }
@@ -76,7 +109,7 @@ function VerifyEmailPage() {
         window.location.href = "/";
       }, 600);
     } else {
-      toast.error("Invalid verification code. Please check your email or enter 123456");
+      toast.error("Invalid verification code. Please check your email and try again.");
     }
     setIsVerifying(false);
   };
@@ -103,11 +136,11 @@ function VerifyEmailPage() {
             <div className="space-y-2">
               <label className="text-xs font-semibold text-muted-foreground flex justify-between">
                 <span>Enter 6-Digit OTP Code</span>
-                <span className="text-[10px] text-primary">Demo OTP: {generatedCode || "123456"}</span>
+                {/* <span className="text-[10px] text-primary">Demo OTP: {generatedCode || "123456"}</span> */}
               </label>
               <Input
                 type="text"
-                placeholder="123456"
+                placeholder="Enter Otp"
                 value={otp}
                 onChange={(e) => setOtp(e.target.value)}
                 maxLength={6}
@@ -124,7 +157,7 @@ function VerifyEmailPage() {
 
           <div className="flex items-center justify-between text-xs text-muted-foreground pt-2 border-t">
             <span>Didn't receive code?</span>
-            <Button variant="ghost" size="sm" onClick={handleSendOtp} disabled={isSending} className="h-7 text-xs text-primary">
+            <Button variant="ghost" size="sm" onClick={() => handleSendOtp(true)} disabled={isSending} className="h-7 text-xs text-primary">
               <RefreshCw className={`mr-1 size-3 ${isSending ? "animate-spin" : ""}`} /> Resend Code
             </Button>
           </div>

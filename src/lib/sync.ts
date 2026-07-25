@@ -1,5 +1,6 @@
 import { localDb } from "./db";
-import { getProductsFn, getCustomersFn, getCategoriesFn, getBrandsFn, getUnitsFn, getSuppliersFn, getPurchasesFn, getInventoryMovementsFn, syncSalesFn, syncProductsFn, syncCustomersFn } from "../api";
+import { pullEverythingFn } from "../sync-api";
+import { SyncEngine } from "./sync-engine";
 
 export async function initializeLocalDb() {
   if (typeof window === "undefined") return;
@@ -42,14 +43,23 @@ export async function initializeLocalDb() {
 
       try {
         const orgId = localStorage.getItem("pos_org_id") || "default";
-        apiProducts = await getProductsFn({ data: { orgId } });
-        apiCustomers = await getCustomersFn({ data: { orgId } });
-        apiCategories = await getCategoriesFn({ data: { orgId } });
-        apiBrands = await getBrandsFn({ data: { orgId } });
-        apiUnits = await getUnitsFn({ data: { orgId } });
-        apiSuppliers = await getSuppliersFn({ data: { orgId } });
-        apiPurchases = await getPurchasesFn({ data: { orgId } });
-        apiMovements = await getInventoryMovementsFn({ data: { orgId } });
+        const org = await localDb.saasOrganizations.get(orgId);
+        const syncKey = org?.syncKey || "default-sync-key";
+
+        if (syncKey) {
+          const pullResult = await pullEverythingFn({ data: { orgId, syncKey } });
+        
+        if (pullResult.success && pullResult.data) {
+          apiProducts = pullResult.data.products || [];
+          apiCustomers = pullResult.data.customers || [];
+          apiCategories = pullResult.data.categories || [];
+          apiBrands = pullResult.data.brands || [];
+          apiUnits = pullResult.data.units || [];
+          apiSuppliers = pullResult.data.suppliers || [];
+          apiPurchases = pullResult.data.purchases || [];
+          apiMovements = pullResult.data.inventoryMovements || [];
+        }
+        }
       } catch (e) {
         console.warn("API not reachable, starting with empty local database.");
       }
@@ -70,90 +80,20 @@ export async function initializeLocalDb() {
         });
       console.log("Local database initialized.");
     }
+
+    // Start the universal background sync engine
+    SyncEngine.start();
   } catch (error) {
     console.error("Failed to initialize local DB:", error);
   }
 }
 
 export async function backgroundSync() {
-  if (typeof navigator === "undefined" || !navigator.onLine) return;
-
-  try {
-    // Fix: synced is boolean, use equals(false) not equals("false")
-    const pendingSales = await localDb.offlineSales
-      .filter(s => s.synced === false)
-      .toArray();
-
-    if (pendingSales.length > 0) {
-      console.log(`Syncing ${pendingSales.length} offline sales...`);
-      const result = await syncSalesFn({ data: { sales: pendingSales } });
-
-      if (result.success && result.syncedIds.length > 0) {
-        await localDb.transaction("rw", localDb.offlineSales, async () => {
-          for (const id of result.syncedIds) {
-            await localDb.offlineSales.update(id, { synced: true, syncRetryCount: 0 });
-          }
-        });
-        console.log(`Sync complete. ${result.syncedIds.length} records synced.`);
-      }
-
-      // Increment retry count for failed ones
-      const failedIds = pendingSales
-        .map(s => s.id)
-        .filter(id => !result.syncedIds.includes(id));
-      for (const id of failedIds) {
-        const sale = await localDb.offlineSales.get(id);
-        if (sale) {
-          await localDb.offlineSales.update(id, {
-            syncRetryCount: (sale.syncRetryCount || 0) + 1,
-          });
-        }
-      }
-    }
-
-    // Sync Products
-    const pendingProducts = await localDb.products.filter(p => p.synced === false).toArray();
-    if (pendingProducts.length > 0) {
-      const res = await syncProductsFn({ data: { products: pendingProducts } });
-      if (res.success && res.syncedIds.length > 0) {
-        await localDb.transaction("rw", localDb.products, async () => {
-          for (const id of res.syncedIds) {
-            await localDb.products.update(id, { synced: true, syncRetryCount: 0 });
-          }
-        });
-      }
-      const failedIds = pendingProducts.map(p => p.id).filter(id => !res.syncedIds.includes(id));
-      for (const id of failedIds) {
-        const prod = await localDb.products.get(id);
-        if (prod) await localDb.products.update(id, { syncRetryCount: (prod.syncRetryCount || 0) + 1 });
-      }
-    }
-
-    // Sync Customers
-    const pendingCustomers = await localDb.customers.filter(c => c.synced === false).toArray();
-    if (pendingCustomers.length > 0) {
-      const res = await syncCustomersFn({ data: { customers: pendingCustomers } });
-      if (res.success && res.syncedIds.length > 0) {
-        await localDb.transaction("rw", localDb.customers, async () => {
-          for (const id of res.syncedIds) {
-            await localDb.customers.update(id, { synced: true, syncRetryCount: 0 });
-          }
-        });
-      }
-      const failedIds = pendingCustomers.map(c => c.id).filter(id => !res.syncedIds.includes(id));
-      for (const id of failedIds) {
-        const cust = await localDb.customers.get(id);
-        if (cust) await localDb.customers.update(id, { syncRetryCount: (cust.syncRetryCount || 0) + 1 });
-      }
-    }
-
-  } catch (error) {
-    console.error("Background sync failed:", error);
-  }
+  // Legacy function now handled by SyncEngine
+  console.log("Triggered sync manually.");
+  SyncEngine.syncAll();
 }
 
-// Start background sync interval (every 30 seconds)
 if (typeof window !== "undefined") {
   window.addEventListener("online", backgroundSync);
-  setInterval(backgroundSync, 30000);
 }

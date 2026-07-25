@@ -38,6 +38,7 @@ import {
   KeyRound,
   UserCheck,
   ShieldAlert,
+  CreditCard,
 } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
@@ -46,97 +47,12 @@ import { localDb } from "@/lib/db";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 
-type Item = { to: string; label: string; tkey: string; icon: typeof Package; badge?: string; roles?: string[] };
-type Group = { label: string; tkey: string; items: Item[] };
-
-const groups: Group[] = [
-  {
-    label: "Overview", tkey: "overview",
-    items: [
-      { to: "/", label: "Dashboard", tkey: "dashboard", icon: LayoutDashboard, roles: ["admin", "manager"] },
-      { to: "/pos", label: "POS Terminal", tkey: "pos", icon: ScanBarcode, badge: "Live" },
-    ],
-  },
-  {
-    label: "Catalog", tkey: "catalog",
-    items: [
-      { to: "/products", label: "Products", tkey: "products", icon: Package, roles: ["admin", "manager"] },
-      { to: "/categories", label: "Categories", tkey: "categories", icon: Tag, roles: ["admin", "manager"] },
-      { to: "/brands", label: "Brands", tkey: "brands", icon: Award, roles: ["admin", "manager"] },
-      { to: "/units", label: "Units", tkey: "units", icon: Ruler, roles: ["admin", "manager"] },
-    ],
-  },
-  {
-    label: "Stock", tkey: "stock",
-    items: [
-      { to: "/inventory", label: "Inventory", tkey: "inventory", icon: Boxes, roles: ["admin", "manager"] },
-      { to: "/inventory/adjustments", label: "Adjustments", tkey: "adjustments", icon: PackageMinus, roles: ["admin", "manager"] },
-      { to: "/inventory/transfers", label: "Transfers", tkey: "transfers", icon: ArrowLeftRight, roles: ["admin", "manager"] },
-      { to: "/inventory/history", label: "Stock History", tkey: "stockHistory", icon: History, roles: ["admin", "manager"] },
-    ],
-  },
-  {
-    label: "Trade & B2B", tkey: "tradeB2B",
-    items: [
-      { to: "/purchases", label: "Purchases", tkey: "purchases", icon: ShoppingCart, roles: ["admin", "manager"] },
-      { to: "/purchases/returns", label: "Purchase Returns", tkey: "purchaseReturns", icon: Undo2, roles: ["admin", "manager"] },
-      { to: "/sales", label: "Sales Invoices", tkey: "salesInvoices", icon: ReceiptText },
-      { to: "/quotations", label: "Quotations", tkey: "quotations", icon: FileText, roles: ["admin", "manager"] },
-      { to: "/delivery-challans", label: "Delivery Challans", tkey: "deliveryChallans", icon: Truck, roles: ["admin", "manager"] },
-      { to: "/sales/returns", label: "Sales Returns", tkey: "salesReturns", icon: Undo2 },
-    ],
-  },
-  {
-    label: "People", tkey: "people",
-    items: [
-      { to: "/customers", label: "Customers", tkey: "customers", icon: Users },
-      { to: "/suppliers", label: "Suppliers", tkey: "suppliers", icon: Truck, roles: ["admin", "manager"] },
-      { to: "/users", label: "Employees", tkey: "employees", icon: UserCog, roles: ["admin"] },
-    ],
-  },
-  {
-    label: "Finance & Accounts", tkey: "finance",
-    items: [
-      { to: "/accounts", label: "Chart of Accounts", tkey: "accounts", icon: BookOpen, roles: ["admin", "manager"] },
-      { to: "/expenses", label: "Expenses", tkey: "expenses", icon: Wallet, roles: ["admin", "manager"] },
-      { to: "/reports", label: "Financial Reports", tkey: "reports", icon: BarChart3, roles: ["admin", "manager"] },
-    ],
-  },
-  {
-    label: "Services & Verticals", tkey: "services",
-    items: [
-      { to: "/repairs", label: "Repair Job Sheets", tkey: "repairs", icon: Wrench, roles: ["admin", "manager"] },
-      { to: "/subscriptions", label: "Subscriptions", tkey: "subscriptions", icon: Repeat, roles: ["admin", "manager"] },
-      { to: "/rentals", label: "Equipment Rentals", tkey: "rentals", icon: KeyRound, roles: ["admin", "manager"] },
-    ],
-  },
-  {
-    label: "Marketing", tkey: "marketing",
-    items: [
-      { to: "/coupons", label: "Coupons", tkey: "coupons", icon: Ticket, roles: ["admin", "manager"] },
-      { to: "/gift-cards", label: "Gift Cards", tkey: "giftCards", icon: Gift },
-      { to: "/loyalty", label: "Loyalty", tkey: "loyalty", icon: Star, roles: ["admin", "manager"] },
-      { to: "/promotions", label: "Promotions", tkey: "promotions", icon: Megaphone, roles: ["admin", "manager"] },
-    ],
-  },
-  {
-    label: "System", tkey: "system",
-    items: [
-      { to: "/super-admin", label: "Super Admin SaaS", tkey: "superAdmin", icon: ShieldAlert, roles: ["admin"] },
-      { to: "/portal", label: "Client Portal", tkey: "clientPortal", icon: UserCheck },
-      { to: "/settings", label: "Settings", tkey: "settings", icon: Settings, roles: ["admin"] },
-      { to: "/notifications", label: "Notifications", tkey: "notifications", icon: Bell },
-      { to: "/activity", label: "Activity Log", tkey: "activityLog", icon: Activity, roles: ["admin", "manager"] },
-      { to: "/profile", label: "Profile", tkey: "profile", icon: CircleUser },
-      { to: "/help", label: "Help Center", tkey: "help", icon: LifeBuoy },
-    ],
-  },
-];
+import { APP_GROUPS } from "@/lib/menu-config";
 
 export function AppSidebar({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
-  const { user, logout } = useAuth();
+  const { user, logout, saasPlan } = useAuth();
   const { t } = useLanguage();
 
   const isActive = (to: string) =>
@@ -146,15 +62,52 @@ export function AppSidebar({ onNavigate }: { onNavigate?: () => void }) {
   const settings = useLiveQuery(() => localDb.settings.get("default"));
   const initials = (user?.name || "U").split(" ").filter(Boolean).map((n) => n[0]).join("").substring(0, 2).toUpperCase();
 
-  const isSuperAdminUser = user?.email?.toLowerCase() === "superadmin@grocer.pro" || user?.email?.toLowerCase().includes("superadmin");
+  const isSuperAdminUser = user?.email?.toLowerCase().includes("superadmin");
 
-  const filteredGroups = groups.map(group => ({
+  let filteredGroups = APP_GROUPS.map(group => ({
     ...group,
     items: group.items.filter(item => {
+      // 1. Role Check
+      const hasRole = !item.roles || (user && item.roles.includes(user.role.toLowerCase()));
+      if (!hasRole) return false;
+
+      // 2. SaaS Subscription Feature Check (for non-superadmins)
+      // The plan's features array should contain the allowed route paths (e.g., "/pos", "/products")
+      if (!isSuperAdminUser && saasPlan && Array.isArray(saasPlan.features)) {
+        // Essential routes that should always be allowed if they exist
+        const essentialRoutes = ["/", "/profile", "/settings", "/notifications", "/help"];
+        if (!essentialRoutes.includes(item.to) && !saasPlan.features.includes(item.to)) {
+          return false;
+        }
+      }
+
+      // 3. Super Admin Specific Routing Check
       if (item.to === "/super-admin" && !isSuperAdminUser) return false;
-      return !item.roles || (user && item.roles.includes(user.role.toLowerCase()));
+
+      return true;
     })
   })).filter(group => group.items.length > 0);
+
+  // If Super Admin, override everything and ONLY show the super admin view
+  if (isSuperAdminUser) {
+    filteredGroups = [
+      {
+        label: "SaaS Management", tkey: "saas",
+        items: [
+          { to: "/super-admin", label: "Dashboard", tkey: "superAdmin", icon: LayoutDashboard, roles: ["admin"] },
+          { to: "/super-admin/users", label: "User Management", tkey: "saasUsers", icon: Users, roles: ["admin"] },
+          { to: "/super-admin/plans", label: "Plan Configuration", tkey: "saasPlans", icon: CreditCard, roles: ["admin"] }
+        ]
+      },
+      {
+        label: "System", tkey: "system",
+        items: [
+          { to: "/settings", label: "Global Settings", tkey: "settings", icon: Settings, roles: ["admin"] },
+          { to: "/profile", label: "Profile", tkey: "profile", icon: CircleUser }
+        ]
+      }
+    ];
+  }
 
   return (
     <div className="flex h-full w-full flex-col bg-sidebar text-sidebar-foreground">
@@ -248,7 +201,7 @@ export function AppSidebar({ onNavigate }: { onNavigate?: () => void }) {
             <div className="truncate text-sm font-semibold">{user?.name || "Admin"}</div>
             <div className="truncate text-xs capitalize text-muted-foreground">{user?.role || "Staff"}</div>
           </div>
-          <button 
+          <button
             onClick={logout}
             className="grid size-8 shrink-0 place-items-center rounded-md text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors"
             title="Log out"

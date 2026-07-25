@@ -72,27 +72,27 @@ export function AppHeader() {
 
   const handleCloseRegister = async () => {
     if (!activeShift) return;
-    
+
     // In a real app, this would open a modal to count cash. For now, auto-close.
     const actualCash = window.prompt(`Closing Register.\nExpected Cash: $${activeShift.expectedCash.toFixed(2)}\nEnter actual cash in drawer:`, activeShift.expectedCash.toString());
-    
+
     if (actualCash === null) return;
-    
+
     const parsedCash = parseFloat(actualCash);
     if (isNaN(parsedCash)) {
       toast.error("Invalid amount");
       return;
     }
-    
+
     const difference = parsedCash - activeShift.expectedCash;
-    
+
     await localDb.shifts.update(activeShift.id, {
       status: "closed",
       closeTime: new Date().toISOString(),
       actualCash: parsedCash,
       difference: difference
     });
-    
+
     toast.success(`Register closed. Discrepancy: $${difference.toFixed(2)}`);
   };
 

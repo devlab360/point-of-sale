@@ -30,6 +30,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useCurrency } from "@/lib/currency";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { calculateItemTax } from "@/lib/taxCalculator";
 import {
   Dialog,
   DialogContent,
@@ -73,7 +74,7 @@ function PosScreen() {
   const settings = useLiveQuery(() => localDb.settings.get("default"));
   const coupons = useLiveQuery(() => localDb.coupons.toArray()) || [];
   const { user } = useAuth();
-  
+
   const activeShift = useLiveQuery(() => {
     if (!user) return undefined;
     return localDb.shifts.where("userId").equals(user.id).filter(s => s.status === "open").first();
@@ -88,6 +89,7 @@ function PosScreen() {
   const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(null);
   const [printData, setPrintData] = useState<any>(null);
   const [saleComplete, setSaleComplete] = useState<any>(null);
+  const [printFormat, setPrintFormat] = useState<"thermal" | "a4">("thermal");
 
   // Dialogs
   const [showCustomerSearch, setShowCustomerSearch] = useState(false);
@@ -102,7 +104,7 @@ function PosScreen() {
   const [splitCash, setSplitCash] = useState("");
   const [splitCard, setSplitCard] = useState("");
   const [confirmCheckout, setConfirmCheckout] = useState(false);
-  
+
   // Shift
   const [showOpenRegister, setShowOpenRegister] = useState(false);
   const [startingCash, setStartingCash] = useState("");
@@ -146,7 +148,7 @@ function PosScreen() {
   const users = useLiveQuery(() => localDb.users.toArray()) || [];
   const [selectedSalesmanId, setSelectedSalesmanId] = useState("");
 
-  const activeCustomer = customers.find(c => c.id === selectedCustomerId) || { id: "walkin", name: "Walk-in Customer", type: "retail" };
+  const activeCustomer = customers.find(c => c.id === selectedCustomerId) || { id: "walkin", name: "Walk-in Customer", type: "retail", stateCode: "" };
 
   // Barcode scanner
   const barcodeRef = useRef("");
@@ -209,7 +211,7 @@ function PosScreen() {
   const lines = cart.map(l => {
     const p = products.find(p => p.id === l.id);
     if (!p) return null;
-    
+
     let unitPrice = p.price;
     let priceTierLabel = "";
     if (activeCustomer.type === "wholesale" && p.wholesalePrice && p.wholesalePrice > 0) {
@@ -221,7 +223,7 @@ function PosScreen() {
     }
 
     const selectedSerial = p.hasSerial && p.serials?.[0] ? p.serials[0] : undefined;
-    
+
     // FEFO (First-Expired First-Out) Auto Batch Picker for Pharmacy & FMCG
     const fefoSortedBatches = p.hasBatch && p.batches
       ? [...p.batches].sort((a, b) => new Date(a.expiryDate || '2099-12-31').getTime() - new Date(b.expiryDate || '2099-12-31').getTime())
@@ -234,9 +236,42 @@ function PosScreen() {
   const subtotal = lines.reduce((s, l) => s + l.total, 0);
   const couponDisc = appliedCoupon ? (appliedCoupon.type === "percentage" ? subtotal * (appliedCoupon.discount / 100) : appliedCoupon.discount) : 0;
   const discountAmt = subtotal * (discountPct / 100) + couponDisc;
-  const taxableAmt = subtotal - discountAmt;
-  const taxAmt = taxableAmt * taxRate;
-  const total = taxableAmt + taxAmt;
+
+  let taxableAmt = 0;
+  let taxAmt = 0;
+  let total = 0;
+
+  let totalCgst = 0;
+  let totalSgst = 0;
+  let totalIgst = 0;
+
+  if (settings?.enableGST) {
+    // GST Mode: Calculate per item
+    lines.forEach(l => {
+      // Pro-rata discount for this item
+      const itemDisc = subtotal > 0 ? (l.total / subtotal) * discountAmt : 0;
+      const res = calculateItemTax({
+        price: l.unitPrice,
+        quantity: l.qty,
+        discountAmt: itemDisc,
+        gstRate: l.product.gstRate || 0,
+        taxInclusive: !!l.product.taxInclusive,
+        storeStateCode: settings.stateCode,
+        customerStateCode: activeCustomer.stateCode
+      });
+      taxableAmt += res.taxableValue;
+      taxAmt += res.totalTaxAmt;
+      totalCgst += res.cgstAmt;
+      totalSgst += res.sgstAmt;
+      totalIgst += res.igstAmt;
+    });
+    total = taxableAmt + taxAmt;
+  } else {
+    // Legacy Non-GST Mode
+    taxableAmt = subtotal - discountAmt;
+    taxAmt = taxableAmt * taxRate;
+    total = taxableAmt + taxAmt;
+  }
   const changeDue = payment === "cash" && cashTendered ? parseFloat(cashTendered) - total : 0;
 
   // Keyboard Shortcuts Listener (F1, F2, F8, F9, ?)
@@ -345,11 +380,11 @@ function PosScreen() {
 
   const handleCheckout = async () => {
     if (lines.length === 0) return;
-    
+
     // Validate split payment
     let cashComponent = 0;
     let paymentsArr: { method: string; amount: number }[] = [];
-    
+
     if (payment === "split") {
       const csh = parseFloat(splitCash) || 0;
       const crd = parseFloat(splitCard) || 0;
@@ -416,6 +451,9 @@ function PosScreen() {
         subtotal: parseFloat(subtotal.toFixed(2)),
         discountAmt: parseFloat(discountAmt.toFixed(2)),
         taxAmt: parseFloat(taxAmt.toFixed(2)),
+        cgstAmt: parseFloat(totalCgst.toFixed(2)),
+        sgstAmt: parseFloat(totalSgst.toFixed(2)),
+        igstAmt: parseFloat(totalIgst.toFixed(2)),
         total: parseFloat(total.toFixed(2)),
         paymentMethod: payment,
         payments: paymentsArr,
@@ -539,6 +577,9 @@ function PosScreen() {
         subtotal,
         discountAmt,
         taxAmt,
+        cgstAmt: totalCgst,
+        sgstAmt: totalSgst,
+        igstAmt: totalIgst,
         total,
         payment,
         changeDue: changeDue > 0 ? changeDue : 0,
@@ -675,8 +716,8 @@ function PosScreen() {
                 <button onClick={() => setShowCustomerSearch(true)} className="text-xs font-medium text-primary hover:underline">
                   Change
                 </button>
-                <button 
-                  onClick={() => setShowAddCustomer(true)} 
+                <button
+                  onClick={() => setShowAddCustomer(true)}
                   className="ml-auto flex items-center gap-1 rounded-md bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary hover:bg-primary/20 transition-colors"
                   title="Create new customer"
                 >
@@ -804,7 +845,15 @@ function PosScreen() {
             <div className="space-y-1.5 rounded-lg bg-muted/40 p-3 text-sm">
               <Row label="Subtotal" value={formatCurrency(subtotal)} />
               {discountAmt > 0 && <Row label={`Discount`} value={`-${formatCurrency(discountAmt)}`} negative />}
-              <Row label={`Tax (${(taxRate * 100).toFixed(0)}%)`} value={formatCurrency(taxAmt)} />
+              {settings?.enableGST ? (
+                <>
+                  {totalCgst > 0 && <Row label="CGST" value={formatCurrency(totalCgst)} />}
+                  {totalSgst > 0 && <Row label="SGST" value={formatCurrency(totalSgst)} />}
+                  {totalIgst > 0 && <Row label="IGST" value={formatCurrency(totalIgst)} />}
+                </>
+              ) : (
+                <Row label={`Tax (${(taxRate * 100).toFixed(0)}%)`} value={formatCurrency(taxAmt)} />
+              )}
               <div className="my-1 border-t border-border" />
               <div className="flex items-baseline justify-between">
                 <span className="text-sm font-semibold">Total</span>
@@ -968,7 +1017,7 @@ function PosScreen() {
                 <Label htmlFor="custType">Pricing Tier / Type</Label>
                 <SearchableSelect
                   value="retail"
-                  onChange={() => {}}
+                  onChange={() => { }}
                   options={[
                     { value: "retail", label: "Retail Customer" },
                     { value: "wholesale", label: "Wholesale Customer" },
@@ -982,7 +1031,7 @@ function PosScreen() {
                 <Label htmlFor="custStatus">Customer Status</Label>
                 <SearchableSelect
                   value="new"
-                  onChange={() => {}}
+                  onChange={() => { }}
                   options={[
                     { value: "new", label: "New Customer" },
                     { value: "regular", label: "Regular" },
@@ -1109,9 +1158,14 @@ function PosScreen() {
         <DialogContent className="sm:max-w-sm">
           <DialogHeader><DialogTitle>Sale Complete</DialogTitle></DialogHeader>
           <div className="flex flex-col gap-3 py-4">
-            <Button onClick={() => window.print()} className="w-full">
-              <Printer className="mr-2 size-4" /> Print Receipt
-            </Button>
+            <div className="grid grid-cols-2 gap-2">
+              <Button onClick={() => { setPrintFormat("thermal"); setTimeout(() => window.print(), 100); }} variant="default" className="w-full">
+                <Printer className="mr-2 size-4" /> Thermal
+              </Button>
+              <Button onClick={() => { setPrintFormat("a4"); setTimeout(() => window.print(), 100); }} variant="outline" className="w-full">
+                <Printer className="mr-2 size-4" /> A4 Invoice
+              </Button>
+            </div>
             {saleComplete?.customer !== "Walk-in Customer" && (
               <Button onClick={sendWhatsApp} className="w-full bg-[#25D366] hover:bg-[#128C7E] text-white">
                 <MessageCircle className="mr-2 size-4" /> Send WhatsApp Receipt
@@ -1125,7 +1179,7 @@ function PosScreen() {
       </Dialog>
 
       {/* Thermal Receipt (print only) */}
-      {printData && (
+      {printData && printFormat === "thermal" && (
         <div className="hidden print:block fixed inset-0 z-[100] bg-white text-black text-[12px] font-mono leading-tight p-4">
           <div className="max-w-[300px] mx-auto">
             <div className="text-center mb-3">
@@ -1135,6 +1189,12 @@ function PosScreen() {
               <p className="mt-1 text-[10px]">{printData.receiptHeader}</p>
             </div>
             <div className="border-t border-black pt-2 mb-2 text-[11px]">
+              {settings?.enableGST && settings.gstin && (
+                <div className="flex justify-between font-bold"><span>GSTIN:</span><span>{settings.gstin}</span></div>
+              )}
+              {settings?.enableGST && settings.stateCode && (
+                <div className="flex justify-between"><span>State Code:</span><span>{settings.stateCode}</span></div>
+              )}
               <div className="flex justify-between"><span>Receipt #:</span><span>{printData.id}</span></div>
               <div className="flex justify-between"><span>Date:</span><span>{printData.date}</span></div>
               <div className="flex justify-between"><span>Customer:</span><span>{printData.customer}</span></div>
@@ -1167,7 +1227,16 @@ function PosScreen() {
             <div className="space-y-0.5 text-[11px]">
               <div className="flex justify-between"><span>Subtotal:</span><span>{currencySymbol}{printData.subtotal.toFixed(2)}</span></div>
               {printData.discountAmt > 0 && <div className="flex justify-between"><span>Discount:</span><span>-{currencySymbol}{printData.discountAmt.toFixed(2)}</span></div>}
-              <div className="flex justify-between"><span>Tax:</span><span>{currencySymbol}{printData.taxAmt.toFixed(2)}</span></div>
+
+              {settings?.enableGST ? (
+                <>
+                  {printData.cgstAmt > 0 && <div className="flex justify-between"><span>CGST:</span><span>{currencySymbol}{printData.cgstAmt.toFixed(2)}</span></div>}
+                  {printData.sgstAmt > 0 && <div className="flex justify-between"><span>SGST:</span><span>{currencySymbol}{printData.sgstAmt.toFixed(2)}</span></div>}
+                  {printData.igstAmt > 0 && <div className="flex justify-between"><span>IGST:</span><span>{currencySymbol}{printData.igstAmt.toFixed(2)}</span></div>}
+                </>
+              ) : (
+                <div className="flex justify-between"><span>Tax:</span><span>{currencySymbol}{printData.taxAmt.toFixed(2)}</span></div>
+              )}
               <div className="flex justify-between font-bold border-t border-black pt-1 mt-1">
                 <span>TOTAL:</span><span>{currencySymbol}{printData.total.toFixed(2)}</span>
               </div>
@@ -1176,6 +1245,125 @@ function PosScreen() {
             </div>
             <div className="text-center text-[10px] mt-4">
               <p>{printData.receiptFooter}</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* A4 Invoice (print only) */}
+      {printData && printFormat === "a4" && (
+        <div className="hidden print:block fixed inset-0 z-[100] bg-white text-black p-8 font-sans text-sm">
+          <div className="max-w-4xl mx-auto border border-black p-6">
+            <div className="text-center mb-6">
+              <h1 className="text-2xl font-bold uppercase tracking-wider">{settings?.enableGST ? "TAX INVOICE" : "INVOICE"}</h1>
+            </div>
+
+            <div className="grid grid-cols-2 gap-8 mb-6">
+              <div>
+                <h3 className="font-bold mb-1">Billed By:</h3>
+                <div className="text-base font-bold">{printData.storeName}</div>
+                <div>{printData.storeAddress}</div>
+                <div>Ph: {printData.storePhone}</div>
+                {settings?.enableGST && settings.gstin && <div className="mt-1 font-semibold">GSTIN: {settings.gstin}</div>}
+                {settings?.enableGST && settings.stateCode && <div>State Code: {settings.stateCode}</div>}
+              </div>
+              <div className="text-right">
+                <h3 className="font-bold mb-1">Billed To:</h3>
+                <div className="text-base font-bold">{printData.customer}</div>
+                {printData.customer !== "Walk-in Customer" && (
+                  <>
+                    <div className="mt-1 font-semibold">Invoice #: {printData.id}</div>
+                    <div>Date: {printData.date}</div>
+                    <div>Payment: {printData.payment.toUpperCase()}</div>
+                  </>
+                )}
+              </div>
+            </div>
+
+            <table className="w-full border-collapse border border-black mb-6">
+              <thead>
+                <tr className="bg-gray-100">
+                  <th className="border border-black px-2 py-1 text-left">Sl</th>
+                  <th className="border border-black px-2 py-1 text-left">Item Description</th>
+                  {settings?.enableGST && <th className="border border-black px-2 py-1 text-center">HSN/SAC</th>}
+                  <th className="border border-black px-2 py-1 text-right">Qty</th>
+                  <th className="border border-black px-2 py-1 text-right">Rate</th>
+                  {settings?.enableGST && (
+                    <>
+                      <th className="border border-black px-2 py-1 text-right">Taxable Val</th>
+                      <th className="border border-black px-2 py-1 text-right">CGST</th>
+                      <th className="border border-black px-2 py-1 text-right">SGST</th>
+                      <th className="border border-black px-2 py-1 text-right">IGST</th>
+                    </>
+                  )}
+                  <th className="border border-black px-2 py-1 text-right">Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                {printData.lines.map((l: any, i: number) => {
+                  let cgstAmt = 0; let sgstAmt = 0; let igstAmt = 0; let taxable = l.total;
+                  if (settings?.enableGST) {
+                    const itemDisc = printData.subtotal > 0 ? (l.total / printData.subtotal) * printData.discountAmt : 0;
+                    const taxRes = require('@/lib/taxCalculator').calculateItemTax({
+                      price: l.unitPrice, quantity: l.qty, discountAmt: itemDisc,
+                      gstRate: l.product.gstRate || 0, taxInclusive: !!l.product.taxInclusive,
+                      storeStateCode: settings?.stateCode, customerStateCode: ""
+                    });
+                    cgstAmt = taxRes.cgstAmt; sgstAmt = taxRes.sgstAmt; igstAmt = taxRes.igstAmt; taxable = taxRes.taxableValue;
+                  }
+                  return (
+                    <tr key={i}>
+                      <td className="border border-black px-2 py-1 text-left">{i + 1}</td>
+                      <td className="border border-black px-2 py-1 text-left">
+                        {l.product.name}
+                        {l.selectedSerial && <div className="text-xs">SN: {l.selectedSerial}</div>}
+                      </td>
+                      {settings?.enableGST && <td className="border border-black px-2 py-1 text-center">{l.product.hsnCode || "-"}</td>}
+                      <td className="border border-black px-2 py-1 text-right">{l.qty}</td>
+                      <td className="border border-black px-2 py-1 text-right">{l.unitPrice.toFixed(2)}</td>
+                      {settings?.enableGST && (
+                        <>
+                          <td className="border border-black px-2 py-1 text-right">{taxable.toFixed(2)}</td>
+                          <td className="border border-black px-2 py-1 text-right">{cgstAmt > 0 ? cgstAmt.toFixed(2) : "-"}</td>
+                          <td className="border border-black px-2 py-1 text-right">{sgstAmt > 0 ? sgstAmt.toFixed(2) : "-"}</td>
+                          <td className="border border-black px-2 py-1 text-right">{igstAmt > 0 ? igstAmt.toFixed(2) : "-"}</td>
+                        </>
+                      )}
+                      <td className="border border-black px-2 py-1 text-right">{l.total.toFixed(2)}</td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+
+            <div className="grid grid-cols-2 gap-8">
+              <div className="text-xs text-gray-600">
+                <div className="font-bold text-black mb-1">Terms & Conditions:</div>
+                {printData.receiptFooter}
+              </div>
+              <div className="space-y-1 text-right font-bold text-base">
+                <div className="flex justify-between"><span>Subtotal:</span><span>{currencySymbol}{printData.subtotal.toFixed(2)}</span></div>
+                {printData.discountAmt > 0 && <div className="flex justify-between text-red-600"><span>Discount:</span><span>-{currencySymbol}{printData.discountAmt.toFixed(2)}</span></div>}
+
+                {settings?.enableGST ? (
+                  <>
+                    {printData.cgstAmt > 0 && <div className="flex justify-between text-sm font-normal"><span>Total CGST:</span><span>{currencySymbol}{printData.cgstAmt.toFixed(2)}</span></div>}
+                    {printData.sgstAmt > 0 && <div className="flex justify-between text-sm font-normal"><span>Total SGST:</span><span>{currencySymbol}{printData.sgstAmt.toFixed(2)}</span></div>}
+                    {printData.igstAmt > 0 && <div className="flex justify-between text-sm font-normal"><span>Total IGST:</span><span>{currencySymbol}{printData.igstAmt.toFixed(2)}</span></div>}
+                  </>
+                ) : (
+                  <div className="flex justify-between text-sm font-normal"><span>Tax:</span><span>{currencySymbol}{printData.taxAmt.toFixed(2)}</span></div>
+                )}
+
+                <div className="flex justify-between text-xl border-t border-black pt-2 mt-2">
+                  <span>Grand Total:</span><span>{currencySymbol}{printData.total.toFixed(2)}</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-12 pt-12 border-t border-gray-300 flex justify-between text-sm">
+              <div className="text-center w-48 border-t border-black pt-1">Customer Signature</div>
+              <div className="text-center w-48 border-t border-black pt-1">Authorized Signatory</div>
             </div>
           </div>
         </div>

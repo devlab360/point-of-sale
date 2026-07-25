@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Input, PasswordInput } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { Briefcase, Building2, CheckCircle2, ChevronLeft, ChevronRight, Store, User } from "lucide-react";
@@ -9,7 +9,8 @@ import { localDb } from "@/lib/db";
 import { v4 as uuidv4 } from "uuid";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { INDUSTRY_SEEDS } from "@/lib/industry-seeds";
-import { sendVerificationEmail, generateVerificationOtp } from "@/lib/email-service";
+import { generateVerificationOtp, getTrialDaysFromEnv } from "@/lib/email-service";
+import { getTrialPlanFn, pushEverythingFn } from "@/sync-api";
 
 export const Route = createFileRoute("/register")({
   head: () => ({ meta: [{ title: "Register · Grocer.Pro SaaS" }] }),
@@ -52,7 +53,8 @@ function RegisterPage() {
     try {
       const orgId = uuidv4();
       const ownerId = uuidv4();
-      const trialEndsAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+      const trialDays = getTrialDaysFromEnv();
+      const trialEndsAt = new Date(Date.now() + trialDays * 24 * 60 * 60 * 1000).toISOString();
 
       // Store setting tied to Org
       const seedData = INDUSTRY_SEEDS[formData.industry];
@@ -79,10 +81,51 @@ function RegisterPage() {
         printStoreLogo: true,
       });
 
+      // Fetch the trial plan from Neon DB set by Super Admin
+      let assignedPlanId = "basic";
+      let assignedPlanName = "Basic Plan (Trial)";
+      try {
+        const trialPlanResult = await getTrialPlanFn({ data: {} });
+        if (trialPlanResult.success && trialPlanResult.plan) {
+          assignedPlanId = trialPlanResult.plan.id;
+          assignedPlanName = trialPlanResult.plan.name;
+          // Cache this plan locally
+          await localDb.saasPlans.put({
+            id: trialPlanResult.plan.id,
+            name: trialPlanResult.plan.name,
+            price: Number(trialPlanResult.plan.price),
+            features: (trialPlanResult.plan.features as string[]) || [],
+            limits: (trialPlanResult.plan.limits as any) || { maxUsers: 2, maxProducts: 100, maxBranches: 1, maxInvoicesPerMonth: 500 },
+          });
+        }
+      } catch (e) {
+        // Fallback: ensure basic plan exists locally
+        const localPlan = await localDb.saasPlans.get("basic");
+        if (!localPlan) {
+          await localDb.saasPlans.put({ id: "basic", name: "Basic Plan (Trial)", price: 999, features: [], limits: { maxUsers: 2, maxProducts: 100, maxBranches: 1, maxInvoicesPerMonth: 500 } });
+        }
+      }
+
+      const syncKey = crypto.randomUUID();
+
+      // Add to SaaS Organizations (local)
+      const newOrgPayload = {
+        id: orgId,
+        name: formData.companyName,
+        ownerEmail: formData.email,
+        status: "trial",
+        currentPlanId: assignedPlanId,
+        planExpiryDate: trialEndsAt,
+        syncKey,
+        isOnline: true,
+        synced: false
+      };
+      await localDb.saasOrganizations.add(newOrgPayload);
+
       const verificationOtp = generateVerificationOtp();
 
-      // Add Owner User
-      await localDb.users.add({
+      // Add Owner User (local)
+      const newUserPayload = {
         id: ownerId,
         orgId,
         name: formData.ownerName,
@@ -90,10 +133,42 @@ function RegisterPage() {
         role: "admin",
         status: "pending_verification",
         lastActive: new Date().toISOString(),
-        pin: "1234",
+        pin: formData.password, // Set the pin to their password for local login
         emailVerified: false,
         emailVerificationToken: verificationOtp,
-      });
+        synced: false
+      };
+      await localDb.users.add(newUserPayload as any);
+
+      // Push org AND user to Neon DB immediately (don't wait for sync engine)
+      try {
+        await pushEverythingFn({
+          data: {
+            orgId,
+            syncKey,
+            changes: {
+              organizations: [{ ...newOrgPayload }],
+              users: [{
+                id: ownerId,
+                organizationId: orgId,
+                name: formData.ownerName,
+                email: formData.email,
+                role: "admin",
+                status: "pending_verification",
+                lastActive: new Date().toISOString(),
+                pin: formData.password,
+                emailVerified: false,
+              }]
+            }
+          }
+        });
+        // If immediate push succeeds, mark as synced locally
+        await localDb.saasOrganizations.update(orgId, { synced: true });
+        await localDb.users.update(ownerId, { synced: true });
+      } catch (e) {
+        console.warn("Could not push org and user to cloud immediately, will sync later");
+      }
+
 
       // Seed Industry Data
       if (seedData) {
@@ -110,9 +185,12 @@ function RegisterPage() {
       localStorage.setItem("pos_auth_user", ownerId);
       localStorage.setItem("pos_org_id", orgId);
       
-      await sendVerificationEmail(formData.email, verificationOtp);
-      toast.success("Registration successful! Please verify your email to start your trial.");
-      navigate({ to: "/verify-email" });
+      // NOTE: We do NOT send the email here. The verify-email page will auto-send it on load.
+      // This prevents duplicate/triple emails from being sent.
+      toast.success("Registration successful! Redirecting to email verification...");
+      setTimeout(() => {
+        window.location.href = "/verify-email";
+      }, 500);
     } catch (err) {
       console.error("Registration submit error:", err);
       toast.error("Registration failed. Please try again.");
@@ -207,7 +285,7 @@ function RegisterPage() {
                 </div>
                 <div className="space-y-2">
                   <Label>Password</Label>
-                  <Input type="password" name="password" value={formData.password} onChange={handleChange} required placeholder="••••••••" />
+                  <PasswordInput name="password" value={formData.password} onChange={handleChange} required placeholder="••••••••" />
                 </div>
               </div>
             )}
@@ -244,7 +322,7 @@ function RegisterPage() {
                 </Button>
               )}
               <Button type="submit" className="w-full">
-                {step === 2 ? "Start 7-Day Free Trial" : "Continue"} {step < 2 && <ChevronRight className="size-4 ml-2" />}
+                {step === 2 ? `Start ${getTrialDaysFromEnv()}-Day Free Trial` : "Continue"} {step < 2 && <ChevronRight className="size-4 ml-2" />}
               </Button>
             </div>
           </form>

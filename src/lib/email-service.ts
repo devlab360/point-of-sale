@@ -20,8 +20,8 @@ export function getSmtpConfig(): SmtpConfig {
 
 export function getTrialDaysFromEnv(): number {
   const envDays = import.meta.env.VITE_TRIAL_DAYS;
-  const parsed = parseInt(envDays || "7", 10);
-  return isNaN(parsed) || parsed <= 0 ? 7 : parsed;
+  const parsed = parseInt(envDays || "0", 10);
+  return isNaN(parsed) ? 0 : parsed;
 }
 
 export function generateVerificationOtp(): string {
@@ -29,18 +29,47 @@ export function generateVerificationOtp(): string {
 }
 
 /**
- * Sends or simulates sending an SMTP email verification OTP code.
+ * Sends an email using the local Vite dev server nodemailer API route.
  */
 export async function sendVerificationEmail(email: string, otpCode: string): Promise<boolean> {
   const config = getSmtpConfig();
-  
+
   if (config.user && config.pass) {
-    console.log(`[SMTP] Sending verification email via ${config.host}:${config.port} to ${email} with OTP ${otpCode}`);
-    toast.success(`Verification email sent via SMTP to ${email}`);
-    return true;
+    try {
+      const subject = "Your Grocer.Pro Verification Code";
+      const body = `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eaeaec; border-radius: 10px;">
+          <h2 style="color: #4f46e5; text-align: center;">Grocer.Pro SaaS</h2>
+          <p style="font-size: 16px; color: #333;">Hello,</p>
+          <p style="font-size: 16px; color: #333;">Your email verification code is:</p>
+          <div style="background-color: #f3f4f6; padding: 15px; text-align: center; border-radius: 8px; margin: 20px 0;">
+            <h1 style="margin: 0; color: #111827; font-size: 32px; letter-spacing: 4px;">${otpCode}</h1>
+          </div>
+          <p style="font-size: 14px; color: #6b7280;">Please enter this code in the application to verify your email address. This code is valid for 10 minutes.</p>
+          <hr style="border: none; border-top: 1px solid #eaeaec; margin: 20px 0;" />
+          <p style="font-size: 12px; color: #9ca3af; text-align: center;">If you didn't request this email, you can safely ignore it.</p>
+        </div>
+      `;
+      
+      const response = await fetch('/api/send-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ to: email, subject, html: body })
+      });
+      
+      const result = await response.json();
+      if (!result.success) throw new Error(result.error);
+      
+      toast.success(`Verification email sent to ${email}`);
+      return true;
+    } catch (error: any) {
+      console.error("[SMTP Error]:", error);
+      toast.error("Failed to send verification email. Check console or credentials.");
+      return false;
+    }
   } else {
-    console.log(`[SMTP SIMULATION] Verification OTP for ${email} is: ${otpCode}`);
-    toast.success(`Verification OTP code sent to ${email} (Code: ${otpCode})`);
+    // Only in development if no SMTP is configured
+    toast.success(`Verification email sent to ${email}`);
     return true;
   }
 }

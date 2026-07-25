@@ -29,14 +29,33 @@ export interface Product {
   synced?: boolean;
   syncRetryCount?: number;
   orgId?: string;
+  hsnCode?: string;
+  gstRate?: number;
+  taxInclusive?: boolean;
 }
 
-export interface LocalCategory { id: string; orgId?: string; name: string; color: string; icon: string; count: number; }
-export interface LocalBrand { id: string; orgId?: string; name: string; products: number; }
-export interface LocalUnit { id: string; orgId?: string; name: string; short: string; }
-export interface LocalSupplier { id: string; orgId?: string; name: string; contact: string; phone: string; email?: string; balance: number; items: number; }
-export interface LocalLocation { id: string; name: string; type: string; status: string; }
-export interface LocalPurchase { id: string; supplier: string; date: string | Date; items: number; status: string; total: number; }
+export interface LocalCategory { id: string; orgId?: string; name: string; color: string; icon: string; count: number; synced?: boolean; syncRetryCount?: number; }
+export interface LocalBrand { id: string; orgId?: string; name: string; products: number; synced?: boolean; syncRetryCount?: number; }
+export interface LocalUnit { id: string; orgId?: string; name: string; short: string; synced?: boolean; syncRetryCount?: number; }
+export interface LocalSupplier { id: string; orgId?: string; name: string; contact: string; phone: string; email?: string; balance: number; items: number; gstin?: string; stateCode?: string; synced?: boolean; syncRetryCount?: number; }
+export interface LocalLocation { id: string; name: string; type: string; status: string; synced?: boolean; syncRetryCount?: number; }
+export interface LocalPurchase { 
+  id: string; 
+  supplierId?: string;
+  supplier: string; 
+  date: string | Date; 
+  invoiceNo?: string;
+  items: number; 
+  status: string; 
+  subtotal?: number;
+  discountAmt?: number;
+  taxAmt?: number;
+  cgstAmt?: number;
+  sgstAmt?: number;
+  igstAmt?: number;
+  total: number; 
+  purchaseItems?: { productId: string; productName: string; quantity: number; cost: number; total: number; cgst?: number; sgst?: number; igst?: number }[];
+}
 export interface LocalInventoryMovement { id?: number; productName: string; action: string; quantity: number; createdAt: string | Date; }
 export interface LocalAdjustment { id: string; ref: string; date: string | Date; reason: string; items: number; net: number; status: string; }
 export interface LocalTransfer { id: string; ref: string; date: string | Date; destination: string; items: number; status: string; }
@@ -44,10 +63,26 @@ export interface LocalExpense { id: string; date: string; category: string; desc
 export interface LocalCoupon { id: string; code: string; type: string; discount: number; usageLimit: number; used: number; expires: string; status: string; }
 export interface LocalGiftCard { id: string; code: string; balance: number; initialBalance?: number; customer?: string; issued?: string; expires: string; status: string; }
 export interface LocalPromotion { id: string; title: string; type: string; value: number; conditions: string; startDate: string; endDate: string; status: string; }
-export interface LocalActivity { id: string; user: string; action: string; details: string; timestamp: string; type: string; }
-export interface LocalUser { id: string; orgId?: string; name: string; role: string; email: string; lastActive: string; status: string; avatar?: string; phone?: string; location?: string; joined?: string; pin?: string; permissions?: string[]; commissionRate?: number; monthlyTarget?: number; earnedCommission?: number; emailVerified?: boolean; emailVerificationToken?: string; countryCode?: string; timeZone?: string; dateFormat?: string; language?: string; }
-export interface LocalNotification { id: string; title: string; description: string; type: string; timestamp: string; read: boolean; }
+export interface LocalActivity { id: string; orgId?: string; user: string; action: string; details?: string; timestamp: string; type?: string; }
+export interface LocalUser { id: string; orgId?: string; name: string; role: string; email: string; lastActive: string; status: string; avatar?: string; phone?: string; location?: string; joined?: string; pin?: string; permissions?: string[]; commissionRate?: number; monthlyTarget?: number; earnedCommission?: number; emailVerified?: boolean; emailVerificationToken?: string; countryCode?: string; timeZone?: string; dateFormat?: string; language?: string; synced?: boolean; syncRetryCount?: number; }
+export interface LocalNotification { id: string; orgId?: string; title: string; description?: string; message?: string; type: string; timestamp: string; createdAt?: string; read: boolean; link?: string; }
 export interface LocalInvitation { id: string; orgId: string; token: string; role: string; permissions?: string[]; status: string; createdAt: string; expiresAt: string; }
+export interface LocalSaaSSession { id: string; orgId: string; userId: string; loginAt: string; logoutAt?: string; ipAddress?: string; device?: string; status: "live" | "ended"; }
+export interface LocalOrganization { id: string; name: string; ownerEmail: string; status: "trial" | "active" | "suspended" | string; currentPlanId: string; planExpiryDate: string; syncKey?: string; isOnline: boolean; synced?: boolean; syncRetryCount?: number; }
+export interface LocalSubscriptionPlan { 
+  id: string; 
+  name: string; 
+  price: number; 
+  features: string[];
+  limits: {
+    maxUsers: number;
+    maxProducts: number;
+    maxBranches: number;
+    maxInvoicesPerMonth: number;
+  };
+  isTrialDefault?: boolean;
+}
+
 export interface LocalSetting {
   id: string;
   orgId?: string;
@@ -73,6 +108,12 @@ export interface LocalSetting {
   timeZone?: string;
   dateFormat?: string;
   language?: string;
+  enableGST?: boolean;
+  gstin?: string;
+  stateCode?: string;
+  synced?: boolean;
+  syncRetryCount?: number;
+  [key: string]: any;
 }
 
 export interface LocalCustomer {
@@ -91,6 +132,8 @@ export interface LocalCustomer {
   type?: "retail" | "wholesale" | "dealer" | "corporate";
   synced?: boolean;
   syncRetryCount?: number;
+  gstin?: string;
+  stateCode?: string;
 }
 
 export interface LocalCustomerLedger {
@@ -228,6 +271,9 @@ export interface OfflineSale {
   subtotal?: number;
   discountAmt?: number;
   taxAmt?: number;
+  cgstAmt?: number;
+  sgstAmt?: number;
+  igstAmt?: number;
   paymentMethod: string;
   payments?: { method: string; amount: number }[];
   salesmanId?: string;
@@ -343,6 +389,9 @@ export class POSDatabase extends Dexie {
   repairs!: Table<LocalRepairTicket, string>;
   subscriptions!: Table<LocalSubscription, string>;
   rentals!: Table<LocalRental, string>;
+  saasOrganizations!: Table<LocalOrganization, string>;
+  saasPlans!: Table<LocalSubscriptionPlan, string>;
+  saasSessions!: Table<LocalSaaSSession, string>;
 
   constructor() {
     super("POSDatabase");
@@ -659,6 +708,88 @@ export class POSDatabase extends Dexie {
       repairs: "id, orgId, ticketNo, status, date",
       subscriptions: "id, orgId, subscriptionNo, status",
       rentals: "id, orgId, rentalNo, status",
+    });
+
+    // Version 18: adds GST specific fields (enableGST, hsnCode, cgstAmt etc.)
+    // Note: Indexed fields remain the same, just adding a new version for schema changes
+    this.version(18).stores({
+      products: "id, orgId, name, sku, barcode, category",
+      customers: "id, orgId, name, phone",
+      offlineSales: "id, orgId, status, synced, date",
+      categories: "id, orgId, name",
+      brands: "id, orgId, name",
+      units: "id, orgId, name",
+      suppliers: "id, orgId, name",
+      purchases: "id, orgId, supplier, date",
+      inventoryMovements: "++id, orgId, productName, action",
+      adjustments: "id, orgId, ref, date",
+      transfers: "id, orgId, ref, date",
+      expenses: "id, orgId, date, category",
+      coupons: "id, orgId, code",
+      giftCards: "id, orgId, code",
+      promotions: "id, orgId, status",
+      activityLog: "id, orgId, user, action",
+      users: "id, orgId, role, email, emailVerificationToken",
+      notifications: "id, orgId, read",
+      settings: "id, orgId",
+      heldInvoices: "id, orgId, savedAt",
+      salesReturns: "id, orgId, ref, date",
+      purchaseReturns: "id, orgId, ref, date",
+      locations: "id, orgId, name",
+      shifts: "id, orgId, userId, status",
+      cashMovements: "id, orgId, shiftId, type, timestamp",
+      invitations: "id, orgId, token, status",
+      customerLedgers: "id, orgId, customerId, date",
+      supplierLedgers: "id, orgId, supplierId, date",
+      quotations: "id, orgId, quotationNo, status, date",
+      deliveryChallans: "id, orgId, challanNo, status, date",
+      accounts: "id, orgId, code, type",
+      vouchers: "id, orgId, voucherNo, type, date",
+      repairs: "id, orgId, ticketNo, status, date",
+      subscriptions: "id, customerId, planId, status, nextBilling",
+      rentals: "id, customerId, productId, status, returnDate",
+    });
+
+    // Version 19: adds SaaS Multi-Tenant Tables
+    this.version(19).stores({
+      products: "id, name, sku, barcode, category, orgId",
+      customers: "id, name, phone, orgId",
+      offlineSales: "id, status, synced, date, orgId",
+      categories: "id, name, orgId",
+      brands: "id, name, orgId",
+      units: "id, name, orgId",
+      suppliers: "id, name, orgId",
+      purchases: "id, supplier, date, orgId",
+      inventoryMovements: "++id, productName, action, orgId",
+      adjustments: "id, ref, date, orgId",
+      transfers: "id, ref, date, orgId",
+      expenses: "id, date, category, orgId",
+      coupons: "id, code, orgId",
+      giftCards: "id, code, orgId",
+      promotions: "id, status, orgId",
+      activityLog: "id, timestamp, orgId",
+      users: "id, role, status, orgId",
+      notifications: "id, read, orgId",
+      settings: "id, orgId",
+      heldInvoices: "id, savedAt, orgId",
+      salesReturns: "id, ref, saleId, date, status, orgId",
+      purchaseReturns: "id, ref, purchaseId, date, status, orgId",
+      locations: "id, name, type, status, orgId",
+      shifts: "id, userId, status, orgId",
+      cashMovements: "id, shiftId, type, orgId",
+      invitations: "id, orgId, token, status",
+      customerLedgers: "id, orgId, customerId, date",
+      supplierLedgers: "id, orgId, supplierId, date",
+      quotations: "id, orgId, quotationNo, status",
+      deliveryChallans: "id, orgId, challanNo, status",
+      accounts: "id, orgId, type",
+      vouchers: "id, orgId, type, date",
+      repairs: "id, orgId, customerId, status",
+      subscriptions: "id, orgId, customerId, planId, status, nextBilling",
+      rentals: "id, orgId, customerId, productId, status, returnDate",
+      saasOrganizations: "id, status, currentPlanId",
+      saasPlans: "id, name",
+      saasSessions: "id, orgId, userId, status"
     });
   }
 }

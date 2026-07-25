@@ -37,6 +37,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import Barcode from "react-barcode";
+import { useAuth } from "@/contexts/AuthContext";
 
 export const Route = createFileRoute("/products")({
   head: () => ({
@@ -46,6 +47,7 @@ export const Route = createFileRoute("/products")({
 });
 
 function ProductsPage() {
+  const { saasPlan } = useAuth();
   const { formatCurrency } = useCurrency();
   const { t } = useLanguage();
   const [view, setView] = useState<"grid" | "list">("list");
@@ -55,6 +57,7 @@ function ProductsPage() {
   const debouncedSearch = useDebounce(search, 300);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
+  const settings = useLiveQuery(() => localDb.settings.get("default"));
   
   const [categoryFilter, setCategoryFilter] = useState("");
   const [brandFilter, setBrandFilter] = useState("");
@@ -111,7 +114,8 @@ function ProductsPage() {
     expiryDate: "", wholesalePrice: 0, dealerPrice: 0, minWholesaleQty: 1,
     hasSerial: false, serialsInput: "",
     hasBatch: false, batchNoInput: "", batchExpiryInput: "", batchStockInput: 0,
-    locationRack: "", locationShelf: "", locationBin: ""
+    locationRack: "", locationShelf: "", locationBin: "",
+    hsnCode: "", gstRate: 0, taxInclusive: false
   });
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
@@ -130,6 +134,12 @@ function ProductsPage() {
 
 
   const openNew = () => {
+    // Check Limits
+    const maxProducts = saasPlan?.limits?.maxProducts || 0;
+    if (rawProducts.length >= maxProducts) {
+      return toast.error(`Plan Limit Reached: Your current plan only allows ${maxProducts} products. Please upgrade to add more.`);
+    }
+
     setEditingProd(null);
     setFormData({
       name: "", sku: "", barcode: "", category: "", brand: "", unit: "",
@@ -137,7 +147,8 @@ function ProductsPage() {
       expiryDate: "", wholesalePrice: 0, dealerPrice: 0, minWholesaleQty: 1,
       hasSerial: false, serialsInput: "",
       hasBatch: false, batchNoInput: "", batchExpiryInput: "", batchStockInput: 0,
-      locationRack: "", locationShelf: "", locationBin: ""
+      locationRack: "", locationShelf: "", locationBin: "",
+      hsnCode: "", gstRate: 0, taxInclusive: false
     });
     setModalOpen(true);
   };
@@ -160,7 +171,10 @@ function ProductsPage() {
       batchStockInput: p.batches?.[0]?.stock || 0,
       locationRack: p.locationRack || "",
       locationShelf: p.locationShelf || "",
-      locationBin: p.locationBin || ""
+      locationBin: p.locationBin || "",
+      hsnCode: p.hsnCode || "",
+      gstRate: p.gstRate || 0,
+      taxInclusive: !!p.taxInclusive
     });
     setModalOpen(true);
   };
@@ -453,6 +467,43 @@ function ProductsPage() {
                 </div>
               )}
             </div>
+
+            {settings?.enableGST && (
+              <div className="col-span-2 rounded-xl border border-border bg-card p-4 space-y-4">
+                <h3 className="text-sm font-semibold mb-2">Tax & Compliance (GST)</h3>
+                <div className="grid grid-cols-3 gap-4">
+                  <div>
+                    <Label className="text-xs">HSN / SAC Code</Label>
+                    <Input placeholder="e.g. 8517" value={formData.hsnCode} onChange={e => setFormData({...formData, hsnCode: e.target.value})} />
+                  </div>
+                  <div>
+                    <Label className="text-xs">GST Rate (%)</Label>
+                    <Select value={formData.gstRate.toString()} onValueChange={v => setFormData({...formData, gstRate: parseInt(v) || 0})}>
+                      <SelectTrigger><SelectValue placeholder="Select Rate" /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="0">0% (Nil Rated)</SelectItem>
+                        <SelectItem value="5">5%</SelectItem>
+                        <SelectItem value="12">12%</SelectItem>
+                        <SelectItem value="18">18%</SelectItem>
+                        <SelectItem value="28">28%</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="flex items-center gap-2 mt-6">
+                    <input
+                      type="checkbox"
+                      id="taxInclusive"
+                      checked={formData.taxInclusive}
+                      onChange={(e) => setFormData({ ...formData, taxInclusive: e.target.checked })}
+                      className="rounded border-border text-primary"
+                    />
+                    <Label htmlFor="taxInclusive" className="text-xs cursor-pointer">
+                      Price is Tax Inclusive
+                    </Label>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Pharmacy Batch & Expiry Tracking Toggle */}
             <div className="col-span-2 rounded-xl border border-info/20 bg-info/5 p-3 space-y-3">

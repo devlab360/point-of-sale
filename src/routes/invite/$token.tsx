@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Input, PasswordInput } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { localDb, type LocalInvitation } from "@/lib/db";
@@ -134,8 +134,8 @@ function InvitePage() {
                 <Input type="email" name="email" value={formData.email} onChange={handleChange} required placeholder="john@example.com" />
               </div>
               <div className="space-y-2">
-                <Label>Set Password (Dashboard)</Label>
-                <Input type="password" name="password" value={formData.password} onChange={handleChange} required placeholder="••••••••" />
+                <Label>Set your password / PIN</Label>
+                <PasswordInput name="password" value={formData.password} onChange={handleChange} required placeholder="••••••••" />
               </div>
               <div className="space-y-2">
                 <Label>Set POS PIN (4 Digits)</Label>

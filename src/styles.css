@@ -235,4 +235,3 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
   scrollbar-width: thin;
   scrollbar-color: color-mix(in oklch, var(--color-muted-foreground) 35%, transparent) transparent;
 }
-

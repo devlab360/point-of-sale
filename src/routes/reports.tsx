@@ -24,7 +24,7 @@ export const Route = createFileRoute("/reports")({
   component: ReportsPage,
 });
 
-type ReportType = "sales" | "profit" | "purchase" | "inventory" | "tax" | "expense" | "daily" | "monthly" | "pnl" | "salesman" | null;
+type ReportType = "sales" | "profit" | "purchase" | "inventory" | "tax" | "expense" | "daily" | "monthly" | "pnl" | "salesman" | "gstr1" | "gstr2" | "gstr3b" | null;
 
 function ReportsPage() {
   const { currencySymbol, formatCurrency } = useCurrency();
@@ -96,6 +96,8 @@ function ReportsPage() {
   const exportCSV = (type: string) => {
     let csv = "";
     let filename = "";
+    const getCustomers = () => localDb.customers.toArray();
+    
     if (type === "sales") {
       csv = ["Invoice,Customer,Date,Payment,Items,Total"].join("\n") + "\n" +
         sales.map(s => `${s.id.slice(0, 8)},${s.customerName || "Walk-in"},${new Date(s.date).toLocaleDateString()},${s.paymentMethod},${s.items},$${s.total.toFixed(2)}`).join("\n");
@@ -108,7 +110,35 @@ function ReportsPage() {
       csv = ["Date,Category,Description,Amount,Status"].join("\n") + "\n" +
         expenses.map(e => `${e.date},${e.category},${e.description},$${e.amount.toFixed(2)},${e.status}`).join("\n");
       filename = "expense-report.csv";
+    } else if (type === "gstr1") {
+      // Outward Supplies (Sales)
+      csv = ["Invoice No,Date,Customer Name,GSTIN,State,Taxable Value,CGST,SGST,IGST,Total Value"].join("\n") + "\n" +
+        sales.map(s => {
+          const taxable = (s.subtotal || 0) - (s.discountAmt || 0);
+          return `${s.id.substring(0,8)},${new Date(s.date).toLocaleDateString()},${s.customerName || "Walk-in"},-,0,${taxable.toFixed(2)},${(s.cgstAmt||0).toFixed(2)},${(s.sgstAmt||0).toFixed(2)},${(s.igstAmt||0).toFixed(2)},${s.total.toFixed(2)}`;
+        }).join("\n");
+      filename = "GSTR-1.csv";
+    } else if (type === "gstr2") {
+      // Inward Supplies (Purchases)
+      csv = ["Invoice No,Date,Supplier Name,GSTIN,Taxable Value,CGST,SGST,IGST,Total Value"].join("\n") + "\n" +
+        purchases.map(p => {
+          const taxable = (p.subtotal || 0) - (p.discountAmt || 0);
+          return `${p.invoiceNo || p.id.substring(0,8)},${new Date(p.date).toLocaleDateString()},${p.supplier},-,${taxable.toFixed(2)},${(p.cgstAmt||0).toFixed(2)},${(p.sgstAmt||0).toFixed(2)},${(p.igstAmt||0).toFixed(2)},${p.total.toFixed(2)}`;
+        }).join("\n");
+      filename = "GSTR-2.csv";
+    } else if (type === "gstr3b") {
+      // Summary
+      let outTaxable = 0; let outCGST = 0; let outSGST = 0; let outIGST = 0;
+      sales.forEach(s => { outTaxable += (s.subtotal||0)-(s.discountAmt||0); outCGST += (s.cgstAmt||0); outSGST += (s.sgstAmt||0); outIGST += (s.igstAmt||0); });
+      let inTaxable = 0; let inCGST = 0; let inSGST = 0; let inIGST = 0;
+      purchases.forEach(p => { inTaxable += (p.subtotal||0)-(p.discountAmt||0); inCGST += (p.cgstAmt||0); inSGST += (p.sgstAmt||0); inIGST += (p.igstAmt||0); });
+
+      csv = ["Description,Total Taxable Value,Integrated Tax,Central Tax,State/UT Tax,Cess"].join("\n") + "\n" +
+            `3.1 Outward Taxable Supplies,${outTaxable.toFixed(2)},${outIGST.toFixed(2)},${outCGST.toFixed(2)},${outSGST.toFixed(2)},0.00\n` +
+            `4(A) ITC Available (Inward Supplies),${inTaxable.toFixed(2)},${inIGST.toFixed(2)},${inCGST.toFixed(2)},${inSGST.toFixed(2)},0.00`;
+      filename = "GSTR-3B.csv";
     }
+
     const blob = new Blob([csv], { type: "text/csv" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -120,6 +150,9 @@ function ReportsPage() {
 
   const reportCards = [
     { type: "sales" as ReportType, icon: DollarSign, name: "Sales Report", desc: "Daily, weekly and monthly sales trends" },
+    { type: "gstr1" as ReportType, icon: FileText, name: "GSTR-1 (Outward Supplies)", desc: "B2B and B2C sales for GST return filing" },
+    { type: "gstr2" as ReportType, icon: FileText, name: "GSTR-2 (Inward Supplies)", desc: "Purchase records for Input Tax Credit (ITC)" },
+    { type: "gstr3b" as ReportType, icon: FileText, name: "GSTR-3B (Summary)", desc: "Monthly summary of outward supplies and ITC" },
     { type: "profit" as ReportType, icon: TrendingUp, name: "Profit Report", desc: "Gross and net margin by category" },
     { type: "pnl" as ReportType, icon: BookOpen, name: "Profit & Loss Statement (P&L)", desc: "Formal income statement, COGS, and Net Income" },
     { type: "salesman" as ReportType, icon: Users, name: "Salesman Commission Leaderboard", desc: "Sales target vs achievement and earned commissions" },

@@ -1,14 +1,35 @@
-import { pgTable, text, serial, integer, numeric, timestamp, boolean } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, numeric, timestamp, boolean, jsonb, unique } from "drizzle-orm/pg-core";
 
 export const organizations = pgTable("organizations", {
   id: text("id").primaryKey(),
   name: text("name").notNull(),
-  industry: text("industry").notNull(),
-  plan: text("plan").notNull().default("free"), // free, basic, pro
-  status: text("status").notNull().default("active"),
-  subscriptionStatus: text("subscription_status").notNull().default("trial"), // trial, active, expired
-  trialEndsAt: timestamp("trial_ends_at"),
+  ownerEmail: text("owner_email").notNull(),
+  status: text("status").notNull().default("trial"), // trial, active, suspended
+  currentPlanId: text("current_plan_id").notNull().default("basic"),
+  planExpiryDate: timestamp("plan_expiry_date"),
+  syncKey: text("sync_key").notNull().default("default-sync-key"), // To authenticate devices
+  isOnline: boolean("is_online").notNull().default(true),
   createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const saasPlans = pgTable("saas_plans", {
+  id: text("id").primaryKey(),
+  name: text("name").notNull(),
+  price: numeric("price", { precision: 10, scale: 2 }).notNull(),
+  features: jsonb("features"),
+  limits: jsonb("limits"),
+  isTrialDefault: boolean("is_trial_default").notNull().default(false),
+});
+
+export const saasSessions = pgTable("saas_sessions", {
+  id: text("id").primaryKey(),
+  orgId: text("org_id").notNull(),
+  userId: text("user_id").notNull(),
+  loginAt: timestamp("login_at").notNull(),
+  logoutAt: timestamp("logout_at"),
+  ipAddress: text("ip_address"),
+  device: text("device"),
+  status: text("status").notNull().default("live"),
 });
 
 export const invitations = pgTable("invitations", {
@@ -16,10 +37,38 @@ export const invitations = pgTable("invitations", {
   organizationId: text("organization_id").notNull().references(() => organizations.id),
   token: text("token").notNull(),
   role: text("role").notNull().default("cashier"),
-  status: text("status").notNull().default("pending"), // pending, accepted, expired
+  permissions: jsonb("permissions"),
+  status: text("status").notNull().default("pending"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   expiresAt: timestamp("expires_at").notNull(),
 });
+
+export const users = pgTable("users", {
+  id: text("id").primaryKey(),
+  organizationId: text("organization_id").references(() => organizations.id),
+  name: text("name").notNull(),
+  role: text("role").notNull(),
+  email: text("email").notNull(),
+  lastActive: timestamp("last_active").defaultNow(),
+  status: text("status").notNull().default("active"),
+  avatar: text("avatar"),
+  phone: text("phone"),
+  location: text("location"),
+  joined: timestamp("joined"),
+  pin: text("pin"),
+  permissions: jsonb("permissions"),
+  commissionRate: numeric("commission_rate", { precision: 5, scale: 2 }),
+  monthlyTarget: numeric("monthly_target", { precision: 12, scale: 2 }),
+  earnedCommission: numeric("earned_commission", { precision: 12, scale: 2 }),
+  emailVerified: boolean("email_verified").default(false),
+  emailVerificationToken: text("email_verification_token"),
+  countryCode: text("country_code"),
+  timeZone: text("time_zone"),
+  dateFormat: text("date_format"),
+  language: text("language"),
+}, (t) => ({
+  userEmailIdx: unique("user_email_idx").on(t.email, t.organizationId)
+}));
 
 export const categories = pgTable("categories", {
   id: text("id").primaryKey(),
@@ -28,14 +77,18 @@ export const categories = pgTable("categories", {
   color: text("color").notNull().default("oklch(0.7 0.1 200)"),
   icon: text("icon").notNull().default("📦"),
   count: integer("count").notNull().default(0),
-});
+}, (t) => ({
+  catNameIdx: unique("cat_name_idx").on(t.name, t.organizationId)
+}));
 
 export const brands = pgTable("brands", {
   id: text("id").primaryKey(),
   organizationId: text("organization_id").notNull().references(() => organizations.id),
   name: text("name").notNull(),
   products: integer("products").notNull().default(0),
-});
+}, (t) => ({
+  brandNameIdx: unique("brand_name_idx").on(t.name, t.organizationId)
+}));
 
 export const units = pgTable("units", {
   id: text("id").primaryKey(),
@@ -50,16 +103,19 @@ export const suppliers = pgTable("suppliers", {
   name: text("name").notNull(),
   contact: text("contact").notNull(),
   phone: text("phone").notNull(),
+  email: text("email"),
   balance: numeric("balance", { precision: 12, scale: 2 }).notNull().default("0"),
   items: integer("items").notNull().default(0),
+  gstin: text("gstin"),
+  stateCode: text("state_code"),
 });
 
 export const products = pgTable("products", {
   id: text("id").primaryKey(),
   organizationId: text("organization_id").notNull().references(() => organizations.id),
   name: text("name").notNull(),
-  sku: text("sku").notNull().unique(),
-  barcode: text("barcode").notNull().unique(),
+  sku: text("sku").notNull(),
+  barcode: text("barcode").notNull(),
   category: text("category").notNull(),
   brand: text("brand").notNull(),
   unit: text("unit").notNull(),
@@ -69,9 +125,26 @@ export const products = pgTable("products", {
   reorderLevel: integer("reorder_level").notNull().default(10),
   image: text("image"),
   status: text("status").notNull().default("active"),
+  expiryDate: timestamp("expiry_date"),
+  wholesalePrice: numeric("wholesale_price", { precision: 10, scale: 2 }),
+  dealerPrice: numeric("dealer_price", { precision: 10, scale: 2 }),
+  minWholesaleQty: integer("min_wholesale_qty"),
+  hasSerial: boolean("has_serial").default(false),
+  serials: jsonb("serials"),
+  hasBatch: boolean("has_batch").default(false),
+  batches: jsonb("batches"),
+  locationRack: text("location_rack"),
+  locationShelf: text("location_shelf"),
+  locationBin: text("location_bin"),
+  hsnCode: text("hsn_code"),
+  gstRate: numeric("gst_rate", { precision: 5, scale: 2 }),
+  taxInclusive: boolean("tax_inclusive").default(false),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
-});
+}, (t) => ({
+  skuIdx: unique("sku_idx").on(t.sku, t.organizationId),
+  barcodeIdx: unique("barcode_idx").on(t.barcode, t.organizationId)
+}));
 
 export const customers = pgTable("customers", {
   id: text("id").primaryKey(),
@@ -79,12 +152,16 @@ export const customers = pgTable("customers", {
   name: text("name").notNull(),
   email: text("email"),
   phone: text("phone"),
+  loyaltyPoints: integer("loyalty_points").default(0),
   visits: integer("visits").default(0),
   totalSpent: numeric("total_spent", { precision: 12, scale: 2 }).default("0"),
-  loyaltyPoints: integer("loyalty_points").default(0),
   credit: numeric("credit", { precision: 10, scale: 2 }).default("0"),
+  creditLimit: numeric("credit_limit", { precision: 10, scale: 2 }),
   walletBalance: numeric("wallet_balance", { precision: 10, scale: 2 }).default("0"),
   status: text("status").default("regular"),
+  type: text("type").default("retail"),
+  gstin: text("gstin"),
+  stateCode: text("state_code"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -92,37 +169,68 @@ export const customers = pgTable("customers", {
 export const sales = pgTable("sales", {
   id: text("id").primaryKey(),
   organizationId: text("organization_id").notNull().references(() => organizations.id),
-  customerId: text("customer_id").references(() => customers.id),
-  customerName: text("customer_name"), // Storing name directly for walk-in customers
+  customerId: text("customer_id"),
+  customerName: text("customer_name"),
   date: timestamp("date").defaultNow().notNull(),
   items: integer("items").notNull(),
-  paymentMethod: text("payment_method").notNull(),
-  status: text("status").notNull().default("completed"),
   total: numeric("total", { precision: 12, scale: 2 }).notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  subtotal: numeric("subtotal", { precision: 12, scale: 2 }),
+  discountAmt: numeric("discount_amt", { precision: 12, scale: 2 }),
+  taxAmt: numeric("tax_amt", { precision: 12, scale: 2 }),
+  cgstAmt: numeric("cgst_amt", { precision: 12, scale: 2 }),
+  sgstAmt: numeric("sgst_amt", { precision: 12, scale: 2 }),
+  igstAmt: numeric("igst_amt", { precision: 12, scale: 2 }),
+  paymentMethod: text("payment_method").notNull(),
+  payments: jsonb("payments"),
+  salesmanId: text("salesman_id"),
+  salesmanName: text("salesman_name"),
+  commissionAmt: numeric("commission_amt", { precision: 10, scale: 2 }),
+  status: text("status").notNull().default("completed"),
 });
 
 export const saleItems = pgTable("sale_items", {
   id: serial("id").primaryKey(),
   organizationId: text("organization_id").notNull().references(() => organizations.id),
-  saleId: text("sale_id").notNull().references(() => sales.id),
-  productId: text("product_id").notNull().references(() => products.id),
+  saleId: text("sale_id").notNull().references(() => sales.id, { onDelete: "cascade" }),
+  productId: text("product_id").notNull(),
+  productName: text("product_name").notNull(),
   quantity: integer("quantity").notNull(),
   price: numeric("price", { precision: 10, scale: 2 }).notNull(),
   total: numeric("total", { precision: 10, scale: 2 }).notNull(),
+  serialNumber: text("serial_number"),
+  batchNo: text("batch_no"),
 });
 
 export const purchases = pgTable("purchases", {
   id: text("id").primaryKey(),
   organizationId: text("organization_id").notNull().references(() => organizations.id),
+  supplierId: text("supplier_id"),
   supplier: text("supplier").notNull(),
   date: timestamp("date").defaultNow().notNull(),
+  invoiceNo: text("invoice_no"),
   items: integer("items").notNull(),
   status: text("status").notNull(),
+  subtotal: numeric("subtotal", { precision: 12, scale: 2 }),
+  discountAmt: numeric("discount_amt", { precision: 12, scale: 2 }),
+  taxAmt: numeric("tax_amt", { precision: 12, scale: 2 }),
+  cgstAmt: numeric("cgst_amt", { precision: 12, scale: 2 }),
+  sgstAmt: numeric("sgst_amt", { precision: 12, scale: 2 }),
+  igstAmt: numeric("igst_amt", { precision: 12, scale: 2 }),
   total: numeric("total", { precision: 12, scale: 2 }).notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const purchaseItems = pgTable("purchase_items", {
+  id: serial("id").primaryKey(),
+  organizationId: text("organization_id").notNull().references(() => organizations.id),
+  purchaseId: text("purchase_id").notNull().references(() => purchases.id, { onDelete: "cascade" }),
+  productId: text("product_id").notNull(),
+  productName: text("product_name").notNull(),
+  quantity: integer("quantity").notNull(),
+  cost: numeric("cost", { precision: 10, scale: 2 }).notNull(),
+  total: numeric("total", { precision: 10, scale: 2 }).notNull(),
+  cgst: numeric("cgst", { precision: 10, scale: 2 }),
+  sgst: numeric("sgst", { precision: 10, scale: 2 }),
+  igst: numeric("igst", { precision: 10, scale: 2 }),
 });
 
 export const inventoryMovements = pgTable("inventory_movements", {
@@ -137,6 +245,11 @@ export const inventoryMovements = pgTable("inventory_movements", {
 export const settings = pgTable("settings", {
   id: text("id").primaryKey(),
   organizationId: text("organization_id").notNull().references(() => organizations.id),
+  trialEndsAt: timestamp("trial_ends_at"),
+  trialDays: integer("trial_days"),
+  subscriptionStatus: text("subscription_status"),
+  currencySymbol: text("currency_symbol"),
+  currencyCode: text("currency_code"),
   storeName: text("store_name").notNull(),
   taxId: text("tax_id"),
   address: text("address"),
@@ -150,6 +263,298 @@ export const settings = pgTable("settings", {
   footerNote: text("footer_note"),
   emailReceiptDefault: boolean("email_receipt_default").notNull().default(true),
   printStoreLogo: boolean("print_store_logo").notNull().default(true),
+  countryCode: text("country_code"),
+  timeZone: text("time_zone"),
+  dateFormat: text("date_format"),
+  language: text("language"),
+  enableGST: boolean("enable_gst").default(false),
+  gstin: text("gstin"),
+  stateCode: text("state_code"),
+  businessType: text("business_type"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const adjustments = pgTable("adjustments", {
+  id: text("id").primaryKey(),
+  organizationId: text("organization_id").notNull().references(() => organizations.id),
+  ref: text("ref").notNull(),
+  date: timestamp("date").notNull(),
+  reason: text("reason").notNull(),
+  items: integer("items").notNull(),
+  net: numeric("net", { precision: 12, scale: 2 }).notNull(),
+  status: text("status").notNull(),
+});
+
+export const transfers = pgTable("transfers", {
+  id: text("id").primaryKey(),
+  organizationId: text("organization_id").notNull().references(() => organizations.id),
+  ref: text("ref").notNull(),
+  date: timestamp("date").notNull(),
+  destination: text("destination").notNull(),
+  items: integer("items").notNull(),
+  status: text("status").notNull(),
+});
+
+export const expenses = pgTable("expenses", {
+  id: text("id").primaryKey(),
+  organizationId: text("organization_id").notNull().references(() => organizations.id),
+  date: timestamp("date").notNull(),
+  category: text("category").notNull(),
+  description: text("description"),
+  amount: numeric("amount", { precision: 12, scale: 2 }).notNull(),
+  status: text("status").notNull(),
+});
+
+export const coupons = pgTable("coupons", {
+  id: text("id").primaryKey(),
+  organizationId: text("organization_id").notNull().references(() => organizations.id),
+  code: text("code").notNull(),
+  type: text("type").notNull(),
+  discount: numeric("discount", { precision: 12, scale: 2 }).notNull(),
+  usageLimit: integer("usage_limit").notNull(),
+  used: integer("used").notNull().default(0),
+  expires: timestamp("expires").notNull(),
+  status: text("status").notNull(),
+});
+
+export const giftCards = pgTable("gift_cards", {
+  id: text("id").primaryKey(),
+  organizationId: text("organization_id").notNull().references(() => organizations.id),
+  code: text("code").notNull(),
+  balance: numeric("balance", { precision: 12, scale: 2 }).notNull(),
+  initialBalance: numeric("initial_balance", { precision: 12, scale: 2 }),
+  customer: text("customer"),
+  issued: timestamp("issued"),
+  expires: timestamp("expires").notNull(),
+  status: text("status").notNull(),
+});
+
+export const promotions = pgTable("promotions", {
+  id: text("id").primaryKey(),
+  organizationId: text("organization_id").notNull().references(() => organizations.id),
+  title: text("title").notNull(),
+  type: text("type").notNull(),
+  value: numeric("value", { precision: 12, scale: 2 }).notNull(),
+  conditions: text("conditions"),
+  startDate: timestamp("start_date").notNull(),
+  endDate: timestamp("end_date").notNull(),
+  status: text("status").notNull(),
+});
+
+export const activityLog = pgTable("activity_log", {
+  id: text("id").primaryKey(),
+  organizationId: text("organization_id").notNull().references(() => organizations.id),
+  user: text("user").notNull(),
+  action: text("action").notNull(),
+  details: text("details"),
+  timestamp: timestamp("timestamp").notNull(),
+  type: text("type"),
+});
+
+export const notifications = pgTable("notifications", {
+  id: text("id").primaryKey(),
+  organizationId: text("organization_id").notNull().references(() => organizations.id),
+  title: text("title").notNull(),
+  description: text("description"),
+  type: text("type"),
+  timestamp: timestamp("timestamp").notNull(),
+  read: boolean("read").notNull().default(false),
+});
+
+export const heldInvoices = pgTable("held_invoices", {
+  id: text("id").primaryKey(),
+  organizationId: text("organization_id").notNull().references(() => organizations.id),
+  customerId: text("customer_id"),
+  customerName: text("customer_name"),
+  cart: jsonb("cart").notNull(),
+  discount: numeric("discount", { precision: 12, scale: 2 }).notNull(),
+  payment: text("payment").notNull(),
+  savedAt: timestamp("saved_at").notNull(),
+  note: text("note"),
+});
+
+export const salesReturns = pgTable("sales_returns", {
+  id: text("id").primaryKey(),
+  organizationId: text("organization_id").notNull().references(() => organizations.id),
+  ref: text("ref").notNull(),
+  saleId: text("sale_id").notNull(),
+  customerName: text("customer_name"),
+  reason: text("reason").notNull(),
+  items: jsonb("items").notNull(),
+  total: numeric("total", { precision: 12, scale: 2 }).notNull(),
+  status: text("status").notNull(),
+  date: timestamp("date").notNull(),
+  stockRestored: boolean("stock_restored").notNull(),
+});
+
+export const purchaseReturns = pgTable("purchase_returns", {
+  id: text("id").primaryKey(),
+  organizationId: text("organization_id").notNull().references(() => organizations.id),
+  ref: text("ref").notNull(),
+  purchaseId: text("purchase_id").notNull(),
+  supplier: text("supplier").notNull(),
+  reason: text("reason").notNull(),
+  items: jsonb("items").notNull(),
+  total: numeric("total", { precision: 12, scale: 2 }).notNull(),
+  status: text("status").notNull(),
+  date: timestamp("date").notNull(),
+  stockRestored: boolean("stock_restored").notNull(),
+});
+
+export const locations = pgTable("locations", {
+  id: text("id").primaryKey(),
+  organizationId: text("organization_id").notNull().references(() => organizations.id),
+  name: text("name").notNull(),
+  type: text("type").notNull(),
+  status: text("status").notNull(),
+});
+
+export const shifts = pgTable("shifts", {
+  id: text("id").primaryKey(),
+  organizationId: text("organization_id").notNull().references(() => organizations.id),
+  userId: text("user_id").notNull(),
+  userName: text("user_name").notNull(),
+  openTime: timestamp("open_time").notNull(),
+  closeTime: timestamp("close_time"),
+  startingCash: numeric("starting_cash", { precision: 12, scale: 2 }).notNull(),
+  expectedCash: numeric("expected_cash", { precision: 12, scale: 2 }).notNull(),
+  actualCash: numeric("actual_cash", { precision: 12, scale: 2 }),
+  difference: numeric("difference", { precision: 12, scale: 2 }),
+  status: text("status").notNull(),
+  notes: text("notes"),
+});
+
+export const cashMovements = pgTable("cash_movements", {
+  id: text("id").primaryKey(),
+  organizationId: text("organization_id").notNull().references(() => organizations.id),
+  shiftId: text("shift_id").notNull(),
+  type: text("type").notNull(),
+  amount: numeric("amount", { precision: 12, scale: 2 }).notNull(),
+  reason: text("reason").notNull(),
+  timestamp: timestamp("timestamp").notNull(),
+});
+
+export const customerLedgers = pgTable("customer_ledgers", {
+  id: text("id").primaryKey(),
+  organizationId: text("organization_id").notNull().references(() => organizations.id),
+  customerId: text("customer_id").notNull(),
+  date: timestamp("date").notNull(),
+  type: text("type").notNull(),
+  amount: numeric("amount", { precision: 12, scale: 2 }).notNull(),
+  balanceAfter: numeric("balance_after", { precision: 12, scale: 2 }).notNull(),
+  referenceNo: text("reference_no"),
+  note: text("note"),
+});
+
+export const supplierLedgers = pgTable("supplier_ledgers", {
+  id: text("id").primaryKey(),
+  organizationId: text("organization_id").notNull().references(() => organizations.id),
+  supplierId: text("supplier_id").notNull(),
+  date: timestamp("date").notNull(),
+  type: text("type").notNull(),
+  amount: numeric("amount", { precision: 12, scale: 2 }).notNull(),
+  balanceAfter: numeric("balance_after", { precision: 12, scale: 2 }).notNull(),
+  referenceNo: text("reference_no"),
+  note: text("note"),
+});
+
+export const quotations = pgTable("quotations", {
+  id: text("id").primaryKey(),
+  organizationId: text("organization_id").notNull().references(() => organizations.id),
+  quotationNo: text("quotation_no").notNull(),
+  customerId: text("customer_id"),
+  customerName: text("customer_name").notNull(),
+  customerPhone: text("customer_phone"),
+  date: timestamp("date").notNull(),
+  validUntil: timestamp("valid_until").notNull(),
+  items: jsonb("items").notNull(),
+  subtotal: numeric("subtotal", { precision: 12, scale: 2 }).notNull(),
+  discountAmt: numeric("discount_amt", { precision: 12, scale: 2 }).notNull(),
+  taxAmt: numeric("tax_amt", { precision: 12, scale: 2 }).notNull(),
+  total: numeric("total", { precision: 12, scale: 2 }).notNull(),
+  status: text("status").notNull(),
+  notes: text("notes"),
+});
+
+export const deliveryChallans = pgTable("delivery_challans", {
+  id: text("id").primaryKey(),
+  organizationId: text("organization_id").notNull().references(() => organizations.id),
+  challanNo: text("challan_no").notNull(),
+  customerId: text("customer_id"),
+  customerName: text("customer_name").notNull(),
+  date: timestamp("date").notNull(),
+  items: jsonb("items").notNull(),
+  status: text("status").notNull(),
+  transportName: text("transport_name"),
+  vehicleNo: text("vehicle_no"),
+  driverName: text("driver_name"),
+  notes: text("notes"),
+});
+
+export const accounts = pgTable("accounts", {
+  id: text("id").primaryKey(),
+  organizationId: text("organization_id").notNull().references(() => organizations.id),
+  code: text("code").notNull(),
+  name: text("name").notNull(),
+  type: text("type").notNull(),
+  balance: numeric("balance", { precision: 12, scale: 2 }).notNull(),
+  isSystem: boolean("is_system").default(false),
+});
+
+export const vouchers = pgTable("vouchers", {
+  id: text("id").primaryKey(),
+  organizationId: text("organization_id").notNull().references(() => organizations.id),
+  voucherNo: text("voucher_no").notNull(),
+  date: timestamp("date").notNull(),
+  type: text("type").notNull(),
+  debitAccountId: text("debit_account_id").notNull(),
+  creditAccountId: text("credit_account_id").notNull(),
+  debitAccountName: text("debit_account_name").notNull(),
+  creditAccountName: text("credit_account_name").notNull(),
+  amount: numeric("amount", { precision: 12, scale: 2 }).notNull(),
+  narration: text("narration").notNull(),
+});
+
+export const repairs = pgTable("repairs", {
+  id: text("id").primaryKey(),
+  organizationId: text("organization_id").notNull().references(() => organizations.id),
+  ticketNo: text("ticket_no").notNull(),
+  customerName: text("customer_name").notNull(),
+  customerPhone: text("customer_phone").notNull(),
+  deviceName: text("device_name").notNull(),
+  serialOrImei: text("serial_or_imei"),
+  problemDescription: text("problem_description").notNull(),
+  estimatedCost: numeric("estimated_cost", { precision: 12, scale: 2 }).notNull(),
+  advancePaid: numeric("advance_paid", { precision: 12, scale: 2 }).notNull(),
+  status: text("status").notNull(),
+  date: timestamp("date").notNull(),
+  notes: text("notes"),
+});
+
+export const subscriptions = pgTable("subscriptions", {
+  id: text("id").primaryKey(),
+  organizationId: text("organization_id").notNull().references(() => organizations.id),
+  subscriptionNo: text("subscription_no").notNull(),
+  customerName: text("customer_name").notNull(),
+  customerPhone: text("customer_phone"),
+  planName: text("plan_name").notNull(),
+  billingCycle: text("billing_cycle").notNull(),
+  amount: numeric("amount", { precision: 12, scale: 2 }).notNull(),
+  nextBillingDate: timestamp("next_billing_date").notNull(),
+  status: text("status").notNull(),
+});
+
+export const rentals = pgTable("rentals", {
+  id: text("id").primaryKey(),
+  organizationId: text("organization_id").notNull().references(() => organizations.id),
+  rentalNo: text("rental_no").notNull(),
+  customerName: text("customer_name").notNull(),
+  itemName: text("item_name").notNull(),
+  rentStartDate: timestamp("rent_start_date").notNull(),
+  expectedReturnDate: timestamp("expected_return_date").notNull(),
+  dailyRate: numeric("daily_rate", { precision: 12, scale: 2 }).notNull(),
+  securityDeposit: numeric("security_deposit", { precision: 12, scale: 2 }).notNull(),
+  totalAmount: numeric("total_amount", { precision: 12, scale: 2 }).notNull(),
+  status: text("status").notNull(),
 });

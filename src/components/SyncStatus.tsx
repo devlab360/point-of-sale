@@ -11,15 +11,15 @@ export function SyncStatus() {
   const [isSyncing, setIsSyncing] = useState(false);
   
   const pendingSalesCount = useLiveQuery(
-    () => localDb.offlineSales.filter(s => s.synced === false).count(),
+    () => localDb.offlineSales.filter(s => !s.synced).count(),
     []
   ) || 0;
   const pendingProductsCount = useLiveQuery(
-    () => localDb.products.filter(p => p.synced === false).count(),
+    () => localDb.products.filter(p => !p.synced).count(),
     []
   ) || 0;
   const pendingCustomersCount = useLiveQuery(
-    () => localDb.customers.filter(c => c.synced === false).count(),
+    () => localDb.customers.filter(c => !c.synced).count(),
     []
   ) || 0;
   
