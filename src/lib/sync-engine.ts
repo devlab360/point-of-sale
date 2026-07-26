@@ -115,9 +115,10 @@ export class SyncEngine {
         }
       }
 
-      // 2. PULL latest data from Postgres
-      console.log("[Sync Engine] Pulling latest data from server...");
-      const pullResult = await pullEverythingFn({ data: { orgId, syncKey } });
+      // 2. PULL latest data from Postgres (with delta timestamp filtering)
+      const lastSyncedAt = localStorage.getItem("pos_last_synced_at") || undefined;
+      console.log("[Sync Engine] Pulling latest data from server...", lastSyncedAt ? `(delta since ${lastSyncedAt})` : "(full sync)");
+      const pullResult = await pullEverythingFn({ data: { orgId, syncKey, lastSyncedAt } });
 
       if (pullResult.success && pullResult.data) {
         const serverData = pullResult.data;
@@ -154,6 +155,7 @@ export class SyncEngine {
               await table.bulkPut(recordsToUpsert);
            });
         }
+        localStorage.setItem("pos_last_synced_at", new Date().toISOString());
         console.log("[Sync Engine] Pull successful.");
       }
 

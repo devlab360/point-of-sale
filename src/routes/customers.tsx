@@ -74,9 +74,11 @@ function CustomersPage() {
       const lower = debouncedSearch.toLowerCase();
       filtered = filtered.filter(
         (c) =>
-          c.name.toLowerCase().includes(lower) ||
-          c.email?.toLowerCase().includes(lower) ||
-          c.phone?.toLowerCase().includes(lower)
+          Boolean(
+            (c.name && String(c.name).toLowerCase().includes(lower)) ||
+            (c.email && String(c.email).toLowerCase().includes(lower)) ||
+            (c.phone && String(c.phone).toLowerCase().includes(lower))
+          )
       );
     }
     if (typeFilter) {

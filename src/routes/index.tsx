@@ -1,18 +1,21 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useState } from "react";
 import {
   Area, AreaChart, Bar, BarChart, CartesianGrid, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis,
 } from "recharts";
 import {
-  AlertTriangle, ArrowUpRight, DollarSign, Package, Receipt, ShoppingBag, TrendingUp, Users, Sparkles, Bot,
+  AlertTriangle, ArrowUpRight, DollarSign, Package, Receipt, ShoppingBag, TrendingUp, Users, Sparkles, Bot, Printer, ArrowRight, BarChart3, Calendar,
 } from "lucide-react";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { StatCard } from "@/components/layout/StatCard";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { localDb } from "@/lib/db";
 import { useLiveQuery } from "dexie-react-hooks";
 import { cn } from "@/lib/utils";
 import { useCurrency } from "@/lib/currency";
+import { useAuth } from "@/contexts/AuthContext";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -28,6 +31,11 @@ export const Route = createFileRoute("/")({
 
 function Dashboard() {
   const { currencySymbol, formatCurrency } = useCurrency();
+  const { user, saasPlan } = useAuth();
+  const [isDailyReportOpen, setIsDailyReportOpen] = useState(false);
+  const isSuperAdminUser = user?.email?.toLowerCase().includes("superadmin");
+  const canAccessPos = !isSuperAdminUser && (!saasPlan || !Array.isArray(saasPlan.features) || saasPlan.features.includes("/pos"));
+  const canAccessReports = !isSuperAdminUser && (!saasPlan || !Array.isArray(saasPlan.features) || saasPlan.features.includes("/reports"));
   const fmt = (n: number) => `${currencySymbol}${n.toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
 
   const products = useLiveQuery(() => localDb.products.toArray()) || [];
@@ -57,6 +65,12 @@ function Dashboard() {
   const todayRevenue = sales.reduce((sum, s) => sum + s.total, 0);
   const todayProfit = todayRevenue * 0.3;
   const todayOrders = sales.length;
+
+  const todayDateStr = new Date().toDateString();
+  const actualTodaySales = sales.filter(s => new Date(s.date).toDateString() === todayDateStr);
+  const displayRevenue = actualTodaySales.length > 0 ? actualTodaySales.reduce((sum, s) => sum + s.total, 0) : todayRevenue;
+  const displayOrders = actualTodaySales.length > 0 ? actualTodaySales.length : todayOrders;
+  const displayProfit = displayRevenue * 0.3;
 
   const salesByDay = Array.from({ length: 7 }).map((_, i) => {
     const d = new Date();
@@ -89,14 +103,18 @@ function Dashboard() {
         description="Here's what's happening at Downtown · Station 04 today."
         actions={
           <>
-            <Button variant="outline" size="sm">
-              <Receipt className="size-4" /> Daily report
-            </Button>
-            <Button size="sm" asChild>
-              <Link to="/pos">
-                <ShoppingBag className="size-4" /> Open POS
-              </Link>
-            </Button>
+            {canAccessReports && (
+              <Button variant="outline" size="sm" onClick={() => setIsDailyReportOpen(true)}>
+                <Receipt className="size-4" /> Daily report
+              </Button>
+            )}
+            {canAccessPos && (
+              <Button size="sm" asChild>
+                <Link to="/pos">
+                  <ShoppingBag className="size-4" /> Open POS
+                </Link>
+              </Button>
+            )}
           </>
         }
       />
@@ -457,6 +475,74 @@ function Dashboard() {
           </div>
         </div>
       </div>
+
+      <Dialog open={isDailyReportOpen} onOpenChange={setIsDailyReportOpen}>
+        <DialogContent className="max-w-xl">
+          <DialogHeader>
+            <div className="flex items-center gap-2 text-primary font-semibold text-xs uppercase tracking-wider mb-1">
+              <Calendar className="size-4" />
+              {new Date().toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+            </div>
+            <DialogTitle className="text-xl font-bold flex items-center gap-2">
+              <Receipt className="size-5 text-primary" /> Today's Sales & Performance Summary
+            </DialogTitle>
+            <DialogDescription>
+              Real-time snapshot of your store operations and financial metrics for today.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="grid grid-cols-3 gap-3 my-4">
+            <div className="bg-primary/5 border border-primary/20 rounded-xl p-3.5 text-center">
+              <div className="flex items-center justify-center gap-1.5 text-xs font-semibold text-muted-foreground mb-1">
+                <DollarSign className="size-3.5 text-primary" /> Total Revenue
+              </div>
+              <div className="text-xl font-extrabold text-primary">{fmt(displayRevenue)}</div>
+            </div>
+            <div className="bg-success/10 border border-success/30 rounded-xl p-3.5 text-center">
+              <div className="flex items-center justify-center gap-1.5 text-xs font-semibold text-muted-foreground mb-1">
+                <TrendingUp className="size-3.5 text-success" /> Est. Net Profit
+              </div>
+              <div className="text-xl font-extrabold text-success">{fmt(displayProfit)}</div>
+            </div>
+            <div className="bg-purple-500/10 border border-purple-500/30 rounded-xl p-3.5 text-center">
+              <div className="flex items-center justify-center gap-1.5 text-xs font-semibold text-muted-foreground mb-1">
+                <ShoppingBag className="size-3.5 text-purple-600" /> Transactions
+              </div>
+              <div className="text-xl font-extrabold text-purple-600">{displayOrders} Orders</div>
+            </div>
+          </div>
+
+          <div className="bg-muted/40 rounded-xl p-3.5 border border-border space-y-2">
+            <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Top Performing Product Today</h4>
+            {topSelling.length > 0 ? (
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="grid size-6 place-items-center rounded bg-primary/10 text-xs font-bold text-primary">1</span>
+                  <span className="text-sm font-semibold">{topSelling[0].name}</span>
+                </div>
+                <Badge variant="secondary" className="font-mono text-xs">
+                  {topSelling[0].sold} sold
+                </Badge>
+              </div>
+            ) : (
+              <p className="text-xs text-muted-foreground">No product sales recorded yet today.</p>
+            )}
+          </div>
+
+          <DialogFooter className="mt-4 flex flex-col sm:flex-row gap-2 sm:justify-between">
+            <Button variant="outline" onClick={() => window.print()} className="w-full sm:w-auto">
+              <Printer className="size-4 mr-2" /> Print Summary
+            </Button>
+            {canAccessReports && (
+              <Button asChild className="w-full sm:w-auto bg-primary hover:bg-primary/90 text-primary-foreground">
+                <Link to="/reports" onClick={() => setIsDailyReportOpen(false)}>
+                  <BarChart3 className="size-4 mr-2" /> Detailed Reports <ArrowRight className="size-4 ml-1" />
+                </Link>
+              </Button>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

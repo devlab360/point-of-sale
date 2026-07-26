@@ -49,8 +49,10 @@ function SalesPage() {
     if (debouncedQuery) {
       const q = debouncedQuery.toLowerCase();
       list = list.filter(s =>
-        s.id.toLowerCase().includes(q) ||
-        s.customerName?.toLowerCase().includes(q)
+        Boolean(
+          (s.id && String(s.id).toLowerCase().includes(q)) ||
+          (s.customerName && String(s.customerName).toLowerCase().includes(q))
+        )
       );
     }
     if (statusFilter) {

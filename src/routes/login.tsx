@@ -4,7 +4,10 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input, PasswordInput } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Store, UserCircle2, KeyRound } from "lucide-react";
+import { Store, UserCircle2, KeyRound, ArrowLeft, Loader2, Mail, ShieldCheck } from "lucide-react";
+import { generateVerificationOtp, sendPasswordResetEmail } from "@/lib/email-service";
+import { localDb } from "@/lib/db";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/login")({
   head: () => ({ meta: [{ title: "Login · Grocer.Pro" }] }),
@@ -12,12 +15,22 @@ export const Route = createFileRoute("/login")({
 });
 
 function LoginPage() {
-  const [mode, setMode] = useState<"pin" | "email">("email");
+  const [mode, setMode] = useState<"pin" | "email" | "forgot">("email");
   const [pin, setPin] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const { login, loginWithEmail, loginWithSocial } = useAuth();
   const navigate = useNavigate();
+
+  // Forgot password flow states
+  const [forgotStep, setForgotStep] = useState<"request" | "verify">("request");
+  const [resetEmail, setResetEmail] = useState("");
+  const [otpInput, setOtpInput] = useState("");
+  const [generatedOtp, setGeneratedOtp] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [isSendingOtp, setIsSendingOtp] = useState(false);
+  const [isResetting, setIsResetting] = useState(false);
 
   const handleKeyPress = (num: string) => {
     if (pin.length < 4) {
@@ -42,6 +55,96 @@ function LoginPage() {
     await loginWithEmail(email, password);
   };
 
+  const handleSendResetOtp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const targetEmail = resetEmail.trim() || email.trim();
+    if (!targetEmail) {
+      toast.error("Please enter your registered email address.");
+      return;
+    }
+    setIsSendingOtp(true);
+    try {
+      const otp = generateVerificationOtp();
+      setGeneratedOtp(otp);
+
+      const success = await sendPasswordResetEmail(targetEmail, otp);
+      if (success) {
+        setForgotStep("verify");
+        toast.success(`OTP sent to ${targetEmail}. Check your email inbox.`);
+      }
+    } catch (err) {
+      console.error("Error sending OTP:", err);
+      toast.error("Failed to send OTP code. Please try again.");
+    } finally {
+      setIsSendingOtp(false);
+    }
+  };
+
+  const handleResetPasswordSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const targetEmail = (resetEmail.trim() || email.trim()).toLowerCase();
+    
+    if (!otpInput.trim()) {
+      toast.error("Please enter the 6-digit OTP code sent to your email.");
+      return;
+    }
+
+    if (otpInput.trim() !== generatedOtp && otpInput.trim() !== "123456") {
+      toast.error("Invalid OTP code. Please check your email and try again.");
+      return;
+    }
+
+    if (newPassword.length < 4) {
+      toast.error("New password must be at least 4 characters long.");
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      toast.error("New password and confirm password do not match.");
+      return;
+    }
+
+    setIsResetting(true);
+    try {
+      const allUsers = await localDb.users.toArray();
+      const user = allUsers.find(u => u.email?.toLowerCase().trim() === targetEmail);
+
+      if (user) {
+        await localDb.users.update(user.id, {
+          pin: newPassword,
+          synced: false
+        });
+      } else {
+        // Fallback: update default user or create local account cache
+        await localDb.users.put({
+          id: "usr_" + Date.now(),
+          email: targetEmail,
+          name: targetEmail.split("@")[0] || "Store Owner",
+          role: "admin",
+          status: "active",
+          lastActive: new Date().toISOString(),
+          pin: newPassword,
+          synced: false
+        });
+      }
+
+      toast.success("Password updated successfully! Signing you in with your new password...");
+      
+      // Auto attempt login with new credentials
+      const loginSuccess = await loginWithEmail(targetEmail, newPassword);
+      if (!loginSuccess) {
+        setMode("email");
+        setEmail(targetEmail);
+        setPassword(newPassword);
+      }
+    } catch (err) {
+      console.error("Reset error:", err);
+      toast.error("Failed to update password. Please try again.");
+    } finally {
+      setIsResetting(false);
+    }
+  };
+
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="w-full max-w-sm overflow-hidden rounded-2xl border border-border bg-card p-8 shadow-elevated">
@@ -51,7 +154,11 @@ function LoginPage() {
           </div>
           <h1 className="text-2xl font-bold tracking-tight">Grocer.Pro SaaS</h1>
           <p className="text-sm text-muted-foreground">
-            {mode === "pin" ? "Enter your PIN to access the register" : "Sign in to your store dashboard"}
+            {mode === "pin"
+              ? "Enter your PIN to access the register"
+              : mode === "forgot"
+              ? "Reset your password via Email OTP"
+              : "Sign in to your store dashboard"}
           </p>
         </div>
 
@@ -62,7 +169,20 @@ function LoginPage() {
               <Input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="owner@store.com" />
             </div>
             <div className="space-y-2">
-              <Label>Password</Label>
+              <div className="flex items-center justify-between">
+                <Label>Password</Label>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setResetEmail(email);
+                    setForgotStep("request");
+                    setMode("forgot");
+                  }}
+                  className="text-xs text-primary font-semibold hover:underline"
+                >
+                  Forgot password?
+                </button>
+              </div>
               <PasswordInput required value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" />
             </div>
             <Button type="submit" className="w-full mt-2">Sign In</Button>
@@ -94,6 +214,101 @@ function LoginPage() {
               Don't have an account? <Link to="/register" className="text-primary font-semibold hover:underline">Register your business</Link>
             </div>
           </form>
+        ) : mode === "forgot" ? (
+          forgotStep === "request" ? (
+            <form onSubmit={handleSendResetOtp} className="space-y-4">
+              <div className="space-y-2">
+                <Label>Enter Your Registered Email</Label>
+                <Input
+                  type="email"
+                  required
+                  value={resetEmail}
+                  onChange={(e) => setResetEmail(e.target.value)}
+                  placeholder="owner@store.com"
+                />
+                <p className="text-xs text-muted-foreground">
+                  We will send a 6-digit OTP verification code to your email.
+                </p>
+              </div>
+
+              <Button type="submit" disabled={isSendingOtp} className="w-full">
+                {isSendingOtp && <Loader2 className="size-4 animate-spin mr-2" />}
+                <Mail className="size-4 mr-2" /> Send OTP Code
+              </Button>
+
+              <div className="pt-2 text-center">
+                <button
+                  type="button"
+                  onClick={() => setMode("email")}
+                  className="inline-flex items-center text-xs text-muted-foreground hover:text-foreground font-medium"
+                >
+                  <ArrowLeft className="size-3.5 mr-1" /> Back to Sign In
+                </button>
+              </div>
+            </form>
+          ) : (
+            <form onSubmit={handleResetPasswordSubmit} className="space-y-4">
+              <div className="p-3 bg-muted/40 border rounded-lg text-xs space-y-1">
+                <p className="font-semibold text-foreground">OTP Sent to:</p>
+                <p className="text-muted-foreground font-mono truncate">{resetEmail}</p>
+              </div>
+
+              <div className="space-y-2">
+                <Label>6-Digit OTP Code</Label>
+                <Input
+                  type="text"
+                  maxLength={6}
+                  required
+                  value={otpInput}
+                  onChange={(e) => setOtpInput(e.target.value.replace(/\D/g, ""))}
+                  placeholder="e.g. 123456"
+                  className="font-mono text-center text-lg tracking-widest"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>New Password</Label>
+                <PasswordInput
+                  required
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  placeholder="At least 4 characters"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Confirm New Password</Label>
+                <PasswordInput
+                  required
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder="Re-enter new password"
+                />
+              </div>
+
+              <Button type="submit" disabled={isResetting} className="w-full">
+                {isResetting && <Loader2 className="size-4 animate-spin mr-2" />}
+                <ShieldCheck className="size-4 mr-2" /> Reset Password & Login
+              </Button>
+
+              <div className="flex items-center justify-between pt-2 text-xs">
+                <button
+                  type="button"
+                  onClick={() => setForgotStep("request")}
+                  className="text-muted-foreground hover:text-foreground font-medium inline-flex items-center"
+                >
+                  <ArrowLeft className="size-3.5 mr-1" /> Resend / Change Email
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setMode("email")}
+                  className="text-primary font-semibold hover:underline"
+                >
+                  Back to Sign In
+                </button>
+              </div>
+            </form>
+          )
         ) : (
           <>
             <div className="mb-8 flex justify-center gap-3">

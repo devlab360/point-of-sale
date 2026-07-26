@@ -21,7 +21,7 @@ import {
   Keyboard,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { localDb } from "@/lib/db";
+import { localDb, addSystemNotification } from "@/lib/db";
 import { useLiveQuery } from "dexie-react-hooks";
 import { v4 as uuidv4 } from "uuid";
 import { cn } from "@/lib/utils";
@@ -179,10 +179,17 @@ function PosScreen() {
 
 
   const filtered = useMemo(
-    () => products.filter(p =>
-      (activeCat === "all" || p.category === activeCat) &&
-      (query === "" || p.name.toLowerCase().includes(query.toLowerCase()) || p.sku.toLowerCase().includes(query.toLowerCase()) || p.barcode.includes(query))
-    ),
+    () => products.filter(p => {
+      const catMatch = activeCat === "all" || p.category === activeCat;
+      if (!catMatch) return false;
+      if (!query.trim()) return true;
+      const q = query.toLowerCase();
+      return Boolean(
+        (p.name && String(p.name).toLowerCase().includes(q)) ||
+        (p.sku && String(p.sku).toLowerCase().includes(q)) ||
+        (p.barcode && String(p.barcode).toLowerCase().includes(q))
+      );
+    }),
     [activeCat, query, products],
   );
 
@@ -486,7 +493,7 @@ function PosScreen() {
         if (cashAcc && salesAcc) {
           await localDb.vouchers.add({
             id: uuidv4(),
-            voucherNo: `GL-${saleId.slice(0, 6).toUpperCase()}`,
+            voucherNo: `GL-${invNum}`,
             date: new Date().toISOString(),
             type: "receipt",
             debitAccountId: cashAcc.id,
@@ -495,6 +502,7 @@ function PosScreen() {
             creditAccountName: salesAcc.name,
             amount: total,
             narration: `Automated POS Sale Invoice #${invNum}`,
+            synced: false
           });
           await localDb.accounts.update(cashAcc.id, { balance: cashAcc.balance + total });
           await localDb.accounts.update(salesAcc.id, { balance: salesAcc.balance + total });
@@ -511,10 +519,14 @@ function PosScreen() {
             ? currentProd.serials.filter(s => s !== line.selectedSerial)
             : currentProd.serials;
 
+          const newStock = Math.max(0, currentProd.stock - line.qty);
           await localDb.products.update(line.product.id, {
-            stock: Math.max(0, currentProd.stock - line.qty),
+            stock: newStock,
             serials: updatedSerials,
           });
+          if (newStock <= (currentProd.reorderLevel || 5)) {
+            addSystemNotification("Low Stock Alert", `${currentProd.name} stock dropped to ${newStock} (Reorder level: ${currentProd.reorderLevel || 5})`, "warning", "/products");
+          }
         }
         await localDb.inventoryMovements.add({
           productName: line.product.name,
@@ -529,11 +541,10 @@ function PosScreen() {
         const pointsEarned = Math.floor(total);
         const cust = customers.find(c => c.id === activeCustomer.id);
         if (cust) {
-          let newCredit = cust.credit;
+          let newCredit = cust.credit || 0;
           let newWallet = cust.walletBalance || 0;
           if (payment === "credit") {
             newCredit += total;
-            // Record Customer Ledger (Khata) entry
             await localDb.customerLedgers.add({
               id: uuidv4(),
               customerId: activeCustomer.id,
@@ -542,15 +553,16 @@ function PosScreen() {
               amount: total,
               balanceAfter: newCredit,
               referenceNo: invNum,
-              note: `POS Credit Sale Invoice #${invNum}`
+              note: `POS Credit Sale Invoice #${invNum}`,
+              synced: false
             });
           } else if (payment === "wallet") {
             newWallet -= total;
           }
           await localDb.customers.update(activeCustomer.id, {
-            loyaltyPoints: cust.loyaltyPoints + pointsEarned,
-            totalSpent: cust.totalSpent + total,
-            visits: cust.visits + 1,
+            loyaltyPoints: (cust.loyaltyPoints || 0) + pointsEarned,
+            totalSpent: (cust.totalSpent || 0) + total,
+            visits: (cust.visits || 0) + 1,
             credit: newCredit,
             walletBalance: newWallet,
             synced: false
@@ -561,6 +573,12 @@ function PosScreen() {
       // 4. Increment coupon usage
       if (appliedCoupon) {
         await localDb.coupons.update(appliedCoupon.id, { used: appliedCoupon.used + 1 });
+      }
+
+      if (payment === "credit") {
+        addSystemNotification("Credit Sale Completed", `Invoice #${invNum} (${formatCurrency(total)}) billed to credit ledger for ${activeCustomer.name}`, "info", "/sales");
+      } else if (total >= 100) {
+        addSystemNotification("New Sale Completed", `Invoice #${invNum} completed for ${formatCurrency(total)} via ${payment.toUpperCase()}`, "success", "/sales");
       }
 
       // 5. Set print data
@@ -613,9 +631,9 @@ function PosScreen() {
 
   return (
     <>
-      <div className="print:hidden grid h-[calc(100vh-4rem)] grid-cols-1 lg:grid-cols-[1fr_420px]">
+      <div className="print:hidden grid h-[calc(100vh-4rem)] grid-cols-1 md:grid-cols-[1fr_360px] lg:grid-cols-[1fr_420px]">
         {/* Left: Product Grid */}
-        <div className="flex min-h-0 flex-col bg-muted/30">
+        <div className="flex min-h-0 min-w-0 flex-col bg-muted/30">
           <div className="flex flex-col gap-3 border-b border-border bg-background p-4 lg:flex-row lg:items-center">
             <div className="relative flex-1">
               <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
@@ -648,7 +666,7 @@ function PosScreen() {
 
           <div className="flex gap-2 overflow-x-auto border-b border-border bg-background px-4 py-2.5">
             <CatChip active={activeCat === "all"} onClick={() => setActiveCat("all")} icon="🛒" label="All" />
-            {categories.map(c => (
+            {Array.from(new Map(categories.map(c => [c.name.trim().toLowerCase(), c])).values()).map(c => (
               <CatChip key={c.id} active={activeCat === c.name} onClick={() => setActiveCat(c.name)} icon={c.icon} label={c.name} />
             ))}
           </div>
@@ -657,7 +675,7 @@ function PosScreen() {
             {filtered.length === 0 ? (
               <div className="flex h-full items-center justify-center text-sm text-muted-foreground">No products match your search.</div>
             ) : (
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
+              <div className="grid grid-cols-2 gap-3.5 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
                 {filtered.map(p => {
                   const low = p.stock > 0 && p.stock <= p.reorderLevel;
                   const out = p.stock <= 0;
@@ -667,25 +685,32 @@ function PosScreen() {
                       onClick={() => addToCart(p.id)}
                       disabled={out}
                       className={cn(
-                        "group relative overflow-hidden rounded-xl border border-border bg-card p-3 text-left shadow-soft transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-elevated",
+                        "group relative w-full min-w-0 flex flex-col overflow-hidden rounded-xl border border-border bg-card p-3 text-left shadow-soft transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/60 hover:shadow-elevated focus:outline-none focus:ring-2 focus:ring-primary/20",
                         out && "opacity-50 cursor-not-allowed"
                       )}
                     >
-                      <div className="relative aspect-square overflow-hidden rounded-lg bg-muted">
-                        <img src={p.image} alt="" className="size-full object-contain p-4" />
+                      <div className="relative w-full aspect-square overflow-hidden rounded-lg bg-muted/50 flex items-center justify-center shrink-0">
+                        <img
+                          src={p.image || "https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&q=80&w=300&h=300"}
+                          alt={p.name}
+                          loading="lazy"
+                          className="max-w-full max-h-full object-contain p-2.5 transition-transform duration-300 group-hover:scale-105"
+                        />
                         {low && !out && (
-                          <span className="absolute left-2 top-2 rounded-full bg-warning/20 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-warning-foreground">Low</span>
+                          <span className="absolute left-2 top-2 rounded-full bg-warning/20 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-warning-foreground shadow-sm">Low</span>
                         )}
                         {out && (
-                          <span className="absolute left-2 top-2 rounded-full bg-destructive/20 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-destructive">Out</span>
+                          <span className="absolute left-2 top-2 rounded-full bg-destructive/20 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-destructive shadow-sm">Out</span>
                         )}
                       </div>
-                      <div className="mt-2.5">
-                        <div className="line-clamp-1 text-sm font-semibold">{p.name}</div>
-                        <div className="mt-0.5 truncate text-[11px] text-muted-foreground">{p.brand} · {p.unit}</div>
-                        <div className="mt-2 flex items-center justify-between">
+                      <div className="mt-2.5 w-full min-w-0 flex-1 flex flex-col justify-between">
+                        <div>
+                          <div className="line-clamp-1 text-sm font-semibold text-foreground">{p.name}</div>
+                          <div className="mt-0.5 truncate text-[11px] text-muted-foreground">{p.brand} · {p.unit}</div>
+                        </div>
+                        <div className="mt-2 flex items-center justify-between pt-1 border-t border-border/40">
                           <span className="number text-base font-bold text-foreground">{formatCurrency(p.price)}</span>
-                          <span className="grid size-7 place-items-center rounded-lg bg-muted text-muted-foreground transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
+                          <span className="grid size-7 shrink-0 place-items-center rounded-lg bg-muted text-muted-foreground transition-colors group-hover:bg-primary group-hover:text-primary-foreground shadow-sm">
                             <Plus className="size-4" />
                           </span>
                         </div>

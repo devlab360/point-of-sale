@@ -192,6 +192,7 @@ function AppLayout() {
   // Route Security Middleware (SaaS Feature Flags)
   const isSuperAdmin = user?.email?.toLowerCase().includes("superadmin");
   const isSuspended = saasOrg?.status === "suspended" && !isSuperAdmin;
+  const canAccessAiCopilot = !isSuperAdmin && (!saasPlan || !Array.isArray(saasPlan.features) || saasPlan.features.includes("ai_copilot"));
   let unauthorizedMessage = null;
 
   if (isAuthenticated && !isSuperAdmin) {
@@ -331,7 +332,7 @@ function AppLayout() {
           </main>
         </div>
       </div>
-      <AiCopilotDrawer />
+      {canAccessAiCopilot && <AiCopilotDrawer />}
       <Toaster
         position="top-right"
         toastOptions={{

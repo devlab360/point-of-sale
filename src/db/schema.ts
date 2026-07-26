@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, numeric, timestamp, boolean, jsonb, unique } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, numeric, timestamp, boolean, jsonb, unique, index } from "drizzle-orm/pg-core";
 
 export const organizations = pgTable("organizations", {
   id: text("id").primaryKey(),
@@ -30,7 +30,10 @@ export const saasSessions = pgTable("saas_sessions", {
   ipAddress: text("ip_address"),
   device: text("device"),
   status: text("status").notNull().default("live"),
-});
+}, (t) => ({
+  orgIdx: index("saas_sessions_org_idx").on(t.orgId),
+  userIdx: index("saas_sessions_user_idx").on(t.userId),
+}));
 
 export const invitations = pgTable("invitations", {
   id: text("id").primaryKey(),
@@ -41,7 +44,10 @@ export const invitations = pgTable("invitations", {
   status: text("status").notNull().default("pending"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   expiresAt: timestamp("expires_at").notNull(),
-});
+}, (t) => ({
+  orgIdx: index("invitations_org_idx").on(t.organizationId),
+  tokenIdx: index("invitations_token_idx").on(t.token),
+}));
 
 export const users = pgTable("users", {
   id: text("id").primaryKey(),
@@ -67,7 +73,8 @@ export const users = pgTable("users", {
   dateFormat: text("date_format"),
   language: text("language"),
 }, (t) => ({
-  userEmailIdx: unique("user_email_idx").on(t.email, t.organizationId)
+  userEmailIdx: unique("user_email_idx").on(t.email, t.organizationId),
+  orgIdx: index("users_org_idx").on(t.organizationId),
 }));
 
 export const categories = pgTable("categories", {
@@ -78,7 +85,8 @@ export const categories = pgTable("categories", {
   icon: text("icon").notNull().default("📦"),
   count: integer("count").notNull().default(0),
 }, (t) => ({
-  catNameIdx: unique("cat_name_idx").on(t.name, t.organizationId)
+  catNameIdx: unique("cat_name_idx").on(t.name, t.organizationId),
+  orgIdx: index("categories_org_idx").on(t.organizationId),
 }));
 
 export const brands = pgTable("brands", {
@@ -87,7 +95,8 @@ export const brands = pgTable("brands", {
   name: text("name").notNull(),
   products: integer("products").notNull().default(0),
 }, (t) => ({
-  brandNameIdx: unique("brand_name_idx").on(t.name, t.organizationId)
+  brandNameIdx: unique("brand_name_idx").on(t.name, t.organizationId),
+  orgIdx: index("brands_org_idx").on(t.organizationId),
 }));
 
 export const units = pgTable("units", {
@@ -95,7 +104,9 @@ export const units = pgTable("units", {
   organizationId: text("organization_id").notNull().references(() => organizations.id),
   name: text("name").notNull(),
   short: text("short").notNull(),
-});
+}, (t) => ({
+  orgIdx: index("units_org_idx").on(t.organizationId),
+}));
 
 export const suppliers = pgTable("suppliers", {
   id: text("id").primaryKey(),
@@ -108,7 +119,9 @@ export const suppliers = pgTable("suppliers", {
   items: integer("items").notNull().default(0),
   gstin: text("gstin"),
   stateCode: text("state_code"),
-});
+}, (t) => ({
+  orgIdx: index("suppliers_org_idx").on(t.organizationId),
+}));
 
 export const products = pgTable("products", {
   id: text("id").primaryKey(),
@@ -143,7 +156,8 @@ export const products = pgTable("products", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 }, (t) => ({
   skuIdx: unique("sku_idx").on(t.sku, t.organizationId),
-  barcodeIdx: unique("barcode_idx").on(t.barcode, t.organizationId)
+  barcodeIdx: unique("barcode_idx").on(t.barcode, t.organizationId),
+  orgIdx: index("products_org_idx").on(t.organizationId),
 }));
 
 export const customers = pgTable("customers", {
@@ -164,7 +178,10 @@ export const customers = pgTable("customers", {
   stateCode: text("state_code"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
-});
+}, (t) => ({
+  orgIdx: index("customers_org_idx").on(t.organizationId),
+  phoneIdx: index("customers_phone_idx").on(t.phone),
+}));
 
 export const sales = pgTable("sales", {
   id: text("id").primaryKey(),
@@ -186,7 +203,10 @@ export const sales = pgTable("sales", {
   salesmanName: text("salesman_name"),
   commissionAmt: numeric("commission_amt", { precision: 10, scale: 2 }),
   status: text("status").notNull().default("completed"),
-});
+}, (t) => ({
+  orgDateIdx: index("sales_org_date_idx").on(t.organizationId, t.date),
+  customerIdx: index("sales_cust_idx").on(t.customerId),
+}));
 
 export const saleItems = pgTable("sale_items", {
   id: serial("id").primaryKey(),
@@ -199,7 +219,11 @@ export const saleItems = pgTable("sale_items", {
   total: numeric("total", { precision: 10, scale: 2 }).notNull(),
   serialNumber: text("serial_number"),
   batchNo: text("batch_no"),
-});
+}, (t) => ({
+  orgIdx: index("sale_items_org_idx").on(t.organizationId),
+  saleIdx: index("sale_items_sale_idx").on(t.saleId),
+  productIdx: index("sale_items_prod_idx").on(t.productId),
+}));
 
 export const purchases = pgTable("purchases", {
   id: text("id").primaryKey(),
@@ -217,7 +241,10 @@ export const purchases = pgTable("purchases", {
   sgstAmt: numeric("sgst_amt", { precision: 12, scale: 2 }),
   igstAmt: numeric("igst_amt", { precision: 12, scale: 2 }),
   total: numeric("total", { precision: 12, scale: 2 }).notNull(),
-});
+}, (t) => ({
+  orgDateIdx: index("purchases_org_date_idx").on(t.organizationId, t.date),
+  supplierIdx: index("purchases_supp_idx").on(t.supplierId),
+}));
 
 export const purchaseItems = pgTable("purchase_items", {
   id: serial("id").primaryKey(),
@@ -231,7 +258,10 @@ export const purchaseItems = pgTable("purchase_items", {
   cgst: numeric("cgst", { precision: 10, scale: 2 }),
   sgst: numeric("sgst", { precision: 10, scale: 2 }),
   igst: numeric("igst", { precision: 10, scale: 2 }),
-});
+}, (t) => ({
+  orgIdx: index("purchase_items_org_idx").on(t.organizationId),
+  purchaseIdx: index("purchase_items_purchase_idx").on(t.purchaseId),
+}));
 
 export const inventoryMovements = pgTable("inventory_movements", {
   id: serial("id").primaryKey(),
@@ -240,7 +270,10 @@ export const inventoryMovements = pgTable("inventory_movements", {
   action: text("action").notNull(),
   quantity: integer("quantity").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-});
+}, (t) => ({
+  orgIdx: index("inv_move_org_idx").on(t.organizationId),
+  prodIdx: index("inv_move_prod_idx").on(t.productName),
+}));
 
 export const settings = pgTable("settings", {
   id: text("id").primaryKey(),
@@ -273,7 +306,9 @@ export const settings = pgTable("settings", {
   businessType: text("business_type"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
-});
+}, (t) => ({
+  orgIdx: index("settings_org_idx").on(t.organizationId),
+}));
 
 export const adjustments = pgTable("adjustments", {
   id: text("id").primaryKey(),
@@ -284,7 +319,9 @@ export const adjustments = pgTable("adjustments", {
   items: integer("items").notNull(),
   net: numeric("net", { precision: 12, scale: 2 }).notNull(),
   status: text("status").notNull(),
-});
+}, (t) => ({
+  orgIdx: index("adjustments_org_idx").on(t.organizationId),
+}));
 
 export const transfers = pgTable("transfers", {
   id: text("id").primaryKey(),
@@ -294,7 +331,9 @@ export const transfers = pgTable("transfers", {
   destination: text("destination").notNull(),
   items: integer("items").notNull(),
   status: text("status").notNull(),
-});
+}, (t) => ({
+  orgIdx: index("transfers_org_idx").on(t.organizationId),
+}));
 
 export const expenses = pgTable("expenses", {
   id: text("id").primaryKey(),
@@ -304,7 +343,9 @@ export const expenses = pgTable("expenses", {
   description: text("description"),
   amount: numeric("amount", { precision: 12, scale: 2 }).notNull(),
   status: text("status").notNull(),
-});
+}, (t) => ({
+  orgDateIdx: index("expenses_org_date_idx").on(t.organizationId, t.date),
+}));
 
 export const coupons = pgTable("coupons", {
   id: text("id").primaryKey(),
@@ -316,7 +357,10 @@ export const coupons = pgTable("coupons", {
   used: integer("used").notNull().default(0),
   expires: timestamp("expires").notNull(),
   status: text("status").notNull(),
-});
+}, (t) => ({
+  orgIdx: index("coupons_org_idx").on(t.organizationId),
+  codeIdx: index("coupons_code_idx").on(t.code),
+}));
 
 export const giftCards = pgTable("gift_cards", {
   id: text("id").primaryKey(),
@@ -328,7 +372,10 @@ export const giftCards = pgTable("gift_cards", {
   issued: timestamp("issued"),
   expires: timestamp("expires").notNull(),
   status: text("status").notNull(),
-});
+}, (t) => ({
+  orgIdx: index("gift_cards_org_idx").on(t.organizationId),
+  codeIdx: index("gift_cards_code_idx").on(t.code),
+}));
 
 export const promotions = pgTable("promotions", {
   id: text("id").primaryKey(),
@@ -340,7 +387,9 @@ export const promotions = pgTable("promotions", {
   startDate: timestamp("start_date").notNull(),
   endDate: timestamp("end_date").notNull(),
   status: text("status").notNull(),
-});
+}, (t) => ({
+  orgIdx: index("promotions_org_idx").on(t.organizationId),
+}));
 
 export const activityLog = pgTable("activity_log", {
   id: text("id").primaryKey(),
@@ -350,7 +399,9 @@ export const activityLog = pgTable("activity_log", {
   details: text("details"),
   timestamp: timestamp("timestamp").notNull(),
   type: text("type"),
-});
+}, (t) => ({
+  orgTimeIdx: index("activity_log_org_time_idx").on(t.organizationId, t.timestamp),
+}));
 
 export const notifications = pgTable("notifications", {
   id: text("id").primaryKey(),
@@ -360,7 +411,9 @@ export const notifications = pgTable("notifications", {
   type: text("type"),
   timestamp: timestamp("timestamp").notNull(),
   read: boolean("read").notNull().default(false),
-});
+}, (t) => ({
+  orgTimeIdx: index("notifications_org_time_idx").on(t.organizationId, t.timestamp),
+}));
 
 export const heldInvoices = pgTable("held_invoices", {
   id: text("id").primaryKey(),
@@ -372,7 +425,9 @@ export const heldInvoices = pgTable("held_invoices", {
   payment: text("payment").notNull(),
   savedAt: timestamp("saved_at").notNull(),
   note: text("note"),
-});
+}, (t) => ({
+  orgIdx: index("held_invoices_org_idx").on(t.organizationId),
+}));
 
 export const salesReturns = pgTable("sales_returns", {
   id: text("id").primaryKey(),
@@ -386,7 +441,10 @@ export const salesReturns = pgTable("sales_returns", {
   status: text("status").notNull(),
   date: timestamp("date").notNull(),
   stockRestored: boolean("stock_restored").notNull(),
-});
+}, (t) => ({
+  orgIdx: index("sales_returns_org_idx").on(t.organizationId),
+  saleIdx: index("sales_returns_sale_idx").on(t.saleId),
+}));
 
 export const purchaseReturns = pgTable("purchase_returns", {
   id: text("id").primaryKey(),
@@ -400,7 +458,10 @@ export const purchaseReturns = pgTable("purchase_returns", {
   status: text("status").notNull(),
   date: timestamp("date").notNull(),
   stockRestored: boolean("stock_restored").notNull(),
-});
+}, (t) => ({
+  orgIdx: index("purchase_returns_org_idx").on(t.organizationId),
+  purchaseIdx: index("purchase_returns_pur_idx").on(t.purchaseId),
+}));
 
 export const locations = pgTable("locations", {
   id: text("id").primaryKey(),
@@ -408,7 +469,9 @@ export const locations = pgTable("locations", {
   name: text("name").notNull(),
   type: text("type").notNull(),
   status: text("status").notNull(),
-});
+}, (t) => ({
+  orgIdx: index("locations_org_idx").on(t.organizationId),
+}));
 
 export const shifts = pgTable("shifts", {
   id: text("id").primaryKey(),
@@ -423,7 +486,9 @@ export const shifts = pgTable("shifts", {
   difference: numeric("difference", { precision: 12, scale: 2 }),
   status: text("status").notNull(),
   notes: text("notes"),
-});
+}, (t) => ({
+  orgUserIdx: index("shifts_org_user_idx").on(t.organizationId, t.userId),
+}));
 
 export const cashMovements = pgTable("cash_movements", {
   id: text("id").primaryKey(),
@@ -433,7 +498,9 @@ export const cashMovements = pgTable("cash_movements", {
   amount: numeric("amount", { precision: 12, scale: 2 }).notNull(),
   reason: text("reason").notNull(),
   timestamp: timestamp("timestamp").notNull(),
-});
+}, (t) => ({
+  orgShiftIdx: index("cash_move_org_shift_idx").on(t.organizationId, t.shiftId),
+}));
 
 export const customerLedgers = pgTable("customer_ledgers", {
   id: text("id").primaryKey(),
@@ -445,7 +512,9 @@ export const customerLedgers = pgTable("customer_ledgers", {
   balanceAfter: numeric("balance_after", { precision: 12, scale: 2 }).notNull(),
   referenceNo: text("reference_no"),
   note: text("note"),
-});
+}, (t) => ({
+  orgCustDateIdx: index("cust_ledg_org_cust_idx").on(t.organizationId, t.customerId, t.date),
+}));
 
 export const supplierLedgers = pgTable("supplier_ledgers", {
   id: text("id").primaryKey(),
@@ -457,7 +526,9 @@ export const supplierLedgers = pgTable("supplier_ledgers", {
   balanceAfter: numeric("balance_after", { precision: 12, scale: 2 }).notNull(),
   referenceNo: text("reference_no"),
   note: text("note"),
-});
+}, (t) => ({
+  orgSuppDateIdx: index("supp_ledg_org_supp_idx").on(t.organizationId, t.supplierId, t.date),
+}));
 
 export const quotations = pgTable("quotations", {
   id: text("id").primaryKey(),
@@ -475,7 +546,9 @@ export const quotations = pgTable("quotations", {
   total: numeric("total", { precision: 12, scale: 2 }).notNull(),
   status: text("status").notNull(),
   notes: text("notes"),
-});
+}, (t) => ({
+  orgIdx: index("quotations_org_idx").on(t.organizationId),
+}));
 
 export const deliveryChallans = pgTable("delivery_challans", {
   id: text("id").primaryKey(),
@@ -490,7 +563,9 @@ export const deliveryChallans = pgTable("delivery_challans", {
   vehicleNo: text("vehicle_no"),
   driverName: text("driver_name"),
   notes: text("notes"),
-});
+}, (t) => ({
+  orgIdx: index("delivery_challans_org_idx").on(t.organizationId),
+}));
 
 export const accounts = pgTable("accounts", {
   id: text("id").primaryKey(),
@@ -500,7 +575,9 @@ export const accounts = pgTable("accounts", {
   type: text("type").notNull(),
   balance: numeric("balance", { precision: 12, scale: 2 }).notNull(),
   isSystem: boolean("is_system").default(false),
-});
+}, (t) => ({
+  orgIdx: index("accounts_org_idx").on(t.organizationId),
+}));
 
 export const vouchers = pgTable("vouchers", {
   id: text("id").primaryKey(),
@@ -514,7 +591,9 @@ export const vouchers = pgTable("vouchers", {
   creditAccountName: text("credit_account_name").notNull(),
   amount: numeric("amount", { precision: 12, scale: 2 }).notNull(),
   narration: text("narration").notNull(),
-});
+}, (t) => ({
+  orgDateIdx: index("vouchers_org_date_idx").on(t.organizationId, t.date),
+}));
 
 export const repairs = pgTable("repairs", {
   id: text("id").primaryKey(),
@@ -530,7 +609,9 @@ export const repairs = pgTable("repairs", {
   status: text("status").notNull(),
   date: timestamp("date").notNull(),
   notes: text("notes"),
-});
+}, (t) => ({
+  orgIdx: index("repairs_org_idx").on(t.organizationId),
+}));
 
 export const subscriptions = pgTable("subscriptions", {
   id: text("id").primaryKey(),
@@ -543,7 +624,9 @@ export const subscriptions = pgTable("subscriptions", {
   amount: numeric("amount", { precision: 12, scale: 2 }).notNull(),
   nextBillingDate: timestamp("next_billing_date").notNull(),
   status: text("status").notNull(),
-});
+}, (t) => ({
+  orgIdx: index("subscriptions_org_idx").on(t.organizationId),
+}));
 
 export const rentals = pgTable("rentals", {
   id: text("id").primaryKey(),
@@ -557,4 +640,6 @@ export const rentals = pgTable("rentals", {
   securityDeposit: numeric("security_deposit", { precision: 12, scale: 2 }).notNull(),
   totalAmount: numeric("total_amount", { precision: 12, scale: 2 }).notNull(),
   status: text("status").notNull(),
-});
+}, (t) => ({
+  orgIdx: index("rentals_org_idx").on(t.organizationId),
+}));

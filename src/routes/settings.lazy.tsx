@@ -1,8 +1,8 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createLazyFileRoute } from "@tanstack/react-router";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/button";
-import { Check, Trash2, CreditCard, Loader2, QrCode, Landmark, Banknote, Lock, Key, ShieldCheck } from "lucide-react";
-import { localDb, type LocalSetting, addSystemNotification } from "@/lib/db";
+import { Check, Trash2, CreditCard, Loader2, QrCode, Landmark, Banknote } from "lucide-react";
+import { localDb, type LocalSetting } from "@/lib/db";
 import { SyncEngine } from "@/lib/sync-engine";
 import { toast } from "sonner";
 import { useLiveQuery } from "dexie-react-hooks";
@@ -24,7 +24,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useRouter, useSearch } from "@tanstack/react-router";
 import { getTrialDaysLeft, DEFAULT_PAYMENT_CONFIG } from "@/lib/utils";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Input, PasswordInput } from "@/components/ui/input";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { CURRENCY_OPTIONS } from "@/lib/currency";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -32,13 +32,7 @@ import { SearchableSelect } from "@/components/ui/searchable-select";
 import { getTrialDaysFromEnv } from "@/lib/email-service";
 
 
-export const Route = createFileRoute("/settings")({
-  head: () => ({ meta: [{ title: "Settings · Grocer.Pro" }] }),
-  validateSearch: (search: Record<string, unknown>): { tab?: string } => {
-    return {
-      tab: typeof search.tab === "string" ? search.tab : undefined,
-    };
-  },
+export const Route = createLazyFileRoute("/settings")({
   component: SettingsPage,
 });
 
@@ -59,6 +53,7 @@ const defaultSettings: LocalSetting = {
   footerNote: "Returns accepted within 14 days.",
   emailReceiptDefault: true,
   printStoreLogo: true,
+  logoUrl: "",
 };
 
 function SettingsPage() {
@@ -95,7 +90,8 @@ function SettingsPage() {
         orgId: user?.orgId || "demo-org",
         user: user?.name || user?.email || "Admin",
         action: `Submitted payment proof (UTR: ${paymentForm.utrNumber}) for ${selectedPlanForUpgrade.name} upgrade`,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
+        synced: false
       });
       await localDb.notifications.put({
         id: "notif_" + Date.now(),
@@ -107,10 +103,12 @@ function SettingsPage() {
         read: false,
         timestamp: new Date().toISOString(),
         createdAt: new Date().toISOString(),
-        link: "/super-admin/plans"
+        link: "/super-admin/plans",
+        synced: false
       } as any);
 
       toast.success("Payment proof submitted successfully! Super Admin will verify UTR: " + paymentForm.utrNumber + " and activate your subscription within 2-4 hours.");
+      SyncEngine.syncAll().catch(err => console.warn("Background sync error:", err));
       setSelectedPlanForUpgrade(null);
       setPaymentForm({ utrNumber: "", paymentMethod: "UPI / QR Scan", note: "" });
     } catch (e) {
@@ -142,8 +140,21 @@ function SettingsPage() {
 
   const handleSave = async () => {
     try {
-      await localDb.settings.put({ ...settings, id: "default" });
-      toast.success("Settings saved successfully.");
+      const orgId = user?.orgId || (settings as any).orgId || "demo-org";
+      const settingId = user?.orgId && user.orgId !== "default" && user.orgId !== "demo-org" && user.orgId !== "superadmin"
+        ? (settings.id === "default" ? `setting_${user.orgId}` : (settings.id || `setting_${user.orgId}`))
+        : (settings.id || "default");
+
+      const updatedSetting = {
+        ...settings,
+        id: settingId,
+        orgId: orgId,
+        synced: false,
+        updatedAt: new Date().toISOString(),
+      };
+      await localDb.settings.put(updatedSetting);
+      toast.success("Settings saved locally & syncing to cloud database...");
+      SyncEngine.syncAll().catch(err => console.warn("Background sync error:", err));
     } catch (error) {
       console.error("Settings save error:", error);
       toast.error("Failed to save settings.");
@@ -163,93 +174,8 @@ function SettingsPage() {
   };
 
 
-  const [passForm, setPassForm] = useState({
-    currentPassword: "",
-    newPassword: "",
-    confirmPassword: "",
-    newPin: user?.pin || ""
-  });
-  const [isUpdatingSecurity, setIsUpdatingSecurity] = useState(false);
-
-  useEffect(() => {
-    if (user?.pin && !passForm.newPin) {
-      setPassForm(p => ({ ...p, newPin: user.pin || "" }));
-    }
-  }, [user]);
-
-  const handleUpdateSecurity = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!user) {
-      toast.error("No active user found.");
-      return;
-    }
-
-    if (user.pin && passForm.currentPassword) {
-      if (user.pin !== passForm.currentPassword) {
-        toast.error("Current password / PIN is incorrect.");
-        return;
-      }
-    }
-
-    if (passForm.newPassword) {
-      if (passForm.newPassword.length < 4) {
-        toast.error("New password must be at least 4 characters long.");
-        return;
-      }
-      if (passForm.newPassword !== passForm.confirmPassword) {
-        toast.error("New password and confirm password do not match.");
-        return;
-      }
-    }
-
-    if (passForm.newPin && !/^\d{4}$/.test(passForm.newPin)) {
-      toast.error("Cashier PIN must be a 4-digit number (e.g. 1234).");
-      return;
-    }
-
-    if (!passForm.newPassword && passForm.newPin === user.pin) {
-      toast.info("No changes made to password or PIN.");
-      return;
-    }
-
-    setIsUpdatingSecurity(true);
-    try {
-      const updatedPin = passForm.newPassword || passForm.newPin || user.pin;
-      await localDb.users.update(user.id, {
-        pin: updatedPin,
-        synced: false
-      });
-
-      await localDb.activityLog.add({
-        id: "act_" + Date.now(),
-        orgId: user.orgId || "demo-org",
-        user: user.name || user.email || "Admin",
-        action: "Updated login password & cashier security PIN",
-        timestamp: new Date().toISOString(),
-        synced: false
-      });
-
-      addSystemNotification(
-        "Security Credentials Updated",
-        "Your account password and access PIN were updated successfully.",
-        "success",
-        "/settings?tab=security"
-      ).catch(console.warn);
-
-      toast.success("Security credentials updated successfully!");
-      setPassForm({ currentPassword: "", newPassword: "", confirmPassword: "", newPin: updatedPin || "" });
-      SyncEngine.syncAll().catch((err: any) => console.warn(err));
-    } catch (err) {
-      console.error("Security update error:", err);
-      toast.error("Failed to update password. Please try again.");
-    } finally {
-      setIsUpdatingSecurity(false);
-    }
-  };
-
   const sections = [
     { id: "store", label: t("storeInfo") || "Store Information" },
-    { id: "security", label: "Security & Password" },
     { id: "billing", label: t("billing") || "Billing & Plan" },
     { id: "tax", label: t("taxes") || "Taxes" },
     { id: "receipt", label: t("receipts") || "Receipt" },
@@ -285,6 +211,63 @@ function SettingsPage() {
         <div className="flex-1 space-y-6">
           <TabsContent value="store" className="mt-0 outline-none">
             <Card title="Store Information" desc="Used on receipts and reports.">
+              <div className="mb-6 flex flex-col sm:flex-row items-center gap-5 p-4 border border-border rounded-xl bg-muted/20">
+                <div className="size-20 shrink-0 rounded-xl border-2 border-dashed border-primary/40 bg-card flex items-center justify-center overflow-hidden relative shadow-sm">
+                  {settings.logoUrl ? (
+                    <img src={settings.logoUrl} alt="Store Logo" className="size-full object-contain p-1" />
+                  ) : (
+                    <div className="flex flex-col items-center justify-center text-muted-foreground">
+                      <QrCode className="size-6 mb-1 opacity-50" />
+                      <span className="text-[10px] font-semibold">No Logo</span>
+                    </div>
+                  )}
+                </div>
+                <div className="flex-1 space-y-2 text-center sm:text-left">
+                  <div>
+                    <h4 className="text-sm font-bold text-foreground">Store Logo (Dynamic)</h4>
+                    <p className="text-xs text-muted-foreground">Upload your custom logo (PNG/JPG). This will dynamically display in the sidebar, header, and printed thermal/A4 receipts.</p>
+                  </div>
+                  <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
+                    <label className="inline-flex items-center justify-center h-8 px-3 rounded-md text-xs font-semibold bg-primary text-primary-foreground hover:bg-primary/90 cursor-pointer transition-colors shadow-sm">
+                      Upload New Logo
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            if (file.size > 2 * 1024 * 1024) {
+                              toast.error("Logo file size must be less than 2MB");
+                              return;
+                            }
+                            const reader = new FileReader();
+                            reader.onloadend = () => {
+                              handleChange("logoUrl", reader.result as string);
+                              toast.success("Logo uploaded! Click 'Save changes' below to apply globally.");
+                            };
+                            reader.readAsDataURL(file);
+                          }
+                        }}
+                      />
+                    </label>
+                    {settings.logoUrl && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="h-8 text-xs text-destructive hover:bg-destructive/10"
+                        onClick={() => {
+                          handleChange("logoUrl", "");
+                          toast.info("Logo removed. Click 'Save changes' below.");
+                        }}
+                      >
+                        Remove Logo
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              </div>
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <Field label="Store name">
                   <input className="inp" value={settings.storeName} onChange={(e) => handleChange("storeName", e.target.value)} />
@@ -324,83 +307,6 @@ function SettingsPage() {
                   />
                 </Field>
               </div>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="security" className="mt-0 outline-none space-y-6">
-            <Card title="Account Security & Password" desc="Update your login password and cashier POS access PIN.">
-              <form onSubmit={handleUpdateSecurity} className="space-y-6">
-                <div className="rounded-xl border border-border/80 bg-muted/20 p-4 flex items-start gap-3">
-                  <ShieldCheck className="size-5 text-primary shrink-0 mt-0.5" />
-                  <div className="text-xs space-y-1">
-                    <p className="font-semibold text-foreground">Logged in Account Security</p>
-                    <p className="text-muted-foreground">
-                      User: <strong className="text-foreground">{user?.name || "Admin"}</strong> ({user?.email || "No email"}) | Role: <span className="uppercase font-mono text-primary font-bold">{user?.role || "admin"}</span>
-                    </p>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                  <div className="sm:col-span-2 space-y-1.5">
-                    <Label className="text-xs font-semibold">Current Password / PIN (Verification)</Label>
-                    <PasswordInput
-                      value={passForm.currentPassword}
-                      onChange={(e) => setPassForm(p => ({ ...p, currentPassword: e.target.value }))}
-                      placeholder="Enter your current password or 4-digit PIN"
-                      className="bg-background"
-                    />
-                    <p className="text-[11px] text-muted-foreground">Required to verify identity before saving changes.</p>
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <Label className="text-xs font-semibold flex items-center gap-1.5">
-                      <Lock className="size-3.5 text-muted-foreground" /> New Password
-                    </Label>
-                    <PasswordInput
-                      value={passForm.newPassword}
-                      onChange={(e) => setPassForm(p => ({ ...p, newPassword: e.target.value }))}
-                      placeholder="At least 4 characters"
-                      className="bg-background"
-                    />
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <Label className="text-xs font-semibold flex items-center gap-1.5">
-                      <Lock className="size-3.5 text-muted-foreground" /> Confirm New Password
-                    </Label>
-                    <PasswordInput
-                      value={passForm.confirmPassword}
-                      onChange={(e) => setPassForm(p => ({ ...p, confirmPassword: e.target.value }))}
-                      placeholder="Re-enter new password"
-                      className="bg-background"
-                    />
-                  </div>
-
-                  <div className="sm:col-span-2 pt-2 border-t space-y-1.5">
-                    <Label className="text-xs font-semibold flex items-center gap-1.5">
-                      <Key className="size-3.5 text-muted-foreground" /> POS Cashier Quick Access PIN
-                    </Label>
-                    <Input
-                      type="text"
-                      maxLength={4}
-                      value={passForm.newPin}
-                      onChange={(e) => setPassForm(p => ({ ...p, newPin: e.target.value.replace(/\D/g, "") }))}
-                      placeholder="e.g. 1234 (4 digits)"
-                      className="bg-background font-mono tracking-widest text-base sm:w-64"
-                    />
-                    <p className="text-[11px] text-muted-foreground">
-                      This 4-digit PIN is used for fast login on the POS terminal screen.
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex justify-end pt-2">
-                  <Button type="submit" disabled={isUpdatingSecurity} className="bg-primary hover:bg-primary/90">
-                    {isUpdatingSecurity && <Loader2 className="size-4 animate-spin mr-2" />}
-                    <ShieldCheck className="size-4 mr-2" /> Update Security Credentials
-                  </Button>
-                </div>
-              </form>
             </Card>
           </TabsContent>
 
@@ -653,7 +559,7 @@ function SettingsPage() {
                   <span className="text-muted-foreground block text-[10px]">Account Number</span>
                   <span className="font-mono font-semibold text-primary">{paymentConfig?.accountNo || "50200098765432"}</span>
                 </div>
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   <div>
                     <span className="text-muted-foreground block text-[10px]">IFSC Code</span>
                     <span className="font-mono">{paymentConfig?.ifscCode || "HDFC0001234"}</span>

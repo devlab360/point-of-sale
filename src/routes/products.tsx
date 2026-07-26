@@ -69,9 +69,11 @@ function ProductsPage() {
       const lower = debouncedSearch.toLowerCase();
       filtered = filtered.filter(
         (p) =>
-          p.name.toLowerCase().includes(lower) ||
-          p.sku.toLowerCase().includes(lower) ||
-          p.barcode.toLowerCase().includes(lower)
+          Boolean(
+            (p.name && String(p.name).toLowerCase().includes(lower)) ||
+            (p.sku && String(p.sku).toLowerCase().includes(lower)) ||
+            (p.barcode && String(p.barcode).toLowerCase().includes(lower))
+          )
       );
     }
     if (categoryFilter) {

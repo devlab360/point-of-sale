@@ -4,7 +4,7 @@ import { localDb, type LocalUser } from "@/lib/db";
 import { initiateGoogleOAuth, initiateFacebookOAuth, GOOGLE_CLIENT_ID, FACEBOOK_APP_ID } from "@/lib/auth-social";
 import { toast } from "sonner";
 import { useRouter } from "@tanstack/react-router";
-import { getSuperAdminDataFn, pullEverythingFn } from "@/sync-api";
+import { getSuperAdminDataFn, pullEverythingFn, verifyUserEmailFn } from "@/sync-api";
 
 interface AuthContextType {
   user: LocalUser | null;
@@ -174,11 +174,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const loginWithEmail = async (email: string, password: string) => {
     try {
       const SUPER_ADMIN_EMAIL = import.meta.env.VITE_SUPER_ADMIN_EMAIL || "superadmin@pos.com";
-      const SUPER_ADMIN_PASS = import.meta.env.VITE_SUPER_ADMIN_PASSWORD || "admin123";
+      const SUPER_ADMIN_PASS = import.meta.env.VITE_SUPER_ADMIN_PASSWORD || "";
 
       // Super Admin special login
       if (email.toLowerCase().trim() === SUPER_ADMIN_EMAIL.toLowerCase()) {
-        if (password !== SUPER_ADMIN_PASS) {
+        if (!SUPER_ADMIN_PASS || password !== SUPER_ADMIN_PASS) {
           toast.error("Invalid super admin credentials");
           return false;
         }
@@ -206,18 +206,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const allUsers = await localDb.users.toArray();
       let foundUser = allUsers.find((u: LocalUser) => u.email?.toLowerCase() === email.toLowerCase().trim());
 
-      // If not found locally, try fetching from Neon DB
+      // If not found locally, try fetching from Neon DB using targeted verification endpoint
       if (!foundUser) {
         try {
-          const ADMIN_KEY = import.meta.env.VITE_SUPER_ADMIN_PASSWORD || "admin123";
-          const remoteResult = await getSuperAdminDataFn({ data: { adminKey: ADMIN_KEY } }) as any;
+          const remoteResult = await verifyUserEmailFn({ data: { email } }) as any;
           if (remoteResult.success && remoteResult.data) {
-            const remoteUser = remoteResult.data.users.find((u: any) => u.email?.toLowerCase() === email.toLowerCase().trim());
+            const remoteUser = remoteResult.data.user;
             if (remoteUser) {
               // Cache user locally
               const localUserData: LocalUser = {
                 id: remoteUser.id,
-                orgId: remoteUser.organizationId,
+                orgId: remoteUser.organizationId || remoteUser.orgId,
                 name: remoteUser.name,
                 email: remoteUser.email,
                 role: remoteUser.role,
@@ -228,7 +227,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               };
               await localDb.users.put(localUserData);
               // Also cache organization
-              const remoteOrg = remoteResult.data.organizations.find((o: any) => o.id === remoteUser.organizationId);
+              const remoteOrg = remoteResult.data.organization;
               if (remoteOrg) {
                 await localDb.saasOrganizations.put({
                   id: remoteOrg.id,
