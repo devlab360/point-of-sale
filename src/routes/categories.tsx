@@ -1,9 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Pencil, Tag, Trash2, Plus, LayoutGrid } from "lucide-react";
+import { Pencil, Tag, Trash2, Plus, LayoutGrid, Loader2 } from "lucide-react";
 import { DataPage } from "@/components/layout/DataPage";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PaginationControls } from "@/components/ui/pagination-controls";
-import { localDb } from "@/lib/db";
+import { localDb, type LocalCategory } from "@/lib/db";
 import { useLiveQuery } from "dexie-react-hooks";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
@@ -23,7 +23,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-
+import { useFormValidation } from "@/hooks/useFormValidation";
+import { FieldError } from "@/components/ui/field-error";
 
 export const Route = createFileRoute("/categories")({
   head: () => ({ meta: [{ title: "Categories · Grocer.Pro" }] }),
@@ -42,7 +43,8 @@ function CategoriesPage() {
   }, [rawCategories, products]);
 
   const [modalOpen, setModalOpen] = useState(false);
-  const [editingCat, setEditingCat] = useState<any>(null);
+  const [editingCat, setEditingCat] = useState<LocalCategory | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
   
   const [name, setName] = useState("");
   const [icon, setIcon] = useState("🛒");
@@ -84,7 +86,7 @@ function CategoriesPage() {
     setModalOpen(true);
   };
 
-  const openEdit = (cat: any) => {
+  const openEdit = (cat: LocalCategory) => {
     setEditingCat(cat);
     setName(cat.name);
     setIcon(cat.icon);
@@ -92,9 +94,16 @@ function CategoriesPage() {
     setModalOpen(true);
   };
 
-  const save = async () => {
-    if (!name.trim()) return toast.error("Name is required");
+  const { errors: catErrors, validate: validateCat, clearError: clearCatError, clearAll: clearCatAll } = useFormValidation({
+    name: { required: "Category name is required" },
+  });
+
+  const save = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const isValid = validateCat({ name });
+    if (!isValid) return;
     
+    setIsSaving(true);
     try {
       if (editingCat) {
         await localDb.categories.update(editingCat.id, { name, icon, color });
@@ -110,8 +119,11 @@ function CategoriesPage() {
         toast.success("Category created");
       }
       setModalOpen(false);
+      clearCatAll();
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "An error occurred");
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -179,31 +191,44 @@ function CategoriesPage() {
         )}
       </DataPage>
 
-      <Dialog open={modalOpen} onOpenChange={setModalOpen}>
+      <Dialog open={modalOpen} onOpenChange={(open) => {
+        if (!open) { setModalOpen(false); clearCatAll(); }
+      }}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>{editingCat ? "Edit Category" : "New Category"}</DialogTitle>
           </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid gap-2">
-              <Label htmlFor="name">Name</Label>
-              <Input id="name" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Beverages" />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="grid gap-2">
-                <Label htmlFor="icon">Emoji Icon</Label>
-                <Input id="icon" value={icon} onChange={(e) => setIcon(e.target.value)} placeholder="🥤" />
+          <form onSubmit={save} noValidate>
+            <div className="grid gap-4 py-4">
+              <div className="grid gap-1.5">
+                <Label htmlFor="name">Name <span className="text-destructive">*</span></Label>
+                <Input
+                  id="name" value={name}
+                  onChange={(e) => { setName(e.target.value); clearCatError("name"); }}
+                  placeholder="e.g. Beverages"
+                  className={catErrors.name ? "border-destructive focus-visible:ring-destructive" : ""}
+                />
+                <FieldError message={catErrors.name} />
               </div>
-              <div className="grid gap-2">
-                <Label htmlFor="color">Theme Color</Label>
-                <Input id="color" value={color} onChange={(e) => setColor(e.target.value)} placeholder="var(--color-primary)" />
+              <div className="grid grid-cols-2 gap-4">
+                <div className="grid gap-1.5">
+                  <Label htmlFor="icon">Emoji Icon</Label>
+                  <Input id="icon" value={icon} onChange={(e) => setIcon(e.target.value)} placeholder="🥤" />
+                </div>
+                <div className="grid gap-1.5">
+                  <Label htmlFor="color">Theme Color</Label>
+                  <Input id="color" value={color} onChange={(e) => setColor(e.target.value)} placeholder="var(--color-primary)" />
+                </div>
               </div>
             </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setModalOpen(false)}>Cancel</Button>
-            <Button onClick={save}>Save changes</Button>
-          </DialogFooter>
+            <DialogFooter className="mt-6">
+              <Button type="button" variant="outline" onClick={() => { setModalOpen(false); clearCatAll(); }}>Cancel</Button>
+              <Button type="submit" disabled={isSaving}>
+                {isSaving && <Loader2 className="size-4 animate-spin mr-2" />}
+                Save changes
+              </Button>
+            </DialogFooter>
+          </form>
         </DialogContent>
       </Dialog>
 

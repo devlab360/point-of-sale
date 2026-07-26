@@ -5,9 +5,11 @@ import { useState, useEffect } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { localDb } from "@/lib/db";
 import { toast } from "sonner";
+import { Loader2 } from "lucide-react";
 import { useLanguage, LANGUAGES } from "@/contexts/LanguageContext";
 import { COUNTRY_CODES, TIMEZONES, DATE_FORMATS } from "@/lib/formatters";
 import { SearchableSelect } from "@/components/ui/searchable-select";
+import { FieldError } from "@/components/ui/field-error";
 
 export const Route = createFileRoute("/profile")({
   head: () => ({ meta: [{ title: "Profile · Grocer.Pro" }] }),
@@ -41,17 +43,36 @@ function ProfilePage() {
     }
   }, [dbProfile]);
 
+  const [profileErrors, setProfileErrors] = useState<Record<string, string>>({});
+  const [isSaving, setIsSaving] = useState(false);
+
   const handleChange = (key: string, value: string) => {
     setProfile((prev) => ({ ...prev, [key]: value }));
+    if (profileErrors[key]) setProfileErrors(prev => { const n = {...prev}; delete n[key]; return n; });
   };
 
   const handleSave = async () => {
+    const errors: Record<string, string> = {};
+    if (!profile.name?.trim()) errors.name = "Full name is required";
+    if (profile.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(profile.email.trim())) errors.email = "Enter a valid email address";
+    if (profile.phone) {
+      const clean = profile.phone.replace(/[\s\-\+\(\)]/g, "");
+      if (!/^\d{10,15}$/.test(clean)) errors.phone = "Enter a valid 10-15 digit phone number";
+    }
+    if (Object.keys(errors).length > 0) {
+      setProfileErrors(errors);
+      toast.error(Object.values(errors)[0]);
+      return;
+    }
     try {
+      setIsSaving(true);
       await localDb.users.put({ ...profile, id: "me" });
       toast.success("Profile updated successfully.");
     } catch (error) {
       console.error("Profile save error:", error);
       toast.error("Failed to update profile.");
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -69,7 +90,12 @@ function ProfilePage() {
       <PageHeader 
         title={t("profile") || "Your Profile"} 
         description="Personal details and preferences." 
-        actions={<Button onClick={handleSave}>{t("save")}</Button>} 
+        actions={
+          <Button onClick={handleSave} disabled={isSaving}>
+            {isSaving && <Loader2 className="size-4 animate-spin mr-2" />}
+            {t("save")}
+          </Button>
+        } 
       />
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div className="rounded-xl border border-border bg-card p-6 text-center shadow-soft">
@@ -83,16 +109,31 @@ function ProfilePage() {
         <div className="rounded-xl border border-border bg-card p-6 shadow-soft lg:col-span-2">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <label className="block">
-              <span className="mb-1.5 block text-xs font-semibold text-muted-foreground">Full name</span>
-              <input value={profile.name} onChange={e => handleChange('name', e.target.value)} className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/20" />
+              <span className="mb-1.5 block text-xs font-semibold text-muted-foreground">Full name <span className="text-destructive">*</span></span>
+              <input
+                value={profile.name}
+                onChange={e => handleChange('name', e.target.value)}
+                className={`w-full rounded-lg border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring/20 ${profileErrors.name ? 'border-destructive focus:border-destructive' : 'border-border focus:border-ring'}`}
+              />
+              <FieldError message={profileErrors.name} />
             </label>
             <label className="block">
               <span className="mb-1.5 block text-xs font-semibold text-muted-foreground">Email</span>
-              <input value={profile.email} onChange={e => handleChange('email', e.target.value)} className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/20" />
+              <input
+                value={profile.email}
+                onChange={e => handleChange('email', e.target.value)}
+                className={`w-full rounded-lg border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring/20 ${profileErrors.email ? 'border-destructive focus:border-destructive' : 'border-border focus:border-ring'}`}
+              />
+              <FieldError message={profileErrors.email} />
             </label>
             <label className="block">
               <span className="mb-1.5 block text-xs font-semibold text-muted-foreground">Phone</span>
-              <input value={profile.phone || ""} onChange={e => handleChange('phone', e.target.value)} className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/20" />
+              <input
+                value={profile.phone || ""}
+                onChange={e => handleChange('phone', e.target.value)}
+                className={`w-full rounded-lg border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring/20 ${profileErrors.phone ? 'border-destructive focus:border-destructive' : 'border-border focus:border-ring'}`}
+              />
+              <FieldError message={profileErrors.phone} />
             </label>
             <label className="block">
               <span className="mb-1.5 block text-xs font-semibold text-muted-foreground">Role</span>

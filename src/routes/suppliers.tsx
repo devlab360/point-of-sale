@@ -27,12 +27,15 @@ import {
 } from "@/components/ui/alert-dialog";
 import { localDb } from "@/lib/db";
 import { useLiveQuery } from "dexie-react-hooks";
+import { Truck, Plus, Trash2, Edit2, Search, ArrowUpRight, ArrowDownLeft, Calendar, FileText, CheckCircle2, Star, Loader2 } from "lucide-react";
 import { useCurrency } from "@/lib/currency";
-import { MoreVertical, Edit2, Trash2, Truck } from "lucide-react";
+import { MoreVertical } from "lucide-react";
 import { v4 as uuidv4 } from "uuid";
 import { toast } from "sonner";
 import type { LocalSupplier } from "@/lib/db";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useFormValidation } from "@/hooks/useFormValidation";
+import { FieldError } from "@/components/ui/field-error";
 
 export const Route = createFileRoute("/suppliers")({
   head: () => ({ meta: [{ title: "Suppliers · Grocer.Pro" }] }),
@@ -46,6 +49,7 @@ function SuppliersPage() {
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [editItem, setEditItem] = useState<LocalSupplier | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
   const [ledgerSupplier, setLedgerSupplier] = useState<LocalSupplier | null>(null);
 
   const supplierLedgerEntries = useLiveQuery(() => {
@@ -81,19 +85,25 @@ function SuppliersPage() {
     return suppliers.slice(start, start + pageSize);
   }, [suppliers, page, pageSize]);
 
+  const { errors: suppErrors, validate: validateSupp, clearError: clearSuppError, clearAll: clearSuppAll } = useFormValidation({
+    name: { required: "Supplier name is required", minLength: { value: 2, message: "Name must be at least 2 characters" } },
+    contact: { required: "Contact person name is required" },
+    email: { email: "Enter a valid email address" },
+    phone: { phone: "Enter a valid phone number" },
+  });
+
   const handleSave = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    setIsSaving(true);
     try {
       const formData = new FormData(e.currentTarget);
-      const name = formData.get("name") as string;
-      const contact = formData.get("contact") as string;
-      const phone = formData.get("phone") as string;
-      const email = formData.get("email") as string;
+      const name = (formData.get("name") as string)?.trim();
+      const contact = (formData.get("contact") as string)?.trim();
+      const phone = (formData.get("phone") as string)?.trim();
+      const email = (formData.get("email") as string)?.trim();
 
-      if (!name) {
-        toast.error("Name is required");
-        return;
-      }
+      const isValid = validateSupp({ name, contact, email, phone });
+      if (!isValid) return;
 
       if (editItem) {
         await localDb.suppliers.update(editItem.id, { name, contact, phone, email });
@@ -112,8 +122,11 @@ function SuppliersPage() {
         toast.success("Supplier added successfully");
         setIsAddOpen(false);
       }
+      clearSuppAll();
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "An error occurred");
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -208,34 +221,66 @@ function SuppliersPage() {
         if (!open) {
           setIsAddOpen(false);
           setEditItem(null);
+          clearSuppAll();
         }
       }}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>{editItem ? "Edit Supplier" : "Add Supplier"}</DialogTitle>
           </DialogHeader>
-          <form onSubmit={handleSave} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="name">Supplier Name</Label>
-              <Input id="name" name="name" placeholder="e.g. Supplier Company Name" required defaultValue={editItem?.name} />
+          <form noValidate onSubmit={handleSave} className="space-y-4">
+            <div className="space-y-1.5">
+              <Label htmlFor="name">Supplier Name <span className="text-destructive">*</span></Label>
+              <Input
+                id="name" name="name"
+                placeholder="e.g. Supplier Company Name"
+                defaultValue={editItem?.name}
+                className={suppErrors.name ? "border-destructive focus-visible:ring-destructive" : ""}
+                onChange={() => clearSuppError("name")}
+              />
+              <FieldError message={suppErrors.name} />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="contact">Contact Person</Label>
-              <Input id="contact" name="contact" placeholder="e.g. Contact Person Name" required defaultValue={editItem?.contact} />
+            <div className="space-y-1.5">
+              <Label htmlFor="contact">Contact Person <span className="text-destructive">*</span></Label>
+              <Input
+                id="contact" name="contact"
+                placeholder="e.g. Contact Person Name"
+                defaultValue={editItem?.contact}
+                className={suppErrors.contact ? "border-destructive focus-visible:ring-destructive" : ""}
+                onChange={() => clearSuppError("contact")}
+              />
+              <FieldError message={suppErrors.contact} />
             </div>
             <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 <Label htmlFor="email">Email</Label>
-                <Input id="email" name="email" type="email" placeholder="e.g. supplier@example.com" required defaultValue={editItem?.email} />
+                <Input
+                  id="email" name="email" type="email"
+                  placeholder="e.g. supplier@example.com"
+                  defaultValue={editItem?.email}
+                  className={suppErrors.email ? "border-destructive focus-visible:ring-destructive" : ""}
+                  onChange={() => clearSuppError("email")}
+                />
+                <FieldError message={suppErrors.email} />
               </div>
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 <Label htmlFor="phone">Phone</Label>
-                <Input id="phone" name="phone" type="tel" placeholder="e.g. +880 1700 000000" required defaultValue={editItem?.phone} />
+                <Input
+                  id="phone" name="phone" type="tel"
+                  placeholder="e.g. +880 1700 000000"
+                  defaultValue={editItem?.phone}
+                  className={suppErrors.phone ? "border-destructive focus-visible:ring-destructive" : ""}
+                  onChange={() => clearSuppError("phone")}
+                />
+                <FieldError message={suppErrors.phone} />
               </div>
             </div>
             <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => { setIsAddOpen(false); setEditItem(null); }}>Cancel</Button>
-              <Button type="submit">Save Supplier</Button>
+              <Button type="button" variant="outline" onClick={() => { setIsAddOpen(false); setEditItem(null); clearSuppAll(); }}>Cancel</Button>
+              <Button type="submit" disabled={isSaving}>
+                {isSaving && <Loader2 className="size-4 animate-spin mr-2" />}
+                Save Supplier
+              </Button>
             </DialogFooter>
           </form>
         </DialogContent>

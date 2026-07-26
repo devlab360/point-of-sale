@@ -8,6 +8,10 @@ import { Store, UserCircle2, KeyRound, ArrowLeft, Loader2, Mail, ShieldCheck } f
 import { generateVerificationOtp, sendPasswordResetEmail } from "@/lib/email-service";
 import { localDb } from "@/lib/db";
 import { toast } from "sonner";
+import { validateEmail, validatePassword, sanitizeInput } from "@/lib/validation";
+import { checkRateLimit } from "@/lib/api-response";
+import { useFormValidation } from "@/hooks/useFormValidation";
+import { FieldError } from "@/components/ui/field-error";
 
 export const Route = createFileRoute("/login")({
   head: () => ({ meta: [{ title: "Login · Grocer.Pro" }] }),
@@ -32,6 +36,22 @@ function LoginPage() {
   const [isSendingOtp, setIsSendingOtp] = useState(false);
   const [isResetting, setIsResetting] = useState(false);
 
+  // Validation hooks
+  const { errors: loginErrors, validate: validateLogin, clearError: clearLoginError } = useFormValidation({
+    email: { required: "Email is required", email: "Enter a valid email address" },
+    password: { required: "Password is required", minLength: { value: 4, message: "Password must be at least 4 characters" } },
+  });
+
+  const { errors: forgotErrors, validate: validateForgot, clearError: clearForgotError } = useFormValidation({
+    resetEmail: { required: "Email is required", email: "Enter a valid email address" },
+  });
+
+  const { errors: resetErrors, validate: validateReset, clearError: clearResetError } = useFormValidation({
+    otpInput: { required: "OTP code is required", minLength: { value: 6, message: "OTP must be 6 digits" } },
+    newPassword: { required: "New password is required", minLength: { value: 4, message: "Password must be at least 4 characters" } },
+    confirmPassword: { required: "Please confirm your password" },
+  });
+
   const handleKeyPress = (num: string) => {
     if (pin.length < 4) {
       setPin(prev => prev + num);
@@ -52,14 +72,47 @@ function LoginPage() {
 
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    await loginWithEmail(email, password);
+    const cleanEmail = sanitizeInput(email);
+
+    const isValid = validateLogin({ email: cleanEmail, password });
+    if (!isValid) return;
+
+    const emailVal = validateEmail(cleanEmail);
+    if (!emailVal.valid) {
+      toast.error(emailVal.error);
+      return;
+    }
+    const passVal = validatePassword(password);
+    if (!passVal.valid) {
+      toast.error(passVal.error);
+      return;
+    }
+
+    const rateCheck = checkRateLimit(`login_${cleanEmail}`, 5, 60000);
+    if (!rateCheck.allowed) {
+      toast.error(`Too many login attempts. Please wait ${rateCheck.retryAfterSec} seconds.`);
+      return;
+    }
+
+    await loginWithEmail(cleanEmail, password);
   };
 
   const handleSendResetOtp = async (e: React.FormEvent) => {
     e.preventDefault();
-    const targetEmail = resetEmail.trim() || email.trim();
-    if (!targetEmail) {
-      toast.error("Please enter your registered email address.");
+    const targetEmail = sanitizeInput(resetEmail || email);
+
+    const isValid = validateForgot({ resetEmail: targetEmail });
+    if (!isValid) return;
+
+    const emailVal = validateEmail(targetEmail);
+    if (!emailVal.valid) {
+      toast.error(emailVal.error);
+      return;
+    }
+
+    const rateCheck = checkRateLimit(`otp_${targetEmail}`, 3, 60000);
+    if (!rateCheck.allowed) {
+      toast.error(`OTP request limit reached. Please wait ${rateCheck.retryAfterSec} seconds.`);
       return;
     }
     setIsSendingOtp(true);
@@ -83,6 +136,9 @@ function LoginPage() {
   const handleResetPasswordSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const targetEmail = (resetEmail.trim() || email.trim()).toLowerCase();
+
+    const isValid = validateReset({ otpInput, newPassword, confirmPassword });
+    if (!isValid) return;
     
     if (!otpInput.trim()) {
       toast.error("Please enter the 6-digit OTP code sent to your email.");
@@ -163,12 +219,19 @@ function LoginPage() {
         </div>
 
         {mode === "email" ? (
-          <form onSubmit={handleEmailLogin} className="space-y-4">
-            <div className="space-y-2">
+          <form noValidate onSubmit={handleEmailLogin} className="space-y-4">
+            <div className="space-y-1.5">
               <Label>Email</Label>
-              <Input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="owner@store.com" />
+              <Input
+                type="email"
+                value={email}
+                onChange={(e) => { setEmail(e.target.value); clearLoginError("email"); }}
+                placeholder="owner@store.com"
+                className={loginErrors.email ? "border-destructive focus-visible:ring-destructive" : ""}
+              />
+              <FieldError message={loginErrors.email} />
             </div>
-            <div className="space-y-2">
+            <div className="space-y-1.5">
               <div className="flex items-center justify-between">
                 <Label>Password</Label>
                 <button
@@ -183,7 +246,13 @@ function LoginPage() {
                   Forgot password?
                 </button>
               </div>
-              <PasswordInput required value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" />
+              <PasswordInput
+                value={password}
+                onChange={(e) => { setPassword(e.target.value); clearLoginError("password"); }}
+                placeholder="••••••••"
+                className={loginErrors.password ? "border-destructive focus-visible:ring-destructive" : ""}
+              />
+              <FieldError message={loginErrors.password} />
             </div>
             <Button type="submit" className="w-full mt-2">Sign In</Button>
             
@@ -216,16 +285,17 @@ function LoginPage() {
           </form>
         ) : mode === "forgot" ? (
           forgotStep === "request" ? (
-            <form onSubmit={handleSendResetOtp} className="space-y-4">
-              <div className="space-y-2">
+            <form noValidate onSubmit={handleSendResetOtp} className="space-y-4">
+              <div className="space-y-1.5">
                 <Label>Enter Your Registered Email</Label>
                 <Input
                   type="email"
-                  required
                   value={resetEmail}
-                  onChange={(e) => setResetEmail(e.target.value)}
+                  onChange={(e) => { setResetEmail(e.target.value); clearForgotError("resetEmail"); }}
                   placeholder="owner@store.com"
+                  className={forgotErrors.resetEmail ? "border-destructive focus-visible:ring-destructive" : ""}
                 />
+                <FieldError message={forgotErrors.resetEmail} />
                 <p className="text-xs text-muted-foreground">
                   We will send a 6-digit OTP verification code to your email.
                 </p>
@@ -247,43 +317,51 @@ function LoginPage() {
               </div>
             </form>
           ) : (
-            <form onSubmit={handleResetPasswordSubmit} className="space-y-4">
+            <form noValidate onSubmit={handleResetPasswordSubmit} className="space-y-4">
               <div className="p-3 bg-muted/40 border rounded-lg text-xs space-y-1">
                 <p className="font-semibold text-foreground">OTP Sent to:</p>
                 <p className="text-muted-foreground font-mono truncate">{resetEmail}</p>
               </div>
 
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 <Label>6-Digit OTP Code</Label>
                 <Input
                   type="text"
                   maxLength={6}
-                  required
                   value={otpInput}
-                  onChange={(e) => setOtpInput(e.target.value.replace(/\D/g, ""))}
+                  onChange={(e) => { setOtpInput(e.target.value.replace(/\D/g, "")); clearResetError("otpInput"); }}
                   placeholder="e.g. 123456"
-                  className="font-mono text-center text-lg tracking-widest"
+                  className={`font-mono text-center text-lg tracking-widest ${resetErrors.otpInput ? "border-destructive" : ""}`}
                 />
+                <FieldError message={resetErrors.otpInput} />
               </div>
 
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 <Label>New Password</Label>
                 <PasswordInput
-                  required
                   value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
+                  onChange={(e) => { setNewPassword(e.target.value); clearResetError("newPassword"); }}
                   placeholder="At least 4 characters"
+                  className={resetErrors.newPassword ? "border-destructive" : ""}
                 />
+                <FieldError message={resetErrors.newPassword} />
               </div>
 
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 <Label>Confirm New Password</Label>
                 <PasswordInput
-                  required
                   value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  onChange={(e) => { setConfirmPassword(e.target.value); clearResetError("confirmPassword"); }}
                   placeholder="Re-enter new password"
+                  className={resetErrors.confirmPassword ? "border-destructive" : ""}
                 />
+                {newPassword && confirmPassword && newPassword !== confirmPassword && (
+                  <p className="text-[11px] text-destructive font-medium">✕ Passwords do not match</p>
+                )}
+                {newPassword && confirmPassword && newPassword === confirmPassword && (
+                  <p className="text-[11px] text-success font-medium">✓ Passwords match</p>
+                )}
+                <FieldError message={resetErrors.confirmPassword} />
               </div>
 
               <Button type="submit" disabled={isResetting} className="w-full">

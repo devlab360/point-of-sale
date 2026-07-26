@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { db } from "./db";
 import * as schema from "./db/schema";
-import { eq, gt, and, inArray } from "drizzle-orm";
+import { eq, gt, and, inArray, ilike } from "drizzle-orm";
 
 export const pullEverythingFn = createServerFn({ method: "GET" })
   .validator((data: { orgId: string; syncKey: string; lastSyncedAt?: string }) => data)
@@ -304,7 +304,7 @@ export const verifyUserEmailFn = createServerFn({ method: "POST" })
     if (!email) return { success: false, error: "Email required" };
 
     try {
-      const users = await db.select().from(schema.users).where(eq(schema.users.email, email)).limit(1);
+      const users = await db.select().from(schema.users).where(ilike(schema.users.email, email)).limit(1);
       if (!users.length) {
         return { success: false, error: "User not found" };
       }
@@ -312,9 +312,12 @@ export const verifyUserEmailFn = createServerFn({ method: "POST" })
       const orgId = user.organizationId;
 
       let org = null;
+      let orgSettings = null;
       if (orgId) {
         const orgs = await db.select().from(schema.organizations).where(eq(schema.organizations.id, orgId)).limit(1);
         if (orgs.length) org = orgs[0];
+        const stgs = await db.select().from(schema.settings).where(eq(schema.settings.organizationId, orgId)).limit(1);
+        if (stgs.length) orgSettings = stgs[0];
       }
 
       const plans = await db.select().from(schema.saasPlans);
@@ -324,6 +327,7 @@ export const verifyUserEmailFn = createServerFn({ method: "POST" })
         data: {
           user: JSON.parse(JSON.stringify(user)),
           organization: org ? JSON.parse(JSON.stringify(org)) : null,
+          settings: orgSettings ? JSON.parse(JSON.stringify(orgSettings)) : null,
           plans: JSON.parse(JSON.stringify(plans))
         }
       };
@@ -420,6 +424,18 @@ export const createTenantUserFn = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     if (!isAuthorizedSuperAdmin(data.adminKey)) return { success: false, error: "Unauthorized" };
     try {
+      const cleanEmail = data.email?.toLowerCase().trim();
+      const cleanPassword = data.password?.trim();
+      if (!cleanEmail || !cleanPassword) {
+        return { success: false, error: "Email and password required" };
+      }
+      if (cleanPassword.length < 8) {
+        return { success: false, error: "Password must be at least 8 characters long" };
+      }
+      if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^a-zA-Z\d])/.test(cleanPassword)) {
+        return { success: false, error: "Password must contain uppercase, lowercase, number and special character (e.g. Samim@123)" };
+      }
+
       const orgId = crypto.randomUUID();
       const ownerId = crypto.randomUUID();
       const syncKey = crypto.randomUUID();
@@ -430,7 +446,7 @@ export const createTenantUserFn = createServerFn({ method: "POST" })
       await db.insert(schema.organizations).values({
         id: orgId,
         name: data.storeName,
-        ownerEmail: data.email,
+        ownerEmail: cleanEmail,
         status: "active",
         currentPlanId: data.planId,
         syncKey,
@@ -443,12 +459,32 @@ export const createTenantUserFn = createServerFn({ method: "POST" })
         id: ownerId,
         organizationId: orgId,
         name: data.ownerName,
-        email: data.email,
+        email: cleanEmail,
         role: "admin",
         status: "active",
-        pin: data.password, // stored as pin for local login compatibility
+        pin: cleanPassword, // stored as pin for local login compatibility
         emailVerified: true,
         lastActive: new Date(),
+      } as any);
+
+      // Create default settings for this tenant in cloud DB
+      await db.insert(schema.settings).values({
+        id: crypto.randomUUID(),
+        organizationId: orgId,
+        storeName: data.storeName,
+        email: cleanEmail,
+        currencySymbol: "₹",
+        currencyCode: "INR",
+        subscriptionStatus: "active",
+        trialDays: 14,
+        trialEndsAt: planExpiryDate,
+        standardRate: "0",
+        reducedRate: "0",
+        pricesIncludeTax: false,
+        showTaxBreakdown: true,
+        emailReceiptDefault: true,
+        printStoreLogo: true,
+        enableGST: false,
       } as any);
 
       return { success: true, orgId, ownerId, syncKey };

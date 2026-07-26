@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Grid3x3, List, MoreHorizontal, Pencil, Plus, Trash2, PackageSearch, Printer } from "lucide-react";
+import { Grid3x3, List, MoreHorizontal, Pencil, Plus, Trash2, PackageSearch, Printer, Loader2 } from "lucide-react";
 import { useState, useMemo, useEffect } from "react";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PaginationControls } from "@/components/ui/pagination-controls";
@@ -38,6 +38,8 @@ import {
 } from "@/components/ui/alert-dialog";
 import Barcode from "react-barcode";
 import { useAuth } from "@/contexts/AuthContext";
+import { useFormValidation } from "@/hooks/useFormValidation";
+import { FieldError } from "@/components/ui/field-error";
 
 export const Route = createFileRoute("/products")({
   head: () => ({
@@ -109,6 +111,7 @@ function ProductsPage() {
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editingProd, setEditingProd] = useState<any>(null);
+  const [isSaving, setIsSaving] = useState(false);
   
   const [formData, setFormData] = useState({
     name: "", sku: "", barcode: "", category: "", brand: "", unit: "",
@@ -125,6 +128,15 @@ function ProductsPage() {
   const [printProduct, setPrintProduct] = useState<any>(null);
   const [printCount, setPrintCount] = useState(1);
   const [isPrinting, setIsPrinting] = useState(false);
+
+  const { errors: prodErrors, validate: validateProd, clearError: clearProdError, clearAll: clearProdAll } = useFormValidation({
+    name: { required: "Product name is required", minLength: { value: 2, message: "Name must be at least 2 characters" } },
+    sku: { required: "SKU is required" },
+    price: { required: "Retail price is required", positive: "Price must be a valid positive number" },
+    cost: { required: "Cost price is required", positive: "Cost must be a valid positive number" },
+    stock: { required: "Stock is required", positive: "Stock cannot be negative" },
+    reorderLevel: { required: "Reorder level is required", positive: "Reorder level cannot be negative" },
+  });
 
   useEffect(() => {
     if (isPrinting) {
@@ -181,8 +193,21 @@ function ProductsPage() {
     setModalOpen(true);
   };
 
-  const save = async () => {
-    if (!formData.name) return toast.error("Name is required");
+  const save = async (e?: React.FormEvent<HTMLFormElement>) => {
+    if (e) e.preventDefault();
+
+    const isValid = validateProd({
+      name: formData.name,
+      sku: formData.sku,
+      price: String(formData.price),
+      cost: String(formData.cost),
+      stock: String(formData.stock),
+      reorderLevel: String(formData.reorderLevel),
+    });
+
+    if (!isValid) return;
+    
+    setIsSaving(true);
     
     // Parse serials
     const serialsList = formData.hasSerial
@@ -215,8 +240,11 @@ function ProductsPage() {
         toast.success("Product created");
       }
       setModalOpen(false);
+      clearProdAll();
     } catch (e) {
       toast.error("Failed to save product");
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -349,71 +377,112 @@ function ProductsPage() {
           <DialogHeader>
             <DialogTitle>{editingProd ? "Edit Product" : "New Product"}</DialogTitle>
           </DialogHeader>
-          <div className="grid grid-cols-2 gap-4 py-4">
-            <div className="grid gap-2 col-span-2">
-              <Label>Product Name</Label>
-              <Input placeholder="e.g. Item Name" required value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} />
-            </div>
-            <div className="grid gap-2">
-              <Label>SKU</Label>
-              <Input placeholder="e.g. SKU-001" required value={formData.sku} onChange={e => setFormData({...formData, sku: e.target.value})} />
-            </div>
-            <div className="grid gap-2">
-              <Label>Barcode</Label>
-              <Input placeholder="e.g. 123456789012" value={formData.barcode} onChange={e => setFormData({...formData, barcode: e.target.value})} />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="category">{t("category") || "Category"}</Label>
-              <SearchableSelect
-                options={categories.map(c => ({ value: c.id, label: c.name }))}
-                value={formData.category}
-                onChange={val => setFormData({ ...formData, category: val })}
-                placeholder={t("selectCategory") || "Select category..."}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="brand">{t("brand") || "Brand"}</Label>
-              <SearchableSelect
-                options={brands.map(b => ({ value: b.id, label: b.name }))}
-                value={formData.brand}
-                onChange={val => setFormData({ ...formData, brand: val })}
-                placeholder={t("selectBrand") || "Select brand..."}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="unit">{t("unitType") || "Unit Type"}</Label>
-              <SearchableSelect
-                options={units.map(u => ({ value: u.id, label: u.name }))}
-                value={formData.unit}
-                onChange={val => setFormData({ ...formData, unit: val })}
-                placeholder={t("selectUnit") || "Select unit..."}
-              />
-            </div>
-            <div className="grid gap-2">
-              <Label>Retail Price *</Label>
-              <Input type="number" min="0" step="0.01" placeholder="0.00" required value={formData.price} onChange={e => setFormData({...formData, price: parseFloat(e.target.value) || 0})} />
-            </div>
-            <div className="grid gap-2">
-              <Label>Wholesale Price (Optional)</Label>
-              <Input type="number" min="0" step="0.01" placeholder="e.g. 45.00" value={formData.wholesalePrice || ""} onChange={e => setFormData({...formData, wholesalePrice: parseFloat(e.target.value) || 0})} />
-            </div>
-            <div className="grid gap-2">
-              <Label>Dealer Price (Optional)</Label>
-              <Input type="number" min="0" step="0.01" placeholder="e.g. 40.00" value={formData.dealerPrice || ""} onChange={e => setFormData({...formData, dealerPrice: parseFloat(e.target.value) || 0})} />
-            </div>
-            <div className="grid gap-2">
-              <Label>Cost Price</Label>
-              <Input type="number" min="0" step="0.01" placeholder="0.00" required value={formData.cost} onChange={e => setFormData({...formData, cost: parseFloat(e.target.value) || 0})} />
-            </div>
-            <div className="grid gap-2">
-              <Label>Stock</Label>
-              <Input type="number" min="0" placeholder="0" required value={formData.stock} onChange={e => setFormData({...formData, stock: parseInt(e.target.value)})} />
-            </div>
-            <div className="grid gap-2">
-              <Label>Reorder Level</Label>
-              <Input type="number" min="0" placeholder="e.g. 5" required value={formData.reorderLevel} onChange={e => setFormData({...formData, reorderLevel: parseInt(e.target.value)})} />
-            </div>
-            <div className="grid gap-2">
+          <form onSubmit={save} noValidate>
+            <div className="grid grid-cols-2 gap-4 py-4">
+              <div className="grid gap-1.5 col-span-2">
+                <Label>Product Name <span className="text-destructive">*</span></Label>
+                <Input
+                  placeholder="e.g. Item Name"
+                  value={formData.name}
+                  onChange={e => { setFormData({...formData, name: e.target.value}); clearProdError("name"); }}
+                  className={prodErrors.name ? "border-destructive focus-visible:ring-destructive" : ""}
+                />
+                <FieldError message={prodErrors.name} />
+              </div>
+              <div className="grid gap-1.5">
+                <Label>SKU <span className="text-destructive">*</span></Label>
+                <Input
+                  placeholder="e.g. SKU-001"
+                  value={formData.sku}
+                  onChange={e => { setFormData({...formData, sku: e.target.value}); clearProdError("sku"); }}
+                  className={prodErrors.sku ? "border-destructive focus-visible:ring-destructive" : ""}
+                />
+                <FieldError message={prodErrors.sku} />
+              </div>
+              <div className="grid gap-1.5">
+                <Label>Barcode</Label>
+                <Input placeholder="e.g. 123456789012" value={formData.barcode} onChange={e => setFormData({...formData, barcode: e.target.value})} />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="category">{t("category") || "Category"}</Label>
+                <SearchableSelect
+                  options={categories.map(c => ({ value: c.id, label: c.name }))}
+                  value={formData.category}
+                  onChange={val => setFormData({ ...formData, category: val })}
+                  placeholder={t("selectCategory") || "Select category..."}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="brand">{t("brand") || "Brand"}</Label>
+                <SearchableSelect
+                  options={brands.map(b => ({ value: b.id, label: b.name }))}
+                  value={formData.brand}
+                  onChange={val => setFormData({ ...formData, brand: val })}
+                  placeholder={t("selectBrand") || "Select brand..."}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="unit">{t("unitType") || "Unit Type"}</Label>
+                <SearchableSelect
+                  options={units.map(u => ({ value: u.id, label: u.name }))}
+                  value={formData.unit}
+                  onChange={val => setFormData({ ...formData, unit: val })}
+                  placeholder={t("selectUnit") || "Select unit..."}
+                />
+              </div>
+              <div className="grid gap-1.5">
+                <Label>Retail Price <span className="text-destructive">*</span></Label>
+                <Input
+                  type="number" min="0" step="0.01"
+                  placeholder="0.00"
+                  value={formData.price}
+                  onChange={e => { setFormData({...formData, price: parseFloat(e.target.value) || 0}); clearProdError("price"); }}
+                  className={prodErrors.price ? "border-destructive focus-visible:ring-destructive" : ""}
+                />
+                <FieldError message={prodErrors.price} />
+              </div>
+              <div className="grid gap-1.5">
+                <Label>Wholesale Price (Optional)</Label>
+                <Input type="number" min="0" step="0.01" placeholder="e.g. 45.00" value={formData.wholesalePrice || ""} onChange={e => setFormData({...formData, wholesalePrice: parseFloat(e.target.value) || 0})} />
+              </div>
+              <div className="grid gap-1.5">
+                <Label>Dealer Price (Optional)</Label>
+                <Input type="number" min="0" step="0.01" placeholder="e.g. 40.00" value={formData.dealerPrice || ""} onChange={e => setFormData({...formData, dealerPrice: parseFloat(e.target.value) || 0})} />
+              </div>
+              <div className="grid gap-1.5">
+                <Label>Cost Price <span className="text-destructive">*</span></Label>
+                <Input
+                  type="number" min="0" step="0.01"
+                  placeholder="0.00"
+                  value={formData.cost}
+                  onChange={e => { setFormData({...formData, cost: parseFloat(e.target.value) || 0}); clearProdError("cost"); }}
+                  className={prodErrors.cost ? "border-destructive focus-visible:ring-destructive" : ""}
+                />
+                <FieldError message={prodErrors.cost} />
+              </div>
+              <div className="grid gap-1.5">
+                <Label>Stock <span className="text-destructive">*</span></Label>
+                <Input
+                  type="number" min="0"
+                  placeholder="0"
+                  value={formData.stock}
+                  onChange={e => { setFormData({...formData, stock: parseInt(e.target.value) || 0}); clearProdError("stock"); }}
+                  className={prodErrors.stock ? "border-destructive focus-visible:ring-destructive" : ""}
+                />
+                <FieldError message={prodErrors.stock} />
+              </div>
+              <div className="grid gap-1.5">
+                <Label>Reorder Level <span className="text-destructive">*</span></Label>
+                <Input
+                  type="number" min="0"
+                  placeholder="e.g. 5"
+                  value={formData.reorderLevel}
+                  onChange={e => { setFormData({...formData, reorderLevel: parseInt(e.target.value) || 0}); clearProdError("reorderLevel"); }}
+                  className={prodErrors.reorderLevel ? "border-destructive focus-visible:ring-destructive" : ""}
+                />
+                <FieldError message={prodErrors.reorderLevel} />
+              </div>
+              <div className="grid gap-1.5">
               <Label>Expiry Date (Optional)</Label>
               <DatePicker 
                 date={formData.expiryDate} 
@@ -543,11 +612,15 @@ function ProductsPage() {
                 </div>
               )}
             </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setModalOpen(false)}>Cancel</Button>
-            <Button onClick={save}>Save changes</Button>
-          </DialogFooter>
+            </div>
+            <DialogFooter className="mt-6">
+              <Button type="button" variant="outline" onClick={() => { setModalOpen(false); clearProdAll(); }}>Cancel</Button>
+              <Button type="submit" disabled={isSaving}>
+                {isSaving && <Loader2 className="size-4 animate-spin mr-2" />}
+                Save Product
+              </Button>
+            </DialogFooter>
+          </form>
         </DialogContent>
       </Dialog>
 

@@ -1,0 +1,136 @@
+import { put } from "@vercel/blob";
+import { sanitizeInput } from "./validation";
+
+export interface BlobUploadOptions {
+  folder?: string;
+  allowedTypes?: string[];
+  maxSizeMB?: number;
+  onProgress?: (percentage: number) => void;
+}
+
+export interface BlobUploadResult {
+  url: string;
+  pathname: string;
+  contentType: string;
+  size: number;
+  name: string;
+}
+
+const DEFAULT_ALLOWED_TYPES = [
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+  "image/gif",
+  "image/svg+xml",
+  "application/pdf",
+];
+
+const DEFAULT_MAX_SIZE_MB = 5;
+
+/**
+ * Validates a file before sending it to Vercel Blob storage.
+ */
+export function validateFileBeforeUpload(
+  file: File,
+  options: BlobUploadOptions = {}
+): { valid: boolean; error?: string } {
+  if (!file) return { valid: false, error: "No file selected." };
+
+  // 1. File size check
+  const maxSizeMB = options.maxSizeMB || DEFAULT_MAX_SIZE_MB;
+  const maxSizeBytes = maxSizeMB * 1024 * 1024;
+  if (file.size > maxSizeBytes) {
+    return {
+      valid: false,
+      error: `File size (${(file.size / (1024 * 1024)).toFixed(2)}MB) exceeds maximum limit of ${maxSizeMB}MB.`,
+    };
+  }
+
+  if (file.size === 0) {
+    return { valid: false, error: "File is empty or corrupted." };
+  }
+
+  // 2. MIME type check
+  const allowedTypes = options.allowedTypes || DEFAULT_ALLOWED_TYPES;
+  if (!allowedTypes.includes(file.type)) {
+    return {
+      valid: false,
+      error: `File type '${file.type || "unknown"}' is not supported. Allowed formats: ${allowedTypes
+        .map((t) => t.split("/")[1])
+        .join(", ")}.`,
+    };
+  }
+
+  // 3. Executable & Double Extension Check
+  const name = file.name.toLowerCase();
+  const dangerousExtensions = [".exe", ".bat", ".cmd", ".sh", ".php", ".js", ".vbs", ".ps1", ".jar", ".py"];
+  if (dangerousExtensions.some((ext) => name.endsWith(ext))) {
+    return { valid: false, error: "Executable or dangerous file types are strictly prohibited." };
+  }
+
+  return { valid: true };
+}
+
+/**
+ * Centralized Vercel Blob File Upload Service.
+ */
+export async function uploadToVercelBlob(
+  file: File,
+  options: BlobUploadOptions = {}
+): Promise<BlobUploadResult> {
+  const validation = validateFileBeforeUpload(file, options);
+  if (!validation.valid) {
+    throw new Error(validation.error || "File validation failed.");
+  }
+
+  // Sanitize filename & create unique path
+  const sanitizedOriginalName = sanitizeInput(file.name.replace(/[^a-zA-Z0-9.\-_]/g, "_"));
+  const folder = options.folder ? sanitizeInput(options.folder) : "uploads";
+  const filename = `${folder}/${Date.now()}_${sanitizedOriginalName}`;
+
+  const token = import.meta.env.VITE_BLOB_READ_WRITE_TOKEN;
+
+  if (token) {
+    try {
+      const blob = await put(filename, file, {
+        access: "public",
+        token: token,
+      });
+
+      return {
+        url: blob.url,
+        pathname: blob.pathname,
+        contentType: file.type,
+        size: file.size,
+        name: file.name,
+      };
+    } catch (err: any) {
+      console.error("[Vercel Blob Upload Error]:", err);
+      throw new Error("Failed to upload file to Vercel Blob storage.");
+    }
+  } else {
+    // Offline / Local Development Fallback (Data URL with progress simulation)
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadstart = () => options.onProgress?.(10);
+      reader.onprogress = (e) => {
+        if (e.lengthComputable) {
+          const percent = Math.round((e.loaded / e.total) * 100);
+          options.onProgress?.(percent);
+        }
+      };
+      reader.onloadend = () => {
+        options.onProgress?.(100);
+        resolve({
+          url: reader.result as string,
+          pathname: filename,
+          contentType: file.type,
+          size: file.size,
+          name: file.name,
+        });
+      };
+      reader.onerror = () => reject(new Error("Failed to read file locally."));
+      reader.readAsDataURL(file);
+    });
+  }
+}

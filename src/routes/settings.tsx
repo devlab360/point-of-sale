@@ -30,6 +30,9 @@ import { CURRENCY_OPTIONS } from "@/lib/currency";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { getTrialDaysFromEnv } from "@/lib/email-service";
+import { FileUpload } from "@/components/ui/file-upload";
+import { useFormValidation } from "@/hooks/useFormValidation";
+import { FieldError } from "@/components/ui/field-error";
 
 
 export const Route = createFileRoute("/settings")({
@@ -177,10 +180,21 @@ function SettingsPage() {
     }
   }, [user]);
 
+  const { errors: secErrors, validate: validateSec, clearError: clearSecError, clearAll: clearSecAll } = useFormValidation({
+    newPassword: { minLength: { value: 4, message: "Password must be at least 4 characters" } },
+    confirmPassword: {},
+  });
+
   const handleUpdateSecurity = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) {
       toast.error("No active user found.");
+      return;
+    }
+
+    // Require current password to be filled if we're changing something
+    if (!passForm.currentPassword.trim()) {
+      toast.error("Please enter your current password / PIN to verify identity.");
       return;
     }
 
@@ -192,10 +206,8 @@ function SettingsPage() {
     }
 
     if (passForm.newPassword) {
-      if (passForm.newPassword.length < 4) {
-        toast.error("New password must be at least 4 characters long.");
-        return;
-      }
+      const isValid = validateSec({ newPassword: passForm.newPassword, confirmPassword: passForm.confirmPassword });
+      if (!isValid) return;
       if (passForm.newPassword !== passForm.confirmPassword) {
         toast.error("New password and confirm password do not match.");
         return;
@@ -238,6 +250,7 @@ function SettingsPage() {
 
       toast.success("Security credentials updated successfully!");
       setPassForm({ currentPassword: "", newPassword: "", confirmPassword: "", newPin: updatedPin || "" });
+      clearSecAll();
       SyncEngine.syncAll().catch((err: any) => console.warn(err));
     } catch (err) {
       console.error("Security update error:", err);
@@ -285,6 +298,17 @@ function SettingsPage() {
         <div className="flex-1 space-y-6">
           <TabsContent value="store" className="mt-0 outline-none">
             <Card title="Store Information" desc="Used on receipts and reports.">
+              <div className="mb-6">
+                <FileUpload
+                  label="Store Custom Logo (Vercel Blob Powered)"
+                  description="Upload your store logo via Vercel Blob (PNG/JPG/WEBP). Will dynamically show on printed bills, sidebar, and receipts."
+                  value={settings.logoUrl || ""}
+                  onChange={(url) => handleChange("logoUrl", url)}
+                  folder="store-logos"
+                  maxSizeMB={5}
+                />
+              </div>
+
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <Field label="Store name">
                   <input className="inp" value={settings.storeName} onChange={(e) => handleChange("storeName", e.target.value)} />
@@ -358,10 +382,11 @@ function SettingsPage() {
                     </Label>
                     <PasswordInput
                       value={passForm.newPassword}
-                      onChange={(e) => setPassForm(p => ({ ...p, newPassword: e.target.value }))}
+                      onChange={(e) => { setPassForm(p => ({ ...p, newPassword: e.target.value })); clearSecError("newPassword"); }}
                       placeholder="At least 4 characters"
-                      className="bg-background"
+                      className={`bg-background ${secErrors.newPassword ? "border-destructive focus-visible:ring-destructive" : ""}`}
                     />
+                    <FieldError message={secErrors.newPassword} />
                   </div>
 
                   <div className="space-y-1.5">
@@ -370,10 +395,20 @@ function SettingsPage() {
                     </Label>
                     <PasswordInput
                       value={passForm.confirmPassword}
-                      onChange={(e) => setPassForm(p => ({ ...p, confirmPassword: e.target.value }))}
+                      onChange={(e) => { setPassForm(p => ({ ...p, confirmPassword: e.target.value })); clearSecError("confirmPassword"); }}
                       placeholder="Re-enter new password"
-                      className="bg-background"
+                      className={`bg-background ${secErrors.confirmPassword ? "border-destructive focus-visible:ring-destructive" : ""}`}
                     />
+                    {passForm.newPassword && passForm.confirmPassword && passForm.newPassword !== passForm.confirmPassword && (
+                      <p className="text-[11px] text-destructive font-medium flex items-center gap-1">
+                        <span>✕</span> Passwords do not match
+                      </p>
+                    )}
+                    {passForm.newPassword && passForm.confirmPassword && passForm.newPassword === passForm.confirmPassword && (
+                      <p className="text-[11px] text-success font-medium flex items-center gap-1">
+                        <span>✓</span> Passwords match
+                      </p>
+                    )}
                   </div>
 
                   <div className="sm:col-span-2 pt-2 border-t space-y-1.5">

@@ -19,9 +19,11 @@ import {
 import { localDb, type LocalRepairTicket } from "@/lib/db";
 import { useLiveQuery } from "dexie-react-hooks";
 import { useCurrency } from "@/lib/currency";
-import { Wrench, Printer, CheckCircle2, MoreVertical, Trash2, ShieldCheck, Phone } from "lucide-react";
+import { Wrench, Printer, CheckCircle2, MoreVertical, Trash2, ShieldCheck, Phone, Loader2 } from "lucide-react";
 import { v4 as uuidv4 } from "uuid";
 import { toast } from "sonner";
+import { useFormValidation } from "@/hooks/useFormValidation";
+import { FieldError } from "@/components/ui/field-error";
 
 export const Route = createFileRoute("/repairs")({
   head: () => ({ meta: [{ title: "Service & Repair Management · Grocer.Pro" }] }),
@@ -35,6 +37,7 @@ function RepairsPage() {
 
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [viewItem, setViewItem] = useState<LocalRepairTicket | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search, 300);
@@ -69,10 +72,20 @@ function RepairsPage() {
   const totalPages = Math.max(1, Math.ceil(filteredRepairs.length / itemsPerPage));
   const paginated = filteredRepairs.slice((page - 1) * itemsPerPage, page * itemsPerPage);
 
+  const { errors: repErrors, validate: validateRep, clearError: clearRepError, clearAll: clearRepAll } = useFormValidation({
+    customerName: { required: "Customer name is required" },
+    customerPhone: { required: "Phone number is required" },
+    deviceName: { required: "Device name is required" },
+    problemDescription: { required: "Problem description is required" },
+  });
+
   const handleCreateRepair = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!customerName || !deviceName || !problemDescription) return toast.error("Please fill in all required fields");
 
+    const isValid = validateRep({ customerName, customerPhone, deviceName, problemDescription });
+    if (!isValid) return;
+
+    setIsSubmitting(true);
     try {
       const tNo = `REP-${Date.now().toString().slice(-6)}`;
       await localDb.repairs.add({
@@ -99,8 +112,11 @@ function RepairsPage() {
       setProblemDescription("");
       setEstimatedCost("");
       setAdvancePaid("");
+      clearRepAll();
     } catch (err) {
       toast.error("Failed to create repair ticket");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -207,7 +223,9 @@ function RepairsPage() {
       </DataPage>
 
       {/* Create Repair Ticket Modal */}
-      <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
+      <Dialog open={isAddOpen} onOpenChange={(open) => {
+        if (!open) { setIsAddOpen(false); clearRepAll(); }
+      }}>
         <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
@@ -215,39 +233,54 @@ function RepairsPage() {
               <span>Create Repair Ticket (মেরামত এন্ট্রি)</span>
             </DialogTitle>
           </DialogHeader>
-          <form onSubmit={handleCreateRepair} className="space-y-4 pt-2">
+          <form noValidate onSubmit={handleCreateRepair} className="space-y-4 pt-2">
             <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Customer Name *</Label>
-                <Input placeholder="e.g. Customer Name" value={customerName} onChange={(e) => setCustomerName(e.target.value)} required />
+              <div className="space-y-1.5">
+                <Label>Customer Name <span className="text-destructive">*</span></Label>
+                <Input
+                  placeholder="e.g. Customer Name" value={customerName}
+                  onChange={(e) => { setCustomerName(e.target.value); clearRepError("customerName"); }}
+                  className={repErrors.customerName ? "border-destructive focus-visible:ring-destructive" : ""}
+                />
+                <FieldError message={repErrors.customerName} />
               </div>
-              <div className="space-y-2">
-                <Label>Phone Number *</Label>
-                <Input placeholder="e.g. +880 1711000000" value={customerPhone} onChange={(e) => setCustomerPhone(e.target.value)} required />
+              <div className="space-y-1.5">
+                <Label>Phone Number <span className="text-destructive">*</span></Label>
+                <Input
+                  placeholder="e.g. +880 1711000000" value={customerPhone}
+                  onChange={(e) => { setCustomerPhone(e.target.value); clearRepError("customerPhone"); }}
+                  className={repErrors.customerPhone ? "border-destructive focus-visible:ring-destructive" : ""}
+                />
+                <FieldError message={repErrors.customerPhone} />
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Device / Model Name *</Label>
-                <Input placeholder="e.g. Device / Model Name" value={deviceName} onChange={(e) => setDeviceName(e.target.value)} required />
+              <div className="space-y-1.5">
+                <Label>Device / Model Name <span className="text-destructive">*</span></Label>
+                <Input
+                  placeholder="e.g. Device / Model Name" value={deviceName}
+                  onChange={(e) => { setDeviceName(e.target.value); clearRepError("deviceName"); }}
+                  className={repErrors.deviceName ? "border-destructive focus-visible:ring-destructive" : ""}
+                />
+                <FieldError message={repErrors.deviceName} />
               </div>
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 <Label>Serial / IMEI Number</Label>
                 <Input placeholder="e.g. Serial or IMEI Number" value={serialOrImei} onChange={(e) => setSerialOrImei(e.target.value)} />
               </div>
             </div>
 
-            <div className="space-y-2">
-              <Label>Problem / Fault Description *</Label>
+            <div className="space-y-1.5">
+              <Label>Problem / Fault Description <span className="text-destructive">*</span></Label>
               <textarea
                 rows={2}
                 placeholder="e.g. Describe the device issue or fault"
                 value={problemDescription}
-                onChange={(e) => setProblemDescription(e.target.value)}
-                required
-                className="w-full rounded-md border border-input bg-background p-2 text-xs"
+                onChange={(e) => { setProblemDescription(e.target.value); clearRepError("problemDescription"); }}
+                className={`w-full rounded-md border bg-background p-2 text-xs ${repErrors.problemDescription ? "border-destructive focus-visible:ring-destructive" : "border-input"}`}
               />
+              <FieldError message={repErrors.problemDescription} />
             </div>
 
             <div className="grid grid-cols-2 gap-4">
@@ -261,9 +294,12 @@ function RepairsPage() {
               </div>
             </div>
 
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setIsAddOpen(false)}>Cancel</Button>
-              <Button type="submit">Create Repair Ticket</Button>
+            <DialogFooter className="mt-6">
+              <Button type="button" variant="outline" onClick={() => { setIsAddOpen(false); clearRepAll(); }}>Cancel</Button>
+              <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting && <Loader2 className="size-4 animate-spin mr-2" />}
+                Create Repair Ticket
+              </Button>
             </DialogFooter>
           </form>
         </DialogContent>

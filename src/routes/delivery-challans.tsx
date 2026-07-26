@@ -20,9 +20,11 @@ import {
 import { localDb, type LocalDeliveryChallan } from "@/lib/db";
 import { useLiveQuery } from "dexie-react-hooks";
 import { useCurrency } from "@/lib/currency";
-import { Truck, Printer, CheckCircle2, MoreVertical, Trash2, ArrowRightLeft } from "lucide-react";
+import { Truck, Printer, CheckCircle2, MoreVertical, Trash2, ArrowRightLeft, Loader2 } from "lucide-react";
 import { v4 as uuidv4 } from "uuid";
 import { toast } from "sonner";
+import { useFormValidation } from "@/hooks/useFormValidation";
+import { FieldError } from "@/components/ui/field-error";
 
 export const Route = createFileRoute("/delivery-challans")({
   head: () => ({ meta: [{ title: "Delivery Challans · Grocer.Pro" }] }),
@@ -39,6 +41,7 @@ function DeliveryChallansPage() {
 
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [viewItem, setViewItem] = useState<LocalDeliveryChallan | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search, 300);
@@ -111,12 +114,25 @@ function DeliveryChallansPage() {
     );
   };
 
+  const { errors: chErrors, validate: validateCh, clearError: clearChError, clearAll: clearChAll } = useFormValidation({
+    selectedCustomerId: { required: "Customer is required" },
+  });
+
   const handleCreateChallan = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    const isValid = validateCh({ selectedCustomerId });
+    if (!isValid) return;
+
+    if (lineItems.length === 0) {
+      toast.error("Please add at least one line item");
+      return;
+    }
+
     const cust = customers.find((c) => c.id === selectedCustomerId);
     if (!cust) return toast.error("Please select a customer");
-    if (lineItems.length === 0) return toast.error("Please add at least one line item");
 
+    setIsSubmitting(true);
     try {
       const chNo = `CH-${Date.now().toString().slice(-6)}`;
       await localDb.deliveryChallans.add({
@@ -157,8 +173,11 @@ function DeliveryChallansPage() {
       toast.success(`Delivery Challan ${chNo} created & goods dispatched!`);
       setIsAddOpen(false);
       setLineItems([]);
+      clearChAll();
     } catch (err) {
       toast.error("Failed to create delivery challan");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -305,53 +324,56 @@ function DeliveryChallansPage() {
       </DataPage>
 
       {/* Create Delivery Challan Modal */}
-      <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
-        <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Truck className="size-5 text-primary" />
-              <span>Create Delivery Challan (চালান)</span>
-            </DialogTitle>
+      <Dialog open={isAddOpen} onOpenChange={(open) => {
+        if (!open) { setIsAddOpen(false); clearChAll(); }
+      }}>
+        <DialogContent className="sm:max-w-3xl overflow-hidden p-0">
+          <DialogHeader className="bg-muted p-4">
+            <DialogTitle>Dispatch Delivery Challan</DialogTitle>
           </DialogHeader>
-          <form onSubmit={handleCreateChallan} className="space-y-4 pt-2">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Select Customer *</Label>
+          <form noValidate onSubmit={handleCreateChallan} className="space-y-4 p-4 max-h-[80vh] overflow-y-auto">
+            <div className="space-y-1.5">
+              <Label>Customer / Consignee <span className="text-destructive">*</span></Label>
+              <div className={chErrors.selectedCustomerId ? "rounded-md border border-destructive" : ""}>
                 <SearchableSelect
-                  options={customers.map(c => ({ value: c.id, label: `${c.name} - ${c.phone}` }))}
+                  options={customers.map((c) => ({ value: c.id, label: c.name }))}
                   value={selectedCustomerId}
-                  onChange={setSelectedCustomerId}
-                  placeholder="Select Customer..."
+                  onChange={(val) => { setSelectedCustomerId(val); clearChError("selectedCustomerId"); }}
+                  placeholder="Select a customer..."
                 />
               </div>
-              <div className="space-y-2">
-                <Label>Transport Company</Label>
-                <Input placeholder="e.g. Sundarban Courier / Local Truck" value={transportName} onChange={(e) => setTransportName(e.target.value)} />
-              </div>
+              <FieldError message={chErrors.selectedCustomerId} />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+              <div className="space-y-1.5">
+                <Label>Transport / Carrier</Label>
+                <Input value={transportName} onChange={(e) => setTransportName(e.target.value)} placeholder="e.g. FedEx / Own Vehicle" />
+              </div>
+              <div className="space-y-1.5">
                 <Label>Vehicle No.</Label>
-                <Input placeholder="e.g. DHAKA-METRO-11-2034" value={vehicleNo} onChange={(e) => setVehicleNo(e.target.value)} />
+                <Input value={vehicleNo} onChange={(e) => setVehicleNo(e.target.value)} placeholder="e.g. MH-12-XX-9999" />
               </div>
-              <div className="space-y-2">
-                <Label>Driver Name & Phone</Label>
-                <Input placeholder="e.g. Karim (+880 1711223344)" value={driverName} onChange={(e) => setDriverName(e.target.value)} />
+              <div className="space-y-1.5">
+                <Label>Driver Name & Contact</Label>
+                <Input value={driverName} onChange={(e) => setDriverName(e.target.value)} placeholder="e.g. John Doe (555-0101)" />
               </div>
             </div>
 
-            {/* Line Items Selection */}
-            <div className="space-y-2 border-t pt-3">
+            <div className="space-y-1.5">
               <Label>Search & Add Products</Label>
               <SearchableSelect
                 options={products.map(p => ({ value: p.id, label: p.name, sublabel: `Stock: ${p.stock} ${p.unit} | Price: ${formatCurrency(p.price)}` }))}
                 value=""
                 onChange={(val) => {
-                  if (val) addItemToChallan(val);
+                  if (val) {
+                    addItemToChallan(val);
+                    clearChError("lineItems");
+                  }
                 }}
                 placeholder="Search products by name or code..."
               />
+              <FieldError message={chErrors.lineItems} />
             </div>
 
             {/* Line Items Table */}
@@ -398,9 +420,12 @@ function DeliveryChallansPage() {
               </div>
             )}
 
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setIsAddOpen(false)}>Cancel</Button>
-              <Button type="submit">Dispatch Delivery Challan</Button>
+            <DialogFooter className="mt-6">
+              <Button type="button" variant="outline" onClick={() => { setIsAddOpen(false); clearChAll(); }}>Cancel</Button>
+              <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting && <Loader2 className="size-4 animate-spin mr-2" />}
+                Dispatch Delivery Challan
+              </Button>
             </DialogFooter>
           </form>
         </DialogContent>

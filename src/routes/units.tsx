@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Pencil, Trash2, Scale } from "lucide-react";
+import { Scale, Pencil, Trash2, Loader2 } from "lucide-react";
 import { useState, useMemo, useEffect } from "react";
 import { useDebounce } from "@/hooks/useDebounce";
 import { v4 as uuidv4 } from "uuid";
@@ -23,6 +23,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { useFormValidation } from "@/hooks/useFormValidation";
+import { FieldError } from "@/components/ui/field-error";
 
 export const Route = createFileRoute("/units")({
   head: () => ({ meta: [{ title: "Units · Grocer.Pro" }] }),
@@ -34,6 +36,7 @@ function UnitsPage() {
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editingUnit, setEditingUnit] = useState<any>(null);
+  const [isSaving, setIsSaving] = useState(false);
   const [name, setName] = useState("");
   const [short, setShort] = useState("");
   const [deleteId, setDeleteId] = useState<string | null>(null);
@@ -79,9 +82,17 @@ function UnitsPage() {
     setModalOpen(true);
   };
 
-  const save = async () => {
-    if (!name.trim() || !short.trim()) return toast.error("Name and Short code are required");
+  const { errors: unitErrors, validate: validateUnit, clearError: clearUnitError, clearAll: clearUnitAll } = useFormValidation({
+    name: { required: "Unit name is required" },
+    short: { required: "Short code is required" },
+  });
+
+  const save = async (e?: React.FormEvent<HTMLFormElement>) => {
+    if (e) e.preventDefault();
+    const isValid = validateUnit({ name, short });
+    if (!isValid) return;
     
+    setIsSaving(true);
     try {
       if (editingUnit) {
         await localDb.units.update(editingUnit.id, { name, short });
@@ -95,8 +106,11 @@ function UnitsPage() {
         toast.success("Unit created");
       }
       setModalOpen(false);
+      clearUnitAll();
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "An error occurred");
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -166,27 +180,46 @@ function UnitsPage() {
         )}
       </DataPage>
 
-      <Dialog open={modalOpen} onOpenChange={setModalOpen}>
+      <Dialog open={modalOpen} onOpenChange={(open) => {
+        if (!open) { setModalOpen(false); clearUnitAll(); }
+      }}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>{editingUnit ? "Edit Unit" : "New Unit"}</DialogTitle>
           </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="grid gap-2">
-                <Label htmlFor="name">Name</Label>
-                <Input id="name" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Kilogram" required />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="short">Short Code</Label>
-                <Input id="short" value={short} onChange={(e) => setShort(e.target.value)} placeholder="e.g. kg" required />
+          <form onSubmit={save} noValidate>
+            <div className="grid gap-4 py-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="grid gap-1.5">
+                  <Label htmlFor="name">Name <span className="text-destructive">*</span></Label>
+                  <Input
+                    id="name" value={name}
+                    onChange={(e) => { setName(e.target.value); clearUnitError("name"); }}
+                    placeholder="e.g. Kilogram"
+                    className={unitErrors.name ? "border-destructive focus-visible:ring-destructive" : ""}
+                  />
+                  <FieldError message={unitErrors.name} />
+                </div>
+                <div className="grid gap-1.5">
+                  <Label htmlFor="short">Short Code <span className="text-destructive">*</span></Label>
+                  <Input
+                    id="short" value={short}
+                    onChange={(e) => { setShort(e.target.value); clearUnitError("short"); }}
+                    placeholder="e.g. kg"
+                    className={unitErrors.short ? "border-destructive focus-visible:ring-destructive" : ""}
+                  />
+                  <FieldError message={unitErrors.short} />
+                </div>
               </div>
             </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setModalOpen(false)}>Cancel</Button>
-            <Button onClick={save}>Save changes</Button>
-          </DialogFooter>
+            <DialogFooter className="mt-6">
+              <Button type="button" variant="outline" onClick={() => { setModalOpen(false); clearUnitAll(); }}>Cancel</Button>
+              <Button type="submit" disabled={isSaving}>
+                {isSaving && <Loader2 className="size-4 animate-spin mr-2" />}
+                Save changes
+              </Button>
+            </DialogFooter>
+          </form>
         </DialogContent>
       </Dialog>
 

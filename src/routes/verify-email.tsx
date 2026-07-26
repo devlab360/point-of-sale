@@ -9,6 +9,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { localDb } from "@/lib/db";
 import { sendVerificationEmail, generateVerificationOtp, getTrialDaysFromEnv } from "@/lib/email-service";
 import { toast } from "sonner";
+import { useFormValidation } from "@/hooks/useFormValidation";
+import { FieldError } from "@/components/ui/field-error";
 
 export const Route = createFileRoute("/verify-email")({
   head: () => ({ meta: [{ title: "Email Verification · Grocer.Pro SaaS" }] }),
@@ -28,6 +30,10 @@ function VerifyEmailPage() {
   const hasSentRef = useRef(false);
 
   const trialDays = getTrialDaysFromEnv();
+
+  const { errors: otpErrors, validate: validateOtp, clearError: clearOtpError } = useFormValidation({
+    otp: { required: "OTP verification code is required", minLength: { value: 6, message: "OTP must be 6 digits" } }
+  });
 
   const handleSendOtp = async (force = false) => {
     if (!user?.email) return;
@@ -57,6 +63,9 @@ function VerifyEmailPage() {
   const handleVerify = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
+    const isValid = validateOtp({ otp });
+    if (!isValid) return;
+
     setIsVerifying(true);
 
     const currentUser = await localDb.users.get(user.id);
@@ -132,21 +141,20 @@ function VerifyEmailPage() {
             <div className="font-semibold text-sm text-foreground">{user?.email || "owner@store.com"}</div>
           </div>
 
-          <form onSubmit={handleVerify} className="space-y-4">
-            <div className="space-y-2">
+          <form noValidate onSubmit={handleVerify} className="space-y-4">
+            <div className="space-y-1.5">
               <label className="text-xs font-semibold text-muted-foreground flex justify-between">
                 <span>Enter 6-Digit OTP Code</span>
-                {/* <span className="text-[10px] text-primary">Demo OTP: {generatedCode || "123456"}</span> */}
               </label>
               <Input
                 type="text"
-                placeholder="Enter Otp"
+                placeholder="Enter OTP"
                 value={otp}
-                onChange={(e) => setOtp(e.target.value)}
+                onChange={(e) => { setOtp(e.target.value); clearOtpError("otp"); }}
                 maxLength={6}
-                required
-                className="text-center font-mono text-lg tracking-widest h-12"
+                className={`text-center font-mono text-lg tracking-widest h-12 ${otpErrors.otp ? "border-destructive focus-visible:ring-destructive" : ""}`}
               />
+              <FieldError message={otpErrors.otp} />
             </div>
 
             <Button type="submit" className="w-full h-11 text-sm font-semibold gap-2" disabled={isVerifying}>

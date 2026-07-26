@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { getSuperAdminDataFn, updateOrganizationFn, createTenantUserFn } from "@/sync-api";
 import { Store, Search, CheckCircle2, Clock, Ban, Plus, Loader2, UserPlus } from "lucide-react";
+import { validateStrongPassword } from "@/lib/validation";
 
 export const Route = createLazyFileRoute("/super-admin/users")({
   component: SuperAdminUsers,
@@ -154,6 +155,10 @@ function SuperAdminUsers() {
   const handleCreateTenant = async () => {
     if (!newTenant.storeName || !newTenant.email || !newTenant.password || !newTenant.planId) {
       return toast.error("Please fill in all required fields");
+    }
+    const pwdCheck = validateStrongPassword(newTenant.password);
+    if (!pwdCheck.valid) {
+      return toast.error(pwdCheck.error);
     }
     setIsCreating(true);
     try {

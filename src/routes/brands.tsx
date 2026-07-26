@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Pencil, Trash2, Tag } from "lucide-react";
+import { Tag, Pencil, Trash2, Loader2 } from "lucide-react";
 import { useState, useMemo, useEffect } from "react";
 import { useDebounce } from "@/hooks/useDebounce";
 import { v4 as uuidv4 } from "uuid";
@@ -24,6 +24,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { useFormValidation } from "@/hooks/useFormValidation";
+import { FieldError } from "@/components/ui/field-error";
 
 
 export const Route = createFileRoute("/brands")({
@@ -46,6 +48,7 @@ function BrandsPage() {
   const [editingBrand, setEditingBrand] = useState<any>(null);
   const [name, setName] = useState("");
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
 
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search, 300);
@@ -86,9 +89,16 @@ function BrandsPage() {
     setModalOpen(true);
   };
 
-  const save = async () => {
-    if (!name.trim()) return toast.error("Name is required");
+  const { errors: brandErrors, validate: validateBrand, clearError: clearBrandError, clearAll: clearBrandAll } = useFormValidation({
+    name: { required: "Brand name is required" },
+  });
+
+  const save = async (e?: React.FormEvent<HTMLFormElement>) => {
+    if (e) e.preventDefault();
+    const isValid = validateBrand({ name });
+    if (!isValid) return;
     
+    setIsSaving(true);
     try {
       if (editingBrand) {
         await localDb.brands.update(editingBrand.id, { name });
@@ -102,8 +112,11 @@ function BrandsPage() {
         toast.success("Brand created");
       }
       setModalOpen(false);
+      clearBrandAll();
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "An error occurred");
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -184,21 +197,34 @@ function BrandsPage() {
         )}
       </DataPage>
 
-      <Dialog open={modalOpen} onOpenChange={setModalOpen}>
+      <Dialog open={modalOpen} onOpenChange={(open) => {
+        if (!open) { setModalOpen(false); clearBrandAll(); }
+      }}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>{editingBrand ? "Edit Brand" : "New Brand"}</DialogTitle>
           </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid gap-2">
-              <Label htmlFor="name">Brand Name</Label>
-              <Input id="name" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Nestle" />
+          <form onSubmit={save} noValidate>
+            <div className="grid gap-4 py-4">
+              <div className="grid gap-1.5">
+                <Label htmlFor="name">Brand Name <span className="text-destructive">*</span></Label>
+                <Input
+                  id="name" value={name}
+                  onChange={(e) => { setName(e.target.value); clearBrandError("name"); }}
+                  placeholder="e.g. Nestle"
+                  className={brandErrors.name ? "border-destructive focus-visible:ring-destructive" : ""}
+                />
+                <FieldError message={brandErrors.name} />
+              </div>
             </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setModalOpen(false)}>Cancel</Button>
-            <Button onClick={save}>Save changes</Button>
-          </DialogFooter>
+            <DialogFooter className="mt-6">
+              <Button type="button" variant="outline" onClick={() => { setModalOpen(false); clearBrandAll(); }}>Cancel</Button>
+              <Button type="submit" disabled={isSaving}>
+                {isSaving && <Loader2 className="size-4 animate-spin mr-2" />}
+                Save changes
+              </Button>
+            </DialogFooter>
+          </form>
         </DialogContent>
       </Dialog>
 

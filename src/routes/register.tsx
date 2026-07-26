@@ -4,13 +4,14 @@ import { Button } from "@/components/ui/button";
 import { Input, PasswordInput } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { Briefcase, Building2, CheckCircle2, ChevronLeft, ChevronRight, Store, User } from "lucide-react";
+import { Briefcase, CheckCircle2, ChevronLeft, ChevronRight, Store, User, Loader2 } from "lucide-react";
 import { localDb } from "@/lib/db";
 import { v4 as uuidv4 } from "uuid";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { INDUSTRY_SEEDS } from "@/lib/industry-seeds";
-import { generateVerificationOtp, getTrialDaysFromEnv } from "@/lib/email-service";
-import { getTrialPlanFn, pushEverythingFn } from "@/sync-api";
+import { getTrialDaysFromEnv } from "@/lib/email-service";
+import { getTrialPlanFn } from "@/sync-api";
+import { validateEmail, validateMobile, validatePassword, validateStrongPassword, sanitizeInput } from "@/lib/validation";
 
 export const Route = createFileRoute("/register")({
   head: () => ({ meta: [{ title: "Register · Grocer.Pro SaaS" }] }),
@@ -35,28 +36,96 @@ function RegisterPage() {
     industry: "",
     plan: "monthly"
   });
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isRegistering, setIsRegistering] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+    if (errors[name]) {
+      setErrors((prev) => ({ ...prev, [name]: "" }));
+    }
   };
 
-  const nextStep = () => setStep(s => s + 1);
-  const prevStep = () => setStep(s => s - 1);
+  const validateStep1 = (): boolean => {
+    const newErrors: Record<string, string> = {};
+    const cleanName = sanitizeInput(formData.ownerName);
+    const cleanEmail = sanitizeInput(formData.email);
+
+    if (!cleanName) {
+      newErrors.ownerName = "Full Name is required";
+    }
+
+    const emailCheck = validateEmail(cleanEmail);
+    if (!emailCheck.valid) {
+      newErrors.email = emailCheck.error || "Invalid email address";
+    }
+
+    const passCheck = validateStrongPassword(formData.password);
+    if (!passCheck.valid) {
+      newErrors.password = passCheck.error || "Password is required";
+    }
+
+    setErrors(newErrors);
+
+    if (Object.keys(newErrors).length > 0) {
+      const firstError = Object.values(newErrors)[0];
+      toast.error(firstError);
+      return false;
+    }
+    return true;
+  };
+
+  const validateStep2 = (): boolean => {
+    const newErrors: Record<string, string> = {};
+    const cleanCompany = sanitizeInput(formData.companyName);
+
+    if (!cleanCompany) {
+      newErrors.companyName = "Company / Store Name is required";
+    }
+
+    const phoneCheck = validateMobile(formData.phone);
+    if (!phoneCheck.valid) {
+      newErrors.phone = phoneCheck.error || "Enter a valid phone number";
+    }
+
+    if (!formData.industry) {
+      newErrors.industry = "Please select your business industry";
+    }
+
+    setErrors(newErrors);
+
+    if (Object.keys(newErrors).length > 0) {
+      const firstError = Object.values(newErrors)[0];
+      toast.error(firstError);
+      return false;
+    }
+    return true;
+  };
+
+  const handleNext = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (validateStep1()) {
+      setStep(2);
+    }
+  };
+
+  const prevStep = () => {
+    setErrors({});
+    setStep(1);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (step < 2) {
-      nextStep();
-      return;
-    }
+    if (!validateStep2()) return;
     
+    setIsRegistering(true);
     try {
       const orgId = uuidv4();
       const ownerId = uuidv4();
       const trialDays = getTrialDaysFromEnv();
       const trialEndsAt = new Date(Date.now() + trialDays * 24 * 60 * 60 * 1000).toISOString();
 
-      // Store setting tied to Org
       const seedData = INDUSTRY_SEEDS[formData.industry];
       
       await localDb.settings.put({
@@ -81,7 +150,6 @@ function RegisterPage() {
         printStoreLogo: true,
       });
 
-      // Fetch the trial plan from Neon DB set by Super Admin
       let assignedPlanId = "basic";
       let assignedPlanName = "Basic Plan (Trial)";
       try {
@@ -89,7 +157,6 @@ function RegisterPage() {
         if (trialPlanResult.success && trialPlanResult.plan) {
           assignedPlanId = trialPlanResult.plan.id;
           assignedPlanName = trialPlanResult.plan.name;
-          // Cache this plan locally
           await localDb.saasPlans.put({
             id: trialPlanResult.plan.id,
             name: trialPlanResult.plan.name,
@@ -99,33 +166,21 @@ function RegisterPage() {
           });
         }
       } catch (e) {
-        // Fallback: ensure basic plan exists locally
-        const localPlan = await localDb.saasPlans.get("basic");
-        if (!localPlan) {
-          await localDb.saasPlans.put({ id: "basic", name: "Basic Plan (Trial)", price: 999, features: [], limits: { maxUsers: 2, maxProducts: 100, maxBranches: 1, maxInvoicesPerMonth: 500 } });
-        }
+        console.warn("Using default basic trial plan");
       }
 
-      const syncKey = crypto.randomUUID();
-
-      // Add to SaaS Organizations (local)
-      const newOrgPayload = {
+      await localDb.saasOrganizations.put({
         id: orgId,
         name: formData.companyName,
         ownerEmail: formData.email,
         status: "trial",
         currentPlanId: assignedPlanId,
         planExpiryDate: trialEndsAt,
-        syncKey,
         isOnline: true,
         synced: false
-      };
-      await localDb.saasOrganizations.add(newOrgPayload);
+      });
 
-      const verificationOtp = generateVerificationOtp();
-
-      // Add Owner User (local)
-      const newUserPayload = {
+      await localDb.users.put({
         id: ownerId,
         orgId,
         name: formData.ownerName,
@@ -133,44 +188,11 @@ function RegisterPage() {
         role: "admin",
         status: "pending_verification",
         lastActive: new Date().toISOString(),
-        pin: formData.password, // Set the pin to their password for local login
+        pin: formData.password,
         emailVerified: false,
-        emailVerificationToken: verificationOtp,
         synced: false
-      };
-      await localDb.users.add(newUserPayload as any);
+      });
 
-      // Push org AND user to Neon DB immediately (don't wait for sync engine)
-      try {
-        await pushEverythingFn({
-          data: {
-            orgId,
-            syncKey,
-            changes: {
-              organizations: [{ ...newOrgPayload }],
-              users: [{
-                id: ownerId,
-                organizationId: orgId,
-                name: formData.ownerName,
-                email: formData.email,
-                role: "admin",
-                status: "pending_verification",
-                lastActive: new Date().toISOString(),
-                pin: formData.password,
-                emailVerified: false,
-              }]
-            }
-          }
-        });
-        // If immediate push succeeds, mark as synced locally
-        await localDb.saasOrganizations.update(orgId, { synced: true });
-        await localDb.users.update(ownerId, { synced: true });
-      } catch (e) {
-        console.warn("Could not push org and user to cloud immediately, will sync later");
-      }
-
-
-      // Seed Industry Data
       if (seedData) {
         if (seedData.categories.length > 0) {
           const mappedCats = seedData.categories.map(c => ({ ...c, orgId }));
@@ -184,9 +206,7 @@ function RegisterPage() {
 
       localStorage.setItem("pos_auth_user", ownerId);
       localStorage.setItem("pos_org_id", orgId);
-      
-      // NOTE: We do NOT send the email here. The verify-email page will auto-send it on load.
-      // This prevents duplicate/triple emails from being sent.
+
       toast.success("Registration successful! Redirecting to email verification...");
       setTimeout(() => {
         window.location.href = "/verify-email";
@@ -194,6 +214,8 @@ function RegisterPage() {
     } catch (err) {
       console.error("Registration submit error:", err);
       toast.error("Registration failed. Please try again.");
+    } finally {
+      setIsRegistering(false);
     }
   };
 
@@ -201,7 +223,6 @@ function RegisterPage() {
     <div className="flex min-h-screen bg-muted/20">
       {/* Left Panel: Hero Image & Branding */}
       <div className="relative hidden w-1/2 flex-col justify-between p-12 text-white lg:flex overflow-hidden">
-        {/* Background Hero Image with Dark Gradient Overlay */}
         <div 
           className="absolute inset-0 bg-cover bg-center transition-transform duration-1000 scale-105"
           style={{ backgroundImage: `url('https://images.unsplash.com/photo-1556742049-0a6754099a6d?auto=format&fit=crop&q=80&w=1600')` }}
@@ -229,7 +250,6 @@ function RegisterPage() {
           </div>
         </div>
 
-        {/* Glassmorphism Feature Card */}
         <div className="relative z-10 rounded-2xl border border-white/20 bg-white/10 p-6 backdrop-blur-md shadow-2xl space-y-3 max-w-md">
           <div className="flex items-center gap-1 text-warning">
             {"★".repeat(5)}
@@ -269,48 +289,93 @@ function RegisterPage() {
             ))}
           </div>
 
-          <form onSubmit={step === 2 ? handleSubmit : (e) => { e.preventDefault(); nextStep(); }} className="space-y-6">
+          <form noValidate onSubmit={step === 2 ? handleSubmit : handleNext} className="space-y-6">
             {step === 1 && (
               <div className="space-y-4 animate-in fade-in slide-in-from-right-4">
-                <div className="space-y-2">
+                <div className="space-y-1.5">
                   <Label>Full Name</Label>
                   <div className="relative">
                     <User className="absolute left-3 top-3 size-4 text-muted-foreground" />
-                    <Input name="ownerName" value={formData.ownerName} onChange={handleChange} required className="pl-10" placeholder="e.g. Your Full Name" />
+                    <Input
+                      name="ownerName"
+                      value={formData.ownerName}
+                      onChange={handleChange}
+                      className={`pl-10 ${errors.ownerName ? "border-destructive focus-visible:ring-destructive" : ""}`}
+                      placeholder="e.g. Your Full Name"
+                    />
                   </div>
+                  {errors.ownerName && <p className="text-xs font-semibold text-destructive mt-1">{errors.ownerName}</p>}
                 </div>
-                <div className="space-y-2">
+
+                <div className="space-y-1.5">
                   <Label>Email Address</Label>
-                  <Input type="email" name="email" value={formData.email} onChange={handleChange} required placeholder="e.g. you@example.com" />
+                  <Input
+                    type="email"
+                    name="email"
+                    value={formData.email}
+                    onChange={handleChange}
+                    className={errors.email ? "border-destructive focus-visible:ring-destructive" : ""}
+                    placeholder="e.g. you@example.com"
+                  />
+                  {errors.email && <p className="text-xs font-semibold text-destructive mt-1">{errors.email}</p>}
                 </div>
-                <div className="space-y-2">
+
+                <div className="space-y-1.5">
                   <Label>Password</Label>
-                  <PasswordInput name="password" value={formData.password} onChange={handleChange} required placeholder="••••••••" />
+                  <PasswordInput
+                    name="password"
+                    value={formData.password}
+                    onChange={handleChange}
+                    className={errors.password ? "border-destructive focus-visible:ring-destructive" : ""}
+                    placeholder="••••••••"
+                  />
+                  {errors.password && <p className="text-xs font-semibold text-destructive mt-1">{errors.password}</p>}
                 </div>
               </div>
             )}
 
             {step === 2 && (
               <div className="space-y-4 animate-in fade-in slide-in-from-right-4">
-                <div className="space-y-2">
+                <div className="space-y-1.5">
                   <Label>Company / Store Name</Label>
                   <div className="relative">
                     <Briefcase className="absolute left-3 top-3 size-4 text-muted-foreground" />
-                    <Input name="companyName" value={formData.companyName} onChange={handleChange} required className="pl-10" placeholder="e.g. Store or Company Name" />
+                    <Input
+                      name="companyName"
+                      value={formData.companyName}
+                      onChange={handleChange}
+                      className={`pl-10 ${errors.companyName ? "border-destructive focus-visible:ring-destructive" : ""}`}
+                      placeholder="e.g. Store or Company Name"
+                    />
                   </div>
+                  {errors.companyName && <p className="text-xs font-semibold text-destructive mt-1">{errors.companyName}</p>}
                 </div>
-                <div className="space-y-2">
+
+                <div className="space-y-1.5">
                   <Label>Phone Number</Label>
-                  <Input type="tel" name="phone" value={formData.phone} onChange={handleChange} required placeholder="e.g. +880 1700 000000" />
+                  <Input
+                    type="tel"
+                    name="phone"
+                    value={formData.phone}
+                    onChange={handleChange}
+                    className={errors.phone ? "border-destructive focus-visible:ring-destructive" : ""}
+                    placeholder="e.g. +880 1700 000000"
+                  />
+                  {errors.phone && <p className="text-xs font-semibold text-destructive mt-1">{errors.phone}</p>}
                 </div>
-                <div className="space-y-2">
+
+                <div className="space-y-1.5">
                   <Label>Industry</Label>
                   <SearchableSelect
                     options={INDUSTRIES.map(ind => ({ value: ind, label: ind }))}
                     value={formData.industry}
-                    onChange={(val) => setFormData(p => ({ ...p, industry: val }))}
+                    onChange={(val) => {
+                      setFormData(p => ({ ...p, industry: val }));
+                      if (errors.industry) setErrors(e => ({ ...e, industry: "" }));
+                    }}
                     placeholder="Select your industry"
                   />
+                  {errors.industry && <p className="text-xs font-semibold text-destructive mt-1">{errors.industry}</p>}
                 </div>
               </div>
             )}
@@ -321,8 +386,11 @@ function RegisterPage() {
                   <ChevronLeft className="size-4 mr-2" /> Back
                 </Button>
               )}
-              <Button type="submit" className="w-full">
-                {step === 2 ? `Start ${getTrialDaysFromEnv()}-Day Free Trial` : "Continue"} {step < 2 && <ChevronRight className="size-4 ml-2" />}
+              <Button type="submit" className="w-full" disabled={isRegistering}>
+                {isRegistering
+                  ? <><Loader2 className="size-4 animate-spin mr-2" /> Processing...</>
+                  : <>{step === 2 ? `Start ${getTrialDaysFromEnv()}-Day Free Trial` : "Continue"} {step < 2 && <ChevronRight className="size-4 ml-2" />}</>
+                }
               </Button>
             </div>
           </form>

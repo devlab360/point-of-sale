@@ -240,6 +240,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                   isOnline: remoteOrg.isOnline ?? true,
                 });
               }
+              if (remoteResult.data.settings) {
+                const s = remoteResult.data.settings;
+                await localDb.settings.put({
+                  ...s,
+                  id: s.id || "default",
+                  orgId: s.organizationId || s.orgId || localUserData.orgId,
+                  synced: true,
+                });
+              }
               if (remoteResult.data.plans && remoteResult.data.plans.length > 0) {
                 const formattedPlans = remoteResult.data.plans.map((p: any) => ({
                   id: p.id,
@@ -266,7 +275,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       // Verify password (stored as PIN)
-      if (foundUser.pin && foundUser.pin !== password) {
+      if (foundUser.pin && foundUser.pin.trim() !== password.trim()) {
         toast.error("Incorrect password");
         return false;
       }

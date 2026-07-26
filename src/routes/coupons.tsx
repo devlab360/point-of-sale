@@ -27,13 +27,15 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { MoreVertical, Edit2, Trash2, Ticket } from "lucide-react";
+import { MoreVertical, Edit2, Trash2, Ticket, Loader2 } from "lucide-react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { localDb } from "@/lib/db";
 import { useCurrency } from "@/lib/currency";
 import { v4 as uuidv4 } from "uuid";
 import { toast } from "sonner";
 import type { LocalCoupon } from "@/lib/db";
+import { useFormValidation } from "@/hooks/useFormValidation";
+import { FieldError } from "@/components/ui/field-error";
 
 export const Route = createFileRoute("/coupons")({
   head: () => ({ meta: [{ title: "Coupons · Grocer.Pro" }] }),
@@ -46,6 +48,7 @@ function CouponsPage() {
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [editItem, setEditItem] = useState<LocalCoupon | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
   const [expiresDate, setExpiresDate] = useState<string>("");
 
   const [search, setSearch] = useState("");
@@ -74,21 +77,27 @@ function CouponsPage() {
   const totalPages = Math.ceil(filteredCoupons.length / itemsPerPage);
   const paginatedCoupons = filteredCoupons.slice((page - 1) * itemsPerPage, page * itemsPerPage);
 
+  const { errors: couponErrors, validate: validateCoupon, clearError: clearCouponError, clearAll: clearCouponAll } = useFormValidation({
+    code: { required: "Coupon code is required" },
+    discount: { required: "Discount value is required", positive: "Discount must be a positive number" },
+    usageLimit: { required: "Usage limit is required", positive: "Usage limit must be a positive number" },
+    expires: { required: "Expiry date is required" }
+  });
+
   const handleSave = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    setIsSaving(true);
     try {
       const formData = new FormData(e.currentTarget);
-      const code = formData.get("code") as string;
+      const code = (formData.get("code") as string)?.trim();
       const type = formData.get("type") as string;
-      const discountStr = formData.get("discount") as string;
-      const usageLimitStr = formData.get("usageLimit") as string;
+      const discountStr = (formData.get("discount") as string)?.trim();
+      const usageLimitStr = (formData.get("usageLimit") as string)?.trim();
       const expires = formData.get("expires") as string;
       const status = formData.get("status") as string;
 
-      if (!code || !type || !discountStr || !usageLimitStr || !expires) {
-        toast.error("Please fill out all required fields");
-        return;
-      }
+      const isValid = validateCoupon({ code, discount: discountStr, usageLimit: usageLimitStr, expires });
+      if (!isValid) return;
 
       const discount = parseFloat(discountStr);
       const usageLimit = parseInt(usageLimitStr, 10);
@@ -111,8 +120,11 @@ function CouponsPage() {
         toast.success("Coupon added successfully");
         setIsAddOpen(false);
       }
+      clearCouponAll();
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "An error occurred");
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -198,19 +210,24 @@ function CouponsPage() {
         if (!open) {
           setIsAddOpen(false);
           setEditItem(null);
+          clearCouponAll();
         }
       }}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>{editItem ? "Edit Coupon" : "Add Coupon"}</DialogTitle>
           </DialogHeader>
-          <form onSubmit={handleSave} className="space-y-4">
+          <form noValidate onSubmit={handleSave} className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="code">Coupon Code</Label>
-                <Input id="code" name="code" required defaultValue={editItem?.code} className="uppercase" />
+              <div className="space-y-1.5">
+                <Label htmlFor="code">Coupon Code <span className="text-destructive">*</span></Label>
+                <Input
+                  id="code" name="code" defaultValue={editItem?.code} className={`uppercase ${couponErrors.code ? 'border-destructive focus-visible:ring-destructive' : ''}`}
+                  onChange={() => clearCouponError("code")}
+                />
+                <FieldError message={couponErrors.code} />
               </div>
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 <Label htmlFor="type">Discount Type</Label>
                 <Select name="type" defaultValue={editItem?.type || "percentage"}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
@@ -222,23 +239,35 @@ function CouponsPage() {
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="discount">Discount Value</Label>
-                <Input id="discount" name="discount" type="number" step="0.01" required defaultValue={editItem?.discount} />
+              <div className="space-y-1.5">
+                <Label htmlFor="discount">Discount Value <span className="text-destructive">*</span></Label>
+                <Input
+                  id="discount" name="discount" type="number" step="0.01" defaultValue={editItem?.discount}
+                  className={couponErrors.discount ? 'border-destructive focus-visible:ring-destructive' : ''}
+                  onChange={() => clearCouponError("discount")}
+                />
+                <FieldError message={couponErrors.discount} />
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="usageLimit">Usage Limit</Label>
-                <Input id="usageLimit" name="usageLimit" type="number" required defaultValue={editItem?.usageLimit || 100} />
+              <div className="space-y-1.5">
+                <Label htmlFor="usageLimit">Usage Limit <span className="text-destructive">*</span></Label>
+                <Input
+                  id="usageLimit" name="usageLimit" type="number" defaultValue={editItem?.usageLimit || 100}
+                  className={couponErrors.usageLimit ? 'border-destructive focus-visible:ring-destructive' : ''}
+                  onChange={() => clearCouponError("usageLimit")}
+                />
+                <FieldError message={couponErrors.usageLimit} />
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="expires">Expiry Date</Label>
+              <div className="space-y-1.5">
+                <Label htmlFor="expires">Expiry Date <span className="text-destructive">*</span></Label>
+                <div className="hidden"><Input name="expires" value={expiresDate || (editItem ? editItem.expires : "")} readOnly /></div>
                 <DatePicker 
                   name="expires" 
                   date={expiresDate || (editItem ? editItem.expires : "")} 
-                  onDateChange={(d) => setExpiresDate(d ? d.toISOString().split("T")[0] : "")} 
+                  onDateChange={(d) => { setExpiresDate(d ? d.toISOString().split("T")[0] : ""); clearCouponError("expires"); }} 
                 />
+                <FieldError message={couponErrors.expires} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="status">Status</Label>
@@ -253,8 +282,11 @@ function CouponsPage() {
               </div>
             </div>
             <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => { setIsAddOpen(false); setEditItem(null); }}>Cancel</Button>
-              <Button type="submit">Save Coupon</Button>
+              <Button type="button" variant="outline" onClick={() => { setIsAddOpen(false); setEditItem(null); clearCouponAll(); }}>Cancel</Button>
+              <Button type="submit" disabled={isSaving}>
+                {isSaving && <Loader2 className="size-4 animate-spin mr-2" />}
+                Save Coupon
+              </Button>
             </DialogFooter>
           </form>
         </DialogContent>

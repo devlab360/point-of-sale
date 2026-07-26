@@ -26,7 +26,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Shield, MoreVertical, Edit2, Trash2 } from "lucide-react";
+import { Shield, MoreVertical, Edit2, Trash2, Loader2, UserCheck, Plus, Search, CheckCircle2, Copy, Link as LinkIcon, Award, Target, Percent, KeyRound, Check } from "lucide-react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { localDb } from "@/lib/db";
 import { v4 as uuidv4 } from "uuid";
@@ -34,7 +34,8 @@ import { toast } from "sonner";
 import type { LocalUser, LocalInvitation } from "@/lib/db";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "@tanstack/react-router";
-import { Check, Copy, Link as LinkIcon, CheckCircle2, KeyRound } from "lucide-react";
+import { useFormValidation } from "@/hooks/useFormValidation";
+import { FieldError } from "@/components/ui/field-error";
 
 const AVAILABLE_PERMISSIONS = [
   { id: "pos", label: "POS Terminal", desc: "Access sales register & checkout" },
@@ -70,6 +71,7 @@ function UsersPage() {
   const [editPermissions, setEditPermissions] = useState<string[]>([]);
   const [editRole, setEditRole] = useState<string>("cashier");
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
 
   const { user } = useAuth();
   const router = useRouter();
@@ -174,16 +176,28 @@ function UsersPage() {
     }
   };
 
+  const { errors: userErrors, validate: validateUser, clearError: clearUserError, clearAll: clearUserAll } = useFormValidation({
+    name: { required: "Name is required", minLength: { value: 2, message: "Name must be at least 2 characters" } },
+    commissionRate: { required: "Commission rate is required", positive: "Commission rate must be a positive number" },
+    monthlyTarget: { required: "Monthly target is required", positive: "Monthly target must be a positive number" },
+  });
+
   const handleSaveEdit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!editItem) return;
+    setIsSaving(true);
     try {
       const formData = new FormData(e.currentTarget);
-      const name = formData.get("name") as string;
+      const name = (formData.get("name") as string)?.trim();
       const status = formData.get("status") as string;
+      const commissionRateStr = (formData.get("commissionRate") as string)?.trim();
+      const monthlyTargetStr = (formData.get("monthlyTarget") as string)?.trim();
 
-      const commissionRate = parseFloat(formData.get("commissionRate") as string) || 0;
-      const monthlyTarget = parseFloat(formData.get("monthlyTarget") as string) || 0;
+      const isValid = validateUser({ name, commissionRate: commissionRateStr, monthlyTarget: monthlyTargetStr });
+      if (!isValid) return;
+
+      const commissionRate = parseFloat(commissionRateStr) || 0;
+      const monthlyTarget = parseFloat(monthlyTargetStr) || 0;
 
       await localDb.users.update(editItem.id, {
         name,
@@ -195,8 +209,11 @@ function UsersPage() {
       });
       toast.success("Employee updated successfully");
       setEditItem(null);
+      clearUserAll();
     } catch (error) {
-      toast.error("Failed to update employee");
+      toast.error("Failed to update user");
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -390,16 +407,23 @@ function UsersPage() {
       </Dialog>
 
       <Dialog open={!!editItem} onOpenChange={(open) => {
-        if (!open) setEditItem(null);
+        if (!open) { setEditItem(null); clearUserAll(); }
       }}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle>Edit Employee & Permissions</DialogTitle>
           </DialogHeader>
-          <form onSubmit={handleSaveEdit} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="name">Full Name</Label>
-              <Input id="name" name="name" placeholder="e.g. Employee Full Name" required defaultValue={editItem?.name} />
+          <form noValidate onSubmit={handleSaveEdit} className="space-y-4">
+            <div className="space-y-1.5">
+              <Label htmlFor="name">Full Name <span className="text-destructive">*</span></Label>
+              <Input
+                id="name" name="name"
+                placeholder="e.g. Employee Full Name"
+                defaultValue={editItem?.name}
+                className={userErrors.name ? "border-destructive focus-visible:ring-destructive" : ""}
+                onChange={() => clearUserError("name")}
+              />
+              <FieldError message={userErrors.name} />
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
@@ -431,13 +455,27 @@ function UsersPage() {
 
             {/* Salesman Commission & Target Settings */}
             <div className="grid grid-cols-2 gap-4 border-t pt-3">
-              <div className="space-y-2">
-                <Label htmlFor="commissionRate">Sales Commission (%)</Label>
-                <Input id="commissionRate" name="commissionRate" type="number" min="0" step="0.1" defaultValue={editItem?.commissionRate || 2.5} placeholder="e.g. 2.5" required />
+              <div className="space-y-1.5">
+                <Label htmlFor="commissionRate">Sales Commission (%) <span className="text-destructive">*</span></Label>
+                <Input
+                  id="commissionRate" name="commissionRate" type="number" min="0" step="0.1"
+                  defaultValue={editItem?.commissionRate || 2.5}
+                  placeholder="e.g. 2.5"
+                  className={userErrors.commissionRate ? "border-destructive focus-visible:ring-destructive" : ""}
+                  onChange={() => clearUserError("commissionRate")}
+                />
+                <FieldError message={userErrors.commissionRate} />
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="monthlyTarget">Monthly Sales Target</Label>
-                <Input id="monthlyTarget" name="monthlyTarget" type="number" min="0" defaultValue={editItem?.monthlyTarget || 10000} placeholder="e.g. 10000" required />
+              <div className="space-y-1.5">
+                <Label htmlFor="monthlyTarget">Monthly Sales Target <span className="text-destructive">*</span></Label>
+                <Input
+                  id="monthlyTarget" name="monthlyTarget" type="number" min="0"
+                  defaultValue={editItem?.monthlyTarget || 10000}
+                  placeholder="e.g. 10000"
+                  className={userErrors.monthlyTarget ? "border-destructive focus-visible:ring-destructive" : ""}
+                  onChange={() => clearUserError("monthlyTarget")}
+                />
+                <FieldError message={userErrors.monthlyTarget} />
               </div>
             </div>
 
@@ -470,7 +508,10 @@ function UsersPage() {
             </div>
 
             <DialogFooter>
-              <Button type="submit">Save Employee & Permissions</Button>
+              <Button type="submit" disabled={isSaving}>
+                {isSaving && <Loader2 className="size-4 animate-spin mr-2" />}
+                Save Employee & Permissions
+              </Button>
             </DialogFooter>
           </form>
         </DialogContent>

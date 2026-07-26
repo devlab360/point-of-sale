@@ -20,10 +20,12 @@ import {
 import { localDb, type LocalSubscription } from "@/lib/db";
 import { useLiveQuery } from "dexie-react-hooks";
 import { useCurrency } from "@/lib/currency";
-import { Repeat, Plus, MoreVertical, Trash2, CheckCircle2, PauseCircle } from "lucide-react";
+import { Repeat, Plus, MoreVertical, Trash2, CheckCircle2, PauseCircle, Loader2 } from "lucide-react";
 import { v4 as uuidv4 } from "uuid";
 import { toast } from "sonner";
 import React from "react";
+import { useFormValidation } from "@/hooks/useFormValidation";
+import { FieldError } from "@/components/ui/field-error";
 
 export const Route = createFileRoute("/subscriptions")({
   head: () => ({ meta: [{ title: "Subscriptions & Recurring Billing · Grocer.Pro" }] }),
@@ -36,6 +38,7 @@ function SubscriptionsPage() {
   const customers = useLiveQuery(() => localDb.customers.toArray()) || [];
 
   const [isAddOpen, setIsAddOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search, 300);
   const [page, setPage] = useState(1);
@@ -73,10 +76,19 @@ function SubscriptionsPage() {
     setPage(1);
   }, [debouncedSearch]);
 
+  const { errors: subErrors, validate: validateSub, clearError: clearSubError, clearAll: clearSubAll } = useFormValidation({
+    customerName: { required: "Customer name is required" },
+    planName: { required: "Plan / Service name is required" },
+    amount: { required: "Recurring amount is required", positive: "Amount must be a positive number" },
+  });
+
   const handleCreateSub = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!customerName || !planName || !amount) return toast.error("Please fill in required fields");
 
+    const isValid = validateSub({ customerName, planName, amount });
+    if (!isValid) return;
+
+    setIsSubmitting(true);
     try {
       const subNo = `SUB-${Date.now().toString().slice(-6)}`;
       await localDb.subscriptions.add({
@@ -96,8 +108,11 @@ function SubscriptionsPage() {
       setCustomerName("");
       setPlanName("");
       setAmount("");
+      clearSubAll();
     } catch (err) {
       toast.error("Failed to create subscription");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -197,7 +212,9 @@ function SubscriptionsPage() {
       </DataPage>
 
       {/* Create Subscription Modal */}
-      <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
+      <Dialog open={isAddOpen} onOpenChange={(open) => {
+        if (!open) { setIsAddOpen(false); clearSubAll(); }
+      }}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
@@ -205,17 +222,29 @@ function SubscriptionsPage() {
               <span>Create Subscription Plan</span>
             </DialogTitle>
           </DialogHeader>
-          <form onSubmit={handleCreateSub} className="space-y-4 pt-2">
-            <div className="space-y-2">
-              <Label>Customer Name *</Label>
-              <Input placeholder="e.g. Customer Name" value={customerName} onChange={(e) => setCustomerName(e.target.value)} required />
+          <form noValidate onSubmit={handleCreateSub} className="space-y-4 pt-2">
+            <div className="space-y-1.5">
+              <Label>Customer Name <span className="text-destructive">*</span></Label>
+              <Input
+                placeholder="e.g. Customer Name"
+                value={customerName}
+                onChange={(e) => { setCustomerName(e.target.value); clearSubError("customerName"); }}
+                className={subErrors.customerName ? "border-destructive focus-visible:ring-destructive" : ""}
+              />
+              <FieldError message={subErrors.customerName} />
             </div>
             <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Plan / Service Name *</Label>
-                <Input placeholder="e.g. Plan / Service Name" value={planName} onChange={(e) => setPlanName(e.target.value)} required />
+              <div className="space-y-1.5">
+                <Label>Plan / Service Name <span className="text-destructive">*</span></Label>
+                <Input
+                  placeholder="e.g. Plan / Service Name"
+                  value={planName}
+                  onChange={(e) => { setPlanName(e.target.value); clearSubError("planName"); }}
+                  className={subErrors.planName ? "border-destructive focus-visible:ring-destructive" : ""}
+                />
+                <FieldError message={subErrors.planName} />
               </div>
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 <Label>Billing Cycle</Label>
                 <SearchableSelect
                   options={[
@@ -230,11 +259,17 @@ function SubscriptionsPage() {
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Recurring Amount *</Label>
-                <Input type="number" min="0" step="0.01" placeholder="0.00" value={amount} onChange={(e) => setAmount(e.target.value)} required />
+              <div className="space-y-1.5">
+                <Label>Recurring Amount <span className="text-destructive">*</span></Label>
+                <Input
+                  type="number" min="0" step="0.01" placeholder="0.00"
+                  value={amount}
+                  onChange={(e) => { setAmount(e.target.value); clearSubError("amount"); }}
+                  className={subErrors.amount ? "border-destructive focus-visible:ring-destructive" : ""}
+                />
+                <FieldError message={subErrors.amount} />
               </div>
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 <Label>Next Billing Date</Label>
                 <div className="mt-1">
                   <DatePicker 
@@ -244,9 +279,12 @@ function SubscriptionsPage() {
                 </div>
               </div>
             </div>
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setIsAddOpen(false)}>Cancel</Button>
-              <Button type="submit">Create Subscription</Button>
+            <DialogFooter className="mt-6">
+              <Button type="button" variant="outline" onClick={() => { setIsAddOpen(false); clearSubAll(); }}>Cancel</Button>
+              <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting && <Loader2 className="size-4 animate-spin mr-2" />}
+                Create Subscription
+              </Button>
             </DialogFooter>
           </form>
         </DialogContent>

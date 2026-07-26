@@ -30,13 +30,15 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Wallet, TrendingDown, Receipt, MoreVertical, Edit2, Trash2 } from "lucide-react";
+import { Wallet, TrendingDown, Receipt, MoreVertical, Edit2, Trash2, Loader2 } from "lucide-react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { localDb } from "@/lib/db";
 import { useCurrency } from "@/lib/currency";
 import { v4 as uuidv4 } from "uuid";
 import { toast } from "sonner";
 import type { LocalExpense } from "@/lib/db";
+import { useFormValidation } from "@/hooks/useFormValidation";
+import { FieldError } from "@/components/ui/field-error";
 
 export const Route = createFileRoute("/expenses")({
   head: () => ({ meta: [{ title: "Expenses · Grocer.Pro" }] }),
@@ -50,6 +52,7 @@ function ExpensesPage() {
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [editItem, setEditItem] = useState<LocalExpense | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
   const [expenseDate, setExpenseDate] = useState<string>("");
 
   const [search, setSearch] = useState("");
@@ -100,22 +103,32 @@ function ExpensesPage() {
   }, {} as Record<string, number>);
   const largestCategory = Object.entries(catMap).sort((a, b) => b[1] - a[1])[0]?.[0] || "N/A";
 
+  const { errors: expErrors, validate: validateExp, clearError: clearExpError, clearAll: clearExpAll } = useFormValidation({
+    date: { required: "Date is required" },
+    category: { required: "Category is required" },
+    description: { required: "Description is required", minLength: { value: 3, message: "Description must be at least 3 characters" } },
+    amount: { required: "Amount is required", positive: "Amount must be a positive number" },
+  });
+
   const handleSave = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    setIsSaving(true);
     try {
       const formData = new FormData(e.currentTarget);
-      const date = formData.get("date") as string;
-      const category = formData.get("category") as string;
-      const description = formData.get("description") as string;
-      const amountStr = formData.get("amount") as string;
+      const date = (formData.get("date") as string)?.trim();
+      const category = (formData.get("category") as string)?.trim();
+      const description = (formData.get("description") as string)?.trim();
+      const amountStr = (formData.get("amount") as string)?.trim();
       const status = formData.get("status") as string;
 
-      if (!date || !category || !description || !amountStr) {
-        toast.error("Please fill out all required fields");
-        return;
-      }
+      const isValid = validateExp({ date, category, description, amount: amountStr });
+      if (!isValid) return;
 
       const amount = parseFloat(amountStr);
+      if (isNaN(amount) || amount <= 0) {
+        toast.error("Amount must be a positive number");
+        return;
+      }
 
       if (editItem) {
         await localDb.expenses.update(editItem.id, { date, category, description, amount, status });
@@ -133,8 +146,11 @@ function ExpensesPage() {
         toast.success("Expense added successfully");
         setIsAddOpen(false);
       }
+      clearExpAll();
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "An error occurred");
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -261,37 +277,60 @@ function ExpensesPage() {
         if (!open) {
           setIsAddOpen(false);
           setEditItem(null);
+          clearExpAll();
         }
       }}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>{editItem ? "Edit Expense" : "Add Expense"}</DialogTitle>
           </DialogHeader>
-          <form id="expense-form" onSubmit={handleSave} className="space-y-4">
+          <form id="expense-form" noValidate onSubmit={handleSave} className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="date">Date</Label>
-                <DatePicker 
-                  name="date" 
-                  date={expenseDate || (editItem ? editItem.date : new Date().toISOString().split('T')[0])} 
-                  onDateChange={(d) => setExpenseDate(d ? d.toISOString().split("T")[0] : "")} 
+              <div className="space-y-1.5">
+                <Label htmlFor="date">Date <span className="text-destructive">*</span></Label>
+                <DatePicker
+                  name="date"
+                  date={expenseDate || (editItem ? editItem.date : new Date().toISOString().split('T')[0])}
+                  onDateChange={(d) => { setExpenseDate(d ? d.toISOString().split("T")[0] : ""); clearExpError("date"); }}
                 />
+                <FieldError message={expErrors.date} />
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="category">Category</Label>
-                <Input id="category" name="category" required defaultValue={editItem?.category} placeholder="e.g. Utilities" />
+              <div className="space-y-1.5">
+                <Label htmlFor="category">Category <span className="text-destructive">*</span></Label>
+                <Input
+                  id="category" name="category"
+                  defaultValue={editItem?.category}
+                  placeholder="e.g. Utilities"
+                  className={expErrors.category ? "border-destructive focus-visible:ring-destructive" : ""}
+                  onChange={() => clearExpError("category")}
+                />
+                <FieldError message={expErrors.category} />
               </div>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="description">Description</Label>
-              <Input id="description" name="description" placeholder="e.g. Electricity bill for July" required defaultValue={editItem?.description} />
+            <div className="space-y-1.5">
+              <Label htmlFor="description">Description <span className="text-destructive">*</span></Label>
+              <Input
+                id="description" name="description"
+                placeholder="e.g. Electricity bill for July"
+                defaultValue={editItem?.description}
+                className={expErrors.description ? "border-destructive focus-visible:ring-destructive" : ""}
+                onChange={() => clearExpError("description")}
+              />
+              <FieldError message={expErrors.description} />
             </div>
             <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="amount">Amount ($)</Label>
-                <Input id="amount" name="amount" type="number" min="0" step="0.01" placeholder="e.g. 150.00" required defaultValue={editItem?.amount} />
+              <div className="space-y-1.5">
+                <Label htmlFor="amount">Amount ($) <span className="text-destructive">*</span></Label>
+                <Input
+                  id="amount" name="amount" type="number" min="0" step="0.01"
+                  placeholder="e.g. 150.00"
+                  defaultValue={editItem?.amount}
+                  className={expErrors.amount ? "border-destructive focus-visible:ring-destructive" : ""}
+                  onChange={() => clearExpError("amount")}
+                />
+                <FieldError message={expErrors.amount} />
               </div>
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 <Label htmlFor="status">Status</Label>
                 <SearchableSelect
                   options={[
@@ -312,8 +351,11 @@ function ExpensesPage() {
               </div>
             </div>
             <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => { setIsAddOpen(false); setEditItem(null); }}>Cancel</Button>
-              <Button type="submit">Save Expense</Button>
+              <Button type="button" variant="outline" onClick={() => { setIsAddOpen(false); setEditItem(null); clearExpAll(); }}>Cancel</Button>
+              <Button type="submit" disabled={isSaving}>
+                {isSaving && <Loader2 className="size-4 animate-spin mr-2" />}
+                Save Expense
+              </Button>
             </DialogFooter>
           </form>
         </DialogContent>

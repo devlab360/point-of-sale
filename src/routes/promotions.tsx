@@ -27,13 +27,15 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { MoreVertical, Edit2, Trash2, Megaphone } from "lucide-react";
+import { Sparkles, Plus, Trash2, Edit2, Search, ArrowUpRight, ArrowDownLeft, Calendar, FileText, CheckCircle2, Star, Loader2, MoreVertical, Megaphone } from "lucide-react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { localDb } from "@/lib/db";
 import { useCurrency } from "@/lib/currency";
 import { v4 as uuidv4 } from "uuid";
 import { toast } from "sonner";
 import type { LocalPromotion } from "@/lib/db";
+import { useFormValidation } from "@/hooks/useFormValidation";
+import { FieldError } from "@/components/ui/field-error";
 
 export const Route = createFileRoute("/promotions")({
   head: () => ({ meta: [{ title: "Promotions · Grocer.Pro" }] }),
@@ -46,6 +48,7 @@ function PromotionsPage() {
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [editItem, setEditItem] = useState<LocalPromotion | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
 
   const [startDate, setStartDate] = useState<string>("");
   const [endDate, setEndDate] = useState<string>("");
@@ -76,22 +79,29 @@ function PromotionsPage() {
   const totalPages = Math.ceil(filteredPromotions.length / itemsPerPage);
   const paginatedPromotions = filteredPromotions.slice((page - 1) * itemsPerPage, page * itemsPerPage);
 
+  const { errors: promoErrors, validate: validatePromo, clearError: clearPromoError, clearAll: clearPromoAll } = useFormValidation({
+    title: { required: "Promotion title is required" },
+    value: { required: "Discount value is required", positive: "Value must be positive" },
+    conditions: { required: "Conditions are required" },
+    startDate: { required: "Start date is required" },
+    endDate: { required: "End date is required" }
+  });
+
   const handleSave = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    setIsSaving(true);
     try {
       const formData = new FormData(e.currentTarget);
-      const title = formData.get("title") as string;
+      const title = (formData.get("title") as string)?.trim();
       const type = formData.get("type") as string;
-      const valueStr = formData.get("value") as string;
-      const conditions = formData.get("conditions") as string;
+      const valueStr = (formData.get("value") as string)?.trim();
+      const conditions = (formData.get("conditions") as string)?.trim();
       const startDate = formData.get("startDate") as string;
       const endDate = formData.get("endDate") as string;
       const status = formData.get("status") as string;
 
-      if (!title || !type || !valueStr || !startDate || !endDate) {
-        toast.error("Please fill out all required fields");
-        return;
-      }
+      const isValid = validatePromo({ title, value: valueStr, conditions, startDate, endDate });
+      if (!isValid) return;
 
       const value = parseFloat(valueStr);
 
@@ -113,8 +123,11 @@ function PromotionsPage() {
         toast.success("Promotion added successfully");
         setIsAddOpen(false);
       }
+      clearPromoAll();
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "An error occurred");
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -189,19 +202,25 @@ function PromotionsPage() {
         if (!open) {
           setIsAddOpen(false);
           setEditItem(null);
+          clearPromoAll();
         }
       }}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>{editItem ? "Edit Promotion" : "Add Promotion"}</DialogTitle>
           </DialogHeader>
-          <form onSubmit={handleSave} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="title">Promotion Title</Label>
-              <Input id="title" name="title" required defaultValue={editItem?.title} placeholder="e.g. Campaign Name" />
+          <form noValidate onSubmit={handleSave} className="space-y-4">
+            <div className="space-y-1.5">
+              <Label htmlFor="title">Promotion Title <span className="text-destructive">*</span></Label>
+              <Input
+                id="title" name="title" defaultValue={editItem?.title} placeholder="e.g. Campaign Name"
+                className={promoErrors.title ? "border-destructive focus-visible:ring-destructive" : ""}
+                onChange={() => clearPromoError("title")}
+              />
+              <FieldError message={promoErrors.title} />
             </div>
             <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 <Label htmlFor="type">Scope Type</Label>
                 <Select name="type" defaultValue={editItem?.type || "storewide"}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
@@ -212,34 +231,48 @@ function PromotionsPage() {
                   </SelectContent>
                 </Select>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="value">Discount Value (%)</Label>
-                <Input id="value" name="value" type="number" min="0" step="0.01" placeholder="e.g. 10.00" required defaultValue={editItem?.value} />
+              <div className="space-y-1.5">
+                <Label htmlFor="value">Discount Value (%) <span className="text-destructive">*</span></Label>
+                <Input
+                  id="value" name="value" type="number" min="0" step="0.01" placeholder="e.g. 10.00" defaultValue={editItem?.value}
+                  className={promoErrors.value ? "border-destructive focus-visible:ring-destructive" : ""}
+                  onChange={() => clearPromoError("value")}
+                />
+                <FieldError message={promoErrors.value} />
               </div>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="conditions">Conditions</Label>
-              <Input id="conditions" name="conditions" required defaultValue={editItem?.conditions} placeholder="e.g. Conditions or Rules" />
+            <div className="space-y-1.5">
+              <Label htmlFor="conditions">Conditions <span className="text-destructive">*</span></Label>
+              <Input
+                id="conditions" name="conditions" defaultValue={editItem?.conditions} placeholder="e.g. Conditions or Rules"
+                className={promoErrors.conditions ? "border-destructive focus-visible:ring-destructive" : ""}
+                onChange={() => clearPromoError("conditions")}
+              />
+              <FieldError message={promoErrors.conditions} />
             </div>
             <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="startDate">Start Date</Label>
+              <div className="space-y-1.5">
+                <Label htmlFor="startDate">Start Date <span className="text-destructive">*</span></Label>
+                <div className="hidden"><Input name="startDate" value={startDate || (editItem ? editItem.startDate : "")} readOnly /></div>
                 <DatePicker 
                   name="startDate" 
                   date={startDate || (editItem ? editItem.startDate : "")} 
-                  onDateChange={(d) => setStartDate(d ? d.toISOString().split("T")[0] : "")} 
+                  onDateChange={(d) => { setStartDate(d ? d.toISOString().split("T")[0] : ""); clearPromoError("startDate"); }} 
                 />
+                <FieldError message={promoErrors.startDate} />
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="endDate">End Date</Label>
+              <div className="space-y-1.5">
+                <Label htmlFor="endDate">End Date <span className="text-destructive">*</span></Label>
+                <div className="hidden"><Input name="endDate" value={endDate || (editItem ? editItem.endDate : "")} readOnly /></div>
                 <DatePicker 
                   name="endDate" 
                   date={endDate || (editItem ? editItem.endDate : "")} 
-                  onDateChange={(d) => setEndDate(d ? d.toISOString().split("T")[0] : "")} 
+                  onDateChange={(d) => { setEndDate(d ? d.toISOString().split("T")[0] : ""); clearPromoError("endDate"); }} 
                 />
+                <FieldError message={promoErrors.endDate} />
               </div>
             </div>
-            <div className="space-y-2">
+            <div className="space-y-1.5">
               <Label htmlFor="status">Status</Label>
               <Select name="status" defaultValue={editItem?.status || "active"}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
@@ -250,9 +283,12 @@ function PromotionsPage() {
                 </SelectContent>
               </Select>
             </div>
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => { setIsAddOpen(false); setEditItem(null); }}>Cancel</Button>
-              <Button type="submit">Save Promotion</Button>
+            <DialogFooter className="mt-6">
+              <Button type="button" variant="outline" onClick={() => { setIsAddOpen(false); setEditItem(null); clearPromoAll(); }}>Cancel</Button>
+              <Button type="submit" disabled={isSaving}>
+                {isSaving && <Loader2 className="size-4 animate-spin mr-2" />}
+                Save Promotion
+              </Button>
             </DialogFooter>
           </form>
         </DialogContent>

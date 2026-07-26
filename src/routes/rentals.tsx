@@ -19,9 +19,11 @@ import {
 import { localDb, type LocalRental } from "@/lib/db";
 import { useLiveQuery } from "dexie-react-hooks";
 import { useCurrency } from "@/lib/currency";
-import { KeyRound, Plus, MoreVertical, Trash2, CheckCircle2 } from "lucide-react";
+import { KeyRound, Plus, MoreVertical, Trash2, CheckCircle2, Loader2 } from "lucide-react";
 import { v4 as uuidv4 } from "uuid";
 import { toast } from "sonner";
+import { useFormValidation } from "@/hooks/useFormValidation";
+import { FieldError } from "@/components/ui/field-error";
 
 export const Route = createFileRoute("/rentals")({
   head: () => ({ meta: [{ title: "Equipment Rentals & Booking · Grocer.Pro" }] }),
@@ -33,6 +35,7 @@ function RentalsPage() {
   const rawRentals = useLiveQuery(() => localDb.rentals.toArray()) || [];
 
   const [isAddOpen, setIsAddOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search, 300);
   const [page, setPage] = useState(1);
@@ -63,10 +66,21 @@ function RentalsPage() {
   const totalPages = Math.max(1, Math.ceil(filteredRentals.length / itemsPerPage));
   const paginated = filteredRentals.slice((page - 1) * itemsPerPage, page * itemsPerPage);
 
+  const { errors: rntErrors, validate: validateRnt, clearError: clearRntError, clearAll: clearRntAll } = useFormValidation({
+    customerName: { required: "Customer name is required" },
+    itemName: { required: "Item name is required" },
+    dailyRate: { required: "Daily rate is required", positive: "Rate must be positive" },
+    rentStartDate: { required: "Start date is required" },
+    expectedReturnDate: { required: "Return date is required" }
+  });
+
   const handleCreateRental = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!customerName || !itemName || !dailyRate) return toast.error("Please fill in required fields");
+    
+    const isValid = validateRnt({ customerName, itemName, dailyRate, rentStartDate, expectedReturnDate });
+    if (!isValid) return;
 
+    setIsSubmitting(true);
     try {
       const rNo = `RNT-${Date.now().toString().slice(-6)}`;
       const rate = parseFloat(dailyRate) || 0;
@@ -91,8 +105,11 @@ function RentalsPage() {
       setItemName("");
       setDailyRate("");
       setSecurityDeposit("");
+      clearRntAll();
     } catch (err) {
       toast.error("Failed to create rental booking");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -183,7 +200,9 @@ function RentalsPage() {
       </DataPage>
 
       {/* Create Rental Booking Modal */}
-      <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
+      <Dialog open={isAddOpen} onOpenChange={(open) => {
+        if (!open) { setIsAddOpen(false); clearRntAll(); }
+      }}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
@@ -191,48 +210,68 @@ function RentalsPage() {
               <span>Create Rental Booking</span>
             </DialogTitle>
           </DialogHeader>
-          <form onSubmit={handleCreateRental} className="space-y-4 pt-2">
-            <div className="space-y-2">
-              <Label>Customer Name *</Label>
-              <Input placeholder="e.g. Customer Name" value={customerName} onChange={(e) => setCustomerName(e.target.value)} required />
+          <form noValidate onSubmit={handleCreateRental} className="space-y-4 pt-2">
+            <div className="space-y-1.5">
+              <Label>Customer Name <span className="text-destructive">*</span></Label>
+              <Input
+                placeholder="e.g. Customer Name" value={customerName}
+                onChange={(e) => { setCustomerName(e.target.value); clearRntError("customerName"); }}
+                className={rntErrors.customerName ? "border-destructive focus-visible:ring-destructive" : ""}
+              />
+              <FieldError message={rntErrors.customerName} />
             </div>
-            <div className="space-y-2">
-              <Label>Rented Equipment / Item *</Label>
-              <Input placeholder="e.g. Item Name" value={itemName} onChange={(e) => setItemName(e.target.value)} required />
+            <div className="space-y-1.5">
+              <Label>Rented Equipment / Item <span className="text-destructive">*</span></Label>
+              <Input
+                placeholder="e.g. Item Name" value={itemName}
+                onChange={(e) => { setItemName(e.target.value); clearRntError("itemName"); }}
+                className={rntErrors.itemName ? "border-destructive focus-visible:ring-destructive" : ""}
+              />
+              <FieldError message={rntErrors.itemName} />
             </div>
             <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Rent Start Date *</Label>
+              <div className="space-y-1.5">
+                <Label>Rent Start Date <span className="text-destructive">*</span></Label>
                 <div className="mt-1">
                   <DatePicker 
                     date={rentStartDate ? new Date(rentStartDate) : undefined} 
-                    onDateChange={(d) => setRentStartDate(d ? d.toISOString().split("T")[0] : "")} 
+                    onDateChange={(d) => { setRentStartDate(d ? d.toISOString().split("T")[0] : ""); clearRntError("rentStartDate"); }} 
                   />
                 </div>
+                <FieldError message={rntErrors.rentStartDate} />
               </div>
-              <div className="space-y-2">
-                <Label>Expected Return Date *</Label>
+              <div className="space-y-1.5">
+                <Label>Expected Return Date <span className="text-destructive">*</span></Label>
                 <div className="mt-1">
                   <DatePicker 
                     date={expectedReturnDate ? new Date(expectedReturnDate) : undefined} 
-                    onDateChange={(d) => setExpectedReturnDate(d ? d.toISOString().split("T")[0] : "")} 
+                    onDateChange={(d) => { setExpectedReturnDate(d ? d.toISOString().split("T")[0] : ""); clearRntError("expectedReturnDate"); }} 
                   />
                 </div>
+                <FieldError message={rntErrors.expectedReturnDate} />
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Daily Rate *</Label>
-                <Input type="number" min="0" step="0.01" placeholder="0.00" value={dailyRate} onChange={(e) => setDailyRate(e.target.value)} required />
+              <div className="space-y-1.5">
+                <Label>Daily Rate <span className="text-destructive">*</span></Label>
+                <Input
+                  type="number" min="0" step="0.01" placeholder="0.00" value={dailyRate}
+                  onChange={(e) => { setDailyRate(e.target.value); clearRntError("dailyRate"); }}
+                  className={rntErrors.dailyRate ? "border-destructive focus-visible:ring-destructive" : ""}
+                />
+                <FieldError message={rntErrors.dailyRate} />
               </div>
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 <Label>Security Deposit Amount</Label>
                 <Input type="number" min="0" step="0.01" placeholder="0.00" value={securityDeposit} onChange={(e) => setSecurityDeposit(e.target.value)} />
               </div>
             </div>
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setIsAddOpen(false)}>Cancel</Button>
-              <Button type="submit">Dispatch Rental Booking</Button>
+            <DialogFooter className="mt-6">
+              <Button type="button" variant="outline" onClick={() => { setIsAddOpen(false); clearRntAll(); }}>Cancel</Button>
+              <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting && <Loader2 className="size-4 animate-spin mr-2" />}
+                Dispatch Rental Booking
+              </Button>
             </DialogFooter>
           </form>
         </DialogContent>

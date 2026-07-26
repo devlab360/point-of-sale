@@ -10,12 +10,14 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { localDb, type LocalAccount, type LocalVoucher } from "@/lib/db";
 import { useLiveQuery } from "dexie-react-hooks";
 import { useCurrency } from "@/lib/currency";
-import { Wallet, Plus, ArrowRightLeft, BookOpen, Layers } from "lucide-react";
+import { Wallet, Plus, ArrowRightLeft, BookOpen, Layers, Loader2 } from "lucide-react";
 import { v4 as uuidv4 } from "uuid";
 import { toast } from "sonner";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { PaginationControls } from "@/components/ui/pagination-controls";
 import { cn } from "@/lib/utils";
+import { useFormValidation } from "@/hooks/useFormValidation";
+import { FieldError } from "@/components/ui/field-error";
 
 export const Route = createFileRoute("/accounts")({
   head: () => ({ meta: [{ title: "Chart of Accounts & Vouchers · Grocer.Pro" }] }),
@@ -43,6 +45,8 @@ function AccountsPage() {
   const [activeTab, setActiveTab] = useState<"accounts" | "vouchers">("accounts");
   const [isAddAccountOpen, setIsAddAccountOpen] = useState(false);
   const [isAddVoucherOpen, setIsAddVoucherOpen] = useState(false);
+  const [isSubmittingAccount, setIsSubmittingAccount] = useState(false);
+  const [isPostingVoucher, setIsPostingVoucher] = useState(false);
   const [accountType, setAccountType] = useState("asset");
 
   // Pagination state
@@ -88,6 +92,17 @@ function AccountsPage() {
   const totalLiabilities = accountsByType.liability.reduce((sum, a) => sum + a.balance, 0);
   const totalEquity = accountsByType.equity.reduce((sum, a) => sum + a.balance, 0) + (totalAssets - totalLiabilities - accountsByType.equity.reduce((sum, a) => sum + a.balance, 0));
 
+  const { errors: accErrors, validate: validateAcc, clearError: clearAccError, clearAll: clearAccAll } = useFormValidation({
+    code: { required: "Account code is required" },
+    name: { required: "Account name is required" },
+  });
+
+  const { errors: vchErrors, validate: validateVch, clearError: clearVchError, clearAll: clearVchAll } = useFormValidation({
+    debitAccId: { required: "Debit account is required" },
+    creditAccId: { required: "Credit account is required" },
+    voucherAmount: { required: "Voucher amount is required", positive: "Amount must be a positive number" },
+  });
+
   const handleCreateAccount = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
@@ -96,8 +111,10 @@ function AccountsPage() {
     const type = (formData.get("type") as any) || "asset";
     const balance = parseFloat(formData.get("balance") as string) || 0;
 
-    if (!name || !code) return toast.error("Code and Account Name are required");
+    const isValid = validateAcc({ code, name });
+    if (!isValid) return;
 
+    setIsSubmittingAccount(true);
     try {
       await localDb.accounts.add({
         id: uuidv4(),
@@ -109,22 +126,32 @@ function AccountsPage() {
       });
       toast.success(`Account "${name}" added to Chart of Accounts!`);
       setIsAddAccountOpen(false);
+      clearAccAll();
     } catch (err) {
       toast.error("Failed to add account");
+    } finally {
+      setIsSubmittingAccount(false);
     }
   };
 
   const handleCreateVoucher = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    const isValid = validateVch({ debitAccId, creditAccId, voucherAmount });
+    if (!isValid) return;
+
     const amt = parseFloat(voucherAmount);
-    if (!debitAccId || !creditAccId) return toast.error("Please select both Debit and Credit accounts");
-    if (debitAccId === creditAccId) return toast.error("Debit and Credit accounts cannot be the same");
-    if (isNaN(amt) || amt <= 0) return toast.error("Please enter a valid voucher amount");
+    
+    if (debitAccId === creditAccId) {
+      toast.error("Debit and Credit accounts cannot be the same");
+      return;
+    }
 
     const debitAcc = rawAccounts.find((a) => a.id === debitAccId);
     const creditAcc = rawAccounts.find((a) => a.id === creditAccId);
     if (!debitAcc || !creditAcc) return;
 
+    setIsPostingVoucher(true);
     try {
       const vNo = `VCH-${Date.now().toString().slice(-6)}`;
       await localDb.vouchers.add({
@@ -148,8 +175,11 @@ function AccountsPage() {
       setIsAddVoucherOpen(false);
       setVoucherAmount("");
       setNarration("");
+      clearVchAll();
     } catch (err) {
       toast.error("Failed to post voucher");
+    } finally {
+      setIsPostingVoucher(false);
     }
   };
 
@@ -282,16 +312,23 @@ function AccountsPage() {
       </DataPage>
 
       {/* Add Account Dialog */}
-      <Dialog open={isAddAccountOpen} onOpenChange={setIsAddAccountOpen}>
+      <Dialog open={isAddAccountOpen} onOpenChange={(open) => {
+        if (!open) { setIsAddAccountOpen(false); clearAccAll(); }
+      }}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Add Ledger Account</DialogTitle>
           </DialogHeader>
-          <form onSubmit={handleCreateAccount} className="space-y-4 pt-2">
+          <form noValidate onSubmit={handleCreateAccount} className="space-y-4 pt-2">
             <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="code">Account Code *</Label>
-                <Input id="code" name="code" placeholder="e.g. 5003" required />
+              <div className="space-y-1.5">
+                <Label htmlFor="code">Account Code <span className="text-destructive">*</span></Label>
+                <Input
+                  id="code" name="code" placeholder="e.g. 5003"
+                  className={accErrors.code ? "border-destructive focus-visible:ring-destructive" : ""}
+                  onChange={() => clearAccError("code")}
+                />
+                <FieldError message={accErrors.code} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="type">Account Category *</Label>
@@ -310,24 +347,34 @@ function AccountsPage() {
                 />
               </div>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="name">Account Name *</Label>
-              <Input id="name" name="name" placeholder="e.g. Marketing & Ad Expense" required />
+            <div className="space-y-1.5">
+              <Label htmlFor="name">Account Name <span className="text-destructive">*</span></Label>
+              <Input
+                id="name" name="name" placeholder="e.g. Marketing & Ad Expense"
+                className={accErrors.name ? "border-destructive focus-visible:ring-destructive" : ""}
+                onChange={() => clearAccError("name")}
+              />
+              <FieldError message={accErrors.name} />
             </div>
-            <div className="space-y-2">
+            <div className="space-y-1.5">
               <Label htmlFor="balance">Opening Balance</Label>
               <Input id="balance" name="balance" type="number" step="0.01" defaultValue="0" />
             </div>
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setIsAddAccountOpen(false)}>Cancel</Button>
-              <Button type="submit">Save Account</Button>
+            <DialogFooter className="mt-6">
+              <Button type="button" variant="outline" onClick={() => { setIsAddAccountOpen(false); clearAccAll(); }}>Cancel</Button>
+              <Button type="submit" disabled={isSubmittingAccount}>
+                {isSubmittingAccount && <Loader2 className="size-4 animate-spin mr-2" />}
+                Save Account
+              </Button>
             </DialogFooter>
           </form>
         </DialogContent>
       </Dialog>
 
       {/* Post Voucher Dialog */}
-      <Dialog open={isAddVoucherOpen} onOpenChange={setIsAddVoucherOpen}>
+      <Dialog open={isAddVoucherOpen} onOpenChange={(open) => {
+        if (!open) { setIsAddVoucherOpen(false); clearVchAll(); }
+      }}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
@@ -335,7 +382,7 @@ function AccountsPage() {
               <span>Post Journal / Payment Voucher</span>
             </DialogTitle>
           </DialogHeader>
-          <form onSubmit={handleCreateVoucher} className="space-y-4 pt-2">
+          <form noValidate onSubmit={handleCreateVoucher} className="space-y-4 pt-2">
             <div className="space-y-2">
               <Label>Voucher Type</Label>
               <SearchableSelect
@@ -352,39 +399,55 @@ function AccountsPage() {
             </div>
 
             <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Debit Account (+)</Label>
-                <SearchableSelect
-                  options={rawAccounts.map(a => ({ value: a.id, label: `[${a.code}] ${a.name}` }))}
-                  value={debitAccId}
-                  onChange={setDebitAccId}
-                  placeholder="-- Debit Account --"
-                />
+              <div className="space-y-1.5">
+                <Label>Debit Account (+) <span className="text-destructive">*</span></Label>
+                <div className={vchErrors.debitAccId ? "rounded-md border border-destructive" : ""}>
+                  <SearchableSelect
+                    options={rawAccounts.map(a => ({ value: a.id, label: `[${a.code}] ${a.name}` }))}
+                    value={debitAccId}
+                    onChange={(val) => { setDebitAccId(val); clearVchError("debitAccId"); }}
+                    placeholder="-- Debit Account --"
+                  />
+                </div>
+                <FieldError message={vchErrors.debitAccId} />
               </div>
-              <div className="space-y-2">
-                <Label>Credit Account (-)</Label>
-                <SearchableSelect
-                  options={rawAccounts.map(a => ({ value: a.id, label: `[${a.code}] ${a.name}` }))}
-                  value={creditAccId}
-                  onChange={setCreditAccId}
-                  placeholder="-- Credit Account --"
-                />
+              <div className="space-y-1.5">
+                <Label>Credit Account (-) <span className="text-destructive">*</span></Label>
+                <div className={vchErrors.creditAccId ? "rounded-md border border-destructive" : ""}>
+                  <SearchableSelect
+                    options={rawAccounts.map(a => ({ value: a.id, label: `[${a.code}] ${a.name}` }))}
+                    value={creditAccId}
+                    onChange={(val) => { setCreditAccId(val); clearVchError("creditAccId"); }}
+                    placeholder="-- Credit Account --"
+                  />
+                </div>
+                <FieldError message={vchErrors.creditAccId} />
               </div>
             </div>
 
-            <div className="space-y-2">
-              <Label>Voucher Amount</Label>
-              <Input type="number" step="0.01" value={voucherAmount} onChange={(e) => setVoucherAmount(e.target.value)} placeholder="0.00" required />
+            <div className="space-y-1.5">
+              <Label>Voucher Amount <span className="text-destructive">*</span></Label>
+              <Input
+                type="number" step="0.01"
+                value={voucherAmount}
+                onChange={(e) => { setVoucherAmount(e.target.value); clearVchError("voucherAmount"); }}
+                placeholder="0.00"
+                className={vchErrors.voucherAmount ? "border-destructive focus-visible:ring-destructive" : ""}
+              />
+              <FieldError message={vchErrors.voucherAmount} />
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-1.5">
               <Label>Narration / Description</Label>
               <Input value={narration} onChange={(e) => setNarration(e.target.value)} placeholder="e.g. Paid office rent for current month via bank transfer" />
             </div>
 
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setIsAddVoucherOpen(false)}>Cancel</Button>
-              <Button type="submit">Post Voucher Entry</Button>
+            <DialogFooter className="mt-6">
+              <Button type="button" variant="outline" onClick={() => { setIsAddVoucherOpen(false); clearVchAll(); }}>Cancel</Button>
+              <Button type="submit" disabled={isPostingVoucher}>
+                {isPostingVoucher && <Loader2 className="size-4 animate-spin mr-2" />}
+                Post Voucher Entry
+              </Button>
             </DialogFooter>
           </form>
         </DialogContent>

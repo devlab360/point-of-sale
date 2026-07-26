@@ -31,13 +31,15 @@ import {
 import { localDb } from "@/lib/db";
 import { useLiveQuery } from "dexie-react-hooks";
 import { useCurrency } from "@/lib/currency";
-import { Mail, Phone, Star, MoreVertical, Edit2, Trash2, Users } from "lucide-react";
+import { Mail, Phone, Star, MoreVertical, Edit2, Trash2, Users, Loader2 } from "lucide-react";
 import { v4 as uuidv4 } from "uuid";
 import { toast } from "sonner";
 import { sendWhatsAppDueReminder } from "@/lib/whatsapp";
 import { cn } from "@/lib/utils";
 import type { LocalCustomer } from "@/lib/db";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useFormValidation } from "@/hooks/useFormValidation";
+import { FieldError } from "@/components/ui/field-error";
 
 export const Route = createFileRoute("/customers")({
   head: () => ({ meta: [{ title: "Customers · Grocer.Pro" }] }),
@@ -51,6 +53,7 @@ function CustomersPage() {
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [editItem, setEditItem] = useState<LocalCustomer | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
   const [settleItem, setSettleItem] = useState<LocalCustomer | null>(null);
   const [settleAmount, setSettleAmount] = useState("");
   const [ledgerCustomer, setLedgerCustomer] = useState<LocalCustomer | null>(null);
@@ -100,19 +103,29 @@ function CustomersPage() {
     return customers.slice(start, start + pageSize);
   }, [customers, page, pageSize]);
 
+  const { errors: custErrors, validate: validateCust, clearError: clearCustError, clearAll: clearCustAll } = useFormValidation({
+    name: { required: "Customer name is required", minLength: { value: 2, message: "Name must be at least 2 characters" } },
+    email: { email: "Enter a valid email address" },
+    phone: { phone: "Enter a valid 10-15 digit phone number" },
+    creditLimit: { positive: "Credit limit must be a valid positive number" },
+  });
+
   const handleSave = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    setIsSaving(true);
     try {
       const formData = new FormData(e.currentTarget);
-      const name = formData.get("name") as string;
-      const email = formData.get("email") as string;
-      const phone = formData.get("phone") as string;
+      const name = (formData.get("name") as string)?.trim();
+      const email = (formData.get("email") as string)?.trim();
+      const phone = (formData.get("phone") as string)?.trim();
       const status = formData.get("status") as string;
       const type = (formData.get("type") as any) || "retail";
       const creditLimit = parseFloat(formData.get("creditLimit") as string) || 5000;
 
-      if (!name) {
-        toast.error("Name is required");
+      const isValid = validateCust({ name, email, phone, creditLimit: String(creditLimit) });
+      if (!isValid) {
+        const firstError = Object.values(custErrors)[0];
+        if (firstError) toast.error(firstError);
         return;
       }
 
@@ -139,8 +152,11 @@ function CustomersPage() {
         toast.success("Customer added successfully");
         setIsAddOpen(false);
       }
+      clearCustAll();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "An error occurred");
+      toast.error("Failed to save customer");
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -340,25 +356,47 @@ function CustomersPage() {
         if (!open) {
           setIsAddOpen(false);
           setEditItem(null);
+          clearCustAll();
         }
       }}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>{editItem ? "Edit Customer" : "Add Customer"}</DialogTitle>
           </DialogHeader>
-          <form id="customer-form" onSubmit={handleSave} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="name">Full Name</Label>
-              <Input id="name" name="name" placeholder="e.g. Customer Name" required defaultValue={editItem?.name || ""} />
+          <form id="customer-form" noValidate onSubmit={handleSave} className="space-y-4">
+            <div className="space-y-1.5">
+              <Label htmlFor="name">Full Name <span className="text-destructive">*</span></Label>
+              <Input
+                id="name" name="name"
+                placeholder="e.g. Customer Name"
+                defaultValue={editItem?.name || ""}
+                className={custErrors.name ? "border-destructive focus-visible:ring-destructive" : ""}
+                onChange={() => clearCustError("name")}
+              />
+              <FieldError message={custErrors.name} />
             </div>
             <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 <Label htmlFor="email">Email</Label>
-                <Input id="email" name="email" type="email" placeholder="e.g. email@example.com" defaultValue={editItem?.email || ""} />
+                <Input
+                  id="email" name="email" type="email"
+                  placeholder="e.g. email@example.com"
+                  defaultValue={editItem?.email || ""}
+                  className={custErrors.email ? "border-destructive focus-visible:ring-destructive" : ""}
+                  onChange={() => clearCustError("email")}
+                />
+                <FieldError message={custErrors.email} />
               </div>
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 <Label htmlFor="phone">Phone</Label>
-                <Input id="phone" name="phone" type="tel" placeholder="e.g. +880 1700 000000" defaultValue={editItem?.phone || ""} />
+                <Input
+                  id="phone" name="phone" type="tel"
+                  placeholder="e.g. +880 1700 000000"
+                  defaultValue={editItem?.phone || ""}
+                  className={custErrors.phone ? "border-destructive focus-visible:ring-destructive" : ""}
+                  onChange={() => clearCustError("phone")}
+                />
+                <FieldError message={custErrors.phone} />
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
@@ -403,13 +441,23 @@ function CustomersPage() {
                 />
               </div>
             </div>
-            <div className="space-y-2">
+            <div className="space-y-1.5">
               <Label htmlFor="creditLimit">Credit Limit ({useCurrency().currencySymbol})</Label>
-              <Input id="creditLimit" name="creditLimit" type="number" min="0" step="0.01" placeholder="e.g. 5000" required defaultValue={editItem?.creditLimit || 5000} />
+              <Input
+                id="creditLimit" name="creditLimit" type="number" min="0" step="0.01"
+                placeholder="e.g. 5000"
+                defaultValue={editItem?.creditLimit || 5000}
+                className={custErrors.creditLimit ? "border-destructive focus-visible:ring-destructive" : ""}
+                onChange={() => clearCustError("creditLimit")}
+              />
+              <FieldError message={custErrors.creditLimit} />
             </div>
             <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => { setIsAddOpen(false); setEditItem(null); }}>Cancel</Button>
-              <Button type="submit">Save Customer</Button>
+              <Button type="button" variant="outline" onClick={() => { setIsAddOpen(false); setEditItem(null); clearCustAll(); }}>Cancel</Button>
+              <Button type="submit" disabled={isSaving}>
+                {isSaving && <Loader2 className="size-4 animate-spin mr-2" />}
+                Save Customer
+              </Button>
             </DialogFooter>
           </form>
         </DialogContent>

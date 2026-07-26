@@ -21,9 +21,11 @@ import {
 import { localDb, type LocalQuotation } from "@/lib/db";
 import { useLiveQuery } from "dexie-react-hooks";
 import { useCurrency } from "@/lib/currency";
-import { FileText, Printer, CheckCircle2, MoreVertical, Trash2, ArrowRightLeft } from "lucide-react";
+import { FileText, Printer, CheckCircle2, MoreVertical, Trash2, ArrowRightLeft, Loader2 } from "lucide-react";
 import { v4 as uuidv4 } from "uuid";
 import { toast } from "sonner";
+import { useFormValidation } from "@/hooks/useFormValidation";
+import { FieldError } from "@/components/ui/field-error";
 
 export const Route = createFileRoute("/quotations")({
   head: () => ({ meta: [{ title: "B2B Quotations · Grocer.Pro" }] }),
@@ -40,6 +42,7 @@ function QuotationsPage() {
 
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [viewItem, setViewItem] = useState<LocalQuotation | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search, 300);
@@ -122,12 +125,25 @@ function QuotationsPage() {
   const quotationTax = quotationSubtotal * 0.08;
   const quotationTotal = quotationSubtotal + quotationTax;
 
+  const { errors: quotErrors, validate: validateQuot, clearError: clearQuotError, clearAll: clearQuotAll } = useFormValidation({
+    selectedCustomerId: { required: "Customer is required" },
+  });
+
   const handleCreateQuotation = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    const isValid = validateQuot({ selectedCustomerId });
+    if (!isValid) return;
+
+    if (lineItems.length === 0) {
+      toast.error("Please add at least one line item");
+      return;
+    }
+
     const cust = customers.find((c) => c.id === selectedCustomerId);
     if (!cust) return toast.error("Please select a customer");
-    if (lineItems.length === 0) return toast.error("Please add at least one line item");
 
+    setIsSubmitting(true);
     try {
       const quotNo = `QT-${Date.now().toString().slice(-6)}`;
       await localDb.quotations.add({
@@ -156,8 +172,11 @@ function QuotationsPage() {
       toast.success(`Quotation ${quotNo} created successfully!`);
       setIsAddOpen(false);
       setLineItems([]);
+      clearQuotAll();
     } catch (err) {
       toast.error("Failed to create quotation");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -302,47 +321,52 @@ function QuotationsPage() {
       </DataPage>
 
       {/* Create B2B Quotation Modal */}
-      <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
-        <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <FileText className="size-5 text-primary" />
-              <span>Create B2B Quotation / Estimate</span>
-            </DialogTitle>
+      <Dialog open={isAddOpen} onOpenChange={(open) => {
+        if (!open) { setIsAddOpen(false); clearQuotAll(); }
+      }}>
+        <DialogContent className="sm:max-w-4xl overflow-hidden p-0">
+          <DialogHeader className="bg-muted p-4">
+            <DialogTitle>Create New Quotation / Estimate</DialogTitle>
           </DialogHeader>
-          <form onSubmit={handleCreateQuotation} className="space-y-4 pt-2">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Select Customer *</Label>
-                <SearchableSelect
-                  options={customers.map(c => ({ value: c.id, label: `${c.name} - ${c.phone || 'No phone'}` }))}
-                  value={selectedCustomerId}
-                  onChange={setSelectedCustomerId}
-                  placeholder="Select Customer..."
-                />
+          <form noValidate onSubmit={handleCreateQuotation} className="space-y-4 p-4 max-h-[80vh] overflow-y-auto">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <div className="space-y-1.5">
+                <Label>Customer / Client <span className="text-destructive">*</span></Label>
+                <div className={quotErrors.selectedCustomerId ? "rounded-md border border-destructive" : ""}>
+                  <SearchableSelect
+                    options={customers.map((c) => ({ value: c.id, label: c.name }))}
+                    value={selectedCustomerId}
+                    onChange={(val) => { setSelectedCustomerId(val); clearQuotError("selectedCustomerId"); }}
+                    placeholder="Search customer..."
+                  />
+                </div>
+                <FieldError message={quotErrors.selectedCustomerId} />
               </div>
-              <div className="space-y-2">
-                <Label>Valid Until *</Label>
+              <div className="space-y-1.5">
+                <Label>Valid Until</Label>
                 <div className="mt-1">
                   <DatePicker 
-                    date={validUntil} 
+                    date={validUntil ? new Date(validUntil) : undefined} 
                     onDateChange={(d) => setValidUntil(d ? d.toISOString().split("T")[0] : "")} 
                   />
                 </div>
               </div>
             </div>
 
-            {/* Line Items Selection */}
-            <div className="space-y-2 border-t pt-3">
-              <Label>Search & Add Products</Label>
+            <div className="space-y-1.5 border-t pt-3">
+              <Label>Search & Add Products to Estimate <span className="text-destructive">*</span></Label>
               <SearchableSelect
-                options={products.map(p => ({ value: p.id, label: p.name, sublabel: `Stock: ${p.stock} | Price: ${formatCurrency(p.price)}` }))}
+                options={products.map((p) => ({ value: p.id, label: p.name, sublabel: `Price: ${formatCurrency(p.price)}` }))}
                 value=""
                 onChange={(val) => {
-                  if (val) addItemToQuotation(val);
+                  if (val) {
+                    addItemToQuotation(val);
+                    clearQuotError("lineItems");
+                  }
                 }}
                 placeholder="Search products by name or code..."
               />
+              <FieldError message={quotErrors.lineItems} />
             </div>
 
             {/* Line Items Table */}
@@ -409,9 +433,12 @@ function QuotationsPage() {
               <div className="flex justify-between font-bold text-base border-t pt-1"><span>Total Estimate:</span><span>{formatCurrency(quotationTotal)}</span></div>
             </div>
 
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setIsAddOpen(false)}>Cancel</Button>
-              <Button type="submit">Create Quotation</Button>
+            <DialogFooter className="mt-6">
+              <Button type="button" variant="outline" onClick={() => { setIsAddOpen(false); clearQuotAll(); }}>Cancel</Button>
+              <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting && <Loader2 className="size-4 animate-spin mr-2" />}
+                Create Quotation
+              </Button>
             </DialogFooter>
           </form>
         </DialogContent>

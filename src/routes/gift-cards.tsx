@@ -26,13 +26,15 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Gift, MoreVertical, Edit2, Trash2 } from "lucide-react";
+import { Gift, Plus, Trash2, Edit2, Search, ArrowUpRight, ArrowDownLeft, Calendar, FileText, CheckCircle2, Star, Loader2, MoreVertical } from "lucide-react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { localDb } from "@/lib/db";
 import { useCurrency } from "@/lib/currency";
 import { v4 as uuidv4 } from "uuid";
 import { toast } from "sonner";
 import type { LocalGiftCard } from "@/lib/db";
+import { useFormValidation } from "@/hooks/useFormValidation";
+import { FieldError } from "@/components/ui/field-error";
 
 export const Route = createFileRoute("/gift-cards")({
   head: () => ({ meta: [{ title: "Gift Cards · Grocer.Pro" }] }),
@@ -45,6 +47,7 @@ function GiftCardsPage() {
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [editItem, setEditItem] = useState<LocalGiftCard | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
   const [expiresDate, setExpiresDate] = useState<string>("");
 
   const [search, setSearch] = useState("");
@@ -73,20 +76,25 @@ function GiftCardsPage() {
   const totalPages = Math.ceil(filteredCards.length / itemsPerPage);
   const paginatedCards = filteredCards.slice((page - 1) * itemsPerPage, page * itemsPerPage);
 
+  const { errors: giftErrors, validate: validateGift, clearError: clearGiftError, clearAll: clearGiftAll } = useFormValidation({
+    code: { required: "Card code is required" },
+    initialBalance: { required: "Initial balance is required", positive: "Balance must be positive" },
+    expires: { required: "Expiry date is required" }
+  });
+
   const handleSave = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    setIsSaving(true);
     try {
       const formData = new FormData(e.currentTarget);
-      const code = formData.get("code") as string;
+      const code = (formData.get("code") as string)?.trim();
       const customer = formData.get("customer") as string;
-      const initialBalanceStr = formData.get("initialBalance") as string;
+      const initialBalanceStr = (formData.get("initialBalance") as string)?.trim();
       const expires = formData.get("expires") as string;
       const status = formData.get("status") as string;
 
-      if (!code || !initialBalanceStr || !expires) {
-        toast.error("Please fill out all required fields");
-        return;
-      }
+      const isValid = validateGift({ code, initialBalance: initialBalanceStr, expires });
+      if (!isValid) return;
 
       const initialBalance = parseFloat(initialBalanceStr);
 
@@ -107,8 +115,11 @@ function GiftCardsPage() {
         toast.success("Gift Card issued successfully");
         setIsAddOpen(false);
       }
+      clearGiftAll();
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "An error occurred");
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -183,28 +194,39 @@ function GiftCardsPage() {
         if (!open) {
           setIsAddOpen(false);
           setEditItem(null);
+          clearGiftAll();
         }
       }}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>{editItem ? "Edit Gift Card" : "Issue Gift Card"}</DialogTitle>
           </DialogHeader>
-          <form onSubmit={handleSave} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="code">Card Code (e.g., GC-XXXX-XXXX)</Label>
-              <Input id="code" name="code" required defaultValue={editItem?.code || `GC-${Math.floor(1000 + Math.random() * 9000)}-${Math.floor(1000 + Math.random() * 9000)}`} className="uppercase font-mono" />
+          <form noValidate onSubmit={handleSave} className="space-y-4">
+            <div className="space-y-1.5">
+              <Label htmlFor="code">Card Code <span className="text-destructive">*</span></Label>
+              <Input
+                id="code" name="code" defaultValue={editItem?.code || `GC-${Math.floor(1000 + Math.random() * 9000)}-${Math.floor(1000 + Math.random() * 9000)}`}
+                className={`uppercase font-mono ${giftErrors.code ? 'border-destructive focus-visible:ring-destructive' : ''}`}
+                onChange={() => clearGiftError("code")}
+              />
+              <FieldError message={giftErrors.code} />
             </div>
-            <div className="space-y-2">
+            <div className="space-y-1.5">
               <Label htmlFor="customer">Customer Name (Optional)</Label>
               <Input id="customer" name="customer" defaultValue={editItem?.customer} placeholder="Leave blank for Walk-in" />
             </div>
             <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="initialBalance">Initial Balance ($)</Label>
-                <Input id="initialBalance" name="initialBalance" type="number" step="0.01" required defaultValue={editItem?.initialBalance} />
+              <div className="space-y-1.5">
+                <Label htmlFor="initialBalance">Initial Balance ($) <span className="text-destructive">*</span></Label>
+                <Input
+                  id="initialBalance" name="initialBalance" type="number" step="0.01" defaultValue={editItem?.initialBalance}
+                  className={giftErrors.initialBalance ? 'border-destructive focus-visible:ring-destructive' : ''}
+                  onChange={() => clearGiftError("initialBalance")}
+                />
+                <FieldError message={giftErrors.initialBalance} />
                 {editItem && <p className="text-[10px] text-muted-foreground">Changing this will not update current available balance directly.</p>}
               </div>
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 <Label htmlFor="status">Status</Label>
                 <Select name="status" defaultValue={editItem?.status || "active"}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
@@ -215,17 +237,22 @@ function GiftCardsPage() {
                 </Select>
               </div>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="expires">Expiry Date</Label>
+            <div className="space-y-1.5">
+              <Label htmlFor="expires">Expiry Date <span className="text-destructive">*</span></Label>
+              <div className="hidden"><Input name="expires" value={expiresDate || (editItem ? editItem.expires : "")} readOnly /></div>
               <DatePicker 
                 name="expires" 
                 date={expiresDate || (editItem ? editItem.expires : "")} 
-                onDateChange={(d) => setExpiresDate(d ? d.toISOString().split("T")[0] : "")} 
+                onDateChange={(d) => { setExpiresDate(d ? d.toISOString().split("T")[0] : ""); clearGiftError("expires"); }} 
               />
+              <FieldError message={giftErrors.expires} />
             </div>
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => { setIsAddOpen(false); setEditItem(null); }}>Cancel</Button>
-              <Button type="submit">Save Gift Card</Button>
+            <DialogFooter className="mt-6">
+              <Button type="button" variant="outline" onClick={() => { setIsAddOpen(false); setEditItem(null); clearGiftAll(); }}>Cancel</Button>
+              <Button type="submit" disabled={isSaving}>
+                {isSaving && <Loader2 className="size-4 animate-spin mr-2" />}
+                Save Gift Card
+              </Button>
             </DialogFooter>
           </form>
         </DialogContent>
