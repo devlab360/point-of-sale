@@ -3,7 +3,9 @@ import { pullEverythingFn, pushEverythingFn } from "../sync-api";
 
 const SYNC_INTERVAL = 1000 * 30; // 30 seconds
 
-// Tables to sync from Dexie to Postgres
+// Tables to sync from Dexie to Postgres (POS operational tables only)
+// NOTE: Super Admin tables (saasOrganizations, saasPlans, saasSessions, invitations)
+// are managed directly via cloud API — they MUST NOT go through the POS sync engine.
 const SYNC_TABLES = [
   'users', 'categories', 'brands', 'units', 'suppliers', 'products', 'customers',
   'offlineSales', 'purchases', 'inventoryMovements', 'settings', 'adjustments', 
@@ -11,7 +13,6 @@ const SYNC_TABLES = [
   'notifications', 'heldInvoices', 'salesReturns', 'purchaseReturns', 'locations', 
   'shifts', 'cashMovements', 'customerLedgers', 'supplierLedgers', 'quotations', 
   'deliveryChallans', 'accounts', 'vouchers', 'repairs', 'subscriptions', 'rentals',
-  'invitations', 'saasOrganizations', 'saasPlans', 'saasSessions'
 ];
 
 export class SyncEngine {

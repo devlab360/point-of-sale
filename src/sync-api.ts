@@ -209,14 +209,32 @@ export const pushEverythingFn = createServerFn({ method: "POST" })
           for (const record of records) {
             try {
               const insertData = { ...record };
+
+              // Fix local field name mismatches → Postgres column names
+              // Local uses 'orgId' but Postgres users table uses 'organizationId'
+              if (insertData.orgId && table.organizationId && !insertData.organizationId) {
+                insertData.organizationId = insertData.orgId;
+              }
+              delete insertData.orgId; // Always remove local-only field
+
+              // Set organizationId from session for non-org/saasPlans tables
               if (tableName !== 'organizations' && tableName !== 'saasPlans' && table.organizationId) {
                 insertData.organizationId = orgId;
               } else if (table.orgId) {
                 insertData.orgId = orgId;
               }
 
+              // Strip local-only fields that don't exist in Postgres schema
               delete insertData.synced;
               delete insertData.syncRetryCount;
+
+              // Strip unknown Postgres columns by only keeping keys that exist in the table schema
+              const tableColumns = Object.keys(table);
+              for (const key of Object.keys(insertData)) {
+                if (key !== 'id' && !tableColumns.includes(key)) {
+                  delete insertData[key];
+                }
+              }
 
               let embeddedSaleItems = null;
               let embeddedPurchaseItems = null;
@@ -245,6 +263,7 @@ export const pushEverythingFn = createServerFn({ method: "POST" })
               } else {
                 await tx.insert(table).values(insertData).onConflictDoNothing();
               }
+
 
               // Bulk insert extracted embedded arrays within transaction
               if (embeddedSaleItems && embeddedSaleItems.length > 0) {
