@@ -1,5 +1,6 @@
 import { useLiveQuery } from "dexie-react-hooks";
 import { localDb } from "@/lib/db";
+import { PersistStore } from "@/lib/session-store";
 
 export interface CurrencyOption {
   symbol: string;
@@ -21,7 +22,7 @@ export const CURRENCY_OPTIONS: CurrencyOption[] = [
 ];
 
 export function useCurrency() {
-  const currentOrgId = typeof window !== "undefined" ? localStorage.getItem("pos_org_id") : null;
+  const currentOrgId = PersistStore.getOrgId();
 
   const dbSetting = useLiveQuery(async () => {
     if (currentOrgId) {

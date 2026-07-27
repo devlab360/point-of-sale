@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
 import { createFileRoute } from "@tanstack/react-router";
+import { PersistStore } from "@/lib/session-store";
 import { DataPage } from "@/components/layout/DataPage";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PaginationControls } from "@/components/ui/pagination-controls";
@@ -140,7 +141,7 @@ function UsersPage() {
     e.preventDefault();
     try {
       const token = uuidv4();
-      const orgId = localStorage.getItem("pos_org_id") || "default";
+      const orgId = PersistStore.getOrgId() || "default";
 
       await localDb.invitations.add({
         id: uuidv4(),

@@ -1,23 +1,23 @@
 import { localDb } from "./db";
 import { pullEverythingFn } from "../sync-api";
 import { SyncEngine } from "./sync-engine";
+import { PersistStore } from "./session-store";
 
 export async function initializeLocalDb() {
   if (typeof window === "undefined") return;
   try {
     // One-time wipe to clear dummy data from previous versions
-    if (!localStorage.getItem("wiped_dummy_v2")) {
+    if (!PersistStore.getFlag("wiped_dummy_v2")) {
       console.log("Wiping dummy data (v2)...");
       await localDb.delete();
       await localDb.open();
-      localStorage.setItem("wiped_dummy_v2", "true");
-      // Clear old wipe flags
-      localStorage.removeItem("wiped_dummy_v1");
+      PersistStore.setFlag("wiped_dummy_v2");
+      PersistStore.removeFlag("wiped_dummy_v1");
       window.location.reload();
       return;
     }
 
-    const orgId = localStorage.getItem("pos_org_id");
+    const orgId = PersistStore.getOrgId();
 
     // If there's a logged-in org, always try to pull fresh data from cloud first
     if (orgId && orgId !== "default" && orgId !== "superadmin-org") {

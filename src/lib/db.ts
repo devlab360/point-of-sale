@@ -808,6 +808,8 @@ export class POSDatabase extends Dexie {
   }
 }
 
+import { PersistStore } from "./session-store";
+
 export const localDb = new POSDatabase();
 
 export async function addSystemNotification(
@@ -817,7 +819,7 @@ export async function addSystemNotification(
   link?: string
 ) {
   try {
-    const orgId = localStorage.getItem("pos_org_id") || "default";
+    const orgId = PersistStore.getOrgId() || "default";
     await localDb.notifications.add({
       id: uuidv4(),
       orgId,

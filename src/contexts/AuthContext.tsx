@@ -5,6 +5,7 @@ import { initiateGoogleOAuth, initiateFacebookOAuth, GOOGLE_CLIENT_ID, FACEBOOK_
 import { toast } from "sonner";
 import { useRouter } from "@tanstack/react-router";
 import { getSuperAdminDataFn, pullEverythingFn, verifyUserEmailFn } from "@/sync-api";
+import { SessionStore, PersistStore } from "@/lib/session-store";
 
 interface AuthContextType {
   user: LocalUser | null;
@@ -85,7 +86,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        const storedUserId = localStorage.getItem("pos_auth_user");
+        const storedUserId = SessionStore.getAuthUser();
         if (storedUserId) {
           const foundUser = await localDb.users.get(storedUserId);
           if (foundUser) {
@@ -104,7 +105,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               setSettings(await localDb.settings.get("default"));
             }
           } else {
-            localStorage.removeItem("pos_auth_user");
+            SessionStore.removeAuthUser();
           }
         }
       } catch (error) {
@@ -125,9 +126,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (foundUser) {
         setUser(foundUser);
-        localStorage.setItem("pos_auth_user", foundUser.id);
+        SessionStore.setAuthUser(foundUser.id);
         if (foundUser.orgId) {
-          localStorage.setItem("pos_org_id", foundUser.orgId);
+          PersistStore.setOrgId(foundUser.orgId);
         }
 
         // Update last active
@@ -145,7 +146,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           
           // Log SaaS Session
           const sessionId = crypto.randomUUID();
-          localStorage.setItem("pos_saas_session", sessionId);
+          SessionStore.setSession(sessionId);
           await localDb.saasSessions.add({
             id: sessionId,
             orgId: foundUser.orgId,
@@ -195,8 +196,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         };
         await localDb.users.put(superAdminUser);
         setUser(superAdminUser);
-        localStorage.setItem("pos_auth_user", superAdminId);
-        localStorage.setItem("pos_org_id", "superadmin-org");
+        SessionStore.setAuthUser(superAdminId);
+        PersistStore.setOrgId("superadmin-org");
         toast.success("Welcome, Super Admin!");
         router.navigate({ to: "/super-admin" });
         return true;
@@ -281,9 +282,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return false;
       }
         setUser(foundUser);
-        localStorage.setItem("pos_auth_user", foundUser.id);
+        SessionStore.setAuthUser(foundUser.id);
         if (foundUser.orgId) {
-          localStorage.setItem("pos_org_id", foundUser.orgId);
+          PersistStore.setOrgId(foundUser.orgId);
         }
         await localDb.users.update(foundUser.id, { lastActive: new Date().toISOString() });
         if (foundUser.orgId) {
@@ -298,7 +299,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           
           // Log SaaS Session
           const sessionId = crypto.randomUUID();
-          localStorage.setItem("pos_saas_session", sessionId);
+          SessionStore.setSession(sessionId);
           await localDb.saasSessions.add({
             id: sessionId,
             orgId: foundUser.orgId,
@@ -354,8 +355,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
       
       setUser(foundUser);
-      localStorage.setItem("pos_auth_user", foundUser.id);
-      localStorage.setItem("pos_org_id", foundUser.orgId || "");
+      SessionStore.setAuthUser(foundUser.id);
+      if (foundUser.orgId) {
+        PersistStore.setOrgId(foundUser.orgId);
+      }
       toast.success(`Logged in with ${provider === "google" ? "Google" : "Facebook"} successfully!`);
       router.navigate({ to: "/" });
       return true;
@@ -366,15 +369,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const logout = async () => {
-    const sessionId = localStorage.getItem("pos_saas_session");
+    const sessionId = SessionStore.getSession();
     if (sessionId) {
       await localDb.saasSessions.update(sessionId, { logoutAt: new Date().toISOString(), status: "ended" });
-      localStorage.removeItem("pos_saas_session");
     }
+    SessionStore.clearAll();
     setUser(null);
     setSaasOrgState(null);
     setSaasPlanState(null);
-    localStorage.removeItem("pos_auth_user");
     router.navigate({ to: "/login" });
   };
 

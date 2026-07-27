@@ -12,6 +12,7 @@ import { INDUSTRY_SEEDS } from "@/lib/industry-seeds";
 import { getTrialDaysFromEnv } from "@/lib/email-service";
 import { getTrialPlanFn } from "@/sync-api";
 import { validateEmail, validateMobile, validatePassword, validateStrongPassword, sanitizeInput } from "@/lib/validation";
+import { SessionStore, PersistStore } from "@/lib/session-store";
 
 export const Route = createFileRoute("/register")({
   head: () => ({ meta: [{ title: "Register · Grocer.Pro SaaS" }] }),
@@ -204,8 +205,8 @@ function RegisterPage() {
         }
       }
 
-      localStorage.setItem("pos_auth_user", ownerId);
-      localStorage.setItem("pos_org_id", orgId);
+      SessionStore.setAuthUser(ownerId);
+      PersistStore.setOrgId(orgId);
 
       toast.success("Registration successful! Redirecting to email verification...");
       setTimeout(() => {

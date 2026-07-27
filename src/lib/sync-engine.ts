@@ -1,5 +1,6 @@
 import { localDb } from "./db";
 import { pullEverythingFn, pushEverythingFn } from "../sync-api";
+import { PersistStore } from "./session-store";
 
 const SYNC_INTERVAL = 1000 * 30; // 30 seconds
 
@@ -37,7 +38,7 @@ export class SyncEngine {
     if (this.isSyncing) return;
     if (typeof navigator !== "undefined" && !navigator.onLine) return;
 
-    const orgId = localStorage.getItem("pos_org_id") || "default";
+    const orgId = PersistStore.getOrgId() || "default";
     this.isSyncing = true;
 
     try {
@@ -122,7 +123,7 @@ export class SyncEngine {
       }
 
       // 2. PULL latest data from Postgres (with delta timestamp filtering)
-      const lastSyncedAt = localStorage.getItem("pos_last_synced_at") || undefined;
+      const lastSyncedAt = PersistStore.getLastSyncedAt() || undefined;
       console.log("[Sync Engine] Pulling latest data from server...", lastSyncedAt ? `(delta since ${lastSyncedAt})` : "(full sync)");
       const pullResult = await pullEverythingFn({ data: { orgId, syncKey, lastSyncedAt } });
 
@@ -167,7 +168,7 @@ export class SyncEngine {
               await table.bulkPut(recordsToUpsert);
            });
         }
-        localStorage.setItem("pos_last_synced_at", new Date().toISOString());
+        PersistStore.setLastSyncedAt(new Date().toISOString());
         console.log("[Sync Engine] Pull successful.");
       }
 
