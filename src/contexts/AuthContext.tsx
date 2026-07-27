@@ -62,8 +62,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 id: p.id,
                 name: p.name,
                 price: Number(p.price || 0),
-                features: Array.isArray(p.features) ? p.features : [],
-                limits: p.limits || { maxUsers: 5, maxProducts: 500, maxBranches: 2, maxInvoicesPerMonth: 1000 },
+                features: Array.isArray(p.features) ? p.features : (typeof p.features === 'string' ? JSON.parse(p.features) : []),
+                limits: (typeof p.limits === 'string' ? JSON.parse(p.limits) : p.limits) || { maxUsers: 5, maxProducts: 500, maxBranches: 2, maxInvoicesPerMonth: 1000 },
                 isTrialDefault: p.isTrialDefault ?? false,
                 synced: true,
               }));
@@ -223,6 +223,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 status: remoteUser.status,
                 lastActive: new Date().toISOString(),
                 pin: remoteUser.pin,
+                permissions: Array.isArray(remoteUser.permissions) ? remoteUser.permissions : (typeof remoteUser.permissions === 'string' ? JSON.parse(remoteUser.permissions) : undefined),
                 emailVerified: remoteUser.emailVerified ?? true,
               };
               await localDb.users.put(localUserData);
@@ -254,8 +255,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                   id: p.id,
                   name: p.name,
                   price: Number(p.price || 0),
-                  features: Array.isArray(p.features) ? p.features : [],
-                  limits: p.limits || { maxUsers: 5, maxProducts: 500, maxBranches: 2, maxInvoicesPerMonth: 1000 },
+                  features: Array.isArray(p.features) ? p.features : (typeof p.features === 'string' ? JSON.parse(p.features) : []),
+                  limits: (typeof p.limits === 'string' ? JSON.parse(p.limits) : p.limits) || { maxUsers: 5, maxProducts: 500, maxBranches: 2, maxInvoicesPerMonth: 1000 },
                   isTrialDefault: p.isTrialDefault ?? false,
                   synced: true,
                 }));

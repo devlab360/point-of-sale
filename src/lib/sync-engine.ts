@@ -140,15 +140,21 @@ export class SyncEngine {
               // Mark pulled records as synced so we don't push them back
               const recordsToUpsert = records.map(r => {
                 if (dexieTableName === 'saasPlans') {
+                  const parsedFeatures = Array.isArray(r.features) ? r.features : (typeof r.features === 'string' ? JSON.parse(r.features) : []);
+                  const parsedLimits = (typeof r.limits === 'string' ? JSON.parse(r.limits) : r.limits) || { maxUsers: 5, maxProducts: 500, maxBranches: 2, maxInvoicesPerMonth: 1000 };
                   return {
                     id: r.id,
                     name: r.name,
                     price: Number(r.price || 0),
-                    features: Array.isArray(r.features) ? r.features : [],
-                    limits: r.limits || { maxUsers: 5, maxProducts: 500, maxBranches: 2, maxInvoicesPerMonth: 1000 },
+                    features: parsedFeatures,
+                    limits: parsedLimits,
                     isTrialDefault: r.isTrialDefault ?? false,
                     synced: true,
                   };
+                }
+                if (dexieTableName === 'users') {
+                  const parsedPerms = Array.isArray(r.permissions) ? r.permissions : (typeof r.permissions === 'string' ? JSON.parse(r.permissions) : r.permissions);
+                  return { ...r, permissions: parsedPerms, synced: true };
                 }
                 return { ...r, synced: true };
               });

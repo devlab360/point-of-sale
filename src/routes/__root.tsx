@@ -196,25 +196,9 @@ function AppLayout() {
   let unauthorizedMessage = null;
 
   if (isAuthenticated && !isSuperAdmin) {
-    if (location.pathname.startsWith("/super-admin")) {
-      unauthorizedMessage = "You do not have permission to access the Super Admin dashboard.";
-    } else if (saasPlan && Array.isArray(saasPlan.features)) {
-      const essentialRoutes = ["/", "/profile", "/settings", "/notifications", "/help"];
-      if (!essentialRoutes.includes(location.pathname)) {
-        const allItems = APP_GROUPS.flatMap(g => g.items);
-        const matchingItems = allItems.filter(item => 
-          location.pathname === item.to || location.pathname.startsWith(item.to + "/")
-        );
-        if (matchingItems.length > 0) {
-          const isAllowed = matchingItems.some(item => 
-            essentialRoutes.includes(item.to) || saasPlan.features.includes(item.to)
-          );
-          if (!isAllowed) {
-            const blockedItem = matchingItems.sort((a, b) => b.to.length - a.to.length)[0];
-            unauthorizedMessage = `The "${blockedItem.label}" feature is not available on your current plan (${saasPlan.name || 'Current Plan'}). Please upgrade your subscription to access this feature.`;
-          }
-        }
-      }
+    const permResult = hasPermissionForRoute(user, location.pathname, !!isSuperAdmin, saasPlan);
+    if (!permResult.allowed) {
+      unauthorizedMessage = permResult.reason || "You do not have permission to access this module.";
     }
   }
 

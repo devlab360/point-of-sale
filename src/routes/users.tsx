@@ -169,7 +169,7 @@ function UsersPage() {
 
   const handleApprove = async (id: string) => {
     try {
-      await localDb.users.update(id, { status: "active" });
+      await localDb.users.update(id, { status: "active", synced: false });
       toast.success("Employee approved successfully");
     } catch (error) {
       toast.error("Failed to approve employee");
@@ -206,6 +206,7 @@ function UsersPage() {
         permissions: editPermissions,
         commissionRate,
         monthlyTarget,
+        synced: false,
       });
       toast.success("Employee updated successfully");
       setEditItem(null);

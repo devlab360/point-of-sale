@@ -149,8 +149,9 @@ function ProductsPage() {
 
   const openNew = () => {
     // Check Limits
-    const maxProducts = saasPlan?.limits?.maxProducts || 0;
-    if (rawProducts.length >= maxProducts) {
+    const limitsObj = typeof saasPlan?.limits === "string" ? JSON.parse(saasPlan.limits) : saasPlan?.limits;
+    const maxProducts = Number(limitsObj?.maxProducts || 500);
+    if (maxProducts > 0 && rawProducts.length >= maxProducts) {
       return toast.error(`Plan Limit Reached: Your current plan only allows ${maxProducts} products. Please upgrade to add more.`);
     }
 

@@ -124,3 +124,59 @@ export const APP_GROUPS: MenuGroup[] = [
     ],
   },
 ];
+
+export const PERMISSION_ROUTE_MAP: Record<string, string[]> = {
+  pos: ["/pos"],
+  inventory: ["/products", "/categories", "/brands", "/units", "/suppliers", "/purchase", "/adjustments", "/transfers", "/quotations", "/challans", "/print-barcodes", "/repairs", "/subscriptions", "/rentals", "/coupons", "/gift-cards", "/loyalty", "/promotions"],
+  reports: ["/reports", "/customer-ledger", "/supplier-ledger", "/accounts", "/vouchers", "/day-book", "/activity"],
+  customers: ["/customers", "/portal"],
+  expenses: ["/expenses"],
+  returns: ["/sales-returns", "/purchase-returns"],
+  settings: ["/settings", "/users", "/locations", "/shifts", "/branches"],
+};
+
+const DEFAULT_ROLE_PERMISSIONS_FALLBACK: Record<string, string[]> = {
+  admin: ["pos", "inventory", "reports", "customers", "expenses", "discounts", "returns", "settings"],
+  manager: ["pos", "inventory", "reports", "customers", "expenses", "discounts", "returns"],
+  cashier: ["pos", "customers", "discounts"],
+};
+
+export function hasPermissionForRoute(user: any, routePath: string, isSuperAdminUser: boolean, saasPlan: any): { allowed: boolean; reason?: string } {
+  if (isSuperAdminUser) return { allowed: true };
+  if (routePath.startsWith("/super-admin")) return { allowed: false, reason: "You do not have permission to access the Super Admin dashboard." };
+
+  const essentialRoutes = ["/", "/profile", "/settings", "/notifications", "/help"];
+  if (essentialRoutes.includes(routePath)) return { allowed: true };
+
+  const allItems = APP_GROUPS.flatMap(g => g.items);
+  const matchedItem = allItems.find(item => routePath === item.to || routePath.startsWith(item.to + "/"));
+  const targetPath = matchedItem ? matchedItem.to : routePath;
+
+  if (saasPlan && Array.isArray(saasPlan.features)) {
+    if (!saasPlan.features.includes(targetPath)) {
+      const label = matchedItem ? matchedItem.label : targetPath;
+      return { 
+        allowed: false, 
+        reason: `The "${label}" feature is not available on your current plan (${saasPlan.name || 'Current Plan'}). Please upgrade your subscription to access this feature.` 
+      };
+    }
+  }
+
+  if (matchedItem && matchedItem.roles && user && user.role) {
+    if (!matchedItem.roles.includes(user.role.toLowerCase())) {
+      return { allowed: false, reason: `Your role (${user.role}) does not have access to ${matchedItem.label}.` };
+    }
+  }
+
+  if (user && user.role?.toLowerCase() !== "admin") {
+    const userPerms = Array.isArray(user.permissions) ? user.permissions : (DEFAULT_ROLE_PERMISSIONS_FALLBACK[user.role?.toLowerCase()] || ["pos"]);
+    const requiredPermEntry = Object.entries(PERMISSION_ROUTE_MAP).find(([_, paths]) => paths.includes(targetPath));
+    if (requiredPermEntry && !userPerms.includes(requiredPermEntry[0])) {
+      const label = matchedItem ? matchedItem.label : targetPath;
+      return { allowed: false, reason: `You do not have permission to access "${label}" based on your employee permissions assigned by store admin.` };
+    }
+  }
+
+  return { allowed: true };
+}
+

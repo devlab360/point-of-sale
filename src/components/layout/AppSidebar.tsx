@@ -47,7 +47,7 @@ import { localDb } from "@/lib/db";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 
-import { APP_GROUPS } from "@/lib/menu-config";
+import { APP_GROUPS, hasPermissionForRoute } from "@/lib/menu-config";
 
 export function AppSidebar({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
@@ -64,24 +64,8 @@ export function AppSidebar({ onNavigate }: { onNavigate?: () => void }) {
   let filteredGroups = APP_GROUPS.map(group => ({
     ...group,
     items: group.items.filter(item => {
-      // 1. Role Check
-      const hasRole = !item.roles || (user && item.roles.includes(user.role.toLowerCase()));
-      if (!hasRole) return false;
-
-      // 2. SaaS Subscription Feature Check (for non-superadmins)
-      // The plan's features array should contain the allowed route paths (e.g., "/pos", "/products")
-      if (!isSuperAdminUser && saasPlan && Array.isArray(saasPlan.features)) {
-        // Essential routes that should always be allowed if they exist
-        const essentialRoutes = ["/", "/profile", "/settings", "/notifications", "/help"];
-        if (!essentialRoutes.includes(item.to) && !saasPlan.features.includes(item.to)) {
-          return false;
-        }
-      }
-
-      // 3. Super Admin Specific Routing Check
-      if (item.to === "/super-admin" && !isSuperAdminUser) return false;
-
-      return true;
+      const result = hasPermissionForRoute(user, item.to, !!isSuperAdminUser, saasPlan);
+      return result.allowed;
     })
   })).filter(group => group.items.length > 0);
 
