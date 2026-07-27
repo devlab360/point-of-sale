@@ -16,6 +16,8 @@ export function getTrialDaysLeft(expiryDateStr?: string | null): number {
 
 export const DEFAULT_PAYMENT_CONFIG = {
   id: "super_admin_payment_config",
+  storeName: "Super Admin Payment Config",
+  synced: true,
   accountName: "Artistry POS Technologies Pvt Ltd",
   bankName: "HDFC Bank (Commercial Branch)",
   accountNo: "50200098765432",

@@ -61,7 +61,12 @@ export class SyncEngine {
         if (!table) continue;
 
         // Find records that are marked as unsynced
-        const pending = await table.filter((r: any) => !r.synced).toArray();
+        const pending = await table.filter((r: any) => {
+          if (r.synced) return false;
+          // Never push super admin payment config or settings missing storeName to cloud settings table
+          if (tableName === 'settings' && (r.id === "super_admin_payment_config" || !r.storeName)) return false;
+          return true;
+        }).toArray();
         if (pending.length > 0) {
           // Map Dexie table names to Postgres table names where they differ
           let pgTableName = tableName;

@@ -67,7 +67,7 @@ function SuperAdminPlans() {
 
   const handleSavePaymentConfig = async () => {
     try {
-      await localDb.settings.put(paymentConfig);
+      await localDb.settings.put({ ...paymentConfig, storeName: "Super Admin Payment Config", synced: true } as any);
       try {
         await createOrUpdatePlanFn({
           data: {
@@ -109,7 +109,7 @@ function SuperAdminPlans() {
         // Sync to local Dexie for offline use
         for (const plan of result.data.plans) {
           if (plan.id === "super_admin_payment_config" && plan.features) {
-            await localDb.settings.put(plan.features as any);
+            await localDb.settings.put({ ...(plan.features as any), storeName: "Super Admin Payment Config", synced: true });
           }
           await localDb.saasPlans.put({
             id: plan.id,

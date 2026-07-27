@@ -12,7 +12,7 @@ import { useEffect, type ReactNode } from "react";
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { AppSidebar } from "@/components/layout/AppSidebar";
-import { APP_GROUPS } from "@/lib/menu-config";
+import { APP_GROUPS, hasPermissionForRoute } from "@/lib/menu-config";
 import { AppHeader } from "@/components/layout/AppHeader";
 import { initializeLocalDb } from "@/lib/sync";
 import { Toaster } from "sonner";
