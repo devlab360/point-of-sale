@@ -6,79 +6,61 @@ export async function initializeLocalDb() {
   if (typeof window === "undefined") return;
   try {
     // One-time wipe to clear dummy data from previous versions
-    if (!localStorage.getItem("wiped_dummy_v1")) {
-      console.log("Wiping dummy data...");
+    if (!localStorage.getItem("wiped_dummy_v2")) {
+      console.log("Wiping dummy data (v2)...");
       await localDb.delete();
       await localDb.open();
-      localStorage.setItem("wiped_dummy_v1", "true");
+      localStorage.setItem("wiped_dummy_v2", "true");
+      // Clear old wipe flags
+      localStorage.removeItem("wiped_dummy_v1");
       window.location.reload();
       return;
     }
 
-    const productsCount = await localDb.products.count();
-    const usersCount = await localDb.users.count();
+    const orgId = localStorage.getItem("pos_org_id");
 
-    if (usersCount === 0) {
-      await localDb.users.add({
-        id: "admin-1",
-        name: "Admin User",
-        role: "admin",
-        email: "admin@grocer.pro",
-        lastActive: new Date().toISOString(),
-        status: "active",
-        pin: "1234"
-      });
-      console.log("Seeded default admin user (PIN: 1234)");
-    }
-
-    if (productsCount === 0) {
-      let apiProducts: any[] = [];
-      let apiCustomers: any[] = [];
-      let apiCategories: any[] = [];
-      let apiBrands: any[] = [];
-      let apiUnits: any[] = [];
-      let apiSuppliers: any[] = [];
-      let apiPurchases: any[] = [];
-      let apiMovements: any[] = [];
-
+    // If there's a logged-in org, always try to pull fresh data from cloud first
+    if (orgId && orgId !== "default" && orgId !== "superadmin-org") {
       try {
-        const orgId = localStorage.getItem("pos_org_id") || "default";
         const org = await localDb.saasOrganizations.get(orgId);
         const syncKey = org?.syncKey || "default-sync-key";
 
-        if (syncKey) {
-          const pullResult = await pullEverythingFn({ data: { orgId, syncKey } });
-        
+        const pullResult = await pullEverythingFn({ data: { orgId, syncKey } });
+
         if (pullResult.success && pullResult.data) {
-          apiProducts = pullResult.data.products || [];
-          apiCustomers = pullResult.data.customers || [];
-          apiCategories = pullResult.data.categories || [];
-          apiBrands = pullResult.data.brands || [];
-          apiUnits = pullResult.data.units || [];
-          apiSuppliers = pullResult.data.suppliers || [];
-          apiPurchases = pullResult.data.purchases || [];
-          apiMovements = pullResult.data.inventoryMovements || [];
-        }
+          const d = pullResult.data;
+
+          // Upsert everything from cloud into local DB
+          await localDb.transaction("rw", [
+            localDb.users, localDb.products, localDb.customers,
+            localDb.categories, localDb.brands, localDb.units, localDb.suppliers,
+            localDb.purchases, localDb.inventoryMovements, localDb.settings,
+            localDb.saasOrganizations, localDb.saasPlans,
+          ], async () => {
+            if (d.users?.length) await localDb.users.bulkPut(d.users.map((r: any) => ({ ...r, orgId: r.organizationId || r.orgId, synced: true })));
+            if (d.products?.length) await localDb.products.bulkPut(d.products.map((r: any) => ({ ...r, synced: true })));
+            if (d.customers?.length) await localDb.customers.bulkPut(d.customers.map((r: any) => ({ ...r, synced: true })));
+            if (d.categories?.length) await localDb.categories.bulkPut(d.categories.map((r: any) => ({ ...r, synced: true })));
+            if (d.brands?.length) await localDb.brands.bulkPut(d.brands.map((r: any) => ({ ...r, synced: true })));
+            if (d.units?.length) await localDb.units.bulkPut(d.units.map((r: any) => ({ ...r, synced: true })));
+            if (d.suppliers?.length) await localDb.suppliers.bulkPut(d.suppliers.map((r: any) => ({ ...r, synced: true })));
+            if (d.settings?.length) await localDb.settings.bulkPut(d.settings.map((r: any) => ({ ...r, orgId: r.organizationId || r.orgId, synced: true })));
+            if (d.organizations?.length) await localDb.saasOrganizations.bulkPut(d.organizations.map((r: any) => ({ ...r, synced: true })));
+            if (d.saasPlans?.length) {
+              await localDb.saasPlans.bulkPut(d.saasPlans.map((p: any) => ({
+                id: p.id, name: p.name, price: Number(p.price || 0),
+                features: Array.isArray(p.features) ? p.features : (typeof p.features === 'string' ? JSON.parse(p.features) : []),
+                limits: (typeof p.limits === 'string' ? JSON.parse(p.limits) : p.limits) || { maxUsers: 5, maxProducts: 500, maxBranches: 2, maxInvoicesPerMonth: 1000 },
+                isTrialDefault: p.isTrialDefault ?? false,
+                synced: true,
+              })));
+            }
+          });
+          console.log("Local database hydrated from cloud.");
         }
       } catch (e) {
-        console.warn("API not reachable, starting with empty local database.");
+        console.warn("Cloud pull on init failed, working offline with existing local data:", e);
       }
-
-      await localDb.transaction("rw", [
-        localDb.products, localDb.customers,
-        localDb.categories, localDb.brands, localDb.units, localDb.suppliers,
-        localDb.purchases, localDb.inventoryMovements
-      ], async () => {
-          if (apiProducts.length) await localDb.products.bulkAdd(apiProducts);
-          if (apiCustomers.length) await localDb.customers.bulkAdd(apiCustomers);
-          if (apiCategories.length) await localDb.categories.bulkAdd(apiCategories);
-          if (apiBrands.length) await localDb.brands.bulkAdd(apiBrands);
-          if (apiUnits.length) await localDb.units.bulkAdd(apiUnits);
-          if (apiSuppliers.length) await localDb.suppliers.bulkAdd(apiSuppliers);
-          if (apiPurchases.length) await localDb.purchases.bulkAdd(apiPurchases);
-          if (apiMovements.length) await localDb.inventoryMovements.bulkAdd(apiMovements);
-        });
-      console.log("Local database initialized.");
     }
 
     // Start the universal background sync engine
