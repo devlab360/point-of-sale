@@ -72,7 +72,36 @@ export function validateFileBeforeUpload(
 }
 
 /**
+ * Helper: read a File as base64 DataURL (reliable client-side fallback).
+ */
+function readFileAsDataURL(file: File, options: BlobUploadOptions, filename: string): Promise<BlobUploadResult> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadstart = () => options.onProgress?.(10);
+    reader.onprogress = (e) => {
+      if (e.lengthComputable) {
+        const percent = Math.round((e.loaded / e.total) * 100);
+        options.onProgress?.(Math.min(90, percent));
+      }
+    };
+    reader.onloadend = () => {
+      options.onProgress?.(100);
+      resolve({
+        url: reader.result as string,
+        pathname: filename,
+        contentType: file.type,
+        size: file.size,
+        name: file.name,
+      });
+    };
+    reader.onerror = () => reject(new Error("Failed to read file locally."));
+    reader.readAsDataURL(file);
+  });
+}
+
+/**
  * Centralized Vercel Blob File Upload Service.
+ * Falls back to base64 DataURL if Vercel Blob upload fails or times out.
  */
 export async function uploadToVercelBlob(
   file: File,
@@ -91,11 +120,20 @@ export async function uploadToVercelBlob(
   const token = import.meta.env.VITE_BLOB_READ_WRITE_TOKEN;
 
   if (token) {
+    // Attempt Vercel Blob upload with a 10-second timeout
     try {
-      const blob = await put(filename, file, {
+      options.onProgress?.(10);
+      const blobUpload = put(filename, file, {
         access: "public",
         token: token,
       });
+
+      const timeout = new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error("Vercel Blob upload timed out (10s). Falling back to local storage.")), 10000)
+      );
+
+      const blob = await Promise.race([blobUpload, timeout]);
+      options.onProgress?.(100);
 
       return {
         url: blob.url,
@@ -105,32 +143,12 @@ export async function uploadToVercelBlob(
         name: file.name,
       };
     } catch (err: any) {
-      console.error("[Vercel Blob Upload Error]:", err);
-      throw new Error("Failed to upload file to Vercel Blob storage.");
+      console.warn("[Vercel Blob] Failed, falling back to base64:", err?.message || err);
+      // Fall back to local base64 so the upload never hangs
+      return readFileAsDataURL(file, options, filename);
     }
   } else {
-    // Offline / Local Development Fallback (Data URL with progress simulation)
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onloadstart = () => options.onProgress?.(10);
-      reader.onprogress = (e) => {
-        if (e.lengthComputable) {
-          const percent = Math.round((e.loaded / e.total) * 100);
-          options.onProgress?.(percent);
-        }
-      };
-      reader.onloadend = () => {
-        options.onProgress?.(100);
-        resolve({
-          url: reader.result as string,
-          pathname: filename,
-          contentType: file.type,
-          size: file.size,
-          name: file.name,
-        });
-      };
-      reader.onerror = () => reject(new Error("Failed to read file locally."));
-      reader.readAsDataURL(file);
-    });
+    // No token — use local base64 fallback directly
+    return readFileAsDataURL(file, options, filename);
   }
 }

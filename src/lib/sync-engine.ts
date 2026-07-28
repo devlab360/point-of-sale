@@ -131,7 +131,7 @@ export class SyncEngine {
         const serverData = pullResult.data;
         
         for (const [pgTableName, records] of Object.entries(serverData)) {
-           if (!records || records.length === 0) continue;
+           if (!records || (records as any[]).length === 0) continue;
            
            let dexieTableName = pgTableName;
            if (pgTableName === 'sales') dexieTableName = 'offlineSales';
@@ -144,33 +144,45 @@ export class SyncEngine {
            if (!table) continue;
 
            await localDb.transaction("rw", table, async () => {
-              // Mark pulled records as synced so we don't push them back
-              const recordsToUpsert = records.map(r => {
-                if (dexieTableName === 'saasPlans') {
-                  const parsedFeatures = Array.isArray(r.features) ? r.features : (typeof r.features === 'string' ? JSON.parse(r.features) : []);
-                  const parsedLimits = (typeof r.limits === 'string' ? JSON.parse(r.limits) : r.limits) || { maxUsers: 5, maxProducts: 500, maxBranches: 2, maxInvoicesPerMonth: 1000 };
-                  return {
-                    id: r.id,
-                    name: r.name,
-                    price: Number(r.price || 0),
-                    features: parsedFeatures,
-                    limits: parsedLimits,
-                    isTrialDefault: r.isTrialDefault ?? false,
-                    synced: true,
-                  };
-                }
-                if (dexieTableName === 'users') {
-                  const parsedPerms = Array.isArray(r.permissions) ? r.permissions : (typeof r.permissions === 'string' ? JSON.parse(r.permissions) : r.permissions);
-                  return { ...r, permissions: parsedPerms, synced: true };
-                }
-                return { ...r, synced: true };
-              });
-              await table.bulkPut(recordsToUpsert);
+              // Get IDs of locally unsynced records so we don't overwrite them
+              // (they are pending push to cloud — we never want to overwrite local edits with stale cloud data)
+              let unsyncedIds = new Set<string>();
+              try {
+                const unsyncedRecords = await table.filter((r: any) => r.synced === false).primaryKeys();
+                unsyncedIds = new Set(unsyncedRecords.map(String));
+              } catch {
+                // Some tables may not have synced field
+              }
+
+              // Mark pulled records as synced, skip any that are locally modified
+              const recordsToUpsert = (records as any[])
+                .filter(r => !unsyncedIds.has(String(r.id))) // ← skip unsynced local records
+                .map(r => {
+                  if (dexieTableName === 'saasPlans') {
+                    const parsedFeatures = Array.isArray(r.features) ? r.features : (typeof r.features === 'string' ? JSON.parse(r.features) : []);
+                    const parsedLimits = (typeof r.limits === 'string' ? JSON.parse(r.limits) : r.limits) || { maxUsers: 5, maxProducts: 500, maxBranches: 2, maxInvoicesPerMonth: 1000 };
+                    return {
+                      id: r.id, name: r.name, price: Number(r.price || 0),
+                      features: parsedFeatures, limits: parsedLimits,
+                      isTrialDefault: r.isTrialDefault ?? false, synced: true,
+                    };
+                  }
+                  if (dexieTableName === 'users') {
+                    const parsedPerms = Array.isArray(r.permissions) ? r.permissions : (typeof r.permissions === 'string' ? JSON.parse(r.permissions) : r.permissions);
+                    return { ...r, orgId: r.organizationId || r.orgId, permissions: parsedPerms, synced: true };
+                  }
+                  return { ...r, synced: true };
+                });
+
+              if (recordsToUpsert.length > 0) {
+                await table.bulkPut(recordsToUpsert);
+              }
            });
         }
         PersistStore.setLastSyncedAt(new Date().toISOString());
         console.log("[Sync Engine] Pull successful.");
       }
+
 
     } catch (e) {
       console.error("[Sync Engine] Sync encountered an error:", e);

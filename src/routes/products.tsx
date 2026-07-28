@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Grid3x3, List, MoreHorizontal, Pencil, Plus, Trash2, PackageSearch, Printer, Loader2 } from "lucide-react";
+import { FileUpload } from "@/components/ui/file-upload";
 import { useState, useMemo, useEffect } from "react";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PaginationControls } from "@/components/ui/pagination-controls";
@@ -54,13 +55,13 @@ function ProductsPage() {
   const { t } = useLanguage();
   const [view, setView] = useState<"grid" | "list">("list");
   const rawProducts = useLiveQuery(() => localDb.products.toArray()) || [];
-  
+
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search, 300);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const settings = useLiveQuery(() => localDb.settings.get("default"));
-  
+
   const [categoryFilter, setCategoryFilter] = useState("");
   const [brandFilter, setBrandFilter] = useState("");
   const [stockFilter, setStockFilter] = useState("");
@@ -91,7 +92,7 @@ function ProductsPage() {
     } else if (stockFilter === "out-of-stock") {
       filtered = filtered.filter(p => p.stock <= 0);
     }
-    
+
     return filtered;
   }, [rawProducts, debouncedSearch, categoryFilter, brandFilter, stockFilter]);
 
@@ -112,7 +113,7 @@ function ProductsPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [editingProd, setEditingProd] = useState<any>(null);
   const [isSaving, setIsSaving] = useState(false);
-  
+
   const [formData, setFormData] = useState({
     name: "", sku: "", barcode: "", category: "", brand: "", unit: "",
     price: 0, cost: 0, stock: 0, reorderLevel: 5, image: "https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&q=80&w=150&h=150",
@@ -207,9 +208,9 @@ function ProductsPage() {
     });
 
     if (!isValid) return;
-    
+
     setIsSaving(true);
-    
+
     // Parse serials
     const serialsList = formData.hasSerial
       ? formData.serialsInput.split(/[\n,]+/).map(s => s.trim()).filter(Boolean)
@@ -264,7 +265,7 @@ function ProductsPage() {
       setDeleteId(null);
     }
   };
-  
+
   const handlePrint = () => {
     if (!printProduct || printCount < 1) return;
     setIsPrinting(true);
@@ -309,39 +310,39 @@ function ProductsPage() {
           <div className="space-y-4">
             <div className="space-y-2">
               <Label>Category</Label>
-              <SearchableSelect 
+              <SearchableSelect
                 options={[
                   { value: "", label: "All Categories" },
                   ...categories.map(c => ({ value: c.id, label: c.name }))
-                ]} 
-                value={categoryFilter} 
-                onChange={setCategoryFilter} 
+                ]}
+                value={categoryFilter}
+                onChange={setCategoryFilter}
                 placeholder="Filter by Category"
               />
             </div>
             <div className="space-y-2">
               <Label>Brand</Label>
-              <SearchableSelect 
+              <SearchableSelect
                 options={[
                   { value: "", label: "All Brands" },
                   ...brands.map(b => ({ value: b.id, label: b.name }))
-                ]} 
-                value={brandFilter} 
-                onChange={setBrandFilter} 
+                ]}
+                value={brandFilter}
+                onChange={setBrandFilter}
                 placeholder="Filter by Brand"
               />
             </div>
             <div className="space-y-2">
               <Label>Stock Status</Label>
-              <SearchableSelect 
+              <SearchableSelect
                 options={[
                   { value: "", label: "All Statuses" },
                   { value: "in-stock", label: "In Stock" },
                   { value: "low-stock", label: "Low Stock" },
                   { value: "out-of-stock", label: "Out of Stock" },
-                ]} 
-                value={stockFilter} 
-                onChange={setStockFilter} 
+                ]}
+                value={stockFilter}
+                onChange={setStockFilter}
                 placeholder="Filter by Stock"
               />
             </div>
@@ -352,10 +353,10 @@ function ProductsPage() {
         }
       >
         {products.length === 0 ? (
-          <EmptyState 
-            icon={PackageSearch} 
-            title={t("noProductsFound") || "No products found"} 
-            description={search ? (t("adjustSearch") || "Try adjusting your search.") : (t("noProductsYet") || "You haven't added any products yet.")} 
+          <EmptyState
+            icon={PackageSearch}
+            title={t("noProductsFound") || "No products found"}
+            description={search ? (t("adjustSearch") || "Try adjusting your search.") : (t("noProductsYet") || "You haven't added any products yet.")}
           />
         ) : (
           <div className="space-y-4">
@@ -385,7 +386,7 @@ function ProductsPage() {
                 <Input
                   placeholder="e.g. Item Name"
                   value={formData.name}
-                  onChange={e => { setFormData({...formData, name: e.target.value}); clearProdError("name"); }}
+                  onChange={e => { setFormData({ ...formData, name: e.target.value }); clearProdError("name"); }}
                   className={prodErrors.name ? "border-destructive focus-visible:ring-destructive" : ""}
                 />
                 <FieldError message={prodErrors.name} />
@@ -395,14 +396,14 @@ function ProductsPage() {
                 <Input
                   placeholder="e.g. SKU-001"
                   value={formData.sku}
-                  onChange={e => { setFormData({...formData, sku: e.target.value}); clearProdError("sku"); }}
+                  onChange={e => { setFormData({ ...formData, sku: e.target.value }); clearProdError("sku"); }}
                   className={prodErrors.sku ? "border-destructive focus-visible:ring-destructive" : ""}
                 />
                 <FieldError message={prodErrors.sku} />
               </div>
               <div className="grid gap-1.5">
                 <Label>Barcode</Label>
-                <Input placeholder="e.g. 123456789012" value={formData.barcode} onChange={e => setFormData({...formData, barcode: e.target.value})} />
+                <Input placeholder="e.g. 123456789012" value={formData.barcode} onChange={e => setFormData({ ...formData, barcode: e.target.value })} />
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="category">{t("category") || "Category"}</Label>
@@ -437,18 +438,18 @@ function ProductsPage() {
                   type="number" min="0" step="0.01"
                   placeholder="0.00"
                   value={formData.price}
-                  onChange={e => { setFormData({...formData, price: parseFloat(e.target.value) || 0}); clearProdError("price"); }}
+                  onChange={e => { setFormData({ ...formData, price: parseFloat(e.target.value) || 0 }); clearProdError("price"); }}
                   className={prodErrors.price ? "border-destructive focus-visible:ring-destructive" : ""}
                 />
                 <FieldError message={prodErrors.price} />
               </div>
               <div className="grid gap-1.5">
                 <Label>Wholesale Price (Optional)</Label>
-                <Input type="number" min="0" step="0.01" placeholder="e.g. 45.00" value={formData.wholesalePrice || ""} onChange={e => setFormData({...formData, wholesalePrice: parseFloat(e.target.value) || 0})} />
+                <Input type="number" min="0" step="0.01" placeholder="e.g. 45.00" value={formData.wholesalePrice || ""} onChange={e => setFormData({ ...formData, wholesalePrice: parseFloat(e.target.value) || 0 })} />
               </div>
               <div className="grid gap-1.5">
                 <Label>Dealer Price (Optional)</Label>
-                <Input type="number" min="0" step="0.01" placeholder="e.g. 40.00" value={formData.dealerPrice || ""} onChange={e => setFormData({...formData, dealerPrice: parseFloat(e.target.value) || 0})} />
+                <Input type="number" min="0" step="0.01" placeholder="e.g. 40.00" value={formData.dealerPrice || ""} onChange={e => setFormData({ ...formData, dealerPrice: parseFloat(e.target.value) || 0 })} />
               </div>
               <div className="grid gap-1.5">
                 <Label>Cost Price <span className="text-destructive">*</span></Label>
@@ -456,7 +457,7 @@ function ProductsPage() {
                   type="number" min="0" step="0.01"
                   placeholder="0.00"
                   value={formData.cost}
-                  onChange={e => { setFormData({...formData, cost: parseFloat(e.target.value) || 0}); clearProdError("cost"); }}
+                  onChange={e => { setFormData({ ...formData, cost: parseFloat(e.target.value) || 0 }); clearProdError("cost"); }}
                   className={prodErrors.cost ? "border-destructive focus-visible:ring-destructive" : ""}
                 />
                 <FieldError message={prodErrors.cost} />
@@ -467,7 +468,7 @@ function ProductsPage() {
                   type="number" min="0"
                   placeholder="0"
                   value={formData.stock}
-                  onChange={e => { setFormData({...formData, stock: parseInt(e.target.value) || 0}); clearProdError("stock"); }}
+                  onChange={e => { setFormData({ ...formData, stock: parseInt(e.target.value) || 0 }); clearProdError("stock"); }}
                   className={prodErrors.stock ? "border-destructive focus-visible:ring-destructive" : ""}
                 />
                 <FieldError message={prodErrors.stock} />
@@ -478,141 +479,151 @@ function ProductsPage() {
                   type="number" min="0"
                   placeholder="e.g. 5"
                   value={formData.reorderLevel}
-                  onChange={e => { setFormData({...formData, reorderLevel: parseInt(e.target.value) || 0}); clearProdError("reorderLevel"); }}
+                  onChange={e => { setFormData({ ...formData, reorderLevel: parseInt(e.target.value) || 0 }); clearProdError("reorderLevel"); }}
                   className={prodErrors.reorderLevel ? "border-destructive focus-visible:ring-destructive" : ""}
                 />
                 <FieldError message={prodErrors.reorderLevel} />
               </div>
               <div className="grid gap-1.5">
-              <Label>Expiry Date (Optional)</Label>
-              <DatePicker 
-                date={formData.expiryDate} 
-                onDateChange={(d) => setFormData({ ...formData, expiryDate: d ? d.toISOString().split("T")[0] : "" })} 
-                placeholder="Select expiry date"
-              />
-            </div>
-            <div className="grid gap-2 col-span-2">
-              <Label>Image URL</Label>
-              <Input type="url" placeholder="https://example.com/image.jpg" value={formData.image} onChange={e => setFormData({...formData, image: e.target.value})} />
-            </div>
-
-            {/* Warehouse Rack / Shelf Location Fields */}
-            <div className="grid grid-cols-3 gap-2 col-span-2 rounded-xl border p-3 bg-muted/20">
-              <div>
-                <Label className="text-xs">Rack No.</Label>
-                <Input placeholder="e.g. A2" value={formData.locationRack} onChange={e => setFormData({...formData, locationRack: e.target.value})} className="h-8 text-xs" />
-              </div>
-              <div>
-                <Label className="text-xs">Shelf No.</Label>
-                <Input placeholder="e.g. 3" value={formData.locationShelf} onChange={e => setFormData({...formData, locationShelf: e.target.value})} className="h-8 text-xs" />
-              </div>
-              <div>
-                <Label className="text-xs">Bin Position</Label>
-                <Input placeholder="e.g. B4" value={formData.locationBin} onChange={e => setFormData({...formData, locationBin: e.target.value})} className="h-8 text-xs" />
-              </div>
-            </div>
-
-            {/* Electronics IMEI / Serial Tracking Toggle */}
-            <div className="col-span-2 rounded-xl border border-primary/20 bg-primary/5 p-3 space-y-3">
-              <div className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  id="hasSerial"
-                  checked={formData.hasSerial}
-                  onChange={(e) => setFormData({ ...formData, hasSerial: e.target.checked })}
-                  className="rounded border-primary text-primary"
+                <Label>Expiry Date (Optional)</Label>
+                <DatePicker
+                  date={formData.expiryDate}
+                  onDateChange={(d) => setFormData({ ...formData, expiryDate: d ? d.toISOString().split("T")[0] : "" })}
+                  placeholder="Select expiry date"
                 />
-                <Label htmlFor="hasSerial" className="font-semibold text-xs text-primary cursor-pointer">
-                  Track Serial / IMEI Numbers (Mobile & Electronics)
-                </Label>
               </div>
-              {formData.hasSerial && (
-                <div className="space-y-1 pl-6">
-                  <Label className="text-xs">Enter Available IMEI / Serial Numbers (Comma or Newline separated)</Label>
-                  <textarea
-                    rows={2}
-                    value={formData.serialsInput}
-                    onChange={(e) => setFormData({ ...formData, serialsInput: e.target.value })}
-                    placeholder="e.g. SN-001, SN-002, SN-003"
-                    className="w-full rounded-md border border-input bg-background p-2 text-xs font-mono"
+              <div className="grid gap-2 col-span-2">
+                <Label>Product Image</Label>
+                <FileUpload
+                  value={formData.image && !formData.image.includes('unsplash.com') ? formData.image : undefined}
+                  onChange={(url: string) => setFormData({ ...formData, image: url || "https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&q=80&w=150&h=150" })}
+                  folder="products"
+                  accept="image/jpeg,image/png,image/webp,image/gif"
+                  allowedTypes={["image/jpeg", "image/png", "image/webp", "image/gif"]}
+                  maxSizeMB={3}
+                  label=""
+                  description="PNG, JPG, WEBP or GIF • Max 3MB"
+                />
+              </div>
+
+
+              {/* Warehouse Rack / Shelf Location Fields */}
+              <div className="grid grid-cols-3 gap-2 col-span-2 rounded-xl border p-3 bg-muted/20">
+                <div>
+                  <Label className="text-xs">Rack No.</Label>
+                  <Input placeholder="e.g. A2" value={formData.locationRack} onChange={e => setFormData({ ...formData, locationRack: e.target.value })} className="h-8 text-xs" />
+                </div>
+                <div>
+                  <Label className="text-xs">Shelf No.</Label>
+                  <Input placeholder="e.g. 3" value={formData.locationShelf} onChange={e => setFormData({ ...formData, locationShelf: e.target.value })} className="h-8 text-xs" />
+                </div>
+                <div>
+                  <Label className="text-xs">Bin Position</Label>
+                  <Input placeholder="e.g. B4" value={formData.locationBin} onChange={e => setFormData({ ...formData, locationBin: e.target.value })} className="h-8 text-xs" />
+                </div>
+              </div>
+
+              {/* Electronics IMEI / Serial Tracking Toggle */}
+              <div className="col-span-2 rounded-xl border border-primary/20 bg-primary/5 p-3 space-y-3">
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    id="hasSerial"
+                    checked={formData.hasSerial}
+                    onChange={(e) => setFormData({ ...formData, hasSerial: e.target.checked })}
+                    className="rounded border-primary text-primary"
                   />
+                  <Label htmlFor="hasSerial" className="font-semibold text-xs text-primary cursor-pointer">
+                    Track Serial / IMEI Numbers (Mobile & Electronics)
+                  </Label>
                 </div>
-              )}
-            </div>
-
-            {settings?.enableGST && (
-              <div className="col-span-2 rounded-xl border border-border bg-card p-4 space-y-4">
-                <h3 className="text-sm font-semibold mb-2">Tax & Compliance (GST)</h3>
-                <div className="grid grid-cols-3 gap-4">
-                  <div>
-                    <Label className="text-xs">HSN / SAC Code</Label>
-                    <Input placeholder="e.g. 8517" value={formData.hsnCode} onChange={e => setFormData({...formData, hsnCode: e.target.value})} />
-                  </div>
-                  <div>
-                    <Label className="text-xs">GST Rate (%)</Label>
-                    <Select value={formData.gstRate.toString()} onValueChange={v => setFormData({...formData, gstRate: parseInt(v) || 0})}>
-                      <SelectTrigger><SelectValue placeholder="Select Rate" /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="0">0% (Nil Rated)</SelectItem>
-                        <SelectItem value="5">5%</SelectItem>
-                        <SelectItem value="12">12%</SelectItem>
-                        <SelectItem value="18">18%</SelectItem>
-                        <SelectItem value="28">28%</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="flex items-center gap-2 mt-6">
-                    <input
-                      type="checkbox"
-                      id="taxInclusive"
-                      checked={formData.taxInclusive}
-                      onChange={(e) => setFormData({ ...formData, taxInclusive: e.target.checked })}
-                      className="rounded border-border text-primary"
+                {formData.hasSerial && (
+                  <div className="space-y-1 pl-6">
+                    <Label className="text-xs">Enter Available IMEI / Serial Numbers (Comma or Newline separated)</Label>
+                    <textarea
+                      rows={2}
+                      value={formData.serialsInput}
+                      onChange={(e) => setFormData({ ...formData, serialsInput: e.target.value })}
+                      placeholder="e.g. SN-001, SN-002, SN-003"
+                      className="w-full rounded-md border border-input bg-background p-2 text-xs font-mono"
                     />
-                    <Label htmlFor="taxInclusive" className="text-xs cursor-pointer">
-                      Price is Tax Inclusive
-                    </Label>
                   </div>
-                </div>
+                )}
               </div>
-            )}
 
-            {/* Pharmacy Batch & Expiry Tracking Toggle */}
-            <div className="col-span-2 rounded-xl border border-info/20 bg-info/5 p-3 space-y-3">
-              <div className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  id="hasBatch"
-                  checked={formData.hasBatch}
-                  onChange={(e) => setFormData({ ...formData, hasBatch: e.target.checked })}
-                  className="rounded border-info text-info"
-                />
-                <Label htmlFor="hasBatch" className="font-semibold text-xs text-info cursor-pointer">
-                  Track Batches & Batch Expiry (Pharmacy & FMCG Food)
-                </Label>
-              </div>
-              {formData.hasBatch && (
-                <div className="grid grid-cols-3 gap-2 pl-6">
-                  <div>
-                    <Label className="text-xs">Batch Number</Label>
-                    <Input placeholder="e.g. BATCH-2026A" value={formData.batchNoInput} onChange={e => setFormData({...formData, batchNoInput: e.target.value})} className="h-8 text-xs" />
-                  </div>
-                  <div>
-                    <Label className="text-xs">Batch Expiry</Label>
-                    <div className="mt-1">
-                      <DatePicker 
-                        date={formData.batchExpiryInput} 
-                        onDateChange={(d) => setFormData({...formData, batchExpiryInput: d ? d.toISOString().split("T")[0] : ""})} 
+              {settings?.enableGST && (
+                <div className="col-span-2 rounded-xl border border-border bg-card p-4 space-y-4">
+                  <h3 className="text-sm font-semibold mb-2">Tax & Compliance (GST)</h3>
+                  <div className="grid grid-cols-3 gap-4">
+                    <div>
+                      <Label className="text-xs">HSN / SAC Code</Label>
+                      <Input placeholder="e.g. 8517" value={formData.hsnCode} onChange={e => setFormData({ ...formData, hsnCode: e.target.value })} />
+                    </div>
+                    <div>
+                      <Label className="text-xs">GST Rate (%)</Label>
+                      <Select value={formData.gstRate.toString()} onValueChange={v => setFormData({ ...formData, gstRate: parseInt(v) || 0 })}>
+                        <SelectTrigger><SelectValue placeholder="Select Rate" /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="0">0% (Nil Rated)</SelectItem>
+                          <SelectItem value="5">5%</SelectItem>
+                          <SelectItem value="12">12%</SelectItem>
+                          <SelectItem value="18">18%</SelectItem>
+                          <SelectItem value="28">28%</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="flex items-center gap-2 mt-6">
+                      <input
+                        type="checkbox"
+                        id="taxInclusive"
+                        checked={formData.taxInclusive}
+                        onChange={(e) => setFormData({ ...formData, taxInclusive: e.target.checked })}
+                        className="rounded border-border text-primary"
                       />
+                      <Label htmlFor="taxInclusive" className="text-xs cursor-pointer">
+                        Price is Tax Inclusive
+                      </Label>
                     </div>
                   </div>
-                  <div>
-                    <Label className="text-xs">Batch Stock Qty</Label>
-                    <Input type="number" min="0" placeholder="0" required value={formData.batchStockInput} onChange={e => setFormData({...formData, batchStockInput: parseInt(e.target.value) || 0})} className="h-8 text-xs" />
-                  </div>
                 </div>
               )}
-            </div>
+
+              {/* Pharmacy Batch & Expiry Tracking Toggle */}
+              <div className="col-span-2 rounded-xl border border-info/20 bg-info/5 p-3 space-y-3">
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    id="hasBatch"
+                    checked={formData.hasBatch}
+                    onChange={(e) => setFormData({ ...formData, hasBatch: e.target.checked })}
+                    className="rounded border-info text-info"
+                  />
+                  <Label htmlFor="hasBatch" className="font-semibold text-xs text-info cursor-pointer">
+                    Track Batches & Batch Expiry (Pharmacy & FMCG Food)
+                  </Label>
+                </div>
+                {formData.hasBatch && (
+                  <div className="grid grid-cols-3 gap-2 pl-6">
+                    <div>
+                      <Label className="text-xs">Batch Number</Label>
+                      <Input placeholder="e.g. BATCH-2026A" value={formData.batchNoInput} onChange={e => setFormData({ ...formData, batchNoInput: e.target.value })} className="h-8 text-xs" />
+                    </div>
+                    <div>
+                      <Label className="text-xs">Batch Expiry</Label>
+                      <div className="mt-1">
+                        <DatePicker
+                          date={formData.batchExpiryInput}
+                          onDateChange={(d) => setFormData({ ...formData, batchExpiryInput: d ? d.toISOString().split("T")[0] : "" })}
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <Label className="text-xs">Batch Stock Qty</Label>
+                      <Input type="number" min="0" placeholder="0" required value={formData.batchStockInput} onChange={e => setFormData({ ...formData, batchStockInput: parseInt(e.target.value) || 0 })} className="h-8 text-xs" />
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
             <DialogFooter className="mt-6">
               <Button type="button" variant="outline" onClick={() => { setModalOpen(false); clearProdAll(); }}>Cancel</Button>
@@ -655,12 +666,12 @@ function ProductsPage() {
             </div>
             <div className="space-y-2">
               <Label>Number of Labels</Label>
-              <Input 
-                type="number" 
-                min={1} 
-                max={100} 
-                value={printCount} 
-                onChange={(e) => setPrintCount(parseInt(e.target.value) || 1)} 
+              <Input
+                type="number"
+                min={1}
+                max={100}
+                value={printCount}
+                onChange={(e) => setPrintCount(parseInt(e.target.value) || 1)}
               />
             </div>
           </div>

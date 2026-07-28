@@ -19,47 +19,56 @@ export async function initializeLocalDb() {
 
     const orgId = PersistStore.getOrgId();
 
-    // If there's a logged-in org, always try to pull fresh data from cloud first
+    // Only do a FULL cloud pull on first-time setup (when local DB is empty).
+    // On subsequent refreshes, SyncEngine handles the incremental sync.
+    // This prevents overwriting locally-saved unsynced data on every refresh.
     if (orgId && orgId !== "default" && orgId !== "superadmin-org") {
-      try {
-        const org = await localDb.saasOrganizations.get(orgId);
-        const syncKey = org?.syncKey || "default-sync-key";
+      const productsCount = await localDb.products.count();
+      const usersCount = await localDb.users.count();
+      const isFirstLoad = productsCount === 0 && usersCount === 0;
 
-        const pullResult = await pullEverythingFn({ data: { orgId, syncKey } });
+      if (isFirstLoad) {
+        // First-time load on this device — pull everything from cloud to hydrate
+        try {
+          const org = await localDb.saasOrganizations.get(orgId);
+          const syncKey = org?.syncKey || "default-sync-key";
+          const pullResult = await pullEverythingFn({ data: { orgId, syncKey } });
 
-        if (pullResult.success && pullResult.data) {
-          const d = pullResult.data;
+          if (pullResult.success && pullResult.data) {
+            const d = pullResult.data;
 
-          // Upsert everything from cloud into local DB
-          await localDb.transaction("rw", [
-            localDb.users, localDb.products, localDb.customers,
-            localDb.categories, localDb.brands, localDb.units, localDb.suppliers,
-            localDb.purchases, localDb.inventoryMovements, localDb.settings,
-            localDb.saasOrganizations, localDb.saasPlans,
-          ], async () => {
-            if (d.users?.length) await localDb.users.bulkPut(d.users.map((r: any) => ({ ...r, orgId: r.organizationId || r.orgId, synced: true })));
-            if (d.products?.length) await localDb.products.bulkPut(d.products.map((r: any) => ({ ...r, synced: true })));
-            if (d.customers?.length) await localDb.customers.bulkPut(d.customers.map((r: any) => ({ ...r, synced: true })));
-            if (d.categories?.length) await localDb.categories.bulkPut(d.categories.map((r: any) => ({ ...r, synced: true })));
-            if (d.brands?.length) await localDb.brands.bulkPut(d.brands.map((r: any) => ({ ...r, synced: true })));
-            if (d.units?.length) await localDb.units.bulkPut(d.units.map((r: any) => ({ ...r, synced: true })));
-            if (d.suppliers?.length) await localDb.suppliers.bulkPut(d.suppliers.map((r: any) => ({ ...r, synced: true })));
-            if (d.settings?.length) await localDb.settings.bulkPut(d.settings.map((r: any) => ({ ...r, orgId: r.organizationId || r.orgId, synced: true })));
-            if (d.organizations?.length) await localDb.saasOrganizations.bulkPut(d.organizations.map((r: any) => ({ ...r, synced: true })));
-            if (d.saasPlans?.length) {
-              await localDb.saasPlans.bulkPut(d.saasPlans.map((p: any) => ({
-                id: p.id, name: p.name, price: Number(p.price || 0),
-                features: Array.isArray(p.features) ? p.features : (typeof p.features === 'string' ? JSON.parse(p.features) : []),
-                limits: (typeof p.limits === 'string' ? JSON.parse(p.limits) : p.limits) || { maxUsers: 5, maxProducts: 500, maxBranches: 2, maxInvoicesPerMonth: 1000 },
-                isTrialDefault: p.isTrialDefault ?? false,
-                synced: true,
-              })));
-            }
-          });
-          console.log("Local database hydrated from cloud.");
+            await localDb.transaction("rw", [
+              localDb.users, localDb.products, localDb.customers,
+              localDb.categories, localDb.brands, localDb.units, localDb.suppliers,
+              localDb.purchases, localDb.inventoryMovements, localDb.settings,
+              localDb.saasOrganizations, localDb.saasPlans,
+            ], async () => {
+              if (d.users?.length) await localDb.users.bulkAdd(d.users.map((r: any) => ({ ...r, orgId: r.organizationId || r.orgId, synced: true })));
+              if (d.products?.length) await localDb.products.bulkAdd(d.products.map((r: any) => ({ ...r, synced: true })));
+              if (d.customers?.length) await localDb.customers.bulkAdd(d.customers.map((r: any) => ({ ...r, synced: true })));
+              if (d.categories?.length) await localDb.categories.bulkAdd(d.categories.map((r: any) => ({ ...r, synced: true })));
+              if (d.brands?.length) await localDb.brands.bulkAdd(d.brands.map((r: any) => ({ ...r, synced: true })));
+              if (d.units?.length) await localDb.units.bulkAdd(d.units.map((r: any) => ({ ...r, synced: true })));
+              if (d.suppliers?.length) await localDb.suppliers.bulkAdd(d.suppliers.map((r: any) => ({ ...r, synced: true })));
+              if (d.settings?.length) await localDb.settings.bulkAdd(d.settings.map((r: any) => ({ ...r, orgId: r.organizationId || r.orgId, synced: true })));
+              if (d.organizations?.length) await localDb.saasOrganizations.bulkAdd(d.organizations.map((r: any) => ({ ...r, synced: true })));
+              if (d.saasPlans?.length) {
+                await localDb.saasPlans.bulkAdd(d.saasPlans.map((p: any) => ({
+                  id: p.id, name: p.name, price: Number(p.price || 0),
+                  features: Array.isArray(p.features) ? p.features : (typeof p.features === 'string' ? JSON.parse(p.features) : []),
+                  limits: (typeof p.limits === 'string' ? JSON.parse(p.limits) : p.limits) || { maxUsers: 5, maxProducts: 500, maxBranches: 2, maxInvoicesPerMonth: 1000 },
+                  isTrialDefault: p.isTrialDefault ?? false,
+                  synced: true,
+                })));
+              }
+            });
+            console.log("[Sync] First-time device setup: hydrated local DB from cloud.");
+          }
+        } catch (e) {
+          console.warn("[Sync] First-load cloud pull failed, starting with empty local DB:", e);
         }
-      } catch (e) {
-        console.warn("Cloud pull on init failed, working offline with existing local data:", e);
+      } else {
+        console.log("[Sync] Local DB already has data — skipping init pull. SyncEngine will handle incremental sync.");
       }
     }
 
@@ -69,6 +78,7 @@ export async function initializeLocalDb() {
     console.error("Failed to initialize local DB:", error);
   }
 }
+
 
 export async function backgroundSync() {
   // Legacy function now handled by SyncEngine
