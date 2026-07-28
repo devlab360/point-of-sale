@@ -577,3 +577,58 @@ export const sendEmailWorkerFn = createServerFn({ method: "POST" })
     // Return immediately to client to prevent blocking UI / request timeouts
     return { success: true, queued: true };
   });
+
+// ==========================================
+// DIRECT DB FUNCTIONS (FOR SETTINGS/SECURITY)
+// ==========================================
+
+export const getOrgSettingsFn = createServerFn({ method: "GET" })
+  .validator((data: { orgId: string }) => data)
+  .handler(async ({ data }) => {
+    try {
+      const result = await db.select().from(schema.settings).where(eq(schema.settings.organizationId, data.orgId)).limit(1);
+      return { success: true, settings: result.length ? result[0] : null };
+    } catch (error) {
+      return { success: false, error: String(error) };
+    }
+  });
+
+export const updateOrgSettingsFn = createServerFn({ method: "POST" })
+  .validator((data: { orgId: string; settings: Partial<typeof schema.settings.$inferInsert> }) => data)
+  .handler(async ({ data }) => {
+    try {
+      const existing = await db.select().from(schema.settings).where(eq(schema.settings.organizationId, data.orgId)).limit(1);
+      if (existing.length) {
+        await db.update(schema.settings).set({
+          ...data.settings,
+          updatedAt: new Date()
+        }).where(eq(schema.settings.organizationId, data.orgId));
+      } else {
+        await db.insert(schema.settings).values({
+          id: data.orgId,
+          organizationId: data.orgId,
+          storeName: data.settings.storeName || "",
+          ...data.settings
+        } as any);
+      }
+      return { success: true };
+    } catch (error) {
+      console.error("updateOrgSettingsFn error:", error);
+      return { success: false, error: String(error) };
+    }
+  });
+
+export const updateUserSecurityFn = createServerFn({ method: "POST" })
+  .validator((data: { userId: string; orgId: string; pin?: string }) => data)
+  .handler(async ({ data }) => {
+    try {
+      if (!data.pin) return { success: false, error: "No pin provided" };
+      await db.update(schema.users).set({
+        pin: data.pin
+      }).where(and(eq(schema.users.id, data.userId), eq(schema.users.organizationId, data.orgId)));
+      return { success: true };
+    } catch (error) {
+      console.error("updateUserSecurityFn error:", error);
+      return { success: false, error: String(error) };
+    }
+  });

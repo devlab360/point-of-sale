@@ -296,6 +296,7 @@ export const settings = pgTable("settings", {
   footerNote: text("footer_note"),
   emailReceiptDefault: boolean("email_receipt_default").notNull().default(true),
   printStoreLogo: boolean("print_store_logo").notNull().default(true),
+  logoUrl: text("logo_url"),
   countryCode: text("country_code"),
   timeZone: text("time_zone"),
   dateFormat: text("date_format"),

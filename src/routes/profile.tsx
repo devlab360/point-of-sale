@@ -10,38 +10,49 @@ import { useLanguage, LANGUAGES } from "@/contexts/LanguageContext";
 import { COUNTRY_CODES, TIMEZONES, DATE_FORMATS } from "@/lib/formatters";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { FieldError } from "@/components/ui/field-error";
+import { useAuth } from "@/contexts/AuthContext";
 
 export const Route = createFileRoute("/profile")({
   head: () => ({ meta: [{ title: "Profile · Grocer.Pro" }] }),
   component: ProfilePage,
 });
 
-const defaultProfile = {
-  id: "me",
-  name: "",
-  email: "",
-  phone: "",
-  role: "",
-  location: "",
-  joined: "",
-  lastActive: new Date().toISOString(),
-  status: "active",
-  countryCode: "+880",
-  timeZone: "Asia/Dhaka",
-  dateFormat: "DD/MM/YYYY",
-  language: "en"
-};
-
 function ProfilePage() {
   const { language, setLanguage, t } = useLanguage();
-  const dbProfile = useLiveQuery(() => localDb.users.get("me"));
+  const { user: authUser } = useAuth();
+
+  // Use the actual logged-in user's ID (not hardcoded "me")
+  const dbProfile = useLiveQuery(
+    () => authUser?.id ? localDb.users.get(authUser.id) : undefined,
+    [authUser?.id]
+  );
+
+  const defaultProfile = {
+    id: authUser?.id || "me",
+    name: authUser?.name || "",
+    email: authUser?.email || "",
+    phone: "",
+    role: authUser?.role || "",
+    location: "",
+    joined: "",
+    lastActive: new Date().toISOString(),
+    status: "active" as const,
+    countryCode: "+880",
+    timeZone: "Asia/Dhaka",
+    dateFormat: "DD/MM/YYYY",
+    language: "en",
+    pin: authUser?.pin || "",
+  };
+
   const [profile, setProfile] = useState(defaultProfile);
 
   useEffect(() => {
     if (dbProfile) {
-      setProfile(dbProfile as any);
+      setProfile(p => ({ ...defaultProfile, ...dbProfile as any }));
+    } else if (authUser) {
+      setProfile(defaultProfile);
     }
-  }, [dbProfile]);
+  }, [dbProfile, authUser?.id]);
 
   const [profileErrors, setProfileErrors] = useState<Record<string, string>>({});
   const [isSaving, setIsSaving] = useState(false);
@@ -66,7 +77,8 @@ function ProfilePage() {
     }
     try {
       setIsSaving(true);
-      await localDb.users.put({ ...profile, id: "me" });
+      // Save to local DB with correct user ID — SyncEngine pushes to Neon DB
+      await localDb.users.put({ ...profile, id: authUser?.id || profile.id, synced: false });
       toast.success("Profile updated successfully.");
     } catch (error) {
       console.error("Profile save error:", error);
@@ -75,6 +87,7 @@ function ProfilePage() {
       setIsSaving(false);
     }
   };
+
 
   const initials = (profile.name || "U")
     .split(" ")

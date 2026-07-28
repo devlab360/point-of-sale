@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Check, Trash2, CreditCard, Loader2, QrCode, Landmark, Banknote, Lock, Key, ShieldCheck } from "lucide-react";
 import { localDb, type LocalSetting, addSystemNotification } from "@/lib/db";
 import { SyncEngine } from "@/lib/sync-engine";
+import { getOrgSettingsFn, updateOrgSettingsFn, updateUserSecurityFn } from "@/sync-api";
 import { toast } from "sonner";
 import { useLiveQuery } from "dexie-react-hooks";
 import { useEffect, useState } from "react";
@@ -135,9 +136,25 @@ function SettingsPage() {
 
   useEffect(() => {
     if (dbSettings) {
-      setSettings(dbSettings);
+      setSettings((prev) => ({ ...prev, ...dbSettings }));
     }
   }, [dbSettings]);
+
+  useEffect(() => {
+    async function loadCloudSettings() {
+      if (user?.orgId) {
+        try {
+          const res = await getOrgSettingsFn({ data: { orgId: user.orgId } });
+          if (res.success && res.settings) {
+            setSettings(prev => ({ ...prev, ...res.settings }));
+          }
+        } catch (e) {
+          console.error("Failed to load cloud settings", e);
+        }
+      }
+    }
+    loadCloudSettings();
+  }, [user?.orgId]);
 
   const handleChange = (key: string, value: any) => {
     setSettings((prev) => ({ ...prev, [key]: value }));
@@ -145,8 +162,39 @@ function SettingsPage() {
 
   const handleSave = async () => {
     try {
-      await localDb.settings.put({ ...settings, id: "default" });
-      toast.success("Settings saved successfully.");
+      if (["store", "receipt"].includes(activeTab)) {
+        if (!user?.orgId) {
+          toast.error("Organization ID missing. Cannot save to cloud.");
+          return;
+        }
+        const res = await updateOrgSettingsFn({
+          data: {
+            orgId: user.orgId,
+            settings: {
+              storeName: settings.storeName,
+              taxId: settings.taxId,
+              address: settings.address,
+              phone: settings.phone,
+              email: settings.email,
+              currencySymbol: settings.currencySymbol,
+              currencyCode: settings.currencyCode,
+              logoUrl: settings.logoUrl,
+              headerNote: settings.headerNote,
+              footerNote: settings.footerNote,
+              emailReceiptDefault: settings.emailReceiptDefault,
+              printStoreLogo: settings.printStoreLogo,
+            }
+          }
+        });
+        if (res.success) {
+          toast.success("Settings saved successfully to cloud.");
+        } else {
+          toast.error("Failed to save cloud settings: " + res.error);
+        }
+      } else {
+        await localDb.settings.put({ ...settings, id: "default" });
+        toast.success("Settings saved successfully.");
+      }
     } catch (error) {
       console.error("Settings save error:", error);
       toast.error("Failed to save settings.");
@@ -227,9 +275,19 @@ function SettingsPage() {
     setIsUpdatingSecurity(true);
     try {
       const updatedPin = passForm.newPassword || passForm.newPin || user.pin;
+      
+      const res = await updateUserSecurityFn({ 
+        data: { userId: user.id, orgId: user.orgId || "", pin: updatedPin } 
+      });
+      
+      if (!res.success) {
+        throw new Error(res.error || "Server function failed");
+      }
+      
+      // Update local db as well for immediate offline reflection
       await localDb.users.update(user.id, {
         pin: updatedPin,
-        synced: false
+        synced: true // since we just pushed to neon directly
       });
 
       await localDb.activityLog.add({
@@ -251,7 +309,7 @@ function SettingsPage() {
       toast.success("Security credentials updated successfully!");
       setPassForm({ currentPassword: "", newPassword: "", confirmPassword: "", newPin: updatedPin || "" });
       clearSecAll();
-      SyncEngine.syncAll().catch((err: any) => console.warn(err));
+      // SyncEngine.syncAll().catch((err: any) => console.warn(err));
     } catch (err) {
       console.error("Security update error:", err);
       toast.error("Failed to update password. Please try again.");
