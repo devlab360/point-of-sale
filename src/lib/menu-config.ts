@@ -127,11 +127,21 @@ export const APP_GROUPS: MenuGroup[] = [
 
 export const PERMISSION_ROUTE_MAP: Record<string, string[]> = {
   pos: ["/pos"],
-  inventory: ["/products", "/categories", "/brands", "/units", "/suppliers", "/purchase", "/adjustments", "/transfers", "/quotations", "/challans", "/print-barcodes", "/repairs", "/subscriptions", "/rentals", "/coupons", "/gift-cards", "/loyalty", "/promotions"],
-  reports: ["/reports", "/customer-ledger", "/supplier-ledger", "/accounts", "/vouchers", "/day-book", "/activity"],
+  inventory: [
+    "/products", "/categories", "/brands", "/units", "/suppliers",
+    "/purchases", "/purchases/returns", "/inventory", "/inventory/adjustments",
+    "/inventory/transfers", "/inventory/history", "/print-barcodes",
+    "/repairs", "/subscriptions", "/rentals",
+    "/coupons", "/gift-cards", "/loyalty", "/promotions",
+    "/quotations", "/delivery-challans",
+  ],
+  reports: [
+    "/reports", "/customer-ledger", "/supplier-ledger",
+    "/accounts", "/vouchers", "/day-book", "/activity",
+  ],
   customers: ["/customers", "/portal"],
   expenses: ["/expenses"],
-  returns: ["/sales-returns", "/purchase-returns"],
+  returns: ["/sales/returns", "/purchases/returns"],
   settings: ["/settings", "/users", "/locations", "/shifts", "/branches"],
 };
 
@@ -145,32 +155,50 @@ export function hasPermissionForRoute(user: any, routePath: string, isSuperAdmin
   if (isSuperAdminUser) return { allowed: true };
   if (routePath.startsWith("/super-admin")) return { allowed: false, reason: "You do not have permission to access the Super Admin dashboard." };
 
-  const essentialRoutes = ["/", "/profile", "/settings", "/notifications", "/help"];
-  if (essentialRoutes.includes(routePath)) return { allowed: true };
+  // Always allow essential routes
+  const essentialRoutes = ["/", "/profile", "/settings", "/notifications", "/help", "/pos", "/sales"];
+  if (essentialRoutes.some(r => routePath === r || routePath.startsWith(r + "/"))) return { allowed: true };
 
   const allItems = APP_GROUPS.flatMap(g => g.items);
   const matchedItem = allItems.find(item => routePath === item.to || routePath.startsWith(item.to + "/"));
   const targetPath = matchedItem ? matchedItem.to : routePath;
 
-  if (saasPlan && Array.isArray(saasPlan.features)) {
-    if (!saasPlan.features.includes(targetPath)) {
-      const label = matchedItem ? matchedItem.label : targetPath;
-      return { 
-        allowed: false, 
-        reason: `The "${label}" feature is not available on your current plan (${saasPlan.name || 'Current Plan'}). Please upgrade your subscription to access this feature.` 
-      };
+  // ── Plan Feature Check ──────────────────────────────────────────────────────
+  // saasPlan.features contains feature KEYS (e.g. "inventory", "reports"), NOT route paths
+  // Find which feature key this route belongs to
+  if (saasPlan && Array.isArray(saasPlan.features) && saasPlan.features.length > 0) {
+    const requiredFeatureEntry = Object.entries(PERMISSION_ROUTE_MAP).find(([_, paths]) =>
+      paths.some(p => targetPath === p || targetPath.startsWith(p))
+    );
+    if (requiredFeatureEntry) {
+      const [featureKey] = requiredFeatureEntry;
+      if (!saasPlan.features.includes(featureKey)) {
+        const label = matchedItem ? matchedItem.label : targetPath;
+        return {
+          allowed: false,
+          reason: `The "${label}" feature is not available on your current plan (${saasPlan.name || 'Current Plan'}). Please upgrade your subscription to access this feature.`
+        };
+      }
     }
   }
+  // If saasPlan is null/not loaded yet — allow (don't block during loading)
 
+  // ── Role-based Check ────────────────────────────────────────────────────────
   if (matchedItem && matchedItem.roles && user && user.role) {
     if (!matchedItem.roles.includes(user.role.toLowerCase())) {
       return { allowed: false, reason: `Your role (${user.role}) does not have access to ${matchedItem.label}.` };
     }
   }
 
+  // ── Custom Permission Check (non-admin users) ───────────────────────────────
   if (user && user.role?.toLowerCase() !== "admin") {
-    const userPerms = Array.isArray(user.permissions) ? user.permissions : (DEFAULT_ROLE_PERMISSIONS_FALLBACK[user.role?.toLowerCase()] || ["pos"]);
-    const requiredPermEntry = Object.entries(PERMISSION_ROUTE_MAP).find(([_, paths]) => paths.includes(targetPath));
+    const userPerms: string[] = Array.isArray(user.permissions)
+      ? user.permissions
+      : (DEFAULT_ROLE_PERMISSIONS_FALLBACK[user.role?.toLowerCase()] || ["pos"]);
+
+    const requiredPermEntry = Object.entries(PERMISSION_ROUTE_MAP).find(([_, paths]) =>
+      paths.some(p => targetPath === p || targetPath.startsWith(p))
+    );
     if (requiredPermEntry && !userPerms.includes(requiredPermEntry[0])) {
       const label = matchedItem ? matchedItem.label : targetPath;
       return { allowed: false, reason: `You do not have permission to access "${label}" based on your employee permissions assigned by store admin.` };
