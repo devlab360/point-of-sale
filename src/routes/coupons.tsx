@@ -36,6 +36,7 @@ import { toast } from "sonner";
 import type { LocalCoupon } from "@/lib/db";
 import { useFormValidation } from "@/hooks/useFormValidation";
 import { FieldError } from "@/components/ui/field-error";
+import { usePreferences } from "@/contexts/PreferencesContext";
 
 export const Route = createFileRoute("/coupons")({
   head: () => ({ meta: [{ title: "Coupons · Grocer.Pro" }] }),
@@ -43,6 +44,7 @@ export const Route = createFileRoute("/coupons")({
 });
 
 function CouponsPage() {
+  const { formatDate, formatTime, formatDateTime } = usePreferences();
   const { formatCurrency } = useCurrency();
   const coupons = useLiveQuery(() => localDb.coupons.toArray()) || [];
   const [isAddOpen, setIsAddOpen] = useState(false);
@@ -87,6 +89,7 @@ function CouponsPage() {
   const handleSave = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsSaving(true);
+    await new Promise(resolve => setTimeout(resolve, 500));
     try {
       const formData = new FormData(e.currentTarget);
       const code = (formData.get("code") as string)?.trim();
@@ -179,7 +182,7 @@ function CouponsPage() {
                       <td className="px-4 py-3 text-muted-foreground">{c.type}</td>
                       <td className="px-4 py-3 font-semibold text-primary">{c.type === "percentage" ? `${c.discount}%` : formatCurrency(c.discount)}</td>
                       <td className="px-4 py-3 text-muted-foreground">{c.used} / {c.usageLimit}</td>
-                      <td className="px-4 py-3 text-muted-foreground">{new Date(c.expires).toLocaleDateString()}</td>
+                      <td className="px-4 py-3 text-muted-foreground">{formatDate(c.expires)}</td>
                       <td className="px-4 py-3">
                         <Badge className={c.status === "active" ? "bg-success/10 text-success hover:bg-success/15" : c.status === "expiring" ? "bg-warning/15 text-warning-foreground hover:bg-warning/20" : "bg-muted text-muted-foreground hover:bg-muted"}>{c.status}</Badge>
                       </td>

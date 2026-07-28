@@ -4,6 +4,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { useLiveQuery } from "dexie-react-hooks";
 import { localDb } from "@/lib/db";
 import { Activity } from "lucide-react";
+import { usePreferences } from "@/contexts/PreferencesContext";
 
 export const Route = createFileRoute("/activity")({
   head: () => ({ meta: [{ title: "Activity Log · Grocer.Pro" }] }),
@@ -11,6 +12,7 @@ export const Route = createFileRoute("/activity")({
 });
 
 function ActivityPage() {
+  const { formatDate, formatTime, formatDateTime } = usePreferences();
   const activityLog = useLiveQuery(() => localDb.activityLog.reverse().toArray()) || [];
 
   return (
@@ -35,7 +37,7 @@ function ActivityPage() {
                     <span className="text-muted-foreground">{a.action}</span>{" "}
                     <span className="font-mono text-xs text-foreground">{a.details}</span>
                   </div>
-                  <div className="text-xs text-muted-foreground">{new Date(a.timestamp).toLocaleString()}</div>
+                  <div className="text-xs text-muted-foreground">{formatDateTime(a.timestamp)}</div>
                 </li>
               ))}
             </ol>

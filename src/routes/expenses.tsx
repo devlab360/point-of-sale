@@ -39,6 +39,7 @@ import { toast } from "sonner";
 import type { LocalExpense } from "@/lib/db";
 import { useFormValidation } from "@/hooks/useFormValidation";
 import { FieldError } from "@/components/ui/field-error";
+import { usePreferences } from "@/contexts/PreferencesContext";
 
 export const Route = createFileRoute("/expenses")({
   head: () => ({ meta: [{ title: "Expenses · Grocer.Pro" }] }),
@@ -46,6 +47,7 @@ export const Route = createFileRoute("/expenses")({
 });
 
 function ExpensesPage() {
+  const { formatDate, formatTime, formatDateTime } = usePreferences();
   const { formatCurrency } = useCurrency();
   const { t } = useLanguage();
   const rawExpenses = useLiveQuery(() => localDb.expenses.toArray()) || [];
@@ -113,6 +115,7 @@ function ExpensesPage() {
   const handleSave = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsSaving(true);
+    await new Promise(resolve => setTimeout(resolve, 500));
     try {
       const formData = new FormData(e.currentTarget);
       const date = (formData.get("date") as string)?.trim();
@@ -237,7 +240,7 @@ function ExpensesPage() {
                 <tbody className="divide-y divide-border">
                   {paginatedExpenses.map((e) => (
                     <tr key={e.id} className="hover:bg-muted/30">
-                      <td className="px-4 py-3 text-muted-foreground">{new Date(e.date).toLocaleDateString()}</td>
+                      <td className="px-4 py-3 text-muted-foreground">{formatDate(e.date)}</td>
                       <td className="px-4 py-3"><Badge variant="secondary">{e.category}</Badge></td>
                       <td className="px-4 py-3 font-semibold">{e.description}</td>
                       <td className="px-4 py-3"><Badge className={e.status === "paid" ? "bg-success/10 text-success hover:bg-success/15" : "bg-warning/15 text-warning-foreground hover:bg-warning/20"}>{e.status}</Badge></td>

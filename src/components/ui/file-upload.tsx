@@ -1,5 +1,5 @@
 import React, { useState, useRef } from "react";
-import { UploadCloud, X, RefreshCw, FileText, CheckCircle2, AlertCircle, Loader2, ImageIcon } from "lucide-react";
+import { UploadCloud, X, RefreshCw, FileText, CheckCircle2, AlertCircle, Loader2, ImageIcon, User } from "lucide-react";
 import { Button } from "./button";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -17,6 +17,7 @@ export interface FileUploadProps {
   label?: string;
   description?: string;
   className?: string;
+  variant?: "default" | "avatar";
 }
 
 export function FileUpload({
@@ -31,6 +32,7 @@ export function FileUpload({
   label = "Upload File",
   description = `Drag & drop or click to upload (Max ${maxSizeMB}MB)`,
   className,
+  variant = "default",
 }: FileUploadProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
@@ -165,113 +167,154 @@ export function FileUpload({
         onChange={(e) => e.target.files && handleFiles(e.target.files)}
       />
 
-      {/* ── Single-image preview inside the zone ── */}
-      {!multiple && isSingleImage && singleUrl ? (
-        <div
-          onDragOver={handleDragOver}
-          onDragLeave={handleDragLeave}
-          onDrop={handleDrop}
-          className={cn(
-            "group relative overflow-hidden rounded-xl border-2 border-dashed transition-all",
-            isDragging ? "border-primary scale-[1.01]" : "border-border/60 hover:border-primary/60",
-            disabled && "opacity-60 cursor-not-allowed"
-          )}
-          style={{ aspectRatio: "16/7" }}
-        >
-          {/* Preview image fills the zone */}
-          <img
-            src={singleUrl}
-            alt="Product preview"
-            className="size-full object-cover"
-          />
-
-          {/* Uploading overlay */}
-          {isUploading && (
-            <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-background/80 backdrop-blur-sm">
-              <Loader2 className="size-8 text-primary animate-spin" />
-              <span className="text-xs font-semibold text-foreground">Uploading...</span>
-              <div className="w-40 h-1.5 rounded-full bg-muted overflow-hidden">
-                <div
-                  className="h-full bg-primary transition-all duration-300 rounded-full"
-                  style={{ width: `${progress}%` }}
-                />
+      {variant === "avatar" ? (
+        <div className="flex flex-col items-center justify-center w-full">
+          <div
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+            onClick={() => !disabled && !isUploading && fileInputRef.current?.click()}
+            className={cn(
+              "group relative overflow-hidden rounded-full border-4 transition-all cursor-pointer select-none size-24 shrink-0 shadow-sm bg-muted",
+              isDragging ? "border-primary scale-105" : "border-background hover:border-primary/20",
+              disabled && "cursor-not-allowed opacity-60"
+            )}
+          >
+            {isUploading ? (
+              <div className="size-full flex flex-col items-center justify-center bg-background/80 backdrop-blur-sm z-10">
+                <Loader2 className="size-6 text-primary animate-spin mb-1" />
+                <span className="text-[10px] font-mono font-medium text-foreground">{progress}%</span>
               </div>
-              <span className="text-[10px] font-mono text-muted-foreground">{progress}%</span>
-            </div>
-          )}
+            ) : singleUrl ? (
+              <img src={singleUrl} alt="Avatar" className="size-full object-cover" />
+            ) : (
+              <div className="size-full flex flex-col items-center justify-center text-muted-foreground bg-gradient-to-br from-primary/5 to-info/5">
+                <User className="size-8 opacity-40 mb-1" />
+              </div>
+            )}
 
-          {/* Hover overlay with actions */}
-          {!isUploading && (
-            <div className="absolute inset-0 flex items-center justify-center gap-3 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity backdrop-blur-[2px]">
-              <Button
-                type="button"
-                size="sm"
-                variant="secondary"
-                className="h-8 px-3 text-xs font-semibold shadow-lg"
-                onClick={() => !disabled && fileInputRef.current?.click()}
-              >
-                <ImageIcon className="size-3.5 mr-1.5" />
-                Change
-              </Button>
-              <Button
-                type="button"
-                size="sm"
-                variant="destructive"
-                className="h-8 px-3 text-xs font-semibold shadow-lg"
-                onClick={(e) => { e.stopPropagation(); handleRemove(singleUrl); }}
-              >
-                <X className="size-3.5 mr-1.5" />
-                Remove
-              </Button>
-            </div>
-          )}
-
-          {/* Success badge */}
-          {!isUploading && (
-            <div className="absolute top-2 right-2 flex items-center gap-1 rounded-full bg-success/90 px-2 py-0.5 text-[10px] font-bold text-white shadow">
-              <CheckCircle2 className="size-3" />
-              Saved
-            </div>
-          )}
+            {/* Hover overlay with pencil/image icon */}
+            {!isUploading && !disabled && (
+              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center">
+                <ImageIcon className="size-5 text-white mb-1" />
+                <span className="text-[10px] text-white font-medium">Change</span>
+              </div>
+            )}
+          </div>
+          {label && <span className="mt-3 text-sm font-semibold">{label}</span>}
+          {description && <span className="mt-1 text-xs text-muted-foreground">{description}</span>}
         </div>
       ) : (
-        /* ── Empty / uploading drop zone ── */
-        <div
-          onDragOver={handleDragOver}
-          onDragLeave={handleDragLeave}
-          onDrop={handleDrop}
-          onClick={() => !disabled && !isUploading && fileInputRef.current?.click()}
-          className={cn(
-            "relative flex flex-col items-center justify-center rounded-xl border-2 border-dashed p-8 text-center transition-all cursor-pointer select-none",
-            isDragging ? "border-primary bg-primary/10 scale-[1.01]" : "border-border/80 bg-muted/20 hover:border-primary/50 hover:bg-muted/40",
-            disabled && "cursor-not-allowed opacity-60 hover:border-border hover:bg-muted/20",
-            uploadError && "border-destructive/60 bg-destructive/5"
-          )}
-        >
-          {isUploading ? (
-            <div className="flex flex-col items-center gap-2 py-2 w-full max-w-xs">
-              <Loader2 className="size-8 text-primary animate-spin" />
-              <span className="text-xs font-semibold text-foreground">Uploading image...</span>
-              <div className="w-full h-2 rounded-full bg-muted overflow-hidden mt-1">
-                <div
-                  className="h-full bg-primary transition-all duration-300 rounded-full"
-                  style={{ width: `${progress}%` }}
-                />
-              </div>
-              <span className="text-[10px] font-mono text-muted-foreground">{progress}%</span>
+        /* ── Default rectangular variant ── */
+        <>
+          {/* ── Single-image preview inside the zone ── */}
+          {!multiple && isSingleImage && singleUrl ? (
+            <div
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onDrop={handleDrop}
+              className={cn(
+                "group relative overflow-hidden rounded-xl border-2 border-dashed transition-all h-32 sm:h-40",
+                isDragging ? "border-primary scale-[1.01]" : "border-border/60 hover:border-primary/60",
+                disabled && "opacity-60 cursor-not-allowed"
+              )}
+            >
+              {/* Preview image fills the zone */}
+              <img
+                src={singleUrl}
+                alt="Product preview"
+                className="size-full object-cover"
+              />
+
+              {/* Uploading overlay */}
+              {isUploading && (
+                <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-background/80 backdrop-blur-sm">
+                  <Loader2 className="size-8 text-primary animate-spin" />
+                  <span className="text-xs font-semibold text-foreground">Uploading...</span>
+                  <div className="w-40 h-1.5 rounded-full bg-muted overflow-hidden">
+                    <div
+                      className="h-full bg-primary transition-all duration-300 rounded-full"
+                      style={{ width: `${progress}%` }}
+                    />
+                  </div>
+                  <span className="text-[10px] font-mono text-muted-foreground">{progress}%</span>
+                </div>
+              )}
+
+              {/* Hover overlay with actions */}
+              {!isUploading && (
+                <div className="absolute inset-0 flex items-center justify-center gap-3 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity backdrop-blur-[2px]">
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="secondary"
+                    className="h-8 px-3 text-xs font-semibold shadow-lg"
+                    onClick={() => !disabled && fileInputRef.current?.click()}
+                  >
+                    <ImageIcon className="size-3.5 mr-1.5" />
+                    Change
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="destructive"
+                    className="h-8 px-3 text-xs font-semibold shadow-lg"
+                    onClick={(e) => { e.stopPropagation(); handleRemove(singleUrl); }}
+                  >
+                    <X className="size-3.5 mr-1.5" />
+                    Remove
+                  </Button>
+                </div>
+              )}
+
+              {/* Success badge */}
+              {!isUploading && (
+                <div className="absolute top-2 right-2 flex items-center gap-1 rounded-full bg-success/90 px-2 py-0.5 text-[10px] font-bold text-white shadow">
+                  <CheckCircle2 className="size-3" />
+                  Saved
+                </div>
+              )}
             </div>
           ) : (
-            <div className="flex flex-col items-center gap-1.5">
-              <div className="grid size-11 place-items-center rounded-full bg-primary/10 text-primary mb-1">
-                <UploadCloud className="size-5" />
-              </div>
-              <span className="text-sm font-semibold text-foreground">
-                Click or drag image here
-              </span>
-              <span className="text-xs text-muted-foreground">{description}</span>
+            /* ── Empty / uploading drop zone ── */
+            <div
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onDrop={handleDrop}
+              onClick={() => !disabled && !isUploading && fileInputRef.current?.click()}
+              className={cn(
+                "relative flex flex-col items-center justify-center rounded-xl border-2 border-dashed p-8 text-center transition-all cursor-pointer select-none",
+                isDragging ? "border-primary bg-primary/10 scale-[1.01]" : "border-border/80 bg-muted/20 hover:border-primary/50 hover:bg-muted/40",
+                disabled && "cursor-not-allowed opacity-60 hover:border-border hover:bg-muted/20",
+                uploadError && "border-destructive/60 bg-destructive/5"
+              )}
+            >
+              {isUploading ? (
+                <div className="flex flex-col items-center gap-2 py-2 w-full max-w-xs">
+                  <Loader2 className="size-8 text-primary animate-spin" />
+                  <span className="text-xs font-semibold text-foreground">Uploading image...</span>
+                  <div className="w-full h-2 rounded-full bg-muted overflow-hidden mt-1">
+                    <div
+                      className="h-full bg-primary transition-all duration-300 rounded-full"
+                      style={{ width: `${progress}%` }}
+                    />
+                  </div>
+                  <span className="text-[10px] font-mono text-muted-foreground">{progress}%</span>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center gap-1.5">
+                  <div className="grid size-11 place-items-center rounded-full bg-primary/10 text-primary mb-1">
+                    <UploadCloud className="size-5" />
+                  </div>
+                  <span className="text-sm font-semibold text-foreground">
+                    Click or drag image here
+                  </span>
+                  <span className="text-xs text-muted-foreground">{description}</span>
+                </div>
+              )}
             </div>
           )}
-        </div>
+        </>
       )}
 
       {/* Error bar */}

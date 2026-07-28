@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { localDb, type LocalInvitation } from "@/lib/db";
 import { v4 as uuidv4 } from "uuid";
-import { Store, CheckCircle2 } from "lucide-react";
+import { Store, CheckCircle2, Loader2 } from "lucide-react";
 
 export const Route = createFileRoute("/invite/$token")({
   head: () => ({ meta: [{ title: "Accept Invitation · Grocer.Pro SaaS" }] }),
@@ -20,6 +20,7 @@ function InvitePage() {
   const [invitation, setInvitation] = useState<LocalInvitation | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   
   const [formData, setFormData] = useState({
     name: "",
@@ -37,8 +38,8 @@ function InvitePage() {
         } else {
           toast.error("Invitation is invalid or has expired.");
         }
-      } catch (error) {
-        toast.error("Failed to verify invitation");
+      } catch (error: any) {
+        toast.error(error.message || "Failed to verify invitation");
       } finally {
         setIsLoading(false);
       }
@@ -59,6 +60,8 @@ function InvitePage() {
       return;
     }
 
+    setIsSaving(true);
+    await new Promise(resolve => setTimeout(resolve, 500));
     try {
       await localDb.users.add({
         id: uuidv4(),
@@ -74,8 +77,10 @@ function InvitePage() {
 
       await localDb.invitations.update(invitation.id, { status: "accepted" });
       setIsSuccess(true);
-    } catch (error) {
-      toast.error("Failed to complete registration");
+    } catch (error: any) {
+      toast.error(error.message || "Failed to complete registration");
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -143,7 +148,10 @@ function InvitePage() {
                 <p className="text-xs text-muted-foreground">You will use this PIN to quickly sign in at the terminal.</p>
               </div>
               
-              <Button type="submit" className="w-full mt-4">Accept Invitation</Button>
+              <Button type="submit" className="w-full mt-4" disabled={isSaving}>
+                {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Accept Invitation
+              </Button>
             </form>
           )}
         </div>

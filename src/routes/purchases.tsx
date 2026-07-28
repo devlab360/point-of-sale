@@ -17,6 +17,7 @@ import { Label } from "@/components/ui/label";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useDebounce } from "@/hooks/useDebounce";
 import { cn } from "@/lib/utils";
+import { usePreferences } from "@/contexts/PreferencesContext";
 
 export const Route = createFileRoute("/purchases")({
   head: () => ({ meta: [{ title: "Purchases · Grocer.Pro" }] }),
@@ -24,6 +25,7 @@ export const Route = createFileRoute("/purchases")({
 });
 
 function PurchasesPage() {
+  const { formatDate, formatTime, formatDateTime } = usePreferences();
   const navigate = useNavigate();
   const { formatCurrency } = useCurrency();
   const { t } = useLanguage();
@@ -120,7 +122,7 @@ function PurchasesPage() {
                     <tr key={p.id} className="hover:bg-muted/30">
                       <td className="px-4 py-3 font-mono text-xs font-semibold">{p.id.slice(0, 8).toUpperCase()}</td>
                       <td className="px-4 py-3 font-semibold">{p.supplier}</td>
-                      <td className="px-4 py-3 text-muted-foreground">{new Date(p.date).toLocaleDateString()}</td>
+                      <td className="px-4 py-3 text-muted-foreground">{formatDate(p.date)}</td>
                       <td className="px-4 py-3 text-right">{p.items}</td>
                       <td className="px-4 py-3">
                         <Badge className={cn(
@@ -165,7 +167,7 @@ function PurchasesPage() {
             <div className="space-y-3 text-sm">
               <div className="grid grid-cols-2 gap-2">
                 <div><span className="text-muted-foreground">Supplier:</span> <strong>{viewPurchase.supplier}</strong></div>
-                <div><span className="text-muted-foreground">Date:</span> {new Date(viewPurchase.date).toLocaleDateString()}</div>
+                <div><span className="text-muted-foreground">Date:</span> {formatDate(viewPurchase.date)}</div>
                 <div><span className="text-muted-foreground">Items:</span> {viewPurchase.items}</div>
                 <div>
                   <span className="text-muted-foreground">Status:</span>{" "}

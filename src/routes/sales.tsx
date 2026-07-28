@@ -11,6 +11,7 @@ import { cn } from "@/lib/utils";
 import { Eye, Printer, Plus, Search, Receipt } from "lucide-react";
 import { useState, useMemo, useEffect } from "react";
 import type { OfflineSale } from "@/lib/db";
+import { usePreferences } from "@/contexts/PreferencesContext";
 import { DataPage } from "@/components/layout/DataPage";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PaginationControls } from "@/components/ui/pagination-controls";
@@ -26,6 +27,7 @@ export const Route = createFileRoute("/sales")({
 function SalesPage() {
   const navigate = useNavigate();
   const { t } = useLanguage();
+  const { formatDateTime } = usePreferences();
   const { currencySymbol, formatCurrency } = useCurrency();
   const sales = useLiveQuery(() => localDb.offlineSales.reverse().toArray()) || [];
   const settings = useLiveQuery(() => localDb.settings.get("default"));
@@ -172,7 +174,7 @@ function SalesPage() {
                     <tr key={s.id} className="hover:bg-muted/30">
                       <td className="px-4 py-3 font-mono text-xs font-semibold">{s.id.slice(0, 8).toUpperCase()}</td>
                       <td className="px-4 py-3 font-semibold">{s.customerName || "Walk-in"}</td>
-                      <td className="px-4 py-3 text-muted-foreground">{new Date(s.date).toLocaleString()}</td>
+                      <td className="px-4 py-3 text-muted-foreground">{formatDateTime(s.date)}</td>
                       <td className="px-4 py-3 text-right">{s.items}</td>
                       <td className="px-4 py-3 text-muted-foreground capitalize">{s.paymentMethod || "cash"}</td>
                       <td className="px-4 py-3">
@@ -228,7 +230,7 @@ function SalesPage() {
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-2 text-sm">
                 <div><span className="text-muted-foreground">Customer:</span> <strong>{viewSale.customerName || "Walk-in"}</strong></div>
-                <div><span className="text-muted-foreground">Date:</span> {new Date(viewSale.date).toLocaleString()}</div>
+                <div><span className="text-muted-foreground">Date:</span> {formatDateTime(viewSale.date)}</div>
                 <div><span className="text-muted-foreground">Payment:</span> <strong className="capitalize">{viewSale.paymentMethod}</strong></div>
                 <div><span className="text-muted-foreground">Status:</span> <Badge className="bg-success/10 text-success">{viewSale.status}</Badge></div>
               </div>
@@ -279,7 +281,7 @@ function SalesPage() {
             </div>
             <div className="border-t border-black pt-2 mb-2 text-[11px]">
               <div className="flex justify-between"><span>Receipt #:</span><span>{viewSale.id.slice(0, 8).toUpperCase()}</span></div>
-              <div className="flex justify-between"><span>Date:</span><span>{new Date(viewSale.date).toLocaleString()}</span></div>
+              <div className="flex justify-between"><span>Date:</span><span>{formatDateTime(viewSale.date)}</span></div>
               <div className="flex justify-between"><span>Customer:</span><span>{viewSale.customerName || "Walk-in"}</span></div>
             </div>
             <div className="border-t border-b border-black py-2 mb-2">

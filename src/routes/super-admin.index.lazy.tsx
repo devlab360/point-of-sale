@@ -6,12 +6,14 @@ import { Card } from "@/components/ui/card";
 import { localDb } from "@/lib/db";
 import { Badge } from "@/components/ui/badge";
 import { useLiveQuery } from "dexie-react-hooks";
+import { usePreferences } from "@/contexts/PreferencesContext";
 
 export const Route = createLazyFileRoute("/super-admin/")({
   component: SuperAdminDashboard,
 });
 
 function SuperAdminDashboard() {
+  const { formatDate, formatTime, formatDateTime } = usePreferences();
   const organizations = useLiveQuery(() => localDb.saasOrganizations.toArray()) || [];
   const plans = useLiveQuery(() => localDb.saasPlans.toArray()) || [];
   const sessions = useLiveQuery(() => localDb.saasSessions.toArray()) || [];
@@ -48,8 +50,8 @@ function SuperAdminDashboard() {
                   </Badge>
                 </div>
                 <div className="text-[10px] text-muted-foreground flex justify-between">
-                  <span>In: {new Date(session.loginAt).toLocaleTimeString()}</span>
-                  {session.logoutAt && <span>Out: {new Date(session.logoutAt).toLocaleTimeString()}</span>}
+                  <span>In: {formatTime(session.loginAt)}</span>
+                  {session.logoutAt && <span>Out: {formatTime(session.logoutAt)}</span>}
                 </div>
               </div>
             ))}

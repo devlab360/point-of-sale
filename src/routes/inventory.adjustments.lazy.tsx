@@ -13,7 +13,7 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PaginationControls } from "@/components/ui/pagination-controls";
-import { ClipboardList } from "lucide-react";
+import { ClipboardList, Loader2 } from "lucide-react";
 
 export const Route = createLazyFileRoute("/inventory/adjustments")({
   component: AdjustmentsPage,
@@ -30,6 +30,8 @@ function AdjustmentsPage() {
   const totalPages = Math.ceil(adjustments.length / itemsPerPage);
   const paginatedAdjustments = adjustments.slice((page - 1) * itemsPerPage, page * itemsPerPage);
 
+  const [isSaving, setIsSaving] = useState(false);
+
   const handleSave = async () => {
     if (!formData.product || !formData.reason || formData.net === undefined || formData.net === null || isNaN(formData.net)) return toast.error("Please fill all fields");
     if (formData.net === 0) return toast.error("Adjustment quantity cannot be zero");
@@ -37,6 +39,8 @@ function AdjustmentsPage() {
     const prod = products.find(p => p.id === formData.product);
     if (!prod) return;
 
+    setIsSaving(true);
+    await new Promise(resolve => setTimeout(resolve, 500));
     try {
       await localDb.transaction("rw", localDb.adjustments, localDb.inventoryMovements, localDb.products, async () => {
         const adj = {
@@ -60,8 +64,10 @@ function AdjustmentsPage() {
       toast.success("Adjustment added successfully");
       setOpen(false);
       setFormData({ product: "", reason: "", net: 0 });
-    } catch (e) {
-      toast.error("Error saving adjustment");
+    } catch (e: any) {
+      toast.error(e.message || "Error saving adjustment");
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -98,7 +104,10 @@ function AdjustmentsPage() {
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
-              <Button onClick={handleSave}>Apply Adjustment</Button>
+              <Button onClick={handleSave} disabled={isSaving}>
+                {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Apply Adjustment
+              </Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>

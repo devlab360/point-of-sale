@@ -8,6 +8,7 @@ import { DataPage } from "@/components/layout/DataPage";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { PhoneInput } from "@/components/ui/phone-input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
@@ -113,6 +114,7 @@ function CustomersPage() {
   const handleSave = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsSaving(true);
+    await new Promise(resolve => setTimeout(resolve, 500));
     try {
       const formData = new FormData(e.currentTarget);
       const name = (formData.get("name") as string)?.trim();
@@ -153,8 +155,8 @@ function CustomersPage() {
         setIsAddOpen(false);
       }
       clearCustAll();
-    } catch (error) {
-      toast.error("Failed to save customer");
+    } catch (error: any) {
+      toast.error(error.message || "Failed to save customer");
     } finally {
       setIsSaving(false);
     }
@@ -166,11 +168,13 @@ function CustomersPage() {
         await localDb.customers.delete(deleteId);
         toast.success("Customer deleted");
         setDeleteId(null);
-      } catch (error) {
-        toast.error("Failed to delete customer");
+      } catch (error: any) {
+        toast.error(error.message || "Failed to delete customer");
       }
     }
   };
+
+  const [isSettling, setIsSettling] = useState(false);
 
   const handleSettle = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -180,6 +184,8 @@ function CustomersPage() {
       toast.error("Please enter a valid amount up to the outstanding balance.");
       return;
     }
+    setIsSettling(true);
+    await new Promise(resolve => setTimeout(resolve, 500));
     try {
       const newBalance = Math.max(0, settleItem.credit - amount);
       await localDb.customers.update(settleItem.id, {
@@ -200,8 +206,10 @@ function CustomersPage() {
 
       toast.success(`Successfully settled ${formatCurrency(amount)}`);
       setSettleItem(null);
-    } catch (error) {
-      toast.error("Failed to settle balance");
+    } catch (error: any) {
+      toast.error(error.message || "Failed to settle balance");
+    } finally {
+      setIsSettling(false);
     }
   };
 
@@ -389,9 +397,9 @@ function CustomersPage() {
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="phone">Phone</Label>
-                <Input
+                <PhoneInput
                   id="phone" name="phone" type="tel"
-                  placeholder="e.g. +880 1700 000000"
+                  placeholder="e.g. 1700 000000"
                   defaultValue={editItem?.phone || ""}
                   className={custErrors.phone ? "border-destructive focus-visible:ring-destructive" : ""}
                   onChange={() => clearCustError("phone")}
@@ -500,7 +508,10 @@ function CustomersPage() {
             </div>
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setSettleItem(null)}>Cancel</Button>
-              <Button type="submit">Record Payment</Button>
+              <Button type="submit" disabled={isSettling}>
+                {isSettling && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Record Payment
+              </Button>
             </DialogFooter>
           </form>
         </DialogContent>

@@ -36,6 +36,7 @@ import type { LocalSupplier } from "@/lib/db";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useFormValidation } from "@/hooks/useFormValidation";
 import { FieldError } from "@/components/ui/field-error";
+import { PhoneInput } from "@/components/ui/phone-input";
 
 export const Route = createFileRoute("/suppliers")({
   head: () => ({ meta: [{ title: "Suppliers · Grocer.Pro" }] }),
@@ -265,9 +266,9 @@ function SuppliersPage() {
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="phone">Phone</Label>
-                <Input
+                <PhoneInput
                   id="phone" name="phone" type="tel"
-                  placeholder="e.g. +880 1700 000000"
+                  placeholder="e.g. 1700 000000"
                   defaultValue={editItem?.phone}
                   className={suppErrors.phone ? "border-destructive focus-visible:ring-destructive" : ""}
                   onChange={() => clearSuppError("phone")}

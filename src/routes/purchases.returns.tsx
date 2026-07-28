@@ -14,7 +14,7 @@ import {
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { MoreVertical, Trash2 } from "lucide-react";
+import { MoreVertical, Trash2, Loader2 } from "lucide-react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { localDb } from "@/lib/db";
 import { useCurrency } from "@/lib/currency";
@@ -23,6 +23,7 @@ import { v4 as uuidv4 } from "uuid";
 import { toast } from "sonner";
 import { useState, useMemo, useEffect } from "react";
 import { cn } from "@/lib/utils";
+import { usePreferences } from "@/contexts/PreferencesContext";
 
 export const Route = createFileRoute("/purchases/returns")({
   head: () => ({ meta: [{ title: "Purchase Returns · Grocer.Pro" }] }),
@@ -30,6 +31,7 @@ export const Route = createFileRoute("/purchases/returns")({
 });
 
 function PurchaseReturnsPage() {
+  const { formatDate, formatTime, formatDateTime } = usePreferences();
   const { formatCurrency } = useCurrency();
   const rawReturns = useLiveQuery(() => localDb.purchaseReturns.toArray()) || [];
   const purchases = useLiveQuery(() => localDb.purchases.toArray()) || [];
@@ -37,6 +39,7 @@ function PurchaseReturnsPage() {
 
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
@@ -66,10 +69,12 @@ function PurchaseReturnsPage() {
   }, [search]);
 
   const addReturnItem = () => {
+  const { formatDate, formatTime, formatDateTime } = usePreferences();
     setReturnItems(prev => [...prev, { productId: "", productName: "", quantity: 1, cost: 0, total: 0 }]);
   };
 
   const updateReturnItem = (idx: number, field: string, value: any) => {
+  const { formatDate, formatTime, formatDateTime } = usePreferences();
     setReturnItems(prev => {
       const updated = [...prev];
       updated[idx] = { ...updated[idx], [field]: value };
@@ -91,6 +96,9 @@ function PurchaseReturnsPage() {
       if (!reason.trim()) { toast.error("Reason is required"); return; }
       if (returnItems.length === 0) { toast.error("Add at least one item"); return; }
       if (returnItems.some(i => !i.productId)) { toast.error("All items must have a product selected"); return; }
+
+      setIsSubmitting(true);
+      await new Promise(resolve => setTimeout(resolve, 500));
 
       const returnTotal = returnItems.reduce((s, i) => s + i.total, 0);
       const ref = `PR-${Math.floor(Math.random() * 90000) + 10000}`;
@@ -132,6 +140,8 @@ function PurchaseReturnsPage() {
       setReturnItems([]);
     } catch {
       toast.error("Failed to process purchase return");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -177,7 +187,7 @@ function PurchaseReturnsPage() {
                     <td className="px-4 py-3 font-mono text-xs font-semibold">{r.ref}</td>
                     <td className="px-4 py-3 font-semibold">{r.supplier}</td>
                     <td className="px-4 py-3 text-muted-foreground">{r.reason}</td>
-                    <td className="px-4 py-3 text-muted-foreground">{new Date(r.date).toLocaleDateString()}</td>
+                    <td className="px-4 py-3 text-muted-foreground">{formatDate(r.date)}</td>
                     <td className="px-4 py-3 text-right">{r.items.reduce((s, i) => s + i.quantity, 0)}</td>
                     <td className="px-4 py-3">
                       <Badge className={cn(r.status === "approved" && "bg-success/10 text-success hover:bg-success/15", r.status === "pending" && "bg-warning/15 text-warning-foreground")}>
@@ -284,7 +294,10 @@ function PurchaseReturnsPage() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsAddOpen(false)}>Cancel</Button>
-            <Button onClick={handleAdd}>Submit Return</Button>
+            <Button onClick={handleAdd} disabled={isSubmitting}>
+              {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Submit Return
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

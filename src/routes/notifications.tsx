@@ -9,6 +9,7 @@ import { localDb } from "@/lib/db";
 import { SyncEngine } from "@/lib/sync-engine";
 import { toast } from "sonner";
 import { Bell, ExternalLink } from "lucide-react";
+import { usePreferences } from "@/contexts/PreferencesContext";
 
 export const Route = createFileRoute("/notifications")({
   head: () => ({ meta: [{ title: "Notifications · Grocer.Pro" }] }),
@@ -16,6 +17,7 @@ export const Route = createFileRoute("/notifications")({
 });
 
 function NotificationsPage() {
+  const { formatDate, formatTime, formatDateTime } = usePreferences();
   const rawNotifications = useLiveQuery(() => localDb.notifications.toArray()) || [];
   const notifications = useMemo(() => rawNotifications.slice().reverse(), [rawNotifications]);
   const navigate = useNavigate();
@@ -66,7 +68,7 @@ function NotificationsPage() {
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center justify-between gap-2">
                       <h3 className={cn("text-sm", !n.read ? "font-bold text-foreground" : "font-semibold text-foreground/80")}>{n.title}</h3>
-                      <span className="shrink-0 text-xs text-muted-foreground">{new Date(n.timestamp).toLocaleString()}</span>
+                      <span className="shrink-0 text-xs text-muted-foreground">{formatDateTime(n.timestamp)}</span>
                     </div>
                     <p className="mt-0.5 text-sm text-muted-foreground">{n.description}</p>
                   </div>

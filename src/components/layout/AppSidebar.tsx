@@ -206,9 +206,13 @@ export function AppSidebar({ onNavigate }: { onNavigate?: () => void }) {
 
       <div className="shrink-0 border-t border-sidebar-border/80 p-3 bg-sidebar/60 backdrop-blur-sm">
         <div className="flex items-center gap-3 rounded-xl border border-sidebar-border/60 bg-sidebar-accent/30 p-2.5 shadow-soft transition-colors duration-150 hover:bg-sidebar-accent/60 hover:border-sidebar-border hover:shadow-md">
-          <div className="grid size-9 shrink-0 place-items-center rounded-lg bg-gradient-to-tr from-primary/25 via-primary/10 to-transparent border border-primary/30 text-xs font-extrabold text-primary shadow-sm">
-            {initials}
-          </div>
+          {user?.avatar ? (
+            <img src={user.avatar} alt="Profile" className="size-9 shrink-0 rounded-lg object-cover border border-primary/30 shadow-sm" />
+          ) : (
+            <div className="grid size-9 shrink-0 place-items-center rounded-lg bg-gradient-to-tr from-primary/25 via-primary/10 to-transparent border border-primary/30 text-xs font-extrabold text-primary shadow-sm">
+              {initials}
+            </div>
+          )}
           <div className="min-w-0 flex-1">
             <div className="truncate text-xs font-bold text-foreground">{user?.name || "Admin"}</div>
             <div className="truncate text-[10px] font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1 mt-0.5">

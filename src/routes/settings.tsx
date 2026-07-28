@@ -34,6 +34,7 @@ import { getTrialDaysFromEnv } from "@/lib/email-service";
 import { FileUpload } from "@/components/ui/file-upload";
 import { useFormValidation } from "@/hooks/useFormValidation";
 import { FieldError } from "@/components/ui/field-error";
+import { PhoneInput } from "@/components/ui/phone-input";
 
 
 export const Route = createFileRoute("/settings")({
@@ -48,19 +49,19 @@ export const Route = createFileRoute("/settings")({
 
 const defaultSettings: LocalSetting = {
   id: "default",
-  storeName: "Grocer.Pro Downtown",
+  storeName: "",
   currencySymbol: "$",
   currencyCode: "USD",
-  taxId: "US-84-2918471",
-  address: "142 Market Street, San Francisco, CA 94103",
-  phone: "+1 415 555 0188",
-  email: "hello@grocer.pro",
-  standardRate: 8.00,
-  reducedRate: 3.00,
+  taxId: "",
+  address: "",
+  phone: "",
+  email: "",
+  standardRate: 0,
+  reducedRate: 0,
   pricesIncludeTax: false,
   showTaxBreakdown: true,
-  headerNote: "Thank you for shopping with us!",
-  footerNote: "Returns accepted within 14 days.",
+  headerNote: "",
+  footerNote: "",
   emailReceiptDefault: true,
   printStoreLogo: true,
 };
@@ -126,6 +127,7 @@ function SettingsPage() {
 
   const [activeTab, setActiveTab] = useState(isTrialExpired ? "billing" : (search.tab || "store"));
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     if (user && user.role !== "admin") {
@@ -136,9 +138,16 @@ function SettingsPage() {
 
   useEffect(() => {
     if (dbSettings) {
-      setSettings((prev) => ({ ...prev, ...dbSettings }));
+      setSettings({ ...defaultSettings, ...dbSettings });
+    } else if (user) {
+      // Seed from user registration data when no saved settings exist
+      setSettings({
+        ...defaultSettings,
+        email: user.email || "",
+        storeName: user.name || "",
+      });
     }
-  }, [dbSettings]);
+  }, [dbSettings, user?.id]);
 
   useEffect(() => {
     async function loadCloudSettings() {
@@ -146,7 +155,7 @@ function SettingsPage() {
         try {
           const res = await getOrgSettingsFn({ data: { orgId: user.orgId } });
           if (res.success && res.settings) {
-            setSettings(prev => ({ ...prev, ...res.settings }));
+            setSettings(prev => ({ ...prev, ...(res.settings as any) }));
           }
         } catch (e) {
           console.error("Failed to load cloud settings", e);
@@ -161,35 +170,48 @@ function SettingsPage() {
   };
 
   const handleSave = async () => {
+    setIsSaving(true);
+    await new Promise(resolve => setTimeout(resolve, 500));
     try {
+      // Resolve orgId from multiple sources
+      const orgId = user?.orgId || dbSettings?.orgId || settings.orgId;
+
       if (["store", "receipt"].includes(activeTab)) {
-        if (!user?.orgId) {
-          toast.error("Organization ID missing. Cannot save to cloud.");
-          return;
-        }
-        const res = await updateOrgSettingsFn({
-          data: {
-            orgId: user.orgId,
-            settings: {
-              storeName: settings.storeName,
-              taxId: settings.taxId,
-              address: settings.address,
-              phone: settings.phone,
-              email: settings.email,
-              currencySymbol: settings.currencySymbol,
-              currencyCode: settings.currencyCode,
-              logoUrl: settings.logoUrl,
-              headerNote: settings.headerNote,
-              footerNote: settings.footerNote,
-              emailReceiptDefault: settings.emailReceiptDefault,
-              printStoreLogo: settings.printStoreLogo,
+        // Always save locally first (works offline)
+        await localDb.settings.put({ ...settings, id: "default", orgId: orgId || settings.orgId });
+
+        // Also push to cloud if orgId is available
+        if (orgId) {
+          try {
+            const res = await updateOrgSettingsFn({
+              data: {
+                orgId,
+                settings: {
+                  storeName: settings.storeName,
+                  taxId: settings.taxId,
+                  address: settings.address,
+                  phone: settings.phone,
+                  email: settings.email,
+                  currencySymbol: settings.currencySymbol,
+                  currencyCode: settings.currencyCode,
+                  logoUrl: settings.logoUrl,
+                  headerNote: settings.headerNote,
+                  footerNote: settings.footerNote,
+                  emailReceiptDefault: settings.emailReceiptDefault,
+                  printStoreLogo: settings.printStoreLogo,
+                }
+              }
+            });
+            if (res.success) {
+              toast.success("Settings saved successfully.");
+            } else {
+              toast.success("Settings saved locally. Cloud sync failed: " + res.error);
             }
+          } catch {
+            toast.success("Settings saved locally. Cloud sync unavailable.");
           }
-        });
-        if (res.success) {
-          toast.success("Settings saved successfully to cloud.");
         } else {
-          toast.error("Failed to save cloud settings: " + res.error);
+          toast.success("Settings saved successfully.");
         }
       } else {
         await localDb.settings.put({ ...settings, id: "default" });
@@ -198,12 +220,17 @@ function SettingsPage() {
     } catch (error) {
       console.error("Settings save error:", error);
       toast.error("Failed to save settings.");
+    } finally {
+      setIsSaving(false);
     }
   };
 
   const handleResetData = async () => {
     try {
+      toast.info("Syncing data to cloud before wipe...");
+      await SyncEngine.syncAll();
       await localDb.delete();
+      localStorage.removeItem("pos_last_synced_at");
       toast.success("Database wiped successfully. Please refresh the page.");
       setTimeout(() => window.location.reload(), 1500);
     } catch (err) {
@@ -275,15 +302,15 @@ function SettingsPage() {
     setIsUpdatingSecurity(true);
     try {
       const updatedPin = passForm.newPassword || passForm.newPin || user.pin;
-      
-      const res = await updateUserSecurityFn({ 
-        data: { userId: user.id, orgId: user.orgId || "", pin: updatedPin } 
+
+      const res = await updateUserSecurityFn({
+        data: { userId: user.id, orgId: user.orgId || "", pin: updatedPin }
       });
-      
+
       if (!res.success) {
         throw new Error(res.error || "Server function failed");
       }
-      
+
       // Update local db as well for immediate offline reflection
       await localDb.users.update(user.id, {
         pin: updatedPin,
@@ -378,7 +405,12 @@ function SettingsPage() {
                   <input className="inp" value={settings.address} onChange={(e) => handleChange("address", e.target.value)} />
                 </Field>
                 <Field label="Phone">
-                  <input className="inp" value={settings.phone} onChange={(e) => handleChange("phone", e.target.value)} />
+                  <PhoneInput
+                    value={settings.phone}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                      handleChange("phone", e.target.value);
+                    }}
+                  />
                 </Field>
                 <Field label="Email">
                   <input className="inp" value={settings.email} onChange={(e) => handleChange("email", e.target.value)} />
@@ -677,7 +709,10 @@ function SettingsPage() {
 
           <div className="flex justify-end pt-4">
             <Button variant="outline" className="mr-3" onClick={() => { if (dbSettings) setSettings(dbSettings) }}>Cancel</Button>
-            <Button onClick={handleSave}><Check className="size-4 mr-2" /> Save changes</Button>
+            <Button onClick={handleSave} disabled={isSaving}>
+              {isSaving ? <Loader2 className="size-4 animate-spin mr-2" /> : <Check className="size-4 mr-2" />}
+              Save changes
+            </Button>
           </div>
         </div>
       </Tabs>
@@ -797,21 +832,39 @@ function SettingsPage() {
                 </div>
               </div>
 
+              {/* Dynamic fields based on payment method */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
                 <div>
                   <Label className="text-xs">Amount Paid</Label>
                   <Input value={`₹${selectedPlanForUpgrade?.price || 0}`} disabled className="mt-1 font-mono font-bold bg-muted text-primary" />
                 </div>
                 <div className="sm:col-span-2">
-                  <Label className="text-xs">Transaction ID / UTR / Reference No. <span className="text-red-500">*</span></Label>
+                  <Label className="text-xs">
+                    {paymentForm.paymentMethod === "UPI / QR Scan"
+                      ? "UPI Reference / Transaction ID"
+                      : paymentForm.paymentMethod === "NEFT / IMPS / RTGS"
+                        ? "UTR Number / Reference No."
+                        : "Cheque No. / Deposit Slip No."}{" "}
+                    <span className="text-red-500">*</span>
+                  </Label>
                   <Input
                     value={paymentForm.utrNumber}
                     onChange={(e) => setPaymentForm({ ...paymentForm, utrNumber: e.target.value })}
-                    placeholder="Enter 12-digit UPI Ref / UTR / Transaction No."
+                    placeholder={
+                      paymentForm.paymentMethod === "UPI / QR Scan"
+                        ? "e.g. 123456789012 (12-digit UPI Ref)"
+                        : paymentForm.paymentMethod === "NEFT / IMPS / RTGS"
+                          ? "e.g. HDFC12345678 (Bank UTR)"
+                          : "e.g. CHQ00123 (Cheque/Deposit No.)"
+                    }
                     className="mt-1 font-mono"
                     required
                   />
-                  <span className="text-[10px] text-muted-foreground block mt-0.5">Required by Super Admin to verify and activate recharge.</span>
+                  <span className="text-[10px] text-muted-foreground block mt-0.5">
+                    {paymentForm.paymentMethod === "Cash / Cheque Deposit"
+                      ? "Enter cheque number or cash deposit receipt number."
+                      : "Required by Super Admin to verify and activate recharge."}
+                  </span>
                 </div>
               </div>
 
@@ -820,7 +873,13 @@ function SettingsPage() {
                 <Input
                   value={paymentForm.note}
                   onChange={(e) => setPaymentForm({ ...paymentForm, note: e.target.value })}
-                  placeholder="e.g. Paid from Rahul Kumar's GPay account"
+                  placeholder={
+                    paymentForm.paymentMethod === "UPI / QR Scan"
+                      ? "e.g. Paid from Rahul Kumar's GPay account"
+                      : paymentForm.paymentMethod === "NEFT / IMPS / RTGS"
+                        ? "e.g. HDFC Savings A/C - Rahul Kumar"
+                        : "e.g. Cash deposited at SBI Branch, Kolkata"
+                  }
                   className="mt-1"
                 />
               </div>

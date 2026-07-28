@@ -1,3 +1,5 @@
+import { usePreferences } from "@/contexts/PreferencesContext";
+
 /**
  * WhatsApp CRM Utility Helper
  * Formats invoice summaries and Khata due reminders for 1-click WhatsApp messaging.
@@ -19,12 +21,13 @@ export function sendWhatsAppInvoice(
   currencySymbol: string,
   items: { productName: string; quantity: number; price: number }[]
 ) {
+    const { formatDate, formatTime, formatDateTime } = usePreferences();
   const cleanPhone = formatWhatsAppPhone(customerPhone || "");
   const itemListText = items
     .map((item) => `• ${item.productName} (x${item.quantity}) - ${currencySymbol}${item.price * item.quantity}`)
     .join("\n");
 
-  const message = `🧾 *INVOICE ACKNOWLEDGEMENT - GROCER.PRO*\n\nDear *${customerName}*,\nThank you for shopping with us!\n\n*Invoice No:* #${invoiceNo}\n*Date:* ${new Date().toLocaleDateString()}\n\n*Purchased Items:*\n${itemListText}\n\n*Total Paid:* *${currencySymbol}${totalAmount}*\n\nThank you for your business! 🙏`;
+  const message = `🧾 *INVOICE ACKNOWLEDGEMENT - GROCER.PRO*\n\nDear *${customerName}*,\nThank you for shopping with us!\n\n*Invoice No:* #${invoiceNo}\n*Date:* ${formatDate(new Date())}\n\n*Purchased Items:*\n${itemListText}\n\n*Total Paid:* *${currencySymbol}${totalAmount}*\n\nThank you for your business! 🙏`;
 
   const url = cleanPhone
     ? `https://api.whatsapp.com/send?phone=${cleanPhone}&text=${encodeURIComponent(message)}`

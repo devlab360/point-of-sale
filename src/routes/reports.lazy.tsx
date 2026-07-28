@@ -18,6 +18,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+import { usePreferences } from "@/contexts/PreferencesContext";
 
 export const Route = createLazyFileRoute("/reports")({
   component: ReportsPage,
@@ -26,6 +27,7 @@ export const Route = createLazyFileRoute("/reports")({
 type ReportType = "sales" | "profit" | "purchase" | "inventory" | "tax" | "expense" | "daily" | "monthly" | "pnl" | "salesman" | "gstr1" | "gstr2" | "gstr3b" | null;
 
 function ReportsPage() {
+  const { formatDate, formatTime, formatDateTime } = usePreferences();
   const { currencySymbol, formatCurrency } = useCurrency();
   const sales = useLiveQuery(() => localDb.offlineSales.toArray()) || [];
   const products = useLiveQuery(() => localDb.products.toArray()) || [];
@@ -93,13 +95,14 @@ function ReportsPage() {
   const pieData = catData.length > 0 ? catData : categories.slice(0, 5).map((c, i) => ({ name: c.name, value: 20, color: COLORS[i % COLORS.length] }));
 
   const exportCSV = (type: string) => {
+  const { formatDate, formatTime, formatDateTime } = usePreferences();
     let csv = "";
     let filename = "";
     const getCustomers = () => localDb.customers.toArray();
     
     if (type === "sales") {
       csv = ["Invoice,Customer,Date,Payment,Items,Total"].join("\n") + "\n" +
-        sales.map(s => `${s.id.slice(0, 8)},${s.customerName || "Walk-in"},${new Date(s.date).toLocaleDateString()},${s.paymentMethod},${s.items},$${s.total.toFixed(2)}`).join("\n");
+        sales.map(s => `${s.id.slice(0, 8)},${s.customerName || "Walk-in"},${formatDate(s.date)},${s.paymentMethod},${s.items},$${s.total.toFixed(2)}`).join("\n");
       filename = "sales-report.csv";
     } else if (type === "inventory") {
       csv = ["Product,SKU,Stock,Reorder Level,Value"].join("\n") + "\n" +
@@ -114,7 +117,7 @@ function ReportsPage() {
       csv = ["Invoice No,Date,Customer Name,GSTIN,State,Taxable Value,CGST,SGST,IGST,Total Value"].join("\n") + "\n" +
         sales.map(s => {
           const taxable = (s.subtotal || 0) - (s.discountAmt || 0);
-          return `${s.id.substring(0,8)},${new Date(s.date).toLocaleDateString()},${s.customerName || "Walk-in"},-,0,${taxable.toFixed(2)},${(s.cgstAmt||0).toFixed(2)},${(s.sgstAmt||0).toFixed(2)},${(s.igstAmt||0).toFixed(2)},${s.total.toFixed(2)}`;
+          return `${s.id.substring(0,8)},${formatDate(s.date)},${s.customerName || "Walk-in"},-,0,${taxable.toFixed(2)},${(s.cgstAmt||0).toFixed(2)},${(s.sgstAmt||0).toFixed(2)},${(s.igstAmt||0).toFixed(2)},${s.total.toFixed(2)}`;
         }).join("\n");
       filename = "GSTR-1.csv";
     } else if (type === "gstr2") {
@@ -122,7 +125,7 @@ function ReportsPage() {
       csv = ["Invoice No,Date,Supplier Name,GSTIN,Taxable Value,CGST,SGST,IGST,Total Value"].join("\n") + "\n" +
         purchases.map(p => {
           const taxable = (p.subtotal || 0) - (p.discountAmt || 0);
-          return `${p.invoiceNo || p.id.substring(0,8)},${new Date(p.date).toLocaleDateString()},${p.supplier},-,${taxable.toFixed(2)},${(p.cgstAmt||0).toFixed(2)},${(p.sgstAmt||0).toFixed(2)},${(p.igstAmt||0).toFixed(2)},${p.total.toFixed(2)}`;
+          return `${p.invoiceNo || p.id.substring(0,8)},${formatDate(p.date)},${p.supplier},-,${taxable.toFixed(2)},${(p.cgstAmt||0).toFixed(2)},${(p.sgstAmt||0).toFixed(2)},${(p.igstAmt||0).toFixed(2)},${p.total.toFixed(2)}`;
         }).join("\n");
       filename = "GSTR-2.csv";
     } else if (type === "gstr3b") {
@@ -321,7 +324,7 @@ function ReportsPage() {
                         <tr key={s.id} className="hover:bg-muted/30">
                           <td className="px-3 py-2 font-mono text-xs">{s.id.slice(0, 8).toUpperCase()}</td>
                           <td className="px-3 py-2">{s.customerName || "Walk-in"}</td>
-                          <td className="px-3 py-2 text-muted-foreground">{new Date(s.date).toLocaleDateString()}</td>
+                          <td className="px-3 py-2 text-muted-foreground">{formatDate(s.date)}</td>
                           <td className="px-3 py-2 text-right font-semibold">{formatCurrency(s.total)}</td>
                         </tr>
                       ))}
@@ -475,7 +478,7 @@ function ReportsPage() {
                       <tr key={p.id} className="hover:bg-muted/30">
                         <td className="px-3 py-2 font-mono text-xs">{p.id.slice(0, 8).toUpperCase()}</td>
                         <td className="px-3 py-2">{p.supplier}</td>
-                        <td className="px-3 py-2 text-muted-foreground">{new Date(p.date).toLocaleDateString()}</td>
+                        <td className="px-3 py-2 text-muted-foreground">{formatDate(p.date)}</td>
                         <td className="px-3 py-2 text-right font-semibold">{formatCurrency(p.total)}</td>
                       </tr>
                     ))}

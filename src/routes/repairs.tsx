@@ -20,6 +20,7 @@ import { localDb, type LocalRepairTicket } from "@/lib/db";
 import { useLiveQuery } from "dexie-react-hooks";
 import { useCurrency } from "@/lib/currency";
 import { Wrench, Printer, CheckCircle2, MoreVertical, Trash2, ShieldCheck, Phone, Loader2 } from "lucide-react";
+import { PhoneInput } from "@/components/ui/phone-input";
 import { v4 as uuidv4 } from "uuid";
 import { toast } from "sonner";
 import { useFormValidation } from "@/hooks/useFormValidation";
@@ -86,6 +87,7 @@ function RepairsPage() {
     if (!isValid) return;
 
     setIsSubmitting(true);
+    await new Promise(resolve => setTimeout(resolve, 500));
     try {
       const tNo = `REP-${Date.now().toString().slice(-6)}`;
       await localDb.repairs.add({
@@ -246,9 +248,9 @@ function RepairsPage() {
               </div>
               <div className="space-y-1.5">
                 <Label>Phone Number <span className="text-destructive">*</span></Label>
-                <Input
-                  placeholder="e.g. +880 1711000000" value={customerPhone}
-                  onChange={(e) => { setCustomerPhone(e.target.value); clearRepError("customerPhone"); }}
+                <PhoneInput 
+                  placeholder="e.g. 1711000000" value={customerPhone} 
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => { setCustomerPhone(e.target.value); clearRepError("customerPhone"); }}
                   className={repErrors.customerPhone ? "border-destructive focus-visible:ring-destructive" : ""}
                 />
                 <FieldError message={repErrors.customerPhone} />

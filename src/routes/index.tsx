@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import {
   Area, AreaChart, Bar, BarChart, CartesianGrid, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis,
 } from "recharts";
@@ -41,8 +41,70 @@ function Dashboard() {
   const products = useLiveQuery(() => localDb.products.toArray()) || [];
   const sales = useLiveQuery(() => localDb.offlineSales.toArray()) || [];
   const customers = useLiveQuery(() => localDb.customers.toArray()) || [];
+  const expenses = useLiveQuery(() => localDb.expenses.toArray()) || [];
   const currentUser = useLiveQuery(() => localDb.users.get("me"));
   const userName = currentUser?.name || "Admin";
+
+  const healthAnalysis = useMemo(() => {
+    const totalSalesRev = sales.reduce((sum, s) => sum + (s.total || 0), 0);
+    const totalExp = expenses.reduce((sum, e) => sum + (e.amount || 0), 0);
+
+    let totalCogs = 0;
+    sales.forEach((s) => {
+      s.saleItems?.forEach((i) => {
+        const prod = products.find((p) => p.id === i.productId);
+        if (prod) totalCogs += (prod.cost || 0) * i.quantity;
+      });
+    });
+    const netProfit = totalSalesRev - totalCogs - totalExp;
+    const profitMargin = totalSalesRev > 0 ? (netProfit / totalSalesRev) * 100 : 0;
+
+    // Dead Stock Calculation
+    const soldProductIds = new Set(sales.flatMap((s) => s.saleItems?.map((i) => i.productId) || []));
+    const deadStockItems = products.filter((p) => (p.stock || 0) > 0 && !soldProductIds.has(p.id));
+    const totalStockValue = products.reduce((sum, p) => sum + (p.stock || 0) * (p.cost || 0), 0);
+    const deadStockValue = deadStockItems.reduce((sum, p) => sum + (p.stock || 0) * (p.cost || 0), 0);
+
+    // Due Collection Health
+    const totalDue = customers.reduce((sum, c) => sum + (c.credit || 0), 0);
+    const overDueRatio = totalSalesRev > 0 ? (totalDue / totalSalesRev) * 100 : 0;
+
+    // Score Calculation out of 100
+    let score = products.length > 0 || sales.length > 0 ? 50 : 30;
+    if (sales.length >= 5) score += 15;
+    else if (sales.length > 0) score += 10;
+
+    if (netProfit > 0) score += 10;
+    if (profitMargin >= 15) score += 10;
+    else if (profitMargin > 0) score += 5;
+
+    if (totalStockValue > 0 && deadStockValue < totalStockValue * 0.25) score += 10;
+    if (overDueRatio < 30) score += 5;
+
+    score = Math.min(100, Math.max(0, Math.round(score)));
+
+    let grade = "Grade: A+ (Excellent)";
+    let badgeClass = "bg-success/20 text-success border-success/30 font-bold";
+
+    if (score >= 85) {
+      grade = "Grade: A+ (Excellent)";
+      badgeClass = "bg-success/20 text-success border-success/30 font-bold";
+    } else if (score >= 70) {
+      grade = "Grade: A (Strong)";
+      badgeClass = "bg-emerald-500/20 text-emerald-600 border-emerald-500/30 font-bold dark:text-emerald-400";
+    } else if (score >= 55) {
+      grade = "Grade: B (Average)";
+      badgeClass = "bg-info/20 text-info border-info/30 font-bold";
+    } else if (score >= 40) {
+      grade = "Grade: C (Needs Attention)";
+      badgeClass = "bg-warning/20 text-warning-foreground border-warning/30 font-bold";
+    } else {
+      grade = "Grade: D (Critical)";
+      badgeClass = "bg-destructive/20 text-destructive border-destructive/30 font-bold";
+    }
+
+    return { score, grade, badgeClass };
+  }, [sales, products, customers, expenses]);
 
   const lowStock = products.filter((p) => p.stock <= p.reorderLevel).slice(0, 5);
 
@@ -160,12 +222,12 @@ function Dashboard() {
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <div className="flex size-14 items-center justify-center rounded-2xl bg-primary text-primary-foreground font-extrabold text-2xl shadow-elevated">
-              88
+              {healthAnalysis.score}
             </div>
             <div>
               <div className="flex items-center gap-2">
                 <h3 className="font-bold text-base text-foreground">Business Health Score</h3>
-                <Badge className="bg-success/20 text-success border-success/30 font-bold">Grade: A+ (Excellent)</Badge>
+                <Badge className={healthAnalysis.badgeClass}>{healthAnalysis.grade}</Badge>
               </div>
               <p className="text-xs text-muted-foreground mt-0.5">
                 Calculated across Sales Growth, Profit Margin, Stock Burn Rate & Due Recoveries.

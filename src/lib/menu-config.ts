@@ -151,46 +151,54 @@ const DEFAULT_ROLE_PERMISSIONS_FALLBACK: Record<string, string[]> = {
   cashier: ["pos", "customers", "discounts"],
 };
 
-export function hasPermissionForRoute(user: any, routePath: string, isSuperAdminUser: boolean, saasPlan: any): { allowed: boolean; reason?: string } {
+export function hasPermissionForRoute(
+  user: any,
+  routePath: string,
+  isSuperAdminUser: boolean,
+  saasPlan: any
+): { allowed: boolean; reason?: string } {
+  // 1. Super Admin Authorization
   if (isSuperAdminUser) return { allowed: true };
   if (routePath.startsWith("/super-admin")) return { allowed: false, reason: "You do not have permission to access the Super Admin dashboard." };
 
-  // Always allow essential routes
-  const essentialRoutes = ["/", "/profile", "/settings", "/notifications", "/help", "/pos", "/sales"];
-  if (essentialRoutes.some(r => routePath === r || routePath.startsWith(r + "/"))) return { allowed: true };
+  // 2. Core System Routes (Always Available - strictly those hidden from SaaS UI checkboxes)
+  const coreSystemRoutes = ["/", "/profile"];
+  if (coreSystemRoutes.some(r => routePath === r || routePath.startsWith(r + "/"))) {
+    return { allowed: true };
+  }
 
+  // 3. Resolve Target Path from App Groups
   const allItems = APP_GROUPS.flatMap(g => g.items);
   const matchedItem = allItems.find(item => routePath === item.to || routePath.startsWith(item.to + "/"));
   const targetPath = matchedItem ? matchedItem.to : routePath;
 
-  // ── Plan Feature Check ──────────────────────────────────────────────────────
-  // saasPlan.features contains feature KEYS (e.g. "inventory", "reports"), NOT route paths
-  // Find which feature key this route belongs to
+  // 4. SaaS Plan Authorization
   if (saasPlan && Array.isArray(saasPlan.features) && saasPlan.features.length > 0) {
     const requiredFeatureEntry = Object.entries(PERMISSION_ROUTE_MAP).find(([_, paths]) =>
       paths.some(p => targetPath === p || targetPath.startsWith(p))
     );
-    if (requiredFeatureEntry) {
-      const [featureKey] = requiredFeatureEntry;
-      if (!saasPlan.features.includes(featureKey)) {
-        const label = matchedItem ? matchedItem.label : targetPath;
-        return {
-          allowed: false,
-          reason: `The "${label}" feature is not available on your current plan (${saasPlan.name || 'Current Plan'}). Please upgrade your subscription to access this feature.`
-        };
-      }
+    const legacyFeatureKey = requiredFeatureEntry ? requiredFeatureEntry[0] : null;
+
+    const planAllowsRoute = saasPlan.features.some((feat: string) => targetPath === feat || targetPath.startsWith(feat + "/"));
+    const planAllowsLegacy = legacyFeatureKey && saasPlan.features.includes(legacyFeatureKey);
+
+    if (!planAllowsRoute && !planAllowsLegacy) {
+      const label = matchedItem ? matchedItem.label : targetPath;
+      return {
+        allowed: false,
+        reason: `The "${label}" feature is not available on your current plan (${saasPlan.name || 'Current Plan'}). Please upgrade your subscription to access this feature.`
+      };
     }
   }
-  // If saasPlan is null/not loaded yet — allow (don't block during loading)
 
-  // ── Role-based Check ────────────────────────────────────────────────────────
-  if (matchedItem && matchedItem.roles && user && user.role) {
+  // 5. Role-Based Authorization
+  if (matchedItem && matchedItem.roles && user?.role) {
     if (!matchedItem.roles.includes(user.role.toLowerCase())) {
       return { allowed: false, reason: `Your role (${user.role}) does not have access to ${matchedItem.label}.` };
     }
   }
 
-  // ── Custom Permission Check (non-admin users) ───────────────────────────────
+  // 6. User-Specific Employee Permissions Authorization
   if (user && user.role?.toLowerCase() !== "admin") {
     const userPerms: string[] = Array.isArray(user.permissions)
       ? user.permissions
@@ -199,9 +207,10 @@ export function hasPermissionForRoute(user: any, routePath: string, isSuperAdmin
     const requiredPermEntry = Object.entries(PERMISSION_ROUTE_MAP).find(([_, paths]) =>
       paths.some(p => targetPath === p || targetPath.startsWith(p))
     );
+
     if (requiredPermEntry && !userPerms.includes(requiredPermEntry[0])) {
       const label = matchedItem ? matchedItem.label : targetPath;
-      return { allowed: false, reason: `You do not have permission to access "${label}" based on your employee permissions assigned by store admin.` };
+      return { allowed: false, reason: `You do not have permission to access "${label}". Contact your store administrator.` };
     }
   }
 

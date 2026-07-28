@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Mail, CheckCircle2, RefreshCw, ShieldCheck, ArrowRight } from "lucide-react";
+import { Mail, CheckCircle2, RefreshCw, ShieldCheck, ArrowRight, Loader2 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { localDb } from "@/lib/db";
 import { sendVerificationEmail, generateVerificationOtp, getTrialDaysFromEnv } from "@/lib/email-service";
@@ -67,6 +67,7 @@ function VerifyEmailPage() {
     if (!isValid) return;
 
     setIsVerifying(true);
+    await new Promise(resolve => setTimeout(resolve, 500));
 
     const currentUser = await localDb.users.get(user.id);
     const validToken = currentUser?.emailVerificationToken || generatedCode;
@@ -157,10 +158,8 @@ function VerifyEmailPage() {
               <FieldError message={otpErrors.otp} />
             </div>
 
-            <Button type="submit" className="w-full h-11 text-sm font-semibold gap-2" disabled={isVerifying}>
-              {isVerifying ? "Verifying..." : "Verify & Start Trial"}
-              <ArrowRight className="size-4" />
-            </Button>
+            <Button type="submit" className="w-full h-11 text-sm font-semibold gap-2" disabled={isVerifying}>{isVerifying && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} {isVerifying ? "Verifying..." : "Verify & Start Trial"}
+              <ArrowRight className="size-4" /></Button>
           </form>
 
           <div className="flex items-center justify-between text-xs text-muted-foreground pt-2 border-t">

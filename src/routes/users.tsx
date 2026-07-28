@@ -137,8 +137,12 @@ function UsersPage() {
     setEditPermissions(userItem.permissions || DEFAULT_ROLE_PERMISSIONS[userItem.role] || DEFAULT_ROLE_PERMISSIONS.cashier);
   };
 
+  const [isGenerating, setIsGenerating] = useState(false);
+
   const handleGenerateInvite = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    setIsGenerating(true);
+    await new Promise(resolve => setTimeout(resolve, 500));
     try {
       const token = uuidv4();
       const orgId = PersistStore.getOrgId() || "default";
@@ -156,8 +160,10 @@ function UsersPage() {
 
       const link = `${window.location.origin}/invite/${token}`;
       setGeneratedLink(link);
-    } catch (error) {
-      toast.error("Failed to generate invite link");
+    } catch (error: any) {
+      toast.error(error.message || "Failed to generate invite link");
+    } finally {
+      setIsGenerating(false);
     }
   };
 
@@ -172,8 +178,8 @@ function UsersPage() {
     try {
       await localDb.users.update(id, { status: "active", synced: false });
       toast.success("Employee approved successfully");
-    } catch (error) {
-      toast.error("Failed to approve employee");
+    } catch (error: any) {
+      toast.error(error.message || "Failed to approve employee");
     }
   };
 
@@ -212,8 +218,8 @@ function UsersPage() {
       toast.success("Employee updated successfully");
       setEditItem(null);
       clearUserAll();
-    } catch (error) {
-      toast.error("Failed to update user");
+    } catch (error: any) {
+      toast.error(error.message || "Failed to update user");
     } finally {
       setIsSaving(false);
     }
@@ -225,8 +231,8 @@ function UsersPage() {
         await localDb.users.delete(deleteId);
         toast.success("Employee deleted");
         setDeleteId(null);
-      } catch (error) {
-        toast.error("Failed to delete employee");
+      } catch (error: any) {
+        toast.error(error.message || "Failed to delete employee");
       }
     }
   };
@@ -388,7 +394,10 @@ function UsersPage() {
                 Generate a unique invitation link to send to your employee. They will register their credentials and PIN, after which you can approve their account.
               </p>
               <DialogFooter>
-                <Button type="submit"><LinkIcon className="size-4 mr-2" /> Generate Link</Button>
+                <Button type="submit" disabled={isGenerating}>
+                  {isGenerating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  <LinkIcon className="size-4 mr-2" /> Generate Link
+                </Button>
               </DialogFooter>
             </form>
           ) : (

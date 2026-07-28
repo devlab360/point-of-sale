@@ -25,6 +25,7 @@ import { v4 as uuidv4 } from "uuid";
 import { toast } from "sonner";
 import { useFormValidation } from "@/hooks/useFormValidation";
 import { FieldError } from "@/components/ui/field-error";
+import { usePreferences } from "@/contexts/PreferencesContext";
 
 export const Route = createFileRoute("/delivery-challans")({
   head: () => ({ meta: [{ title: "Delivery Challans · Grocer.Pro" }] }),
@@ -34,6 +35,7 @@ export const Route = createFileRoute("/delivery-challans")({
 type ChallanLineItem = { productId: string; productName: string; quantity: number; unit: string; price: number };
 
 function DeliveryChallansPage() {
+  const { formatDate, formatTime, formatDateTime } = usePreferences();
   const { formatCurrency } = useCurrency();
   const rawChallans = useLiveQuery(() => localDb.deliveryChallans.toArray()) || [];
   const customers = useLiveQuery(() => localDb.customers.toArray()) || [];
@@ -82,6 +84,7 @@ function DeliveryChallansPage() {
   }, [debouncedSearch]);
 
   const addItemToChallan = (productId: string) => {
+  const { formatDate, formatTime, formatDateTime } = usePreferences();
     const p = products.find((prod) => prod.id === productId);
     if (!p) return;
     const cust = customers.find((c) => c.id === selectedCustomerId);
@@ -105,6 +108,7 @@ function DeliveryChallansPage() {
   };
 
   const updateLineQty = (productId: string, qty: number) => {
+  const { formatDate, formatTime, formatDateTime } = usePreferences();
     if (qty <= 0) {
       setLineItems((prev) => prev.filter((item) => item.productId !== productId));
       return;
@@ -133,6 +137,7 @@ function DeliveryChallansPage() {
     if (!cust) return toast.error("Please select a customer");
 
     setIsSubmitting(true);
+    await new Promise(resolve => setTimeout(resolve, 500));
     try {
       const chNo = `CH-${Date.now().toString().slice(-6)}`;
       await localDb.deliveryChallans.add({
@@ -274,7 +279,7 @@ function DeliveryChallansPage() {
                     <tr key={c.id} className="hover:bg-muted/30">
                       <td className="px-4 py-3 font-mono font-bold text-primary">{c.challanNo}</td>
                       <td className="px-4 py-3 font-semibold">{c.customerName}</td>
-                      <td className="px-4 py-3 text-xs text-muted-foreground">{new Date(c.date).toLocaleDateString()}</td>
+                      <td className="px-4 py-3 text-xs text-muted-foreground">{formatDate(c.date)}</td>
                       <td className="px-4 py-3 text-xs">
                         {c.transportName ? `${c.transportName} (${c.vehicleNo || "N/A"})` : "Self / Local"}
                       </td>

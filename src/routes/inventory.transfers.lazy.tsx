@@ -10,7 +10,7 @@ import { useLiveQuery } from "dexie-react-hooks";
 import { localDb } from "@/lib/db";
 import { v4 as uuidv4 } from "uuid";
 import { toast } from "sonner";
-import { ArrowRightLeft, Search } from "lucide-react";
+import { ArrowRightLeft, Search, Loader2 } from "lucide-react";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PaginationControls } from "@/components/ui/pagination-controls";
 import { useDebounce } from "@/hooks/useDebounce";
@@ -52,6 +52,8 @@ function TransfersPage() {
   const totalPages = Math.ceil(filteredTransfers.length / itemsPerPage);
   const paginatedTransfers = filteredTransfers.slice((page - 1) * itemsPerPage, page * itemsPerPage);
 
+  const [isSaving, setIsSaving] = useState(false);
+
   const handleSave = async () => {
     if (!formData.product || !formData.destination || !formData.items) return toast.error("Please fill all fields");
     
@@ -60,6 +62,8 @@ function TransfersPage() {
 
     if (prod.stock < formData.items) return toast.error("Not enough stock for transfer");
 
+    setIsSaving(true);
+    await new Promise(resolve => setTimeout(resolve, 500));
     try {
       await localDb.transaction("rw", localDb.transfers, localDb.inventoryMovements, localDb.products, async () => {
         const transfer = {
@@ -82,8 +86,10 @@ function TransfersPage() {
       toast.success("Transfer recorded successfully");
       setOpen(false);
       setFormData({ product: "", destination: "", items: 1 });
-    } catch (e) {
-      toast.error("Error saving transfer");
+    } catch (e: any) {
+      toast.error(e.message || "Error saving transfer");
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -132,7 +138,10 @@ function TransfersPage() {
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
-              <Button onClick={handleSave}>Record Transfer</Button>
+              <Button onClick={handleSave} disabled={isSaving}>
+                {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Record Transfer
+              </Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>

@@ -70,8 +70,8 @@ function SuperAdminUsers() {
           });
         }
       }
-    } catch (e) {
-      toast.error("Could not connect to cloud. Showing local data.");
+    } catch (e: any) {
+      toast.error(e.message || "Could not connect to cloud. Showing local data.");
       const orgs = await localDb.saasOrganizations.toArray();
       setOrganizations(orgs.filter(o => o.id !== "default"));
       const localPlans = await localDb.saasPlans.toArray();
@@ -105,8 +105,8 @@ function SuperAdminUsers() {
       await localDb.saasOrganizations.update(org.id, { status: newStatus });
       toast.success(`Tenant ${newStatus === "suspended" ? "suspended" : "activated"}`);
       await loadData();
-    } catch (e) {
-      toast.error("Failed to update status");
+    } catch (e: any) {
+      toast.error(e.message || "Failed to update status");
     }
   };
 
@@ -118,13 +118,17 @@ function SuperAdminUsers() {
       await localDb.saasOrganizations.update(org.id, { planExpiryDate: newExpiry });
       toast.success("Added 7 days trial!");
       await loadData();
-    } catch (e) {
-      toast.error("Failed");
+    } catch (e: any) {
+      toast.error(e.message || "Failed");
     }
   };
 
+  const [isEditing, setIsEditing] = useState(false);
+
   const handleEditTenantSubmit = async () => {
     if (!editingTenant?.name || !editingTenant?.ownerEmail) return toast.error("Fill required fields");
+    setIsEditing(true);
+    await new Promise(resolve => setTimeout(resolve, 500));
     try {
       await updateOrganizationFn({
         data: {
@@ -147,8 +151,10 @@ function SuperAdminUsers() {
       toast.success("Tenant updated!");
       setIsEditModalOpen(false);
       await loadData();
-    } catch (e) {
-      toast.error("Failed to update tenant");
+    } catch (e: any) {
+      toast.error(e.message || "Failed to update tenant");
+    } finally {
+      setIsEditing(false);
     }
   };
 
@@ -161,6 +167,7 @@ function SuperAdminUsers() {
       return toast.error(pwdCheck.error);
     }
     setIsCreating(true);
+    await new Promise(resolve => setTimeout(resolve, 500));
     try {
       const result = await createTenantUserFn({ data: { adminKey: ADMIN_KEY, ...newTenant } }) as any;
       if (result.success) {
@@ -171,8 +178,8 @@ function SuperAdminUsers() {
       } else {
         toast.error("Failed: " + result.error);
       }
-    } catch (e) {
-      toast.error("Server error");
+    } catch (e: any) {
+      toast.error(e.message || "Server error");
     } finally {
       setIsCreating(false);
     }
@@ -372,7 +379,10 @@ function SuperAdminUsers() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsEditModalOpen(false)}>Cancel</Button>
-            <Button onClick={handleEditTenantSubmit}>Save Changes</Button>
+            <Button onClick={handleEditTenantSubmit} disabled={isEditing}>
+              {isEditing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Save Changes
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

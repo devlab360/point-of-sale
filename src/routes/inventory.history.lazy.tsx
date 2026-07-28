@@ -7,12 +7,14 @@ import { useState, useMemo } from "react";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PaginationControls } from "@/components/ui/pagination-controls";
 import { History } from "lucide-react";
+import { usePreferences } from "@/contexts/PreferencesContext";
 
 export const Route = createLazyFileRoute("/inventory/history")({
   component: HistoryPage,
 });
 
 function HistoryPage() {
+  const { formatDate, formatTime, formatDateTime } = usePreferences();
   const rawMovements = useLiveQuery(() => localDb.inventoryMovements.reverse().toArray()) || [];
   const [page, setPage] = useState(1);
   const itemsPerPage = 15;
@@ -47,7 +49,7 @@ function HistoryPage() {
                 {movements.map((m, i) => (
                   <tr key={m.id || i} className="hover:bg-muted/30">
                     <td className="px-4 py-3 text-muted-foreground">
-                      {new Date(m.createdAt).toLocaleString()}
+                      {formatDateTime(m.createdAt)}
                     </td>
                     <td className="px-4 py-3 font-semibold">{m.productName}</td>
                     <td className="px-4 py-3">

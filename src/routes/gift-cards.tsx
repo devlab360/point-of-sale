@@ -35,6 +35,7 @@ import { toast } from "sonner";
 import type { LocalGiftCard } from "@/lib/db";
 import { useFormValidation } from "@/hooks/useFormValidation";
 import { FieldError } from "@/components/ui/field-error";
+import { usePreferences } from "@/contexts/PreferencesContext";
 
 export const Route = createFileRoute("/gift-cards")({
   head: () => ({ meta: [{ title: "Gift Cards · Grocer.Pro" }] }),
@@ -42,6 +43,7 @@ export const Route = createFileRoute("/gift-cards")({
 });
 
 function GiftCardsPage() {
+  const { formatDate, formatTime, formatDateTime } = usePreferences();
   const { formatCurrency } = useCurrency();
   const giftCards = useLiveQuery(() => localDb.giftCards.toArray()) || [];
   const [isAddOpen, setIsAddOpen] = useState(false);
@@ -85,6 +87,7 @@ function GiftCardsPage() {
   const handleSave = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsSaving(true);
+    await new Promise(resolve => setTimeout(resolve, 500));
     try {
       const formData = new FormData(e.currentTarget);
       const code = (formData.get("code") as string)?.trim();
@@ -181,7 +184,7 @@ function GiftCardsPage() {
                     <span className="text-xs uppercase tracking-wider text-muted-foreground">Balance</span>
                     <span className="number text-2xl font-bold">{formatCurrency(g.balance)}</span>
                   </div>
-                  <div className="mt-1 text-xs text-muted-foreground">expires {new Date(g.expires).toLocaleDateString()}</div>
+                  <div className="mt-1 text-xs text-muted-foreground">expires {formatDate(g.expires)}</div>
                 </div>
               ))}
             </div>

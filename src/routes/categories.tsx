@@ -104,6 +104,7 @@ function CategoriesPage() {
     if (!isValid) return;
     
     setIsSaving(true);
+    await new Promise(resolve => setTimeout(resolve, 500));
     try {
       if (editingCat) {
         await localDb.categories.update(editingCat.id, { name, icon, color });

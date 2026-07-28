@@ -210,6 +210,7 @@ function ProductsPage() {
     if (!isValid) return;
 
     setIsSaving(true);
+    await new Promise(resolve => setTimeout(resolve, 500));
 
     // Parse serials
     const serialsList = formData.hasSerial

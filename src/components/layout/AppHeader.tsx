@@ -93,10 +93,10 @@ export function AppHeader() {
   const searchProducts = useMemo(() => {
     if (!searchQuery.trim() || searchQuery.length < 1) return [];
     const q = searchQuery.toLowerCase();
-    return allProducts.filter(p => 
+    return allProducts.filter(p =>
       Boolean(
-        (p.name && String(p.name).toLowerCase().includes(q)) || 
-        (p.sku && String(p.sku).toLowerCase().includes(q)) || 
+        (p.name && String(p.name).toLowerCase().includes(q)) ||
+        (p.sku && String(p.sku).toLowerCase().includes(q)) ||
         (p.barcode && String(p.barcode).toLowerCase().includes(q)) ||
         (p.category && String(p.category).toLowerCase().includes(q)) ||
         (p.brand && String(p.brand).toLowerCase().includes(q))
@@ -107,10 +107,10 @@ export function AppHeader() {
   const searchCustomers = useMemo(() => {
     if (!searchQuery.trim() || searchQuery.length < 1) return [];
     const q = searchQuery.toLowerCase();
-    return allCustomers.filter(c => 
+    return allCustomers.filter(c =>
       Boolean(
-        (c.name && String(c.name).toLowerCase().includes(q)) || 
-        (c.phone && String(c.phone).includes(q)) || 
+        (c.name && String(c.name).toLowerCase().includes(q)) ||
+        (c.phone && String(c.phone).includes(q)) ||
         (c.email && String(c.email).toLowerCase().includes(q)) ||
         (c.gstin && String(c.gstin).toLowerCase().includes(q))
       )
@@ -120,9 +120,9 @@ export function AppHeader() {
   const searchOrders = useMemo(() => {
     if (!searchQuery.trim() || searchQuery.length < 1) return [];
     const q = searchQuery.toLowerCase();
-    return allOrders.filter(s => 
+    return allOrders.filter(s =>
       Boolean(
-        (s.id && String(s.id).toLowerCase().includes(q)) || 
+        (s.id && String(s.id).toLowerCase().includes(q)) ||
         (s.customerName && String(s.customerName).toLowerCase().includes(q)) ||
         (s.paymentMethod && String(s.paymentMethod).toLowerCase().includes(q))
       )
@@ -132,10 +132,10 @@ export function AppHeader() {
   const searchSuppliers = useMemo(() => {
     if (!searchQuery.trim() || searchQuery.length < 1) return [];
     const q = searchQuery.toLowerCase();
-    return allSuppliers.filter(s => 
+    return allSuppliers.filter(s =>
       Boolean(
-        (s.name && String(s.name).toLowerCase().includes(q)) || 
-        (s.phone && String(s.phone).includes(q)) || 
+        (s.name && String(s.name).toLowerCase().includes(q)) ||
+        (s.phone && String(s.phone).includes(q)) ||
         (s.email && String(s.email).toLowerCase().includes(q)) ||
         (s.contact && String(s.contact).toLowerCase().includes(q))
       )
@@ -145,10 +145,10 @@ export function AppHeader() {
   const searchPurchases = useMemo(() => {
     if (!searchQuery.trim() || searchQuery.length < 1) return [];
     const q = searchQuery.toLowerCase();
-    return allPurchases.filter(p => 
+    return allPurchases.filter(p =>
       Boolean(
-        (p.id && String(p.id).toLowerCase().includes(q)) || 
-        (p.invoiceNo && String(p.invoiceNo).toLowerCase().includes(q)) || 
+        (p.id && String(p.id).toLowerCase().includes(q)) ||
+        (p.invoiceNo && String(p.invoiceNo).toLowerCase().includes(q)) ||
         (p.supplier && String(p.supplier).toLowerCase().includes(q))
       )
     ).slice(0, 5);
@@ -157,9 +157,9 @@ export function AppHeader() {
   const searchExpenses = useMemo(() => {
     if (!searchQuery.trim() || searchQuery.length < 1) return [];
     const q = searchQuery.toLowerCase();
-    return allExpenses.filter(e => 
+    return allExpenses.filter(e =>
       Boolean(
-        (e.category && String(e.category).toLowerCase().includes(q)) || 
+        (e.category && String(e.category).toLowerCase().includes(q)) ||
         (e.description && String(e.description).toLowerCase().includes(q))
       )
     ).slice(0, 5);
@@ -168,7 +168,7 @@ export function AppHeader() {
   const searchModules = useMemo(() => {
     if (!searchQuery.trim() || searchQuery.length < 1) return [];
     const q = searchQuery.toLowerCase();
-    return APP_MODULES.filter(m => 
+    return APP_MODULES.filter(m =>
       m.title.toLowerCase().includes(q) || m.category.toLowerCase().includes(q)
     ).slice(0, 6);
   }, [APP_MODULES, searchQuery]);
@@ -212,7 +212,7 @@ export function AppHeader() {
     if (!activeShift) return;
 
     // In a real app, this would open a modal to count cash. For now, auto-close.
-    const actualCash = window.prompt(`Closing Register.\nExpected Cash: $${activeShift.expectedCash.toFixed(2)}\nEnter actual cash in drawer:`, activeShift.expectedCash.toString());
+    const actualCash = window.prompt(`Closing Register.\nExpected Cash: $${Number(activeShift.expectedCash || 0).toFixed(2)}\nEnter actual cash in drawer:`, activeShift.expectedCash.toString());
 
     if (actualCash === null) return;
 
@@ -231,7 +231,7 @@ export function AppHeader() {
       difference: difference
     });
 
-    toast.success(`Register closed. Discrepancy: $${difference.toFixed(2)}`);
+    toast.success(`Register closed. Discrepancy: $${Number(difference || 0).toFixed(2)}`);
   };
 
   return (
@@ -377,8 +377,12 @@ export function AppHeader() {
         </DropdownMenu>
 
         <DropdownMenu>
-          <DropdownMenuTrigger className="ml-1 grid size-9 place-items-center rounded-full bg-gradient-to-br from-primary to-info text-sm font-bold text-primary-foreground">
-            {initials}
+          <DropdownMenuTrigger className="ml-1 flex size-9 items-center justify-center rounded-full bg-gradient-to-br from-primary to-info text-sm font-bold text-primary-foreground overflow-hidden">
+            {(profile as any).avatar ? (
+              <img src={(profile as any).avatar} alt="Profile" className="size-full object-cover" />
+            ) : (
+              initials
+            )}
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-56">
             <DropdownMenuLabel>
@@ -482,7 +486,7 @@ export function AppHeader() {
                             {p.sku && <span className="text-xs text-muted-foreground font-mono">({p.sku})</span>}
                           </div>
                           <div className="flex items-center gap-2 font-semibold text-primary">
-                            ${p.price.toFixed(2)} <ArrowRight className="size-3.5 text-muted-foreground" />
+                            ${Number(p.price || 0).toFixed(2)} <ArrowRight className="size-3.5 text-muted-foreground" />
                           </div>
                         </div>
                       ))}
@@ -524,7 +528,7 @@ export function AppHeader() {
                         >
                           <div className="font-medium">Order #{o.id}</div>
                           <div className="flex items-center gap-2 text-xs text-muted-foreground font-medium">
-                            <span>{o.customerName || "Walk-in Customer"} · ${o.total.toFixed(2)}</span> <ArrowRight className="size-3.5" />
+                            <span>{o.customerName || "Walk-in Customer"} · ${Number(o.total || 0).toFixed(2)}</span> <ArrowRight className="size-3.5" />
                           </div>
                         </div>
                       ))}
@@ -566,7 +570,7 @@ export function AppHeader() {
                         >
                           <div className="font-medium">Purchase #{p.invoiceNo || p.id}</div>
                           <div className="flex items-center gap-2 text-xs text-muted-foreground font-medium">
-                            <span>{p.supplier || "Vendor"} · ${p.total.toFixed(2)}</span> <ArrowRight className="size-3.5" />
+                            <span>{p.supplier || "Vendor"} · ${Number(p.total || 0).toFixed(2)}</span> <ArrowRight className="size-3.5" />
                           </div>
                         </div>
                       ))}
@@ -587,7 +591,7 @@ export function AppHeader() {
                         >
                           <div className="font-medium">{e.category || "Expense"}</div>
                           <div className="flex items-center gap-2 text-xs text-muted-foreground font-medium">
-                            <span>{e.description || "No description"} · ${e.amount.toFixed(2)}</span> <ArrowRight className="size-3.5" />
+                            <span>{e.description || "No description"} · ${Number(e.amount || 0).toFixed(2)}</span> <ArrowRight className="size-3.5" />
                           </div>
                         </div>
                       ))}

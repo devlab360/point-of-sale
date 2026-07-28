@@ -35,6 +35,7 @@ function LoginPage() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isSendingOtp, setIsSendingOtp] = useState(false);
   const [isResetting, setIsResetting] = useState(false);
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
 
   // Validation hooks
   const { errors: loginErrors, validate: validateLogin, clearError: clearLoginError } = useFormValidation({
@@ -62,11 +63,19 @@ function LoginPage() {
     setPin(prev => prev.slice(0, -1));
   };
 
+  const [isPinLoggingIn, setIsPinLoggingIn] = useState(false);
+
   const handlePinLogin = async () => {
     if (pin.length !== 4) return;
-    const success = await login(pin);
-    if (!success) {
-      setPin("");
+    setIsPinLoggingIn(true);
+    await new Promise(resolve => setTimeout(resolve, 500));
+    try {
+      const success = await login(pin);
+      if (!success) {
+        setPin("");
+      }
+    } finally {
+      setIsPinLoggingIn(false);
     }
   };
 
@@ -94,7 +103,13 @@ function LoginPage() {
       return;
     }
 
-    await loginWithEmail(cleanEmail, password);
+    setIsLoggingIn(true);
+    await new Promise(resolve => setTimeout(resolve, 500));
+    try {
+      await loginWithEmail(cleanEmail, password);
+    } finally {
+      setIsLoggingIn(false);
+    }
   };
 
   const handleSendResetOtp = async (e: React.FormEvent) => {
@@ -116,6 +131,7 @@ function LoginPage() {
       return;
     }
     setIsSendingOtp(true);
+    await new Promise(resolve => setTimeout(resolve, 500));
     try {
       const otp = generateVerificationOtp();
       setGeneratedOtp(otp);
@@ -125,9 +141,8 @@ function LoginPage() {
         setForgotStep("verify");
         toast.success(`OTP sent to ${targetEmail}. Check your email inbox.`);
       }
-    } catch (err) {
-      console.error("Error sending OTP:", err);
-      toast.error("Failed to send OTP code. Please try again.");
+    } catch (err: any) {
+      toast.error(err.message || "Failed to send OTP code. Please try again.");
     } finally {
       setIsSendingOtp(false);
     }
@@ -139,7 +154,7 @@ function LoginPage() {
 
     const isValid = validateReset({ otpInput, newPassword, confirmPassword });
     if (!isValid) return;
-    
+
     if (!otpInput.trim()) {
       toast.error("Please enter the 6-digit OTP code sent to your email.");
       return;
@@ -161,6 +176,7 @@ function LoginPage() {
     }
 
     setIsResetting(true);
+    await new Promise(resolve => setTimeout(resolve, 500));
     try {
       const allUsers = await localDb.users.toArray();
       const user = allUsers.find(u => u.email?.toLowerCase().trim() === targetEmail);
@@ -185,7 +201,7 @@ function LoginPage() {
       }
 
       toast.success("Password updated successfully! Signing you in with your new password...");
-      
+
       // Auto attempt login with new credentials
       const loginSuccess = await loginWithEmail(targetEmail, newPassword);
       if (!loginSuccess) {
@@ -193,9 +209,8 @@ function LoginPage() {
         setEmail(targetEmail);
         setPassword(newPassword);
       }
-    } catch (err) {
-      console.error("Reset error:", err);
-      toast.error("Failed to update password. Please try again.");
+    } catch (err: any) {
+      toast.error(err.message || "Failed to update password. Please try again.");
     } finally {
       setIsResetting(false);
     }
@@ -213,8 +228,8 @@ function LoginPage() {
             {mode === "pin"
               ? "Enter your PIN to access the register"
               : mode === "forgot"
-              ? "Reset your password via Email OTP"
-              : "Sign in to your store dashboard"}
+                ? "Reset your password via Email OTP"
+                : "Sign in to your store dashboard"}
           </p>
         </div>
 
@@ -254,8 +269,11 @@ function LoginPage() {
               />
               <FieldError message={loginErrors.password} />
             </div>
-            <Button type="submit" className="w-full mt-2">Sign In</Button>
-            
+            <Button type="submit" className="w-full mt-2" disabled={isLoggingIn}>
+              {isLoggingIn && <Loader2 className="size-4 animate-spin mr-2" />}
+              Sign In
+            </Button>
+
             <div className="relative my-4">
               <div className="absolute inset-0 flex items-center"><span className="w-full border-t" /></div>
               <div className="relative flex justify-center text-xs uppercase"><span className="bg-card px-2 text-muted-foreground">Or continue with</span></div>
@@ -393,9 +411,8 @@ function LoginPage() {
               {[0, 1, 2, 3].map((i) => (
                 <div
                   key={i}
-                  className={`size-4 rounded-full transition-colors ${
-                    i < pin.length ? "bg-primary" : "bg-muted"
-                  }`}
+                  className={`size-4 rounded-full transition-colors ${i < pin.length ? "bg-primary" : "bg-muted"
+                    }`}
                 />
               ))}
             </div>
@@ -417,8 +434,8 @@ function LoginPage() {
               <Button variant="outline" className="h-16 text-2xl font-semibold" onClick={() => handleKeyPress("0")}>
                 0
               </Button>
-              <Button className="h-16 text-xl font-medium" onClick={handlePinLogin} disabled={pin.length !== 4}>
-                Go
+              <Button className="h-16 text-xl font-medium" onClick={handlePinLogin} disabled={pin.length !== 4 || isPinLoggingIn}>
+                {isPinLoggingIn ? <Loader2 className="size-6 animate-spin" /> : "Go"}
               </Button>
             </div>
           </>

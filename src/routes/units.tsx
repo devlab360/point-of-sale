@@ -93,6 +93,7 @@ function UnitsPage() {
     if (!isValid) return;
     
     setIsSaving(true);
+    await new Promise(resolve => setTimeout(resolve, 500));
     try {
       if (editingUnit) {
         await localDb.units.update(editingUnit.id, { name, short });

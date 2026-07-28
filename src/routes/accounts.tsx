@@ -18,6 +18,7 @@ import { PaginationControls } from "@/components/ui/pagination-controls";
 import { cn } from "@/lib/utils";
 import { useFormValidation } from "@/hooks/useFormValidation";
 import { FieldError } from "@/components/ui/field-error";
+import { usePreferences } from "@/contexts/PreferencesContext";
 
 export const Route = createFileRoute("/accounts")({
   head: () => ({ meta: [{ title: "Chart of Accounts & Vouchers · Grocer.Pro" }] }),
@@ -38,6 +39,7 @@ const DEFAULT_ACCOUNTS: Omit<LocalAccount, "id">[] = [
 ];
 
 function AccountsPage() {
+  const { formatDate, formatTime, formatDateTime } = usePreferences();
   const { formatCurrency } = useCurrency();
   const rawAccounts = useLiveQuery(() => localDb.accounts.toArray()) || [];
   const rawVouchers = useLiveQuery(() => localDb.vouchers.toArray()) || [];
@@ -115,6 +117,7 @@ function AccountsPage() {
     if (!isValid) return;
 
     setIsSubmittingAccount(true);
+    await new Promise(resolve => setTimeout(resolve, 500));
     try {
       await localDb.accounts.add({
         id: uuidv4(),
@@ -152,6 +155,7 @@ function AccountsPage() {
     if (!debitAcc || !creditAcc) return;
 
     setIsPostingVoucher(true);
+    await new Promise(resolve => setTimeout(resolve, 500));
     try {
       const vNo = `VCH-${Date.now().toString().slice(-6)}`;
       await localDb.vouchers.add({
@@ -284,7 +288,7 @@ function AccountsPage() {
                     paginatedVouchers.map((v) => (
                       <tr key={v.id} className="hover:bg-muted/30">
                         <td className="px-4 py-3 font-mono font-bold text-primary">{v.voucherNo}</td>
-                        <td className="px-4 py-3 text-xs text-muted-foreground">{new Date(v.date).toLocaleString()}</td>
+                        <td className="px-4 py-3 text-xs text-muted-foreground">{formatDateTime(v.date)}</td>
                         <td className="px-4 py-3 font-medium uppercase text-xs">
                           <Badge variant="outline" className="capitalize">{v.type}</Badge>
                         </td>

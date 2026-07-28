@@ -13,6 +13,7 @@ import { getTrialDaysFromEnv } from "@/lib/email-service";
 import { getTrialPlanFn } from "@/sync-api";
 import { validateEmail, validateMobile, validatePassword, validateStrongPassword, sanitizeInput } from "@/lib/validation";
 import { SessionStore, PersistStore } from "@/lib/session-store";
+import { PhoneInput } from "@/components/ui/phone-input";
 
 export const Route = createFileRoute("/register")({
   head: () => ({ meta: [{ title: "Register · Grocer.Pro SaaS" }] }),
@@ -20,8 +21,8 @@ export const Route = createFileRoute("/register")({
 });
 
 const INDUSTRIES = [
-  "Saloon & Spa", "Grocery Shop", "Hotel & Restaurant", 
-  "Beauty and Cosmetics", "Super Market", "Hyper Market", 
+  "Saloon & Spa", "Grocery Shop", "Hotel & Restaurant",
+  "Beauty and Cosmetics", "Super Market", "Hyper Market",
   "Home Decor & Furniture", "Apparel", "Electronics", "Books & Toys"
 ];
 
@@ -119,7 +120,7 @@ function RegisterPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validateStep2()) return;
-    
+
     setIsRegistering(true);
     try {
       const orgId = uuidv4();
@@ -128,7 +129,7 @@ function RegisterPage() {
       const trialEndsAt = new Date(Date.now() + trialDays * 24 * 60 * 60 * 1000).toISOString();
 
       const seedData = INDUSTRY_SEEDS[formData.industry];
-      
+
       await localDb.settings.put({
         id: "default",
         orgId,
@@ -224,7 +225,7 @@ function RegisterPage() {
     <div className="flex min-h-screen bg-muted/20">
       {/* Left Panel: Hero Image & Branding */}
       <div className="relative hidden w-1/2 flex-col justify-between p-12 text-white lg:flex overflow-hidden">
-        <div 
+        <div
           className="absolute inset-0 bg-cover bg-center transition-transform duration-1000 scale-105"
           style={{ backgroundImage: `url('https://images.unsplash.com/photo-1556742049-0a6754099a6d?auto=format&fit=crop&q=80&w=1600')` }}
         />
@@ -237,7 +238,7 @@ function RegisterPage() {
             </div>
             <span className="text-white drop-shadow-md">Grocer.Pro SaaS</span>
           </div>
-          
+
           <div className="mt-12 space-y-4 max-w-md">
             <span className="rounded-full bg-primary/20 border border-primary/40 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-primary-foreground backdrop-blur-md">
               ⚡ World-Class POS + ERP Platform
@@ -354,13 +355,13 @@ function RegisterPage() {
 
                 <div className="space-y-1.5">
                   <Label>Phone Number</Label>
-                  <Input
+                  <PhoneInput
                     type="tel"
                     name="phone"
                     value={formData.phone}
                     onChange={handleChange}
                     className={errors.phone ? "border-destructive focus-visible:ring-destructive" : ""}
-                    placeholder="e.g. +880 1700 000000"
+                    placeholder="e.g. 1700 000000"
                   />
                   {errors.phone && <p className="text-xs font-semibold text-destructive mt-1">{errors.phone}</p>}
                 </div>

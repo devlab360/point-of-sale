@@ -186,12 +186,19 @@ export const pushEverythingFn = createServerFn({ method: "POST" })
           // For append-only tables, if records have no embedded items, we can do a bulk insert
           if (tableName === 'saleItems' || tableName === 'purchaseItems' || tableName === 'inventoryMovements') {
             const cleanRecords = tableName === 'saleItems' ? records.map(validateAndSanitizeSaleItem) : records;
+            const dateFields = new Set(['planExpiryDate', 'createdAt', 'loginAt', 'logoutAt', 'expiresAt', 'lastActive', 'joined', 'expiryDate', 'updatedAt', 'date', 'trialEndsAt', 'expires', 'issued', 'startDate', 'endDate', 'timestamp', 'savedAt', 'openTime', 'closeTime', 'nextBillingDate', 'rentStartDate', 'expectedReturnDate']);
             const bulkData = cleanRecords.map((r: any) => {
               const item = { ...r };
               if (table.organizationId) item.organizationId = orgId;
               else if (table.orgId) item.orgId = orgId;
               delete item.synced;
               delete item.syncRetryCount;
+
+              for (const key of Object.keys(item)) {
+                if (dateFields.has(key) && typeof item[key] === 'string') {
+                  item[key] = new Date(item[key]);
+                }
+              }
               return item;
             });
             if (bulkData.length > 0) {
@@ -230,9 +237,13 @@ export const pushEverythingFn = createServerFn({ method: "POST" })
 
               // Strip unknown Postgres columns by only keeping keys that exist in the table schema
               const tableColumns = Object.keys(table);
+              const dateFields = new Set(['planExpiryDate', 'createdAt', 'loginAt', 'logoutAt', 'expiresAt', 'lastActive', 'joined', 'expiryDate', 'updatedAt', 'date', 'trialEndsAt', 'expires', 'issued', 'startDate', 'endDate', 'timestamp', 'savedAt', 'openTime', 'closeTime', 'nextBillingDate', 'rentStartDate', 'expectedReturnDate']);
+
               for (const key of Object.keys(insertData)) {
                 if (key !== 'id' && !tableColumns.includes(key)) {
                   delete insertData[key];
+                } else if (dateFields.has(key) && typeof insertData[key] === 'string') {
+                  insertData[key] = new Date(insertData[key]);
                 }
               }
 
@@ -582,7 +593,7 @@ export const sendEmailWorkerFn = createServerFn({ method: "POST" })
 // DIRECT DB FUNCTIONS (FOR SETTINGS/SECURITY)
 // ==========================================
 
-export const getOrgSettingsFn = createServerFn({ method: "GET" })
+export const getOrgSettingsFn = createServerFn({ method: "POST" })
   .validator((data: { orgId: string }) => data)
   .handler(async ({ data }) => {
     try {
@@ -597,10 +608,28 @@ export const updateOrgSettingsFn = createServerFn({ method: "POST" })
   .validator((data: { orgId: string; settings: Partial<typeof schema.settings.$inferInsert> }) => data)
   .handler(async ({ data }) => {
     try {
+      // Remove undefined values to prevent Drizzle errors
+      const cleanSettings = Object.fromEntries(
+        Object.entries(data.settings).filter(([_, v]) => v !== undefined)
+      );
+
+      // Ensure org exists to prevent Foreign Key constraint violation
+      const orgCheck = await db.select().from(schema.organizations).where(eq(schema.organizations.id, data.orgId)).limit(1);
+      if (!orgCheck.length) {
+        await db.insert(schema.organizations).values({
+          id: data.orgId,
+          name: data.settings.storeName || "Unknown Store",
+          ownerEmail: "",
+          status: "trial",
+          currentPlanId: "basic",
+          syncKey: data.orgId // fallback
+        }).onConflictDoNothing();
+      }
+
       const existing = await db.select().from(schema.settings).where(eq(schema.settings.organizationId, data.orgId)).limit(1);
       if (existing.length) {
         await db.update(schema.settings).set({
-          ...data.settings,
+          ...cleanSettings,
           updatedAt: new Date()
         }).where(eq(schema.settings.organizationId, data.orgId));
       } else {
@@ -608,7 +637,7 @@ export const updateOrgSettingsFn = createServerFn({ method: "POST" })
           id: data.orgId,
           organizationId: data.orgId,
           storeName: data.settings.storeName || "",
-          ...data.settings
+          ...cleanSettings
         } as any);
       }
       return { success: true };

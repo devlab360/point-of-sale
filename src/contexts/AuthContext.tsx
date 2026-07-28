@@ -94,7 +94,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             if (foundUser.orgId) {
               const userSettings = await localDb.settings.where("orgId").equals(foundUser.orgId).first();
               setSettings(userSettings || await localDb.settings.get("default"));
-              
+
               const org = await localDb.saasOrganizations.get(foundUser.orgId);
               if (org) {
                 setSaasOrgState(org);
@@ -143,7 +143,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             const plan = await localDb.saasPlans.get(org.currentPlanId);
             if (plan) setSaasPlanState(plan);
           }
-          
+
           // Log SaaS Session
           const sessionId = crypto.randomUUID();
           SessionStore.setSession(sessionId);
@@ -281,36 +281,36 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         toast.error("Incorrect password");
         return false;
       }
-        setUser(foundUser);
-        SessionStore.setAuthUser(foundUser.id);
-        if (foundUser.orgId) {
-          PersistStore.setOrgId(foundUser.orgId);
+      setUser(foundUser);
+      SessionStore.setAuthUser(foundUser.id);
+      if (foundUser.orgId) {
+        PersistStore.setOrgId(foundUser.orgId);
+      }
+      await localDb.users.update(foundUser.id, { lastActive: new Date().toISOString() });
+      if (foundUser.orgId) {
+        const userSettings = await localDb.settings.where("orgId").equals(foundUser.orgId).first();
+        setSettings(userSettings || await localDb.settings.get("default"));
+        const org = await localDb.saasOrganizations.get(foundUser.orgId);
+        if (org) {
+          setSaasOrgState(org);
+          const plan = await localDb.saasPlans.get(org.currentPlanId);
+          if (plan) setSaasPlanState(plan);
         }
-        await localDb.users.update(foundUser.id, { lastActive: new Date().toISOString() });
-        if (foundUser.orgId) {
-          const userSettings = await localDb.settings.where("orgId").equals(foundUser.orgId).first();
-          setSettings(userSettings || await localDb.settings.get("default"));
-          const org = await localDb.saasOrganizations.get(foundUser.orgId);
-          if (org) {
-            setSaasOrgState(org);
-            const plan = await localDb.saasPlans.get(org.currentPlanId);
-            if (plan) setSaasPlanState(plan);
-          }
-          
-          // Log SaaS Session
-          const sessionId = crypto.randomUUID();
-          SessionStore.setSession(sessionId);
-          await localDb.saasSessions.add({
-            id: sessionId,
-            orgId: foundUser.orgId,
-            userId: foundUser.id,
-            loginAt: new Date().toISOString(),
-            status: "live",
-            device: navigator.userAgent
-          });
-        } else {
-          setSettings(await localDb.settings.get("default"));
-        }
+
+        // Log SaaS Session
+        const sessionId = crypto.randomUUID();
+        SessionStore.setSession(sessionId);
+        await localDb.saasSessions.add({
+          id: sessionId,
+          orgId: foundUser.orgId,
+          userId: foundUser.id,
+          loginAt: new Date().toISOString(),
+          status: "live",
+          device: navigator.userAgent
+        });
+      } else {
+        setSettings(await localDb.settings.get("default"));
+      }
 
       toast.success(`Welcome back, ${foundUser.name}`);
       router.navigate({ to: "/" });
@@ -334,10 +334,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       const mockEmail = provider === "google" ? "google.user@store.com" : "facebook.user@store.com";
       const mockName = provider === "google" ? "Google User" : "Facebook User";
-      
+
       const users = await localDb.users.toArray();
       let foundUser = users.find(u => u.email === mockEmail);
-      
+
       if (!foundUser) {
         const newId = `social-${Date.now()}`;
         const orgId = `org-${Date.now()}`;
@@ -353,7 +353,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         };
         await localDb.users.add(foundUser);
       }
-      
+
       setUser(foundUser);
       SessionStore.setAuthUser(foundUser.id);
       if (foundUser.orgId) {

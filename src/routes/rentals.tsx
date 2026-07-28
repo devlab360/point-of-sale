@@ -81,6 +81,7 @@ function RentalsPage() {
     if (!isValid) return;
 
     setIsSubmitting(true);
+    await new Promise(resolve => setTimeout(resolve, 500));
     try {
       const rNo = `RNT-${Date.now().toString().slice(-6)}`;
       const rate = parseFloat(dailyRate) || 0;

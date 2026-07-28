@@ -19,6 +19,7 @@ import {
   X,
   MessageCircle,
   Keyboard,
+  Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { localDb, addSystemNotification } from "@/lib/db";
@@ -49,7 +50,9 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
+import { PhoneInput } from "@/components/ui/phone-input";
 import { Label } from "@/components/ui/label";
+import { usePreferences } from "@/contexts/PreferencesContext";
 
 export const Route = createFileRoute("/pos")({
   head: () => ({
@@ -65,6 +68,7 @@ type CartLine = { id: string; qty: number };
 type PaymentMode = "cash" | "card" | "upi" | "split" | "credit" | "wallet";
 
 function PosScreen() {
+  const { formatDate, formatTime, formatDateTime } = usePreferences();
   const { currencySymbol, formatCurrency } = useCurrency();
   const { t } = useLanguage();
   const products = useLiveQuery(() => localDb.products.toArray()) || [];
@@ -79,6 +83,9 @@ function PosScreen() {
     if (!user) return undefined;
     return localDb.shifts.where("userId").equals(user.id).filter(s => s.status === "open").first();
   }, [user]);
+
+  const [activeCustomerType, setActiveCustomerType] = useState("retail");
+  const [isAddingCustomer, setIsAddingCustomer] = useState(false);
 
   const [activeCat, setActiveCat] = useState<string>("all");
   const [query, setQuery] = useState("");
@@ -156,6 +163,7 @@ function PosScreen() {
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      const { formatDate, formatTime, formatDateTime } = usePreferences();
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
       const now = Date.now();
       if (now - lastKeyTimeRef.current > 50) barcodeRef.current = "";
@@ -194,6 +202,7 @@ function PosScreen() {
   );
 
   const addToCart = (id: string) => {
+    const { formatDate, formatTime, formatDateTime } = usePreferences();
     const product = products.find(p => p.id === id);
     if (!product) return;
     setCart(c => {
@@ -209,6 +218,7 @@ function PosScreen() {
   };
 
   const updateQty = (id: string, qty: number) => {
+    const { formatDate, formatTime, formatDateTime } = usePreferences();
     if (qty <= 0) { setCart(c => c.filter(l => l.id !== id)); return; }
     const product = products.find(p => p.id === id);
     if (product && qty > product.stock) { toast.error(`Only ${product.stock} available`); return; }
@@ -284,6 +294,7 @@ function PosScreen() {
   // Keyboard Shortcuts Listener (F1, F2, F8, F9, ?)
   useEffect(() => {
     const handleKeyboardShortcuts = (e: KeyboardEvent) => {
+      const { formatDate, formatTime, formatDateTime } = usePreferences();
       if (e.key === "F1") {
         e.preventDefault();
         const searchInput = document.querySelector<HTMLInputElement>('input[placeholder*="Search products"]');
@@ -325,6 +336,7 @@ function PosScreen() {
   };
 
   const resumeInvoice = (held: typeof heldInvoices[0]) => {
+    const { formatDate, formatTime, formatDateTime } = usePreferences();
     setCart(held.cart);
     setDiscountPct(held.discount);
     setDiscountInput(String(held.discount));
@@ -336,6 +348,7 @@ function PosScreen() {
   };
 
   const applyCoupon = () => {
+    const { formatDate, formatTime, formatDateTime } = usePreferences();
     const coupon = coupons.find(c => c.code.toLowerCase() === couponCode.toLowerCase() && c.status === "active");
     if (!coupon) { toast.error("Invalid or expired coupon code"); return; }
     if (new Date(coupon.expires) < new Date()) { toast.error("Coupon has expired"); return; }
@@ -359,6 +372,8 @@ function PosScreen() {
       return;
     }
 
+    setIsAddingCustomer(true);
+    await new Promise(resolve => setTimeout(resolve, 500));
     try {
       const id = uuidv4();
       await localDb.customers.add({
@@ -380,8 +395,10 @@ function PosScreen() {
       setShowAddCustomer(false);
       setShowCustomerSearch(false);
       toast.success(`Customer "${name}" added & selected for current bill!`);
-    } catch (err) {
-      toast.error("Failed to add customer. Please try again.");
+    } catch (err: any) {
+      toast.error(err.message || "Failed to add customer. Please try again.");
+    } finally {
+      setIsAddingCustomer(false);
     }
   };
 
@@ -507,7 +524,7 @@ function PosScreen() {
           await localDb.accounts.update(cashAcc.id, { balance: cashAcc.balance + total });
           await localDb.accounts.update(salesAcc.id, { balance: salesAcc.balance + total });
         }
-      } catch (e) {
+      } catch (e: any) {
         // Silent fallback
       }
 
@@ -590,7 +607,7 @@ function PosScreen() {
         receiptHeader,
         receiptFooter,
         customer: activeCustomer.name,
-        date: new Date().toLocaleString(),
+        date: formatDateTime(new Date()),
         lines,
         subtotal,
         discountAmt,
@@ -614,13 +631,13 @@ function PosScreen() {
 
       setSaleComplete(printObj);
       toast.success(`Sale #${invNum} complete!`);
-    } catch (e) {
-      console.error(e);
-      toast.error("Failed to complete sale. Please try again.");
+    } catch (e: any) {
+      toast.error(e.message || "Failed to complete sale. Please try again.");
     }
   };
 
   const sendWhatsApp = () => {
+    const { formatDate, formatTime, formatDateTime } = usePreferences();
     if (!saleComplete) return;
     const cust = customers.find(c => c.name === saleComplete.customer);
     const phone = cust?.phone || "";
@@ -1030,7 +1047,7 @@ function PosScreen() {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="custPhone">Phone Number *</Label>
-                <Input id="custPhone" name="phone" required placeholder="e.g. +91 9876543210" />
+                <PhoneInput id="custPhone" name="phone" required placeholder="e.g. +91 9876543210" />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="custEmail">Email (Optional)</Label>
@@ -1070,7 +1087,8 @@ function PosScreen() {
               <Button type="button" variant="outline" onClick={() => setShowAddCustomer(false)}>
                 Cancel
               </Button>
-              <Button type="submit">
+              <Button type="submit" disabled={isAddingCustomer}>
+                {isAddingCustomer && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Save & Select Customer
               </Button>
             </DialogFooter>
@@ -1118,7 +1136,7 @@ function PosScreen() {
                 <div key={h.id} className="flex items-center justify-between rounded-lg border border-border p-3">
                   <div>
                     <div className="font-semibold text-sm">{h.customerName || "Walk-in"}</div>
-                    <div className="text-xs text-muted-foreground">{h.cart.length} items · {new Date(h.savedAt).toLocaleTimeString()}</div>
+                    <div className="text-xs text-muted-foreground">{h.cart.length} items · {formatTime(h.savedAt)}</div>
                   </div>
                   <div className="flex gap-2">
                     <Button size="sm" onClick={() => resumeInvoice(h)}>Resume</Button>
@@ -1444,6 +1462,7 @@ function CatChip({ active, onClick, icon, label }: { active: boolean; onClick: (
 }
 
 function Row({ label, value, negative }: { label: string; value: string; negative?: boolean }) {
+  const { formatDate, formatTime, formatDateTime } = usePreferences();
   return (
     <div className="flex justify-between text-muted-foreground">
       <span>{label}</span>

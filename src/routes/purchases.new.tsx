@@ -140,7 +140,7 @@ function NewPurchase() {
               {isAnalyzing ? <Loader2 className="size-4 mr-2 animate-spin" /> : <Camera className="size-4 mr-2" />}
               Auto-Fill with AI
             </Button>
-            <Button size="sm" onClick={handleSubmit} disabled={isAnalyzing}>Submit Order</Button>
+            <Button size="sm" onClick={handleSubmit} disabled={isAnalyzing}>{isAnalyzing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Submit Order</Button>
           </div>
         }
       />

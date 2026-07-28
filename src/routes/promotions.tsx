@@ -36,6 +36,7 @@ import { toast } from "sonner";
 import type { LocalPromotion } from "@/lib/db";
 import { useFormValidation } from "@/hooks/useFormValidation";
 import { FieldError } from "@/components/ui/field-error";
+import { usePreferences } from "@/contexts/PreferencesContext";
 
 export const Route = createFileRoute("/promotions")({
   head: () => ({ meta: [{ title: "Promotions · Grocer.Pro" }] }),
@@ -43,6 +44,7 @@ export const Route = createFileRoute("/promotions")({
 });
 
 function PromotionsPage() {
+  const { formatDate, formatTime, formatDateTime } = usePreferences();
   const { formatCurrency } = useCurrency();
   const promotions = useLiveQuery(() => localDb.promotions.toArray()) || [];
   const [isAddOpen, setIsAddOpen] = useState(false);
@@ -90,6 +92,7 @@ function PromotionsPage() {
   const handleSave = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsSaving(true);
+    await new Promise(resolve => setTimeout(resolve, 500));
     try {
       const formData = new FormData(e.currentTarget);
       const title = (formData.get("title") as string)?.trim();
@@ -189,7 +192,7 @@ function PromotionsPage() {
                   <div className="mt-4 rounded-lg bg-primary/5 px-3 py-2 text-sm font-semibold text-primary">
                     {p.type === "percentage" ? `${p.value}%` : formatCurrency(p.value)} OFF - {p.conditions}
                   </div>
-                  <div className="mt-3 text-xs text-muted-foreground">Runs {new Date(p.startDate).toLocaleDateString()} → {new Date(p.endDate).toLocaleDateString()}</div>
+                  <div className="mt-3 text-xs text-muted-foreground">Runs {formatDate(p.startDate)} → {formatDate(p.endDate)}</div>
                 </div>
               ))}
             </div>

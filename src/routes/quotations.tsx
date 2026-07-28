@@ -26,6 +26,7 @@ import { v4 as uuidv4 } from "uuid";
 import { toast } from "sonner";
 import { useFormValidation } from "@/hooks/useFormValidation";
 import { FieldError } from "@/components/ui/field-error";
+import { usePreferences } from "@/contexts/PreferencesContext";
 
 export const Route = createFileRoute("/quotations")({
   head: () => ({ meta: [{ title: "B2B Quotations · Grocer.Pro" }] }),
@@ -35,6 +36,7 @@ export const Route = createFileRoute("/quotations")({
 type QuotationLineItem = { productId: string; productName: string; quantity: number; price: number };
 
 function QuotationsPage() {
+  const { formatDate, formatTime, formatDateTime } = usePreferences();
   const { formatCurrency, currencySymbol } = useCurrency();
   const rawQuotations = useLiveQuery(() => localDb.quotations.toArray()) || [];
   const customers = useLiveQuery(() => localDb.customers.toArray()) || [];
@@ -83,6 +85,7 @@ function QuotationsPage() {
   }, [debouncedSearch]);
 
   const addItemToQuotation = (productId: string) => {
+  const { formatDate, formatTime, formatDateTime } = usePreferences();
     const p = products.find((prod) => prod.id === productId);
     if (!p) return;
     const cust = customers.find((c) => c.id === selectedCustomerId);
@@ -106,6 +109,7 @@ function QuotationsPage() {
   };
 
   const updateLineQty = (productId: string, qty: number) => {
+  const { formatDate, formatTime, formatDateTime } = usePreferences();
     if (qty <= 0) {
       setLineItems((prev) => prev.filter((item) => item.productId !== productId));
       return;
@@ -116,6 +120,7 @@ function QuotationsPage() {
   };
 
   const updateLinePrice = (productId: string, price: number) => {
+  const { formatDate, formatTime, formatDateTime } = usePreferences();
     setLineItems((prev) =>
       prev.map((item) => (item.productId === productId ? { ...item, price } : item))
     );
@@ -144,6 +149,7 @@ function QuotationsPage() {
     if (!cust) return toast.error("Please select a customer");
 
     setIsSubmitting(true);
+    await new Promise(resolve => setTimeout(resolve, 500));
     try {
       const quotNo = `QT-${Date.now().toString().slice(-6)}`;
       await localDb.quotations.add({
@@ -270,8 +276,8 @@ function QuotationsPage() {
                     <tr key={q.id} className="hover:bg-muted/30">
                       <td className="px-4 py-3 font-mono font-bold text-primary">{q.quotationNo}</td>
                       <td className="px-4 py-3 font-semibold">{q.customerName}</td>
-                      <td className="px-4 py-3 text-xs text-muted-foreground">{new Date(q.date).toLocaleDateString()}</td>
-                      <td className="px-4 py-3 text-xs text-muted-foreground">{new Date(q.validUntil).toLocaleDateString()}</td>
+                      <td className="px-4 py-3 text-xs text-muted-foreground">{formatDate(q.date)}</td>
+                      <td className="px-4 py-3 text-xs text-muted-foreground">{formatDate(q.validUntil)}</td>
                       <td className="px-4 py-3 text-right font-bold">{formatCurrency(q.total)}</td>
                       <td className="px-4 py-3">
                         {q.status === "converted" ? (
@@ -474,8 +480,8 @@ function QuotationsPage() {
                 </div>
                 <div className="text-right">
                   <h4 className="font-bold text-xs uppercase text-muted-foreground">Quotation Info</h4>
-                  <div className="text-xs mt-1">Date: <strong>{new Date(viewItem.date).toLocaleDateString()}</strong></div>
-                  <div className="text-xs">Valid Until: <strong className="text-destructive">{new Date(viewItem.validUntil).toLocaleDateString()}</strong></div>
+                  <div className="text-xs mt-1">Date: <strong>{formatDate(viewItem.date)}</strong></div>
+                  <div className="text-xs">Valid Until: <strong className="text-destructive">{formatDate(viewItem.validUntil)}</strong></div>
                 </div>
               </div>
 

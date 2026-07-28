@@ -15,7 +15,7 @@ import {
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { MoreVertical, Trash2, Undo2 } from "lucide-react";
+import { MoreVertical, Trash2, Undo2, Loader2 } from "lucide-react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { localDb } from "@/lib/db";
 import { useCurrency } from "@/lib/currency";
@@ -26,6 +26,7 @@ import { useState, useMemo, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { useDebounce } from "@/hooks/useDebounce";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { usePreferences } from "@/contexts/PreferencesContext";
 
 export const Route = createFileRoute("/sales/returns")({
   head: () => ({ meta: [{ title: "Sales Returns · Grocer.Pro" }] }),
@@ -33,6 +34,7 @@ export const Route = createFileRoute("/sales/returns")({
 });
 
 function SalesReturnsPage() {
+  const { formatDate, formatTime, formatDateTime } = usePreferences();
   const { formatCurrency } = useCurrency();
   const { t } = useLanguage();
   const returns = useLiveQuery(() => localDb.salesReturns.reverse().toArray()) || [];
@@ -42,6 +44,7 @@ function SalesReturnsPage() {
 
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search, 300);
@@ -80,6 +83,7 @@ function SalesReturnsPage() {
   const selectedSale: OfflineSale | undefined = sales.find(s => s.id === saleId);
 
   const toggleItem = (item: OfflineSale["saleItems"][0], checked: boolean) => {
+  const { formatDate, formatTime, formatDateTime } = usePreferences();
     if (checked) {
       setSelectedItems(prev => [...prev, {
         productId: item.productId,
@@ -98,6 +102,9 @@ function SalesReturnsPage() {
       if (!saleId) { toast.error("Please select an invoice"); return; }
       if (!reason.trim()) { toast.error("Reason is required"); return; }
       if (selectedItems.length === 0) { toast.error("Select at least one item to return"); return; }
+
+      setIsSubmitting(true);
+      await new Promise(resolve => setTimeout(resolve, 500));
 
       const returnTotal = selectedItems.reduce((s, i) => s + i.total, 0);
       const ref = `SR-${Math.floor(Math.random() * 90000) + 10000}`;
@@ -147,8 +154,10 @@ function SalesReturnsPage() {
       setReason("");
       setSelectedItems([]);
       setRefundMethod("cash");
-    } catch (err) {
-      toast.error("Failed to process return");
+    } catch (err: any) {
+      toast.error(err.message || "Failed to process return");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -203,7 +212,7 @@ function SalesReturnsPage() {
                       <td className="px-4 py-3 font-mono text-xs text-muted-foreground">{r.saleId.slice(0, 8).toUpperCase()}</td>
                       <td className="px-4 py-3 font-semibold">{r.customerName}</td>
                       <td className="px-4 py-3 text-muted-foreground">{r.reason}</td>
-                      <td className="px-4 py-3 text-muted-foreground">{new Date(r.date).toLocaleDateString()}</td>
+                      <td className="px-4 py-3 text-muted-foreground">{formatDate(r.date)}</td>
                       <td className="px-4 py-3">
                         <Badge className={cn(r.status === "approved" && "bg-success/10 text-success hover:bg-success/15", r.status === "pending" && "bg-warning/15 text-warning-foreground")}>
                           {r.status}
@@ -304,7 +313,10 @@ function SalesReturnsPage() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsAddOpen(false)}>Cancel</Button>
-            <Button onClick={handleAdd}>Process Return</Button>
+            <Button onClick={handleAdd} disabled={isSubmitting}>
+              {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Process Return
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

@@ -99,6 +99,7 @@ function BrandsPage() {
     if (!isValid) return;
     
     setIsSaving(true);
+    await new Promise(resolve => setTimeout(resolve, 500));
     try {
       if (editingBrand) {
         await localDb.brands.update(editingBrand.id, { name });

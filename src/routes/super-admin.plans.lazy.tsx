@@ -56,6 +56,7 @@ function SuperAdminPlans() {
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const dbPaymentConfig = useLiveQuery(() => localDb.settings.get("super_admin_payment_config")) as any;
   const [paymentConfig, setPaymentConfig] = useState<any>(DEFAULT_PAYMENT_CONFIG);
+  const [isSavingPayment, setIsSavingPayment] = useState(false);
 
   useEffect(() => {
     if (dbPaymentConfig) {
@@ -66,6 +67,8 @@ function SuperAdminPlans() {
   }, [dbPaymentConfig]);
 
   const handleSavePaymentConfig = async () => {
+    setIsSavingPayment(true);
+    await new Promise(resolve => setTimeout(resolve, 500));
     try {
       await localDb.settings.put({ ...paymentConfig, storeName: "Super Admin Payment Config", synced: true } as any);
       try {
@@ -97,6 +100,8 @@ function SuperAdminPlans() {
       setIsPaymentModalOpen(false);
     } catch (e) {
       toast.error("Failed to save payment configuration.");
+    } finally {
+      setIsSavingPayment(false);
     }
   };
 
@@ -135,6 +140,7 @@ function SuperAdminPlans() {
   const handleSavePlan = async () => {
     if (!editingPlan.name) return toast.error("Plan name is required");
     setIsSaving(true);
+    await new Promise(resolve => setTimeout(resolve, 500));
     try {
       const result = await createOrUpdatePlanFn({
         data: { adminKey: ADMIN_KEY, plan: editingPlan }
@@ -351,7 +357,8 @@ function SuperAdminPlans() {
                     {group.items.map((item, j) => {
                       const Icon = item.icon;
                       const isSelected = editingPlan.features.includes(item.to);
-                      if (["/", "/super-admin", "/profile", "/settings"].includes(item.to)) return null;
+                      // Don't show checkboxes for routes that are strictly personal or super-admin only
+                      if (["/", "/super-admin", "/profile"].includes(item.to)) return null;
                       return (
                         <div key={j} className="flex items-center space-x-2">
                           <input
@@ -523,10 +530,23 @@ function SuperAdminPlans() {
           </div>
           <DialogFooter className="pt-2 border-t">
             <Button variant="outline" onClick={() => setIsPaymentModalOpen(false)}>Cancel</Button>
-            <Button onClick={handleSavePaymentConfig} className="bg-primary hover:bg-primary/90">Save Payment Settings</Button>
+            <Button onClick={handleSavePaymentConfig} disabled={isSavingPayment} className="bg-primary hover:bg-primary/90">
+              {isSavingPayment && <Loader2 className="size-4 animate-spin mr-2" />}
+              Save Payment Settings
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
+  );
+}
+<Button onClick={handleSavePaymentConfig} disabled={isSavingPayment} className="bg-primary hover:bg-primary/90">
+  {isSavingPayment && <Loader2 className="size-4 animate-spin mr-2" />}
+  Save Payment Settings
+</Button>
+          </DialogFooter >
+        </DialogContent >
+      </Dialog >
+    </div >
   );
 }

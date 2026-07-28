@@ -7,7 +7,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { localDb } from "@/lib/db";
 import { useLiveQuery } from "dexie-react-hooks";
 import { useCurrency } from "@/lib/currency";
-import { Search, UserCheck, ShieldCheck, Printer, FileText } from "lucide-react";
+import { Search, UserCheck, ShieldCheck, Printer, FileText, Loader2 } from "lucide-react";
+import { usePreferences } from "@/contexts/PreferencesContext";
 
 export const Route = createFileRoute("/portal")({
   head: () => ({ meta: [{ title: "Customer & Client Portal · Grocer.Pro" }] }),
@@ -15,9 +16,11 @@ export const Route = createFileRoute("/portal")({
 });
 
 function CustomerPortalPage() {
+  const { formatDate, formatTime, formatDateTime } = usePreferences();
   const { formatCurrency } = useCurrency();
   const [searchPhone, setSearchPhone] = useState("");
   const [activeLookup, setActiveLookup] = useState("");
+  const [isSearching, setIsSearching] = useState(false);
 
   const customers = useLiveQuery(() => localDb.customers.toArray()) || [];
   const sales = useLiveQuery(() => localDb.offlineSales.toArray()) || [];
@@ -62,9 +65,12 @@ function CustomerPortalPage() {
       <Card className="border-primary/20 shadow-soft">
         <CardContent className="pt-6">
           <form
-            onSubmit={(e) => {
+            onSubmit={async (e) => {
               e.preventDefault();
+              setIsSearching(true);
+              await new Promise(resolve => setTimeout(resolve, 500));
               setActiveLookup(searchPhone.trim());
+              setIsSearching(false);
             }}
             className="flex gap-2"
           >
@@ -77,7 +83,8 @@ function CustomerPortalPage() {
                 className="pl-9 h-11 text-sm"
               />
             </div>
-            <Button type="submit" className="h-11 px-6 font-bold">
+            <Button type="submit" disabled={isSearching} className="h-11 px-6 font-bold">
+              {isSearching && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Check Statement
             </Button>
           </form>
@@ -137,7 +144,7 @@ function CustomerPortalPage() {
                         <tr key={idx}>
                           <td className="p-2.5 font-semibold text-foreground">{item.productName}</td>
                           <td className="p-2.5 font-mono text-xs font-bold text-primary">{item.serialNumber}</td>
-                          <td className="p-2.5 text-right text-muted-foreground">{new Date(item.date).toLocaleDateString()}</td>
+                          <td className="p-2.5 text-right text-muted-foreground">{formatDate(item.date)}</td>
                           <td className="p-2.5 text-center">
                             <Badge className="bg-success/15 text-success border-success/30">Active Warranty</Badge>
                           </td>
@@ -179,7 +186,7 @@ function CustomerPortalPage() {
                       {customerSales.map((s) => (
                         <tr key={s.id}>
                           <td className="p-2.5 font-mono font-bold text-primary">{s.id.substring(0, 8).toUpperCase()}</td>
-                          <td className="p-2.5 text-muted-foreground">{new Date(s.date).toLocaleDateString()}</td>
+                          <td className="p-2.5 text-muted-foreground">{formatDate(s.date)}</td>
                           <td className="p-2.5 uppercase font-medium">{s.paymentMethod}</td>
                           <td className="p-2.5 text-right font-bold text-sm">{formatCurrency(s.total)}</td>
                         </tr>

@@ -20,7 +20,8 @@ import {
 import { localDb, type LocalSubscription } from "@/lib/db";
 import { useLiveQuery } from "dexie-react-hooks";
 import { useCurrency } from "@/lib/currency";
-import { Repeat, Plus, MoreVertical, Trash2, CheckCircle2, PauseCircle, Loader2 } from "lucide-react";
+import { Calendar, CreditCard, RotateCcw, CheckCircle2, PauseCircle, Trash2, ShieldCheck, MoreVertical, Loader2, Repeat, Plus } from "lucide-react";
+import { PhoneInput } from "@/components/ui/phone-input";
 import { v4 as uuidv4 } from "uuid";
 import { toast } from "sonner";
 import React from "react";
@@ -89,6 +90,7 @@ function SubscriptionsPage() {
     if (!isValid) return;
 
     setIsSubmitting(true);
+    await new Promise(resolve => setTimeout(resolve, 500));
     try {
       const subNo = `SUB-${Date.now().toString().slice(-6)}`;
       await localDb.subscriptions.add({
@@ -232,6 +234,15 @@ function SubscriptionsPage() {
                 className={subErrors.customerName ? "border-destructive focus-visible:ring-destructive" : ""}
               />
               <FieldError message={subErrors.customerName} />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Phone Number</Label>
+              <PhoneInput 
+                placeholder="e.g. 1711000000" value={customerPhone} 
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => { setCustomerPhone(e.target.value); clearSubError("customerPhone"); }}
+                className={subErrors.customerPhone ? "border-destructive focus-visible:ring-destructive" : ""}
+              />
+              <FieldError message={subErrors.customerPhone} />
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1.5">

@@ -11,6 +11,7 @@ import { COUNTRY_CODES, TIMEZONES, DATE_FORMATS } from "@/lib/formatters";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { FieldError } from "@/components/ui/field-error";
 import { useAuth } from "@/contexts/AuthContext";
+import { FileUpload } from "@/components/ui/file-upload";
 
 export const Route = createFileRoute("/profile")({
   head: () => ({ meta: [{ title: "Profile · Grocer.Pro" }] }),
@@ -42,6 +43,7 @@ function ProfilePage() {
     dateFormat: "DD/MM/YYYY",
     language: "en",
     pin: authUser?.pin || "",
+    avatar: authUser?.avatar || "",
   };
 
   const [profile, setProfile] = useState(defaultProfile);
@@ -77,6 +79,7 @@ function ProfilePage() {
     }
     try {
       setIsSaving(true);
+    await new Promise(resolve => setTimeout(resolve, 500));
       // Save to local DB with correct user ID — SyncEngine pushes to Neon DB
       await localDb.users.put({ ...profile, id: authUser?.id || profile.id, synced: false });
       toast.success("Profile updated successfully.");
@@ -111,13 +114,20 @@ function ProfilePage() {
         } 
       />
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        <div className="rounded-xl border border-border bg-card p-6 text-center shadow-soft">
-          <div className="mx-auto grid size-24 place-items-center rounded-full bg-gradient-to-br from-primary to-info text-2xl font-bold text-primary-foreground">
-            {initials}
+        <div className="rounded-xl border border-border bg-card p-6 text-center shadow-soft flex flex-col items-center">
+          <div className="w-full flex justify-center mb-4">
+            <FileUpload
+              variant="avatar"
+              label=""
+              description=""
+              value={profile.avatar || ""}
+              onChange={(url) => handleChange("avatar", url)}
+              folder="avatars"
+              maxSizeMB={2}
+            />
           </div>
-          <h2 className="mt-4 text-lg font-bold">{profile.name}</h2>
+          <h2 className="text-lg font-bold">{profile.name}</h2>
           <p className="text-sm text-muted-foreground">{profile.role} · {profile.location?.split(' ')[0]}</p>
-          <Button variant="outline" size="sm" className="mt-4">Change photo</Button>
         </div>
         <div className="rounded-xl border border-border bg-card p-6 shadow-soft lg:col-span-2">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
