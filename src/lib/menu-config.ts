@@ -35,7 +35,6 @@ import {
   Repeat,
   KeyRound,
   UserCheck,
-  ShieldAlert,
 } from "lucide-react";
 
 export type MenuItem = { to: string; label: string; tkey: string; icon: any; badge?: string; roles?: string[] };
@@ -114,7 +113,6 @@ export const APP_GROUPS: MenuGroup[] = [
   {
     label: "System", tkey: "system",
     items: [
-      { to: "/super-admin", label: "Super Admin SaaS", tkey: "superAdmin", icon: ShieldAlert, roles: ["admin"] },
       { to: "/portal", label: "Client Portal", tkey: "clientPortal", icon: UserCheck },
       { to: "/settings", label: "Settings", tkey: "settings", icon: Settings, roles: ["admin"] },
       { to: "/notifications", label: "Notifications", tkey: "notifications", icon: Bell },

@@ -13,7 +13,6 @@ import { Route as VerifyEmailRouteImport } from './routes/verify-email'
 import { Route as UsersRouteImport } from './routes/users'
 import { Route as UnitsRouteImport } from './routes/units'
 import { Route as SuppliersRouteImport } from './routes/suppliers'
-import { Route as SuperAdminRouteImport } from './routes/super-admin'
 import { Route as SubscriptionsRouteImport } from './routes/subscriptions'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as SalesRouteImport } from './routes/sales'
@@ -43,10 +42,7 @@ import { Route as BrandsRouteImport } from './routes/brands'
 import { Route as ActivityRouteImport } from './routes/activity'
 import { Route as AccountsRouteImport } from './routes/accounts'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as SuperAdminIndexRouteImport } from './routes/super-admin.index'
 import { Route as InventoryIndexRouteImport } from './routes/inventory.index'
-import { Route as SuperAdminUsersRouteImport } from './routes/super-admin.users'
-import { Route as SuperAdminPlansRouteImport } from './routes/super-admin.plans'
 import { Route as SalesReturnsRouteImport } from './routes/sales.returns'
 import { Route as PurchasesReturnsRouteImport } from './routes/purchases.returns'
 import { Route as PurchasesNewRouteImport } from './routes/purchases.new'
@@ -75,11 +71,6 @@ const SuppliersRoute = SuppliersRouteImport.update({
   path: '/suppliers',
   getParentRoute: () => rootRouteImport,
 } as any)
-const SuperAdminRoute = SuperAdminRouteImport.update({
-  id: '/super-admin',
-  path: '/super-admin',
-  getParentRoute: () => rootRouteImport,
-} as any).lazy(() => import('./routes/super-admin.lazy').then((d) => d.Route))
 const SubscriptionsRoute = SubscriptionsRouteImport.update({
   id: '/subscriptions',
   path: '/subscriptions',
@@ -225,33 +216,12 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const SuperAdminIndexRoute = SuperAdminIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => SuperAdminRoute,
-} as any).lazy(() =>
-  import('./routes/super-admin.index.lazy').then((d) => d.Route),
-)
 const InventoryIndexRoute = InventoryIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => InventoryRoute,
 } as any).lazy(() =>
   import('./routes/inventory.index.lazy').then((d) => d.Route),
-)
-const SuperAdminUsersRoute = SuperAdminUsersRouteImport.update({
-  id: '/users',
-  path: '/users',
-  getParentRoute: () => SuperAdminRoute,
-} as any).lazy(() =>
-  import('./routes/super-admin.users.lazy').then((d) => d.Route),
-)
-const SuperAdminPlansRoute = SuperAdminPlansRouteImport.update({
-  id: '/plans',
-  path: '/plans',
-  getParentRoute: () => SuperAdminRoute,
-} as any).lazy(() =>
-  import('./routes/super-admin.plans.lazy').then((d) => d.Route),
 )
 const SalesReturnsRoute = SalesReturnsRouteImport.update({
   id: '/returns',
@@ -325,7 +295,6 @@ export interface FileRoutesByFullPath {
   '/sales': typeof SalesRouteWithChildren
   '/settings': typeof SettingsRoute
   '/subscriptions': typeof SubscriptionsRoute
-  '/super-admin': typeof SuperAdminRouteWithChildren
   '/suppliers': typeof SuppliersRoute
   '/units': typeof UnitsRoute
   '/users': typeof UsersRoute
@@ -337,10 +306,7 @@ export interface FileRoutesByFullPath {
   '/purchases/new': typeof PurchasesNewRoute
   '/purchases/returns': typeof PurchasesReturnsRoute
   '/sales/returns': typeof SalesReturnsRoute
-  '/super-admin/plans': typeof SuperAdminPlansRoute
-  '/super-admin/users': typeof SuperAdminUsersRoute
   '/inventory/': typeof InventoryIndexRoute
-  '/super-admin/': typeof SuperAdminIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -382,10 +348,7 @@ export interface FileRoutesByTo {
   '/purchases/new': typeof PurchasesNewRoute
   '/purchases/returns': typeof PurchasesReturnsRoute
   '/sales/returns': typeof SalesReturnsRoute
-  '/super-admin/plans': typeof SuperAdminPlansRoute
-  '/super-admin/users': typeof SuperAdminUsersRoute
   '/inventory': typeof InventoryIndexRoute
-  '/super-admin': typeof SuperAdminIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -418,7 +381,6 @@ export interface FileRoutesById {
   '/sales': typeof SalesRouteWithChildren
   '/settings': typeof SettingsRoute
   '/subscriptions': typeof SubscriptionsRoute
-  '/super-admin': typeof SuperAdminRouteWithChildren
   '/suppliers': typeof SuppliersRoute
   '/units': typeof UnitsRoute
   '/users': typeof UsersRoute
@@ -430,10 +392,7 @@ export interface FileRoutesById {
   '/purchases/new': typeof PurchasesNewRoute
   '/purchases/returns': typeof PurchasesReturnsRoute
   '/sales/returns': typeof SalesReturnsRoute
-  '/super-admin/plans': typeof SuperAdminPlansRoute
-  '/super-admin/users': typeof SuperAdminUsersRoute
   '/inventory/': typeof InventoryIndexRoute
-  '/super-admin/': typeof SuperAdminIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -467,7 +426,6 @@ export interface FileRouteTypes {
     | '/sales'
     | '/settings'
     | '/subscriptions'
-    | '/super-admin'
     | '/suppliers'
     | '/units'
     | '/users'
@@ -479,10 +437,7 @@ export interface FileRouteTypes {
     | '/purchases/new'
     | '/purchases/returns'
     | '/sales/returns'
-    | '/super-admin/plans'
-    | '/super-admin/users'
     | '/inventory/'
-    | '/super-admin/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -524,10 +479,7 @@ export interface FileRouteTypes {
     | '/purchases/new'
     | '/purchases/returns'
     | '/sales/returns'
-    | '/super-admin/plans'
-    | '/super-admin/users'
     | '/inventory'
-    | '/super-admin'
   id:
     | '__root__'
     | '/'
@@ -559,7 +511,6 @@ export interface FileRouteTypes {
     | '/sales'
     | '/settings'
     | '/subscriptions'
-    | '/super-admin'
     | '/suppliers'
     | '/units'
     | '/users'
@@ -571,10 +522,7 @@ export interface FileRouteTypes {
     | '/purchases/new'
     | '/purchases/returns'
     | '/sales/returns'
-    | '/super-admin/plans'
-    | '/super-admin/users'
     | '/inventory/'
-    | '/super-admin/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -607,7 +555,6 @@ export interface RootRouteChildren {
   SalesRoute: typeof SalesRouteWithChildren
   SettingsRoute: typeof SettingsRoute
   SubscriptionsRoute: typeof SubscriptionsRoute
-  SuperAdminRoute: typeof SuperAdminRouteWithChildren
   SuppliersRoute: typeof SuppliersRoute
   UnitsRoute: typeof UnitsRoute
   UsersRoute: typeof UsersRoute
@@ -643,13 +590,6 @@ declare module '@tanstack/react-router' {
       path: '/suppliers'
       fullPath: '/suppliers'
       preLoaderRoute: typeof SuppliersRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/super-admin': {
-      id: '/super-admin'
-      path: '/super-admin'
-      fullPath: '/super-admin'
-      preLoaderRoute: typeof SuperAdminRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/subscriptions': {
@@ -855,33 +795,12 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/super-admin/': {
-      id: '/super-admin/'
-      path: '/'
-      fullPath: '/super-admin/'
-      preLoaderRoute: typeof SuperAdminIndexRouteImport
-      parentRoute: typeof SuperAdminRoute
-    }
     '/inventory/': {
       id: '/inventory/'
       path: '/'
       fullPath: '/inventory/'
       preLoaderRoute: typeof InventoryIndexRouteImport
       parentRoute: typeof InventoryRoute
-    }
-    '/super-admin/users': {
-      id: '/super-admin/users'
-      path: '/users'
-      fullPath: '/super-admin/users'
-      preLoaderRoute: typeof SuperAdminUsersRouteImport
-      parentRoute: typeof SuperAdminRoute
-    }
-    '/super-admin/plans': {
-      id: '/super-admin/plans'
-      path: '/plans'
-      fullPath: '/super-admin/plans'
-      preLoaderRoute: typeof SuperAdminPlansRouteImport
-      parentRoute: typeof SuperAdminRoute
     }
     '/sales/returns': {
       id: '/sales/returns'
@@ -977,22 +896,6 @@ const SalesRouteChildren: SalesRouteChildren = {
 
 const SalesRouteWithChildren = SalesRoute._addFileChildren(SalesRouteChildren)
 
-interface SuperAdminRouteChildren {
-  SuperAdminPlansRoute: typeof SuperAdminPlansRoute
-  SuperAdminUsersRoute: typeof SuperAdminUsersRoute
-  SuperAdminIndexRoute: typeof SuperAdminIndexRoute
-}
-
-const SuperAdminRouteChildren: SuperAdminRouteChildren = {
-  SuperAdminPlansRoute: SuperAdminPlansRoute,
-  SuperAdminUsersRoute: SuperAdminUsersRoute,
-  SuperAdminIndexRoute: SuperAdminIndexRoute,
-}
-
-const SuperAdminRouteWithChildren = SuperAdminRoute._addFileChildren(
-  SuperAdminRouteChildren,
-)
-
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AccountsRoute: AccountsRoute,
@@ -1023,7 +926,6 @@ const rootRouteChildren: RootRouteChildren = {
   SalesRoute: SalesRouteWithChildren,
   SettingsRoute: SettingsRoute,
   SubscriptionsRoute: SubscriptionsRoute,
-  SuperAdminRoute: SuperAdminRouteWithChildren,
   SuppliersRoute: SuppliersRoute,
   UnitsRoute: UnitsRoute,
   UsersRoute: UsersRoute,

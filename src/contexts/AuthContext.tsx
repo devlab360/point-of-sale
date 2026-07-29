@@ -174,35 +174,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const loginWithEmail = async (email: string, password: string) => {
     try {
-      const SUPER_ADMIN_EMAIL = import.meta.env.VITE_SUPER_ADMIN_EMAIL || "superadmin@pos.com";
-      const SUPER_ADMIN_PASS = import.meta.env.VITE_SUPER_ADMIN_PASSWORD || "";
-
-      // Super Admin special login
-      if (email.toLowerCase().trim() === SUPER_ADMIN_EMAIL.toLowerCase()) {
-        if (!SUPER_ADMIN_PASS || password !== SUPER_ADMIN_PASS) {
-          toast.error("Invalid super admin credentials");
-          return false;
-        }
-        const superAdminId = "superadmin-master-id";
-        const superAdminUser: LocalUser = {
-          id: superAdminId,
-          orgId: "superadmin-org",
-          name: "Super Admin",
-          email: SUPER_ADMIN_EMAIL,
-          role: "admin",
-          status: "active",
-          lastActive: new Date().toISOString(),
-          pin: SUPER_ADMIN_PASS,
-        };
-        await localDb.users.put(superAdminUser);
-        setUser(superAdminUser);
-        SessionStore.setAuthUser(superAdminId);
-        PersistStore.setOrgId("superadmin-org");
-        toast.success("Welcome, Super Admin!");
-        router.navigate({ to: "/super-admin" });
-        return true;
-      }
-
       // Regular user: first check local DB
       const allUsers = await localDb.users.toArray();
       let foundUser = allUsers.find((u: LocalUser) => u.email?.toLowerCase() === email.toLowerCase().trim());
