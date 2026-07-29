@@ -145,6 +145,13 @@ function RootComponent() {
 
   useEffect(() => {
     initializeLocalDb();
+    
+    // Register PWA Service Worker
+    if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
+      import('virtual:pwa-register').then(({ registerSW }) => {
+        registerSW({ immediate: true });
+      }).catch((err) => console.error('PWA registration error:', err));
+    }
   }, []);
 
   return (

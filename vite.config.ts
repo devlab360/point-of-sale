@@ -66,15 +66,60 @@ export default defineConfig({
       emailDevPlugin(),
       VitePWA({ 
         registerType: 'autoUpdate',
-        devOptions: { enabled: true }, // Enable PWA in dev mode for testing offline
+        devOptions: { enabled: true, type: 'module', navigateFallback: '/' }, // Enable PWA in dev mode for testing offline
         manifest: {
           name: 'Grocer.Pro POS',
           short_name: 'GrocerPOS',
+          description: 'Premium POS and inventory management for grocery, daily goods, and retail chains.',
           theme_color: '#ffffff',
+          background_color: '#ffffff',
           display: 'standalone',
+          orientation: 'portrait',
+          icons: [
+            {
+              src: '/icon.svg',
+              sizes: 'any',
+              type: 'image/svg+xml',
+              purpose: 'any maskable'
+            }
+          ]
         },
         workbox: {
           globPatterns: ['**/*.{js,css,html,ico,png,svg,json}'],
+          cleanupOutdatedCaches: true,
+          clientsClaim: true,
+          skipWaiting: true,
+          navigateFallback: '/',
+          runtimeCaching: [
+            {
+              urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
+              handler: 'CacheFirst',
+              options: {
+                cacheName: 'google-fonts-cache',
+                expiration: {
+                  maxEntries: 10,
+                  maxAgeSeconds: 60 * 60 * 24 * 365 // <== 365 days
+                },
+                cacheableResponse: {
+                  statuses: [0, 200]
+                }
+              }
+            },
+            {
+              urlPattern: /^https:\/\/fonts\.gstatic\.com\/.*/i,
+              handler: 'CacheFirst',
+              options: {
+                cacheName: 'gstatic-fonts-cache',
+                expiration: {
+                  maxEntries: 10,
+                  maxAgeSeconds: 60 * 60 * 24 * 365 // <== 365 days
+                },
+                cacheableResponse: {
+                  statuses: [0, 200]
+                },
+              }
+            }
+          ]
         }
       })
     ]
