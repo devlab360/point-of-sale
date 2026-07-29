@@ -540,13 +540,4 @@ function SuperAdminPlans() {
     </div>
   );
 }
-<Button onClick={handleSavePaymentConfig} disabled={isSavingPayment} className="bg-primary hover:bg-primary/90">
-  {isSavingPayment && <Loader2 className="size-4 animate-spin mr-2" />}
-  Save Payment Settings
-</Button>
-          </DialogFooter >
-        </DialogContent >
-      </Dialog >
-    </div >
-  );
-}
+
