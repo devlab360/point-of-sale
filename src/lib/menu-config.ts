@@ -159,31 +159,51 @@ export function hasPermissionForRoute(
 ): { allowed: boolean; reason?: string } {
   // 1. Super Admin Authorization
   if (isSuperAdminUser) return { allowed: true };
-  if (routePath.startsWith("/super-admin")) return { allowed: false, reason: "You do not have permission to access the Super Admin dashboard." };
+  if (routePath.startsWith("/super-admin")) {
+    return { allowed: false, reason: "You do not have permission to access the Super Admin dashboard." };
+  }
 
-  // 2. Core System Routes (Always Available - strictly those hidden from SaaS UI checkboxes)
-  const coreSystemRoutes = ["/", "/profile"];
-  if (coreSystemRoutes.some(r => routePath === r || routePath.startsWith(r + "/"))) {
+  // 2. Core System Routes (Always Available)
+  if (routePath === "/" || routePath === "/profile" || routePath.startsWith("/profile/")) {
     return { allowed: true };
   }
 
-  // 3. Resolve Target Path from App Groups
+  // 3. Resolve Target Path
   const allItems = APP_GROUPS.flatMap(g => g.items);
-  const matchedItem = allItems.find(item => routePath === item.to || routePath.startsWith(item.to + "/"));
+  
+  // First try to find an exact match for the route
+  let matchedItem = allItems.find(item => routePath === item.to);
+  
+  // If no exact match (e.g., dynamic routes like /products/123/edit), find the most specific parent
+  if (!matchedItem) {
+    const parentMatches = allItems.filter(item => routePath.startsWith(item.to + "/"));
+    if (parentMatches.length > 0) {
+      parentMatches.sort((a, b) => b.to.length - a.to.length);
+      matchedItem = parentMatches[0];
+    }
+  }
+  
   const targetPath = matchedItem ? matchedItem.to : routePath;
+  const label = matchedItem ? matchedItem.label : targetPath;
 
   // 4. SaaS Plan Authorization
   if (saasPlan && Array.isArray(saasPlan.features) && saasPlan.features.length > 0) {
     const requiredFeatureEntry = Object.entries(PERMISSION_ROUTE_MAP).find(([_, paths]) =>
-      paths.some(p => targetPath === p || targetPath.startsWith(p))
+      paths.some(p => targetPath === p || targetPath.startsWith(p + "/"))
     );
     const legacyFeatureKey = requiredFeatureEntry ? requiredFeatureEntry[0] : null;
 
-    const planAllowsRoute = saasPlan.features.some((feat: string) => targetPath === feat || targetPath.startsWith(feat + "/"));
+    const isAppGroupItem = !!matchedItem;
+    const planAllowsRoute = saasPlan.features.some((feat: string) => {
+      // If it's a distinct sidebar item, it requires an exact match in the features array
+      if (isAppGroupItem) return targetPath === feat;
+      // Otherwise allow dynamic sub-pages (like /products/123) to match their parent prefix
+      return targetPath === feat || targetPath.startsWith(feat + "/");
+    });
+    
     const planAllowsLegacy = legacyFeatureKey && saasPlan.features.includes(legacyFeatureKey);
 
     if (!planAllowsRoute && !planAllowsLegacy) {
-      const label = matchedItem ? matchedItem.label : targetPath;
       return {
         allowed: false,
         reason: `The "${label}" feature is not available on your current plan (${saasPlan.name || 'Current Plan'}). Please upgrade your subscription to access this feature.`
@@ -192,24 +212,23 @@ export function hasPermissionForRoute(
   }
 
   // 5. Role-Based Authorization
-  if (matchedItem && matchedItem.roles && user?.role) {
+  if (matchedItem?.roles && user?.role) {
     if (!matchedItem.roles.includes(user.role.toLowerCase())) {
-      return { allowed: false, reason: `Your role (${user.role}) does not have access to ${matchedItem.label}.` };
+      return { allowed: false, reason: `Your role (${user.role}) does not have access to ${label}.` };
     }
   }
 
   // 6. User-Specific Employee Permissions Authorization
-  if (user && user.role?.toLowerCase() !== "admin") {
-    const userPerms: string[] = Array.isArray(user.permissions)
+  if (user?.role?.toLowerCase() !== "admin") {
+    const userPerms: string[] = Array.isArray(user?.permissions)
       ? user.permissions
-      : (DEFAULT_ROLE_PERMISSIONS_FALLBACK[user.role?.toLowerCase()] || ["pos"]);
+      : (DEFAULT_ROLE_PERMISSIONS_FALLBACK[user?.role?.toLowerCase()] || ["pos"]);
 
     const requiredPermEntry = Object.entries(PERMISSION_ROUTE_MAP).find(([_, paths]) =>
-      paths.some(p => targetPath === p || targetPath.startsWith(p))
+      paths.some(p => targetPath === p || targetPath.startsWith(p + "/"))
     );
 
     if (requiredPermEntry && !userPerms.includes(requiredPermEntry[0])) {
-      const label = matchedItem ? matchedItem.label : targetPath;
       return { allowed: false, reason: `You do not have permission to access "${label}". Contact your store administrator.` };
     }
   }
