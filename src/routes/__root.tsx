@@ -210,7 +210,7 @@ function AppLayout() {
   if (unauthorizedMessage) {
     return (
       <div className="flex h-screen w-full overflow-hidden bg-background text-foreground">
-        <aside className="hidden w-64 shrink-0 border-r border-sidebar-border lg:flex">
+        <aside className="hidden w-auto shrink-0 border-r border-sidebar-border lg:flex z-40">
           <AppSidebar />
         </aside>
         <div className="flex min-w-0 flex-1 flex-col">
@@ -315,7 +315,7 @@ function AppLayout() {
       )}
 
       <div className="flex h-screen w-full overflow-hidden bg-background text-foreground">
-        <aside className="hidden w-64 shrink-0 border-r border-sidebar-border lg:flex">
+        <aside className="hidden w-auto shrink-0 border-r border-sidebar-border lg:flex transition-all duration-300 z-40">
           <AppSidebar />
         </aside>
         <div className="flex min-w-0 flex-1 flex-col relative">

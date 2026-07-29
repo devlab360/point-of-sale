@@ -4,7 +4,7 @@ import { localDb, type LocalUser } from "@/lib/db";
 import { initiateGoogleOAuth, initiateFacebookOAuth, GOOGLE_CLIENT_ID, FACEBOOK_APP_ID } from "@/lib/auth-social";
 import { toast } from "sonner";
 import { useRouter } from "@tanstack/react-router";
-import { getSuperAdminDataFn, pullEverythingFn, verifyUserEmailFn } from "@/sync-api";
+import { pullEverythingFn, verifyUserEmailFn } from "@/sync-api";
 import { SessionStore, PersistStore } from "@/lib/session-store";
 
 interface AuthContextType {

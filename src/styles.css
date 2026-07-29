@@ -1,5 +1,4 @@
-@import "tailwindcss" source(none);
-@source "../src";
+@import "tailwindcss";
 @import "tw-animate-css";
 
 @custom-variant dark (&:is(.dark *));
@@ -234,4 +233,15 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
 * {
   scrollbar-width: thin;
   scrollbar-color: color-mix(in oklch, var(--color-muted-foreground) 35%, transparent) transparent;
+}
+
+/* Remove spin buttons from number inputs globally */
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type="number"] {
+  -moz-appearance: textfield;
 }

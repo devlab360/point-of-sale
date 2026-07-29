@@ -30,6 +30,8 @@ import {
   PackageMinus,
   Undo2,
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
   LogOut,
   FileText,
   BookOpen,
@@ -52,6 +54,19 @@ import { APP_GROUPS, hasPermissionForRoute } from "@/lib/menu-config";
 export function AppSidebar({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
+  const [isMinimized, setIsMinimized] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('sidebarMinimized') === 'true';
+    }
+    return false;
+  });
+
+  const toggleMinimize = () => {
+    const newState = !isMinimized;
+    setIsMinimized(newState);
+    localStorage.setItem('sidebarMinimized', String(newState));
+  };
+
   const { user, logout, saasPlan } = useAuth();
   const { t } = useLanguage();
 
@@ -105,22 +120,31 @@ export function AppSidebar({ onNavigate }: { onNavigate?: () => void }) {
   };
 
   return (
-    <div className="flex h-full w-full flex-col bg-sidebar text-sidebar-foreground select-none">
-      <div className="flex h-16 shrink-0 items-center gap-3 border-b border-sidebar-border px-5 bg-sidebar/80 backdrop-blur-md">
-        <div className="grid size-9 place-items-center rounded-xl bg-gradient-to-br from-primary to-primary/80 text-primary-foreground shadow-md shadow-primary/20 ring-2 ring-primary/20 overflow-hidden">
+    <div className={cn("relative flex h-full flex-col bg-sidebar text-sidebar-foreground select-none transition-all duration-300 z-20", isMinimized ? "w-[4.5rem]" : "w-64")}>
+      <button
+        onClick={toggleMinimize}
+        className="absolute -right-4 top-6 flex size-8 items-center justify-center rounded-full border border-sidebar-border bg-background text-muted-foreground shadow-md hover:text-foreground hover:border-primary/50 hover:bg-muted/50 z-50 transition-all hover:scale-105"
+      >
+        {isMinimized ? <ChevronRight className="size-6" /> : <ChevronLeft className="size-6" />}
+      </button>
+
+      <div className={cn("flex h-16 shrink-0 items-center gap-3 border-b border-sidebar-border bg-sidebar/80 backdrop-blur-md", isMinimized ? "justify-center px-0" : "px-5")}>
+        <div className="grid size-9 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-primary to-primary/80 text-primary-foreground shadow-md shadow-primary/20 ring-2 ring-primary/20 overflow-hidden">
           {settings?.logoUrl ? (
             <img src={settings.logoUrl} alt="Logo" className="size-full object-cover bg-white" />
           ) : (
             <Store className="size-5" strokeWidth={2.5} />
           )}
         </div>
-        <div className="min-w-0 flex-1">
-          <div className="truncate text-sm font-extrabold tracking-tight text-foreground">GROCER.PRO</div>
-          <div className="truncate text-[10px] font-semibold uppercase tracking-widest text-primary/80 flex items-center gap-1">
-            <span className="size-1.5 rounded-full bg-success inline-block animate-pulse"></span>
-            {settings?.storeName || "Main Store"}
+        {!isMinimized && (
+          <div className="min-w-0 flex-1">
+            <div className="truncate text-sm font-extrabold tracking-tight text-foreground">GROCER.PRO</div>
+            <div className="truncate text-[10px] font-semibold uppercase tracking-widest text-primary/80 flex items-center gap-1">
+              <span className="size-1.5 rounded-full bg-success inline-block animate-pulse"></span>
+              {settings?.storeName || "Main Store"}
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
       <nav className="scrollbar-thin flex-1 overflow-y-auto px-3.5 py-4 space-y-3.5">
@@ -133,26 +157,30 @@ export function AppSidebar({ onNavigate }: { onNavigate?: () => void }) {
                 onClick={() =>
                   setCollapsed((c) => ({ ...c, [group.label]: !c[group.label] }))
                 }
+                title={isMinimized ? (t(group.tkey) || group.label) : undefined}
                 className={cn(
-                  "flex w-full items-center justify-between rounded-lg px-2.5 py-1.5 text-[10px] font-extrabold uppercase tracking-widest transition-all duration-200",
+                  "flex w-full items-center justify-between rounded-lg py-1.5 text-[10px] font-extrabold uppercase tracking-widest transition-all duration-200",
+                  isMinimized ? "px-0 justify-center" : "px-2.5",
                   hasActiveChild
                     ? "text-primary font-black bg-primary/5"
                     : "text-muted-foreground/80 hover:bg-sidebar-accent/50 hover:text-foreground"
                 )}
               >
-                <span className="flex items-center gap-1.5">
+                <span className={cn("flex items-center", isMinimized ? "justify-center w-full" : "gap-1.5")}>
                   <span className={cn("size-1.5 rounded-full transition-colors", hasActiveChild ? "bg-primary shadow-[0_0_8px_rgba(var(--primary),0.8)]" : "bg-transparent group-hover/section:bg-muted-foreground/40")} />
-                  {t(group.tkey) || group.label}
+                  {!isMinimized && (t(group.tkey) || group.label)}
                 </span>
-                <div className="flex items-center gap-1.5">
-                  <span className="text-[10px] font-mono text-muted-foreground/60 px-1.5 py-0.2 rounded bg-sidebar-accent/30">{group.items.length}</span>
-                  <ChevronDown
-                    className={cn("size-3.5 transition-transform duration-200 text-muted-foreground", isClosed && "-rotate-90")}
-                  />
-                </div>
+                {!isMinimized && (
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[10px] font-mono text-muted-foreground/60 px-1.5 py-0.2 rounded bg-sidebar-accent/30">{group.items.length}</span>
+                    <ChevronDown
+                      className={cn("size-3.5 transition-transform duration-200 text-muted-foreground", isClosed && "-rotate-90")}
+                    />
+                  </div>
+                )}
               </button>
-              {!isClosed && (
-                <div className="mt-1.5 ml-3 pl-2.5 border-l-2 border-sidebar-border/70 space-y-1 py-0.5 transition-all">
+              {(!isClosed || isMinimized) && (
+                <div className={cn("mt-1.5 space-y-1 py-0.5 transition-all", isMinimized ? "ml-0 pl-0 border-none" : "ml-3 pl-2.5 border-l-2 border-sidebar-border/70")}>
                   {group.items.map((item) => {
                     const Icon = item.icon;
                     const active = isActive(item.to);
@@ -161,10 +189,12 @@ export function AppSidebar({ onNavigate }: { onNavigate?: () => void }) {
                         key={item.to}
                         to={item.to}
                         onClick={onNavigate}
+                        title={isMinimized ? (t(item.tkey) || item.label) : undefined}
                         className={cn(
-                          "group relative flex items-center gap-3 rounded-xl px-2.5 py-2 text-xs font-medium transition-colors duration-150",
+                          "group relative flex items-center rounded-xl py-2 text-xs font-medium transition-colors duration-150",
+                          isMinimized ? "justify-center px-0" : "gap-3 px-2.5",
                           active
-                            ? "bg-gradient-to-r from-primary/15 via-primary/10 to-transparent text-primary font-bold shadow-sm before:absolute before:-left-[11px] before:top-1.5 before:bottom-1.5 before:w-[3px] before:rounded-r-full before:bg-primary before:shadow-[0_0_8px_rgba(var(--primary),0.8)]"
+                            ? cn("bg-gradient-to-r from-primary/15 via-primary/10 to-transparent text-primary font-bold shadow-sm before:absolute before:top-1.5 before:bottom-1.5 before:w-[3px] before:rounded-r-full before:bg-primary before:shadow-[0_0_8px_rgba(var(--primary),0.8)]", isMinimized ? "before:left-0" : "before:-left-[11px]")
                             : "text-sidebar-foreground/75 hover:bg-sidebar-accent/70 hover:text-foreground",
                         )}
                       >
@@ -175,12 +205,14 @@ export function AppSidebar({ onNavigate }: { onNavigate?: () => void }) {
                           )}
                           strokeWidth={active ? 2.5 : 2}
                         />
-                        <span className="flex-1 text-left line-clamp-1">{t(item.tkey) || item.label}</span>
-                        {item.label === "Notifications" && unreadCount > 0 ? (
+                        {!isMinimized && (
+                          <span className="flex-1 text-left line-clamp-1">{t(item.tkey) || item.label}</span>
+                        )}
+                        {!isMinimized && item.label === "Notifications" && unreadCount > 0 ? (
                           <span className={cn("rounded-md px-1.5 py-0.5 text-[10px] font-bold shadow-sm", active ? "bg-primary text-primary-foreground animate-pulse" : "bg-destructive text-destructive-foreground animate-bounce")}>
                             {unreadCount}
                           </span>
-                        ) : item.badge && (
+                        ) : !isMinimized && item.badge ? (
                           <span
                             className={cn(
                               "rounded-md px-1.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wider shadow-sm",
@@ -193,7 +225,9 @@ export function AppSidebar({ onNavigate }: { onNavigate?: () => void }) {
                           >
                             {item.badge}
                           </span>
-                        )}
+                        ) : isMinimized && (item.label === "Notifications" && unreadCount > 0 || item.badge) ? (
+                          <span className="absolute top-1.5 right-1.5 size-2 rounded-full bg-destructive animate-pulse" />
+                        ) : null}
                       </Link>
                     );
                   })}
@@ -204,8 +238,8 @@ export function AppSidebar({ onNavigate }: { onNavigate?: () => void }) {
         })}
       </nav>
 
-      <div className="shrink-0 border-t border-sidebar-border/80 p-3 bg-sidebar/60 backdrop-blur-sm">
-        <div className="flex items-center gap-3 rounded-xl border border-sidebar-border/60 bg-sidebar-accent/30 p-2.5 shadow-soft transition-colors duration-150 hover:bg-sidebar-accent/60 hover:border-sidebar-border hover:shadow-md">
+      <div className={cn("shrink-0 border-t border-sidebar-border/80 bg-sidebar/60 backdrop-blur-sm", isMinimized ? "p-2" : "p-3")}>
+        <div className={cn("flex items-center rounded-xl border border-sidebar-border/60 bg-sidebar-accent/30 shadow-soft transition-colors duration-150 hover:bg-sidebar-accent/60 hover:border-sidebar-border hover:shadow-md", isMinimized ? "flex-col p-1.5 gap-2" : "gap-3 p-2.5")}>
           {user?.avatar ? (
             <img src={user.avatar} alt="Profile" className="size-9 shrink-0 rounded-lg object-cover border border-primary/30 shadow-sm" />
           ) : (
@@ -213,16 +247,18 @@ export function AppSidebar({ onNavigate }: { onNavigate?: () => void }) {
               {initials}
             </div>
           )}
-          <div className="min-w-0 flex-1">
-            <div className="truncate text-xs font-bold text-foreground">{user?.name || "Admin"}</div>
-            <div className="truncate text-[10px] font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1 mt-0.5">
-              <span className="size-1.5 rounded-full bg-success inline-block"></span>
-              {user?.role || "Staff"}
+          {!isMinimized && (
+            <div className="min-w-0 flex-1">
+              <div className="truncate text-xs font-bold text-foreground">{user?.name || "Admin"}</div>
+              <div className="truncate text-[10px] font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1 mt-0.5">
+                <span className="size-1.5 rounded-full bg-success inline-block"></span>
+                {user?.role || "Staff"}
+              </div>
             </div>
-          </div>
+          )}
           <button
             onClick={logout}
-            className="grid size-8 shrink-0 place-items-center rounded-lg border border-transparent text-muted-foreground hover:border-destructive/30 hover:bg-destructive/15 hover:text-destructive transition-colors duration-150"
+            className={cn("grid shrink-0 place-items-center rounded-lg border border-transparent text-muted-foreground hover:border-destructive/30 hover:bg-destructive/15 hover:text-destructive transition-colors duration-150", isMinimized ? "size-9 w-full" : "size-8")}
             title="Log out"
           >
             <LogOut className="size-4" />

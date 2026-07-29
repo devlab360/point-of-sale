@@ -18,11 +18,11 @@ export const DEFAULT_PAYMENT_CONFIG = {
   id: "super_admin_payment_config",
   storeName: "Super Admin Payment Config",
   synced: true,
-  accountName: "Artistry POS Technologies Pvt Ltd",
-  bankName: "HDFC Bank (Commercial Branch)",
-  accountNo: "50200098765432",
-  ifscCode: "HDFC0001234",
-  upiId: "pos.artistry@hdfcbank",
-  qrCodeUrl: "https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=upi://pay?pa=pos.artistry@hdfcbank&pn=ArtistryPOS&cu=INR",
-  instructions: "Scan the QR code using GPay, PhonePe, Paytm or transfer directly via NEFT/IMPS/RTGS. After payment, submit your Transaction ID/UTR below for verification."
+  accountName: "",
+  bankName: "",
+  accountNo: "",
+  ifscCode: "",
+  upiId: "",
+  qrCodeUrl: "",
+  instructions: "Please make the payment using the details above and submit your Transaction ID/UTR below for verification."
 };

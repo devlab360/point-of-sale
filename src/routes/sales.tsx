@@ -36,7 +36,7 @@ function SalesPage() {
   const debouncedQuery = useDebounce(query, 300);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
-  
+
   const [statusFilter, setStatusFilter] = useState("");
   const [paymentFilter, setPaymentFilter] = useState("");
   const [syncFilter, setSyncFilter] = useState("");
@@ -80,6 +80,27 @@ function SalesPage() {
     return filtered.slice(start, start + pageSize);
   }, [filtered, page, pageSize]);
 
+  const summaries = useMemo(() => {
+    let cash = 0, card = 0, upi = 0, credit = 0;
+    filtered.forEach(s => {
+      if (s.status === "refunded") return; // Ignore refunded sales in total collected
+      if (s.payments && s.payments.length > 0) {
+        s.payments.forEach(p => {
+          if (p.method === 'cash') cash += p.amount;
+          else if (p.method === 'card') card += p.amount;
+          else if (p.method === 'upi' || p.method === 'online' || p.method === 'mobile' || p.method === 'wallet') upi += p.amount;
+          else if (p.method === 'credit') credit += p.amount;
+        });
+      } else {
+        if (s.paymentMethod === 'cash') cash += s.total;
+        else if (s.paymentMethod === 'card') card += s.total;
+        else if (s.paymentMethod === 'credit') credit += s.total;
+        else if (s.paymentMethod === 'upi' || s.paymentMethod === 'wallet' || s.paymentMethod === 'mobile') upi += s.total;
+      }
+    });
+    return { cash, card, upi, credit, total: cash + card + upi + credit };
+  }, [filtered]);
+
   const printReceipt = (s: OfflineSale) => {
     setViewSale(s);
     setTimeout(() => window.print(), 200);
@@ -99,43 +120,43 @@ function SalesPage() {
           <div className="space-y-4">
             <div className="space-y-2">
               <Label>Status</Label>
-              <SearchableSelect 
+              <SearchableSelect
                 options={[
                   { value: "", label: "All Statuses" },
                   { value: "completed", label: "Completed" },
                   { value: "pending", label: "Pending" },
                   { value: "refunded", label: "Refunded" }
-                ]} 
-                value={statusFilter} 
-                onChange={setStatusFilter} 
+                ]}
+                value={statusFilter}
+                onChange={setStatusFilter}
                 placeholder="Filter by Status"
               />
             </div>
             <div className="space-y-2">
               <Label>Payment Method</Label>
-              <SearchableSelect 
+              <SearchableSelect
                 options={[
                   { value: "", label: "All Methods" },
                   { value: "cash", label: "Cash" },
                   { value: "card", label: "Card" },
                   { value: "mobile", label: "Mobile Banking" },
                   { value: "wallet", label: "Wallet" }
-                ]} 
-                value={paymentFilter} 
-                onChange={setPaymentFilter} 
+                ]}
+                value={paymentFilter}
+                onChange={setPaymentFilter}
                 placeholder="Filter by Payment"
               />
             </div>
             <div className="space-y-2">
               <Label>Sync Status</Label>
-              <SearchableSelect 
+              <SearchableSelect
                 options={[
                   { value: "", label: "All Sync Status" },
                   { value: "synced", label: "Synced" },
                   { value: "pending", label: "Pending Sync" }
-                ]} 
-                value={syncFilter} 
-                onChange={setSyncFilter} 
+                ]}
+                value={syncFilter}
+                onChange={setSyncFilter}
                 placeholder="Filter by Sync"
               />
             </div>
@@ -147,13 +168,33 @@ function SalesPage() {
       >
         {/* We override the primaryAction onClick to use a Link instead, since DataPage only takes a callback, or we can just keep the button as child. Wait, DataPage's primaryAction just takes onClick. We can just pass the Link inside children, or adapt DataPage. Actually, DataPage primaryAction is fine. */}
         {filtered.length === 0 ? (
-          <EmptyState 
-            icon={Receipt} 
-            title={t("noSalesFound") || "No sales found"} 
-            description={debouncedQuery ? (t("adjustSearch") || "Try adjusting your search.") : (t("noSalesYet") || "No transactions have been recorded yet.")} 
+          <EmptyState
+            icon={Receipt}
+            title={t("noSalesFound") || "No sales found"}
+            description={debouncedQuery ? (t("adjustSearch") || "Try adjusting your search.") : (t("noSalesYet") || "No transactions have been recorded yet.")}
           />
         ) : (
           <div className="space-y-4">
+            {/* Payment Summary Cards */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="rounded-xl border border-border bg-card p-4 shadow-sm flex flex-col gap-1">
+                <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Total Cash</span>
+                <span className="text-xl font-black text-emerald-600">{formatCurrency(summaries.cash)}</span>
+              </div>
+              <div className="rounded-xl border border-border bg-card p-4 shadow-sm flex flex-col gap-1">
+                <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Total Card</span>
+                <span className="text-xl font-black text-blue-600">{formatCurrency(summaries.card)}</span>
+              </div>
+              <div className="rounded-xl border border-border bg-card p-4 shadow-sm flex flex-col gap-1">
+                <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">UPI / Online</span>
+                <span className="text-xl font-black text-indigo-600">{formatCurrency(summaries.upi)}</span>
+              </div>
+              <div className="rounded-xl border border-border bg-card p-4 shadow-sm flex flex-col gap-1">
+                <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Credit (Due)</span>
+                <span className="text-xl font-black text-amber-600">{formatCurrency(summaries.credit)}</span>
+              </div>
+            </div>
+
             <div className="overflow-hidden rounded-xl border border-border bg-card shadow-soft">
               <table className="w-full text-left text-sm">
                 <thead className="bg-muted/50 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
@@ -176,7 +217,18 @@ function SalesPage() {
                       <td className="px-4 py-3 font-semibold">{s.customerName || "Walk-in"}</td>
                       <td className="px-4 py-3 text-muted-foreground">{formatDateTime(s.date)}</td>
                       <td className="px-4 py-3 text-right">{s.items}</td>
-                      <td className="px-4 py-3 text-muted-foreground capitalize">{s.paymentMethod || "cash"}</td>
+                      <td className="px-4 py-3 text-muted-foreground capitalize">
+                        {s.paymentMethod === 'split' && s.payments && s.payments.length > 0 ? (
+                          <div className="flex flex-col gap-0.5 text-[10px]">
+                            <span className="font-bold text-primary">SPLIT</span>
+                            {s.payments.map((p, i) => (
+                              <span key={i} className="font-semibold text-foreground">{p.method.toUpperCase()}: {formatCurrency(p.amount)}</span>
+                            ))}
+                          </div>
+                        ) : (
+                          <span className="font-medium text-foreground">{s.paymentMethod || "cash"}</span>
+                        )}
+                      </td>
                       <td className="px-4 py-3">
                         <Badge className={cn(s.synced ? "bg-success/10 text-success" : "bg-warning/15 text-warning-foreground")}>
                           {s.synced ? "Synced" : "Pending"}
@@ -286,10 +338,10 @@ function SalesPage() {
             </div>
             <div className="border-t border-b border-black py-2 mb-2">
               {viewSale.saleItems?.map((item, i) => (
-                <div key={i} className="flex justify-between"><span className="truncate max-w-[160px]">{item.productName} x{item.quantity}</span><span>{currencySymbol}{item.total.toFixed(2)}</span></div>
+                <div key={i} className="flex justify-between"><span className="truncate max-w-[160px]">{item.productName} x{item.quantity}</span><span>{formatCurrency(item.total)}</span></div>
               ))}
             </div>
-            <div className="flex justify-between font-bold"><span>TOTAL:</span><span>{currencySymbol}{viewSale.total.toFixed(2)}</span></div>
+            <div className="flex justify-between font-bold"><span>TOTAL:</span><span>{formatCurrency(viewSale.total)}</span></div>
             <p className="mt-3 text-center text-[10px]">Thank you for your business!</p>
           </div>
         </div>

@@ -438,7 +438,8 @@ function ProductsPage() {
                 <Input
                   type="number" min="0" step="0.01"
                   placeholder="0.00"
-                  value={formData.price}
+                  value={formData.price === 0 ? "" : formData.price}
+                  onFocus={e => e.target.select()}
                   onChange={e => { setFormData({ ...formData, price: parseFloat(e.target.value) || 0 }); clearProdError("price"); }}
                   className={prodErrors.price ? "border-destructive focus-visible:ring-destructive" : ""}
                 />
@@ -457,7 +458,8 @@ function ProductsPage() {
                 <Input
                   type="number" min="0" step="0.01"
                   placeholder="0.00"
-                  value={formData.cost}
+                  value={formData.cost === 0 ? "" : formData.cost}
+                  onFocus={e => e.target.select()}
                   onChange={e => { setFormData({ ...formData, cost: parseFloat(e.target.value) || 0 }); clearProdError("cost"); }}
                   className={prodErrors.cost ? "border-destructive focus-visible:ring-destructive" : ""}
                 />
@@ -468,7 +470,8 @@ function ProductsPage() {
                 <Input
                   type="number" min="0"
                   placeholder="0"
-                  value={formData.stock}
+                  value={formData.stock === 0 ? "" : formData.stock}
+                  onFocus={e => e.target.select()}
                   onChange={e => { setFormData({ ...formData, stock: parseInt(e.target.value) || 0 }); clearProdError("stock"); }}
                   className={prodErrors.stock ? "border-destructive focus-visible:ring-destructive" : ""}
                 />
@@ -479,7 +482,8 @@ function ProductsPage() {
                 <Input
                   type="number" min="0"
                   placeholder="e.g. 5"
-                  value={formData.reorderLevel}
+                  value={formData.reorderLevel === 0 ? "" : formData.reorderLevel}
+                  onFocus={e => e.target.select()}
                   onChange={e => { setFormData({ ...formData, reorderLevel: parseInt(e.target.value) || 0 }); clearProdError("reorderLevel"); }}
                   className={prodErrors.reorderLevel ? "border-destructive focus-visible:ring-destructive" : ""}
                 />
