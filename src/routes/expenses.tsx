@@ -114,10 +114,11 @@ function ExpensesPage() {
 
   const handleSave = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    
     setIsSaving(true);
     await new Promise(resolve => setTimeout(resolve, 500));
     try {
-      const formData = new FormData(e.currentTarget);
       const date = (formData.get("date") as string)?.trim();
       const category = (formData.get("category") as string)?.trim();
       const description = (formData.get("description") as string)?.trim();

@@ -83,7 +83,6 @@ function SalesReturnsPage() {
   const selectedSale: OfflineSale | undefined = sales.find(s => s.id === saleId);
 
   const toggleItem = (item: OfflineSale["saleItems"][0], checked: boolean) => {
-  const { formatDate, formatTime, formatDateTime } = usePreferences();
     if (checked) {
       setSelectedItems(prev => [...prev, {
         productId: item.productId,

@@ -69,12 +69,10 @@ function PurchaseReturnsPage() {
   }, [search]);
 
   const addReturnItem = () => {
-  const { formatDate, formatTime, formatDateTime } = usePreferences();
     setReturnItems(prev => [...prev, { productId: "", productName: "", quantity: 1, cost: 0, total: 0 }]);
   };
 
   const updateReturnItem = (idx: number, field: string, value: any) => {
-  const { formatDate, formatTime, formatDateTime } = usePreferences();
     setReturnItems(prev => {
       const updated = [...prev];
       updated[idx] = { ...updated[idx], [field]: value };

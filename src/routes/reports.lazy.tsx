@@ -95,7 +95,6 @@ function ReportsPage() {
   const pieData = catData.length > 0 ? catData : categories.slice(0, 5).map((c, i) => ({ name: c.name, value: 20, color: COLORS[i % COLORS.length] }));
 
   const exportCSV = (type: string) => {
-  const { formatDate, formatTime, formatDateTime } = usePreferences();
     let csv = "";
     let filename = "";
     const getCustomers = () => localDb.customers.toArray();

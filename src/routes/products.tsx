@@ -361,7 +361,7 @@ function ProductsPage() {
           />
         ) : (
           <div className="space-y-4">
-            {view === "list" ? <TableView products={paginatedProducts} onEdit={openEdit} onDelete={deleteProd} onPrint={(p) => { setPrintProduct(p); setPrintCount(1); }} /> : <GridView products={paginatedProducts} onEdit={openEdit} onPrint={(p) => { setPrintProduct(p); setPrintCount(1); }} />}
+            {view === "list" ? <TableView products={paginatedProducts} categories={categories} brands={brands} units={units} onEdit={openEdit} onDelete={deleteProd} onPrint={(p) => { setPrintProduct(p); setPrintCount(1); }} /> : <GridView products={paginatedProducts} categories={categories} brands={brands} units={units} onEdit={openEdit} onPrint={(p) => { setPrintProduct(p); setPrintCount(1); }} />}
             {products.length > 0 && (
               <PaginationControls
                 currentPage={page}
@@ -706,7 +706,7 @@ function ProductsPage() {
 }
 
 
-function TableView({ products, onEdit, onDelete, onPrint }: { products: any[], onEdit: (p: any) => void, onDelete: (id: string) => void, onPrint: (p: any) => void }) {
+function TableView({ products, categories, brands, units, onEdit, onDelete, onPrint }: { products: any[], categories: any[], brands: any[], units: any[], onEdit: (p: any) => void, onDelete: (id: string) => void, onPrint: (p: any) => void }) {
   const { formatCurrency } = useCurrency();
   const { t } = useLanguage();
   return (
@@ -730,6 +730,9 @@ function TableView({ products, onEdit, onDelete, onPrint }: { products: any[], o
           <tbody className="divide-y divide-border">
             {products.map((p) => {
               const low = p.stock <= p.reorderLevel;
+              const categoryName = categories.find((c) => c.id === p.category)?.name || p.category || "-";
+              const brandName = brands.find((b) => b.id === p.brand)?.name || p.brand || "";
+              const unitName = units.find((u) => u.id === p.unit)?.name || p.unit || "";
               return (
                 <tr key={p.id} className="hover:bg-muted/30">
                   <td className="px-4 py-3">
@@ -737,17 +740,17 @@ function TableView({ products, onEdit, onDelete, onPrint }: { products: any[], o
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-3">
-                      <div className="grid size-10 shrink-0 place-items-center rounded-lg bg-muted">
-                        <img src={p.image} alt="" className="size-7" />
+                      <div className="grid size-10 shrink-0 place-items-center rounded-lg bg-muted overflow-hidden">
+                        <img src={p.image} alt="" className="size-full object-cover" />
                       </div>
                       <div>
                         <div className="font-semibold">{p.name}</div>
-                        <div className="text-xs text-muted-foreground">{p.brand}</div>
+                        <div className="text-xs text-muted-foreground">{brandName}</div>
                       </div>
                     </div>
                   </td>
                   <td className="px-4 py-3 font-mono text-xs text-muted-foreground">{p.sku}</td>
-                  <td className="px-4 py-3 text-muted-foreground">{p.category}</td>
+                  <td className="px-4 py-3 text-muted-foreground">{categoryName}</td>
                   <td className="number px-4 py-3 text-right">
                     <div className="font-semibold">{formatCurrency(p.price)}</div>
                     {(p.wholesalePrice > 0 || p.dealerPrice > 0) && (
@@ -759,7 +762,7 @@ function TableView({ products, onEdit, onDelete, onPrint }: { products: any[], o
                   </td>
                   <td className="px-4 py-3 text-right">
                     <span className={cn("number font-semibold", low && "text-destructive")}>{p.stock}</span>
-                    <span className="ml-1 text-xs text-muted-foreground">{p.unit}</span>
+                    <span className="ml-1 text-xs text-muted-foreground">{unitName}</span>
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex flex-col gap-1 items-start">
@@ -815,33 +818,50 @@ function TableView({ products, onEdit, onDelete, onPrint }: { products: any[], o
   );
 }
 
-function GridView({ products, onEdit, onPrint }: { products: any[], onEdit: (p: any) => void, onPrint: (p: any) => void }) {
+function GridView({ products, categories, brands, units, onEdit, onPrint }: { products: any[], categories: any[], brands: any[], units: any[], onEdit: (p: any) => void, onPrint: (p: any) => void }) {
   const { formatCurrency } = useCurrency();
   return (
     <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-      {products.map((p) => (
-        <div
-          key={p.id}
-          className="relative overflow-hidden rounded-xl border border-border bg-card shadow-soft transition-shadow hover:shadow-elevated group"
-        >
-          <div className="aspect-square bg-muted p-6 cursor-pointer" onClick={() => onEdit(p)}>
-            <img src={p.image} alt="" className="size-full" />
-          </div>
-          <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
-            <Button variant="secondary" size="icon" className="size-7 shadow-soft" onClick={(e) => { e.stopPropagation(); onPrint(p); }}>
-              <Printer className="size-3.5" />
-            </Button>
-          </div>
-          <div className="p-3.5 cursor-pointer" onClick={() => onEdit(p)}>
-            <div className="text-sm font-semibold">{p.name}</div>
-            <div className="mt-0.5 text-xs text-muted-foreground">{p.sku}</div>
-            <div className="mt-2.5 flex items-center justify-between">
-              <span className="number text-base font-bold">{formatCurrency(p.price)}</span>
-              <span className="text-xs text-muted-foreground">{p.stock} in stock</span>
+      {products.map((p) => {
+        const categoryName = categories.find((c) => c.id === p.category)?.name || p.category || "-";
+        const unitName = units.find((u) => u.id === p.unit)?.name || p.unit || "";
+        return (
+          <div
+            key={p.id}
+            className="relative overflow-hidden rounded-xl border border-border bg-card shadow-soft transition-shadow hover:shadow-elevated group"
+          >
+            <div className="aspect-square bg-muted cursor-pointer overflow-hidden" onClick={() => onEdit(p)}>
+              <img src={p.image} alt="" className="size-full object-cover" />
+            </div>
+            <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+              <Button variant="secondary" size="icon" className="size-7 shadow-soft" onClick={(e) => { e.stopPropagation(); onPrint(p); }}>
+                <Printer className="size-3.5" />
+              </Button>
+            </div>
+            <div className="p-3.5 cursor-pointer" onClick={() => onEdit(p)}>
+              <div className="text-sm font-semibold truncate" title={p.name}>{p.name}</div>
+              <div className="mt-0.5 flex items-center justify-between text-xs text-muted-foreground">
+                <span>{p.sku}</span>
+                <span className="truncate max-w-[50%] text-right">{categoryName}</span>
+              </div>
+
+              <div className="mt-2.5 flex flex-col gap-1">
+                <div className="flex items-center justify-between">
+                  <span className="number text-base font-bold">{formatCurrency(p.price)}</span>
+                  <span className={cn("text-xs font-medium", p.stock <= p.reorderLevel ? "text-destructive" : "text-muted-foreground")}>{p.stock} {unitName || "in stock"}</span>
+                </div>
+
+                {(p.wholesalePrice > 0 || p.dealerPrice > 0) && (
+                  <div className="flex items-center justify-between text-[10px] border-t border-border/50 pt-1 mt-0.5">
+                    <span className="text-info font-medium">{p.wholesalePrice > 0 ? `WS: ${formatCurrency(p.wholesalePrice)}` : ''}</span>
+                    <span className="text-warning font-medium">{p.dealerPrice > 0 ? `DLR: ${formatCurrency(p.dealerPrice)}` : ''}</span>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }

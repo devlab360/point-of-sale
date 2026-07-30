@@ -84,7 +84,6 @@ function DeliveryChallansPage() {
   }, [debouncedSearch]);
 
   const addItemToChallan = (productId: string) => {
-  const { formatDate, formatTime, formatDateTime } = usePreferences();
     const p = products.find((prod) => prod.id === productId);
     if (!p) return;
     const cust = customers.find((c) => c.id === selectedCustomerId);
@@ -108,7 +107,6 @@ function DeliveryChallansPage() {
   };
 
   const updateLineQty = (productId: string, qty: number) => {
-  const { formatDate, formatTime, formatDateTime } = usePreferences();
     if (qty <= 0) {
       setLineItems((prev) => prev.filter((item) => item.productId !== productId));
       return;

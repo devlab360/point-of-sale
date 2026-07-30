@@ -16,6 +16,7 @@ export const Route = createLazyFileRoute("/inventory/")({
 function StockList() {
   const products = useLiveQuery(() => localDb.products.toArray()) || [];
   const sales = useLiveQuery(() => localDb.offlineSales.toArray()) || [];
+  const units = useLiveQuery(() => localDb.units.toArray()) || [];
   const lowCount = products.filter(p => p.stock <= p.reorderLevel).length;
   const outCount = products.filter(p => p.stock <= 0).length;
 
@@ -26,7 +27,7 @@ function StockList() {
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
     const recentSales = sales.filter(s => new Date(s.date) >= thirtyDaysAgo);
-    
+
     const salesMap: Record<string, number> = {};
     recentSales.forEach(sale => {
       sale.saleItems?.forEach(item => {
@@ -101,15 +102,15 @@ function StockList() {
                 <tr key={p.id} className="hover:bg-muted/30">
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-3">
-                      <div className="grid size-9 place-items-center rounded-lg bg-muted">
-                        <img src={p.image} alt="" className="size-6" />
+                      <div className="grid size-9 shrink-0 place-items-center rounded-lg bg-muted overflow-hidden">
+                        <img src={p.image} alt="" className="size-full object-cover" />
                       </div>
                       <span className="font-semibold">{p.name}</span>
                     </div>
                   </td>
                   <td className="px-4 py-3 font-mono text-xs text-muted-foreground">{p.sku}</td>
                   <td className={cn("number px-4 py-3 text-right font-semibold", low && "text-destructive")}>
-                    {p.stock} {p.unit}
+                    {p.stock} {units.find((u) => u.id === p.unit)?.name || p.unit || ""}
                   </td>
                   <td className="px-4 py-3 text-right text-muted-foreground">{p.reorderLevel}</td>
                   <td className="number px-4 py-3 text-right">${(p.stock * p.cost).toFixed(0)}</td>

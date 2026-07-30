@@ -199,6 +199,11 @@ export const pushEverythingFn = createServerFn({ method: "POST" })
                   item[key] = new Date(item[key]);
                 }
               }
+              
+              // Prevent primary key conflicts by ignoring the client's IndexedDB auto-increment ID.
+              // Postgres will generate a fresh serial ID for these append-only records.
+              delete item.id;
+              
               return item;
             });
             if (bulkData.length > 0) {
