@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -55,6 +56,15 @@ function RepairsPage() {
   const [advancePaid, setAdvancePaid] = useState("");
   const [notes, setNotes] = useState("Backup data before repair. 30 days warranty on replaced parts.");
 
+  const [filters, setFilters] = useState({ status: "" });
+  const [draftFilters, setDraftFilters] = useState({ status: "" });
+  const activeFilterCount = filters.status ? 1 : 0;
+
+  const handleResetFilters = () => {
+    setFilters({ status: "" });
+    setDraftFilters({ status: "" });
+  };
+
   const filteredRepairs = useMemo(() => {
     let filtered = rawRepairs;
     if (debouncedSearch) {
@@ -67,8 +77,11 @@ function RepairsPage() {
           r.serialOrImei?.toLowerCase().includes(lower)
       );
     }
+    if (filters.status) {
+      filtered = filtered.filter(r => r.status === filters.status);
+    }
     return filtered.reverse();
-  }, [rawRepairs, debouncedSearch]);
+  }, [rawRepairs, debouncedSearch, filters.status]);
 
   const totalPages = Math.max(1, Math.ceil(filteredRepairs.length / itemsPerPage));
   const paginated = filteredRepairs.slice((page - 1) * itemsPerPage, page * itemsPerPage);
@@ -142,6 +155,34 @@ function RepairsPage() {
         searchValue={search}
         onSearchChange={setSearch}
         hideToolbar={rawRepairs.length === 0}
+        onResetFilters={handleResetFilters}
+        activeFilterCount={activeFilterCount}
+        filtersContent={({ close }) => (
+          <div className="space-y-4 flex flex-col h-full min-h-[50vh]">
+            <div className="flex-1 space-y-4">
+              <div className="space-y-2">
+                <Label>Status</Label>
+                <SearchableSelect
+                  options={[
+                    { value: "", label: "All Statuses" },
+                    { value: "received", label: "Received" },
+                    { value: "diagnosing", label: "Diagnosing" },
+                    { value: "repaired", label: "Repaired" },
+                    { value: "delivered", label: "Delivered" },
+                  ]}
+                  value={draftFilters.status}
+                  onChange={(val) => setDraftFilters(prev => ({ ...prev, status: val }))}
+                  placeholder="Filter by Status"
+                />
+              </div>
+            </div>
+            <div className="pt-4 mt-auto">
+              <Button className="w-full" onClick={() => { setFilters(draftFilters); close(); }}>
+                Apply Filters
+              </Button>
+            </div>
+          </div>
+        )}
       >
         {filteredRepairs.length === 0 ? (
           <EmptyState

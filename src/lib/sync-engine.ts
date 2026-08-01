@@ -97,7 +97,12 @@ export class SyncEngine {
             if (successfullySyncedIds.length > 0) {
               await localDb.transaction("rw", table, async () => {
                 for (const id of successfullySyncedIds) {
-                  await table.update(id, { synced: true, syncRetryCount: 0 });
+                  const record = await table.get(id);
+                  if (record && record._deleted) {
+                    await table.delete(id);
+                  } else {
+                    await table.update(id, { synced: true, syncRetryCount: 0 });
+                  }
                 }
               });
             }

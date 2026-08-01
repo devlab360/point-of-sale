@@ -40,7 +40,7 @@ function ReportsPage() {
   const [dateTo, setDateTo] = useState("");
 
   const mtdRevenue = sales.reduce((sum, s) => sum + s.total, 0);
-  
+
   let mtdCost = 0;
   sales.forEach(sale => {
     sale.saleItems?.forEach(item => {
@@ -49,7 +49,7 @@ function ReportsPage() {
     });
   });
   const mtdProfit = mtdRevenue - mtdCost;
-  
+
   const mtdOrders = sales.length;
   const taxPayable = mtdRevenue * 0.08;
   const totalExpenses = expenses.reduce((s, e) => s + e.amount, 0);
@@ -62,7 +62,7 @@ function ReportsPage() {
     const monthSales = sales.filter(s => new Date(s.date).getMonth() === d.getMonth() && new Date(s.date).getFullYear() === d.getFullYear());
     const revenue = monthSales.reduce((sum, s) => sum + s.total, 0);
     const expense = expenses.filter(e => new Date(e.date).getMonth() === d.getMonth()).reduce((s, e) => s + e.amount, 0);
-    
+
     let cogs = 0;
     monthSales.forEach(sale => {
       sale.saleItems?.forEach(item => {
@@ -98,7 +98,7 @@ function ReportsPage() {
     let csv = "";
     let filename = "";
     const getCustomers = () => localDb.customers.toArray();
-    
+
     if (type === "sales") {
       csv = ["Invoice,Customer,Date,Payment,Items,Total"].join("\n") + "\n" +
         sales.map(s => `${s.id.slice(0, 8)},${s.customerName || "Walk-in"},${formatDate(s.date)},${s.paymentMethod},${s.items},$${s.total.toFixed(2)}`).join("\n");
@@ -116,7 +116,7 @@ function ReportsPage() {
       csv = ["Invoice No,Date,Customer Name,GSTIN,State,Taxable Value,CGST,SGST,IGST,Total Value"].join("\n") + "\n" +
         sales.map(s => {
           const taxable = (s.subtotal || 0) - (s.discountAmt || 0);
-          return `${s.id.substring(0,8)},${formatDate(s.date)},${s.customerName || "Walk-in"},-,0,${taxable.toFixed(2)},${(s.cgstAmt||0).toFixed(2)},${(s.sgstAmt||0).toFixed(2)},${(s.igstAmt||0).toFixed(2)},${s.total.toFixed(2)}`;
+          return `${s.id.substring(0, 8)},${formatDate(s.date)},${s.customerName || "Walk-in"},-,0,${taxable.toFixed(2)},${(s.cgstAmt || 0).toFixed(2)},${(s.sgstAmt || 0).toFixed(2)},${(s.igstAmt || 0).toFixed(2)},${s.total.toFixed(2)}`;
         }).join("\n");
       filename = "GSTR-1.csv";
     } else if (type === "gstr2") {
@@ -124,19 +124,19 @@ function ReportsPage() {
       csv = ["Invoice No,Date,Supplier Name,GSTIN,Taxable Value,CGST,SGST,IGST,Total Value"].join("\n") + "\n" +
         purchases.map(p => {
           const taxable = (p.subtotal || 0) - (p.discountAmt || 0);
-          return `${p.invoiceNo || p.id.substring(0,8)},${formatDate(p.date)},${p.supplier},-,${taxable.toFixed(2)},${(p.cgstAmt||0).toFixed(2)},${(p.sgstAmt||0).toFixed(2)},${(p.igstAmt||0).toFixed(2)},${p.total.toFixed(2)}`;
+          return `${p.invoiceNo || p.id.substring(0, 8)},${formatDate(p.date)},${p.supplier},-,${taxable.toFixed(2)},${(p.cgstAmt || 0).toFixed(2)},${(p.sgstAmt || 0).toFixed(2)},${(p.igstAmt || 0).toFixed(2)},${p.total.toFixed(2)}`;
         }).join("\n");
       filename = "GSTR-2.csv";
     } else if (type === "gstr3b") {
       // Summary
       let outTaxable = 0; let outCGST = 0; let outSGST = 0; let outIGST = 0;
-      sales.forEach(s => { outTaxable += (s.subtotal||0)-(s.discountAmt||0); outCGST += (s.cgstAmt||0); outSGST += (s.sgstAmt||0); outIGST += (s.igstAmt||0); });
+      sales.forEach(s => { outTaxable += (s.subtotal || 0) - (s.discountAmt || 0); outCGST += (s.cgstAmt || 0); outSGST += (s.sgstAmt || 0); outIGST += (s.igstAmt || 0); });
       let inTaxable = 0; let inCGST = 0; let inSGST = 0; let inIGST = 0;
-      purchases.forEach(p => { inTaxable += (p.subtotal||0)-(p.discountAmt||0); inCGST += (p.cgstAmt||0); inSGST += (p.sgstAmt||0); inIGST += (p.igstAmt||0); });
+      purchases.forEach(p => { inTaxable += (p.subtotal || 0) - (p.discountAmt || 0); inCGST += (p.cgstAmt || 0); inSGST += (p.sgstAmt || 0); inIGST += (p.igstAmt || 0); });
 
       csv = ["Description,Total Taxable Value,Integrated Tax,Central Tax,State/UT Tax,Cess"].join("\n") + "\n" +
-            `3.1 Outward Taxable Supplies,${outTaxable.toFixed(2)},${outIGST.toFixed(2)},${outCGST.toFixed(2)},${outSGST.toFixed(2)},0.00\n` +
-            `4(A) ITC Available (Inward Supplies),${inTaxable.toFixed(2)},${inIGST.toFixed(2)},${inCGST.toFixed(2)},${inSGST.toFixed(2)},0.00`;
+        `3.1 Outward Taxable Supplies,${outTaxable.toFixed(2)},${outIGST.toFixed(2)},${outCGST.toFixed(2)},${outSGST.toFixed(2)},0.00\n` +
+        `4(A) ITC Available (Inward Supplies),${inTaxable.toFixed(2)},${inIGST.toFixed(2)},${inCGST.toFixed(2)},${inSGST.toFixed(2)},0.00`;
       filename = "GSTR-3B.csv";
     }
 
@@ -270,11 +270,11 @@ function ReportsPage() {
 
       {/* Report Modal */}
       <Dialog open={!!activeReport} onOpenChange={(open) => !open && setActiveReport(null)}>
-        <DialogContent className="sm:max-w-2xl max-h-[85vh] overflow-y-auto">
+        <DialogContent className="sm:max-w-5xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="capitalize flex items-center justify-between pr-6">
-              <span>{activeReport === "pnl" ? "Profit & Loss Statement (লাভ-ক্ষতি বিবরণী)" : `${activeReport} Report`}</span>
-              <Button size="sm" variant="outline" onClick={() => window.print()}>Print Report</Button>
+              <span>{activeReport === "pnl" ? "Profit & Loss Statement" : `${activeReport} Report`}</span>
+              <Button size="sm" variant="outline" onClick={() => window.print()} className="font-semibold bg-primary/10 border-primary/20 text-primary hover:text-primary hover:bg-primary/20 hover:border-primary/30"> Print Report</Button>
             </DialogTitle>
           </DialogHeader>
 
@@ -284,9 +284,9 @@ function ReportsPage() {
               <div className="flex-1">
                 <Label className="text-xs">From</Label>
                 <div className="mt-1">
-                  <DatePicker 
-                    date={dateFrom} 
-                    onDateChange={(d) => setDateFrom(d ? d.toISOString().split("T")[0] : "")} 
+                  <DatePicker
+                    date={dateFrom}
+                    onDateChange={(d) => setDateFrom(d ? d.toISOString().split("T")[0] : "")}
                     placeholder="From Date"
                   />
                 </div>
@@ -294,9 +294,9 @@ function ReportsPage() {
               <div className="flex-1">
                 <Label className="text-xs">To</Label>
                 <div className="mt-1">
-                  <DatePicker 
-                    date={dateTo} 
-                    onDateChange={(d) => setDateTo(d ? d.toISOString().split("T")[0] : "")} 
+                  <DatePicker
+                    date={dateTo}
+                    onDateChange={(d) => setDateTo(d ? d.toISOString().split("T")[0] : "")}
                     placeholder="To Date"
                   />
                 </div>
@@ -315,7 +315,7 @@ function ReportsPage() {
                 </div>
                 <div className="overflow-hidden rounded-lg border border-border max-h-64 overflow-y-auto">
                   <table className="w-full text-sm">
-                    <thead className="bg-muted/50 text-[11px] uppercase tracking-wider text-muted-foreground sticky top-0">
+                    <thead className="bg-muted z-10 text-[11px] uppercase tracking-wider text-muted-foreground sticky top-0 shadow-sm">
                       <tr><th className="px-3 py-2 text-left">Invoice</th><th className="px-3 py-2 text-left">Customer</th><th className="px-3 py-2 text-left">Date</th><th className="px-3 py-2 text-right">Total</th></tr>
                     </thead>
                     <tbody className="divide-y divide-border">
@@ -336,7 +336,7 @@ function ReportsPage() {
               <div className="space-y-3">
                 <div className="overflow-hidden rounded-lg border border-border">
                   <table className="w-full text-sm">
-                    <thead className="bg-muted/50 text-[11px] uppercase tracking-wider text-muted-foreground">
+                    <thead className="bg-muted z-10 text-[11px] uppercase tracking-wider text-muted-foreground sticky top-0 shadow-sm">
                       <tr>
                         <th className="px-3 py-2 text-left">Sales Representative</th>
                         <th className="px-3 py-2 text-center">Comm. Rate</th>
@@ -394,7 +394,7 @@ function ReportsPage() {
             {activeReport === "inventory" && (
               <div className="overflow-hidden rounded-lg border border-border max-h-72 overflow-y-auto">
                 <table className="w-full text-sm">
-                  <thead className="bg-muted/50 text-[11px] uppercase tracking-wider text-muted-foreground sticky top-0">
+                  <thead className="bg-muted z-10 text-[11px] uppercase tracking-wider text-muted-foreground sticky top-0 shadow-sm">
                     <tr><th className="px-3 py-2 text-left">Product</th><th className="px-3 py-2 text-right">Stock</th><th className="px-3 py-2 text-right">Reorder</th><th className="px-3 py-2 text-right">Value</th></tr>
                   </thead>
                   <tbody className="divide-y divide-border">
@@ -422,7 +422,7 @@ function ReportsPage() {
                 </div>
                 <div className="overflow-hidden rounded-lg border border-border max-h-64 overflow-y-auto">
                   <table className="w-full text-sm">
-                    <thead className="bg-muted/50 text-[11px] uppercase tracking-wider text-muted-foreground sticky top-0">
+                    <thead className="bg-muted z-10 text-[11px] uppercase tracking-wider text-muted-foreground sticky top-0 shadow-sm">
                       <tr><th className="px-3 py-2 text-left">Date</th><th className="px-3 py-2 text-left">Category</th><th className="px-3 py-2 text-left">Description</th><th className="px-3 py-2 text-right">Amount</th></tr>
                     </thead>
                     <tbody className="divide-y divide-border">

@@ -37,9 +37,14 @@ function SalesPage() {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
 
-  const [statusFilter, setStatusFilter] = useState("");
-  const [paymentFilter, setPaymentFilter] = useState("");
-  const [syncFilter, setSyncFilter] = useState("");
+  const [filters, setFilters] = useState({ status: "", payment: "", sync: "" });
+  const [draftFilters, setDraftFilters] = useState({ status: "", payment: "", sync: "" });
+  const activeFilterCount = (filters.status ? 1 : 0) + (filters.payment ? 1 : 0) + (filters.sync ? 1 : 0);
+
+  const handleResetFilters = () => {
+    setFilters({ status: "", payment: "", sync: "" });
+    setDraftFilters({ status: "", payment: "", sync: "" });
+  };
   const [viewSale, setViewSale] = useState<OfflineSale | null>(null);
 
   const storeName = settings?.storeName || "GROCER.PRO";
@@ -57,22 +62,22 @@ function SalesPage() {
         )
       );
     }
-    if (statusFilter) {
-      list = list.filter(s => s.status === statusFilter);
+    if (filters.status) {
+      list = list.filter(s => s.status === filters.status);
     }
-    if (paymentFilter) {
-      list = list.filter(s => s.paymentMethod === paymentFilter);
+    if (filters.payment) {
+      list = list.filter(s => s.paymentMethod === filters.payment);
     }
-    if (syncFilter) {
-      const isSynced = syncFilter === "synced";
+    if (filters.sync) {
+      const isSynced = filters.sync === "synced";
       list = list.filter(s => s.synced === isSynced);
     }
     return list;
-  }, [sales, debouncedQuery, statusFilter, paymentFilter, syncFilter]);
+  }, [sales, debouncedQuery, filters.status, filters.payment, filters.sync]);
 
   useEffect(() => {
     setPage(1);
-  }, [debouncedQuery, statusFilter, paymentFilter, syncFilter]);
+  }, [debouncedQuery, filters]);
 
   const totalPages = Math.ceil(filtered.length / pageSize);
   const paginatedSales = useMemo(() => {
@@ -116,55 +121,61 @@ function SalesPage() {
         searchValue={query}
         onSearchChange={setQuery}
         hideToolbar={sales.length === 0}
-        filtersContent={
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label>Status</Label>
-              <SearchableSelect
-                options={[
-                  { value: "", label: "All Statuses" },
-                  { value: "completed", label: "Completed" },
-                  { value: "pending", label: "Pending" },
-                  { value: "refunded", label: "Refunded" }
-                ]}
-                value={statusFilter}
-                onChange={setStatusFilter}
-                placeholder="Filter by Status"
-              />
+        onResetFilters={handleResetFilters}
+        activeFilterCount={activeFilterCount}
+        filtersContent={({ close }) => (
+          <div className="space-y-4 flex flex-col h-full min-h-[50vh]">
+            <div className="flex-1 space-y-4">
+              <div className="space-y-2">
+                <Label>Status</Label>
+                <SearchableSelect
+                  options={[
+                    { value: "", label: "All Statuses" },
+                    { value: "completed", label: "Completed" },
+                    { value: "pending", label: "Pending" },
+                    { value: "refunded", label: "Refunded" }
+                  ]}
+                  value={draftFilters.status}
+                  onChange={(val) => setDraftFilters(prev => ({ ...prev, status: val }))}
+                  placeholder="Filter by Status"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Payment Method</Label>
+                <SearchableSelect
+                  options={[
+                    { value: "", label: "All Methods" },
+                    { value: "cash", label: "Cash" },
+                    { value: "card", label: "Card" },
+                    { value: "mobile", label: "Mobile Banking" },
+                    { value: "wallet", label: "Wallet" }
+                  ]}
+                  value={draftFilters.payment}
+                  onChange={(val) => setDraftFilters(prev => ({ ...prev, payment: val }))}
+                  placeholder="Filter by Payment"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Sync Status</Label>
+                <SearchableSelect
+                  options={[
+                    { value: "", label: "All Sync Status" },
+                    { value: "synced", label: "Synced" },
+                    { value: "pending", label: "Pending Sync" }
+                  ]}
+                  value={draftFilters.sync}
+                  onChange={(val) => setDraftFilters(prev => ({ ...prev, sync: val }))}
+                  placeholder="Filter by Sync"
+                />
+              </div>
             </div>
-            <div className="space-y-2">
-              <Label>Payment Method</Label>
-              <SearchableSelect
-                options={[
-                  { value: "", label: "All Methods" },
-                  { value: "cash", label: "Cash" },
-                  { value: "card", label: "Card" },
-                  { value: "mobile", label: "Mobile Banking" },
-                  { value: "wallet", label: "Wallet" }
-                ]}
-                value={paymentFilter}
-                onChange={setPaymentFilter}
-                placeholder="Filter by Payment"
-              />
+            <div className="pt-4 mt-auto">
+              <Button className="w-full" onClick={() => { setFilters(draftFilters); close(); }}>
+                Apply Filters
+              </Button>
             </div>
-            <div className="space-y-2">
-              <Label>Sync Status</Label>
-              <SearchableSelect
-                options={[
-                  { value: "", label: "All Sync Status" },
-                  { value: "synced", label: "Synced" },
-                  { value: "pending", label: "Pending Sync" }
-                ]}
-                value={syncFilter}
-                onChange={setSyncFilter}
-                placeholder="Filter by Sync"
-              />
-            </div>
-            <Button variant="outline" className="w-full" onClick={() => { setStatusFilter(""); setPaymentFilter(""); setSyncFilter(""); }}>
-              Reset Filters
-            </Button>
           </div>
-        }
+        )}
       >
         {/* We override the primaryAction onClick to use a Link instead, since DataPage only takes a callback, or we can just keep the button as child. Wait, DataPage's primaryAction just takes onClick. We can just pass the Link inside children, or adapt DataPage. Actually, DataPage primaryAction is fine. */}
         {filtered.length === 0 ? (
@@ -230,7 +241,14 @@ function SalesPage() {
                         )}
                       </td>
                       <td className="px-4 py-3">
-                        <Badge className={cn(s.synced ? "bg-success/10 text-success" : "bg-warning/15 text-warning-foreground")}>
+                        <Badge
+                          variant="outline"
+                          className={cn(
+                            s.synced
+                              ? "bg-success/10 text-success border-success/20 hover:bg-success/20"
+                              : "bg-warning/10 text-warning border-warning/20 hover:bg-warning/20"
+                          )}
+                        >
                           {s.synced ? "Synced" : "Pending"}
                         </Badge>
                       </td>
@@ -284,7 +302,19 @@ function SalesPage() {
                 <div><span className="text-muted-foreground">Customer:</span> <strong>{viewSale.customerName || "Walk-in"}</strong></div>
                 <div><span className="text-muted-foreground">Date:</span> {formatDateTime(viewSale.date)}</div>
                 <div><span className="text-muted-foreground">Payment:</span> <strong className="capitalize">{viewSale.paymentMethod}</strong></div>
-                <div><span className="text-muted-foreground">Status:</span> <Badge className="bg-success/10 text-success">{viewSale.status}</Badge></div>
+                <div>
+                  <span className="text-muted-foreground">Status:</span>{" "}
+                  <Badge
+                    variant="outline"
+                    className={cn(
+                      viewSale.status === "completed" && "bg-success/10 text-success hover:bg-success/20 border-success/20",
+                      viewSale.status === "pending" && "bg-warning/10 text-warning hover:bg-warning/20 border-warning/20",
+                      viewSale.status === "cancelled" && "bg-destructive/10 text-destructive hover:bg-destructive/20 border-destructive/20"
+                    )}
+                  >
+                    {viewSale.status}
+                  </Badge>
+                </div>
               </div>
               <div className="rounded-lg border border-border overflow-hidden">
                 <table className="w-full text-sm">

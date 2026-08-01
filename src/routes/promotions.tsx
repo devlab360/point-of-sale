@@ -37,6 +37,7 @@ import type { LocalPromotion } from "@/lib/db";
 import { useFormValidation } from "@/hooks/useFormValidation";
 import { FieldError } from "@/components/ui/field-error";
 import { usePreferences } from "@/contexts/PreferencesContext";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 
 export const Route = createFileRoute("/promotions")({
   head: () => ({ meta: [{ title: "Promotions · Grocer.Pro" }] }),
@@ -60,18 +61,33 @@ function PromotionsPage() {
   const [page, setPage] = useState(1);
   const itemsPerPage = 10;
 
+  const [filters, setFilters] = useState({ type: "", status: "" });
+  const [draftFilters, setDraftFilters] = useState({ type: "", status: "" });
+  const activeFilterCount = (filters.type ? 1 : 0) + (filters.status ? 1 : 0);
+
+  const handleResetFilters = () => {
+    setFilters({ type: "", status: "" });
+    setDraftFilters({ type: "", status: "" });
+  };
+
   const filteredPromotions = useMemo(() => {
     let list = promotions;
     if (debouncedSearch) {
       const lower = debouncedSearch.toLowerCase();
       list = list.filter(p => p.title.toLowerCase().includes(lower));
     }
+    if (filters.type) {
+      list = list.filter(p => p.type === filters.type);
+    }
+    if (filters.status) {
+      list = list.filter(p => p.status === filters.status);
+    }
     return list;
-  }, [promotions, debouncedSearch]);
+  }, [promotions, debouncedSearch, filters.type, filters.status]);
 
   useEffect(() => {
     setPage(1);
-  }, [debouncedSearch]);
+  }, [debouncedSearch, filters]);
 
   useEffect(() => {
     const maxPage = Math.max(1, Math.ceil(filteredPromotions.length / itemsPerPage));
@@ -91,10 +107,10 @@ function PromotionsPage() {
 
   const handleSave = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    const formData = new FormData(e.currentTarget);
     setIsSaving(true);
     await new Promise(resolve => setTimeout(resolve, 500));
     try {
-      const formData = new FormData(e.currentTarget);
       const title = (formData.get("title") as string)?.trim();
       const type = formData.get("type") as string;
       const valueStr = (formData.get("value") as string)?.trim();
@@ -156,6 +172,46 @@ function PromotionsPage() {
         searchValue={search}
         onSearchChange={setSearch}
         hideToolbar={promotions.length === 0}
+        onResetFilters={handleResetFilters}
+        activeFilterCount={activeFilterCount}
+        filtersContent={({ close }) => (
+          <div className="space-y-4 flex flex-col h-full min-h-[50vh]">
+            <div className="flex-1 space-y-4">
+              <div className="space-y-2">
+                <Label>Type</Label>
+                <SearchableSelect
+                  options={[
+                    { value: "", label: "All Types" },
+                    { value: "storewide", label: "Storewide" },
+                    { value: "category", label: "Specific Category" },
+                    { value: "product", label: "Specific Product" },
+                  ]}
+                  value={draftFilters.type}
+                  onChange={(val) => setDraftFilters(prev => ({ ...prev, type: val }))}
+                  placeholder="Filter by Type"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Status</Label>
+                <SearchableSelect
+                  options={[
+                    { value: "", label: "All Statuses" },
+                    { value: "active", label: "Active" },
+                    { value: "draft", label: "Draft" },
+                  ]}
+                  value={draftFilters.status}
+                  onChange={(val) => setDraftFilters(prev => ({ ...prev, status: val }))}
+                  placeholder="Filter by Status"
+                />
+              </div>
+            </div>
+            <div className="pt-4 mt-auto">
+              <Button className="w-full" onClick={() => { setFilters(draftFilters); close(); }}>
+                Apply Filters
+              </Button>
+            </div>
+          </div>
+        )}
       >
         {filteredPromotions.length === 0 ? (
           <EmptyState

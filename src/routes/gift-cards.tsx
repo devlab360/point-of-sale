@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DatePicker } from "@/components/ui/date-picker";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import {
   DropdownMenu,
@@ -57,18 +58,30 @@ function GiftCardsPage() {
   const [page, setPage] = useState(1);
   const itemsPerPage = 9;
 
+  const [filters, setFilters] = useState({ status: "" });
+  const [draftFilters, setDraftFilters] = useState({ status: "" });
+  const activeFilterCount = filters.status ? 1 : 0;
+
+  const handleResetFilters = () => {
+    setFilters({ status: "" });
+    setDraftFilters({ status: "" });
+  };
+
   const filteredCards = useMemo(() => {
     let list = giftCards;
     if (debouncedSearch) {
       const lower = debouncedSearch.toLowerCase();
       list = list.filter(c => c.code.toLowerCase().includes(lower) || c.customer?.toLowerCase().includes(lower));
     }
+    if (filters.status) {
+      list = list.filter(c => c.status === filters.status);
+    }
     return list;
-  }, [giftCards, debouncedSearch]);
+  }, [giftCards, debouncedSearch, filters.status]);
 
   useEffect(() => {
     setPage(1);
-  }, [debouncedSearch]);
+  }, [debouncedSearch, filters]);
 
   useEffect(() => {
     const maxPage = Math.max(1, Math.ceil(filteredCards.length / itemsPerPage));
@@ -86,10 +99,10 @@ function GiftCardsPage() {
 
   const handleSave = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    const formData = new FormData(e.currentTarget);
     setIsSaving(true);
     await new Promise(resolve => setTimeout(resolve, 500));
     try {
-      const formData = new FormData(e.currentTarget);
       const code = (formData.get("code") as string)?.trim();
       const customer = formData.get("customer") as string;
       const initialBalanceStr = (formData.get("initialBalance") as string)?.trim();
@@ -148,6 +161,33 @@ function GiftCardsPage() {
         searchValue={search}
         onSearchChange={setSearch}
         hideToolbar={giftCards.length === 0}
+        onResetFilters={handleResetFilters}
+        activeFilterCount={activeFilterCount}
+        filtersContent={({ close }) => (
+          <div className="space-y-4 flex flex-col h-full min-h-[50vh]">
+            <div className="flex-1 space-y-4">
+              <div className="space-y-2">
+                <Label>Status</Label>
+                <SearchableSelect
+                  options={[
+                    { value: "", label: "All Statuses" },
+                    { value: "active", label: "Active" },
+                    { value: "expired", label: "Expired" },
+                    { value: "used", label: "Used" },
+                  ]}
+                  value={draftFilters.status}
+                  onChange={(val) => setDraftFilters(prev => ({ ...prev, status: val }))}
+                  placeholder="Filter by Status"
+                />
+              </div>
+            </div>
+            <div className="pt-4 mt-auto">
+              <Button className="w-full" onClick={() => { setFilters(draftFilters); close(); }}>
+                Apply Filters
+              </Button>
+            </div>
+          </div>
+        )}
       >
         {filteredCards.length === 0 ? (
           <EmptyState

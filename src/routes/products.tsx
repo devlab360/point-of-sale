@@ -20,6 +20,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DataPage } from "@/components/layout/DataPage";
 import { localDb } from "@/lib/db";
+import { PersistStore } from "@/lib/session-store";
 import { useLiveQuery } from "dexie-react-hooks";
 import { cn } from "@/lib/utils";
 import { useCurrency } from "@/lib/currency";
@@ -54,7 +55,7 @@ function ProductsPage() {
   const { formatCurrency } = useCurrency();
   const { t } = useLanguage();
   const [view, setView] = useState<"grid" | "list">("list");
-  const rawProducts = useLiveQuery(() => localDb.products.toArray()) || [];
+  const rawProducts = useLiveQuery(() => localDb.products.filter(p => !p._deleted).toArray()) || [];
 
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search, 300);
@@ -62,9 +63,14 @@ function ProductsPage() {
   const [pageSize, setPageSize] = useState(10);
   const settings = useLiveQuery(() => localDb.settings.get("default"));
 
-  const [categoryFilter, setCategoryFilter] = useState("");
-  const [brandFilter, setBrandFilter] = useState("");
-  const [stockFilter, setStockFilter] = useState("");
+  const [filters, setFilters] = useState({ category: "", brand: "", stock: "" });
+  const [draftFilters, setDraftFilters] = useState({ category: "", brand: "", stock: "" });
+  const activeFilterCount = (filters.category ? 1 : 0) + (filters.brand ? 1 : 0) + (filters.stock ? 1 : 0);
+
+  const handleResetFilters = () => {
+    setFilters({ category: "", brand: "", stock: "" });
+    setDraftFilters({ category: "", brand: "", stock: "" });
+  };
 
   const products = useMemo(() => {
     let filtered = rawProducts;
@@ -79,26 +85,26 @@ function ProductsPage() {
           )
       );
     }
-    if (categoryFilter) {
-      filtered = filtered.filter(p => p.category === categoryFilter);
+    if (filters.category) {
+      filtered = filtered.filter(p => p.category === filters.category);
     }
-    if (brandFilter) {
-      filtered = filtered.filter(p => p.brand === brandFilter);
+    if (filters.brand) {
+      filtered = filtered.filter(p => p.brand === filters.brand);
     }
-    if (stockFilter === "in-stock") {
+    if (filters.stock === "in-stock") {
       filtered = filtered.filter(p => p.stock > (p.reorderLevel || 0));
-    } else if (stockFilter === "low-stock") {
+    } else if (filters.stock === "low-stock") {
       filtered = filtered.filter(p => p.stock > 0 && p.stock <= (p.reorderLevel || 5));
-    } else if (stockFilter === "out-of-stock") {
+    } else if (filters.stock === "out-of-stock") {
       filtered = filtered.filter(p => p.stock <= 0);
     }
 
     return filtered;
-  }, [rawProducts, debouncedSearch, categoryFilter, brandFilter, stockFilter]);
+  }, [rawProducts, debouncedSearch, filters.category, filters.brand, filters.stock]);
 
   useEffect(() => {
     setPage(1);
-  }, [debouncedSearch, categoryFilter, brandFilter, stockFilter]);
+  }, [debouncedSearch, filters]);
 
   const totalPages = Math.ceil(products.length / pageSize);
   const paginatedProducts = useMemo(() => {
@@ -238,6 +244,7 @@ function ProductsPage() {
       } else {
         await localDb.products.add({
           id: uuidv4(),
+          orgId: PersistStore.getOrgId() || "default",
           ...payload
         });
         toast.success("Product created");
@@ -258,7 +265,7 @@ function ProductsPage() {
   const confirmDelete = async () => {
     if (!deleteId) return;
     try {
-      await localDb.products.delete(deleteId);
+      await localDb.products.update(deleteId, { _deleted: true, synced: false });
       toast.success("Product deleted");
     } catch (error) {
       toast.error("Failed to delete product");
@@ -307,51 +314,57 @@ function ProductsPage() {
             </button>
           </div>
         }
-        filtersContent={
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label>Category</Label>
-              <SearchableSelect
-                options={[
-                  { value: "", label: "All Categories" },
-                  ...categories.map(c => ({ value: c.id, label: c.name }))
-                ]}
-                value={categoryFilter}
-                onChange={setCategoryFilter}
-                placeholder="Filter by Category"
-              />
+        onResetFilters={handleResetFilters}
+        activeFilterCount={activeFilterCount}
+        filtersContent={({ close }) => (
+          <div className="space-y-4 flex flex-col h-full min-h-[50vh]">
+            <div className="flex-1 space-y-4">
+              <div className="space-y-2">
+                <Label>Category</Label>
+                <SearchableSelect
+                  options={[
+                    { value: "", label: "All Categories" },
+                    ...categories.map(c => ({ value: c.id, label: c.name }))
+                  ]}
+                  value={draftFilters.category}
+                  onChange={(val) => setDraftFilters(prev => ({ ...prev, category: val }))}
+                  placeholder="Filter by Category"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Brand</Label>
+                <SearchableSelect
+                  options={[
+                    { value: "", label: "All Brands" },
+                    ...brands.map(b => ({ value: b.id, label: b.name }))
+                  ]}
+                  value={draftFilters.brand}
+                  onChange={(val) => setDraftFilters(prev => ({ ...prev, brand: val }))}
+                  placeholder="Filter by Brand"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Stock Status</Label>
+                <SearchableSelect
+                  options={[
+                    { value: "", label: "All Statuses" },
+                    { value: "in-stock", label: "In Stock" },
+                    { value: "low-stock", label: "Low Stock" },
+                    { value: "out-of-stock", label: "Out of Stock" },
+                  ]}
+                  value={draftFilters.stock}
+                  onChange={(val) => setDraftFilters(prev => ({ ...prev, stock: val }))}
+                  placeholder="Filter by Stock"
+                />
+              </div>
             </div>
-            <div className="space-y-2">
-              <Label>Brand</Label>
-              <SearchableSelect
-                options={[
-                  { value: "", label: "All Brands" },
-                  ...brands.map(b => ({ value: b.id, label: b.name }))
-                ]}
-                value={brandFilter}
-                onChange={setBrandFilter}
-                placeholder="Filter by Brand"
-              />
+            <div className="pt-4 mt-auto">
+              <Button className="w-full" onClick={() => { setFilters(draftFilters); close(); }}>
+                Apply Filters
+              </Button>
             </div>
-            <div className="space-y-2">
-              <Label>Stock Status</Label>
-              <SearchableSelect
-                options={[
-                  { value: "", label: "All Statuses" },
-                  { value: "in-stock", label: "In Stock" },
-                  { value: "low-stock", label: "Low Stock" },
-                  { value: "out-of-stock", label: "Out of Stock" },
-                ]}
-                value={stockFilter}
-                onChange={setStockFilter}
-                placeholder="Filter by Stock"
-              />
-            </div>
-            <Button variant="outline" className="w-full" onClick={() => { setCategoryFilter(""); setBrandFilter(""); setStockFilter(""); }}>
-              Reset Filters
-            </Button>
           </div>
-        }
+        )}
       >
         {products.length === 0 ? (
           <EmptyState
@@ -404,7 +417,19 @@ function ProductsPage() {
               </div>
               <div className="grid gap-1.5">
                 <Label>Barcode</Label>
-                <Input placeholder="e.g. 123456789012" value={formData.barcode} onChange={e => setFormData({ ...formData, barcode: e.target.value })} />
+                <div className="flex gap-2">
+                  <Input placeholder="e.g. 123456789012" value={formData.barcode} onChange={e => setFormData({ ...formData, barcode: e.target.value })} className="flex-1" />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      const randomBarcode = Math.floor(1000000000000 + Math.random() * 9000000000000).toString();
+                      setFormData({ ...formData, barcode: randomBarcode });
+                    }}
+                  >
+                    Generate
+                  </Button>
+                </div>
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="category">{t("category") || "Category"}</Label>

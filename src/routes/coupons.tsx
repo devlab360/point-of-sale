@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DatePicker } from "@/components/ui/date-picker";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import {
   DropdownMenu,
@@ -58,18 +59,33 @@ function CouponsPage() {
   const [page, setPage] = useState(1);
   const itemsPerPage = 10;
 
+  const [filters, setFilters] = useState({ type: "", status: "" });
+  const [draftFilters, setDraftFilters] = useState({ type: "", status: "" });
+  const activeFilterCount = (filters.type ? 1 : 0) + (filters.status ? 1 : 0);
+
+  const handleResetFilters = () => {
+    setFilters({ type: "", status: "" });
+    setDraftFilters({ type: "", status: "" });
+  };
+
   const filteredCoupons = useMemo(() => {
     let list = coupons;
     if (debouncedSearch) {
       const lower = debouncedSearch.toLowerCase();
       list = list.filter(c => c.code.toLowerCase().includes(lower));
     }
+    if (filters.type) {
+      list = list.filter(c => c.type === filters.type);
+    }
+    if (filters.status) {
+      list = list.filter(c => c.status === filters.status);
+    }
     return list;
-  }, [coupons, debouncedSearch]);
+  }, [coupons, debouncedSearch, filters.type, filters.status]);
 
   useEffect(() => {
     setPage(1);
-  }, [debouncedSearch]);
+  }, [debouncedSearch, filters]);
 
   useEffect(() => {
     const maxPage = Math.max(1, Math.ceil(filteredCoupons.length / itemsPerPage));
@@ -88,10 +104,10 @@ function CouponsPage() {
 
   const handleSave = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    const formData = new FormData(e.currentTarget);
     setIsSaving(true);
     await new Promise(resolve => setTimeout(resolve, 500));
     try {
-      const formData = new FormData(e.currentTarget);
       const code = (formData.get("code") as string)?.trim();
       const type = formData.get("type") as string;
       const discountStr = (formData.get("discount") as string)?.trim();
@@ -153,6 +169,47 @@ function CouponsPage() {
         searchValue={search}
         onSearchChange={setSearch}
         hideToolbar={coupons.length === 0}
+        onResetFilters={handleResetFilters}
+        activeFilterCount={activeFilterCount}
+        filtersContent={({ close }) => (
+          <div className="space-y-4 flex flex-col h-full min-h-[50vh]">
+            <div className="flex-1 space-y-4">
+              <div className="space-y-2">
+                <Label>Type</Label>
+                <SearchableSelect
+                  options={[
+                    { value: "", label: "All Types" },
+                    { value: "percentage", label: "Percentage (%)" },
+                    { value: "fixed", label: "Fixed Amount ($)" },
+                  ]}
+                  value={draftFilters.type}
+                  onChange={(val) => setDraftFilters(prev => ({ ...prev, type: val }))}
+                  placeholder="Filter by Type"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Status</Label>
+                <SearchableSelect
+                  options={[
+                    { value: "", label: "All Statuses" },
+                    { value: "active", label: "Active" },
+                    { value: "expiring", label: "Expiring" },
+                    { value: "expired", label: "Expired" },
+                    { value: "depleted", label: "Depleted" },
+                  ]}
+                  value={draftFilters.status}
+                  onChange={(val) => setDraftFilters(prev => ({ ...prev, status: val }))}
+                  placeholder="Filter by Status"
+                />
+              </div>
+            </div>
+            <div className="pt-4 mt-auto">
+              <Button className="w-full" onClick={() => { setFilters(draftFilters); close(); }}>
+                Apply Filters
+              </Button>
+            </div>
+          </div>
+        )}
       >
         {filteredCoupons.length === 0 ? (
           <EmptyState

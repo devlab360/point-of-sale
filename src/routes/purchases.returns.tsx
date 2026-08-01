@@ -49,14 +49,26 @@ function PurchaseReturnsPage() {
   const [reason, setReason] = useState("");
   const [returnItems, setReturnItems] = useState<{ productId: string; productName: string; quantity: number; cost: number; total: number }[]>([]);
 
+  const [filters, setFilters] = useState({ status: "" });
+  const [draftFilters, setDraftFilters] = useState({ status: "" });
+  const activeFilterCount = filters.status ? 1 : 0;
+
+  const handleResetFilters = () => {
+    setFilters({ status: "" });
+    setDraftFilters({ status: "" });
+  };
+
   const filteredReturns = useMemo(() => {
     let res = rawReturns;
     if (search) {
       const q = search.toLowerCase();
       res = res.filter(r => r.ref.toLowerCase().includes(q) || r.supplier.toLowerCase().includes(q) || r.reason.toLowerCase().includes(q));
     }
+    if (filters.status) {
+      res = res.filter(r => r.status === filters.status);
+    }
     return [...res].reverse();
-  }, [rawReturns, search]);
+  }, [rawReturns, search, filters.status]);
 
   const totalPages = Math.ceil(filteredReturns.length / pageSize);
   const paginatedReturns = useMemo(() => {
@@ -66,7 +78,7 @@ function PurchaseReturnsPage() {
 
   useEffect(() => {
     setPage(1);
-  }, [search]);
+  }, [search, filters]);
 
   const addReturnItem = () => {
     setReturnItems(prev => [...prev, { productId: "", productName: "", quantity: 1, cost: 0, total: 0 }]);
@@ -161,6 +173,36 @@ function PurchaseReturnsPage() {
         description="Damaged or excess stock returned to suppliers."
         primaryAction={{ label: "New Return", onClick: () => setIsAddOpen(true) }}
         searchPlaceholder="Search by ref or supplier..."
+        searchValue={search}
+        onSearchChange={setSearch}
+        hideToolbar={rawReturns.length === 0}
+        onResetFilters={handleResetFilters}
+        activeFilterCount={activeFilterCount}
+        filtersContent={({ close }) => (
+          <div className="space-y-4 flex flex-col h-full min-h-[50vh]">
+            <div className="flex-1 space-y-4">
+              <div className="space-y-2">
+                <Label>Status</Label>
+                <SearchableSelect
+                  options={[
+                    { value: "", label: "All Statuses" },
+                    { value: "approved", label: "Approved" },
+                    { value: "pending", label: "Pending" },
+                    { value: "rejected", label: "Rejected" },
+                  ]}
+                  value={draftFilters.status}
+                  onChange={(val) => setDraftFilters(prev => ({ ...prev, status: val }))}
+                  placeholder="Filter by Status"
+                />
+              </div>
+            </div>
+            <div className="pt-4 mt-auto">
+              <Button className="w-full" onClick={() => { setFilters(draftFilters); close(); }}>
+                Apply Filters
+              </Button>
+            </div>
+          </div>
+        )}
       >
         <div className="overflow-hidden rounded-xl border border-border bg-card shadow-soft">
           <table className="w-full text-left text-sm">

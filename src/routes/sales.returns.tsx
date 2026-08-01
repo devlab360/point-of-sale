@@ -4,6 +4,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { PaginationControls } from "@/components/ui/pagination-controls";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -51,6 +52,15 @@ function SalesReturnsPage() {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
 
+  const [filters, setFilters] = useState({ status: "" });
+  const [draftFilters, setDraftFilters] = useState({ status: "" });
+  const activeFilterCount = filters.status ? 1 : 0;
+
+  const handleResetFilters = () => {
+    setFilters({ status: "" });
+    setDraftFilters({ status: "" });
+  };
+
   const filteredReturns = useMemo(() => {
     let list = returns;
     if (debouncedSearch) {
@@ -61,12 +71,15 @@ function SalesReturnsPage() {
         r.customerName.toLowerCase().includes(lower)
       );
     }
+    if (filters.status) {
+      list = list.filter(r => r.status === filters.status);
+    }
     return list;
-  }, [returns, debouncedSearch]);
+  }, [returns, debouncedSearch, filters.status]);
 
   useEffect(() => {
     setPage(1);
-  }, [debouncedSearch]);
+  }, [debouncedSearch, filters]);
 
   const totalPages = Math.ceil(filteredReturns.length / pageSize);
   const paginatedReturns = useMemo(() => {
@@ -181,6 +194,33 @@ function SalesReturnsPage() {
         searchValue={search}
         onSearchChange={setSearch}
         hideToolbar={returns.length === 0}
+        onResetFilters={handleResetFilters}
+        activeFilterCount={activeFilterCount}
+        filtersContent={({ close }) => (
+          <div className="space-y-4 flex flex-col h-full min-h-[50vh]">
+            <div className="flex-1 space-y-4">
+              <div className="space-y-2">
+                <Label>Status</Label>
+                <SearchableSelect
+                  options={[
+                    { value: "", label: "All Statuses" },
+                    { value: "approved", label: "Approved" },
+                    { value: "pending", label: "Pending" },
+                    { value: "rejected", label: "Rejected" },
+                  ]}
+                  value={draftFilters.status}
+                  onChange={(val) => setDraftFilters(prev => ({ ...prev, status: val }))}
+                  placeholder="Filter by Status"
+                />
+              </div>
+            </div>
+            <div className="pt-4 mt-auto">
+              <Button className="w-full" onClick={() => { setFilters(draftFilters); close(); }}>
+                Apply Filters
+              </Button>
+            </div>
+          </div>
+        )}
       >
         {filteredReturns.length === 0 ? (
           <EmptyState

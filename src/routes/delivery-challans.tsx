@@ -58,6 +58,15 @@ function DeliveryChallansPage() {
   const [notes, setNotes] = useState("Goods dispatched in good condition. Please inspect upon delivery.");
   const [lineItems, setLineItems] = useState<ChallanLineItem[]>([]);
 
+  const [filters, setFilters] = useState({ status: "" });
+  const [draftFilters, setDraftFilters] = useState({ status: "" });
+  const activeFilterCount = filters.status ? 1 : 0;
+
+  const handleResetFilters = () => {
+    setFilters({ status: "" });
+    setDraftFilters({ status: "" });
+  };
+
   const filteredChallans = useMemo(() => {
     let filtered = rawChallans;
     if (debouncedSearch) {
@@ -69,8 +78,11 @@ function DeliveryChallansPage() {
           c.transportName?.toLowerCase().includes(lower)
       );
     }
+    if (filters.status) {
+      filtered = filtered.filter(c => c.status === filters.status);
+    }
     return [...filtered].reverse();
-  }, [rawChallans, debouncedSearch]);
+  }, [rawChallans, debouncedSearch, filters.status]);
 
   const totalPages = Math.ceil(filteredChallans.length / pageSize);
   const paginated = useMemo(() => {
@@ -78,10 +90,9 @@ function DeliveryChallansPage() {
     return filteredChallans.slice(start, start + pageSize);
   }, [filteredChallans, page, pageSize]);
 
-  // Reset page when search changes
   useEffect(() => {
     setPage(1);
-  }, [debouncedSearch]);
+  }, [debouncedSearch, filters]);
 
   const addItemToChallan = (productId: string) => {
     const p = products.find((prod) => prod.id === productId);
@@ -122,7 +133,7 @@ function DeliveryChallansPage() {
 
   const handleCreateChallan = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     const isValid = validateCh({ selectedCustomerId });
     if (!isValid) return;
 
@@ -247,10 +258,36 @@ function DeliveryChallansPage() {
         title="Delivery Challans (চালান)"
         description="Issue goods dispatch slips, track vehicle deliveries, and convert challans to invoices."
         primaryAction={{ label: "Create Delivery Challan", onClick: () => setIsAddOpen(true) }}
-        searchPlaceholder="Search by challan # or customer..."
+        searchPlaceholder="Search challans..."
         searchValue={search}
         onSearchChange={setSearch}
         hideToolbar={rawChallans.length === 0}
+        onResetFilters={handleResetFilters}
+        activeFilterCount={activeFilterCount}
+        filtersContent={({ close }) => (
+          <div className="space-y-4 flex flex-col h-full min-h-[50vh]">
+            <div className="flex-1 space-y-4">
+              <div className="space-y-2">
+                <Label>Status</Label>
+                <SearchableSelect
+                  options={[
+                    { value: "", label: "All Statuses" },
+                    { value: "delivered", label: "Delivered" },
+                    { value: "invoiced", label: "Invoiced" },
+                  ]}
+                  value={draftFilters.status}
+                  onChange={(val) => setDraftFilters(prev => ({ ...prev, status: val }))}
+                  placeholder="Filter by Status"
+                />
+              </div>
+            </div>
+            <div className="pt-4 mt-auto">
+              <Button className="w-full" onClick={() => { setFilters(draftFilters); close(); }}>
+                Apply Filters
+              </Button>
+            </div>
+          </div>
+        )}
       >
         {filteredChallans.length === 0 ? (
           <EmptyState
@@ -314,15 +351,15 @@ function DeliveryChallansPage() {
                   ))}
                 </tbody>
               </table>
-              </div>
-              <PaginationControls 
-                currentPage={page} 
-                totalPages={totalPages} 
-                pageSize={pageSize}
-                onPageChange={setPage} 
-                onPageSizeChange={setPageSize}
-              />
             </div>
+            <PaginationControls
+              currentPage={page}
+              totalPages={totalPages}
+              pageSize={pageSize}
+              onPageChange={setPage}
+              onPageSizeChange={setPageSize}
+            />
+          </div>
         )}
       </DataPage>
 

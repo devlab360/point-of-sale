@@ -69,8 +69,14 @@ function CustomersPage() {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   
-  const [typeFilter, setTypeFilter] = useState("");
-  const [statusFilter, setStatusFilter] = useState("");
+  const [filters, setFilters] = useState({ type: "", status: "" });
+  const [draftFilters, setDraftFilters] = useState({ type: "", status: "" });
+  const activeFilterCount = (filters.type ? 1 : 0) + (filters.status ? 1 : 0);
+
+  const handleResetFilters = () => {
+    setFilters({ type: "", status: "" });
+    setDraftFilters({ type: "", status: "" });
+  };
 
   const customers = useMemo(() => {
     let filtered = rawCustomers;
@@ -85,18 +91,18 @@ function CustomersPage() {
           )
       );
     }
-    if (typeFilter) {
-      filtered = filtered.filter((c) => c.type === typeFilter);
+    if (filters.type) {
+      filtered = filtered.filter((c) => c.type === filters.type);
     }
-    if (statusFilter) {
-      filtered = filtered.filter((c) => c.status === statusFilter);
+    if (filters.status) {
+      filtered = filtered.filter((c) => c.status === filters.status);
     }
     return filtered;
-  }, [rawCustomers, debouncedSearch, typeFilter, statusFilter]);
+  }, [rawCustomers, debouncedSearch, filters.type, filters.status]);
 
   useEffect(() => {
     setPage(1);
-  }, [debouncedSearch, typeFilter, statusFilter]);
+  }, [debouncedSearch, filters]);
 
   const totalPages = Math.ceil(customers.length / pageSize);
   const paginatedCustomers = useMemo(() => {
@@ -113,10 +119,10 @@ function CustomersPage() {
 
   const handleSave = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    const formData = new FormData(e.currentTarget);
     setIsSaving(true);
     await new Promise(resolve => setTimeout(resolve, 500));
     try {
-      const formData = new FormData(e.currentTarget);
       const name = (formData.get("name") as string)?.trim();
       const email = (formData.get("email") as string)?.trim();
       const phone = (formData.get("phone") as string)?.trim();
@@ -223,41 +229,47 @@ function CustomersPage() {
         searchValue={search}
         onSearchChange={setSearch}
         hideToolbar={rawCustomers.length === 0}
-        filtersContent={
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label>Customer Type</Label>
-              <SearchableSelect 
-                options={[
-                  { value: "", label: "All Types" },
-                  { value: "retail", label: "Retail" },
-                  { value: "wholesale", label: "Wholesale" },
-                  { value: "dealer", label: "Dealer" },
-                  { value: "distributor", label: "Distributor" }
-                ]} 
-                value={typeFilter} 
-                onChange={setTypeFilter} 
-                placeholder="Filter by Type"
-              />
+        onResetFilters={handleResetFilters}
+        activeFilterCount={activeFilterCount}
+        filtersContent={({ close }) => (
+          <div className="space-y-4 flex flex-col h-full min-h-[50vh]">
+            <div className="flex-1 space-y-4">
+              <div className="space-y-2">
+                <Label>Customer Type</Label>
+                <SearchableSelect 
+                  options={[
+                    { value: "", label: "All Types" },
+                    { value: "retail", label: "Retail" },
+                    { value: "wholesale", label: "Wholesale" },
+                    { value: "dealer", label: "Dealer" },
+                    { value: "distributor", label: "Distributor" }
+                  ]} 
+                  value={draftFilters.type} 
+                  onChange={(val) => setDraftFilters(prev => ({ ...prev, type: val }))} 
+                  placeholder="Filter by Type"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Status</Label>
+                <SearchableSelect 
+                  options={[
+                    { value: "", label: "All Statuses" },
+                    { value: "active", label: "Active" },
+                    { value: "inactive", label: "Inactive" }
+                  ]} 
+                  value={draftFilters.status} 
+                  onChange={(val) => setDraftFilters(prev => ({ ...prev, status: val }))} 
+                  placeholder="Filter by Status"
+                />
+              </div>
             </div>
-            <div className="space-y-2">
-              <Label>Status</Label>
-              <SearchableSelect 
-                options={[
-                  { value: "", label: "All Statuses" },
-                  { value: "active", label: "Active" },
-                  { value: "inactive", label: "Inactive" }
-                ]} 
-                value={statusFilter} 
-                onChange={setStatusFilter} 
-                placeholder="Filter by Status"
-              />
+            <div className="pt-4 mt-auto">
+              <Button className="w-full" onClick={() => { setFilters(draftFilters); close(); }}>
+                Apply Filters
+              </Button>
             </div>
-            <Button variant="outline" className="w-full" onClick={() => { setTypeFilter(""); setStatusFilter(""); }}>
-              Reset Filters
-            </Button>
           </div>
-        }
+        )}
       >
         {customers.length === 0 ? (
           <EmptyState 

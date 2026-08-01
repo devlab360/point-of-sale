@@ -62,8 +62,14 @@ function ExpensesPage() {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   
-  const [categoryFilter, setCategoryFilter] = useState("");
-  const [statusFilter, setStatusFilter] = useState("");
+  const [filters, setFilters] = useState({ category: "", status: "" });
+  const [draftFilters, setDraftFilters] = useState({ category: "", status: "" });
+  const activeFilterCount = (filters.category ? 1 : 0) + (filters.status ? 1 : 0);
+
+  const handleResetFilters = () => {
+    setFilters({ category: "", status: "" });
+    setDraftFilters({ category: "", status: "" });
+  };
 
   const expenses = useMemo(() => {
     let filtered = rawExpenses;
@@ -74,18 +80,18 @@ function ExpensesPage() {
         e.description.toLowerCase().includes(lower)
       );
     }
-    if (categoryFilter) {
-      filtered = filtered.filter(e => e.category === categoryFilter);
+    if (filters.category) {
+      filtered = filtered.filter(e => e.category === filters.category);
     }
-    if (statusFilter) {
-      filtered = filtered.filter(e => e.status === statusFilter);
+    if (filters.status) {
+      filtered = filtered.filter(e => e.status === filters.status);
     }
     return filtered;
-  }, [rawExpenses, debouncedSearch, categoryFilter, statusFilter]);
+  }, [rawExpenses, debouncedSearch, filters.category, filters.status]);
 
   useEffect(() => {
     setPage(1);
-  }, [debouncedSearch, categoryFilter, statusFilter]);
+  }, [debouncedSearch, filters]);
 
   const totalPages = Math.ceil(expenses.length / pageSize);
   const paginatedExpenses = useMemo(() => {
@@ -185,38 +191,44 @@ function ExpensesPage() {
         searchValue={search}
         onSearchChange={setSearch}
         hideToolbar={rawExpenses.length === 0}
-        filtersContent={
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label>Category</Label>
-              <SearchableSelect 
-                options={[
-                  { value: "", label: "All Categories" },
-                  ...uniqueCategories.map(c => ({ value: c, label: c }))
-                ]} 
-                value={categoryFilter} 
-                onChange={setCategoryFilter} 
-                placeholder="Filter by Category"
-              />
+        onResetFilters={handleResetFilters}
+        activeFilterCount={activeFilterCount}
+        filtersContent={({ close }) => (
+          <div className="space-y-4 flex flex-col h-full min-h-[50vh]">
+            <div className="flex-1 space-y-4">
+              <div className="space-y-2">
+                <Label>Category</Label>
+                <SearchableSelect 
+                  options={[
+                    { value: "", label: "All Categories" },
+                    ...uniqueCategories.map(c => ({ value: c, label: c }))
+                  ]} 
+                  value={draftFilters.category} 
+                  onChange={(val) => setDraftFilters(prev => ({ ...prev, category: val }))} 
+                  placeholder="Filter by Category"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Status</Label>
+                <SearchableSelect 
+                  options={[
+                    { value: "", label: "All Statuses" },
+                    { value: "paid", label: "Paid" },
+                    { value: "pending", label: "Pending" }
+                  ]} 
+                  value={draftFilters.status} 
+                  onChange={(val) => setDraftFilters(prev => ({ ...prev, status: val }))} 
+                  placeholder="Filter by Status"
+                />
+              </div>
             </div>
-            <div className="space-y-2">
-              <Label>Status</Label>
-              <SearchableSelect 
-                options={[
-                  { value: "", label: "All Statuses" },
-                  { value: "paid", label: "Paid" },
-                  { value: "pending", label: "Pending" }
-                ]} 
-                value={statusFilter} 
-                onChange={setStatusFilter} 
-                placeholder="Filter by Status"
-              />
+            <div className="pt-4 mt-auto">
+              <Button className="w-full" onClick={() => { setFilters(draftFilters); close(); }}>
+                Apply Filters
+              </Button>
             </div>
-            <Button variant="outline" className="w-full" onClick={() => { setCategoryFilter(""); setStatusFilter(""); }}>
-              Reset Filters
-            </Button>
           </div>
-        }
+        )}
       >
         {expenses.length === 0 ? (
           <EmptyState

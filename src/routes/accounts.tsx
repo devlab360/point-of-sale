@@ -6,14 +6,15 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { useDebounce } from "@/hooks/useDebounce";
 import { localDb, type LocalAccount, type LocalVoucher } from "@/lib/db";
 import { useLiveQuery } from "dexie-react-hooks";
 import { useCurrency } from "@/lib/currency";
 import { Wallet, Plus, ArrowRightLeft, BookOpen, Layers, Loader2 } from "lucide-react";
 import { v4 as uuidv4 } from "uuid";
 import { toast } from "sonner";
-import { SearchableSelect } from "@/components/ui/searchable-select";
 import { PaginationControls } from "@/components/ui/pagination-controls";
 import { cn } from "@/lib/utils";
 import { useFormValidation } from "@/hooks/useFormValidation";
@@ -52,13 +53,46 @@ function AccountsPage() {
   const [accountType, setAccountType] = useState("asset");
 
   // Pagination state
+  const [search, setSearch] = useState("");
+  const debouncedSearch = useDebounce(search, 300);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
-  const totalPages = Math.ceil(rawVouchers.length / pageSize);
+
+  const [filters, setFilters] = useState({ type: "" });
+  const [draftFilters, setDraftFilters] = useState({ type: "" });
+  const activeFilterCount = filters.type ? 1 : 0;
+
+  const handleResetFilters = () => {
+    setFilters({ type: "" });
+    setDraftFilters({ type: "" });
+  };
+
+  const filteredVouchers = useMemo(() => {
+    let filtered = rawVouchers;
+    if (debouncedSearch) {
+      const lower = debouncedSearch.toLowerCase();
+      filtered = filtered.filter(
+        v => v.voucherNo.toLowerCase().includes(lower) || 
+             v.narration?.toLowerCase().includes(lower) ||
+             v.debitAccountName.toLowerCase().includes(lower) ||
+             v.creditAccountName.toLowerCase().includes(lower)
+      );
+    }
+    if (filters.type) {
+      filtered = filtered.filter(v => v.type === filters.type);
+    }
+    return [...filtered].reverse();
+  }, [rawVouchers, debouncedSearch, filters.type]);
+
+  const totalPages = Math.ceil(filteredVouchers.length / pageSize);
   const paginatedVouchers = useMemo(() => {
     const start = (page - 1) * pageSize;
-    return rawVouchers.slice(start, start + pageSize);
-  }, [rawVouchers, page, pageSize]);
+    return filteredVouchers.slice(start, start + pageSize);
+  }, [filteredVouchers, page, pageSize]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [debouncedSearch, filters]);
 
   // Initialize default Chart of Accounts if empty
   useEffect(() => {
@@ -196,6 +230,38 @@ function AccountsPage() {
           label: activeTab === "accounts" ? "Add Ledger Account" : "Post New Voucher",
           onClick: () => (activeTab === "accounts" ? setIsAddAccountOpen(true) : setIsAddVoucherOpen(true)),
         }}
+        searchPlaceholder={activeTab === "vouchers" ? "Search vouchers..." : ""}
+        searchValue={activeTab === "vouchers" ? search : ""}
+        onSearchChange={activeTab === "vouchers" ? setSearch : () => {}}
+        hideToolbar={activeTab === "accounts" || rawVouchers.length === 0}
+        onResetFilters={handleResetFilters}
+        activeFilterCount={activeFilterCount}
+        filtersContent={activeTab === "vouchers" ? ({ close }) => (
+          <div className="space-y-4 flex flex-col h-full min-h-[50vh]">
+            <div className="flex-1 space-y-4">
+              <div className="space-y-2">
+                <Label>Voucher Type</Label>
+                <SearchableSelect
+                  options={[
+                    { value: "", label: "All Types" },
+                    { value: "payment", label: "Payment" },
+                    { value: "receipt", label: "Receipt" },
+                    { value: "journal", label: "Journal" },
+                    { value: "contra", label: "Contra" },
+                  ]}
+                  value={draftFilters.type}
+                  onChange={(val) => setDraftFilters(prev => ({ ...prev, type: val }))}
+                  placeholder="Filter by Type"
+                />
+              </div>
+            </div>
+            <div className="pt-4 mt-auto">
+              <Button className="w-full" onClick={() => { setFilters(draftFilters); close(); }}>
+                Apply Filters
+              </Button>
+            </div>
+          </div>
+        ) : undefined}
       >
         {/* Navigation Tabs */}
         <div className="flex gap-2 border-b pb-3">
@@ -278,10 +344,10 @@ function AccountsPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
-                  {rawVouchers.length === 0 ? (
+                  {filteredVouchers.length === 0 ? (
                     <tr>
                       <td colSpan={7} className="py-8 text-center text-xs text-muted-foreground">
-                        No vouchers posted yet. Click "Post New Voucher" to create journal entries.
+                        {search || filters.type ? "No vouchers match your search." : "No vouchers posted yet. Click \"Post New Voucher\" to create journal entries."}
                       </td>
                     </tr>
                   ) : (

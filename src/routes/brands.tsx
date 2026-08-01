@@ -3,9 +3,11 @@ import { DataPage } from "@/components/layout/DataPage";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PaginationControls } from "@/components/ui/pagination-controls";
 import { localDb } from "@/lib/db";
+import { PersistStore } from "@/lib/session-store";
 import { useLiveQuery } from "dexie-react-hooks";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -34,8 +36,8 @@ export const Route = createFileRoute("/brands")({
 });
 
 function BrandsPage() {
-  const rawBrands = useLiveQuery(() => localDb.brands.toArray()) || [];
-  const products = useLiveQuery(() => localDb.products.toArray()) || [];
+  const rawBrands = useLiveQuery(() => localDb.brands.filter(b => !b._deleted).toArray()) || [];
+  const products = useLiveQuery(() => localDb.products.filter(p => !p._deleted).toArray()) || [];
   
   const brandsWithCounts = useMemo(() => {
     return rawBrands.map(b => ({
@@ -55,18 +57,32 @@ function BrandsPage() {
   const [page, setPage] = useState(1);
   const itemsPerPage = 10;
 
+  const [filters, setFilters] = useState({ usage: "" });
+  const [draftFilters, setDraftFilters] = useState({ usage: "" });
+  const activeFilterCount = filters.usage ? 1 : 0;
+
+  const handleResetFilters = () => {
+    setFilters({ usage: "" });
+    setDraftFilters({ usage: "" });
+  };
+
   const brands = useMemo(() => {
     let filtered = brandsWithCounts;
     if (debouncedSearch) {
       const lower = debouncedSearch.toLowerCase();
       filtered = filtered.filter(b => b.name.toLowerCase().includes(lower));
     }
+    if (filters.usage === "in-use") {
+      filtered = filtered.filter(b => b.products > 0);
+    } else if (filters.usage === "empty") {
+      filtered = filtered.filter(b => b.products === 0);
+    }
     return filtered;
-  }, [brandsWithCounts, debouncedSearch]);
+  }, [brandsWithCounts, debouncedSearch, filters.usage]);
 
   useEffect(() => {
     setPage(1);
-  }, [debouncedSearch]);
+  }, [debouncedSearch, filters]);
 
   useEffect(() => {
     const maxPage = Math.max(1, Math.ceil(brands.length / itemsPerPage));
@@ -102,13 +118,15 @@ function BrandsPage() {
     await new Promise(resolve => setTimeout(resolve, 500));
     try {
       if (editingBrand) {
-        await localDb.brands.update(editingBrand.id, { name });
+        await localDb.brands.update(editingBrand.id, { name, synced: false });
         toast.success("Brand updated");
       } else {
         await localDb.brands.add({
           id: uuidv4(),
+          orgId: PersistStore.getOrgId() || "default",
           name,
           products: 0,
+          synced: false
         });
         toast.success("Brand created");
       }
@@ -124,7 +142,7 @@ function BrandsPage() {
   const confirmDelete = async () => {
     if (!deleteId) return;
     try {
-      await localDb.brands.delete(deleteId);
+      await localDb.brands.update(deleteId, { _deleted: true, synced: false });
       toast.success("Brand deleted");
     } catch (error) {
       toast.error("Failed to delete brand");
@@ -144,6 +162,32 @@ function BrandsPage() {
         searchValue={search}
         onSearchChange={setSearch}
         hideToolbar={rawBrands.length === 0}
+        onResetFilters={handleResetFilters}
+        activeFilterCount={activeFilterCount}
+        filtersContent={({ close }) => (
+          <div className="space-y-4 flex flex-col h-full min-h-[50vh]">
+            <div className="flex-1 space-y-4">
+              <div className="space-y-2">
+                <Label>Usage Status</Label>
+                <SearchableSelect
+                  options={[
+                    { value: "", label: "All Brands" },
+                    { value: "in-use", label: "In Use (Has products)" },
+                    { value: "empty", label: "Empty (No products)" },
+                  ]}
+                  value={draftFilters.usage}
+                  onChange={(val) => setDraftFilters(prev => ({ ...prev, usage: val }))}
+                  placeholder="Filter by Usage"
+                />
+              </div>
+            </div>
+            <div className="pt-4 mt-auto">
+              <Button className="w-full" onClick={() => { setFilters(draftFilters); close(); }}>
+                Apply Filters
+              </Button>
+            </div>
+          </div>
+        )}
       >
         {brands.length === 0 ? (
           <EmptyState 
@@ -179,7 +223,7 @@ function BrandsPage() {
                         <Badge className="bg-success/10 text-success hover:bg-success/15">Active</Badge>
                       </td>
                       <td className="px-4 py-3 text-right">
-                        <div className="flex justify-end gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+                        <div className="flex justify-end gap-1">
                           <Button variant="ghost" size="icon" className="size-8" onClick={() => openEdit(b)}>
                             <Pencil className="size-4" />
                           </Button>

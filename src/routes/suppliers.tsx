@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -63,6 +64,15 @@ function SuppliersPage() {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(9);
 
+  const [filters, setFilters] = useState({ balance: "" });
+  const [draftFilters, setDraftFilters] = useState({ balance: "" });
+  const activeFilterCount = filters.balance ? 1 : 0;
+
+  const handleResetFilters = () => {
+    setFilters({ balance: "" });
+    setDraftFilters({ balance: "" });
+  };
+
   const suppliers = useMemo(() => {
     let filtered = rawSuppliers;
     if (debouncedSearch) {
@@ -73,12 +83,17 @@ function SuppliersPage() {
         s.email?.toLowerCase().includes(lower)
       );
     }
+    if (filters.balance === "has_balance") {
+      filtered = filtered.filter(s => s.balance > 0);
+    } else if (filters.balance === "settled") {
+      filtered = filtered.filter(s => s.balance <= 0);
+    }
     return filtered;
-  }, [rawSuppliers, debouncedSearch]);
+  }, [rawSuppliers, debouncedSearch, filters.balance]);
 
   useEffect(() => {
     setPage(1);
-  }, [debouncedSearch]);
+  }, [debouncedSearch, filters]);
 
   const totalPages = Math.ceil(suppliers.length / pageSize);
   const paginatedSuppliers = useMemo(() => {
@@ -153,6 +168,32 @@ function SuppliersPage() {
         searchValue={search}
         onSearchChange={setSearch}
         hideToolbar={rawSuppliers.length === 0}
+        onResetFilters={handleResetFilters}
+        activeFilterCount={activeFilterCount}
+        filtersContent={({ close }) => (
+          <div className="space-y-4 flex flex-col h-full min-h-[50vh]">
+            <div className="flex-1 space-y-4">
+              <div className="space-y-2">
+                <Label>Balance Status</Label>
+                <SearchableSelect
+                  options={[
+                    { value: "", label: "All Suppliers" },
+                    { value: "has_balance", label: "Has Balance" },
+                    { value: "settled", label: "Settled" },
+                  ]}
+                  value={draftFilters.balance}
+                  onChange={(val) => setDraftFilters(prev => ({ ...prev, balance: val }))}
+                  placeholder="Filter by Balance"
+                />
+              </div>
+            </div>
+            <div className="pt-4 mt-auto">
+              <Button className="w-full" onClick={() => { setFilters(draftFilters); close(); }}>
+                Apply Filters
+              </Button>
+            </div>
+          </div>
+        )}
       >
         {suppliers.length === 0 ? (
           <EmptyState 

@@ -220,6 +220,13 @@ export const pushEverythingFn = createServerFn({ method: "POST" })
           // Upsert logic for each record in updateable tables
           for (const record of records) {
             try {
+              if (record._deleted) {
+                // Hard delete from Postgres
+                await tx.delete(table).where(eq(table.id, record.id));
+                syncedIds[tableName].push(record.id);
+                continue;
+              }
+
               const insertData = { ...record };
 
               // Fix local field name mismatches → Postgres column names
@@ -239,6 +246,7 @@ export const pushEverythingFn = createServerFn({ method: "POST" })
               // Strip local-only fields that don't exist in Postgres schema
               delete insertData.synced;
               delete insertData.syncRetryCount;
+              delete insertData._deleted;
 
               // Strip unknown Postgres columns by only keeping keys that exist in the table schema
               const tableColumns = Object.keys(table);

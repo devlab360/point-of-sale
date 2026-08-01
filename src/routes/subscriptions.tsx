@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
 import { createFileRoute } from "@tanstack/react-router";
+import { format } from "date-fns";
 import { DataPage } from "@/components/layout/DataPage";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PaginationControls } from "@/components/ui/pagination-controls";
@@ -53,6 +54,15 @@ function SubscriptionsPage() {
   const [amount, setAmount] = useState("");
   const [nextBillingDate, setNextBillingDate] = useState("");
 
+  const [filters, setFilters] = useState({ status: "" });
+  const [draftFilters, setDraftFilters] = useState({ status: "" });
+  const activeFilterCount = filters.status ? 1 : 0;
+
+  const handleResetFilters = () => {
+    setFilters({ status: "" });
+    setDraftFilters({ status: "" });
+  };
+
   const filteredSubs = useMemo(() => {
     let filtered = rawSubs;
     if (debouncedSearch) {
@@ -64,8 +74,11 @@ function SubscriptionsPage() {
           s.planName.toLowerCase().includes(lower)
       );
     }
+    if (filters.status) {
+      filtered = filtered.filter(s => s.status === filters.status);
+    }
     return [...filtered].reverse();
-  }, [rawSubs, debouncedSearch]);
+  }, [rawSubs, debouncedSearch, filters.status]);
 
   const totalPages = Math.ceil(filteredSubs.length / pageSize);
   const paginated = useMemo(() => {
@@ -75,7 +88,7 @@ function SubscriptionsPage() {
 
   useEffect(() => {
     setPage(1);
-  }, [debouncedSearch]);
+  }, [debouncedSearch, filters]);
 
   const { errors: subErrors, validate: validateSub, clearError: clearSubError, clearAll: clearSubAll } = useFormValidation({
     customerName: { required: "Customer name is required" },
@@ -138,6 +151,33 @@ function SubscriptionsPage() {
         searchValue={search}
         onSearchChange={setSearch}
         hideToolbar={rawSubs.length === 0}
+        onResetFilters={handleResetFilters}
+        activeFilterCount={activeFilterCount}
+        filtersContent={({ close }) => (
+          <div className="space-y-4 flex flex-col h-full min-h-[50vh]">
+            <div className="flex-1 space-y-4">
+              <div className="space-y-2">
+                <Label>Status</Label>
+                <SearchableSelect
+                  options={[
+                    { value: "", label: "All Statuses" },
+                    { value: "active", label: "Active" },
+                    { value: "paused", label: "Paused" },
+                    { value: "cancelled", label: "Cancelled" },
+                  ]}
+                  value={draftFilters.status}
+                  onChange={(val) => setDraftFilters(prev => ({ ...prev, status: val }))}
+                  placeholder="Filter by Status"
+                />
+              </div>
+            </div>
+            <div className="pt-4 mt-auto">
+              <Button className="w-full" onClick={() => { setFilters(draftFilters); close(); }}>
+                Apply Filters
+              </Button>
+            </div>
+          </div>
+        )}
       >
         {filteredSubs.length === 0 ? (
           <EmptyState
@@ -169,7 +209,7 @@ function SubscriptionsPage() {
                       <td className="px-4 py-3 font-medium">{s.planName}</td>
                       <td className="px-4 py-3 text-xs uppercase font-mono">{s.billingCycle}</td>
                       <td className="px-4 py-3 text-right font-bold">{formatCurrency(s.amount)}</td>
-                      <td className="px-4 py-3 text-xs text-muted-foreground">{s.nextBillingDate}</td>
+                      <td className="px-4 py-3 text-xs text-muted-foreground">{s.nextBillingDate ? format(new Date(s.nextBillingDate), "MMM dd, yyyy") : "-"}</td>
                       <td className="px-4 py-3">
                         {s.status === "active" ? (
                           <Badge className="bg-success/15 text-success border-success/30">Active</Badge>

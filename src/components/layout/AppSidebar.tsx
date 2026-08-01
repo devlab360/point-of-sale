@@ -123,9 +123,12 @@ export function AppSidebar({ onNavigate }: { onNavigate?: () => void }) {
     <div className={cn("relative flex h-full flex-col bg-sidebar text-sidebar-foreground select-none transition-all duration-300 z-20", isMinimized ? "w-[4.5rem]" : "w-64")}>
       <button
         onClick={toggleMinimize}
-        className="absolute -right-4 top-6 flex size-8 items-center justify-center rounded-full border border-sidebar-border bg-background text-muted-foreground shadow-md hover:text-foreground hover:border-primary/50 hover:bg-muted/50 z-50 transition-all hover:scale-105"
+        className={cn(
+          "absolute -right-3 top-5 z-50 flex size-6 cursor-pointer items-center justify-center rounded-full border border-border bg-background text-muted-foreground shadow-sm transition-all hover:bg-accent hover:text-foreground hover:scale-110",
+          isMinimized && "rotate-180"
+        )}
       >
-        {isMinimized ? <ChevronRight className="size-6" /> : <ChevronLeft className="size-6" />}
+        <ChevronLeft className="size-3.5" strokeWidth={2.5} />
       </button>
 
       <div className={cn("flex h-16 shrink-0 items-center gap-3 border-b border-sidebar-border bg-sidebar/80 backdrop-blur-md", isMinimized ? "justify-center px-0" : "px-5")}>
@@ -149,8 +152,9 @@ export function AppSidebar({ onNavigate }: { onNavigate?: () => void }) {
 
       <nav className="scrollbar-thin flex-1 overflow-y-auto px-3.5 py-4 space-y-3.5">
         {filteredGroups.map((group) => {
-          const isClosed = collapsed[group.label];
           const hasActiveChild = group.items.some((i) => isActive(i.to));
+          // If not explicitly toggled in `collapsed` state, we assume it is closed UNLESS it has an active child.
+          const isClosed = collapsed[group.label] !== undefined ? collapsed[group.label] : !hasActiveChild;
           return (
             <div key={group.label} className="group/section">
               <button
@@ -159,7 +163,7 @@ export function AppSidebar({ onNavigate }: { onNavigate?: () => void }) {
                 }
                 title={isMinimized ? (t(group.tkey) || group.label) : undefined}
                 className={cn(
-                  "flex w-full items-center justify-between rounded-lg py-1.5 text-[10px] font-extrabold uppercase tracking-widest transition-all duration-200",
+                  "flex w-full items-center justify-between rounded-md py-1.5 text-[10px] font-extrabold uppercase tracking-widest transition-all duration-200",
                   isMinimized ? "px-0 justify-center" : "px-2.5",
                   hasActiveChild
                     ? "text-primary font-black bg-primary/5"
@@ -191,7 +195,7 @@ export function AppSidebar({ onNavigate }: { onNavigate?: () => void }) {
                         onClick={onNavigate}
                         title={isMinimized ? (t(item.tkey) || item.label) : undefined}
                         className={cn(
-                          "group relative flex items-center rounded-xl py-2 text-xs font-medium transition-colors duration-150",
+                          "group relative flex items-center rounded-md py-2 text-xs font-medium transition-colors duration-150",
                           isMinimized ? "justify-center px-0" : "gap-3 px-2.5",
                           active
                             ? cn("bg-gradient-to-r from-primary/15 via-primary/10 to-transparent text-primary font-bold shadow-sm before:absolute before:top-1.5 before:bottom-1.5 before:w-[3px] before:rounded-r-full before:bg-primary before:shadow-[0_0_8px_rgba(var(--primary),0.8)]", isMinimized ? "before:left-0" : "before:-left-[11px]")

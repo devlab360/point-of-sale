@@ -6,8 +6,14 @@ import { useLiveQuery } from "dexie-react-hooks";
 import { cn } from "@/lib/utils";
 import { Download, Filter, Brain } from "lucide-react";
 import { toast } from "sonner";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { DataPage } from "@/components/layout/DataPage";
+import { useDebounce } from "@/hooks/useDebounce";
+import { SearchableSelect } from "@/components/ui/searchable-select";
+import { PaginationControls } from "@/components/ui/pagination-controls";
+import { Label } from "@/components/ui/label";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 export const Route = createLazyFileRoute("/inventory/")({
   component: StockList,
@@ -20,7 +26,21 @@ function StockList() {
   const lowCount = products.filter(p => p.stock <= p.reorderLevel).length;
   const outCount = products.filter(p => p.stock <= 0).length;
 
+  const { t } = useLanguage();
   const [showForecast, setShowForecast] = useState(false);
+  const [search, setSearch] = useState("");
+  const debouncedSearch = useDebounce(search, 300);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+
+  const [filters, setFilters] = useState({ status: "" });
+  const [draftFilters, setDraftFilters] = useState({ status: "" });
+  const activeFilterCount = filters.status ? 1 : 0;
+
+  const handleResetFilters = () => {
+    setFilters({ status: "" });
+    setDraftFilters({ status: "" });
+  };
 
   const forecasts = useMemo(() => {
     if (!showForecast) return [];
@@ -50,89 +70,165 @@ function StockList() {
     return diff > 0 && diff <= 30;
   };
 
+  const filteredProducts = useMemo(() => {
+    let list = products;
+
+    if (debouncedSearch) {
+      const lower = debouncedSearch.toLowerCase();
+      list = list.filter(p =>
+        p.name.toLowerCase().includes(lower) ||
+        p.sku.toLowerCase().includes(lower)
+      );
+    }
+
+    if (filters.status === "in-stock") {
+      list = list.filter(p => p.stock > p.reorderLevel);
+    } else if (filters.status === "low") {
+      list = list.filter(p => p.stock > 0 && p.stock <= p.reorderLevel);
+    } else if (filters.status === "out") {
+      list = list.filter(p => p.stock <= 0);
+    } else if (filters.status === "expiring") {
+      list = list.filter(p => isExpiringSoon(p.expiryDate) || isExpired(p.expiryDate));
+    }
+
+    return list;
+  }, [products, debouncedSearch, filters.status]);
+
+  const totalPages = Math.ceil(filteredProducts.length / pageSize);
+  const paginatedProducts = useMemo(() => {
+    const start = (page - 1) * pageSize;
+    return filteredProducts.slice(start, start + pageSize);
+  }, [filteredProducts, page, pageSize]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [debouncedSearch, filters]);
+
   const expiringCount = products.filter(p => isExpiringSoon(p.expiryDate) || isExpired(p.expiryDate)).length;
 
   return (
-    <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="text-sm text-muted-foreground">
-          <span className="font-semibold text-foreground">{products.length} SKUs</span> · {lowCount} low ·{" "}
-          <span className="text-destructive">{outCount} out of stock</span>
-          {expiringCount > 0 && <span className="text-warning ml-2">· {expiringCount} expiring</span>}
+    <div className="p-4 md:p-6 lg:p-8">
+      <DataPage
+        title="Stock Inventory"
+        description="Monitor your current stock levels and AI forecasts."
+        searchPlaceholder="Search inventory by name or SKU..."
+        searchValue={search}
+        onSearchChange={setSearch}
+        hideToolbar={products.length === 0}
+        onResetFilters={handleResetFilters}
+        activeFilterCount={activeFilterCount}
+        filtersContent={({ close }) => (
+          <div className="space-y-4 flex flex-col h-full min-h-[50vh]">
+            <div className="flex-1 space-y-4">
+              <div className="space-y-2">
+                <Label>Stock Status</Label>
+                <SearchableSelect
+                  options={[
+                    { value: "", label: "All Statuses" },
+                    { value: "in-stock", label: "In Stock" },
+                    { value: "low", label: "Low Stock" },
+                    { value: "out", label: "Out of Stock" },
+                    { value: "expiring", label: "Expiring Soon" },
+                  ]}
+                  value={draftFilters.status}
+                  onChange={(val) => setDraftFilters(prev => ({ ...prev, status: val }))}
+                  placeholder="Filter by Status"
+                />
+              </div>
+            </div>
+            <div className="pt-4 mt-auto">
+              <Button className="w-full" onClick={() => { setFilters(draftFilters); close(); }}>
+                Apply Filters
+              </Button>
+            </div>
+          </div>
+        )}
+        toolbar={
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" className="bg-primary/5 text-primary hover:bg-primary/10 border-primary/20" onClick={() => setShowForecast(true)}>
+              <Brain className="size-4 mr-1.5" /> AI Forecast
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => {
+              const csv = ["Product,SKU,Stock,Reorder,Value"];
+              filteredProducts.forEach(p => csv.push(`${p.name},${p.sku},${p.stock},${p.reorderLevel},${p.stock * p.cost}`));
+              const blob = new Blob([csv.join("\\n")], { type: "text/csv" });
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement("a");
+              a.href = url;
+              a.download = `inventory-${new Date().toISOString().split('T')[0]}.csv`;
+              a.click();
+              toast.success("Inventory exported");
+            }}>
+              <Download className="size-4" /> Export CSV
+            </Button>
+          </div>
+        }
+      >
+        <div className="mb-4 text-sm text-muted-foreground flex gap-3 flex-wrap">
+          <span className="font-semibold text-foreground">{products.length} SKUs</span> <span>· {lowCount} low</span>
+          <span className="text-destructive">· {outCount} out of stock</span>
+          {expiringCount > 0 && <span className="text-warning">· {expiringCount} expiring</span>}
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={() => toast("Export not available offline yet.")}>
-            <Filter className="size-4" /> Filters
-          </Button>
-          <Button variant="outline" size="sm" className="bg-primary/5 text-primary hover:bg-primary/10 border-primary/20" onClick={() => setShowForecast(true)}>
-            <Brain className="size-4 mr-1.5" /> AI Forecast
-          </Button>
-          <Button variant="outline" size="sm" onClick={() => {
-            const csv = ["Product,SKU,Stock,Reorder,Value"];
-            products.forEach(p => csv.push(`${p.name},${p.sku},${p.stock},${p.reorderLevel},${p.stock * p.cost}`));
-            const blob = new Blob([csv.join("\n")], { type: "text/csv" });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement("a");
-            a.href = url;
-            a.download = `inventory-${new Date().toISOString().split('T')[0]}.csv`;
-            a.click();
-            toast.success("Inventory exported");
-          }}>
-            <Download className="size-4" /> Export CSV
-          </Button>
-        </div>
-      </div>
-      <div className="overflow-hidden rounded-xl border border-border bg-card shadow-soft">
-        <table className="w-full text-left text-sm">
-          <thead className="bg-muted/50 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-            <tr>
-              <th className="px-4 py-3">Product</th>
-              <th className="px-4 py-3">SKU</th>
-              <th className="px-4 py-3 text-right">On hand</th>
-              <th className="px-4 py-3 text-right">Reorder</th>
-              <th className="px-4 py-3 text-right">Value</th>
-              <th className="px-4 py-3">Status</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-border">
-            {products.map((p) => {
-              const low = p.stock <= p.reorderLevel;
-              const out = p.stock <= 0;
-              return (
-                <tr key={p.id} className="hover:bg-muted/30">
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-3">
-                      <div className="grid size-9 shrink-0 place-items-center rounded-lg bg-muted overflow-hidden">
-                        <img src={p.image} alt="" className="size-full object-cover" />
+        <div className="overflow-hidden rounded-xl border border-border bg-card shadow-soft">
+          <table className="w-full text-left text-sm">
+            <thead className="bg-muted/50 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+              <tr>
+                <th className="px-4 py-3">Product</th>
+                <th className="px-4 py-3">SKU</th>
+                <th className="px-4 py-3 text-right">On hand</th>
+                <th className="px-4 py-3 text-right">Reorder</th>
+                <th className="px-4 py-3 text-right">Value</th>
+                <th className="px-4 py-3">Status</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border">
+              {paginatedProducts.map((p) => {
+                const low = p.stock <= p.reorderLevel;
+                const out = p.stock <= 0;
+                return (
+                  <tr key={p.id} className="hover:bg-muted/30">
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-3">
+                        <div className="grid size-9 shrink-0 place-items-center rounded-lg bg-muted overflow-hidden">
+                          <img src={p.image} alt="" className="size-full object-cover" />
+                        </div>
+                        <span className="font-semibold">{p.name}</span>
                       </div>
-                      <span className="font-semibold">{p.name}</span>
-                    </div>
-                  </td>
-                  <td className="px-4 py-3 font-mono text-xs text-muted-foreground">{p.sku}</td>
-                  <td className={cn("number px-4 py-3 text-right font-semibold", low && "text-destructive")}>
-                    {p.stock} {units.find((u) => u.id === p.unit)?.name || p.unit || ""}
-                  </td>
-                  <td className="px-4 py-3 text-right text-muted-foreground">{p.reorderLevel}</td>
-                  <td className="number px-4 py-3 text-right">${(p.stock * p.cost).toFixed(0)}</td>
-                  <td className="px-4 py-3">
-                    <div className="flex gap-1 flex-wrap">
-                      {isExpired(p.expiryDate) && <Badge variant="destructive">Expired</Badge>}
-                      {isExpiringSoon(p.expiryDate) && <Badge className="bg-warning/15 text-warning-foreground hover:bg-warning/20">Expiring</Badge>}
-                      {out ? (
-                        <Badge variant="destructive">Out</Badge>
-                      ) : low ? (
-                        <Badge className="bg-warning/15 text-warning-foreground hover:bg-warning/20">Low</Badge>
-                      ) : (
-                        <Badge className="bg-success/10 text-success hover:bg-success/15">In stock</Badge>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
+                    </td>
+                    <td className="px-4 py-3 font-mono text-xs text-muted-foreground">{p.sku}</td>
+                    <td className={cn("number px-4 py-3 text-right font-semibold", low && "text-destructive")}>
+                      {p.stock} {units.find((u) => u.id === p.unit)?.name || p.unit || ""}
+                    </td>
+                    <td className="px-4 py-3 text-right text-muted-foreground">{p.reorderLevel}</td>
+                    <td className="number px-4 py-3 text-right">${(p.stock * p.cost).toFixed(0)}</td>
+                    <td className="px-4 py-3">
+                      <div className="flex gap-1 flex-wrap">
+                        {isExpired(p.expiryDate) && <Badge variant="destructive">Expired</Badge>}
+                        {isExpiringSoon(p.expiryDate) && <Badge className="bg-warning/15 text-warning-foreground hover:bg-warning/20">Expiring</Badge>}
+                        {out ? (
+                          <Badge variant="destructive">Out</Badge>
+                        ) : low ? (
+                          <Badge className="bg-warning/15 text-warning-foreground hover:bg-warning/20">Low</Badge>
+                        ) : (
+                          <Badge className="bg-success/10 text-success hover:bg-success/15">In stock</Badge>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+
+        <PaginationControls
+          currentPage={page}
+          totalPages={totalPages}
+          pageSize={pageSize}
+          onPageChange={setPage}
+          onPageSizeChange={setPageSize}
+        />
+      </DataPage>
 
       <Dialog open={showForecast} onOpenChange={setShowForecast}>
         <DialogContent className="sm:max-w-md">

@@ -32,6 +32,8 @@ import { useCurrency } from "@/lib/currency";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { calculateItemTax } from "@/lib/taxCalculator";
+import { VirtualKeyboard } from "@/components/ui/virtual-keyboard";
+import * as LucideIcons from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -150,6 +152,10 @@ function PosScreen() {
   const [splitUpi, setSplitUpi] = useState("");
   const [confirmCheckout, setConfirmCheckout] = useState(false);
 
+  // Keyboard
+  const [keyboardOpen, setKeyboardOpen] = useState(false);
+  const [activeInput, setActiveInput] = useState<"discount" | "cashTendered" | "splitCash" | "splitCard" | "splitUpi" | null>(null);
+
   // Shift
   const [showOpenRegister, setShowOpenRegister] = useState(false);
   const [startingCash, setStartingCash] = useState("");
@@ -192,6 +198,12 @@ function PosScreen() {
 
   const users = useLiveQuery(() => localDb.users.toArray()) || [];
   const [selectedSalesmanId, setSelectedSalesmanId] = useState("");
+
+  useEffect(() => {
+    if (user?.id && !selectedSalesmanId) {
+      setSelectedSalesmanId(user.id);
+    }
+  }, [user, selectedSalesmanId]);
 
   const activeCustomer = customers.find(c => c.id === selectedCustomerId) || { id: "walkin", name: "Walk-in Customer", type: "retail", stateCode: "" };
 
@@ -692,6 +704,21 @@ function PosScreen() {
     window.open(url, '_blank');
   };
 
+  const handleKeyboardChange = (input: string) => {
+    if (activeInput === "discount") {
+      setDiscountInput(input);
+      setDiscountPct(Math.min(100, Math.max(0, parseFloat(input) || 0)));
+    } else if (activeInput === "cashTendered") {
+      setCashTendered(input);
+    } else if (activeInput === "splitCash") {
+      setSplitCash(input);
+    } else if (activeInput === "splitCard") {
+      setSplitCard(input);
+    } else if (activeInput === "splitUpi") {
+      setSplitUpi(input);
+    }
+  };
+
   return (
     <>
       <div className="print:hidden flex h-[calc(100vh-4rem)] flex-col md:flex-row">
@@ -722,6 +749,19 @@ function PosScreen() {
               <ScanBarcode className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-primary" />
               <input
                 placeholder="Scan barcode here..."
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    const b = e.currentTarget.value;
+                    if (b.length > 2) {
+                      const product = products.find(p => p.barcode === b || p.sku === b);
+                      if (product) {
+                        if (product.stock <= 0) { toast.error(`${product.name} is out of stock`); }
+                        else { addToCart(product.id); toast.success(`Scanned: ${product.name}`); }
+                      } else { toast.error(`Unknown barcode: ${b}`); }
+                    }
+                    e.currentTarget.value = "";
+                  }
+                }}
                 className="h-11 w-full rounded-xl border border-primary/30 bg-primary/5 pl-10 pr-3 font-mono text-sm placeholder:text-primary/60 focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/20"
               />
             </div>
@@ -907,6 +947,7 @@ function PosScreen() {
                     min="0"
                     max="100"
                     value={discountInput}
+                    onFocus={() => { setActiveInput("discount"); setKeyboardOpen(true); }}
                     onChange={e => {
                       setDiscountInput(e.target.value);
                       const v = parseFloat(e.target.value) || 0;
@@ -955,6 +996,7 @@ function PosScreen() {
                   <input
                     type="number"
                     value={cashTendered}
+                    onFocus={() => { setActiveInput("cashTendered"); setKeyboardOpen(true); }}
                     onChange={e => setCashTendered(e.target.value)}
                     placeholder={`Min ${formatCurrency(total)}`}
                     className="h-8 flex-1 rounded-md border border-border bg-background px-2 text-sm font-mono font-semibold outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
@@ -995,15 +1037,15 @@ function PosScreen() {
               <div className="mt-2.5 grid grid-cols-3 gap-2 bg-muted/20 p-2 rounded-lg border border-border/50">
                 <div>
                   <Label className="text-[10px] font-bold uppercase text-muted-foreground">Cash</Label>
-                  <input type="number" value={splitCash} onChange={e => setSplitCash(e.target.value)} placeholder="0.00" className="mt-1 h-8 w-full rounded-md border border-border bg-background px-2 text-sm font-semibold outline-none focus:border-primary" />
+                  <input type="number" value={splitCash} onFocus={() => { setActiveInput("splitCash"); setKeyboardOpen(true); }} onChange={e => setSplitCash(e.target.value)} placeholder="0.00" className="mt-1 h-8 w-full rounded-md border border-border bg-background px-2 text-sm font-semibold outline-none focus:border-primary" />
                 </div>
                 <div>
                   <Label className="text-[10px] font-bold uppercase text-muted-foreground">Card</Label>
-                  <input type="number" value={splitCard} onChange={e => setSplitCard(e.target.value)} placeholder="0.00" className="mt-1 h-8 w-full rounded-md border border-border bg-background px-2 text-sm font-semibold outline-none focus:border-primary" />
+                  <input type="number" value={splitCard} onFocus={() => { setActiveInput("splitCard"); setKeyboardOpen(true); }} onChange={e => setSplitCard(e.target.value)} placeholder="0.00" className="mt-1 h-8 w-full rounded-md border border-border bg-background px-2 text-sm font-semibold outline-none focus:border-primary" />
                 </div>
                 <div>
                   <Label className="text-[10px] font-bold uppercase text-muted-foreground">UPI/Online</Label>
-                  <input type="number" value={splitUpi} onChange={e => setSplitUpi(e.target.value)} placeholder="0.00" className="mt-1 h-8 w-full rounded-md border border-border bg-background px-2 text-sm font-semibold outline-none focus:border-primary" />
+                  <input type="number" value={splitUpi} onFocus={() => { setActiveInput("splitUpi"); setKeyboardOpen(true); }} onChange={e => setSplitUpi(e.target.value)} placeholder="0.00" className="mt-1 h-8 w-full rounded-md border border-border bg-background px-2 text-sm font-semibold outline-none focus:border-primary" />
                 </div>
               </div>
             )}
@@ -1571,6 +1613,20 @@ function PosScreen() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <VirtualKeyboard
+        isOpen={keyboardOpen}
+        onClose={() => setKeyboardOpen(false)}
+        inputName={activeInput || "default"}
+        inputValue={
+          activeInput === "discount" ? discountInput :
+          activeInput === "cashTendered" ? cashTendered :
+          activeInput === "splitCash" ? splitCash :
+          activeInput === "splitCard" ? splitCard :
+          activeInput === "splitUpi" ? splitUpi : ""
+        }
+        onChange={handleKeyboardChange}
+      />
     </>
   );
 }

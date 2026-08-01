@@ -35,7 +35,14 @@ function PurchasesPage() {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   
-  const [statusFilter, setStatusFilter] = useState("");
+  const [filters, setFilters] = useState({ status: "" });
+  const [draftFilters, setDraftFilters] = useState({ status: "" });
+  const activeFilterCount = filters.status ? 1 : 0;
+
+  const handleResetFilters = () => {
+    setFilters({ status: "" });
+    setDraftFilters({ status: "" });
+  };
   
   const [viewPurchase, setViewPurchase] = useState<LocalPurchase | null>(null);
 
@@ -48,15 +55,15 @@ function PurchasesPage() {
         p.id.toLowerCase().includes(lower)
       );
     }
-    if (statusFilter) {
-      list = list.filter(p => p.status === statusFilter);
+    if (filters.status) {
+      list = list.filter(p => p.status === filters.status);
     }
     return list;
-  }, [rawPurchases, debouncedQuery, statusFilter]);
+  }, [rawPurchases, debouncedQuery, filters.status]);
 
   useEffect(() => {
     setPage(1);
-  }, [debouncedQuery, statusFilter]);
+  }, [debouncedQuery, filters]);
 
   const totalPages = Math.ceil(filtered.length / pageSize);
   const paginatedPurchases = useMemo(() => {
@@ -74,27 +81,33 @@ function PurchasesPage() {
         searchValue={query}
         onSearchChange={setQuery}
         hideToolbar={rawPurchases.length === 0}
-        filtersContent={
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label>Status</Label>
-              <SearchableSelect 
-                options={[
-                  { value: "", label: "All Statuses" },
-                  { value: "received", label: "Received" },
-                  { value: "partial", label: "Partial" },
-                  { value: "pending", label: "Pending" }
-                ]} 
-                value={statusFilter} 
-                onChange={setStatusFilter} 
-                placeholder="Filter by Status"
-              />
+        onResetFilters={handleResetFilters}
+        activeFilterCount={activeFilterCount}
+        filtersContent={({ close }) => (
+          <div className="space-y-4 flex flex-col h-full min-h-[50vh]">
+            <div className="flex-1 space-y-4">
+              <div className="space-y-2">
+                <Label>Status</Label>
+                <SearchableSelect 
+                  options={[
+                    { value: "", label: "All Statuses" },
+                    { value: "received", label: "Received" },
+                    { value: "partial", label: "Partial" },
+                    { value: "pending", label: "Pending" }
+                  ]} 
+                  value={draftFilters.status} 
+                  onChange={(val) => setDraftFilters(prev => ({ ...prev, status: val }))} 
+                  placeholder="Filter by Status"
+                />
+              </div>
             </div>
-            <Button variant="outline" className="w-full" onClick={() => setStatusFilter("")}>
-              Reset Filters
-            </Button>
+            <div className="pt-4 mt-auto">
+              <Button className="w-full" onClick={() => { setFilters(draftFilters); close(); }}>
+                Apply Filters
+              </Button>
+            </div>
           </div>
-        }
+        )}
       >
         {filtered.length === 0 ? (
           <EmptyState
@@ -171,7 +184,16 @@ function PurchasesPage() {
                 <div><span className="text-muted-foreground">Items:</span> {viewPurchase.items}</div>
                 <div>
                   <span className="text-muted-foreground">Status:</span>{" "}
-                  <Badge className={cn(viewPurchase.status === "received" && "bg-success/10 text-success")}>{viewPurchase.status}</Badge>
+                  <Badge 
+                    variant="outline"
+                    className={cn(
+                      viewPurchase.status === "received" && "bg-success/10 text-success hover:bg-success/20 border-success/20",
+                      viewPurchase.status === "pending" && "bg-warning/10 text-warning hover:bg-warning/20 border-warning/20",
+                      viewPurchase.status === "cancelled" && "bg-destructive/10 text-destructive hover:bg-destructive/20 border-destructive/20"
+                    )}
+                  >
+                    {viewPurchase.status}
+                  </Badge>
                 </div>
               </div>
               <div className="rounded-lg bg-muted/40 p-3 flex justify-between font-semibold">

@@ -3,9 +3,13 @@ import { Pencil, Tag, Trash2, Plus, LayoutGrid, Loader2 } from "lucide-react";
 import { DataPage } from "@/components/layout/DataPage";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PaginationControls } from "@/components/ui/pagination-controls";
+import { IconPicker } from "@/components/ui/icon-picker";
+import * as LucideIcons from "lucide-react";
 import { localDb, type LocalCategory } from "@/lib/db";
+import { PersistStore } from "@/lib/session-store";
 import { useLiveQuery } from "dexie-react-hooks";
 import { Button } from "@/components/ui/button";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -32,13 +36,13 @@ export const Route = createFileRoute("/categories")({
 });
 
 function CategoriesPage() {
-  const rawCategories = useLiveQuery(() => localDb.categories.toArray()) || [];
-  const products = useLiveQuery(() => localDb.products.toArray()) || [];
+  const rawCategories = useLiveQuery(() => localDb.categories.filter(c => !c._deleted).toArray()) || [];
+  const products = useLiveQuery(() => localDb.products.filter(p => !p._deleted).toArray()) || [];
   
   const categoriesWithCounts = useMemo(() => {
     return rawCategories.map(c => ({
       ...c,
-      count: products.filter(p => p.category === c.name).length
+      count: products.filter(p => p.category === c.name || p.category === c.id).length
     }));
   }, [rawCategories, products]);
 
@@ -47,7 +51,7 @@ function CategoriesPage() {
   const [isSaving, setIsSaving] = useState(false);
   
   const [name, setName] = useState("");
-  const [icon, setIcon] = useState("🛒");
+  const [icon, setIcon] = useState("ShoppingCart");
   const [color, setColor] = useState("var(--color-primary)");
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
@@ -56,18 +60,32 @@ function CategoriesPage() {
   const [page, setPage] = useState(1);
   const itemsPerPage = 10;
 
+  const [filters, setFilters] = useState({ usage: "" });
+  const [draftFilters, setDraftFilters] = useState({ usage: "" });
+  const activeFilterCount = filters.usage ? 1 : 0;
+
+  const handleResetFilters = () => {
+    setFilters({ usage: "" });
+    setDraftFilters({ usage: "" });
+  };
+
   const categories = useMemo(() => {
     let filtered = categoriesWithCounts;
     if (debouncedSearch) {
       const lower = debouncedSearch.toLowerCase();
       filtered = filtered.filter(c => c.name.toLowerCase().includes(lower));
     }
+    if (filters.usage === "in-use") {
+      filtered = filtered.filter(c => c.count > 0);
+    } else if (filters.usage === "empty") {
+      filtered = filtered.filter(c => c.count === 0);
+    }
     return filtered;
-  }, [categoriesWithCounts, debouncedSearch]);
+  }, [categoriesWithCounts, debouncedSearch, filters.usage]);
 
   useEffect(() => {
     setPage(1);
-  }, [debouncedSearch]);
+  }, [debouncedSearch, filters]);
 
   useEffect(() => {
     const maxPage = Math.max(1, Math.ceil(categories.length / itemsPerPage));
@@ -81,7 +99,7 @@ function CategoriesPage() {
   const openNew = () => {
     setEditingCat(null);
     setName("");
-    setIcon("🛒");
+    setIcon("ShoppingCart");
     setColor("var(--color-primary)");
     setModalOpen(true);
   };
@@ -107,15 +125,17 @@ function CategoriesPage() {
     await new Promise(resolve => setTimeout(resolve, 500));
     try {
       if (editingCat) {
-        await localDb.categories.update(editingCat.id, { name, icon, color });
+        await localDb.categories.update(editingCat.id, { name, icon, color, synced: false });
         toast.success("Category updated");
       } else {
         await localDb.categories.add({
           id: uuidv4(),
+          orgId: PersistStore.getOrgId() || "default",
           name,
           icon,
           color,
-          count: 0
+          count: 0,
+          synced: false
         });
         toast.success("Category created");
       }
@@ -131,7 +151,7 @@ function CategoriesPage() {
   const confirmDelete = async () => {
     if (!deleteId) return;
     try {
-      await localDb.categories.delete(deleteId);
+      await localDb.categories.update(deleteId, { _deleted: true, synced: false });
       toast.success("Category deleted");
     } catch (error) {
       toast.error("Failed to delete category");
@@ -151,6 +171,32 @@ function CategoriesPage() {
         searchValue={search}
         onSearchChange={setSearch}
         hideToolbar={rawCategories.length === 0}
+        onResetFilters={handleResetFilters}
+        activeFilterCount={activeFilterCount}
+        filtersContent={({ close }) => (
+          <div className="space-y-4 flex flex-col h-full min-h-[50vh]">
+            <div className="flex-1 space-y-4">
+              <div className="space-y-2">
+                <Label>Usage Status</Label>
+                <SearchableSelect
+                  options={[
+                    { value: "", label: "All Categories" },
+                    { value: "in-use", label: "In Use (Has products)" },
+                    { value: "empty", label: "Empty (No products)" },
+                  ]}
+                  value={draftFilters.usage}
+                  onChange={(val) => setDraftFilters(prev => ({ ...prev, usage: val }))}
+                  placeholder="Filter by Usage"
+                />
+              </div>
+            </div>
+            <div className="pt-4 mt-auto">
+              <Button className="w-full" onClick={() => { setFilters(draftFilters); close(); }}>
+                Apply Filters
+              </Button>
+            </div>
+          </div>
+        )}
       >
         {categories.length === 0 ? (
           <EmptyState 
@@ -213,8 +259,8 @@ function CategoriesPage() {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="grid gap-1.5">
-                  <Label htmlFor="icon">Emoji Icon</Label>
-                  <Input id="icon" value={icon} onChange={(e) => setIcon(e.target.value)} placeholder="🥤" />
+                  <Label htmlFor="icon">Category Icon</Label>
+                  <IconPicker value={icon} onChange={setIcon} />
                 </div>
                 <div className="grid gap-1.5">
                   <Label htmlFor="color">Theme Color</Label>

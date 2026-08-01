@@ -33,13 +33,14 @@ export interface Product {
   hsnCode?: string;
   gstRate?: number;
   taxInclusive?: boolean;
+  _deleted?: boolean;
 }
 
-export interface LocalCategory { id: string; orgId?: string; name: string; color: string; icon: string; count: number; synced?: boolean; syncRetryCount?: number; }
-export interface LocalBrand { id: string; orgId?: string; name: string; products: number; synced?: boolean; syncRetryCount?: number; }
-export interface LocalUnit { id: string; orgId?: string; name: string; short: string; synced?: boolean; syncRetryCount?: number; }
-export interface LocalSupplier { id: string; orgId?: string; name: string; contact: string; phone: string; email?: string; balance: number; items: number; gstin?: string; stateCode?: string; synced?: boolean; syncRetryCount?: number; }
-export interface LocalLocation { id: string; name: string; type: string; status: string; synced?: boolean; syncRetryCount?: number; }
+export interface LocalCategory { id: string; orgId?: string; name: string; color: string; icon: string; count: number; synced?: boolean; syncRetryCount?: number; _deleted?: boolean; }
+export interface LocalBrand { id: string; orgId?: string; name: string; products: number; synced?: boolean; syncRetryCount?: number; _deleted?: boolean; }
+export interface LocalUnit { id: string; orgId?: string; name: string; short: string; synced?: boolean; syncRetryCount?: number; _deleted?: boolean; }
+export interface LocalSupplier { id: string; orgId?: string; name: string; contact: string; phone: string; email?: string; balance: number; items: number; gstin?: string; stateCode?: string; synced?: boolean; syncRetryCount?: number; _deleted?: boolean; }
+export interface LocalLocation { id: string; name: string; type: string; status: string; synced?: boolean; syncRetryCount?: number; _deleted?: boolean; }
 export interface LocalPurchase { 
   id: string; 
   supplierId?: string;

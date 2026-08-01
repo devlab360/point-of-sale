@@ -13,7 +13,9 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PaginationControls } from "@/components/ui/pagination-controls";
-import { ClipboardList, Loader2 } from "lucide-react";
+import { ClipboardList, Loader2, Search } from "lucide-react";
+import { useDebounce } from "@/hooks/useDebounce";
+import { useMemo } from "react";
 
 export const Route = createLazyFileRoute("/inventory/adjustments")({
   component: AdjustmentsPage,
@@ -24,11 +26,22 @@ function AdjustmentsPage() {
   const products = useLiveQuery(() => localDb.products.toArray()) || [];
   const [open, setOpen] = useState(false);
   const [formData, setFormData] = useState({ product: "", reason: "", net: 0 });
+  const [search, setSearch] = useState("");
+  const debouncedSearch = useDebounce(search, 300);
   const [page, setPage] = useState(1);
-  const itemsPerPage = 10;
+  const [pageSize, setPageSize] = useState(10);
 
-  const totalPages = Math.ceil(adjustments.length / itemsPerPage);
-  const paginatedAdjustments = adjustments.slice((page - 1) * itemsPerPage, page * itemsPerPage);
+  const filteredAdjustments = useMemo(() => {
+    let list = adjustments;
+    if (debouncedSearch) {
+      const lower = debouncedSearch.toLowerCase();
+      list = list.filter(a => a.ref.toLowerCase().includes(lower) || a.reason.toLowerCase().includes(lower));
+    }
+    return list;
+  }, [adjustments, debouncedSearch]);
+
+  const totalPages = Math.ceil(filteredAdjustments.length / pageSize);
+  const paginatedAdjustments = filteredAdjustments.slice((page - 1) * pageSize, page * pageSize);
 
   const [isSaving, setIsSaving] = useState(false);
 
@@ -111,14 +124,28 @@ function AdjustmentsPage() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+    </div>
+    {adjustments.length > 0 && (
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center py-4">
+        <div className="relative flex-1 max-w-sm">
+          <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+          <input
+            type="text"
+            placeholder="Search adjustments..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="h-9 w-full rounded-lg border border-border bg-background pl-9 pr-3 text-sm placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/20"
+          />
+        </div>
       </div>
-      {adjustments.length === 0 ? (
-        <EmptyState
-          icon={ClipboardList}
-          title="No adjustments recorded"
-          description="Stock adjustments from audits, damages, or shrinkage will appear here."
-        />
-      ) : (
+    )}
+    {filteredAdjustments.length === 0 ? (
+      <EmptyState
+        icon={ClipboardList}
+        title="No adjustments recorded"
+        description={search ? "Try adjusting your search." : "Stock adjustments from audits, damages, or shrinkage will appear here."}
+      />
+    ) : (
         <div className="space-y-4">
           <div className="overflow-hidden rounded-xl border border-border bg-card shadow-soft">
             <table className="w-full text-left text-sm">
@@ -150,7 +177,13 @@ function AdjustmentsPage() {
               </tbody>
             </table>
           </div>
-          <PaginationControls currentPage={page} totalPages={totalPages} onPageChange={setPage} />
+          <PaginationControls 
+            currentPage={page} 
+            totalPages={totalPages} 
+            pageSize={pageSize}
+            onPageChange={setPage} 
+            onPageSizeChange={setPageSize}
+          />
         </div>
       )}
     </div>

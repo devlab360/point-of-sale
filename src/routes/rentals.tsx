@@ -1,9 +1,11 @@
 import { useState, useMemo } from "react";
 import { createFileRoute } from "@tanstack/react-router";
+import { format } from "date-fns";
 import { DataPage } from "@/components/layout/DataPage";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PaginationControls } from "@/components/ui/pagination-controls";
 import { DatePicker } from "@/components/ui/date-picker";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import { useDebounce } from "@/hooks/useDebounce";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -49,6 +51,15 @@ function RentalsPage() {
   const [dailyRate, setDailyRate] = useState("");
   const [securityDeposit, setSecurityDeposit] = useState("");
 
+  const [filters, setFilters] = useState({ status: "" });
+  const [draftFilters, setDraftFilters] = useState({ status: "" });
+  const activeFilterCount = filters.status ? 1 : 0;
+
+  const handleResetFilters = () => {
+    setFilters({ status: "" });
+    setDraftFilters({ status: "" });
+  };
+
   const filteredRentals = useMemo(() => {
     let filtered = rawRentals;
     if (debouncedSearch) {
@@ -60,8 +71,11 @@ function RentalsPage() {
           r.itemName.toLowerCase().includes(lower)
       );
     }
+    if (filters.status) {
+      filtered = filtered.filter(r => r.status === filters.status);
+    }
     return filtered.reverse();
-  }, [rawRentals, debouncedSearch]);
+  }, [rawRentals, debouncedSearch, filters.status]);
 
   const totalPages = Math.max(1, Math.ceil(filteredRentals.length / itemsPerPage));
   const paginated = filteredRentals.slice((page - 1) * itemsPerPage, page * itemsPerPage);
@@ -134,6 +148,32 @@ function RentalsPage() {
         searchValue={search}
         onSearchChange={setSearch}
         hideToolbar={rawRentals.length === 0}
+        onResetFilters={handleResetFilters}
+        activeFilterCount={activeFilterCount}
+        filtersContent={({ close }) => (
+          <div className="space-y-4 flex flex-col h-full min-h-[50vh]">
+            <div className="flex-1 space-y-4">
+              <div className="space-y-2">
+                <Label>Status</Label>
+                <SearchableSelect
+                  options={[
+                    { value: "", label: "All Statuses" },
+                    { value: "rented", label: "Active Rented" },
+                    { value: "returned", label: "Returned" },
+                  ]}
+                  value={draftFilters.status}
+                  onChange={(val) => setDraftFilters(prev => ({ ...prev, status: val }))}
+                  placeholder="Filter by Status"
+                />
+              </div>
+            </div>
+            <div className="pt-4 mt-auto">
+              <Button className="w-full" onClick={() => { setFilters(draftFilters); close(); }}>
+                Apply Filters
+              </Button>
+            </div>
+          </div>
+        )}
       >
         {filteredRentals.length === 0 ? (
           <EmptyState
@@ -165,7 +205,7 @@ function RentalsPage() {
                       <td className="px-4 py-3 font-medium">{r.itemName}</td>
                       <td className="px-4 py-3 text-xs font-mono">{formatCurrency(r.dailyRate)} / day</td>
                       <td className="px-4 py-3 text-xs font-mono text-warning-foreground font-semibold">{formatCurrency(r.securityDeposit)}</td>
-                      <td className="px-4 py-3 text-xs text-muted-foreground">{r.expectedReturnDate}</td>
+                      <td className="px-4 py-3 text-xs text-muted-foreground">{r.expectedReturnDate ? format(new Date(r.expectedReturnDate), "MMM dd, yyyy") : "-"}</td>
                       <td className="px-4 py-3">
                         {r.status === "returned" ? (
                           <Badge className="bg-success/15 text-success border-success/30">Returned</Badge>

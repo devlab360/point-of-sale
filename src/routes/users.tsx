@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -89,6 +90,15 @@ function UsersPage() {
   const [page, setPage] = useState(1);
   const itemsPerPage = 10;
 
+  const [filters, setFilters] = useState({ role: "", status: "" });
+  const [draftFilters, setDraftFilters] = useState({ role: "", status: "" });
+  const activeFilterCount = (filters.role ? 1 : 0) + (filters.status ? 1 : 0);
+
+  const handleResetFilters = () => {
+    setFilters({ role: "", status: "" });
+    setDraftFilters({ role: "", status: "" });
+  };
+
   const users = useMemo(() => {
     let filtered = rawUsers;
     if (debouncedSearch) {
@@ -99,12 +109,18 @@ function UsersPage() {
         u.role.toLowerCase().includes(lower)
       );
     }
+    if (filters.role) {
+      filtered = filtered.filter(u => u.role === filters.role);
+    }
+    if (filters.status) {
+      filtered = filtered.filter(u => u.status === filters.status);
+    }
     return filtered;
-  }, [rawUsers, debouncedSearch]);
+  }, [rawUsers, debouncedSearch, filters.role, filters.status]);
 
   useEffect(() => {
     setPage(1);
-  }, [debouncedSearch]);
+  }, [debouncedSearch, filters]);
 
   useEffect(() => {
     const maxPage = Math.max(1, Math.ceil(users.length / itemsPerPage));
@@ -247,6 +263,47 @@ function UsersPage() {
         searchValue={search}
         onSearchChange={setSearch}
         hideToolbar={rawUsers.length === 0}
+        onResetFilters={handleResetFilters}
+        activeFilterCount={activeFilterCount}
+        filtersContent={({ close }) => (
+          <div className="space-y-4 flex flex-col h-full min-h-[50vh]">
+            <div className="flex-1 space-y-4">
+              <div className="space-y-2">
+                <Label>Role</Label>
+                <SearchableSelect
+                  options={[
+                    { value: "", label: "All Roles" },
+                    { value: "admin", label: "Admin" },
+                    { value: "manager", label: "Manager" },
+                    { value: "cashier", label: "Cashier" },
+                  ]}
+                  value={draftFilters.role}
+                  onChange={(val) => setDraftFilters(prev => ({ ...prev, role: val }))}
+                  placeholder="Filter by Role"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Status</Label>
+                <SearchableSelect
+                  options={[
+                    { value: "", label: "All Statuses" },
+                    { value: "active", label: "Active" },
+                    { value: "pending", label: "Pending" },
+                    { value: "suspended", label: "Suspended" },
+                  ]}
+                  value={draftFilters.status}
+                  onChange={(val) => setDraftFilters(prev => ({ ...prev, status: val }))}
+                  placeholder="Filter by Status"
+                />
+              </div>
+            </div>
+            <div className="pt-4 mt-auto">
+              <Button className="w-full" onClick={() => { setFilters(draftFilters); close(); }}>
+                Apply Filters
+              </Button>
+            </div>
+          </div>
+        )}
       >
         {users.length === 0 ? (
           <EmptyState

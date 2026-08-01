@@ -54,15 +54,15 @@ function CustomerPortalPage() {
   }, [customerSales]);
 
   return (
-    <div className="min-h-screen bg-muted/20 p-4 md:p-8 space-y-6 max-w-4xl mx-auto">
-      <div className="text-center space-y-2 py-4">
+    <div className="min-h-screen p-4 md:p-8 space-y-6 container mx-auto">
+      <div className="text-center space-y-2 py-4 max-w-2xl mx-auto">
         <Badge className="bg-primary/10 text-primary border-primary/20">Self-Service Portal</Badge>
         <h1 className="text-3xl font-extrabold text-foreground">Customer Statement & Warranty Lookup</h1>
         <p className="text-sm text-muted-foreground">Enter your phone number to check Khata due balance, invoices & warranty IMEIs.</p>
       </div>
 
       {/* Search Input Box */}
-      <Card className="border-primary/20 shadow-soft">
+      <Card className="border-primary/20 shadow-soft max-w-4xl mx-auto">
         <CardContent className="pt-6">
           <form
             onSubmit={async (e) => {

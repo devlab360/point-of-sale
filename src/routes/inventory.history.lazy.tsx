@@ -6,8 +6,9 @@ import { cn } from "@/lib/utils";
 import { useState, useMemo } from "react";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PaginationControls } from "@/components/ui/pagination-controls";
-import { History } from "lucide-react";
+import { History, Search } from "lucide-react";
 import { usePreferences } from "@/contexts/PreferencesContext";
+import { useDebounce } from "@/hooks/useDebounce";
 
 export const Route = createLazyFileRoute("/inventory/history")({
   component: HistoryPage,
@@ -16,22 +17,44 @@ export const Route = createLazyFileRoute("/inventory/history")({
 function HistoryPage() {
   const { formatDate, formatTime, formatDateTime } = usePreferences();
   const rawMovements = useLiveQuery(() => localDb.inventoryMovements.reverse().toArray()) || [];
+  const [search, setSearch] = useState("");
+  const debouncedSearch = useDebounce(search, 300);
   const [page, setPage] = useState(1);
-  const itemsPerPage = 15;
+  const [pageSize, setPageSize] = useState(10);
 
-  const totalPages = Math.ceil(rawMovements.length / itemsPerPage);
-  const movements = rawMovements.slice((page - 1) * itemsPerPage, page * itemsPerPage);
+  const filteredMovements = useMemo(() => {
+    return rawMovements.filter((m) =>
+      m.productName.toLowerCase().includes(debouncedSearch.toLowerCase())
+    );
+  }, [rawMovements, debouncedSearch]);
+
+  const totalPages = Math.ceil(filteredMovements.length / pageSize);
+  const movements = filteredMovements.slice((page - 1) * pageSize, page * pageSize);
 
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <p className="text-sm text-muted-foreground">Complete audit trail of all stock changes across the store.</p>
       </div>
-      {rawMovements.length === 0 ? (
+      {rawMovements.length > 0 && (
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+          <div className="relative flex-1 max-w-sm">
+            <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+            <input
+              type="text"
+              placeholder="Search movements..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="h-9 w-full rounded-lg border border-border bg-background pl-9 pr-3 text-sm placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/20"
+            />
+          </div>
+        </div>
+      )}
+      {filteredMovements.length === 0 ? (
         <EmptyState
           icon={History}
           title="No stock history yet"
-          description="Stock changes will appear here after purchases, sales, and adjustments."
+          description={search ? "Try adjusting your search." : "Stock changes will appear here after purchases, sales, and adjustments."}
         />
       ) : (
         <div className="space-y-4">
@@ -63,7 +86,13 @@ function HistoryPage() {
               </tbody>
             </table>
           </div>
-          <PaginationControls currentPage={page} totalPages={totalPages} onPageChange={setPage} />
+          <PaginationControls 
+            currentPage={page} 
+            totalPages={totalPages} 
+            pageSize={pageSize}
+            onPageChange={setPage} 
+            onPageSizeChange={setPageSize}
+          />
         </div>
       )}
     </div>

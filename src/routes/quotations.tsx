@@ -61,6 +61,15 @@ function QuotationsPage() {
   const [lineItems, setLineItems] = useState<QuotationLineItem[]>([]);
   const [notes, setNotes] = useState("Price valid for 14 days. 50% advance required upon PO confirmation.");
 
+  const [filters, setFilters] = useState({ status: "" });
+  const [draftFilters, setDraftFilters] = useState({ status: "" });
+  const activeFilterCount = filters.status ? 1 : 0;
+
+  const handleResetFilters = () => {
+    setFilters({ status: "" });
+    setDraftFilters({ status: "" });
+  };
+
   const filteredQuotations = useMemo(() => {
     let filtered = rawQuotations;
     if (debouncedSearch) {
@@ -71,8 +80,11 @@ function QuotationsPage() {
           q.customerName.toLowerCase().includes(lower)
       );
     }
+    if (filters.status) {
+      filtered = filtered.filter(q => q.status === filters.status);
+    }
     return [...filtered].reverse();
-  }, [rawQuotations, debouncedSearch]);
+  }, [rawQuotations, debouncedSearch, filters.status]);
 
   const totalPages = Math.ceil(filteredQuotations.length / pageSize);
   const paginated = useMemo(() => {
@@ -82,7 +94,7 @@ function QuotationsPage() {
 
   React.useEffect(() => {
     setPage(1);
-  }, [debouncedSearch]);
+  }, [debouncedSearch, filters]);
 
   const addItemToQuotation = (productId: string) => {
     const p = products.find((prod) => prod.id === productId);
@@ -246,6 +258,32 @@ function QuotationsPage() {
         searchValue={search}
         onSearchChange={setSearch}
         hideToolbar={rawQuotations.length === 0}
+        onResetFilters={handleResetFilters}
+        activeFilterCount={activeFilterCount}
+        filtersContent={({ close }) => (
+          <div className="space-y-4 flex flex-col h-full min-h-[50vh]">
+            <div className="flex-1 space-y-4">
+              <div className="space-y-2">
+                <Label>Status</Label>
+                <SearchableSelect
+                  options={[
+                    { value: "", label: "All Statuses" },
+                    { value: "sent", label: "Sent" },
+                    { value: "converted", label: "Converted to Invoice" },
+                  ]}
+                  value={draftFilters.status}
+                  onChange={(val) => setDraftFilters(prev => ({ ...prev, status: val }))}
+                  placeholder="Filter by Status"
+                />
+              </div>
+            </div>
+            <div className="pt-4 mt-auto">
+              <Button className="w-full" onClick={() => { setFilters(draftFilters); close(); }}>
+                Apply Filters
+              </Button>
+            </div>
+          </div>
+        )}
       >
         {filteredQuotations.length === 0 ? (
           <EmptyState

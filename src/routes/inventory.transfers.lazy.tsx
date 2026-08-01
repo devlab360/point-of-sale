@@ -29,6 +29,7 @@ function TransfersPage() {
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search, 300);
   const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
   const itemsPerPage = 10;
 
   const filteredTransfers = useMemo(() => {
@@ -40,17 +41,15 @@ function TransfersPage() {
     return list;
   }, [transfers, debouncedSearch]);
 
+  const totalPages = Math.ceil(filteredTransfers.length / pageSize);
+  const paginatedTransfers = useMemo(() => {
+    const start = (page - 1) * pageSize;
+    return filteredTransfers.slice(start, start + pageSize);
+  }, [filteredTransfers, page, pageSize]);
+
   useEffect(() => {
     setPage(1);
   }, [debouncedSearch]);
-
-  useEffect(() => {
-    const maxPage = Math.max(1, Math.ceil(filteredTransfers.length / itemsPerPage));
-    if (page > maxPage) setPage(maxPage);
-  }, [filteredTransfers.length, page]);
-
-  const totalPages = Math.ceil(filteredTransfers.length / itemsPerPage);
-  const paginatedTransfers = filteredTransfers.slice((page - 1) * itemsPerPage, page * itemsPerPage);
 
   const [isSaving, setIsSaving] = useState(false);
 
@@ -202,7 +201,13 @@ function TransfersPage() {
               </tbody>
             </table>
           </div>
-          <PaginationControls currentPage={page} totalPages={totalPages} onPageChange={setPage} />
+          <PaginationControls 
+            currentPage={page} 
+            totalPages={totalPages} 
+            pageSize={pageSize}
+            onPageChange={setPage} 
+            onPageSizeChange={setPageSize}
+          />
         </div>
       )}
     </div>

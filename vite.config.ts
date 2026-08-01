@@ -66,7 +66,7 @@ export default defineConfig({
       emailDevPlugin(),
       VitePWA({ 
         registerType: 'autoUpdate',
-        devOptions: { enabled: true, type: 'module', navigateFallback: '/' }, // Enable PWA in dev mode for testing offline
+        devOptions: { enabled: true, type: 'module', navigateFallback: '/', suppressWarnings: true }, // Enable PWA in dev mode for testing offline
         manifest: {
           name: 'Grocer.Pro POS',
           short_name: 'GrocerPOS',
