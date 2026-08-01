@@ -24,6 +24,7 @@ import { useCurrency } from "@/lib/currency";
 import { KeyRound, Plus, MoreVertical, Trash2, CheckCircle2, Loader2 } from "lucide-react";
 import { v4 as uuidv4 } from "uuid";
 import { toast } from "sonner";
+import { PersistStore } from "@/lib/session-store";
 import { useFormValidation } from "@/hooks/useFormValidation";
 import { FieldError } from "@/components/ui/field-error";
 
@@ -34,7 +35,7 @@ export const Route = createFileRoute("/rentals")({
 
 function RentalsPage() {
   const { formatCurrency } = useCurrency();
-  const rawRentals = useLiveQuery(() => localDb.rentals.toArray()) || [];
+  const rawRentals = useLiveQuery(() => localDb.rentals.filter(r => !r._deleted).reverse().toArray()) || [];
 
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -103,6 +104,7 @@ function RentalsPage() {
 
       await localDb.rentals.add({
         id: uuidv4(),
+        orgId: PersistStore.getOrgId() || "default",
         rentalNo: rNo,
         customerName,
         itemName,
@@ -112,6 +114,7 @@ function RentalsPage() {
         securityDeposit: deposit,
         totalAmount: rate * 3 + deposit,
         status: "rented",
+        synced: false,
       });
 
       toast.success(`Rental Booking ${rNo} created!`);
@@ -129,12 +132,21 @@ function RentalsPage() {
   };
 
   const markReturned = async (id: string) => {
-    await localDb.rentals.update(id, { status: "returned" });
+    await localDb.rentals.update(id, { status: "returned", synced: false });
     toast.success("Rental item marked returned and deposit refunded!");
   };
 
   const deleteRental = async (id: string) => {
-    await localDb.rentals.delete(id);
+    await localDb.rentals.update(id, { _deleted: true, synced: false });
+    await localDb.activityLog.add({
+      id: uuidv4(),
+      orgId: PersistStore.getOrgId() || "default",
+      action: "TOMBSTONE",
+      user: "system",
+      details: JSON.stringify({ entityType: "rentals", entityId: id }),
+      timestamp: new Date().toISOString(),
+      synced: false,
+    });
     toast.success("Rental record deleted");
   };
 

@@ -33,6 +33,7 @@ import { localDb } from "@/lib/db";
 import { useCurrency } from "@/lib/currency";
 import { v4 as uuidv4 } from "uuid";
 import { toast } from "sonner";
+import { PersistStore } from "@/lib/session-store";
 import type { LocalGiftCard } from "@/lib/db";
 import { useFormValidation } from "@/hooks/useFormValidation";
 import { FieldError } from "@/components/ui/field-error";
@@ -46,7 +47,7 @@ export const Route = createFileRoute("/gift-cards")({
 function GiftCardsPage() {
   const { formatDate, formatTime, formatDateTime } = usePreferences();
   const { formatCurrency } = useCurrency();
-  const giftCards = useLiveQuery(() => localDb.giftCards.toArray()) || [];
+  const giftCards = useLiveQuery(() => localDb.giftCards.filter(g => !g._deleted).toArray()) || [];
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [editItem, setEditItem] = useState<LocalGiftCard | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
@@ -115,19 +116,22 @@ function GiftCardsPage() {
       const initialBalance = parseFloat(initialBalanceStr);
 
       if (editItem) {
-        await localDb.giftCards.update(editItem.id, { code, customer, initialBalance, expires, status });
+        await localDb.giftCards.update(editItem.id, { code, customer, initialBalance, expires, status, synced: false });
         toast.success("Gift Card updated successfully");
         setEditItem(null);
       } else {
-        await localDb.giftCards.add({
-          id: uuidv4(),
-          code,
-          customer,
-          initialBalance,
-          balance: initialBalance,
-          expires,
-          status,
-        });
+          await localDb.giftCards.add({
+            id: uuidv4(),
+            orgId: PersistStore.getOrgId() || "default",
+            code,
+            balance: initialBalance,
+            initialBalance,
+            customer,
+            issued: new Date().toISOString(),
+            expires,
+            status,
+            synced: false
+          });
         toast.success("Gift Card issued successfully");
         setIsAddOpen(false);
       }
@@ -142,7 +146,16 @@ function GiftCardsPage() {
   const handleDelete = async () => {
     if (deleteId) {
       try {
-        await localDb.giftCards.delete(deleteId);
+        await localDb.giftCards.update(deleteId, { _deleted: true, synced: false });
+        await localDb.activityLog.add({
+          id: uuidv4(),
+          orgId: PersistStore.getOrgId() || "default",
+          action: "TOMBSTONE",
+          user: "system",
+          details: JSON.stringify({ entityType: "giftCards", entityId: deleteId }),
+          timestamp: new Date().toISOString(),
+          synced: false,
+        });
         toast.success("Gift Card deleted");
         setDeleteId(null);
       } catch (error) {

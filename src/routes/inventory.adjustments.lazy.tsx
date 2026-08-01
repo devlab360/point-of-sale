@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useState } from "react";
+import { PersistStore } from "@/lib/session-store";
 import { useLiveQuery } from "dexie-react-hooks";
 import { localDb } from "@/lib/db";
 import { v4 as uuidv4 } from "uuid";
@@ -22,8 +23,8 @@ export const Route = createLazyFileRoute("/inventory/adjustments")({
 });
 
 function AdjustmentsPage() {
-  const adjustments = useLiveQuery(() => localDb.adjustments.toArray()) || [];
-  const products = useLiveQuery(() => localDb.products.toArray()) || [];
+  const adjustments = useLiveQuery(() => localDb.adjustments.filter(a => !a._deleted).toArray()) || [];
+  const products = useLiveQuery(() => localDb.products.filter(p => !p._deleted).toArray()) || [];
   const [open, setOpen] = useState(false);
   const [formData, setFormData] = useState({ product: "", reason: "", net: 0 });
   const [search, setSearch] = useState("");
@@ -58,21 +59,25 @@ function AdjustmentsPage() {
       await localDb.transaction("rw", localDb.adjustments, localDb.inventoryMovements, localDb.products, async () => {
         const adj = {
           id: uuidv4(),
+          orgId: PersistStore.getOrgId() || "default",
           ref: `ADJ-${Math.floor(Math.random() * 10000)}`,
           date: new Date().toISOString(),
           reason: formData.reason,
           items: Math.abs(formData.net),
           net: Number(formData.net),
-          status: "approved"
+          status: "approved",
+          synced: false
         };
         await localDb.adjustments.add(adj);
         await localDb.inventoryMovements.add({
           productName: prod.name,
+          orgId: PersistStore.getOrgId() || "default",
           action: "adjustment",
           quantity: Number(formData.net),
-          createdAt: new Date().toISOString()
+          createdAt: new Date().toISOString(),
+          synced: false
         });
-        await localDb.products.update(prod.id, { stock: prod.stock + Number(formData.net) });
+        await localDb.products.update(prod.id, { stock: prod.stock + Number(formData.net), synced: false });
       });
       toast.success("Adjustment added successfully");
       setOpen(false);

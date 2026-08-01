@@ -63,6 +63,7 @@ export const Route = createFileRoute("/users")({
 
 function UsersPage() {
   const rawUsers = useLiveQuery(() => localDb.users.toArray()) || [];
+  const uniqueRoles = useMemo(() => Array.from(new Set(rawUsers.map(u => u.role))).sort(), [rawUsers]);
   const [isInviteOpen, setIsInviteOpen] = useState(false);
   const [generatedLink, setGeneratedLink] = useState("");
   const [isCopied, setIsCopied] = useState(false);
@@ -273,9 +274,7 @@ function UsersPage() {
                 <SearchableSelect
                   options={[
                     { value: "", label: "All Roles" },
-                    { value: "admin", label: "Admin" },
-                    { value: "manager", label: "Manager" },
-                    { value: "cashier", label: "Cashier" },
+                    ...uniqueRoles.map(r => ({ value: r, label: r.charAt(0).toUpperCase() + r.slice(1) }))
                   ]}
                   value={draftFilters.role}
                   onChange={(val) => setDraftFilters(prev => ({ ...prev, role: val }))}
@@ -408,15 +407,19 @@ function UsersPage() {
           {!generatedLink ? (
             <form onSubmit={handleGenerateInvite} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="role">Assign Primary Role</Label>
-                <Select value={inviteRole} onValueChange={handleRoleChangeForInvite}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="admin">Admin (Full Access)</SelectItem>
-                    <SelectItem value="manager">Manager</SelectItem>
-                    <SelectItem value="cashier">Cashier</SelectItem>
-                  </SelectContent>
-                </Select>
+                <Label htmlFor="role">Assign Primary Role (e.g. Manager, Chef, Mechanic)</Label>
+                <Input
+                  id="role"
+                  placeholder="Enter custom role name..."
+                  value={inviteRole}
+                  onChange={(e) => {
+                    const r = e.target.value;
+                    setInviteRole(r);
+                    if (DEFAULT_ROLE_PERMISSIONS[r.toLowerCase()]) {
+                      setInvitePermissions(DEFAULT_ROLE_PERMISSIONS[r.toLowerCase()]);
+                    }
+                  }}
+                />
               </div>
 
               <div className="space-y-2">
@@ -477,7 +480,7 @@ function UsersPage() {
       <Dialog open={!!editItem} onOpenChange={(open) => {
         if (!open) { setEditItem(null); clearUserAll(); }
       }}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>Edit Employee & Permissions</DialogTitle>
           </DialogHeader>
@@ -495,18 +498,19 @@ function UsersPage() {
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="role">Role</Label>
-                <Select value={editRole} onValueChange={(r) => {
-                  setEditRole(r);
-                  setEditPermissions(DEFAULT_ROLE_PERMISSIONS[r] || []);
-                }}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="admin">Admin</SelectItem>
-                    <SelectItem value="manager">Manager</SelectItem>
-                    <SelectItem value="cashier">Cashier</SelectItem>
-                  </SelectContent>
-                </Select>
+                <Label htmlFor="role">Role (e.g. Manager, Chef, Mechanic)</Label>
+                <Input
+                  id="role"
+                  placeholder="Enter custom role name..."
+                  value={editRole}
+                  onChange={(e) => {
+                    const r = e.target.value;
+                    setEditRole(r);
+                    if (DEFAULT_ROLE_PERMISSIONS[r.toLowerCase()]) {
+                      setEditPermissions(DEFAULT_ROLE_PERMISSIONS[r.toLowerCase()]);
+                    }
+                  }}
+                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="status">Account Status</Label>

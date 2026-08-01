@@ -35,6 +35,7 @@ import { useCurrency } from "@/lib/currency";
 import { Mail, Phone, Star, MoreVertical, Edit2, Trash2, Users, Loader2 } from "lucide-react";
 import { v4 as uuidv4 } from "uuid";
 import { toast } from "sonner";
+import { PersistStore } from "@/lib/session-store";
 import { sendWhatsAppDueReminder } from "@/lib/whatsapp";
 import { cn } from "@/lib/utils";
 import type { LocalCustomer } from "@/lib/db";
@@ -50,7 +51,7 @@ export const Route = createFileRoute("/customers")({
 function CustomersPage() {
   const { formatCurrency, currencySymbol } = useCurrency();
   const { t } = useLanguage();
-  const rawCustomers = useLiveQuery(() => localDb.customers.toArray()) || [];
+  const rawCustomers = useLiveQuery(() => localDb.customers.filter(c => !c._deleted).toArray()) || [];
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [editItem, setEditItem] = useState<LocalCustomer | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
@@ -138,12 +139,13 @@ function CustomersPage() {
       }
 
       if (editItem) {
-        await localDb.customers.update(editItem.id, { name, email, phone, status, type, creditLimit });
+        await localDb.customers.update(editItem.id, { name, email, phone, status, type, creditLimit, synced: false });
         toast.success("Customer updated successfully");
         setEditItem(null);
       } else {
         await localDb.customers.add({
           id: uuidv4(),
+          orgId: PersistStore.getOrgId() || "default",
           name,
           email,
           phone,
@@ -171,7 +173,16 @@ function CustomersPage() {
   const handleDelete = async () => {
     if (deleteId) {
       try {
-        await localDb.customers.delete(deleteId);
+        await localDb.customers.update(deleteId, { _deleted: true, synced: false });
+        await localDb.activityLog.add({
+          id: uuidv4(),
+          orgId: PersistStore.getOrgId() || "default",
+          action: "TOMBSTONE",
+          user: "system",
+          details: JSON.stringify({ entityType: "customers", entityId: deleteId }),
+          timestamp: new Date().toISOString(),
+          synced: false,
+        });
         toast.success("Customer deleted");
         setDeleteId(null);
       } catch (error: any) {
@@ -196,6 +207,7 @@ function CustomersPage() {
       const newBalance = Math.max(0, settleItem.credit - amount);
       await localDb.customers.update(settleItem.id, {
         credit: newBalance,
+        totalSpent: settleItem.totalSpent - amount,
         synced: false
       });
 

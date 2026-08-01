@@ -25,7 +25,6 @@ function InvitePage() {
   const [formData, setFormData] = useState({
     name: "",
     email: "",
-    pin: "",
     password: ""
   });
 
@@ -55,8 +54,8 @@ function InvitePage() {
     e.preventDefault();
     if (!invitation) return;
 
-    if (formData.pin.length !== 4) {
-      toast.error("PIN must be exactly 4 digits");
+    if (formData.password.length < 4) {
+      toast.error("Password must be at least 4 characters");
       return;
     }
 
@@ -72,7 +71,8 @@ function InvitePage() {
         permissions: invitation.permissions || [],
         status: "pending",
         lastActive: new Date().toISOString(),
-        pin: formData.pin
+        pin: formData.password,
+        emailVerified: true,
       });
 
       await localDb.invitations.update(invitation.id, { status: "accepted" });
@@ -139,13 +139,8 @@ function InvitePage() {
                 <Input type="email" name="email" value={formData.email} onChange={handleChange} required placeholder="john@example.com" />
               </div>
               <div className="space-y-2">
-                <Label>Set your password / PIN</Label>
+                <Label>Set your password</Label>
                 <PasswordInput name="password" value={formData.password} onChange={handleChange} required placeholder="••••••••" />
-              </div>
-              <div className="space-y-2">
-                <Label>Set POS PIN (4 Digits)</Label>
-                <Input type="text" inputMode="numeric" pattern="[0-9]*" maxLength={4} name="pin" value={formData.pin} onChange={handleChange} required placeholder="1234" />
-                <p className="text-xs text-muted-foreground">You will use this PIN to quickly sign in at the terminal.</p>
               </div>
               
               <Button type="submit" className="w-full mt-4" disabled={isSaving}>

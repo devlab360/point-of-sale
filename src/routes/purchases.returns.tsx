@@ -17,6 +17,7 @@ import {
 import { MoreVertical, Trash2, Loader2 } from "lucide-react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { localDb } from "@/lib/db";
+import { PersistStore } from "@/lib/session-store";
 import { useCurrency } from "@/lib/currency";
 import type { LocalPurchaseReturn } from "@/lib/db";
 import { v4 as uuidv4 } from "uuid";
@@ -34,7 +35,7 @@ function PurchaseReturnsPage() {
   const { formatDate, formatTime, formatDateTime } = usePreferences();
   const { formatCurrency } = useCurrency();
   const rawReturns = useLiveQuery(() => localDb.purchaseReturns.toArray()) || [];
-  const purchases = useLiveQuery(() => localDb.purchases.toArray()) || [];
+  const purchases = useLiveQuery(() => localDb.purchases.filter(p => !p._deleted).toArray()) || [];
   const products = useLiveQuery(() => localDb.products.toArray()) || [];
 
   const [isAddOpen, setIsAddOpen] = useState(false);
@@ -110,39 +111,48 @@ function PurchaseReturnsPage() {
       setIsSubmitting(true);
       await new Promise(resolve => setTimeout(resolve, 500));
 
-      const returnTotal = returnItems.reduce((s, i) => s + i.total, 0);
-      const ref = `PR-${Math.floor(Math.random() * 90000) + 10000}`;
+      const totalQty = returnItems.reduce((s, i) => s + i.quantity, 0);
+      const totalRefund = returnItems.reduce((s, i) => s + i.total, 0);
+      const purchase = purchases.find(p => p.id === purchaseId);
+      if (!purchase) throw new Error("Purchase not found");
 
-      const newReturn: LocalPurchaseReturn = {
-        id: uuidv4(),
-        ref,
-        purchaseId,
+      const returnId = uuidv4();
+      await localDb.purchaseReturns.add({
+        id: returnId,
+        orgId: PersistStore.getOrgId() || "default",
+        ref: `PR-${Math.floor(Math.random() * 90000) + 10000}`,
+        purchaseId: purchase.id,
         supplier,
         reason,
         items: returnItems,
-        total: parseFloat(returnTotal.toFixed(2)),
-        status: "approved",
+        total: parseFloat(totalRefund.toFixed(2)),
+        status: "processed",
         date: new Date().toISOString(),
         stockRestored: true,
-      };
+        synced: false
+      });
 
-      await localDb.purchaseReturns.add(newReturn);
-
-      // Reduce stock (we're returning to supplier)
-      for (const item of returnItems) {
-        const product = products.find(p => p.id === item.productId);
-        if (product) {
-          await localDb.products.update(item.productId, { stock: Math.max(0, product.stock - item.quantity) });
-          await localDb.inventoryMovements.add({
-            productName: item.productName,
-            action: "purchase_return",
-            quantity: -item.quantity,
-            createdAt: new Date().toISOString(),
-          });
+      for (const line of returnItems) {
+        if (line.quantity > 0) {
+          const prod = products.find(p => p.id === line.productId);
+          if (prod) {
+            await localDb.inventoryMovements.add({
+              productName: prod.name,
+              orgId: PersistStore.getOrgId() || "default",
+              action: "purchase_return",
+              quantity: -line.quantity,
+              createdAt: new Date().toISOString(),
+              synced: false
+            });
+            await localDb.products.update(prod.id, {
+              stock: Math.max(0, prod.stock - line.quantity),
+              synced: false
+            });
+          }
         }
       }
 
-      toast.success(`Purchase return ${ref} recorded`);
+      toast.success(`Purchase return recorded`);
       setIsAddOpen(false);
       setPurchaseId("");
       setSupplier("");
@@ -228,7 +238,7 @@ function PurchaseReturnsPage() {
                     <td className="px-4 py-3 font-semibold">{r.supplier}</td>
                     <td className="px-4 py-3 text-muted-foreground">{r.reason}</td>
                     <td className="px-4 py-3 text-muted-foreground">{formatDate(r.date)}</td>
-                    <td className="px-4 py-3 text-right">{r.items.reduce((s, i) => s + i.quantity, 0)}</td>
+                    <td className="px-4 py-3 text-right">{r.items?.reduce((s, i) => s + (i.quantity || 0), 0) || 0}</td>
                     <td className="px-4 py-3">
                       <Badge className={cn(r.status === "approved" && "bg-success/10 text-success hover:bg-success/15", r.status === "pending" && "bg-warning/15 text-warning-foreground")}>
                         {r.status}

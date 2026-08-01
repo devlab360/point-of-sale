@@ -20,9 +20,9 @@ export const Route = createLazyFileRoute("/inventory/")({
 });
 
 function StockList() {
-  const products = useLiveQuery(() => localDb.products.toArray()) || [];
-  const sales = useLiveQuery(() => localDb.offlineSales.toArray()) || [];
-  const units = useLiveQuery(() => localDb.units.toArray()) || [];
+  const products = useLiveQuery(() => localDb.products.filter(p => !p._deleted).toArray()) || [];
+  const sales = useLiveQuery(() => localDb.offlineSales.filter(s => !s._deleted).toArray()) || [];
+  const units = useLiveQuery(() => localDb.units.filter(u => !u._deleted).toArray()) || [];
   const lowCount = products.filter(p => p.stock <= p.reorderLevel).length;
   const outCount = products.filter(p => p.stock <= 0).length;
 

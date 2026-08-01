@@ -10,6 +10,7 @@ import { v4 as uuidv4 } from "uuid";
 import { toast } from "sonner";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
+import { PersistStore } from "@/lib/session-store";
 
 export const Route = createFileRoute("/purchases/new")({
   head: () => ({ meta: [{ title: "New Purchase · Grocer.Pro" }] }),
@@ -55,14 +56,16 @@ function NewPurchase() {
 
     try {
       await localDb.transaction("rw", localDb.purchases, localDb.inventoryMovements, localDb.products, async () => {
-        const pId = uuidv4();
         await localDb.purchases.add({
-          id: pId,
+          id: uuidv4(),
+          orgId: PersistStore.getOrgId() || "default",
+          supplierId: sup.id,
           supplier: sup.name,
           date: new Date().toISOString(),
           items: lines.reduce((sum, l) => sum + l.qty, 0),
           status: "received",
-          total: total
+          total: total,
+          synced: false
         });
 
         for (const line of lines) {
@@ -70,13 +73,16 @@ function NewPurchase() {
           if (prod) {
             await localDb.inventoryMovements.add({
               productName: prod.name,
+              orgId: PersistStore.getOrgId() || "default",
               action: "purchase",
               quantity: line.qty,
-              createdAt: new Date().toISOString()
+              createdAt: new Date().toISOString(),
+              synced: false
             });
             await localDb.products.update(prod.id, {
               stock: prod.stock + line.qty,
-              cost: line.cost // Update unit cost based on new purchase
+              cost: line.cost,
+              synced: false
             });
           }
         }

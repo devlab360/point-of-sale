@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useState, useMemo, useEffect } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { localDb } from "@/lib/db";
+import { PersistStore } from "@/lib/session-store";
 import { v4 as uuidv4 } from "uuid";
 import { toast } from "sonner";
 import { ArrowRightLeft, Search, Loader2 } from "lucide-react";
@@ -20,9 +21,9 @@ export const Route = createLazyFileRoute("/inventory/transfers")({
 });
 
 function TransfersPage() {
-  const transfers = useLiveQuery(() => localDb.transfers.toArray()) || [];
-  const products = useLiveQuery(() => localDb.products.toArray()) || [];
-  const locations = useLiveQuery(() => localDb.locations.toArray()) || [];
+  const products = useLiveQuery(() => localDb.products.filter(p => !p._deleted).toArray()) || [];
+  const locations = useLiveQuery(() => localDb.locations.filter(l => !l._deleted).toArray()) || [];
+  const transfers = useLiveQuery(() => localDb.transfers.filter(t => !t._deleted).toArray()) || [];
   const [open, setOpen] = useState(false);
   const [formData, setFormData] = useState({ product: "", destination: "", items: 1 });
 
@@ -67,20 +68,24 @@ function TransfersPage() {
       await localDb.transaction("rw", localDb.transfers, localDb.inventoryMovements, localDb.products, async () => {
         const transfer = {
           id: uuidv4(),
+          orgId: PersistStore.getOrgId() || "default",
           ref: `TRF-${Math.floor(Math.random() * 10000)}`,
           date: new Date().toISOString(),
           destination: formData.destination,
           items: Number(formData.items),
-          status: "completed"
+          status: "completed",
+          synced: false
         };
         await localDb.transfers.add(transfer);
         await localDb.inventoryMovements.add({
           productName: prod.name,
+          orgId: PersistStore.getOrgId() || "default",
           action: "transfer_out",
           quantity: -Number(formData.items),
-          createdAt: new Date().toISOString()
+          createdAt: new Date().toISOString(),
+          synced: false
         });
-        await localDb.products.update(prod.id, { stock: prod.stock - Number(formData.items) });
+        await localDb.products.update(prod.id, { stock: prod.stock - Number(formData.items), synced: false });
       });
       toast.success("Transfer recorded successfully");
       setOpen(false);

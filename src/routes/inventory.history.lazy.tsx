@@ -16,7 +16,7 @@ export const Route = createLazyFileRoute("/inventory/history")({
 
 function HistoryPage() {
   const { formatDate, formatTime, formatDateTime } = usePreferences();
-  const rawMovements = useLiveQuery(() => localDb.inventoryMovements.reverse().toArray()) || [];
+  const rawMovements = useLiveQuery(() => localDb.inventoryMovements.filter(m => !m._deleted).reverse().toArray()) || [];
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search, 300);
   const [page, setPage] = useState(1);

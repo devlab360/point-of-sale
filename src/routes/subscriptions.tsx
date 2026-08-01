@@ -25,6 +25,7 @@ import { Calendar, CreditCard, RotateCcw, CheckCircle2, PauseCircle, Trash2, Shi
 import { PhoneInput } from "@/components/ui/phone-input";
 import { v4 as uuidv4 } from "uuid";
 import { toast } from "sonner";
+import { PersistStore } from "@/lib/session-store";
 import React from "react";
 import { useFormValidation } from "@/hooks/useFormValidation";
 import { FieldError } from "@/components/ui/field-error";
@@ -36,7 +37,7 @@ export const Route = createFileRoute("/subscriptions")({
 
 function SubscriptionsPage() {
   const { formatCurrency } = useCurrency();
-  const rawSubs = useLiveQuery(() => localDb.subscriptions.toArray()) || [];
+  const rawSubs = useLiveQuery(() => localDb.subscriptions.filter(s => !s._deleted).reverse().toArray()) || [];
   const customers = useLiveQuery(() => localDb.customers.toArray()) || [];
 
   const [isAddOpen, setIsAddOpen] = useState(false);
@@ -108,6 +109,7 @@ function SubscriptionsPage() {
       const subNo = `SUB-${Date.now().toString().slice(-6)}`;
       await localDb.subscriptions.add({
         id: uuidv4(),
+        orgId: PersistStore.getOrgId() || "default",
         subscriptionNo: subNo,
         customerName,
         customerPhone,
@@ -116,6 +118,7 @@ function SubscriptionsPage() {
         amount: parseFloat(amount) || 0,
         nextBillingDate: nextBillingDate || new Date().toISOString().split("T")[0],
         status: "active",
+        synced: false
       });
 
       toast.success(`Subscription ${subNo} created successfully!`);
@@ -132,12 +135,21 @@ function SubscriptionsPage() {
   };
 
   const updateStatus = async (id: string, status: LocalSubscription["status"]) => {
-    await localDb.subscriptions.update(id, { status });
+    await localDb.subscriptions.update(id, { status, synced: false });
     toast.success(`Subscription ${status}`);
   };
 
   const deleteSub = async (id: string) => {
-    await localDb.subscriptions.delete(id);
+    await localDb.subscriptions.update(id, { _deleted: true, synced: false });
+    await localDb.activityLog.add({
+      id: uuidv4(),
+      orgId: PersistStore.getOrgId() || "default",
+      action: "TOMBSTONE",
+      user: "system",
+      details: JSON.stringify({ entityType: "subscriptions", entityId: id }),
+      timestamp: new Date().toISOString(),
+      synced: false,
+    });
     toast.success("Subscription deleted");
   };
 

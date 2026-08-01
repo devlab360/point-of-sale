@@ -44,8 +44,8 @@ function CustomerPortalPage() {
         if (item.serialNumber) {
           items.push({
             productName: item.productName,
-            serialNumber: item.serialNumber,
-            date: sale.date,
+            serialNumber: (item as any).serialNumber || "N/A",
+            date: sale.date as string,
           });
         }
       });

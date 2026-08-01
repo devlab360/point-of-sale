@@ -15,6 +15,31 @@ function ActivityPage() {
   const { formatDate, formatTime, formatDateTime } = usePreferences();
   const activityLog = useLiveQuery(() => localDb.activityLog.reverse().toArray()) || [];
 
+  const renderLogMessage = (a: any) => {
+    if (a.action === "TOMBSTONE") {
+      let type = "record";
+      try {
+        const p = JSON.parse(a.details || "{}");
+        type = p.table || p.entityType || "record";
+      } catch (e) {}
+      return (
+        <span className="text-muted-foreground">
+          deleted a <strong className="font-medium text-foreground">{type}</strong> record.
+        </span>
+      );
+    }
+    return (
+      <>
+        <span className="text-muted-foreground">{a.action}</span>{" "}
+        {a.details && (
+          <span className="font-mono text-xs text-foreground bg-muted/50 px-1.5 py-0.5 rounded">
+            {a.details}
+          </span>
+        )}
+      </>
+    );
+  };
+
   return (
     <div className="space-y-6 p-4 md:p-6 lg:p-8">
       <DataPage title="Activity Log" description="A timeline of every action across the store.">
@@ -34,8 +59,7 @@ function ActivityPage() {
                   </span>
                   <div className="text-sm">
                     <span className="font-semibold">{a.user}</span>{" "}
-                    <span className="text-muted-foreground">{a.action}</span>{" "}
-                    <span className="font-mono text-xs text-foreground">{a.details}</span>
+                    {renderLogMessage(a)}
                   </div>
                   <div className="text-xs text-muted-foreground">{formatDateTime(a.timestamp)}</div>
                 </li>

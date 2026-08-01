@@ -29,11 +29,11 @@ type ReportType = "sales" | "profit" | "purchase" | "inventory" | "tax" | "expen
 function ReportsPage() {
   const { formatDate, formatTime, formatDateTime } = usePreferences();
   const { currencySymbol, formatCurrency } = useCurrency();
-  const sales = useLiveQuery(() => localDb.offlineSales.toArray()) || [];
-  const products = useLiveQuery(() => localDb.products.toArray()) || [];
-  const expenses = useLiveQuery(() => localDb.expenses.toArray()) || [];
-  const purchases = useLiveQuery(() => localDb.purchases.toArray()) || [];
-  const categories = useLiveQuery(() => localDb.categories.toArray()) || [];
+  const sales = useLiveQuery(() => localDb.offlineSales.filter(s => !s._deleted).toArray()) || [];
+  const products = useLiveQuery(() => localDb.products.filter(p => !p._deleted).toArray()) || [];
+  const expenses = useLiveQuery(() => localDb.expenses.filter(e => !e._deleted).toArray()) || [];
+  const purchases = useLiveQuery(() => localDb.purchases.filter(p => !p._deleted).toArray()) || [];
+  const categories = useLiveQuery(() => localDb.categories.filter(c => !c._deleted).toArray()) || [];
 
   const [activeReport, setActiveReport] = useState<ReportType>(null);
   const [dateFrom, setDateFrom] = useState("");
@@ -97,7 +97,7 @@ function ReportsPage() {
   const exportCSV = (type: string) => {
     let csv = "";
     let filename = "";
-    const getCustomers = () => localDb.customers.toArray();
+    const getCustomers = async () => (await localDb.customers.toArray()).filter(c => !c._deleted);
 
     if (type === "sales") {
       csv = ["Invoice,Customer,Date,Payment,Items,Total"].join("\n") + "\n" +

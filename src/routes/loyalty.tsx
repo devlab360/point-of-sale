@@ -13,7 +13,7 @@ export const Route = createFileRoute("/loyalty")({
 });
 
 function LoyaltyPage() {
-  const customers = useLiveQuery(() => localDb.customers.toArray()) || [];
+  const customers = useLiveQuery(() => localDb.customers.filter(c => !c._deleted).toArray()) || [];
   
   const totalMembers = customers.length;
   const totalPoints = customers.reduce((acc, c) => acc + c.loyaltyPoints, 0);

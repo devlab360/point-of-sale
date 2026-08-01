@@ -10,6 +10,7 @@ import { SearchableSelect } from "@/components/ui/searchable-select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { useDebounce } from "@/hooks/useDebounce";
 import { localDb, type LocalAccount, type LocalVoucher } from "@/lib/db";
+import { PersistStore } from "@/lib/session-store";
 import { useLiveQuery } from "dexie-react-hooks";
 import { useCurrency } from "@/lib/currency";
 import { Wallet, Plus, ArrowRightLeft, BookOpen, Layers, Loader2 } from "lucide-react";
@@ -42,8 +43,8 @@ const DEFAULT_ACCOUNTS: Omit<LocalAccount, "id">[] = [
 function AccountsPage() {
   const { formatDate, formatTime, formatDateTime } = usePreferences();
   const { formatCurrency } = useCurrency();
-  const rawAccounts = useLiveQuery(() => localDb.accounts.toArray()) || [];
-  const rawVouchers = useLiveQuery(() => localDb.vouchers.toArray()) || [];
+  const rawAccounts = useLiveQuery(() => localDb.accounts.filter(a => !a._deleted).toArray()) || [];
+  const rawVouchers = useLiveQuery(() => localDb.vouchers.filter(v => !v._deleted).toArray()) || [];
 
   const [activeTab, setActiveTab] = useState<"accounts" | "vouchers">("accounts");
   const [isAddAccountOpen, setIsAddAccountOpen] = useState(false);
@@ -100,7 +101,7 @@ function AccountsPage() {
       const count = await localDb.accounts.count();
       if (count === 0) {
         for (const acc of DEFAULT_ACCOUNTS) {
-          await localDb.accounts.add({ id: uuidv4(), ...acc });
+          await localDb.accounts.add({ id: uuidv4(), orgId: PersistStore.getOrgId() || "default", synced: false, ...acc });
         }
       }
     };
@@ -160,6 +161,8 @@ function AccountsPage() {
         type,
         balance,
         isSystem: false,
+        orgId: PersistStore.getOrgId() || "default",
+        synced: false
       });
       toast.success(`Account "${name}" added to Chart of Accounts!`);
       setIsAddAccountOpen(false);
@@ -194,6 +197,7 @@ function AccountsPage() {
       const vNo = `VCH-${Date.now().toString().slice(-6)}`;
       await localDb.vouchers.add({
         id: uuidv4(),
+        orgId: PersistStore.getOrgId() || "default",
         voucherNo: vNo,
         date: new Date().toISOString(),
         type: voucherType,
@@ -203,11 +207,12 @@ function AccountsPage() {
         creditAccountName: creditAcc.name,
         amount: amt,
         narration,
+        synced: false
       });
 
       // Update Ledger Account Balances (Double-Entry Principle)
-      await localDb.accounts.update(debitAcc.id, { balance: debitAcc.balance + amt });
-      await localDb.accounts.update(creditAcc.id, { balance: Math.max(0, creditAcc.balance - amt) });
+      await localDb.accounts.update(debitAcc.id, { balance: debitAcc.balance + amt, synced: false });
+      await localDb.accounts.update(creditAcc.id, { balance: Math.max(0, creditAcc.balance - amt), synced: false });
 
       toast.success(`Voucher ${vNo} posted successfully!`);
       setIsAddVoucherOpen(false);

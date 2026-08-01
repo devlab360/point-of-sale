@@ -39,10 +39,12 @@ export interface Product {
 export interface LocalCategory { id: string; orgId?: string; name: string; color: string; icon: string; count: number; synced?: boolean; syncRetryCount?: number; _deleted?: boolean; }
 export interface LocalBrand { id: string; orgId?: string; name: string; products: number; synced?: boolean; syncRetryCount?: number; _deleted?: boolean; }
 export interface LocalUnit { id: string; orgId?: string; name: string; short: string; synced?: boolean; syncRetryCount?: number; _deleted?: boolean; }
+export interface OfflineSale { id: string; orgId?: string; customerId?: string; customerName?: string; date: string | Date; status: string; total: number; subtotal?: number; tax?: number; discount?: number; due?: number; paymentMethod?: string; paidAmount?: number; changeAmount?: number; saleItems?: any[]; synced?: boolean; syncRetryCount?: number; _deleted?: boolean; }
 export interface LocalSupplier { id: string; orgId?: string; name: string; contact: string; phone: string; email?: string; balance: number; items: number; gstin?: string; stateCode?: string; synced?: boolean; syncRetryCount?: number; _deleted?: boolean; }
 export interface LocalLocation { id: string; name: string; type: string; status: string; synced?: boolean; syncRetryCount?: number; _deleted?: boolean; }
 export interface LocalPurchase { 
   id: string; 
+  orgId?: string;
   supplierId?: string;
   supplier: string; 
   date: string | Date; 
@@ -56,17 +58,21 @@ export interface LocalPurchase {
   sgstAmt?: number;
   igstAmt?: number;
   total: number; 
+  paid?: number;
+  due?: number;
   purchaseItems?: { productId: string; productName: string; quantity: number; cost: number; total: number; cgst?: number; sgst?: number; igst?: number }[];
   synced?: boolean;
   syncRetryCount?: number;
+  _deleted?: boolean;
 }
-export interface LocalInventoryMovement { id?: number; productName: string; action: string; quantity: number; createdAt: string | Date; synced?: boolean; syncRetryCount?: number; }
-export interface LocalAdjustment { id: string; ref: string; date: string | Date; reason: string; items: number; net: number; status: string; synced?: boolean; syncRetryCount?: number; }
-export interface LocalTransfer { id: string; ref: string; date: string | Date; destination: string; items: number; status: string; synced?: boolean; syncRetryCount?: number; }
-export interface LocalExpense { id: string; date: string; category: string; description: string; amount: number; status: string; synced?: boolean; syncRetryCount?: number; }
-export interface LocalCoupon { id: string; code: string; type: string; discount: number; usageLimit: number; used: number; expires: string; status: string; synced?: boolean; syncRetryCount?: number; }
-export interface LocalGiftCard { id: string; code: string; balance: number; initialBalance?: number; customer?: string; issued?: string; expires: string; status: string; synced?: boolean; syncRetryCount?: number; }
-export interface LocalPromotion { id: string; title: string; type: string; value: number; conditions: string; startDate: string; endDate: string; status: string; synced?: boolean; syncRetryCount?: number; }
+export interface LocalInventoryMovement { id?: number; productName: string; orgId?: string; action: string; quantity: number; createdAt: string | Date; synced?: boolean; syncRetryCount?: number; _deleted?: boolean; }
+export interface LocalPurchaseReturn { id: string; orgId?: string; ref: string; purchaseId: string; supplier: string; reason: string; items?: any[]; total: number; status: string; date: string; stockRestored: boolean; synced?: boolean; syncRetryCount?: number; _deleted?: boolean; }
+export interface LocalAdjustment { id: string; orgId?: string; ref: string; date: string | Date; reason: string; items: number; net: number; status: string; synced?: boolean; syncRetryCount?: number; _deleted?: boolean; }
+export interface LocalTransfer { id: string; orgId?: string; ref: string; date: string | Date; destination: string; items: number; status: string; synced?: boolean; syncRetryCount?: number; _deleted?: boolean; }
+export interface LocalExpense { id: string; orgId?: string; date: string; category: string; description: string; amount: number; status: string; synced?: boolean; syncRetryCount?: number; _deleted?: boolean; }
+export interface LocalCoupon { id: string; orgId?: string; code: string; type: string; discount: number; usageLimit: number; used: number; expires: string; status: string; synced?: boolean; syncRetryCount?: number; _deleted?: boolean; }
+export interface LocalGiftCard { id: string; orgId?: string; code: string; balance: number; initialBalance?: number; customer?: string; issued?: string; expires: string; status: string; synced?: boolean; syncRetryCount?: number; _deleted?: boolean; }
+export interface LocalPromotion { id: string; orgId?: string; title: string; type: string; value: number; conditions: string; startDate: string; endDate: string; status: string; synced?: boolean; syncRetryCount?: number; _deleted?: boolean; }
 export interface LocalActivity { id: string; orgId?: string; user: string; action: string; details?: string; timestamp: string; type?: string; synced?: boolean; syncRetryCount?: number; }
 export interface LocalUser { id: string; orgId?: string; name: string; role: string; email: string; lastActive: string; status: string; avatar?: string; phone?: string; location?: string; joined?: string; pin?: string; permissions?: string[]; commissionRate?: number; monthlyTarget?: number; earnedCommission?: number; emailVerified?: boolean; emailVerificationToken?: string; countryCode?: string; timeZone?: string; dateFormat?: string; language?: string; synced?: boolean; syncRetryCount?: number; }
 export interface LocalNotification { id: string; orgId?: string; title: string; description?: string; message?: string; type: string; timestamp: string; createdAt?: string; read: boolean; link?: string; synced?: boolean; syncRetryCount?: number; }
@@ -141,6 +147,7 @@ export interface LocalCustomer {
   syncRetryCount?: number;
   gstin?: string;
   stateCode?: string;
+  _deleted?: boolean;
 }
 
 export interface LocalCustomerLedger {
@@ -187,6 +194,9 @@ export interface LocalQuotation {
   total: number;
   status: "draft" | "sent" | "accepted" | "converted" | "rejected";
   notes?: string;
+  synced?: boolean;
+  syncRetryCount?: number;
+  _deleted?: boolean;
 }
 
 export interface LocalDeliveryChallan {
@@ -202,6 +212,9 @@ export interface LocalDeliveryChallan {
   vehicleNo?: string;
   driverName?: string;
   notes?: string;
+  synced?: boolean;
+  syncRetryCount?: number;
+  _deleted?: boolean;
 }
 
 export interface LocalRepairTicket {
@@ -218,6 +231,9 @@ export interface LocalRepairTicket {
   status: "received" | "diagnosing" | "repaired" | "delivered" | "cancelled";
   date: string;
   notes?: string;
+  synced?: boolean;
+  syncRetryCount?: number;
+  _deleted?: boolean;
 }
 
 export interface LocalSubscription {
@@ -231,6 +247,9 @@ export interface LocalSubscription {
   amount: number;
   nextBillingDate: string;
   status: "active" | "paused" | "cancelled";
+  synced?: boolean;
+  syncRetryCount?: number;
+  _deleted?: boolean;
 }
 
 export interface LocalRental {
@@ -245,6 +264,9 @@ export interface LocalRental {
   securityDeposit: number;
   totalAmount: number;
   status: "rented" | "returned" | "overdue";
+  synced?: boolean;
+  syncRetryCount?: number;
+  _deleted?: boolean;
 }
 
 export interface LocalAccount {
@@ -257,6 +279,7 @@ export interface LocalAccount {
   isSystem?: boolean;
   synced?: boolean;
   syncRetryCount?: number;
+  _deleted?: boolean;
 }
 
 export interface LocalVoucher {
@@ -273,6 +296,7 @@ export interface LocalVoucher {
   narration: string;
   synced?: boolean;
   syncRetryCount?: number;
+  _deleted?: boolean;
 }
 
 export interface OfflineSale {
@@ -280,8 +304,8 @@ export interface OfflineSale {
   orgId?: string;
   customerId?: string;
   customerName?: string;
-  date: string;
-  items: number;
+  date: string | Date;
+  items?: number;
   total: number;
   subtotal?: number;
   discountAmt?: number;
@@ -289,23 +313,16 @@ export interface OfflineSale {
   cgstAmt?: number;
   sgstAmt?: number;
   igstAmt?: number;
-  paymentMethod: string;
+  paymentMethod?: string;
   payments?: { method: string; amount: number }[];
   salesmanId?: string;
   salesmanName?: string;
   commissionAmt?: number;
   status: string;
-  synced: boolean;
+  synced?: boolean;
   syncRetryCount?: number;
-  saleItems: {
-    productId: string;
-    productName: string;
-    quantity: number;
-    price: number;
-    total: number;
-    serialNumber?: string;
-    batchNo?: string;
-  }[];
+  _deleted?: boolean;
+  saleItems?: any[];
 }
 
 export interface HeldInvoice {
@@ -330,6 +347,10 @@ export interface LocalSaleReturn {
   status: string;
   date: string;
   stockRestored: boolean;
+  orgId?: string;
+  synced?: boolean;
+  syncRetryCount?: number;
+  _deleted?: boolean;
 }
 
 export interface LocalPurchaseReturn {
@@ -338,7 +359,7 @@ export interface LocalPurchaseReturn {
   purchaseId: string;
   supplier: string;
   reason: string;
-  items: { productId: string; productName: string; quantity: number; cost: number; total: number }[];
+  items?: any[];
   total: number;
   status: string;
   date: string;

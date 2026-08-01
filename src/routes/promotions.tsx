@@ -33,6 +33,7 @@ import { localDb } from "@/lib/db";
 import { useCurrency } from "@/lib/currency";
 import { v4 as uuidv4 } from "uuid";
 import { toast } from "sonner";
+import { PersistStore } from "@/lib/session-store";
 import type { LocalPromotion } from "@/lib/db";
 import { useFormValidation } from "@/hooks/useFormValidation";
 import { FieldError } from "@/components/ui/field-error";
@@ -47,7 +48,7 @@ export const Route = createFileRoute("/promotions")({
 function PromotionsPage() {
   const { formatDate, formatTime, formatDateTime } = usePreferences();
   const { formatCurrency } = useCurrency();
-  const promotions = useLiveQuery(() => localDb.promotions.toArray()) || [];
+  const promotions = useLiveQuery(() => localDb.promotions.filter(p => !p._deleted).toArray()) || [];
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [editItem, setEditItem] = useState<LocalPromotion | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
@@ -125,20 +126,22 @@ function PromotionsPage() {
       const value = parseFloat(valueStr);
 
       if (editItem) {
-        await localDb.promotions.update(editItem.id, { title, type, value, conditions, startDate, endDate, status });
+        await localDb.promotions.update(editItem.id, { title, type, value, conditions, startDate, endDate, status, synced: false });
         toast.success("Promotion updated successfully");
         setEditItem(null);
       } else {
-        await localDb.promotions.add({
-          id: uuidv4(),
-          title,
-          type,
-          value,
-          conditions,
-          startDate,
-          endDate,
-          status,
-        });
+          await localDb.promotions.add({
+            id: uuidv4(),
+            orgId: PersistStore.getOrgId() || "default",
+            title,
+            type,
+            value,
+            conditions,
+            startDate,
+            endDate,
+            status,
+            synced: false
+          });
         toast.success("Promotion added successfully");
         setIsAddOpen(false);
       }
@@ -153,7 +156,16 @@ function PromotionsPage() {
   const handleDelete = async () => {
     if (deleteId) {
       try {
-        await localDb.promotions.delete(deleteId);
+        await localDb.promotions.update(deleteId, { _deleted: true, synced: false });
+        await localDb.activityLog.add({
+          id: uuidv4(),
+          orgId: PersistStore.getOrgId() || "default",
+          action: "TOMBSTONE",
+          user: "system",
+          details: JSON.stringify({ entityType: "promotions", entityId: deleteId }),
+          timestamp: new Date().toISOString(),
+          synced: false,
+        });
         toast.success("Promotion deleted");
         setDeleteId(null);
       } catch (error) {

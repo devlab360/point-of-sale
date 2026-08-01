@@ -19,6 +19,7 @@ import {
 import { MoreVertical, Trash2, Undo2, Loader2 } from "lucide-react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { localDb } from "@/lib/db";
+import { PersistStore } from "@/lib/session-store";
 import { useCurrency } from "@/lib/currency";
 import type { LocalSaleReturn, OfflineSale } from "@/lib/db";
 import { v4 as uuidv4 } from "uuid";
@@ -38,8 +39,8 @@ function SalesReturnsPage() {
   const { formatDate, formatTime, formatDateTime } = usePreferences();
   const { formatCurrency } = useCurrency();
   const { t } = useLanguage();
-  const returns = useLiveQuery(() => localDb.salesReturns.reverse().toArray()) || [];
-  const sales = useLiveQuery(() => localDb.offlineSales.reverse().toArray()) || [];
+  const returns = useLiveQuery(() => localDb.salesReturns.filter(r => !r._deleted).reverse().toArray()) || [];
+  const sales = useLiveQuery(() => localDb.offlineSales.filter(s => !s._deleted).reverse().toArray()) || [];
   const products = useLiveQuery(() => localDb.products.toArray()) || [];
   const customers = useLiveQuery(() => localDb.customers.toArray()) || [];
 
@@ -95,7 +96,7 @@ function SalesReturnsPage() {
 
   const selectedSale: OfflineSale | undefined = sales.find(s => s.id === saleId);
 
-  const toggleItem = (item: OfflineSale["saleItems"][0], checked: boolean) => {
+  const toggleItem = (item: any, checked: boolean) => {
     if (checked) {
       setSelectedItems(prev => [...prev, {
         productId: item.productId,
@@ -123,6 +124,7 @@ function SalesReturnsPage() {
 
       const newReturn: LocalSaleReturn = {
         id: uuidv4(),
+        orgId: PersistStore.getOrgId() || "default",
         ref,
         saleId,
         customerName: selectedSale?.customerName || "Walk-in",
@@ -132,6 +134,7 @@ function SalesReturnsPage() {
         status: "approved",
         date: new Date().toISOString(),
         stockRestored: true,
+        synced: false
       };
 
       await localDb.salesReturns.add(newReturn);
@@ -176,7 +179,16 @@ function SalesReturnsPage() {
   const handleDelete = async () => {
     if (!deleteId) return;
     try {
-      await localDb.salesReturns.delete(deleteId);
+      await localDb.salesReturns.update(deleteId, { _deleted: true, synced: false });
+      await localDb.activityLog.add({
+        id: uuidv4(),
+        orgId: PersistStore.getOrgId() || "default",
+        action: "TOMBSTONE",
+        user: "system",
+        details: JSON.stringify({ entityType: "salesReturns", entityId: deleteId }),
+        timestamp: new Date().toISOString(),
+        synced: false,
+      });
       toast.success("Return record deleted");
       setDeleteId(null);
     } catch {
@@ -309,7 +321,7 @@ function SalesReturnsPage() {
               <div className="space-y-1">
                 <Label>Items to Return</Label>
                 <div className="space-y-2 rounded-lg border border-border p-3 max-h-48 overflow-y-auto">
-                  {selectedSale.saleItems.map(item => {
+                  {selectedSale.saleItems?.map(item => {
                     const checked = selectedItems.some(i => i.productId === item.productId);
                     return (
                       <label key={item.productId} className="flex items-center gap-3 cursor-pointer">

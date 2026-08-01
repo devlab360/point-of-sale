@@ -36,6 +36,7 @@ import { localDb } from "@/lib/db";
 import { useCurrency } from "@/lib/currency";
 import { v4 as uuidv4 } from "uuid";
 import { toast } from "sonner";
+import { PersistStore } from "@/lib/session-store";
 import type { LocalExpense } from "@/lib/db";
 import { useFormValidation } from "@/hooks/useFormValidation";
 import { FieldError } from "@/components/ui/field-error";
@@ -50,7 +51,7 @@ function ExpensesPage() {
   const { formatDate, formatTime, formatDateTime } = usePreferences();
   const { formatCurrency } = useCurrency();
   const { t } = useLanguage();
-  const rawExpenses = useLiveQuery(() => localDb.expenses.toArray()) || [];
+  const rawExpenses = useLiveQuery(() => localDb.expenses.filter(e => !e._deleted).toArray()) || [];
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [editItem, setEditItem] = useState<LocalExpense | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
@@ -141,17 +142,19 @@ function ExpensesPage() {
       }
 
       if (editItem) {
-        await localDb.expenses.update(editItem.id, { date, category, description, amount, status });
+        await localDb.expenses.update(editItem.id, { date, category, description, amount, status, synced: false });
         toast.success("Expense updated successfully");
         setEditItem(null);
       } else {
         await localDb.expenses.add({
           id: uuidv4(),
+          orgId: PersistStore.getOrgId() || "default",
           date,
           category,
           description,
           amount,
           status,
+          synced: false
         });
         toast.success("Expense added successfully");
         setIsAddOpen(false);
@@ -167,7 +170,16 @@ function ExpensesPage() {
   const handleDelete = async () => {
     if (deleteId) {
       try {
-        await localDb.expenses.delete(deleteId);
+        await localDb.expenses.update(deleteId, { _deleted: true, synced: false });
+        await localDb.activityLog.add({
+          id: uuidv4(),
+          orgId: PersistStore.getOrgId() || "default",
+          action: "TOMBSTONE",
+          user: "system",
+          details: JSON.stringify({ entityType: "expenses", entityId: deleteId }),
+          timestamp: new Date().toISOString(),
+          synced: false,
+        });
         toast.success("Expense deleted");
         setDeleteId(null);
       } catch (error) {

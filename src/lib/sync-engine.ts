@@ -184,7 +184,34 @@ export class SyncEngine {
             }
           });
         }
-        PersistStore.setLastSyncedAt(new Date().toISOString());
+
+        // Process Tombstones to broadcast deletions across devices
+        if (serverData.activityLog && Array.isArray(serverData.activityLog)) {
+          for (const log of serverData.activityLog) {
+            if (log.action === 'TOMBSTONE' && log.details) {
+              try {
+                const { table: tableName, id } = JSON.parse(log.details);
+                let dexieTableName = tableName;
+                if (tableName === 'sales') dexieTableName = 'offlineSales';
+                if (tableName === 'organizations') dexieTableName = 'saasOrganizations';
+                const targetTable = (localDb as any)[dexieTableName];
+                if (targetTable) {
+                  await targetTable.delete(id);
+                }
+              } catch (err) {
+                // Ignore parse errors
+              }
+            }
+          }
+        }
+
+        // Use server time to prevent clock skew issues
+        if (pullResult.serverTime) {
+          PersistStore.setLastSyncedAt(pullResult.serverTime);
+        } else {
+          PersistStore.setLastSyncedAt(new Date().toISOString());
+        }
+        
         console.log("[Sync Engine] Pull successful.");
       }
 

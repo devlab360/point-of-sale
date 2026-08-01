@@ -38,10 +38,10 @@ function Dashboard() {
   const canAccessReports = !isSuperAdminUser && (!saasPlan || !Array.isArray(saasPlan.features) || saasPlan.features.includes("/reports"));
   const fmt = (n: number) => `${currencySymbol}${n.toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
 
-  const products = useLiveQuery(() => localDb.products.toArray()) || [];
-  const sales = useLiveQuery(() => localDb.offlineSales.toArray()) || [];
-  const customers = useLiveQuery(() => localDb.customers.toArray()) || [];
-  const expenses = useLiveQuery(() => localDb.expenses.toArray()) || [];
+  const products = useLiveQuery(() => localDb.products.filter(p => !p._deleted).toArray()) || [];
+  const sales = useLiveQuery(() => localDb.offlineSales.filter(s => !s._deleted).toArray()) || [];
+  const customers = useLiveQuery(() => localDb.customers.filter(c => !c._deleted).toArray()) || [];
+  const expenses = useLiveQuery(() => localDb.expenses.filter(e => !e._deleted).toArray()) || [];
   const currentUser = useLiveQuery(() => localDb.users.get("me"));
   const userName = currentUser?.name || "Admin";
 

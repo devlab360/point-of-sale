@@ -34,6 +34,7 @@ import { localDb } from "@/lib/db";
 import { useCurrency } from "@/lib/currency";
 import { v4 as uuidv4 } from "uuid";
 import { toast } from "sonner";
+import { PersistStore } from "@/lib/session-store";
 import type { LocalCoupon } from "@/lib/db";
 import { useFormValidation } from "@/hooks/useFormValidation";
 import { FieldError } from "@/components/ui/field-error";
@@ -47,7 +48,7 @@ export const Route = createFileRoute("/coupons")({
 function CouponsPage() {
   const { formatDate, formatTime, formatDateTime } = usePreferences();
   const { formatCurrency } = useCurrency();
-  const coupons = useLiveQuery(() => localDb.coupons.toArray()) || [];
+  const coupons = useLiveQuery(() => localDb.coupons.filter(c => !c._deleted).toArray()) || [];
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [editItem, setEditItem] = useState<LocalCoupon | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
@@ -122,20 +123,22 @@ function CouponsPage() {
       const usageLimit = parseInt(usageLimitStr, 10);
 
       if (editItem) {
-        await localDb.coupons.update(editItem.id, { code, type, discount, usageLimit, expires, status });
+        await localDb.coupons.update(editItem.id, { code, type, discount, usageLimit, expires, status, synced: false });
         toast.success("Coupon updated successfully");
         setEditItem(null);
       } else {
-        await localDb.coupons.add({
-          id: uuidv4(),
-          code,
-          type,
-          discount,
-          used: 0,
-          usageLimit,
-          expires,
-          status,
-        });
+          await localDb.coupons.add({
+            id: uuidv4(),
+            orgId: PersistStore.getOrgId() || "default",
+            code,
+            type,
+            discount,
+            usageLimit,
+            used: 0,
+            expires,
+            status,
+            synced: false
+          });
         toast.success("Coupon added successfully");
         setIsAddOpen(false);
       }
@@ -150,7 +153,16 @@ function CouponsPage() {
   const handleDelete = async () => {
     if (deleteId) {
       try {
-        await localDb.coupons.delete(deleteId);
+        await localDb.coupons.update(deleteId, { _deleted: true, synced: false });
+        await localDb.activityLog.add({
+          id: uuidv4(),
+          orgId: PersistStore.getOrgId() || "default",
+          action: "TOMBSTONE",
+          user: "system",
+          details: JSON.stringify({ entityType: "coupons", entityId: deleteId }),
+          timestamp: new Date().toISOString(),
+          synced: false,
+        });
         toast.success("Coupon deleted");
         setDeleteId(null);
       } catch (error) {

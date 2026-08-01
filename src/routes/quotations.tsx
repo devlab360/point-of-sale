@@ -24,6 +24,7 @@ import { useCurrency } from "@/lib/currency";
 import { FileText, Printer, CheckCircle2, MoreVertical, Trash2, ArrowRightLeft, Loader2 } from "lucide-react";
 import { v4 as uuidv4 } from "uuid";
 import { toast } from "sonner";
+import { PersistStore } from "@/lib/session-store";
 import { useFormValidation } from "@/hooks/useFormValidation";
 import { FieldError } from "@/components/ui/field-error";
 import { usePreferences } from "@/contexts/PreferencesContext";
@@ -38,7 +39,7 @@ type QuotationLineItem = { productId: string; productName: string; quantity: num
 function QuotationsPage() {
   const { formatDate, formatTime, formatDateTime } = usePreferences();
   const { formatCurrency, currencySymbol } = useCurrency();
-  const rawQuotations = useLiveQuery(() => localDb.quotations.toArray()) || [];
+  const rawQuotations = useLiveQuery(() => localDb.quotations.filter(q => !q._deleted).reverse().toArray()) || [];
   const customers = useLiveQuery(() => localDb.customers.toArray()) || [];
   const products = useLiveQuery(() => localDb.products.toArray()) || [];
 
@@ -182,6 +183,8 @@ function QuotationsPage() {
         total: quotationTotal,
         status: "sent",
         notes,
+        orgId: PersistStore.getOrgId() || "default",
+        synced: false
       });
 
       toast.success(`Quotation ${quotNo} created successfully!`);
@@ -203,6 +206,7 @@ function QuotationsPage() {
       // 1. Create Sale Invoice
       await localDb.offlineSales.add({
         id: saleId,
+        orgId: PersistStore.getOrgId() || "default",
         customerId: quot.customerId,
         customerName: quot.customerName,
         date: new Date().toISOString(),
@@ -234,7 +238,7 @@ function QuotationsPage() {
       }
 
       // 3. Mark Quotation as Converted
-      await localDb.quotations.update(quot.id, { status: "converted" });
+      await localDb.quotations.update(quot.id, { status: "converted", synced: false });
 
       toast.success(`Quotation ${quot.quotationNo} converted to Sales Invoice #${invNum}!`);
       setViewItem(null);
@@ -242,9 +246,17 @@ function QuotationsPage() {
       toast.error("Failed to convert quotation to invoice");
     }
   };
-
   const deleteQuotation = async (id: string) => {
-    await localDb.quotations.delete(id);
+    await localDb.quotations.update(id, { _deleted: true, synced: false });
+    await localDb.activityLog.add({
+      id: uuidv4(),
+      orgId: PersistStore.getOrgId() || "default",
+      action: "TOMBSTONE",
+      user: "system",
+      details: JSON.stringify({ entityType: "quotations", entityId: id }),
+      timestamp: new Date().toISOString(),
+      synced: false,
+    });
     toast.success("Quotation deleted");
   };
 

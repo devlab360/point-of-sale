@@ -23,6 +23,7 @@ import { useCurrency } from "@/lib/currency";
 import { Truck, Printer, CheckCircle2, MoreVertical, Trash2, ArrowRightLeft, Loader2 } from "lucide-react";
 import { v4 as uuidv4 } from "uuid";
 import { toast } from "sonner";
+import { PersistStore } from "@/lib/session-store";
 import { useFormValidation } from "@/hooks/useFormValidation";
 import { FieldError } from "@/components/ui/field-error";
 import { usePreferences } from "@/contexts/PreferencesContext";
@@ -37,7 +38,7 @@ type ChallanLineItem = { productId: string; productName: string; quantity: numbe
 function DeliveryChallansPage() {
   const { formatDate, formatTime, formatDateTime } = usePreferences();
   const { formatCurrency } = useCurrency();
-  const rawChallans = useLiveQuery(() => localDb.deliveryChallans.toArray()) || [];
+  const rawChallans = useLiveQuery(() => localDb.deliveryChallans.filter(c => !c._deleted).reverse().toArray()) || [];
   const customers = useLiveQuery(() => localDb.customers.toArray()) || [];
   const products = useLiveQuery(() => localDb.products.toArray()) || [];
 
@@ -151,6 +152,7 @@ function DeliveryChallansPage() {
       const chNo = `CH-${Date.now().toString().slice(-6)}`;
       await localDb.deliveryChallans.add({
         id: uuidv4(),
+        orgId: PersistStore.getOrgId() || "default",
         challanNo: chNo,
         customerId: cust.id,
         customerName: cust.name,
@@ -166,6 +168,7 @@ function DeliveryChallansPage() {
         vehicleNo,
         driverName,
         notes,
+        synced: false
       });
 
       // Deduct stock immediately upon delivery challan dispatch
@@ -238,7 +241,7 @@ function DeliveryChallansPage() {
       });
 
       // 2. Update Challan status
-      await localDb.deliveryChallans.update(ch.id, { status: "invoiced" });
+      await localDb.deliveryChallans.update(ch.id, { status: "invoiced", synced: false });
 
       toast.success(`Delivery Challan ${ch.challanNo} billed as Sales Invoice #${invNum}!`);
       setViewItem(null);
@@ -248,7 +251,16 @@ function DeliveryChallansPage() {
   };
 
   const deleteChallan = async (id: string) => {
-    await localDb.deliveryChallans.delete(id);
+    await localDb.deliveryChallans.update(id, { _deleted: true, synced: false });
+    await localDb.activityLog.add({
+      id: uuidv4(),
+      orgId: PersistStore.getOrgId() || "default",
+      action: "TOMBSTONE",
+      user: "system",
+      details: JSON.stringify({ entityType: "deliveryChallans", entityId: id }),
+      timestamp: new Date().toISOString(),
+      synced: false,
+    });
     toast.success("Delivery Challan deleted");
   };
 

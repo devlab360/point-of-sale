@@ -29,7 +29,7 @@ function SalesPage() {
   const { t } = useLanguage();
   const { formatDateTime } = usePreferences();
   const { currencySymbol, formatCurrency } = useCurrency();
-  const sales = useLiveQuery(() => localDb.offlineSales.reverse().toArray()) || [];
+  const sales = useLiveQuery(() => localDb.offlineSales.filter(s => !s._deleted).reverse().toArray()) || [];
   const settings = useLiveQuery(() => localDb.settings.get("default"));
 
   const [query, setQuery] = useState("");

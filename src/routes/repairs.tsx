@@ -24,6 +24,7 @@ import { Wrench, Printer, CheckCircle2, MoreVertical, Trash2, ShieldCheck, Phone
 import { PhoneInput } from "@/components/ui/phone-input";
 import { v4 as uuidv4 } from "uuid";
 import { toast } from "sonner";
+import { PersistStore } from "@/lib/session-store";
 import { useFormValidation } from "@/hooks/useFormValidation";
 import { FieldError } from "@/components/ui/field-error";
 
@@ -34,7 +35,7 @@ export const Route = createFileRoute("/repairs")({
 
 function RepairsPage() {
   const { formatCurrency } = useCurrency();
-  const rawRepairs = useLiveQuery(() => localDb.repairs.toArray()) || [];
+  const rawRepairs = useLiveQuery(() => localDb.repairs.filter(r => !r._deleted).reverse().toArray()) || [];
   const customers = useLiveQuery(() => localDb.customers.toArray()) || [];
 
   const [isAddOpen, setIsAddOpen] = useState(false);
@@ -105,6 +106,7 @@ function RepairsPage() {
       const tNo = `REP-${Date.now().toString().slice(-6)}`;
       await localDb.repairs.add({
         id: uuidv4(),
+        orgId: PersistStore.getOrgId() || "default",
         ticketNo: tNo,
         customerName,
         customerPhone,
@@ -116,6 +118,7 @@ function RepairsPage() {
         status: "received",
         date: new Date().toISOString(),
         notes,
+        synced: false
       });
 
       toast.success(`Repair Ticket ${tNo} created successfully!`);
@@ -136,12 +139,21 @@ function RepairsPage() {
   };
 
   const updateStatus = async (id: string, newStatus: LocalRepairTicket["status"]) => {
-    await localDb.repairs.update(id, { status: newStatus });
+    await localDb.repairs.update(id, { status: newStatus, synced: false });
     toast.success(`Ticket status updated to ${newStatus}`);
   };
 
   const deleteRepair = async (id: string) => {
-    await localDb.repairs.delete(id);
+    await localDb.repairs.update(id, { _deleted: true, synced: false });
+    await localDb.activityLog.add({
+      id: uuidv4(),
+      orgId: PersistStore.getOrgId() || "default",
+      action: "TOMBSTONE",
+      user: "system",
+      details: JSON.stringify({ entityType: "repairs", entityId: id }),
+      timestamp: new Date().toISOString(),
+      synced: false,
+    });
     toast.success("Repair Ticket deleted");
   };
 

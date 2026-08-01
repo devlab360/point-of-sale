@@ -29,7 +29,7 @@ function PurchasesPage() {
   const navigate = useNavigate();
   const { formatCurrency } = useCurrency();
   const { t } = useLanguage();
-  const rawPurchases = useLiveQuery(() => localDb.purchases.toArray()) || [];
+  const rawPurchases = useLiveQuery(() => localDb.purchases.filter(p => !p._deleted).toArray()) || [];
   const [query, setQuery] = useState("");
   const debouncedQuery = useDebounce(query, 300);
   const [page, setPage] = useState(1);

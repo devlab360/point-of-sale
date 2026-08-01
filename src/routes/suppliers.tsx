@@ -33,6 +33,7 @@ import { useCurrency } from "@/lib/currency";
 import { MoreVertical } from "lucide-react";
 import { v4 as uuidv4 } from "uuid";
 import { toast } from "sonner";
+import { PersistStore } from "@/lib/session-store";
 import type { LocalSupplier } from "@/lib/db";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useFormValidation } from "@/hooks/useFormValidation";
@@ -47,7 +48,7 @@ export const Route = createFileRoute("/suppliers")({
 function SuppliersPage() {
   const { formatCurrency } = useCurrency();
   const { t } = useLanguage();
-  const rawSuppliers = useLiveQuery(() => localDb.suppliers.toArray()) || [];
+  const rawSuppliers = useLiveQuery(() => localDb.suppliers.filter(s => !s._deleted).toArray()) || [];
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [editItem, setEditItem] = useState<LocalSupplier | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
@@ -122,18 +123,20 @@ function SuppliersPage() {
       if (!isValid) return;
 
       if (editItem) {
-        await localDb.suppliers.update(editItem.id, { name, contact, phone, email });
+        await localDb.suppliers.update(editItem.id, { name, contact, phone, email, synced: false });
         toast.success("Supplier updated successfully");
         setEditItem(null);
       } else {
         await localDb.suppliers.add({
           id: uuidv4(),
+          orgId: PersistStore.getOrgId() || "default",
           name,
           contact,
           phone,
           email,
+          balance: 0,
           items: 0,
-          balance: 0
+          synced: false
         });
         toast.success("Supplier added successfully");
         setIsAddOpen(false);
@@ -149,7 +152,16 @@ function SuppliersPage() {
   const handleDelete = async () => {
     if (deleteId) {
       try {
-        await localDb.suppliers.delete(deleteId);
+        await localDb.suppliers.update(deleteId, { _deleted: true, synced: false });
+        await localDb.activityLog.add({
+          id: uuidv4(),
+          orgId: PersistStore.getOrgId() || "default",
+          action: "TOMBSTONE",
+          user: "system",
+          details: JSON.stringify({ entityType: "suppliers", entityId: deleteId }),
+          timestamp: new Date().toISOString(),
+          synced: false,
+        });
         toast.success("Supplier deleted");
         setDeleteId(null);
       } catch (error) {

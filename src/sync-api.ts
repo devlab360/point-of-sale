@@ -83,7 +83,8 @@ export const pullEverythingFn = createServerFn({ method: "GET" })
         }));
       }
 
-      return { success: true, data: results };
+      // Return server time to prevent client clock skew bugs during delta syncs
+      return { success: true, data: results, serverTime: new Date().toISOString() };
     } catch (error) {
       console.error("Pull failed:", error);
       return { success: false, error: String(error) };
@@ -199,11 +200,11 @@ export const pushEverythingFn = createServerFn({ method: "POST" })
                   item[key] = new Date(item[key]);
                 }
               }
-              
+
               // Prevent primary key conflicts by ignoring the client's IndexedDB auto-increment ID.
               // Postgres will generate a fresh serial ID for these append-only records.
               delete item.id;
-              
+
               return item;
             });
             if (bulkData.length > 0) {
@@ -223,6 +224,17 @@ export const pushEverythingFn = createServerFn({ method: "POST" })
               if (record._deleted) {
                 // Hard delete from Postgres
                 await tx.delete(table).where(eq(table.id, record.id));
+
+                // Broadcast deletion to other devices via Tombstone
+                await tx.insert((schema as any)['activityLog']).values({
+                  id: crypto.randomUUID(),
+                  organizationId: orgId,
+                  user: data.userId || 'system',
+                  action: 'TOMBSTONE',
+                  details: JSON.stringify({ table: tableName, id: record.id }),
+                  timestamp: new Date()
+                });
+
                 syncedIds[tableName].push(record.id);
                 continue;
               }
