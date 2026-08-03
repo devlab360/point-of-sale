@@ -394,8 +394,8 @@ function ProductsPage() {
             <DialogTitle>{editingProd ? "Edit Product" : "New Product"}</DialogTitle>
           </DialogHeader>
           <form onSubmit={save} noValidate>
-            <div className="grid grid-cols-2 gap-4 py-4">
-              <div className="grid gap-1.5 col-span-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 py-4">
+              <div className="grid gap-1.5 col-span-1 sm:col-span-2">
                 <Label>Product Name <span className="text-destructive">*</span></Label>
                 <Input
                   placeholder="e.g. Item Name"
@@ -740,16 +740,16 @@ function TableView({ products, categories, brands, units, onEdit, onDelete, onPr
         <table className="w-full text-left text-sm">
           <thead className="sticky top-0 bg-muted/50 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
             <tr>
-              <th className="px-4 py-3">
+              <th className="px-4 py-3 whitespace-nowrap">
                 <input type="checkbox" className="rounded border-border" />
               </th>
-              <th className="px-4 py-3">{t("product") || "Product"}</th>
-              <th className="px-4 py-3">{t("sku") || "SKU"}</th>
-              <th className="px-4 py-3">{t("category") || "Category"}</th>
-              <th className="px-4 py-3 text-right">{t("price") || "Price"}</th>
-              <th className="px-4 py-3 text-right">{t("stock") || "Stock"}</th>
-              <th className="px-4 py-3">{t("status") || "Status"}</th>
-              <th className="px-4 py-3"></th>
+              <th className="px-4 py-3 whitespace-nowrap">{t("product") || "Product"}</th>
+              <th className="px-4 py-3 whitespace-nowrap">{t("sku") || "SKU"}</th>
+              <th className="px-4 py-3 whitespace-nowrap">{t("category") || "Category"}</th>
+              <th className="px-4 py-3 text-right whitespace-nowrap">{t("price") || "Price"}</th>
+              <th className="px-4 py-3 text-right whitespace-nowrap">{t("stock") || "Stock"}</th>
+              <th className="px-4 py-3 whitespace-nowrap">{t("status") || "Status"}</th>
+              <th className="px-4 py-3 whitespace-nowrap"></th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
@@ -760,10 +760,10 @@ function TableView({ products, categories, brands, units, onEdit, onDelete, onPr
               const unitName = units.find((u) => u.id === p.unit)?.name || p.unit || "";
               return (
                 <tr key={p.id} className="hover:bg-muted/30">
-                  <td className="px-4 py-3">
+                  <td className="px-4 py-3 whitespace-nowrap">
                     <input type="checkbox" className="rounded border-border" />
                   </td>
-                  <td className="px-4 py-3">
+                  <td className="px-4 py-3 whitespace-nowrap">
                     <div className="flex items-center gap-3">
                       <div className="grid size-10 shrink-0 place-items-center rounded-lg bg-muted overflow-hidden">
                         <img src={p.image} alt="" className="size-full object-cover" />
@@ -774,9 +774,9 @@ function TableView({ products, categories, brands, units, onEdit, onDelete, onPr
                       </div>
                     </div>
                   </td>
-                  <td className="px-4 py-3 font-mono text-xs text-muted-foreground">{p.sku}</td>
-                  <td className="px-4 py-3 text-muted-foreground">{categoryName}</td>
-                  <td className="number px-4 py-3 text-right">
+                  <td className="px-4 py-3 font-mono text-xs text-muted-foreground whitespace-nowrap">{p.sku}</td>
+                  <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">{categoryName}</td>
+                  <td className="number px-4 py-3 text-right whitespace-nowrap">
                     <div className="font-semibold">{formatCurrency(p.price)}</div>
                     {(p.wholesalePrice > 0 || p.dealerPrice > 0) && (
                       <div className="flex flex-col items-end gap-0.5 text-[10px] text-muted-foreground mt-0.5">
@@ -785,11 +785,11 @@ function TableView({ products, categories, brands, units, onEdit, onDelete, onPr
                       </div>
                     )}
                   </td>
-                  <td className="px-4 py-3 text-right">
+                  <td className="px-4 py-3 text-right whitespace-nowrap">
                     <span className={cn("number font-semibold", low && "text-destructive")}>{p.stock}</span>
                     <span className="ml-1 text-xs text-muted-foreground">{unitName}</span>
                   </td>
-                  <td className="px-4 py-3">
+                  <td className="px-4 py-3 whitespace-nowrap">
                     <div className="flex flex-col gap-1 items-start">
                       {low ? (
                         <Badge variant="destructive">Low stock</Badge>
@@ -813,7 +813,7 @@ function TableView({ products, categories, brands, units, onEdit, onDelete, onPr
                       )}
                     </div>
                   </td>
-                  <td className="px-4 py-3 text-right">
+                  <td className="px-4 py-3 text-right whitespace-nowrap">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button variant="ghost" size="icon" className="size-8">

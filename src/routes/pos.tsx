@@ -99,6 +99,7 @@ function PosScreen() {
   const [printData, setPrintData] = useState<any>(null);
   const [saleComplete, setSaleComplete] = useState<any>(null);
   const [printFormat, setPrintFormat] = useState<"thermal" | "a4">("thermal");
+  const [mobileTab, setMobileTab] = useState<"products" | "cart">("products");
 
   const [drawerWidth, setDrawerWidth] = useState(() => {
     const saved = localStorage.getItem("pos-drawer-width");
@@ -721,9 +722,25 @@ function PosScreen() {
 
   return (
     <>
-      <div className="print:hidden flex h-[calc(100vh-4rem)] flex-col md:flex-row">
+      {/* Mobile Tab Navigation */}
+      <div className="md:hidden flex bg-card border-b border-border sticky top-0 z-10">
+        <button
+          onClick={() => setMobileTab("products")}
+          className={cn("flex-1 py-3 text-sm font-bold text-center border-b-2 transition-colors", mobileTab === "products" ? "border-primary text-primary" : "border-transparent text-muted-foreground")}
+        >
+          Products
+        </button>
+        <button
+          onClick={() => setMobileTab("cart")}
+          className={cn("flex-1 py-3 text-sm font-bold text-center border-b-2 transition-colors", mobileTab === "cart" ? "border-primary text-primary" : "border-transparent text-muted-foreground")}
+        >
+          Cart ({cart.reduce((sum, item) => sum + item.qty, 0)})
+        </button>
+      </div>
+
+      <div className="print:hidden flex h-[calc(100vh-7rem)] md:h-[calc(100vh-4rem)] flex-col md:flex-row overflow-hidden">
         {/* Left: Product Grid */}
-        <div className="flex min-h-0 min-w-0 flex-1 flex-col bg-muted/30">
+        <div className={cn("flex min-h-0 min-w-0 flex-1 flex-col bg-muted/30", mobileTab === "cart" ? "hidden md:flex" : "flex")}>
           <div className="flex flex-col gap-3 border-b border-border bg-background p-4 lg:flex-row lg:items-center">
             <div className="relative flex-1">
               <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
@@ -734,21 +751,20 @@ function PosScreen() {
                 className="h-11 w-full rounded-xl border border-border bg-card pl-10 pr-3 text-sm focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/20"
               />
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 w-full lg:w-auto">
               <Button
                 variant="outline"
                 size="sm"
-                className="h-11 gap-1.5 text-xs"
+                className="h-11 shrink-0 gap-1.5 px-3 text-xs"
                 onClick={() => setShowShortcutsHelp(true)}
                 title="Keyboard Shortcuts (?)"
               >
-                <Keyboard className="size-4 text-primary" /> Shortcuts
+                <Keyboard className="size-4 text-primary" /> <span className="hidden sm:inline">Shortcuts</span>
               </Button>
-            </div>
-            <div className="relative w-full lg:w-72">
-              <ScanBarcode className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-primary" />
-              <input
-                placeholder="Scan barcode here..."
+              <div className="relative flex-1 lg:w-72">
+                <ScanBarcode className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-primary" />
+                <input
+                  placeholder="Scan barcode..."
                 onKeyDown={(e) => {
                   if (e.key === "Enter") {
                     const b = e.currentTarget.value;
@@ -764,6 +780,7 @@ function PosScreen() {
                 }}
                 className="h-11 w-full rounded-xl border border-primary/30 bg-primary/5 pl-10 pr-3 font-mono text-sm placeholder:text-primary/60 focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/20"
               />
+            </div>
             </div>
           </div>
 
@@ -835,7 +852,7 @@ function PosScreen() {
 
         {/* Right: Cart */}
         <aside
-          className="flex min-h-0 flex-col border-t border-border bg-card w-full md:border-l md:border-t-0 md:w-[var(--drawer-width)]"
+          className={cn("flex min-h-0 flex-col border-t border-border bg-card w-full md:border-l md:border-t-0 md:w-[var(--drawer-width)]", mobileTab === "products" ? "hidden md:flex" : "flex")}
           style={{ '--drawer-width': `${drawerWidth}px` } as React.CSSProperties}
         >
           {/* Customer Bar */}

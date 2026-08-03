@@ -170,15 +170,16 @@ function StockList() {
           {expiringCount > 0 && <span className="text-warning">· {expiringCount} expiring</span>}
         </div>
         <div className="overflow-hidden rounded-xl border border-border bg-card shadow-soft">
+          <div className="overflow-x-auto">
           <table className="w-full text-left text-sm">
             <thead className="bg-muted/50 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
               <tr>
-                <th className="px-4 py-3">Product</th>
-                <th className="px-4 py-3">SKU</th>
-                <th className="px-4 py-3 text-right">On hand</th>
-                <th className="px-4 py-3 text-right">Reorder</th>
-                <th className="px-4 py-3 text-right">Value</th>
-                <th className="px-4 py-3">Status</th>
+                <th className="px-4 py-3 whitespace-nowrap">Product</th>
+                <th className="px-4 py-3 whitespace-nowrap">SKU</th>
+                <th className="px-4 py-3 text-right whitespace-nowrap">On hand</th>
+                <th className="px-4 py-3 text-right whitespace-nowrap">Reorder</th>
+                <th className="px-4 py-3 text-right whitespace-nowrap">Value</th>
+                <th className="px-4 py-3 whitespace-nowrap">Status</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
@@ -187,7 +188,7 @@ function StockList() {
                 const out = p.stock <= 0;
                 return (
                   <tr key={p.id} className="hover:bg-muted/30">
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-3 whitespace-nowrap">
                       <div className="flex items-center gap-3">
                         <div className="grid size-9 shrink-0 place-items-center rounded-lg bg-muted overflow-hidden">
                           <img src={p.image} alt="" className="size-full object-cover" />
@@ -195,13 +196,13 @@ function StockList() {
                         <span className="font-semibold">{p.name}</span>
                       </div>
                     </td>
-                    <td className="px-4 py-3 font-mono text-xs text-muted-foreground">{p.sku}</td>
-                    <td className={cn("number px-4 py-3 text-right font-semibold", low && "text-destructive")}>
+                    <td className="px-4 py-3 font-mono text-xs text-muted-foreground whitespace-nowrap">{p.sku}</td>
+                    <td className={cn("number px-4 py-3 text-right font-semibold whitespace-nowrap", low && "text-destructive")}>
                       {p.stock} {units.find((u) => u.id === p.unit)?.name || p.unit || ""}
                     </td>
-                    <td className="px-4 py-3 text-right text-muted-foreground">{p.reorderLevel}</td>
-                    <td className="number px-4 py-3 text-right">${(p.stock * p.cost).toFixed(0)}</td>
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-3 text-right text-muted-foreground whitespace-nowrap">{p.reorderLevel}</td>
+                    <td className="number px-4 py-3 text-right whitespace-nowrap">${(p.stock * p.cost).toFixed(0)}</td>
+                    <td className="px-4 py-3 whitespace-nowrap">
                       <div className="flex gap-1 flex-wrap">
                         {isExpired(p.expiryDate) && <Badge variant="destructive">Expired</Badge>}
                         {isExpiringSoon(p.expiryDate) && <Badge className="bg-warning/15 text-warning-foreground hover:bg-warning/20">Expiring</Badge>}
@@ -219,6 +220,7 @@ function StockList() {
               })}
             </tbody>
           </table>
+          </div>
         </div>
 
         <PaginationControls

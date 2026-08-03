@@ -33,7 +33,7 @@ export function StatCard({ label, value, delta, hint, icon: Icon, accent = "prim
           </p>
         </div>
         {Icon && (
-          <div className={cn("grid size-10 shrink-0 place-items-center rounded-lg", accentBg[accent])}>
+          <div className={cn("grid size-10 shrink-0 place-items-center rounded-full", accentBg[accent])}>
             <Icon className="size-5" strokeWidth={2} />
           </div>
         )}

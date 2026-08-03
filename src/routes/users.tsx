@@ -39,16 +39,33 @@ import { useRouter } from "@tanstack/react-router";
 import { useFormValidation } from "@/hooks/useFormValidation";
 import { FieldError } from "@/components/ui/field-error";
 
-const AVAILABLE_PERMISSIONS = [
-  { id: "pos", label: "POS Terminal", desc: "Access sales register & checkout" },
-  { id: "inventory", label: "Inventory & Stock", desc: "Manage products, categories & stock" },
-  { id: "reports", label: "Reports & Analytics", desc: "View sales, profit & business reports" },
-  { id: "customers", label: "Customer Mgmt", desc: "Manage customer profiles & loyalty" },
-  { id: "expenses", label: "Store Expenses", desc: "Record & view store expenditure" },
-  { id: "discounts", label: "Apply Discounts", desc: "Give manual cart discounts at POS" },
-  { id: "returns", label: "Sales Returns", desc: "Process refunds & product returns" },
-  { id: "settings", label: "System Settings", desc: "Store configuration & store settings" },
+const PERMISSION_GROUPS = [
+  {
+    group: "Sales & Checkout",
+    permissions: [
+      { id: "pos", label: "POS Terminal", desc: "Access sales register & checkout" },
+      { id: "discounts", label: "Apply Discounts", desc: "Give manual cart discounts at POS" },
+      { id: "returns", label: "Sales Returns", desc: "Process refunds & product returns" },
+    ]
+  },
+  {
+    group: "Store Operations",
+    permissions: [
+      { id: "inventory", label: "Inventory & Stock", desc: "Manage products, categories & stock" },
+      { id: "customers", label: "Customer Mgmt", desc: "Manage customer profiles & loyalty" },
+      { id: "expenses", label: "Store Expenses", desc: "Record & view store expenditure" },
+    ]
+  },
+  {
+    group: "Management",
+    permissions: [
+      { id: "reports", label: "Reports & Analytics", desc: "View sales, profit & business reports" },
+      { id: "settings", label: "System Settings", desc: "Store configuration & store settings" },
+    ]
+  }
 ];
+
+const AVAILABLE_PERMISSIONS = PERMISSION_GROUPS.flatMap(g => g.permissions);
 
 const DEFAULT_ROLE_PERMISSIONS: Record<string, string[]> = {
   admin: AVAILABLE_PERMISSIONS.map(p => p.id),
@@ -424,29 +441,36 @@ function UsersPage() {
 
               <div className="space-y-2">
                 <Label className="flex items-center gap-1.5"><KeyRound className="size-3.5 text-primary" /> Module Permissions</Label>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 border border-border rounded-lg p-3 bg-muted/20 max-h-[220px] overflow-y-auto">
-                  {AVAILABLE_PERMISSIONS.map(p => {
-                    const checked = invitePermissions.includes(p.id);
-                    return (
-                      <div
-                        key={p.id}
-                        onClick={() => toggleInvitePermission(p.id)}
-                        className={`flex items-start gap-2.5 p-2 rounded-md border cursor-pointer transition-all ${checked ? "bg-primary/5 border-primary/40 text-foreground" : "bg-card border-border/60 text-muted-foreground hover:border-border"
-                          }`}
-                      >
-                        <input
-                          type="checkbox"
-                          checked={checked}
-                          onChange={() => { }}
-                          className="mt-0.5 size-4 rounded border-input text-primary accent-primary"
-                        />
-                        <div>
-                          <div className="text-xs font-semibold">{p.label}</div>
-                          <div className="text-[10px] opacity-80">{p.desc}</div>
-                        </div>
+                <div className="space-y-4 border border-border rounded-lg p-4 bg-muted/20 max-h-[250px] overflow-y-auto">
+                  {PERMISSION_GROUPS.map(group => (
+                    <div key={group.group} className="space-y-2">
+                      <h4 className="text-xs font-semibold text-foreground/80 uppercase tracking-wider">{group.group}</h4>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        {group.permissions.map(p => {
+                          const checked = invitePermissions.includes(p.id);
+                          return (
+                            <div
+                              key={p.id}
+                              onClick={() => toggleInvitePermission(p.id)}
+                              className={`flex items-start gap-2.5 p-2 rounded-md border cursor-pointer transition-all ${checked ? "bg-primary/5 border-primary/40 text-foreground" : "bg-card border-border/60 text-muted-foreground hover:border-border"
+                                }`}
+                            >
+                              <input
+                                type="checkbox"
+                                checked={checked}
+                                onChange={() => { }}
+                                className="mt-0.5 size-4 rounded border-input text-primary accent-primary"
+                              />
+                              <div className="space-y-0.5 leading-none">
+                                <p className="text-sm font-medium">{p.label}</p>
+                                <p className="text-[11px] text-muted-foreground leading-snug">{p.desc}</p>
+                              </div>
+                            </div>
+                          );
+                        })}
                       </div>
-                    );
-                  })}
+                    </div>
+                  ))}
                 </div>
               </div>
 
@@ -553,29 +577,36 @@ function UsersPage() {
 
             <div className="space-y-2">
               <Label className="flex items-center gap-1.5"><KeyRound className="size-3.5 text-primary" /> Permissions</Label>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 border border-border rounded-lg p-3 bg-muted/20 max-h-[220px] overflow-y-auto">
-                {AVAILABLE_PERMISSIONS.map(p => {
-                  const checked = editPermissions.includes(p.id);
-                  return (
-                    <div
-                      key={p.id}
-                      onClick={() => toggleEditPermission(p.id)}
-                      className={`flex items-start gap-2.5 p-2 rounded-md border cursor-pointer transition-all ${checked ? "bg-primary/5 border-primary/40 text-foreground" : "bg-card border-border/60 text-muted-foreground hover:border-border"
-                        }`}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={checked}
-                        onChange={() => { }}
-                        className="mt-0.5 size-4 rounded border-input text-primary accent-primary"
-                      />
-                      <div>
-                        <div className="text-xs font-semibold">{p.label}</div>
-                        <div className="text-[10px] opacity-80">{p.desc}</div>
-                      </div>
+              <div className="space-y-4 border border-border rounded-lg p-4 bg-muted/20 max-h-[250px] overflow-y-auto">
+                {PERMISSION_GROUPS.map(group => (
+                  <div key={group.group} className="space-y-2">
+                    <h4 className="text-xs font-semibold text-foreground/80 uppercase tracking-wider">{group.group}</h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      {group.permissions.map(p => {
+                        const checked = editPermissions.includes(p.id);
+                        return (
+                          <div
+                            key={p.id}
+                            onClick={() => toggleEditPermission(p.id)}
+                            className={`flex items-start gap-2.5 p-2 rounded-md border cursor-pointer transition-all ${checked ? "bg-primary/5 border-primary/40 text-foreground" : "bg-card border-border/60 text-muted-foreground hover:border-border"
+                              }`}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={checked}
+                              onChange={() => { }}
+                              className="mt-0.5 size-4 rounded border-input text-primary accent-primary"
+                            />
+                            <div className="space-y-0.5 leading-none">
+                              <p className="text-sm font-medium">{p.label}</p>
+                              <p className="text-[11px] text-muted-foreground leading-snug">{p.desc}</p>
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
-                  );
-                })}
+                  </div>
+                ))}
               </div>
             </div>
 

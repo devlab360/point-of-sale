@@ -198,19 +198,20 @@ function BrandsPage() {
         ) : (
           <div className="space-y-4">
             <div className="overflow-hidden rounded-xl border border-border bg-card shadow-soft">
-              <table className="w-full text-left text-sm">
-                <thead className="bg-muted/50 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                  <tr>
-                    <th className="px-4 py-3">Brand</th>
-                    <th className="px-4 py-3">Products</th>
-                    <th className="px-4 py-3">Status</th>
-                    <th className="px-4 py-3 text-right">Actions</th>
-                  </tr>
-                </thead>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-sm">
+                  <thead className="bg-muted/50 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                    <tr>
+                      <th className="px-4 py-3 whitespace-nowrap">Brand</th>
+                      <th className="px-4 py-3 whitespace-nowrap">Products</th>
+                      <th className="px-4 py-3 whitespace-nowrap">Status</th>
+                      <th className="px-4 py-3 text-right whitespace-nowrap">Actions</th>
+                    </tr>
+                  </thead>
                 <tbody className="divide-y divide-border">
                   {paginatedBrands.map((b) => (
                     <tr key={b.id} className="hover:bg-muted/30 group">
-                      <td className="px-4 py-3">
+                      <td className="px-4 py-3 whitespace-nowrap">
                         <div className="flex items-center gap-3">
                           <div className="grid size-9 place-items-center rounded-lg bg-primary/10 text-sm font-bold text-primary">
                             {b.name.slice(0, 2).toUpperCase()}
@@ -218,11 +219,11 @@ function BrandsPage() {
                           <span className="font-semibold">{b.name}</span>
                         </div>
                       </td>
-                      <td className="px-4 py-3 text-muted-foreground">{b.products || 0}</td>
-                      <td className="px-4 py-3">
+                      <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">{b.products || 0}</td>
+                      <td className="px-4 py-3 whitespace-nowrap">
                         <Badge className="bg-success/10 text-success hover:bg-success/15">Active</Badge>
                       </td>
-                      <td className="px-4 py-3 text-right">
+                      <td className="px-4 py-3 text-right whitespace-nowrap">
                         <div className="flex justify-end gap-1">
                           <Button variant="ghost" size="icon" className="size-8" onClick={() => openEdit(b)}>
                             <Pencil className="size-4" />
@@ -236,6 +237,7 @@ function BrandsPage() {
                   ))}
                 </tbody>
               </table>
+              </div>
             </div>
             <PaginationControls currentPage={page} totalPages={totalPages} onPageChange={setPage} />
           </div>

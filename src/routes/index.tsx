@@ -4,7 +4,7 @@ import {
   Area, AreaChart, Bar, BarChart, CartesianGrid, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis,
 } from "recharts";
 import {
-  AlertTriangle, ArrowUpRight, DollarSign, Package, Receipt, ShoppingBag, TrendingUp, Users, Sparkles, Bot, Printer, ArrowRight, BarChart3, Calendar,
+  AlertTriangle, ArrowUpRight, Wallet, Package, ShoppingCart, ShoppingBag, TrendingUp, Users, Sparkles, Bot, Printer, ArrowRight, BarChart3, Calendar, Receipt, DollarSign,
 } from "lucide-react";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { StatCard } from "@/components/layout/StatCard";
@@ -33,10 +33,11 @@ function Dashboard() {
   const { currencySymbol, formatCurrency } = useCurrency();
   const { user, saasPlan } = useAuth();
   const [isDailyReportOpen, setIsDailyReportOpen] = useState(false);
+  const [chartView, setChartView] = useState<"revenue" | "profit">("revenue");
   const isSuperAdminUser = user?.email?.toLowerCase().includes("superadmin");
   const canAccessPos = !isSuperAdminUser && (!saasPlan || !Array.isArray(saasPlan.features) || saasPlan.features.includes("/pos"));
   const canAccessReports = !isSuperAdminUser && (!saasPlan || !Array.isArray(saasPlan.features) || saasPlan.features.includes("/reports"));
-  const fmt = (n: number) => `${currencySymbol}${n.toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
+  const fmt = (n: number | string) => `${currencySymbol}${(Number(n) || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
   const products = useLiveQuery(() => localDb.products.filter(p => !p._deleted).toArray()) || [];
   const sales = useLiveQuery(() => localDb.offlineSales.filter(s => !s._deleted).toArray()) || [];
@@ -46,8 +47,8 @@ function Dashboard() {
   const userName = currentUser?.name || "Admin";
 
   const healthAnalysis = useMemo(() => {
-    const totalSalesRev = sales.reduce((sum, s) => sum + (s.total || 0), 0);
-    const totalExp = expenses.reduce((sum, e) => sum + (e.amount || 0), 0);
+    const totalSalesRev = sales.reduce((sum, s) => sum + (Number(s.total) || 0), 0);
+    const totalExp = expenses.reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
 
     let totalCogs = 0;
     sales.forEach((s) => {
@@ -124,13 +125,13 @@ function Dashboard() {
 
   const recentSales = [...sales].reverse().slice(0, 5);
 
-  const todayRevenue = sales.reduce((sum, s) => sum + s.total, 0);
+  const todayRevenue = sales.reduce((sum, s) => sum + (Number(s.total) || 0), 0);
   const todayProfit = todayRevenue * 0.3;
   const todayOrders = sales.length;
 
   const todayDateStr = new Date().toDateString();
   const actualTodaySales = sales.filter(s => new Date(s.date).toDateString() === todayDateStr);
-  const displayRevenue = actualTodaySales.length > 0 ? actualTodaySales.reduce((sum, s) => sum + s.total, 0) : todayRevenue;
+  const displayRevenue = actualTodaySales.length > 0 ? actualTodaySales.reduce((sum, s) => sum + (Number(s.total) || 0), 0) : todayRevenue;
   const displayOrders = actualTodaySales.length > 0 ? actualTodaySales.length : todayOrders;
   const displayProfit = displayRevenue * 0.3;
 
@@ -139,7 +140,7 @@ function Dashboard() {
     d.setDate(d.getDate() - (6 - i));
     const day = d.toLocaleDateString('default', { weekday: 'short' });
     const daySales = sales.filter(s => new Date(s.date).toDateString() === d.toDateString());
-    return { day, sales: daySales.reduce((sum, s) => sum + s.total, 0) };
+    return { day, sales: daySales.reduce((sum, s) => sum + (Number(s.total) || 0), 0) };
   });
 
   const categoryShare = [
@@ -154,7 +155,7 @@ function Dashboard() {
     d.setMonth(d.getMonth() - (11 - i));
     const m = d.toLocaleString('default', { month: 'short' });
     const monthSales = sales.filter(s => new Date(s.date).getMonth() === d.getMonth());
-    const revenue = monthSales.reduce((sum, s) => sum + s.total, 0);
+    const revenue = monthSales.reduce((sum, s) => sum + (Number(s.total) || 0), 0);
     return { m, revenue, profit: revenue * 0.3 };
   });
 
@@ -253,7 +254,7 @@ function Dashboard() {
           value={fmt(todayRevenue)}
           delta={0}
           hint="Calculated locally"
-          icon={DollarSign}
+          icon={Wallet}
           accent="primary"
         />
         <StatCard
@@ -261,7 +262,7 @@ function Dashboard() {
           value={todayOrders.toString()}
           delta={0}
           hint="Calculated locally"
-          icon={Receipt}
+          icon={ShoppingCart}
           accent="info"
         />
         <StatCard
@@ -290,10 +291,10 @@ function Dashboard() {
               <p className="text-xs text-muted-foreground">Last 12 months</p>
             </div>
             <div className="flex gap-2">
-              <Button variant="outline" size="sm" className="h-7 px-2.5 text-xs">
+              <Button variant={chartView === "revenue" ? "outline" : "ghost"} size="sm" className="h-7 px-2.5 text-xs" onClick={() => setChartView("revenue")}>
                 Revenue
               </Button>
-              <Button variant="ghost" size="sm" className="h-7 px-2.5 text-xs">
+              <Button variant={chartView === "profit" ? "outline" : "ghost"} size="sm" className="h-7 px-2.5 text-xs" onClick={() => setChartView("profit")}>
                 Profit
               </Button>
             </div>
@@ -302,9 +303,9 @@ function Dashboard() {
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={monthly} margin={{ top: 8, right: 8, left: -16, bottom: 0 }}>
                 <defs>
-                  <linearGradient id="rev" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="var(--color-primary)" stopOpacity={0.35} />
-                    <stop offset="100%" stopColor="var(--color-primary)" stopOpacity={0} />
+                  <linearGradient id="chartGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor={chartView === "revenue" ? "var(--color-primary)" : "var(--color-success)"} stopOpacity={0.35} />
+                    <stop offset="100%" stopColor={chartView === "revenue" ? "var(--color-primary)" : "var(--color-success)"} stopOpacity={0} />
                   </linearGradient>
                 </defs>
                 <CartesianGrid stroke="var(--color-border)" vertical={false} />
@@ -331,10 +332,10 @@ function Dashboard() {
                 />
                 <Area
                   type="monotone"
-                  dataKey="revenue"
-                  stroke="var(--color-primary)"
+                  dataKey={chartView}
+                  stroke={chartView === "revenue" ? "var(--color-primary)" : "var(--color-success)"}
                   strokeWidth={2.5}
-                  fill="url(#rev)"
+                  fill="url(#chartGradient)"
                 />
               </AreaChart>
             </ResponsiveContainer>
@@ -479,23 +480,23 @@ function Dashboard() {
             <table className="w-full text-left text-sm">
               <thead>
                 <tr className="border-y border-border bg-muted/40 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                  <th className="px-5 py-2.5">Invoice</th>
-                  <th className="px-5 py-2.5">Customer</th>
-                  <th className="px-5 py-2.5">Payment</th>
-                  <th className="px-5 py-2.5">Status</th>
-                  <th className="px-5 py-2.5 text-right">Amount</th>
+                  <th className="px-5 py-2.5 whitespace-nowrap">Invoice</th>
+                  <th className="px-5 py-2.5 whitespace-nowrap">Customer</th>
+                  <th className="px-5 py-2.5 whitespace-nowrap">Payment</th>
+                  <th className="px-5 py-2.5 whitespace-nowrap">Status</th>
+                  <th className="px-5 py-2.5 whitespace-nowrap text-right">Amount</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
                 {recentSales.slice(0, 7).map((s) => (
                   <tr key={s.id} className="hover:bg-muted/30">
-                    <td className="px-5 py-3 font-medium">{s.id.slice(0, 8).toUpperCase()}</td>
-                    <td className="px-5 py-3">{s.customerName || "Walk-in"}</td>
-                    <td className="px-5 py-3 text-muted-foreground capitalize">{s.paymentMethod || "cash"}</td>
-                    <td className="px-5 py-3">
+                    <td className="px-5 py-3 font-medium whitespace-nowrap">{s.id.slice(0, 8).toUpperCase()}</td>
+                    <td className="px-5 py-3 whitespace-nowrap">{s.customerName || "Walk-in"}</td>
+                    <td className="px-5 py-3 text-muted-foreground capitalize whitespace-nowrap">{s.paymentMethod || "cash"}</td>
+                    <td className="px-5 py-3 whitespace-nowrap">
                       <StatusBadge status={s.status} />
                     </td>
-                    <td className="number px-5 py-3 text-right font-semibold">
+                    <td className="number px-5 py-3 text-right font-semibold whitespace-nowrap">
                       {formatCurrency(s.total)}
                     </td>
                   </tr>
@@ -553,7 +554,7 @@ function Dashboard() {
             </DialogDescription>
           </DialogHeader>
 
-          <div className="grid grid-cols-3 gap-3 my-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 my-4">
             <div className="bg-primary/5 border border-primary/20 rounded-xl p-3.5 text-center">
               <div className="flex items-center justify-center gap-1.5 text-xs font-semibold text-muted-foreground mb-1">
                 <DollarSign className="size-3.5 text-primary" /> Total Revenue
