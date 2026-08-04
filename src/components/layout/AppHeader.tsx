@@ -46,6 +46,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage, LANGUAGES } from "@/contexts/LanguageContext";
 import { toast } from "sonner";
 import { v4 as uuidv4 } from "uuid";
+import { InstallAppButton } from "@/components/InstallAppButton";
 
 function pathToCrumbs(pathname: string) {
   if (pathname === "/") return [{ label: "Dashboard", to: "/" }];
@@ -373,6 +374,7 @@ export function AppHeader() {
           <Search className="size-5" />
         </Button>
 
+        <InstallAppButton />
         <SyncStatus />
 
         {canAccessPos && (

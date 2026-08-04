@@ -197,15 +197,15 @@ export function AppSidebar({ onNavigate }: { onNavigate?: () => void }) {
             <div className="truncate text-sm font-extrabold tracking-tight text-foreground">
               GROCER.PRO
             </div>
-            <div className="truncate text-[10px] font-semibold uppercase tracking-widest text-primary/80 flex items-center gap-1">
-              <span className="size-1.5 rounded-full bg-success inline-block animate-pulse"></span>
-              {settings?.storeName || "Main Store"}
+            <div className="text-[10px] font-semibold uppercase tracking-widest text-primary/80 flex items-center gap-1 min-w-0">
+              <span className="size-1.5 rounded-full bg-success inline-block animate-pulse shrink-0"></span>
+              <span className="truncate">{settings?.storeName || "Main Store"}</span>
             </div>
           </div>
         )}
       </div>
 
-      <nav className="scrollbar-thin flex-1 overflow-y-auto px-3.5 py-4 space-y-3.5">
+      <nav className="scrollbar-thin flex-1 overflow-y-auto overflow-x-hidden px-3.5 py-4 space-y-3.5">
         {filteredGroups.map((group) => {
           const hasActiveChild = group.items.some((i) => isActive(i.to));
           // If not explicitly toggled in `collapsed` state, we assume it is closed UNLESS it has an active child.
@@ -232,28 +232,32 @@ export function AppSidebar({ onNavigate }: { onNavigate?: () => void }) {
               >
                 <span
                   className={cn(
-                    "flex items-center",
+                    "flex items-center min-w-0 flex-1",
                     isMinimized ? "justify-center w-full" : "gap-1.5",
                   )}
                 >
                   <span
                     className={cn(
-                      "size-1.5 rounded-full transition-colors",
+                      "size-1.5 shrink-0 rounded-full transition-colors",
                       hasActiveChild
                         ? "bg-primary shadow-[0_0_8px_rgba(var(--primary),0.8)]"
                         : "bg-transparent group-hover/section:bg-muted-foreground/40",
                     )}
                   />
-                  {!isMinimized && (t(group.tkey) || group.label)}
+                  {!isMinimized && (
+                    <span className="truncate text-left">
+                      {t(group.tkey) || group.label}
+                    </span>
+                  )}
                 </span>
                 {!isMinimized && (
-                  <div className="flex items-center gap-1.5">
+                  <div className="flex items-center gap-1.5 shrink-0">
                     <span className="text-[10px] font-mono text-muted-foreground/60 px-1.5 py-0.2 rounded bg-sidebar-accent/30">
                       {group.items.length}
                     </span>
                     <ChevronDown
                       className={cn(
-                        "size-3.5 transition-transform duration-200 text-muted-foreground",
+                        "size-3.5 shrink-0 transition-transform duration-200 text-muted-foreground",
                         isClosed && "-rotate-90",
                       )}
                     />
@@ -279,7 +283,7 @@ export function AppSidebar({ onNavigate }: { onNavigate?: () => void }) {
                         onClick={onNavigate}
                         title={isMinimized ? t(item.tkey) || item.label : undefined}
                         className={cn(
-                          "group relative flex items-center rounded-lg py-2 text-sm font-medium transition-all duration-200",
+                          "group relative flex items-center rounded-lg py-2 text-sm font-medium transition-all duration-200 overflow-hidden",
                           isMinimized ? "justify-center px-0" : "gap-3 px-3",
                           active
                             ? "bg-primary/15 text-primary font-semibold shadow-sm"
@@ -296,7 +300,7 @@ export function AppSidebar({ onNavigate }: { onNavigate?: () => void }) {
                           strokeWidth={active ? 2.5 : 2}
                         />
                         {!isMinimized && (
-                          <span className="flex-1 text-left line-clamp-1">
+                          <span className="flex-1 text-left truncate min-w-0">
                             {t(item.tkey) || item.label}
                           </span>
                         )}
