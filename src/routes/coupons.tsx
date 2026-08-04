@@ -8,10 +8,22 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { DatePicker } from "@/components/ui/date-picker";
 import { SearchableSelect } from "@/components/ui/searchable-select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -29,16 +41,17 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { MoreVertical, Edit2, Trash2, Ticket, Loader2 } from "lucide-react";
-import { useLiveQuery } from "dexie-react-hooks";
-import { localDb } from "@/lib/db";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { getCouponsFn, createCouponFn, updateCouponStatusFn, deleteCouponFn } from "@/api/coupons";
 import { useCurrency } from "@/lib/currency";
 import { v4 as uuidv4 } from "uuid";
 import { toast } from "sonner";
 import { PersistStore } from "@/lib/session-store";
-import type { LocalCoupon } from "@/lib/db";
 import { useFormValidation } from "@/hooks/useFormValidation";
 import { FieldError } from "@/components/ui/field-error";
 import { usePreferences } from "@/contexts/PreferencesContext";
+import { TableSkeleton } from "@/components/skeletons/TableSkeleton";
+import { ErrorState } from "@/components/ui/error-state";
 
 export const Route = createFileRoute("/coupons")({
   head: () => ({ meta: [{ title: "Coupons · Grocer.Pro" }] }),
@@ -48,9 +61,22 @@ export const Route = createFileRoute("/coupons")({
 function CouponsPage() {
   const { formatDate, formatTime, formatDateTime } = usePreferences();
   const { formatCurrency } = useCurrency();
-  const coupons = useLiveQuery(() => localDb.coupons.filter(c => !c._deleted).toArray()) || [];
+  const orgId = PersistStore.getOrgId() || "default";
+  const queryClient = useQueryClient();
+
+  const {
+    data: couponsData,
+    isLoading: isCouponsLoading,
+    isError: isCouponsError,
+    refetch: refetchCoupons,
+  } = useQuery({
+    queryKey: ["coupons", orgId],
+    queryFn: async () => ((await getCouponsFn({ data: {} })) as any)?.data || [],
+  });
+  const coupons = couponsData || [];
+
   const [isAddOpen, setIsAddOpen] = useState(false);
-  const [editItem, setEditItem] = useState<LocalCoupon | null>(null);
+  const [editItem, setEditItem] = useState<any | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [expiresDate, setExpiresDate] = useState<string>("");
@@ -73,13 +99,13 @@ function CouponsPage() {
     let list = coupons;
     if (debouncedSearch) {
       const lower = debouncedSearch.toLowerCase();
-      list = list.filter(c => c.code.toLowerCase().includes(lower));
+      list = list.filter((c) => c.code.toLowerCase().includes(lower));
     }
     if (filters.type) {
-      list = list.filter(c => c.type === filters.type);
+      list = list.filter((c) => c.type === filters.type);
     }
     if (filters.status) {
-      list = list.filter(c => c.status === filters.status);
+      list = list.filter((c) => c.status === filters.status);
     }
     return list;
   }, [coupons, debouncedSearch, filters.type, filters.status]);
@@ -96,18 +122,29 @@ function CouponsPage() {
   const totalPages = Math.ceil(filteredCoupons.length / itemsPerPage);
   const paginatedCoupons = filteredCoupons.slice((page - 1) * itemsPerPage, page * itemsPerPage);
 
-  const { errors: couponErrors, validate: validateCoupon, clearError: clearCouponError, clearAll: clearCouponAll } = useFormValidation({
+  const {
+    errors: couponErrors,
+    validate: validateCoupon,
+    clearError: clearCouponError,
+    clearAll: clearCouponAll,
+  } = useFormValidation({
     code: { required: "Coupon code is required" },
-    discount: { required: "Discount value is required", positive: "Discount must be a positive number" },
-    usageLimit: { required: "Usage limit is required", positive: "Usage limit must be a positive number" },
-    expires: { required: "Expiry date is required" }
+    discount: {
+      required: "Discount value is required",
+      positive: "Discount must be a positive number",
+    },
+    usageLimit: {
+      required: "Usage limit is required",
+      positive: "Usage limit must be a positive number",
+    },
+    expires: { required: "Expiry date is required" },
   });
 
   const handleSave = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
     setIsSaving(true);
-    await new Promise(resolve => setTimeout(resolve, 500));
+    await new Promise((resolve) => setTimeout(resolve, 500));
     try {
       const code = (formData.get("code") as string)?.trim();
       const type = formData.get("type") as string;
@@ -116,29 +153,50 @@ function CouponsPage() {
       const expires = formData.get("expires") as string;
       const status = formData.get("status") as string;
 
-      const isValid = validateCoupon({ code, discount: discountStr, usageLimit: usageLimitStr, expires });
+      const isValid = validateCoupon({
+        code,
+        discount: discountStr,
+        usageLimit: usageLimitStr,
+        expires,
+      });
       if (!isValid) return;
 
       const discount = parseFloat(discountStr);
       const usageLimit = parseInt(usageLimitStr, 10);
 
       if (editItem) {
-        await localDb.coupons.update(editItem.id, { code, type, discount, usageLimit, expires, status, synced: false });
+        await createCouponFn({
+          data: {
+            coupon: {
+              id: editItem.id,
+              code,
+              type,
+              value: discount,
+              usageLimit,
+              usedCount: editItem.usedCount || 0,
+              validUntil: expires,
+              status,
+            },
+          },
+        });
+        queryClient.invalidateQueries({ queryKey: ["coupons"] });
         toast.success("Coupon updated successfully");
         setEditItem(null);
       } else {
-          await localDb.coupons.add({
-            id: uuidv4(),
-            orgId: PersistStore.getOrgId() || "default",
-            code,
-            type,
-            discount,
-            usageLimit,
-            used: 0,
-            expires,
-            status,
-            synced: false
-          });
+        await createCouponFn({
+          data: {
+            coupon: {
+              code,
+              type,
+              value: discount,
+              usageLimit,
+              usedCount: 0,
+              validUntil: expires,
+              status,
+            },
+          },
+        });
+        queryClient.invalidateQueries({ queryKey: ["coupons"] });
         toast.success("Coupon added successfully");
         setIsAddOpen(false);
       }
@@ -153,29 +211,22 @@ function CouponsPage() {
   const handleDelete = async () => {
     if (deleteId) {
       try {
-        await localDb.coupons.update(deleteId, { _deleted: true, synced: false });
-        await localDb.activityLog.add({
-          id: uuidv4(),
-          orgId: PersistStore.getOrgId() || "default",
-          action: "TOMBSTONE",
-          user: "system",
-          details: JSON.stringify({ entityType: "coupons", entityId: deleteId }),
-          timestamp: new Date().toISOString(),
-          synced: false,
-        });
-        toast.success("Coupon deleted");
-        setDeleteId(null);
+        await deleteCouponFn({ data: { id: deleteId } });
+        queryClient.invalidateQueries({ queryKey: ["coupons"] });
+        toast.success("Coupon deleted successfully");
       } catch (error) {
         toast.error("Failed to delete coupon");
+      } finally {
+        setDeleteId(null);
       }
     }
   };
 
   return (
     <div className="p-4 md:p-6 lg:p-8">
-      <DataPage 
-        title="Coupons" 
-        description="Discount codes redeemable at POS and online." 
+      <DataPage
+        title="Coupons"
+        description="Discount codes redeemable at POS and online."
         primaryAction={{ label: "New Coupon", onClick: () => setIsAddOpen(true) }}
         searchPlaceholder="Search by coupon code..."
         searchValue={search}
@@ -195,7 +246,7 @@ function CouponsPage() {
                     { value: "fixed", label: "Fixed Amount ($)" },
                   ]}
                   value={draftFilters.type}
-                  onChange={(val) => setDraftFilters(prev => ({ ...prev, type: val }))}
+                  onChange={(val) => setDraftFilters((prev) => ({ ...prev, type: val }))}
                   placeholder="Filter by Type"
                 />
               </div>
@@ -210,24 +261,40 @@ function CouponsPage() {
                     { value: "depleted", label: "Depleted" },
                   ]}
                   value={draftFilters.status}
-                  onChange={(val) => setDraftFilters(prev => ({ ...prev, status: val }))}
+                  onChange={(val) => setDraftFilters((prev) => ({ ...prev, status: val }))}
                   placeholder="Filter by Status"
                 />
               </div>
             </div>
             <div className="pt-4 mt-auto">
-              <Button className="w-full" onClick={() => { setFilters(draftFilters); close(); }}>
+              <Button
+                className="w-full"
+                onClick={() => {
+                  setFilters(draftFilters);
+                  close();
+                }}
+              >
                 Apply Filters
               </Button>
             </div>
           </div>
         )}
       >
-        {filteredCoupons.length === 0 ? (
+        {isCouponsLoading ? (
+          <TableSkeleton columns={7} rows={6} showHeaderAction={false} showFilters={false} />
+        ) : isCouponsError ? (
+          <ErrorState onRetry={refetchCoupons} />
+        ) : filteredCoupons.length === 0 ? (
           <EmptyState
             icon={Ticket}
             title="No coupons found"
             description={search ? "Try adjusting your search." : "No coupons created yet."}
+            actionLabel="Add Coupon"
+            onAction={() => {
+              setEditItem(null);
+              setExpiresDate("");
+              setIsAddOpen(true);
+            }}
           />
         ) : (
           <div className="space-y-4">
@@ -247,13 +314,33 @@ function CouponsPage() {
                 <tbody className="divide-y divide-border">
                   {paginatedCoupons.map((c) => (
                     <tr key={c.id} className="hover:bg-muted/30">
-                      <td className="px-4 py-3"><code className="rounded bg-muted px-2 py-1 text-xs font-bold">{c.code}</code></td>
-                      <td className="px-4 py-3 text-muted-foreground">{c.type}</td>
-                      <td className="px-4 py-3 font-semibold text-primary">{c.type === "percentage" ? `${c.discount}%` : formatCurrency(c.discount)}</td>
-                      <td className="px-4 py-3 text-muted-foreground">{c.used} / {c.usageLimit}</td>
-                      <td className="px-4 py-3 text-muted-foreground">{formatDate(c.expires)}</td>
                       <td className="px-4 py-3">
-                        <Badge className={c.status === "active" ? "bg-success/10 text-success hover:bg-success/15" : c.status === "expiring" ? "bg-warning/15 text-warning-foreground hover:bg-warning/20" : "bg-muted text-muted-foreground hover:bg-muted"}>{c.status}</Badge>
+                        <code className="rounded bg-muted px-2 py-1 text-xs font-bold">
+                          {c.code}
+                        </code>
+                      </td>
+                      <td className="px-4 py-3 text-muted-foreground">{c.type}</td>
+                      <td className="px-4 py-3 font-semibold">
+                        {c.type === "percent" ? `${c.value}%` : formatCurrency(c.value)}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-muted-foreground">
+                        {c.usedCount} / {c.usageLimit || "∞"}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-muted-foreground">
+                        {c.validUntil ? formatDate(new Date(c.validUntil).toISOString()) : "Never"}
+                      </td>
+                      <td className="px-4 py-3">
+                        <Badge
+                          className={
+                            c.status === "active"
+                              ? "bg-success/10 text-success hover:bg-success/15"
+                              : c.status === "expiring"
+                                ? "bg-warning/15 text-warning-foreground hover:bg-warning/20"
+                                : "bg-muted text-muted-foreground hover:bg-muted"
+                          }
+                        >
+                          {c.status}
+                        </Badge>
                       </td>
                       <td className="px-4 py-3 text-right">
                         <DropdownMenu>
@@ -263,8 +350,15 @@ function CouponsPage() {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => setEditItem(c)}><Edit2 className="mr-2 size-4" /> Edit</DropdownMenuItem>
-                            <DropdownMenuItem className="text-destructive focus:bg-destructive/10 focus:text-destructive" onClick={() => setDeleteId(c.id)}><Trash2 className="mr-2 size-4" /> Delete</DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => setEditItem(c)}>
+                              <Edit2 className="mr-2 size-4" /> Edit
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              className="text-destructive focus:bg-destructive/10 focus:text-destructive"
+                              onClick={() => setDeleteId(c.id)}
+                            >
+                              <Trash2 className="mr-2 size-4" /> Delete
+                            </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </td>
@@ -278,13 +372,16 @@ function CouponsPage() {
         )}
       </DataPage>
 
-      <Dialog open={isAddOpen || !!editItem} onOpenChange={(open) => {
-        if (!open) {
-          setIsAddOpen(false);
-          setEditItem(null);
-          clearCouponAll();
-        }
-      }}>
+      <Dialog
+        open={isAddOpen || !!editItem}
+        onOpenChange={(open) => {
+          if (!open) {
+            setIsAddOpen(false);
+            setEditItem(null);
+            clearCouponAll();
+          }
+        }}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>{editItem ? "Edit Coupon" : "Add Coupon"}</DialogTitle>
@@ -292,9 +389,14 @@ function CouponsPage() {
           <form noValidate onSubmit={handleSave} className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <Label htmlFor="code">Coupon Code <span className="text-destructive">*</span></Label>
+                <Label htmlFor="code">
+                  Coupon Code <span className="text-destructive">*</span>
+                </Label>
                 <Input
-                  id="code" name="code" defaultValue={editItem?.code} className={`uppercase ${couponErrors.code ? 'border-destructive focus-visible:ring-destructive' : ''}`}
+                  id="code"
+                  name="code"
+                  defaultValue={editItem?.code}
+                  className={`uppercase ${couponErrors.code ? "border-destructive focus-visible:ring-destructive" : ""}`}
                   onChange={() => clearCouponError("code")}
                 />
                 <FieldError message={couponErrors.code} />
@@ -302,7 +404,9 @@ function CouponsPage() {
               <div className="space-y-1.5">
                 <Label htmlFor="type">Discount Type</Label>
                 <Select name="type" defaultValue={editItem?.type || "percentage"}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="percentage">Percentage (%)</SelectItem>
                     <SelectItem value="fixed">Fixed Amount ($)</SelectItem>
@@ -312,19 +416,36 @@ function CouponsPage() {
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <Label htmlFor="discount">Discount Value <span className="text-destructive">*</span></Label>
+                <Label htmlFor="discount">
+                  Discount Value <span className="text-destructive">*</span>
+                </Label>
                 <Input
-                  id="discount" name="discount" type="number" step="0.01" defaultValue={editItem?.discount}
-                  className={couponErrors.discount ? 'border-destructive focus-visible:ring-destructive' : ''}
+                  id="discount"
+                  name="discount"
+                  type="number"
+                  step="0.01"
+                  defaultValue={editItem?.discount}
+                  className={
+                    couponErrors.discount ? "border-destructive focus-visible:ring-destructive" : ""
+                  }
                   onChange={() => clearCouponError("discount")}
                 />
                 <FieldError message={couponErrors.discount} />
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="usageLimit">Usage Limit <span className="text-destructive">*</span></Label>
+                <Label htmlFor="usageLimit">
+                  Usage Limit <span className="text-destructive">*</span>
+                </Label>
                 <Input
-                  id="usageLimit" name="usageLimit" type="number" defaultValue={editItem?.usageLimit || 100}
-                  className={couponErrors.usageLimit ? 'border-destructive focus-visible:ring-destructive' : ''}
+                  id="usageLimit"
+                  name="usageLimit"
+                  type="number"
+                  defaultValue={editItem?.usageLimit || 100}
+                  className={
+                    couponErrors.usageLimit
+                      ? "border-destructive focus-visible:ring-destructive"
+                      : ""
+                  }
                   onChange={() => clearCouponError("usageLimit")}
                 />
                 <FieldError message={couponErrors.usageLimit} />
@@ -332,19 +453,32 @@ function CouponsPage() {
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <Label htmlFor="expires">Expiry Date <span className="text-destructive">*</span></Label>
-                <div className="hidden"><Input name="expires" value={expiresDate || (editItem ? editItem.expires : "")} readOnly /></div>
-                <DatePicker 
-                  name="expires" 
-                  date={expiresDate || (editItem ? editItem.expires : "")} 
-                  onDateChange={(d) => { setExpiresDate(d ? d.toISOString().split("T")[0] : ""); clearCouponError("expires"); }} 
+                <Label htmlFor="expires">
+                  Expiry Date <span className="text-destructive">*</span>
+                </Label>
+                <div className="hidden">
+                  <Input
+                    name="expires"
+                    value={expiresDate || (editItem ? editItem.expires : "")}
+                    readOnly
+                  />
+                </div>
+                <DatePicker
+                  name="expires"
+                  date={expiresDate || (editItem ? editItem.expires : "")}
+                  onDateChange={(d) => {
+                    setExpiresDate(d ? d.toISOString().split("T")[0] : "");
+                    clearCouponError("expires");
+                  }}
                 />
                 <FieldError message={couponErrors.expires} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="status">Status</Label>
                 <Select name="status" defaultValue={editItem?.status || "active"}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="active">Active</SelectItem>
                     <SelectItem value="expiring">Expiring Soon</SelectItem>
@@ -354,7 +488,17 @@ function CouponsPage() {
               </div>
             </div>
             <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => { setIsAddOpen(false); setEditItem(null); clearCouponAll(); }}>Cancel</Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setIsAddOpen(false);
+                  setEditItem(null);
+                  clearCouponAll();
+                }}
+              >
+                Cancel
+              </Button>
               <Button type="submit" disabled={isSaving}>
                 {isSaving && <Loader2 className="size-4 animate-spin mr-2" />}
                 Save Coupon
@@ -374,7 +518,12 @@ function CouponsPage() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Delete</AlertDialogAction>
+            <AlertDialogAction
+              onClick={handleDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

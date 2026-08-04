@@ -1,16 +1,22 @@
 import { v4 as uuidv4 } from "uuid";
 
 type SeedData = {
-  categories: { id: string, name: string, color: string, icon: string, count: number }[];
-  units: { id: string, name: string, short: string }[];
-  settings: { storeName: string, headerNote: string };
+  categories: { id: string; name: string; color: string; icon: string; count: number }[];
+  units: { id: string; name: string; short: string }[];
+  settings: { storeName: string; headerNote: string };
 };
 
 export const INDUSTRY_SEEDS: Record<string, SeedData> = {
   "Saloon & Spa": {
     categories: [
       { id: uuidv4(), name: "Haircut", color: "oklch(0.7 0.1 200)", icon: "✂️", count: 0 },
-      { id: uuidv4(), name: "Facial & Skincare", color: "oklch(0.8 0.15 320)", icon: "💆", count: 0 },
+      {
+        id: uuidv4(),
+        name: "Facial & Skincare",
+        color: "oklch(0.8 0.15 320)",
+        icon: "💆",
+        count: 0,
+      },
       { id: uuidv4(), name: "Massage Therapy", color: "oklch(0.75 0.1 250)", icon: "🌿", count: 0 },
       { id: uuidv4(), name: "Products", color: "oklch(0.6 0.1 100)", icon: "🧴", count: 0 },
     ],
@@ -18,7 +24,7 @@ export const INDUSTRY_SEEDS: Record<string, SeedData> = {
       { id: uuidv4(), name: "Service", short: "svc" },
       { id: uuidv4(), name: "Bottle", short: "btl" },
     ],
-    settings: { storeName: "My Saloon & Spa", headerNote: "Welcome to our Spa" }
+    settings: { storeName: "My Saloon & Spa", headerNote: "Welcome to our Spa" },
   },
   "Grocery Shop": {
     categories: [
@@ -32,7 +38,7 @@ export const INDUSTRY_SEEDS: Record<string, SeedData> = {
       { id: uuidv4(), name: "Piece", short: "pcs" },
       { id: uuidv4(), name: "Liter", short: "L" },
     ],
-    settings: { storeName: "Fresh Grocery", headerNote: "Thank you for shopping with us!" }
+    settings: { storeName: "Fresh Grocery", headerNote: "Thank you for shopping with us!" },
   },
   "Hotel & Restaurant": {
     categories: [
@@ -45,7 +51,7 @@ export const INDUSTRY_SEEDS: Record<string, SeedData> = {
       { id: uuidv4(), name: "Serving", short: "srv" },
       { id: uuidv4(), name: "Glass", short: "gls" },
     ],
-    settings: { storeName: "My Restaurant", headerNote: "Enjoy your meal!" }
+    settings: { storeName: "My Restaurant", headerNote: "Enjoy your meal!" },
   },
   "Beauty and Cosmetics": {
     categories: [
@@ -58,7 +64,7 @@ export const INDUSTRY_SEEDS: Record<string, SeedData> = {
       { id: uuidv4(), name: "Piece", short: "pcs" },
       { id: uuidv4(), name: "Milliliter", short: "ml" },
     ],
-    settings: { storeName: "Beauty Store", headerNote: "Discover your true beauty." }
+    settings: { storeName: "Beauty Store", headerNote: "Discover your true beauty." },
   },
   "Super Market": {
     categories: [
@@ -71,7 +77,7 @@ export const INDUSTRY_SEEDS: Record<string, SeedData> = {
       { id: uuidv4(), name: "Piece", short: "pcs" },
       { id: uuidv4(), name: "Kilogram", short: "kg" },
     ],
-    settings: { storeName: "Supermarket", headerNote: "Everything you need under one roof!" }
+    settings: { storeName: "Supermarket", headerNote: "Everything you need under one roof!" },
   },
   "Hyper Market": {
     categories: [
@@ -80,10 +86,8 @@ export const INDUSTRY_SEEDS: Record<string, SeedData> = {
       { id: uuidv4(), name: "Clothing", color: "oklch(0.7 0.1 320)", icon: "👕", count: 0 },
       { id: uuidv4(), name: "Home & Living", color: "oklch(0.65 0.1 50)", icon: "🛋️", count: 0 },
     ],
-    units: [
-      { id: uuidv4(), name: "Piece", short: "pcs" },
-    ],
-    settings: { storeName: "Hypermarket", headerNote: "Big choices, bigger savings!" }
+    units: [{ id: uuidv4(), name: "Piece", short: "pcs" }],
+    settings: { storeName: "Hypermarket", headerNote: "Big choices, bigger savings!" },
   },
   "Home Decor & Furniture": {
     categories: [
@@ -96,9 +100,9 @@ export const INDUSTRY_SEEDS: Record<string, SeedData> = {
       { id: uuidv4(), name: "Item", short: "itm" },
       { id: uuidv4(), name: "Set", short: "set" },
     ],
-    settings: { storeName: "Home Decor", headerNote: "Making your house a home." }
+    settings: { storeName: "Home Decor", headerNote: "Making your house a home." },
   },
-  "Apparel": {
+  Apparel: {
     categories: [
       { id: uuidv4(), name: "Men's Clothing", color: "oklch(0.6 0.1 220)", icon: "👔", count: 0 },
       { id: uuidv4(), name: "Women's Clothing", color: "oklch(0.7 0.1 340)", icon: "👗", count: 0 },
@@ -109,19 +113,17 @@ export const INDUSTRY_SEEDS: Record<string, SeedData> = {
       { id: uuidv4(), name: "Piece", short: "pcs" },
       { id: uuidv4(), name: "Pair", short: "pr" },
     ],
-    settings: { storeName: "Apparel Store", headerNote: "Wear your style." }
+    settings: { storeName: "Apparel Store", headerNote: "Wear your style." },
   },
-  "Electronics": {
+  Electronics: {
     categories: [
       { id: uuidv4(), name: "Smartphones", color: "oklch(0.6 0.1 220)", icon: "📱", count: 0 },
       { id: uuidv4(), name: "Laptops", color: "oklch(0.6 0.1 200)", icon: "💻", count: 0 },
       { id: uuidv4(), name: "Accessories", color: "oklch(0.5 0.1 250)", icon: "🎧", count: 0 },
       { id: uuidv4(), name: "Appliances", color: "oklch(0.7 0.1 50)", icon: "📺", count: 0 },
     ],
-    units: [
-      { id: uuidv4(), name: "Unit", short: "unt" },
-    ],
-    settings: { storeName: "Electronics Hub", headerNote: "Connecting the future." }
+    units: [{ id: uuidv4(), name: "Unit", short: "unt" }],
+    settings: { storeName: "Electronics Hub", headerNote: "Connecting the future." },
   },
   "Books & Toys": {
     categories: [
@@ -130,9 +132,7 @@ export const INDUSTRY_SEEDS: Record<string, SeedData> = {
       { id: uuidv4(), name: "Board Games", color: "oklch(0.8 0.15 40)", icon: "🎲", count: 0 },
       { id: uuidv4(), name: "Action Figures", color: "oklch(0.6 0.15 30)", icon: "🤖", count: 0 },
     ],
-    units: [
-      { id: uuidv4(), name: "Item", short: "itm" },
-    ],
-    settings: { storeName: "Books & Toys Store", headerNote: "Knowledge and fun in one place." }
-  }
+    units: [{ id: uuidv4(), name: "Item", short: "itm" }],
+    settings: { storeName: "Books & Toys Store", headerNote: "Knowledge and fun in one place." },
+  },
 };

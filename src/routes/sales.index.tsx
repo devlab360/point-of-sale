@@ -1,16 +1,19 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { TableSkeleton } from "@/components/skeletons/TableSkeleton";
+import { ErrorState } from "@/components/ui/error-state";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { localDb } from "@/lib/db";
-import { useLiveQuery } from "dexie-react-hooks";
 import { useCurrency } from "@/lib/currency";
 import { cn } from "@/lib/utils";
 import { Eye, Printer, Plus, Search, Receipt } from "lucide-react";
 import { useState, useMemo, useEffect } from "react";
-import type { OfflineSale } from "@/lib/db";
+import { useQuery } from "@tanstack/react-query";
+import { getSalesFn } from "@/api/sales";
+import { getSettingsFn } from "@/api/settings";
+import { useAuth } from "@/contexts/AuthContext";
 import { usePreferences } from "@/contexts/PreferencesContext";
 import { DataPage } from "@/components/layout/DataPage";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -29,84 +32,109 @@ function SalesPage() {
   const { t } = useLanguage();
   const { formatDateTime } = usePreferences();
   const { currencySymbol, formatCurrency } = useCurrency();
-  const sales = useLiveQuery(() => localDb.offlineSales.filter(s => !s._deleted).reverse().toArray()) || [];
-  const settings = useLiveQuery(() => localDb.settings.get("default"));
+  const { user } = useAuth();
+  const orgId = user?.orgId || "default";
 
   const [query, setQuery] = useState("");
   const debouncedQuery = useDebounce(query, 300);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
-
   const [filters, setFilters] = useState({ status: "", payment: "", sync: "" });
   const [draftFilters, setDraftFilters] = useState({ status: "", payment: "", sync: "" });
-  const activeFilterCount = (filters.status ? 1 : 0) + (filters.payment ? 1 : 0) + (filters.sync ? 1 : 0);
+  const activeFilterCount =
+    (filters.status ? 1 : 0) + (filters.payment ? 1 : 0) + (filters.sync ? 1 : 0);
+
+  const {
+    data: salesResponse,
+    isLoading: isSalesLoading,
+    isError: isSalesError,
+    refetch: refetchSales,
+  } = useQuery({
+    queryKey: [
+      "sales",
+      orgId,
+      page,
+      pageSize,
+      debouncedQuery,
+      filters.status,
+      filters.payment,
+      filters.sync,
+    ],
+    queryFn: async () =>
+      ((await getSalesFn({
+        data: {
+          page,
+          pageSize,
+          query: debouncedQuery,
+          status: filters.status,
+          payment: filters.payment,
+          sync: filters.sync,
+        },
+      })) as any) || {},
+  });
+
+  const sales = salesResponse?.data || [];
+  const totalCount = salesResponse?.total || 0;
+  const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
+
+  const { data: settingsData } = useQuery({
+    queryKey: ["settings", orgId],
+    queryFn: async () => ((await getSettingsFn({ data: {} })) as any)?.data,
+  });
+  const settings = settingsData || null;
+
+  // States moved up
 
   const handleResetFilters = () => {
     setFilters({ status: "", payment: "", sync: "" });
     setDraftFilters({ status: "", payment: "", sync: "" });
   };
-  const [viewSale, setViewSale] = useState<OfflineSale | null>(null);
+  const [viewSale, setViewSale] = useState<any | null>(null);
 
   const storeName = settings?.storeName || "GROCER.PRO";
   const storeAddress = settings?.address || "";
   const storePhone = settings?.phone || "";
 
-  const filtered = useMemo(() => {
-    let list = sales;
-    if (debouncedQuery) {
-      const q = debouncedQuery.toLowerCase();
-      list = list.filter(s =>
-        Boolean(
-          (s.id && String(s.id).toLowerCase().includes(q)) ||
-          (s.customerName && String(s.customerName).toLowerCase().includes(q))
-        )
-      );
-    }
-    if (filters.status) {
-      list = list.filter(s => s.status === filters.status);
-    }
-    if (filters.payment) {
-      list = list.filter(s => s.paymentMethod === filters.payment);
-    }
-    if (filters.sync) {
-      const isSynced = filters.sync === "synced";
-      list = list.filter(s => s.synced === isSynced);
-    }
-    return list;
-  }, [sales, debouncedQuery, filters.status, filters.payment, filters.sync]);
-
   useEffect(() => {
     setPage(1);
   }, [debouncedQuery, filters]);
 
-  const totalPages = Math.ceil(filtered.length / pageSize);
-  const paginatedSales = useMemo(() => {
-    const start = (page - 1) * pageSize;
-    return filtered.slice(start, start + pageSize);
-  }, [filtered, page, pageSize]);
-
   const summaries = useMemo(() => {
-    let cash = 0, card = 0, upi = 0, credit = 0;
-    filtered.forEach(s => {
+    let cash = 0,
+      card = 0,
+      upi = 0,
+      credit = 0;
+    sales.forEach((s) => {
       if (s.status === "refunded") return; // Ignore refunded sales in total collected
       if (s.payments && s.payments.length > 0) {
-        s.payments.forEach(p => {
-          if (p.method === 'cash') cash += p.amount;
-          else if (p.method === 'card') card += p.amount;
-          else if (p.method === 'upi' || p.method === 'online' || p.method === 'mobile' || p.method === 'wallet') upi += p.amount;
-          else if (p.method === 'credit') credit += p.amount;
+        s.payments.forEach((p: any) => {
+          if (p.method === "cash") cash += p.amount;
+          else if (p.method === "card") card += p.amount;
+          else if (
+            p.method === "upi" ||
+            p.method === "online" ||
+            p.method === "mobile" ||
+            p.method === "wallet"
+          )
+            upi += p.amount;
+          else if (p.method === "credit") credit += p.amount;
         });
       } else {
-        if (s.paymentMethod === 'cash') cash += s.total;
-        else if (s.paymentMethod === 'card') card += s.total;
-        else if (s.paymentMethod === 'credit') credit += s.total;
-        else if (s.paymentMethod === 'upi' || s.paymentMethod === 'wallet' || s.paymentMethod === 'mobile') upi += s.total;
+        if (s.paymentMethod === "cash") cash += s.total;
+        else if (s.paymentMethod === "card") card += s.total;
+        else if (s.paymentMethod === "credit") credit += s.total;
+        else if (
+          s.paymentMethod === "upi" ||
+          s.paymentMethod === "wallet" ||
+          s.paymentMethod === "mobile"
+        )
+          upi += s.total;
       }
     });
     return { cash, card, upi, credit, total: cash + card + upi + credit };
-  }, [filtered]);
+  }, [sales]);
 
-  const printReceipt = (s: OfflineSale) => {
+  const printReceipt = (s: any) => {
     setViewSale(s);
     setTimeout(() => window.print(), 200);
   };
@@ -116,7 +144,11 @@ function SalesPage() {
       <DataPage
         title={t("salesHistory") || "Sales History"}
         description={t("manageSales") || "Every transaction across all your registers."}
-        primaryAction={{ label: t("newSale") || "New Sale", onClick: () => navigate({ to: "/pos" }), icon: Plus }}
+        primaryAction={{
+          label: t("newSale") || "New Sale",
+          onClick: () => navigate({ to: "/pos" }),
+          icon: Plus,
+        }}
         searchPlaceholder={t("searchSales") || "Search by invoice or customer..."}
         searchValue={query}
         onSearchChange={setQuery}
@@ -133,10 +165,10 @@ function SalesPage() {
                     { value: "", label: "All Statuses" },
                     { value: "completed", label: "Completed" },
                     { value: "pending", label: "Pending" },
-                    { value: "refunded", label: "Refunded" }
+                    { value: "refunded", label: "Refunded" },
                   ]}
                   value={draftFilters.status}
-                  onChange={(val) => setDraftFilters(prev => ({ ...prev, status: val }))}
+                  onChange={(val) => setDraftFilters((prev) => ({ ...prev, status: val }))}
                   placeholder="Filter by Status"
                 />
               </div>
@@ -148,10 +180,10 @@ function SalesPage() {
                     { value: "cash", label: "Cash" },
                     { value: "card", label: "Card" },
                     { value: "mobile", label: "Mobile Banking" },
-                    { value: "wallet", label: "Wallet" }
+                    { value: "wallet", label: "Wallet" },
                   ]}
                   value={draftFilters.payment}
-                  onChange={(val) => setDraftFilters(prev => ({ ...prev, payment: val }))}
+                  onChange={(val) => setDraftFilters((prev) => ({ ...prev, payment: val }))}
                   placeholder="Filter by Payment"
                 />
               </div>
@@ -161,16 +193,22 @@ function SalesPage() {
                   options={[
                     { value: "", label: "All Sync Status" },
                     { value: "synced", label: "Synced" },
-                    { value: "pending", label: "Pending Sync" }
+                    { value: "pending", label: "Pending Sync" },
                   ]}
                   value={draftFilters.sync}
-                  onChange={(val) => setDraftFilters(prev => ({ ...prev, sync: val }))}
+                  onChange={(val) => setDraftFilters((prev) => ({ ...prev, sync: val }))}
                   placeholder="Filter by Sync"
                 />
               </div>
             </div>
             <div className="pt-4 mt-auto">
-              <Button className="w-full" onClick={() => { setFilters(draftFilters); close(); }}>
+              <Button
+                className="w-full"
+                onClick={() => {
+                  setFilters(draftFilters);
+                  close();
+                }}
+              >
                 Apply Filters
               </Button>
             </div>
@@ -178,31 +216,57 @@ function SalesPage() {
         )}
       >
         {/* We override the primaryAction onClick to use a Link instead, since DataPage only takes a callback, or we can just keep the button as child. Wait, DataPage's primaryAction just takes onClick. We can just pass the Link inside children, or adapt DataPage. Actually, DataPage primaryAction is fine. */}
-        {filtered.length === 0 ? (
+        {isSalesLoading ? (
+          <TableSkeleton columns={7} rows={6} showHeaderAction={false} showFilters={false} />
+        ) : isSalesError ? (
+          <ErrorState onRetry={refetchSales} />
+        ) : sales.length === 0 ? (
           <EmptyState
             icon={Receipt}
             title={t("noSalesFound") || "No sales found"}
-            description={debouncedQuery ? (t("adjustSearch") || "Try adjusting your search.") : (t("noSalesYet") || "No transactions have been recorded yet.")}
+            description={
+              debouncedQuery
+                ? t("adjustSearch") || "Try adjusting your search."
+                : t("noSalesYet") || "No transactions have been recorded yet."
+            }
+            actionLabel="Open POS"
+            onAction={() => navigate({ to: "/pos" })}
           />
         ) : (
           <div className="space-y-4">
             {/* Payment Summary Cards */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
               <div className="rounded-xl border border-border bg-card p-4 shadow-sm flex flex-col gap-1">
-                <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Total Cash</span>
-                <span className="text-xl font-black text-emerald-600">{formatCurrency(summaries.cash)}</span>
+                <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
+                  Total Cash
+                </span>
+                <span className="text-xl font-black text-emerald-600">
+                  {formatCurrency(summaries.cash)}
+                </span>
               </div>
               <div className="rounded-xl border border-border bg-card p-4 shadow-sm flex flex-col gap-1">
-                <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Total Card</span>
-                <span className="text-xl font-black text-blue-600">{formatCurrency(summaries.card)}</span>
+                <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
+                  Total Card
+                </span>
+                <span className="text-xl font-black text-blue-600">
+                  {formatCurrency(summaries.card)}
+                </span>
               </div>
               <div className="rounded-xl border border-border bg-card p-4 shadow-sm flex flex-col gap-1">
-                <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">UPI / Online</span>
-                <span className="text-xl font-black text-indigo-600">{formatCurrency(summaries.upi)}</span>
+                <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
+                  UPI / Online
+                </span>
+                <span className="text-xl font-black text-indigo-600">
+                  {formatCurrency(summaries.upi)}
+                </span>
               </div>
               <div className="rounded-xl border border-border bg-card p-4 shadow-sm flex flex-col gap-1">
-                <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Credit (Due)</span>
-                <span className="text-xl font-black text-amber-600">{formatCurrency(summaries.credit)}</span>
+                <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
+                  Credit (Due)
+                </span>
+                <span className="text-xl font-black text-amber-600">
+                  {formatCurrency(summaries.credit)}
+                </span>
               </div>
             </div>
 
@@ -222,22 +286,28 @@ function SalesPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
-                  {paginatedSales.map(s => (
+                  {sales.map((s) => (
                     <tr key={s.id} className="hover:bg-muted/30">
-                      <td className="px-4 py-3 font-mono text-xs font-semibold">{s.id.slice(0, 8).toUpperCase()}</td>
+                      <td className="px-4 py-3 font-mono text-xs font-semibold">
+                        {s.id.slice(0, 8).toUpperCase()}
+                      </td>
                       <td className="px-4 py-3 font-semibold">{s.customerName || "Walk-in"}</td>
                       <td className="px-4 py-3 text-muted-foreground">{formatDateTime(s.date)}</td>
                       <td className="px-4 py-3 text-right">{s.items}</td>
                       <td className="px-4 py-3 text-muted-foreground capitalize">
-                        {s.paymentMethod === 'split' && s.payments && s.payments.length > 0 ? (
+                        {s.paymentMethod === "split" && s.payments && s.payments.length > 0 ? (
                           <div className="flex flex-col gap-0.5 text-[10px]">
                             <span className="font-bold text-primary">SPLIT</span>
                             {s.payments.map((p, i) => (
-                              <span key={i} className="font-semibold text-foreground">{p.method.toUpperCase()}: {formatCurrency(p.amount)}</span>
+                              <span key={i} className="font-semibold text-foreground">
+                                {p.method.toUpperCase()}: {formatCurrency(p.amount)}
+                              </span>
                             ))}
                           </div>
                         ) : (
-                          <span className="font-medium text-foreground">{s.paymentMethod || "cash"}</span>
+                          <span className="font-medium text-foreground">
+                            {s.paymentMethod || "cash"}
+                          </span>
                         )}
                       </td>
                       <td className="px-4 py-3">
@@ -246,28 +316,45 @@ function SalesPage() {
                           className={cn(
                             s.synced
                               ? "bg-success/10 text-success border-success/20 hover:bg-success/20"
-                              : "bg-warning/10 text-warning border-warning/20 hover:bg-warning/20"
+                              : "bg-warning/10 text-warning border-warning/20 hover:bg-warning/20",
                           )}
                         >
                           {s.synced ? "Synced" : "Pending"}
                         </Badge>
                       </td>
                       <td className="px-4 py-3">
-                        <Badge className={cn(
-                          s.status === "completed" && "bg-success/10 text-success hover:bg-success/15",
-                          s.status === "pending" && "bg-warning/15 text-warning-foreground hover:bg-warning/20",
-                          s.status === "refunded" && "bg-muted text-muted-foreground hover:bg-muted",
-                        )}>
+                        <Badge
+                          className={cn(
+                            s.status === "completed" &&
+                              "bg-success/10 text-success hover:bg-success/15",
+                            s.status === "pending" &&
+                              "bg-warning/15 text-warning-foreground hover:bg-warning/20",
+                            s.status === "refunded" &&
+                              "bg-muted text-muted-foreground hover:bg-muted",
+                          )}
+                        >
                           {s.status}
                         </Badge>
                       </td>
-                      <td className="number px-4 py-3 text-right font-semibold">{formatCurrency(s.total)}</td>
+                      <td className="number px-4 py-3 text-right font-semibold">
+                        {formatCurrency(s.total)}
+                      </td>
                       <td className="px-4 py-3">
                         <div className="flex gap-1">
-                          <Button variant="ghost" size="icon" title="View details" onClick={() => setViewSale(s)}>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            title="View details"
+                            onClick={() => setViewSale(s)}
+                          >
                             <Eye className="size-4" />
                           </Button>
-                          <Button variant="ghost" size="icon" title="Reprint receipt" onClick={() => printReceipt(s)}>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            title="Reprint receipt"
+                            onClick={() => printReceipt(s)}
+                          >
                             <Printer className="size-4" />
                           </Button>
                         </div>
@@ -277,7 +364,7 @@ function SalesPage() {
                 </tbody>
               </table>
             </div>
-            {filtered.length > 0 && (
+            {sales.length > 0 && (
               <PaginationControls
                 currentPage={page}
                 totalPages={totalPages}
@@ -291,7 +378,7 @@ function SalesPage() {
       </DataPage>
 
       {/* Sale Detail Dialog */}
-      <Dialog open={!!viewSale} onOpenChange={open => !open && setViewSale(null)}>
+      <Dialog open={!!viewSale} onOpenChange={(open) => !open && setViewSale(null)}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>Invoice #{viewSale?.id.slice(0, 8).toUpperCase()}</DialogTitle>
@@ -299,17 +386,29 @@ function SalesPage() {
           {viewSale && (
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-2 text-sm">
-                <div><span className="text-muted-foreground">Customer:</span> <strong>{viewSale.customerName || "Walk-in"}</strong></div>
-                <div><span className="text-muted-foreground">Date:</span> {formatDateTime(viewSale.date)}</div>
-                <div><span className="text-muted-foreground">Payment:</span> <strong className="capitalize">{viewSale.paymentMethod}</strong></div>
+                <div>
+                  <span className="text-muted-foreground">Customer:</span>{" "}
+                  <strong>{viewSale.customerName || "Walk-in"}</strong>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">Date:</span>{" "}
+                  {formatDateTime(viewSale.date)}
+                </div>
+                <div>
+                  <span className="text-muted-foreground">Payment:</span>{" "}
+                  <strong className="capitalize">{viewSale.paymentMethod}</strong>
+                </div>
                 <div>
                   <span className="text-muted-foreground">Status:</span>{" "}
                   <Badge
                     variant="outline"
                     className={cn(
-                      viewSale.status === "completed" && "bg-success/10 text-success hover:bg-success/20 border-success/20",
-                      viewSale.status === "pending" && "bg-warning/10 text-warning hover:bg-warning/20 border-warning/20",
-                      viewSale.status === "cancelled" && "bg-destructive/10 text-destructive hover:bg-destructive/20 border-destructive/20"
+                      viewSale.status === "completed" &&
+                        "bg-success/10 text-success hover:bg-success/20 border-success/20",
+                      viewSale.status === "pending" &&
+                        "bg-warning/10 text-warning hover:bg-warning/20 border-warning/20",
+                      viewSale.status === "cancelled" &&
+                        "bg-destructive/10 text-destructive hover:bg-destructive/20 border-destructive/20",
                     )}
                   >
                     {viewSale.status}
@@ -332,19 +431,45 @@ function SalesPage() {
                         <td className="px-3 py-2">{item.productName}</td>
                         <td className="px-3 py-2 text-right">{item.quantity}</td>
                         <td className="px-3 py-2 text-right">{formatCurrency(item.price)}</td>
-                        <td className="px-3 py-2 text-right font-semibold">{formatCurrency(item.total)}</td>
+                        <td className="px-3 py-2 text-right font-semibold">
+                          {formatCurrency(item.total)}
+                        </td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
               </div>
               <div className="space-y-1 rounded-lg bg-muted/40 p-3 text-sm">
-                {viewSale.subtotal !== undefined && <div className="flex justify-between"><span className="text-muted-foreground">Subtotal</span><span>{formatCurrency(viewSale.subtotal)}</span></div>}
-                {viewSale.discountAmt !== undefined && viewSale.discountAmt > 0 && <div className="flex justify-between text-destructive"><span>Discount</span><span>-{formatCurrency(viewSale.discountAmt)}</span></div>}
-                {viewSale.taxAmt !== undefined && <div className="flex justify-between"><span className="text-muted-foreground">Tax</span><span>{formatCurrency(viewSale.taxAmt)}</span></div>}
-                <div className="flex justify-between border-t border-border pt-1 font-bold"><span>Total</span><span>{formatCurrency(viewSale.total)}</span></div>
+                {viewSale.subtotal !== undefined && (
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Subtotal</span>
+                    <span>{formatCurrency(viewSale.subtotal)}</span>
+                  </div>
+                )}
+                {viewSale.discountAmt !== undefined && viewSale.discountAmt > 0 && (
+                  <div className="flex justify-between text-destructive">
+                    <span>Discount</span>
+                    <span>-{formatCurrency(viewSale.discountAmt)}</span>
+                  </div>
+                )}
+                {viewSale.taxAmt !== undefined && (
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Tax</span>
+                    <span>{formatCurrency(viewSale.taxAmt)}</span>
+                  </div>
+                )}
+                <div className="flex justify-between border-t border-border pt-1 font-bold">
+                  <span>Total</span>
+                  <span>{formatCurrency(viewSale.total)}</span>
+                </div>
               </div>
-              <Button className="w-full" onClick={() => { setViewSale(null); printReceipt(viewSale); }}>
+              <Button
+                className="w-full"
+                onClick={() => {
+                  setViewSale(null);
+                  printReceipt(viewSale);
+                }}
+              >
                 <Printer className="size-4 mr-2" /> Reprint Receipt
               </Button>
             </div>
@@ -362,16 +487,33 @@ function SalesPage() {
               <p>Tel: {storePhone}</p>
             </div>
             <div className="border-t border-black pt-2 mb-2 text-[11px]">
-              <div className="flex justify-between"><span>Receipt #:</span><span>{viewSale.id.slice(0, 8).toUpperCase()}</span></div>
-              <div className="flex justify-between"><span>Date:</span><span>{formatDateTime(viewSale.date)}</span></div>
-              <div className="flex justify-between"><span>Customer:</span><span>{viewSale.customerName || "Walk-in"}</span></div>
+              <div className="flex justify-between">
+                <span>Receipt #:</span>
+                <span>{viewSale.id.slice(0, 8).toUpperCase()}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Date:</span>
+                <span>{formatDateTime(viewSale.date)}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Customer:</span>
+                <span>{viewSale.customerName || "Walk-in"}</span>
+              </div>
             </div>
             <div className="border-t border-b border-black py-2 mb-2">
               {viewSale.saleItems?.map((item, i) => (
-                <div key={i} className="flex justify-between"><span className="truncate max-w-[160px]">{item.productName} x{item.quantity}</span><span>{formatCurrency(item.total)}</span></div>
+                <div key={i} className="flex justify-between">
+                  <span className="truncate max-w-[160px]">
+                    {item.productName} x{item.quantity}
+                  </span>
+                  <span>{formatCurrency(item.total)}</span>
+                </div>
               ))}
             </div>
-            <div className="flex justify-between font-bold"><span>TOTAL:</span><span>{formatCurrency(viewSale.total)}</span></div>
+            <div className="flex justify-between font-bold">
+              <span>TOTAL:</span>
+              <span>{formatCurrency(viewSale.total)}</span>
+            </div>
             <p className="mt-3 text-center text-[10px]">Thank you for your business!</p>
           </div>
         </div>

@@ -33,7 +33,12 @@ export function StatCard({ label, value, delta, hint, icon: Icon, accent = "prim
           </p>
         </div>
         {Icon && (
-          <div className={cn("grid size-10 shrink-0 place-items-center rounded-full", accentBg[accent])}>
+          <div
+            className={cn(
+              "grid size-10 shrink-0 place-items-center rounded-full",
+              accentBg[accent],
+            )}
+          >
             <Icon className="size-5" strokeWidth={2} />
           </div>
         )}
@@ -46,11 +51,7 @@ export function StatCard({ label, value, delta, hint, icon: Icon, accent = "prim
               positive ? "bg-success/10 text-success" : "bg-destructive/10 text-destructive",
             )}
           >
-            {positive ? (
-              <ArrowUpRight className="size-3" />
-            ) : (
-              <ArrowDownRight className="size-3" />
-            )}
+            {positive ? <ArrowUpRight className="size-3" /> : <ArrowDownRight className="size-3" />}
             {Math.abs(delta)}%
           </span>
         )}

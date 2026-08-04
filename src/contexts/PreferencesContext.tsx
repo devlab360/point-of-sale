@@ -1,3 +1,4 @@
+// @refresh reset
 import React, { createContext, useContext, useMemo } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -23,21 +24,24 @@ export function PreferencesProvider({ children }: { children: React.ReactNode })
     // Utility to get date parts mapped to the given timezone
     const getParts = (dateValue: Date) => {
       try {
-        const dtf = new Intl.DateTimeFormat('en-US', {
+        const dtf = new Intl.DateTimeFormat("en-US", {
           timeZone,
-          year: 'numeric',
-          month: '2-digit',
-          day: '2-digit',
-          hour: '2-digit',
-          minute: '2-digit',
-          second: '2-digit',
-          hour12: true
+          year: "numeric",
+          month: "2-digit",
+          day: "2-digit",
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit",
+          hour12: true,
         });
         const parts = dtf.formatToParts(dateValue);
-        const map = parts.reduce((acc, part) => {
-          acc[part.type] = part.value;
-          return acc;
-        }, {} as Record<string, string>);
+        const map = parts.reduce(
+          (acc, part) => {
+            acc[part.type] = part.value;
+            return acc;
+          },
+          {} as Record<string, string>,
+        );
         return map;
       } catch (e) {
         // Fallback if timezone is invalid
@@ -75,12 +79,12 @@ export function PreferencesProvider({ children }: { children: React.ReactNode })
       const d = new Date(dateInput);
       if (isNaN(d.getTime())) return String(dateInput);
       try {
-        return new Intl.DateTimeFormat('en-US', {
+        return new Intl.DateTimeFormat("en-US", {
           timeZone,
-          hour: 'numeric',
-          minute: '2-digit',
-          second: '2-digit',
-          hour12: true
+          hour: "numeric",
+          minute: "2-digit",
+          second: "2-digit",
+          hour12: true,
         }).format(d);
       } catch (e) {
         return d.toLocaleTimeString();
@@ -95,18 +99,17 @@ export function PreferencesProvider({ children }: { children: React.ReactNode })
     return { formatDate, formatTime, formatDateTime };
   }, [dateFormat, timeZone]);
 
-  const value = {
-    dateFormat,
-    timeZone,
-    countryCode,
-    ...formatters
-  };
-
-  return (
-    <PreferencesContext.Provider value={value}>
-      {children}
-    </PreferencesContext.Provider>
+  const value = useMemo(
+    () => ({
+      dateFormat,
+      timeZone,
+      countryCode,
+      ...formatters,
+    }),
+    [dateFormat, timeZone, countryCode, formatters],
   );
+
+  return <PreferencesContext.Provider value={value}>{children}</PreferencesContext.Provider>;
 }
 
 export function usePreferences() {

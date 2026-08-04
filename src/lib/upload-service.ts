@@ -1,5 +1,6 @@
 import { put } from "@vercel/blob";
 import { sanitizeInput } from "./validation";
+import { uploadFileServerFn } from "@/api/upload";
 
 export interface BlobUploadOptions {
   folder?: string;
@@ -32,7 +33,7 @@ const DEFAULT_MAX_SIZE_MB = 5;
  */
 export function validateFileBeforeUpload(
   file: File,
-  options: BlobUploadOptions = {}
+  options: BlobUploadOptions = {},
 ): { valid: boolean; error?: string } {
   if (!file) return { valid: false, error: "No file selected." };
 
@@ -63,7 +64,18 @@ export function validateFileBeforeUpload(
 
   // 3. Executable & Double Extension Check
   const name = file.name.toLowerCase();
-  const dangerousExtensions = [".exe", ".bat", ".cmd", ".sh", ".php", ".js", ".vbs", ".ps1", ".jar", ".py"];
+  const dangerousExtensions = [
+    ".exe",
+    ".bat",
+    ".cmd",
+    ".sh",
+    ".php",
+    ".js",
+    ".vbs",
+    ".ps1",
+    ".jar",
+    ".py",
+  ];
   if (dangerousExtensions.some((ext) => name.endsWith(ext))) {
     return { valid: false, error: "Executable or dangerous file types are strictly prohibited." };
   }
@@ -74,7 +86,11 @@ export function validateFileBeforeUpload(
 /**
  * Helper: read a File as base64 DataURL (reliable client-side fallback).
  */
-function readFileAsDataURL(file: File, options: BlobUploadOptions, filename: string): Promise<BlobUploadResult> {
+function readFileAsDataURL(
+  file: File,
+  options: BlobUploadOptions,
+  filename: string,
+): Promise<BlobUploadResult> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onloadstart = () => options.onProgress?.(10);
@@ -105,7 +121,7 @@ function readFileAsDataURL(file: File, options: BlobUploadOptions, filename: str
  */
 export async function uploadToVercelBlob(
   file: File,
-  options: BlobUploadOptions = {}
+  options: BlobUploadOptions = {},
 ): Promise<BlobUploadResult> {
   const validation = validateFileBeforeUpload(file, options);
   if (!validation.valid) {
@@ -120,24 +136,35 @@ export async function uploadToVercelBlob(
   const token = import.meta.env.VITE_BLOB_READ_WRITE_TOKEN;
 
   if (token) {
-    // Attempt Vercel Blob upload with a 10-second timeout
+    // Attempt Vercel Blob upload with a 10-second timeout via our safe Server Function
     try {
       options.onProgress?.(10);
-      const blobUpload = put(filename, file, {
-        access: "public",
-        token: token,
+
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("filename", filename);
+
+      const blobUpload = uploadFileServerFn({ data: formData }).then((res) => {
+        const result = res as any;
+        if (!result || !result.success || result.error)
+          throw new Error(result?.error || "Unknown server error");
+        return result;
       });
 
       const timeout = new Promise<never>((_, reject) =>
-        setTimeout(() => reject(new Error("Vercel Blob upload timed out (10s). Falling back to local storage.")), 10000)
+        setTimeout(
+          () =>
+            reject(new Error("Vercel Blob upload timed out (10s). Falling back to local storage.")),
+          10000,
+        ),
       );
 
-      const blob = await Promise.race([blobUpload, timeout]);
+      const blob: any = await Promise.race([blobUpload, timeout]);
       options.onProgress?.(100);
 
       return {
-        url: blob.url,
-        pathname: blob.pathname,
+        url: blob.url || blob.data?.url || "",
+        pathname: blob.pathname || blob.data?.pathname || filename,
         contentType: file.type,
         size: file.size,
         name: file.name,

@@ -1,5 +1,15 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Grid3x3, List, MoreHorizontal, Pencil, Plus, Trash2, PackageSearch, Printer, Loader2 } from "lucide-react";
+import {
+  Grid3x3,
+  List,
+  MoreHorizontal,
+  Pencil,
+  Plus,
+  Trash2,
+  PackageSearch,
+  Printer,
+  Loader2,
+} from "lucide-react";
 import { FileUpload } from "@/components/ui/file-upload";
 import { useState, useMemo, useEffect } from "react";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -14,20 +24,33 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { DataPage } from "@/components/layout/DataPage";
-import { localDb } from "@/lib/db";
 import { PersistStore } from "@/lib/session-store";
-import { useLiveQuery } from "dexie-react-hooks";
 import { cn } from "@/lib/utils";
 import { useCurrency } from "@/lib/currency";
 import { DatePicker } from "@/components/ui/date-picker";
 import { v4 as uuidv4 } from "uuid";
 import { toast } from "sonner";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { TableSkeleton } from "@/components/skeletons/TableSkeleton";
+import { CardGridSkeleton } from "@/components/skeletons/CardGridSkeleton";
+import { ErrorState } from "@/components/ui/error-state";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -42,6 +65,12 @@ import Barcode from "react-barcode";
 import { useAuth } from "@/contexts/AuthContext";
 import { useFormValidation } from "@/hooks/useFormValidation";
 import { FieldError } from "@/components/ui/field-error";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { getProductsFn, createProductFn, updateProductFn, deleteProductFn } from "@/api/products";
+import { getCategoriesFn } from "@/api/categories";
+import { getBrandsFn } from "@/api/brands";
+import { getUnitsFn } from "@/api/units";
+import { getSettingsFn } from "@/api/settings";
 
 export const Route = createFileRoute("/products")({
   head: () => ({
@@ -54,80 +83,105 @@ function ProductsPage() {
   const { saasPlan } = useAuth();
   const { formatCurrency } = useCurrency();
   const { t } = useLanguage();
+  const orgId = PersistStore.getOrgId() || "default";
+  const queryClient = useQueryClient();
+
   const [view, setView] = useState<"grid" | "list">("list");
-  const rawProducts = useLiveQuery(() => localDb.products.filter(p => !p._deleted).toArray()) || [];
 
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search, 300);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
-  const settings = useLiveQuery(() => localDb.settings.get("default"));
 
   const [filters, setFilters] = useState({ category: "", brand: "", stock: "" });
   const [draftFilters, setDraftFilters] = useState({ category: "", brand: "", stock: "" });
-  const activeFilterCount = (filters.category ? 1 : 0) + (filters.brand ? 1 : 0) + (filters.stock ? 1 : 0);
+  const activeFilterCount =
+    (filters.category ? 1 : 0) + (filters.brand ? 1 : 0) + (filters.stock ? 1 : 0);
+
+  const {
+    data: productsResponse,
+    isLoading: isProductsLoading,
+    isError: isProductsError,
+    refetch: refetchProducts,
+  } = useQuery({
+    queryKey: ["products", orgId, page, pageSize, debouncedSearch, filters.category],
+    queryFn: async () =>
+      ((await getProductsFn({
+        data: { page, pageSize, query: debouncedSearch, categoryId: filters.category },
+      })) as any) || {},
+  });
+
+  const products = productsResponse?.data || [];
+  const totalCount = productsResponse?.total || 0;
+  const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
+
+  // Filters moved up
 
   const handleResetFilters = () => {
     setFilters({ category: "", brand: "", stock: "" });
     setDraftFilters({ category: "", brand: "", stock: "" });
   };
 
-  const products = useMemo(() => {
-    let filtered = rawProducts;
-    if (debouncedSearch) {
-      const lower = debouncedSearch.toLowerCase();
-      filtered = filtered.filter(
-        (p) =>
-          Boolean(
-            (p.name && String(p.name).toLowerCase().includes(lower)) ||
-            (p.sku && String(p.sku).toLowerCase().includes(lower)) ||
-            (p.barcode && String(p.barcode).toLowerCase().includes(lower))
-          )
-      );
-    }
-    if (filters.category) {
-      filtered = filtered.filter(p => p.category === filters.category);
-    }
-    if (filters.brand) {
-      filtered = filtered.filter(p => p.brand === filters.brand);
-    }
-    if (filters.stock === "in-stock") {
-      filtered = filtered.filter(p => p.stock > (p.reorderLevel || 0));
-    } else if (filters.stock === "low-stock") {
-      filtered = filtered.filter(p => p.stock > 0 && p.stock <= (p.reorderLevel || 5));
-    } else if (filters.stock === "out-of-stock") {
-      filtered = filtered.filter(p => p.stock <= 0);
-    }
-
-    return filtered;
-  }, [rawProducts, debouncedSearch, filters.category, filters.brand, filters.stock]);
+  const { data: settingsData } = useQuery({
+    queryKey: ["settings", orgId],
+    queryFn: async () => ((await getSettingsFn({ data: {} })) as any)?.data,
+  });
+  const settings = settingsData?.[0] || null;
 
   useEffect(() => {
     setPage(1);
-  }, [debouncedSearch, filters]);
+  }, [debouncedSearch, filters.category, filters.brand, filters.stock]);
+  const { data: categoriesData } = useQuery({
+    queryKey: ["categories", orgId],
+    queryFn: async () => ((await getCategoriesFn({ data: {} })) as any)?.data || [],
+  });
+  const categories = categoriesData || [];
 
-  const totalPages = Math.ceil(products.length / pageSize);
-  const paginatedProducts = useMemo(() => {
-    const start = (page - 1) * pageSize;
-    return products.slice(start, start + pageSize);
-  }, [products, page, pageSize]);
+  const { data: brandsData } = useQuery({
+    queryKey: ["brands", orgId],
+    queryFn: async () => ((await getBrandsFn({ data: {} })) as any)?.data || [],
+  });
+  const brands = brandsData || [];
 
-  const categories = useLiveQuery(() => localDb.categories.toArray()) || [];
-  const brands = useLiveQuery(() => localDb.brands.toArray()) || [];
-  const units = useLiveQuery(() => localDb.units.toArray()) || [];
+  const { data: unitsData } = useQuery({
+    queryKey: ["units", orgId],
+    queryFn: async () => ((await getUnitsFn({ data: {} })) as any)?.data || [],
+  });
+  const units = unitsData || [];
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editingProd, setEditingProd] = useState<any>(null);
   const [isSaving, setIsSaving] = useState(false);
 
   const [formData, setFormData] = useState({
-    name: "", sku: "", barcode: "", category: "", brand: "", unit: "",
-    price: 0, cost: 0, stock: 0, reorderLevel: 5, image: "https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&q=80&w=150&h=150",
-    expiryDate: "", wholesalePrice: 0, dealerPrice: 0, minWholesaleQty: 1,
-    hasSerial: false, serialsInput: "",
-    hasBatch: false, batchNoInput: "", batchExpiryInput: "", batchStockInput: 0,
-    locationRack: "", locationShelf: "", locationBin: "",
-    hsnCode: "", gstRate: 0, taxInclusive: false
+    name: "",
+    sku: "",
+    barcode: "",
+    category: "",
+    brand: "",
+    unit: "",
+    price: 0,
+    cost: 0,
+    stock: 0,
+    reorderLevel: 5,
+    image:
+      "https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&q=80&w=150&h=150",
+    expiryDate: "",
+    wholesalePrice: 0,
+    dealerPrice: 0,
+    minWholesaleQty: 1,
+    hasSerial: false,
+    serialsInput: "",
+    hasBatch: false,
+    batchNoInput: "",
+    batchExpiryInput: "",
+    batchStockInput: 0,
+    locationRack: "",
+    locationShelf: "",
+    locationBin: "",
+    hsnCode: "",
+    gstRate: 0,
+    taxInclusive: false,
   });
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
@@ -136,13 +190,27 @@ function ProductsPage() {
   const [printCount, setPrintCount] = useState(1);
   const [isPrinting, setIsPrinting] = useState(false);
 
-  const { errors: prodErrors, validate: validateProd, clearError: clearProdError, clearAll: clearProdAll } = useFormValidation({
-    name: { required: "Product name is required", minLength: { value: 2, message: "Name must be at least 2 characters" } },
+  const {
+    errors: prodErrors,
+    validate: validateProd,
+    clearError: clearProdError,
+    clearAll: clearProdAll,
+  } = useFormValidation({
+    name: {
+      required: "Product name is required",
+      minLength: { value: 2, message: "Name must be at least 2 characters" },
+    },
     sku: { required: "SKU is required" },
-    price: { required: "Retail price is required", positive: "Price must be a valid positive number" },
+    price: {
+      required: "Retail price is required",
+      positive: "Price must be a valid positive number",
+    },
     cost: { required: "Cost price is required", positive: "Cost must be a valid positive number" },
     stock: { required: "Stock is required", positive: "Stock cannot be negative" },
-    reorderLevel: { required: "Reorder level is required", positive: "Reorder level cannot be negative" },
+    reorderLevel: {
+      required: "Reorder level is required",
+      positive: "Reorder level cannot be negative",
+    },
   });
 
   useEffect(() => {
@@ -153,24 +221,47 @@ function ProductsPage() {
     }
   }, [isPrinting]);
 
-
   const openNew = () => {
     // Check Limits
-    const limitsObj = typeof saasPlan?.limits === "string" ? JSON.parse(saasPlan.limits) : saasPlan?.limits;
+    const limitsObj =
+      typeof saasPlan?.limits === "string" ? JSON.parse(saasPlan.limits) : saasPlan?.limits;
     const maxProducts = Number(limitsObj?.maxProducts || 500);
-    if (maxProducts > 0 && rawProducts.length >= maxProducts) {
-      return toast.error(`Plan Limit Reached: Your current plan only allows ${maxProducts} products. Please upgrade to add more.`);
+    if (maxProducts > 0 && products.length >= maxProducts) {
+      return toast.error(
+        `Plan Limit Reached: Your current plan only allows ${maxProducts} products. Please upgrade to add more.`,
+      );
     }
 
     setEditingProd(null);
     setFormData({
-      name: "", sku: "", barcode: "", category: "", brand: "", unit: "",
-      price: 0, cost: 0, stock: 0, reorderLevel: 5, image: "https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&q=80&w=150&h=150",
-      expiryDate: "", wholesalePrice: 0, dealerPrice: 0, minWholesaleQty: 1,
-      hasSerial: false, serialsInput: "",
-      hasBatch: false, batchNoInput: "", batchExpiryInput: "", batchStockInput: 0,
-      locationRack: "", locationShelf: "", locationBin: "",
-      hsnCode: "", gstRate: 0, taxInclusive: false
+      name: "",
+      sku: "",
+      barcode: "",
+      category: "",
+      brand: "",
+      unit: "",
+      price: 0,
+      cost: 0,
+      stock: 0,
+      reorderLevel: 5,
+      image:
+        "https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&q=80&w=150&h=150",
+      expiryDate: "",
+      wholesalePrice: 0,
+      dealerPrice: 0,
+      minWholesaleQty: 1,
+      hasSerial: false,
+      serialsInput: "",
+      hasBatch: false,
+      batchNoInput: "",
+      batchExpiryInput: "",
+      batchStockInput: 0,
+      locationRack: "",
+      locationShelf: "",
+      locationBin: "",
+      hsnCode: "",
+      gstRate: 0,
+      taxInclusive: false,
     });
     setModalOpen(true);
   };
@@ -178,9 +269,17 @@ function ProductsPage() {
   const openEdit = (p: any) => {
     setEditingProd(p);
     setFormData({
-      name: p.name, sku: p.sku, barcode: p.barcode, category: p.category,
-      brand: p.brand, unit: p.unit, price: p.price, cost: p.cost,
-      stock: p.stock, reorderLevel: p.reorderLevel, image: p.image,
+      name: p.name,
+      sku: p.sku,
+      barcode: p.barcode,
+      category: p.category,
+      brand: p.brand,
+      unit: p.unit,
+      price: p.price,
+      cost: p.cost,
+      stock: p.stock,
+      reorderLevel: p.reorderLevel,
+      image: p.image,
       expiryDate: p.expiryDate || "",
       wholesalePrice: p.wholesalePrice || 0,
       dealerPrice: p.dealerPrice || 0,
@@ -196,7 +295,7 @@ function ProductsPage() {
       locationBin: p.locationBin || "",
       hsnCode: p.hsnCode || "",
       gstRate: p.gstRate || 0,
-      taxInclusive: !!p.taxInclusive
+      taxInclusive: !!p.taxInclusive,
     });
     setModalOpen(true);
   };
@@ -216,43 +315,66 @@ function ProductsPage() {
     if (!isValid) return;
 
     setIsSaving(true);
-    await new Promise(resolve => setTimeout(resolve, 500));
+    await new Promise((resolve) => setTimeout(resolve, 500));
 
     // Parse serials
     const serialsList = formData.hasSerial
-      ? formData.serialsInput.split(/[\n,]+/).map(s => s.trim()).filter(Boolean)
+      ? formData.serialsInput
+          .split(/[\n,]+/)
+          .map((s) => s.trim())
+          .filter(Boolean)
       : [];
 
-    const computedStock = formData.hasSerial && serialsList.length > 0 ? serialsList.length : formData.stock;
+    const computedStock =
+      formData.hasSerial && serialsList.length > 0 ? serialsList.length : formData.stock;
 
-    const batchesList = formData.hasBatch && formData.batchNoInput
-      ? [{ batchNo: formData.batchNoInput, expiryDate: formData.batchExpiryInput, stock: formData.batchStockInput || computedStock }]
-      : [];
+    const batchesList =
+      formData.hasBatch && formData.batchNoInput
+        ? [
+            {
+              batchNo: formData.batchNoInput,
+              expiryDate: formData.batchExpiryInput,
+              stock: formData.batchStockInput || computedStock,
+            },
+          ]
+        : [];
 
     const payload = {
       ...formData,
       stock: computedStock,
       serials: serialsList,
       batches: batchesList,
-      synced: false
+      synced: false,
     };
 
     try {
       if (editingProd) {
-        await localDb.products.update(editingProd.id, payload);
-        toast.success("Product updated");
-      } else {
-        await localDb.products.add({
-          id: uuidv4(),
-          orgId: PersistStore.getOrgId() || "default",
-          ...payload
+        const res = await updateProductFn({
+          data: {
+            id: editingProd.id,
+            updates: payload,
+          },
         });
-        toast.success("Product created");
+        if (res?.success) {
+          toast.success("Product updated");
+          queryClient.invalidateQueries({ queryKey: ["products"] });
+        } else throw new Error(res?.error);
+      } else {
+        const res = await createProductFn({
+          data: {
+            product: payload,
+          },
+        });
+        if (res?.success) {
+          toast.success("Product created");
+          queryClient.invalidateQueries({ queryKey: ["products"] });
+        } else throw new Error(res?.error);
       }
       setModalOpen(false);
       clearProdAll();
-    } catch (e) {
-      toast.error("Failed to save product");
+    } catch (e: any) {
+      console.error("Product Save Error:", e);
+      toast.error(e.message || "Failed to save product");
     } finally {
       setIsSaving(false);
     }
@@ -265,8 +387,11 @@ function ProductsPage() {
   const confirmDelete = async () => {
     if (!deleteId) return;
     try {
-      await localDb.products.update(deleteId, { _deleted: true, synced: false });
-      toast.success("Product deleted");
+      const res = await deleteProductFn({ data: { id: deleteId } });
+      if (res?.success) {
+        toast.success("Product deleted");
+        queryClient.invalidateQueries({ queryKey: ["products"] });
+      } else throw new Error(res?.error);
     } catch (error) {
       toast.error("Failed to delete product");
     } finally {
@@ -279,17 +404,18 @@ function ProductsPage() {
     setIsPrinting(true);
   };
 
-
   return (
     <div className="p-4 md:p-6 lg:p-8">
       <DataPage
         title={t("products") || "Products"}
-        description={t("manageCatalog") || "Manage your full SKU catalog, pricing, and stock thresholds."}
+        description={
+          t("manageCatalog") || "Manage your full SKU catalog, pricing, and stock thresholds."
+        }
         primaryAction={{ label: t("addProduct") || "Add Product", onClick: openNew }}
         searchPlaceholder={t("searchProducts") || "Search by name, SKU, or barcode..."}
         searchValue={search}
         onSearchChange={setSearch}
-        hideToolbar={rawProducts.length === 0}
+        hideToolbar={products.length === 0}
         toolbar={
           <div className="inline-flex rounded-lg border border-border bg-muted/30 p-0.5">
             <button
@@ -324,10 +450,10 @@ function ProductsPage() {
                 <SearchableSelect
                   options={[
                     { value: "", label: "All Categories" },
-                    ...categories.map(c => ({ value: c.id, label: c.name }))
+                    ...categories.map((c) => ({ value: c.id, label: c.name })),
                   ]}
                   value={draftFilters.category}
-                  onChange={(val) => setDraftFilters(prev => ({ ...prev, category: val }))}
+                  onChange={(val) => setDraftFilters((prev) => ({ ...prev, category: val }))}
                   placeholder="Filter by Category"
                 />
               </div>
@@ -336,10 +462,10 @@ function ProductsPage() {
                 <SearchableSelect
                   options={[
                     { value: "", label: "All Brands" },
-                    ...brands.map(b => ({ value: b.id, label: b.name }))
+                    ...brands.map((b) => ({ value: b.id, label: b.name })),
                   ]}
                   value={draftFilters.brand}
-                  onChange={(val) => setDraftFilters(prev => ({ ...prev, brand: val }))}
+                  onChange={(val) => setDraftFilters((prev) => ({ ...prev, brand: val }))}
                   placeholder="Filter by Brand"
                 />
               </div>
@@ -353,28 +479,73 @@ function ProductsPage() {
                     { value: "out-of-stock", label: "Out of Stock" },
                   ]}
                   value={draftFilters.stock}
-                  onChange={(val) => setDraftFilters(prev => ({ ...prev, stock: val }))}
+                  onChange={(val) => setDraftFilters((prev) => ({ ...prev, stock: val }))}
                   placeholder="Filter by Stock"
                 />
               </div>
             </div>
             <div className="pt-4 mt-auto">
-              <Button className="w-full" onClick={() => { setFilters(draftFilters); close(); }}>
+              <Button
+                className="w-full"
+                onClick={() => {
+                  setFilters(draftFilters);
+                  close();
+                }}
+              >
                 Apply Filters
               </Button>
             </div>
           </div>
         )}
       >
-        {products.length === 0 ? (
+        {isProductsLoading ? (
+          view === "list" ? (
+            <TableSkeleton columns={7} rows={6} showHeaderAction={false} showFilters={false} />
+          ) : (
+            <CardGridSkeleton cards={8} />
+          )
+        ) : isProductsError ? (
+          <ErrorState onRetry={refetchProducts} />
+        ) : products.length === 0 ? (
           <EmptyState
             icon={PackageSearch}
             title={t("noProductsFound") || "No products found"}
-            description={search ? (t("adjustSearch") || "Try adjusting your search.") : (t("noProductsYet") || "You haven't added any products yet.")}
+            description={
+              search
+                ? t("adjustSearch") || "Try adjusting your search."
+                : t("noProductsYet") || "You haven't added any products yet."
+            }
+            actionLabel="Add Product"
+            onAction={openNew}
           />
         ) : (
           <div className="space-y-4">
-            {view === "list" ? <TableView products={paginatedProducts} categories={categories} brands={brands} units={units} onEdit={openEdit} onDelete={deleteProd} onPrint={(p) => { setPrintProduct(p); setPrintCount(1); }} /> : <GridView products={paginatedProducts} categories={categories} brands={brands} units={units} onEdit={openEdit} onPrint={(p) => { setPrintProduct(p); setPrintCount(1); }} />}
+            {view === "list" ? (
+              <TableView
+                products={products}
+                categories={categories}
+                brands={brands}
+                units={units}
+                onEdit={openEdit}
+                onDelete={deleteProd}
+                onPrint={(p) => {
+                  setPrintProduct(p);
+                  setPrintCount(1);
+                }}
+              />
+            ) : (
+              <GridView
+                products={products}
+                categories={categories}
+                brands={brands}
+                units={units}
+                onEdit={openEdit}
+                onPrint={(p) => {
+                  setPrintProduct(p);
+                  setPrintCount(1);
+                }}
+              />
+            )}
             {products.length > 0 && (
               <PaginationControls
                 currentPage={page}
@@ -396,34 +567,55 @@ function ProductsPage() {
           <form onSubmit={save} noValidate>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 py-4">
               <div className="grid gap-1.5 col-span-1 sm:col-span-2">
-                <Label>Product Name <span className="text-destructive">*</span></Label>
+                <Label>
+                  Product Name <span className="text-destructive">*</span>
+                </Label>
                 <Input
                   placeholder="e.g. Item Name"
                   value={formData.name}
-                  onChange={e => { setFormData({ ...formData, name: e.target.value }); clearProdError("name"); }}
-                  className={prodErrors.name ? "border-destructive focus-visible:ring-destructive" : ""}
+                  onChange={(e) => {
+                    setFormData({ ...formData, name: e.target.value });
+                    clearProdError("name");
+                  }}
+                  className={
+                    prodErrors.name ? "border-destructive focus-visible:ring-destructive" : ""
+                  }
                 />
                 <FieldError message={prodErrors.name} />
               </div>
               <div className="grid gap-1.5">
-                <Label>SKU <span className="text-destructive">*</span></Label>
+                <Label>
+                  SKU <span className="text-destructive">*</span>
+                </Label>
                 <Input
                   placeholder="e.g. SKU-001"
                   value={formData.sku}
-                  onChange={e => { setFormData({ ...formData, sku: e.target.value }); clearProdError("sku"); }}
-                  className={prodErrors.sku ? "border-destructive focus-visible:ring-destructive" : ""}
+                  onChange={(e) => {
+                    setFormData({ ...formData, sku: e.target.value });
+                    clearProdError("sku");
+                  }}
+                  className={
+                    prodErrors.sku ? "border-destructive focus-visible:ring-destructive" : ""
+                  }
                 />
                 <FieldError message={prodErrors.sku} />
               </div>
               <div className="grid gap-1.5">
                 <Label>Barcode</Label>
                 <div className="flex gap-2">
-                  <Input placeholder="e.g. 123456789012" value={formData.barcode} onChange={e => setFormData({ ...formData, barcode: e.target.value })} className="flex-1" />
+                  <Input
+                    placeholder="e.g. 123456789012"
+                    value={formData.barcode}
+                    onChange={(e) => setFormData({ ...formData, barcode: e.target.value })}
+                    className="flex-1"
+                  />
                   <Button
                     type="button"
                     variant="outline"
                     onClick={() => {
-                      const randomBarcode = Math.floor(1000000000000 + Math.random() * 9000000000000).toString();
+                      const randomBarcode = Math.floor(
+                        1000000000000 + Math.random() * 9000000000000,
+                      ).toString();
                       setFormData({ ...formData, barcode: randomBarcode });
                     }}
                   >
@@ -434,83 +626,137 @@ function ProductsPage() {
               <div className="space-y-1.5">
                 <Label htmlFor="category">{t("category") || "Category"}</Label>
                 <SearchableSelect
-                  options={categories.map(c => ({ value: c.id, label: c.name }))}
+                  options={categories.map((c) => ({ value: c.id, label: c.name }))}
                   value={formData.category}
-                  onChange={val => setFormData({ ...formData, category: val })}
+                  onChange={(val) => setFormData({ ...formData, category: val })}
                   placeholder={t("selectCategory") || "Select category..."}
                 />
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="brand">{t("brand") || "Brand"}</Label>
                 <SearchableSelect
-                  options={brands.map(b => ({ value: b.id, label: b.name }))}
+                  options={brands.map((b) => ({ value: b.id, label: b.name }))}
                   value={formData.brand}
-                  onChange={val => setFormData({ ...formData, brand: val })}
+                  onChange={(val) => setFormData({ ...formData, brand: val })}
                   placeholder={t("selectBrand") || "Select brand..."}
                 />
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="unit">{t("unitType") || "Unit Type"}</Label>
                 <SearchableSelect
-                  options={units.map(u => ({ value: u.id, label: u.name }))}
+                  options={units.map((u) => ({ value: u.id, label: u.name }))}
                   value={formData.unit}
-                  onChange={val => setFormData({ ...formData, unit: val })}
+                  onChange={(val) => setFormData({ ...formData, unit: val })}
                   placeholder={t("selectUnit") || "Select unit..."}
                 />
               </div>
               <div className="grid gap-1.5">
-                <Label>Retail Price <span className="text-destructive">*</span></Label>
+                <Label>
+                  Retail Price <span className="text-destructive">*</span>
+                </Label>
                 <Input
-                  type="number" min="0" step="0.01"
+                  type="number"
+                  min="0"
+                  step="0.01"
                   placeholder="0.00"
                   value={formData.price === 0 ? "" : formData.price}
-                  onFocus={e => e.target.select()}
-                  onChange={e => { setFormData({ ...formData, price: parseFloat(e.target.value) || 0 }); clearProdError("price"); }}
-                  className={prodErrors.price ? "border-destructive focus-visible:ring-destructive" : ""}
+                  onFocus={(e) => e.target.select()}
+                  onChange={(e) => {
+                    setFormData({ ...formData, price: parseFloat(e.target.value) || 0 });
+                    clearProdError("price");
+                  }}
+                  className={
+                    prodErrors.price ? "border-destructive focus-visible:ring-destructive" : ""
+                  }
                 />
                 <FieldError message={prodErrors.price} />
               </div>
               <div className="grid gap-1.5">
                 <Label>Wholesale Price (Optional)</Label>
-                <Input type="number" min="0" step="0.01" placeholder="e.g. 45.00" value={formData.wholesalePrice || ""} onChange={e => setFormData({ ...formData, wholesalePrice: parseFloat(e.target.value) || 0 })} />
+                <Input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  placeholder="e.g. 45.00"
+                  value={formData.wholesalePrice || ""}
+                  onChange={(e) =>
+                    setFormData({ ...formData, wholesalePrice: parseFloat(e.target.value) || 0 })
+                  }
+                />
               </div>
               <div className="grid gap-1.5">
                 <Label>Dealer Price (Optional)</Label>
-                <Input type="number" min="0" step="0.01" placeholder="e.g. 40.00" value={formData.dealerPrice || ""} onChange={e => setFormData({ ...formData, dealerPrice: parseFloat(e.target.value) || 0 })} />
+                <Input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  placeholder="e.g. 40.00"
+                  value={formData.dealerPrice || ""}
+                  onChange={(e) =>
+                    setFormData({ ...formData, dealerPrice: parseFloat(e.target.value) || 0 })
+                  }
+                />
               </div>
               <div className="grid gap-1.5">
-                <Label>Cost Price <span className="text-destructive">*</span></Label>
+                <Label>
+                  Cost Price <span className="text-destructive">*</span>
+                </Label>
                 <Input
-                  type="number" min="0" step="0.01"
+                  type="number"
+                  min="0"
+                  step="0.01"
                   placeholder="0.00"
                   value={formData.cost === 0 ? "" : formData.cost}
-                  onFocus={e => e.target.select()}
-                  onChange={e => { setFormData({ ...formData, cost: parseFloat(e.target.value) || 0 }); clearProdError("cost"); }}
-                  className={prodErrors.cost ? "border-destructive focus-visible:ring-destructive" : ""}
+                  onFocus={(e) => e.target.select()}
+                  onChange={(e) => {
+                    setFormData({ ...formData, cost: parseFloat(e.target.value) || 0 });
+                    clearProdError("cost");
+                  }}
+                  className={
+                    prodErrors.cost ? "border-destructive focus-visible:ring-destructive" : ""
+                  }
                 />
                 <FieldError message={prodErrors.cost} />
               </div>
               <div className="grid gap-1.5">
-                <Label>Stock <span className="text-destructive">*</span></Label>
+                <Label>
+                  Stock <span className="text-destructive">*</span>
+                </Label>
                 <Input
-                  type="number" min="0"
+                  type="number"
+                  min="0"
                   placeholder="0"
                   value={formData.stock === 0 ? "" : formData.stock}
-                  onFocus={e => e.target.select()}
-                  onChange={e => { setFormData({ ...formData, stock: parseInt(e.target.value) || 0 }); clearProdError("stock"); }}
-                  className={prodErrors.stock ? "border-destructive focus-visible:ring-destructive" : ""}
+                  onFocus={(e) => e.target.select()}
+                  onChange={(e) => {
+                    setFormData({ ...formData, stock: parseInt(e.target.value) || 0 });
+                    clearProdError("stock");
+                  }}
+                  className={
+                    prodErrors.stock ? "border-destructive focus-visible:ring-destructive" : ""
+                  }
                 />
                 <FieldError message={prodErrors.stock} />
               </div>
               <div className="grid gap-1.5">
-                <Label>Reorder Level <span className="text-destructive">*</span></Label>
+                <Label>
+                  Reorder Level <span className="text-destructive">*</span>
+                </Label>
                 <Input
-                  type="number" min="0"
+                  type="number"
+                  min="0"
                   placeholder="e.g. 5"
                   value={formData.reorderLevel === 0 ? "" : formData.reorderLevel}
-                  onFocus={e => e.target.select()}
-                  onChange={e => { setFormData({ ...formData, reorderLevel: parseInt(e.target.value) || 0 }); clearProdError("reorderLevel"); }}
-                  className={prodErrors.reorderLevel ? "border-destructive focus-visible:ring-destructive" : ""}
+                  onFocus={(e) => e.target.select()}
+                  onChange={(e) => {
+                    setFormData({ ...formData, reorderLevel: parseInt(e.target.value) || 0 });
+                    clearProdError("reorderLevel");
+                  }}
+                  className={
+                    prodErrors.reorderLevel
+                      ? "border-destructive focus-visible:ring-destructive"
+                      : ""
+                  }
                 />
                 <FieldError message={prodErrors.reorderLevel} />
               </div>
@@ -518,15 +764,28 @@ function ProductsPage() {
                 <Label>Expiry Date (Optional)</Label>
                 <DatePicker
                   date={formData.expiryDate}
-                  onDateChange={(d) => setFormData({ ...formData, expiryDate: d ? d.toISOString().split("T")[0] : "" })}
+                  onDateChange={(d) =>
+                    setFormData({ ...formData, expiryDate: d ? d.toISOString().split("T")[0] : "" })
+                  }
                   placeholder="Select expiry date"
                 />
               </div>
               <div className="grid gap-2 col-span-2">
                 <Label>Product Image</Label>
                 <FileUpload
-                  value={formData.image && !formData.image.includes('unsplash.com') ? formData.image : undefined}
-                  onChange={(url: string) => setFormData({ ...formData, image: url || "https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&q=80&w=150&h=150" })}
+                  value={
+                    formData.image && !formData.image.includes("unsplash.com")
+                      ? formData.image
+                      : undefined
+                  }
+                  onChange={(url: string) =>
+                    setFormData({
+                      ...formData,
+                      image:
+                        url ||
+                        "https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&q=80&w=150&h=150",
+                    })
+                  }
                   folder="products"
                   accept="image/jpeg,image/png,image/webp,image/gif"
                   allowedTypes={["image/jpeg", "image/png", "image/webp", "image/gif"]}
@@ -536,20 +795,34 @@ function ProductsPage() {
                 />
               </div>
 
-
               {/* Warehouse Rack / Shelf Location Fields */}
               <div className="grid grid-cols-3 gap-2 col-span-2 rounded-xl border p-3 bg-muted/20">
                 <div>
                   <Label className="text-xs">Rack No.</Label>
-                  <Input placeholder="e.g. A2" value={formData.locationRack} onChange={e => setFormData({ ...formData, locationRack: e.target.value })} className="h-8 text-xs" />
+                  <Input
+                    placeholder="e.g. A2"
+                    value={formData.locationRack}
+                    onChange={(e) => setFormData({ ...formData, locationRack: e.target.value })}
+                    className="h-8 text-xs"
+                  />
                 </div>
                 <div>
                   <Label className="text-xs">Shelf No.</Label>
-                  <Input placeholder="e.g. 3" value={formData.locationShelf} onChange={e => setFormData({ ...formData, locationShelf: e.target.value })} className="h-8 text-xs" />
+                  <Input
+                    placeholder="e.g. 3"
+                    value={formData.locationShelf}
+                    onChange={(e) => setFormData({ ...formData, locationShelf: e.target.value })}
+                    className="h-8 text-xs"
+                  />
                 </div>
                 <div>
                   <Label className="text-xs">Bin Position</Label>
-                  <Input placeholder="e.g. B4" value={formData.locationBin} onChange={e => setFormData({ ...formData, locationBin: e.target.value })} className="h-8 text-xs" />
+                  <Input
+                    placeholder="e.g. B4"
+                    value={formData.locationBin}
+                    onChange={(e) => setFormData({ ...formData, locationBin: e.target.value })}
+                    className="h-8 text-xs"
+                  />
                 </div>
               </div>
 
@@ -563,13 +836,18 @@ function ProductsPage() {
                     onChange={(e) => setFormData({ ...formData, hasSerial: e.target.checked })}
                     className="rounded border-primary text-primary"
                   />
-                  <Label htmlFor="hasSerial" className="font-semibold text-xs text-primary cursor-pointer">
+                  <Label
+                    htmlFor="hasSerial"
+                    className="font-semibold text-xs text-primary cursor-pointer"
+                  >
                     Track Serial / IMEI Numbers (Mobile & Electronics)
                   </Label>
                 </div>
                 {formData.hasSerial && (
                   <div className="space-y-1 pl-6">
-                    <Label className="text-xs">Enter Available IMEI / Serial Numbers (Comma or Newline separated)</Label>
+                    <Label className="text-xs">
+                      Enter Available IMEI / Serial Numbers (Comma or Newline separated)
+                    </Label>
                     <textarea
                       rows={2}
                       value={formData.serialsInput}
@@ -587,12 +865,23 @@ function ProductsPage() {
                   <div className="grid grid-cols-3 gap-4">
                     <div>
                       <Label className="text-xs">HSN / SAC Code</Label>
-                      <Input placeholder="e.g. 8517" value={formData.hsnCode} onChange={e => setFormData({ ...formData, hsnCode: e.target.value })} />
+                      <Input
+                        placeholder="e.g. 8517"
+                        value={formData.hsnCode}
+                        onChange={(e) => setFormData({ ...formData, hsnCode: e.target.value })}
+                      />
                     </div>
                     <div>
                       <Label className="text-xs">GST Rate (%)</Label>
-                      <Select value={formData.gstRate.toString()} onValueChange={v => setFormData({ ...formData, gstRate: parseInt(v) || 0 })}>
-                        <SelectTrigger><SelectValue placeholder="Select Rate" /></SelectTrigger>
+                      <Select
+                        value={formData.gstRate.toString()}
+                        onValueChange={(v) =>
+                          setFormData({ ...formData, gstRate: parseInt(v) || 0 })
+                        }
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select Rate" />
+                        </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="0">0% (Nil Rated)</SelectItem>
                           <SelectItem value="5">5%</SelectItem>
@@ -607,7 +896,9 @@ function ProductsPage() {
                         type="checkbox"
                         id="taxInclusive"
                         checked={formData.taxInclusive}
-                        onChange={(e) => setFormData({ ...formData, taxInclusive: e.target.checked })}
+                        onChange={(e) =>
+                          setFormData({ ...formData, taxInclusive: e.target.checked })
+                        }
                         className="rounded border-border text-primary"
                       />
                       <Label htmlFor="taxInclusive" className="text-xs cursor-pointer">
@@ -628,7 +919,10 @@ function ProductsPage() {
                     onChange={(e) => setFormData({ ...formData, hasBatch: e.target.checked })}
                     className="rounded border-info text-info"
                   />
-                  <Label htmlFor="hasBatch" className="font-semibold text-xs text-info cursor-pointer">
+                  <Label
+                    htmlFor="hasBatch"
+                    className="font-semibold text-xs text-info cursor-pointer"
+                  >
                     Track Batches & Batch Expiry (Pharmacy & FMCG Food)
                   </Label>
                 </div>
@@ -636,27 +930,59 @@ function ProductsPage() {
                   <div className="grid grid-cols-3 gap-2 pl-6">
                     <div>
                       <Label className="text-xs">Batch Number</Label>
-                      <Input placeholder="e.g. BATCH-2026A" value={formData.batchNoInput} onChange={e => setFormData({ ...formData, batchNoInput: e.target.value })} className="h-8 text-xs" />
+                      <Input
+                        placeholder="e.g. BATCH-2026A"
+                        value={formData.batchNoInput}
+                        onChange={(e) => setFormData({ ...formData, batchNoInput: e.target.value })}
+                        className="h-8 text-xs"
+                      />
                     </div>
                     <div>
                       <Label className="text-xs">Batch Expiry</Label>
                       <div className="mt-1">
                         <DatePicker
                           date={formData.batchExpiryInput}
-                          onDateChange={(d) => setFormData({ ...formData, batchExpiryInput: d ? d.toISOString().split("T")[0] : "" })}
+                          onDateChange={(d) =>
+                            setFormData({
+                              ...formData,
+                              batchExpiryInput: d ? d.toISOString().split("T")[0] : "",
+                            })
+                          }
                         />
                       </div>
                     </div>
                     <div>
                       <Label className="text-xs">Batch Stock Qty</Label>
-                      <Input type="number" min="0" placeholder="0" required value={formData.batchStockInput} onChange={e => setFormData({ ...formData, batchStockInput: parseInt(e.target.value) || 0 })} className="h-8 text-xs" />
+                      <Input
+                        type="number"
+                        min="0"
+                        placeholder="0"
+                        required
+                        value={formData.batchStockInput}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            batchStockInput: parseInt(e.target.value) || 0,
+                          })
+                        }
+                        className="h-8 text-xs"
+                      />
                     </div>
                   </div>
                 )}
               </div>
             </div>
             <DialogFooter className="mt-6">
-              <Button type="button" variant="outline" onClick={() => { setModalOpen(false); clearProdAll(); }}>Cancel</Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setModalOpen(false);
+                  clearProdAll();
+                }}
+              >
+                Cancel
+              </Button>
               <Button type="submit" disabled={isSaving}>
                 {isSaving && <Loader2 className="size-4 animate-spin mr-2" />}
                 Save Product
@@ -676,7 +1002,10 @@ function ProductsPage() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+            <AlertDialogAction
+              onClick={confirmDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
               Delete
             </AlertDialogAction>
           </AlertDialogFooter>
@@ -684,14 +1013,18 @@ function ProductsPage() {
       </AlertDialog>
 
       {/* Print Setup Dialog */}
-      <Dialog open={!!printProduct && !isPrinting} onOpenChange={(open) => !open && setPrintProduct(null)}>
+      <Dialog
+        open={!!printProduct && !isPrinting}
+        onOpenChange={(open) => !open && setPrintProduct(null)}
+      >
         <DialogContent className="sm:max-w-sm">
           <DialogHeader>
             <DialogTitle>Print Barcode Labels</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="text-sm">
-              Product: <strong>{printProduct?.name}</strong><br />
+              Product: <strong>{printProduct?.name}</strong>
+              <br />
               Barcode: <strong>{printProduct?.barcode}</strong>
             </div>
             <div className="space-y-2">
@@ -706,8 +1039,12 @@ function ProductsPage() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setPrintProduct(null)}>Cancel</Button>
-            <Button onClick={handlePrint}><Printer className="size-4 mr-2" /> Print</Button>
+            <Button variant="outline" onClick={() => setPrintProduct(null)}>
+              Cancel
+            </Button>
+            <Button onClick={handlePrint}>
+              <Printer className="size-4 mr-2" /> Print
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -716,10 +1053,20 @@ function ProductsPage() {
       {isPrinting && printProduct && (
         <div className="hidden print:flex fixed inset-0 z-[100] bg-white flex-wrap content-start gap-4 p-4 print:text-black">
           {Array.from({ length: printCount }).map((_, i) => (
-            <div key={i} className="flex flex-col items-center justify-center p-2 border border-black border-dashed w-[200px] h-[100px]">
-              <div className="text-[10px] font-bold truncate w-full text-center">{printProduct.name}</div>
+            <div
+              key={i}
+              className="flex flex-col items-center justify-center p-2 border border-black border-dashed w-[200px] h-[100px]"
+            >
+              <div className="text-[10px] font-bold truncate w-full text-center">
+                {printProduct.name}
+              </div>
               <div className="scale-75 -my-2 origin-center">
-                <Barcode value={printProduct.barcode || printProduct.sku} width={1.5} height={40} displayValue={true} />
+                <Barcode
+                  value={printProduct.barcode || printProduct.sku}
+                  width={1.5}
+                  height={40}
+                  displayValue={true}
+                />
               </div>
               <div className="text-[12px] font-bold mt-1">{formatCurrency(printProduct.price)}</div>
             </div>
@@ -730,8 +1077,23 @@ function ProductsPage() {
   );
 }
 
-
-function TableView({ products, categories, brands, units, onEdit, onDelete, onPrint }: { products: any[], categories: any[], brands: any[], units: any[], onEdit: (p: any) => void, onDelete: (id: string) => void, onPrint: (p: any) => void }) {
+function TableView({
+  products,
+  categories,
+  brands,
+  units,
+  onEdit,
+  onDelete,
+  onPrint,
+}: {
+  products: any[];
+  categories: any[];
+  brands: any[];
+  units: any[];
+  onEdit: (p: any) => void;
+  onDelete: (id: string) => void;
+  onPrint: (p: any) => void;
+}) {
   const { formatCurrency } = useCurrency();
   const { t } = useLanguage();
   return (
@@ -753,89 +1115,108 @@ function TableView({ products, categories, brands, units, onEdit, onDelete, onPr
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
-            {products.map((p) => {
-              const low = p.stock <= p.reorderLevel;
-              const categoryName = categories.find((c) => c.id === p.category)?.name || p.category || "-";
-              const brandName = brands.find((b) => b.id === p.brand)?.name || p.brand || "";
-              const unitName = units.find((u) => u.id === p.unit)?.name || p.unit || "";
-              return (
-                <tr key={p.id} className="hover:bg-muted/30">
-                  <td className="px-4 py-3 whitespace-nowrap">
-                    <input type="checkbox" className="rounded border-border" />
-                  </td>
-                  <td className="px-4 py-3 whitespace-nowrap">
-                    <div className="flex items-center gap-3">
-                      <div className="grid size-10 shrink-0 place-items-center rounded-lg bg-muted overflow-hidden">
-                        <img src={p.image} alt="" className="size-full object-cover" />
-                      </div>
-                      <div>
-                        <div className="font-semibold">{p.name}</div>
-                        <div className="text-xs text-muted-foreground">{brandName}</div>
+            {products.map((p) => (
+              <tr key={p.id} className="group hover:bg-muted/30">
+                <td className="px-4 py-3 whitespace-nowrap">
+                  <input type="checkbox" className="rounded border-border" />
+                </td>
+                <td className="px-4 py-3 whitespace-nowrap">
+                  <div className="flex items-center gap-3">
+                    <div className="grid size-10 shrink-0 place-items-center rounded-lg bg-muted overflow-hidden">
+                      <img src={p.image} alt="" className="size-full object-cover" />
+                    </div>
+                    <div>
+                      <div className="font-semibold">{p.name}</div>
+                      <div className="text-xs text-muted-foreground">
+                        {brands.find((b) => b.id === p.brand)?.name || p.brand || ""}
                       </div>
                     </div>
-                  </td>
-                  <td className="px-4 py-3 font-mono text-xs text-muted-foreground whitespace-nowrap">{p.sku}</td>
-                  <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">{categoryName}</td>
-                  <td className="number px-4 py-3 text-right whitespace-nowrap">
-                    <div className="font-semibold">{formatCurrency(p.price)}</div>
-                    {(p.wholesalePrice > 0 || p.dealerPrice > 0) && (
-                      <div className="flex flex-col items-end gap-0.5 text-[10px] text-muted-foreground mt-0.5">
-                        {p.wholesalePrice > 0 && <span className="text-info font-medium">WS: {formatCurrency(p.wholesalePrice)}</span>}
-                        {p.dealerPrice > 0 && <span className="text-warning font-medium">Dealer: {formatCurrency(p.dealerPrice)}</span>}
-                      </div>
+                  </div>
+                </td>
+                <td className="px-4 py-3 font-mono text-xs text-muted-foreground whitespace-nowrap">
+                  {p.sku}
+                </td>
+                <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">
+                  {categories.find((c) => c.id === p.category)?.name || p.category || "-"}
+                </td>
+                <td className="number px-4 py-3 text-right whitespace-nowrap">
+                  <div className="font-semibold">{formatCurrency(p.price)}</div>
+                  {(p.wholesalePrice > 0 || p.dealerPrice > 0) && (
+                    <div className="flex flex-col items-end gap-0.5 text-[10px] text-muted-foreground mt-0.5">
+                      {p.wholesalePrice > 0 && (
+                        <span className="text-info font-medium">
+                          WS: {formatCurrency(p.wholesalePrice)}
+                        </span>
+                      )}
+                      {p.dealerPrice > 0 && (
+                        <span className="text-warning font-medium">
+                          Dealer: {formatCurrency(p.dealerPrice)}
+                        </span>
+                      )}
+                    </div>
+                  )}
+                </td>
+                <td className="px-4 py-3 text-right whitespace-nowrap">
+                  <span
+                    className={cn(
+                      "number font-semibold",
+                      p.stock <= p.reorderLevel && "text-destructive",
                     )}
-                  </td>
-                  <td className="px-4 py-3 text-right whitespace-nowrap">
-                    <span className={cn("number font-semibold", low && "text-destructive")}>{p.stock}</span>
-                    <span className="ml-1 text-xs text-muted-foreground">{unitName}</span>
-                  </td>
-                  <td className="px-4 py-3 whitespace-nowrap">
-                    <div className="flex flex-col gap-1 items-start">
-                      {low ? (
-                        <Badge variant="destructive">Low stock</Badge>
-                      ) : (
-                        <Badge className="bg-success/10 text-success hover:bg-success/15">In stock</Badge>
-                      )}
-                      {p.hasSerial && (
-                        <span className="rounded bg-primary/10 px-1.5 py-0.5 text-[9px] font-bold text-primary">
-                          IMEI: {p.serials?.length || 0} Avail
-                        </span>
-                      )}
-                      {p.hasBatch && p.batches?.[0] && (
-                        <span className="rounded bg-info/10 px-1.5 py-0.5 text-[9px] font-bold text-info">
-                          Batch: {p.batches[0].batchNo} ({p.batches[0].expiryDate})
-                        </span>
-                      )}
-                      {p.locationRack && (
-                        <span className="rounded bg-muted border px-1.5 py-0.5 text-[9px] font-mono text-muted-foreground font-bold">
-                          Rack: {p.locationRack} {p.locationShelf ? `· ${p.locationShelf}` : ""}
-                        </span>
-                      )}
-                    </div>
-                  </td>
-                  <td className="px-4 py-3 text-right whitespace-nowrap">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="size-8">
-                          <MoreHorizontal className="size-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => onEdit(p)}>
-                          <Pencil className="size-4" /> Edit
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => onPrint(p)}>
-                          <Printer className="size-4" /> Print Label
-                        </DropdownMenuItem>
-                        <DropdownMenuItem className="text-destructive" onClick={() => onDelete(p.id)}>
-                          <Trash2 className="size-4" /> Delete
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </td>
-                </tr>
-              );
-            })}
+                  >
+                    {p.stock}
+                  </span>
+                  <span className="ml-1 text-xs text-muted-foreground">
+                    {units.find((u) => u.id === p.unit)?.name || p.unit || ""}
+                  </span>
+                </td>
+                <td className="px-4 py-3 whitespace-nowrap">
+                  <div className="flex flex-col gap-1 items-start">
+                    {p.stock <= p.reorderLevel ? (
+                      <Badge variant="destructive">Low stock</Badge>
+                    ) : (
+                      <Badge className="bg-success/10 text-success hover:bg-success/15">
+                        In stock
+                      </Badge>
+                    )}
+                    {p.hasSerial && (
+                      <span className="rounded bg-primary/10 px-1.5 py-0.5 text-[9px] font-bold text-primary">
+                        IMEI: {p.serials?.length || 0} Avail
+                      </span>
+                    )}
+                    {p.hasBatch && p.batches?.[0] && (
+                      <span className="rounded bg-info/10 px-1.5 py-0.5 text-[9px] font-bold text-info">
+                        Batch: {p.batches[0].batchNo} ({p.batches[0].expiryDate})
+                      </span>
+                    )}
+                    {p.locationRack && (
+                      <span className="rounded bg-muted border px-1.5 py-0.5 text-[9px] font-mono text-muted-foreground font-bold">
+                        Rack: {p.locationRack} {p.locationShelf ? `· ${p.locationShelf}` : ""}
+                      </span>
+                    )}
+                  </div>
+                </td>
+                <td className="px-4 py-3 text-right whitespace-nowrap">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon" className="size-8">
+                        <MoreHorizontal className="size-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => onEdit(p)}>
+                        <Pencil className="size-4" /> Edit
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => onPrint(p)}>
+                        <Printer className="size-4" /> Print Label
+                      </DropdownMenuItem>
+                      <DropdownMenuItem className="text-destructive" onClick={() => onDelete(p.id)}>
+                        <Trash2 className="size-4" /> Delete
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </td>
+              </tr>
+            ))}
           </tbody>
         </table>
       </div>
@@ -843,7 +1224,21 @@ function TableView({ products, categories, brands, units, onEdit, onDelete, onPr
   );
 }
 
-function GridView({ products, categories, brands, units, onEdit, onPrint }: { products: any[], categories: any[], brands: any[], units: any[], onEdit: (p: any) => void, onPrint: (p: any) => void }) {
+function GridView({
+  products,
+  categories,
+  brands,
+  units,
+  onEdit,
+  onPrint,
+}: {
+  products: any[];
+  categories: any[];
+  brands: any[];
+  units: any[];
+  onEdit: (p: any) => void;
+  onPrint: (p: any) => void;
+}) {
   const { formatCurrency } = useCurrency();
   return (
     <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
@@ -853,18 +1248,31 @@ function GridView({ products, categories, brands, units, onEdit, onPrint }: { pr
         return (
           <div
             key={p.id}
-            className="relative overflow-hidden rounded-xl border border-border bg-card shadow-soft transition-shadow hover:shadow-elevated group"
+            className="group relative flex flex-col overflow-hidden rounded-xl border border-border bg-card transition-all hover:border-primary/50 hover:shadow-md"
           >
-            <div className="aspect-square bg-muted cursor-pointer overflow-hidden" onClick={() => onEdit(p)}>
+            <div
+              className="aspect-square bg-muted cursor-pointer overflow-hidden"
+              onClick={() => onEdit(p)}
+            >
               <img src={p.image} alt="" className="size-full object-cover" />
             </div>
             <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
-              <Button variant="secondary" size="icon" className="size-7 shadow-soft" onClick={(e) => { e.stopPropagation(); onPrint(p); }}>
+              <Button
+                variant="secondary"
+                size="icon"
+                className="size-7 shadow-soft"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onPrint(p);
+                }}
+              >
                 <Printer className="size-3.5" />
               </Button>
             </div>
             <div className="p-3.5 cursor-pointer" onClick={() => onEdit(p)}>
-              <div className="text-sm font-semibold truncate" title={p.name}>{p.name}</div>
+              <div className="text-sm font-semibold truncate" title={p.name}>
+                {p.name}
+              </div>
               <div className="mt-0.5 flex items-center justify-between text-xs text-muted-foreground">
                 <span>{p.sku}</span>
                 <span className="truncate max-w-[50%] text-right">{categoryName}</span>
@@ -873,13 +1281,24 @@ function GridView({ products, categories, brands, units, onEdit, onPrint }: { pr
               <div className="mt-2.5 flex flex-col gap-1">
                 <div className="flex items-center justify-between">
                   <span className="number text-base font-bold">{formatCurrency(p.price)}</span>
-                  <span className={cn("text-xs font-medium", p.stock <= p.reorderLevel ? "text-destructive" : "text-muted-foreground")}>{p.stock} {unitName || "in stock"}</span>
+                  <span
+                    className={cn(
+                      "text-xs font-medium",
+                      p.stock <= p.reorderLevel ? "text-destructive" : "text-muted-foreground",
+                    )}
+                  >
+                    {p.stock} {unitName || "in stock"}
+                  </span>
                 </div>
 
                 {(p.wholesalePrice > 0 || p.dealerPrice > 0) && (
                   <div className="flex items-center justify-between text-[10px] border-t border-border/50 pt-1 mt-0.5">
-                    <span className="text-info font-medium">{p.wholesalePrice > 0 ? `WS: ${formatCurrency(p.wholesalePrice)}` : ''}</span>
-                    <span className="text-warning font-medium">{p.dealerPrice > 0 ? `DLR: ${formatCurrency(p.dealerPrice)}` : ''}</span>
+                    <span className="text-info font-medium">
+                      {p.wholesalePrice > 0 ? `WS: ${formatCurrency(p.wholesalePrice)}` : ""}
+                    </span>
+                    <span className="text-warning font-medium">
+                      {p.dealerPrice > 0 ? `DLR: ${formatCurrency(p.dealerPrice)}` : ""}
+                    </span>
                   </div>
                 )}
               </div>

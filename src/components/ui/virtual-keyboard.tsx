@@ -49,7 +49,12 @@ export function VirtualKeyboard({
   if (!isOpen) return null;
 
   return (
-    <div className={cn("fixed bottom-0 left-0 right-0 bg-background border-t border-border shadow-[0_-10px_40px_rgba(0,0,0,0.1)] z-[100] animate-in slide-in-from-bottom-full duration-300", className)}>
+    <div
+      className={cn(
+        "fixed bottom-0 left-0 right-0 bg-background border-t border-border shadow-[0_-10px_40px_rgba(0,0,0,0.1)] z-[100] animate-in slide-in-from-bottom-full duration-300",
+        className,
+      )}
+    >
       <div className="flex items-center justify-between px-4 py-2 bg-muted/30 border-b border-border/50">
         <div className="flex items-center gap-2 text-sm font-semibold text-muted-foreground">
           <KeyboardIcon className="size-4" /> Virtual Keyboard
@@ -78,8 +83,8 @@ export function VirtualKeyboard({
           buttonTheme={[
             {
               class: "hg-highlight",
-              buttons: "{enter} {bksp} {shift} {lock}"
-            }
+              buttons: "{enter} {bksp} {shift} {lock}",
+            },
           ]}
         />
       </div>

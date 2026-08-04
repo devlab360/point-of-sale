@@ -4,8 +4,10 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { localDb } from "@/lib/db";
-import { useLiveQuery } from "dexie-react-hooks";
+import { useQuery } from "@tanstack/react-query";
+import { getCustomersFn } from "@/api/customers";
+import { getSalesFn } from "@/api/sales";
+import { PersistStore } from "@/lib/session-store";
 import { useCurrency } from "@/lib/currency";
 import { Search, UserCheck, ShieldCheck, Printer, FileText, Loader2 } from "lucide-react";
 import { usePreferences } from "@/contexts/PreferencesContext";
@@ -22,19 +24,34 @@ function CustomerPortalPage() {
   const [activeLookup, setActiveLookup] = useState("");
   const [isSearching, setIsSearching] = useState(false);
 
-  const customers = useLiveQuery(() => localDb.customers.toArray()) || [];
-  const sales = useLiveQuery(() => localDb.offlineSales.toArray()) || [];
+  const orgId = PersistStore.getOrgId() || "default";
+
+  const { data: customersData } = useQuery({
+    queryKey: ["customers", orgId],
+    queryFn: async () => ((await getCustomersFn({ data: {} })) as any)?.data || [],
+  });
+  const customers = customersData || [];
+
+  const { data: salesData } = useQuery({
+    queryKey: ["sales", orgId],
+    queryFn: async () => ((await getSalesFn({ data: {} })) as any)?.data || [],
+  });
+  const sales = salesData || [];
 
   const foundCustomer = useMemo(() => {
     if (!activeLookup) return null;
     return customers.find(
-      (c) => c.phone?.includes(activeLookup) || c.name.toLowerCase().includes(activeLookup.toLowerCase())
+      (c) =>
+        c.phone?.includes(activeLookup) ||
+        c.name.toLowerCase().includes(activeLookup.toLowerCase()),
     );
   }, [customers, activeLookup]);
 
   const customerSales = useMemo(() => {
     if (!foundCustomer) return [];
-    return sales.filter((s) => s.customerId === foundCustomer.id || s.customerName === foundCustomer.name);
+    return sales.filter(
+      (s) => s.customerId === foundCustomer.id || s.customerName === foundCustomer.name,
+    );
   }, [sales, foundCustomer]);
 
   const warrantyItems = useMemo(() => {
@@ -57,8 +74,12 @@ function CustomerPortalPage() {
     <div className="min-h-screen p-4 md:p-8 space-y-6 container mx-auto">
       <div className="text-center space-y-2 py-4 max-w-2xl mx-auto">
         <Badge className="bg-primary/10 text-primary border-primary/20">Self-Service Portal</Badge>
-        <h1 className="text-3xl font-extrabold text-foreground">Customer Statement & Warranty Lookup</h1>
-        <p className="text-sm text-muted-foreground">Enter your phone number to check Khata due balance, invoices & warranty IMEIs.</p>
+        <h1 className="text-3xl font-extrabold text-foreground">
+          Customer Statement & Warranty Lookup
+        </h1>
+        <p className="text-sm text-muted-foreground">
+          Enter your phone number to check Khata due balance, invoices & warranty IMEIs.
+        </p>
       </div>
 
       {/* Search Input Box */}
@@ -68,7 +89,7 @@ function CustomerPortalPage() {
             onSubmit={async (e) => {
               e.preventDefault();
               setIsSearching(true);
-              await new Promise(resolve => setTimeout(resolve, 500));
+              await new Promise((resolve) => setTimeout(resolve, 500));
               setActiveLookup(searchPhone.trim());
               setIsSearching(false);
             }}
@@ -105,15 +126,23 @@ function CustomerPortalPage() {
             </Card>
             <Card className="bg-destructive/5 border-destructive/20">
               <CardContent className="p-4 text-center">
-                <div className="text-xs text-muted-foreground font-medium">Outstanding Khata Due</div>
-                <div className="text-2xl font-extrabold text-destructive mt-1">{formatCurrency(foundCustomer.credit || 0)}</div>
+                <div className="text-xs text-muted-foreground font-medium">
+                  Outstanding Khata Due
+                </div>
+                <div className="text-2xl font-extrabold text-destructive mt-1">
+                  {formatCurrency(foundCustomer.credit || 0)}
+                </div>
               </CardContent>
             </Card>
             <Card className="bg-success/5 border-success/20">
               <CardContent className="p-4 text-center">
-                <div className="text-xs text-muted-foreground font-medium">Available Credit Limit</div>
+                <div className="text-xs text-muted-foreground font-medium">
+                  Available Credit Limit
+                </div>
                 <div className="text-2xl font-extrabold text-success mt-1">
-                  {formatCurrency(Math.max(0, (foundCustomer.creditLimit || 5000) - (foundCustomer.credit || 0)))}
+                  {formatCurrency(
+                    Math.max(0, (foundCustomer.creditLimit || 5000) - (foundCustomer.credit || 0)),
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -142,11 +171,19 @@ function CustomerPortalPage() {
                     <tbody className="divide-y">
                       {warrantyItems.map((item, idx) => (
                         <tr key={idx}>
-                          <td className="p-2.5 font-semibold text-foreground">{item.productName}</td>
-                          <td className="p-2.5 font-mono text-xs font-bold text-primary">{item.serialNumber}</td>
-                          <td className="p-2.5 text-right text-muted-foreground">{formatDate(item.date)}</td>
+                          <td className="p-2.5 font-semibold text-foreground">
+                            {item.productName}
+                          </td>
+                          <td className="p-2.5 font-mono text-xs font-bold text-primary">
+                            {item.serialNumber}
+                          </td>
+                          <td className="p-2.5 text-right text-muted-foreground">
+                            {formatDate(item.date)}
+                          </td>
                           <td className="p-2.5 text-center">
-                            <Badge className="bg-success/15 text-success border-success/30">Active Warranty</Badge>
+                            <Badge className="bg-success/15 text-success border-success/30">
+                              Active Warranty
+                            </Badge>
                           </td>
                         </tr>
                       ))}
@@ -170,7 +207,9 @@ function CustomerPortalPage() {
             </CardHeader>
             <CardContent>
               {customerSales.length === 0 ? (
-                <div className="py-6 text-center text-xs text-muted-foreground">No purchase invoices found for this customer.</div>
+                <div className="py-6 text-center text-xs text-muted-foreground">
+                  No purchase invoices found for this customer.
+                </div>
               ) : (
                 <div className="overflow-hidden rounded-lg border">
                   <table className="w-full text-xs text-left">
@@ -185,10 +224,14 @@ function CustomerPortalPage() {
                     <tbody className="divide-y">
                       {customerSales.map((s) => (
                         <tr key={s.id}>
-                          <td className="p-2.5 font-mono font-bold text-primary">{s.id.substring(0, 8).toUpperCase()}</td>
+                          <td className="p-2.5 font-mono font-bold text-primary">
+                            {s.id.substring(0, 8).toUpperCase()}
+                          </td>
                           <td className="p-2.5 text-muted-foreground">{formatDate(s.date)}</td>
                           <td className="p-2.5 uppercase font-medium">{s.paymentMethod}</td>
-                          <td className="p-2.5 text-right font-bold text-sm">{formatCurrency(s.total)}</td>
+                          <td className="p-2.5 text-right font-bold text-sm">
+                            {formatCurrency(s.total)}
+                          </td>
                         </tr>
                       ))}
                     </tbody>

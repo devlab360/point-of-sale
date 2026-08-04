@@ -37,86 +37,234 @@ import {
   UserCheck,
 } from "lucide-react";
 
-export type MenuItem = { to: string; label: string; tkey: string; icon: any; badge?: string; roles?: string[] };
+export type MenuItem = {
+  to: string;
+  label: string;
+  tkey: string;
+  icon: any;
+  badge?: string;
+  roles?: string[];
+};
 export type MenuGroup = { label: string; tkey: string; items: MenuItem[] };
 
 export const APP_GROUPS: MenuGroup[] = [
   {
-    label: "Overview", tkey: "overview",
+    label: "Overview",
+    tkey: "overview",
     items: [
-      { to: "/", label: "Dashboard", tkey: "dashboard", icon: LayoutDashboard, roles: ["admin", "manager"] },
+      {
+        to: "/",
+        label: "Dashboard",
+        tkey: "dashboard",
+        icon: LayoutDashboard,
+        roles: ["admin", "manager"],
+      },
       { to: "/pos", label: "POS Terminal", tkey: "pos", icon: ScanBarcode, badge: "Live" },
     ],
   },
   {
-    label: "Catalog", tkey: "catalog",
+    label: "Catalog",
+    tkey: "catalog",
     items: [
-      { to: "/products", label: "Products", tkey: "products", icon: Package, roles: ["admin", "manager"] },
-      { to: "/categories", label: "Categories", tkey: "categories", icon: Tag, roles: ["admin", "manager"] },
+      {
+        to: "/products",
+        label: "Products",
+        tkey: "products",
+        icon: Package,
+        roles: ["admin", "manager"],
+      },
+      {
+        to: "/categories",
+        label: "Categories",
+        tkey: "categories",
+        icon: Tag,
+        roles: ["admin", "manager"],
+      },
       { to: "/brands", label: "Brands", tkey: "brands", icon: Award, roles: ["admin", "manager"] },
       { to: "/units", label: "Units", tkey: "units", icon: Ruler, roles: ["admin", "manager"] },
     ],
   },
   {
-    label: "Stock", tkey: "stock",
+    label: "Stock",
+    tkey: "stock",
     items: [
-      { to: "/inventory", label: "Inventory", tkey: "inventory", icon: Boxes, roles: ["admin", "manager"] },
-      { to: "/inventory/adjustments", label: "Adjustments", tkey: "adjustments", icon: PackageMinus, roles: ["admin", "manager"] },
-      { to: "/inventory/transfers", label: "Transfers", tkey: "transfers", icon: ArrowLeftRight, roles: ["admin", "manager"] },
-      { to: "/inventory/history", label: "Stock History", tkey: "stockHistory", icon: History, roles: ["admin", "manager"] },
+      {
+        to: "/inventory",
+        label: "Inventory",
+        tkey: "inventory",
+        icon: Boxes,
+        roles: ["admin", "manager"],
+      },
+      {
+        to: "/inventory/adjustments",
+        label: "Adjustments",
+        tkey: "adjustments",
+        icon: PackageMinus,
+        roles: ["admin", "manager"],
+      },
+      {
+        to: "/inventory/transfers",
+        label: "Transfers",
+        tkey: "transfers",
+        icon: ArrowLeftRight,
+        roles: ["admin", "manager"],
+      },
+      {
+        to: "/inventory/history",
+        label: "Stock History",
+        tkey: "stockHistory",
+        icon: History,
+        roles: ["admin", "manager"],
+      },
     ],
   },
   {
-    label: "Trade & B2B", tkey: "tradeB2B",
+    label: "Trade & B2B",
+    tkey: "tradeB2B",
     items: [
-      { to: "/purchases", label: "Purchases", tkey: "purchases", icon: ShoppingCart, roles: ["admin", "manager"] },
-      { to: "/purchases/returns", label: "Purchase Returns", tkey: "purchaseReturns", icon: Undo2, roles: ["admin", "manager"] },
+      {
+        to: "/purchases",
+        label: "Purchases",
+        tkey: "purchases",
+        icon: ShoppingCart,
+        roles: ["admin", "manager"],
+      },
+      {
+        to: "/purchases/returns",
+        label: "Purchase Returns",
+        tkey: "purchaseReturns",
+        icon: Undo2,
+        roles: ["admin", "manager"],
+      },
       { to: "/sales", label: "Sales Invoices", tkey: "salesInvoices", icon: ReceiptText },
-      { to: "/quotations", label: "Quotations", tkey: "quotations", icon: FileText, roles: ["admin", "manager"] },
-      { to: "/delivery-challans", label: "Delivery Challans", tkey: "deliveryChallans", icon: Truck, roles: ["admin", "manager"] },
+      {
+        to: "/quotations",
+        label: "Quotations",
+        tkey: "quotations",
+        icon: FileText,
+        roles: ["admin", "manager"],
+      },
+      {
+        to: "/delivery-challans",
+        label: "Delivery Challans",
+        tkey: "deliveryChallans",
+        icon: Truck,
+        roles: ["admin", "manager"],
+      },
       { to: "/sales/returns", label: "Sales Returns", tkey: "salesReturns", icon: Undo2 },
     ],
   },
   {
-    label: "People", tkey: "people",
+    label: "People",
+    tkey: "people",
     items: [
       { to: "/customers", label: "Customers", tkey: "customers", icon: Users },
-      { to: "/suppliers", label: "Suppliers", tkey: "suppliers", icon: Truck, roles: ["admin", "manager"] },
+      {
+        to: "/suppliers",
+        label: "Suppliers",
+        tkey: "suppliers",
+        icon: Truck,
+        roles: ["admin", "manager"],
+      },
       { to: "/users", label: "Employees", tkey: "employees", icon: UserCog, roles: ["admin"] },
     ],
   },
   {
-    label: "Finance & Accounts", tkey: "finance",
+    label: "Finance & Accounts",
+    tkey: "finance",
     items: [
-      { to: "/accounts", label: "Chart of Accounts", tkey: "accounts", icon: BookOpen, roles: ["admin", "manager"] },
-      { to: "/expenses", label: "Expenses", tkey: "expenses", icon: Wallet, roles: ["admin", "manager"] },
-      { to: "/reports", label: "Financial Reports", tkey: "reports", icon: BarChart3, roles: ["admin", "manager"] },
+      {
+        to: "/accounts",
+        label: "Chart of Accounts",
+        tkey: "accounts",
+        icon: BookOpen,
+        roles: ["admin", "manager"],
+      },
+      {
+        to: "/expenses",
+        label: "Expenses",
+        tkey: "expenses",
+        icon: Wallet,
+        roles: ["admin", "manager"],
+      },
+      {
+        to: "/reports",
+        label: "Financial Reports",
+        tkey: "reports",
+        icon: BarChart3,
+        roles: ["admin", "manager"],
+      },
     ],
   },
   {
-    label: "Services & Verticals", tkey: "services",
+    label: "Services & Verticals",
+    tkey: "services",
     items: [
-      { to: "/repairs", label: "Repair Job Sheets", tkey: "repairs", icon: Wrench, roles: ["admin", "manager"] },
-      { to: "/subscriptions", label: "Subscriptions", tkey: "subscriptions", icon: Repeat, roles: ["admin", "manager"] },
-      { to: "/rentals", label: "Equipment Rentals", tkey: "rentals", icon: KeyRound, roles: ["admin", "manager"] },
+      {
+        to: "/repairs",
+        label: "Repair Job Sheets",
+        tkey: "repairs",
+        icon: Wrench,
+        roles: ["admin", "manager"],
+      },
+      {
+        to: "/subscriptions",
+        label: "Subscriptions",
+        tkey: "subscriptions",
+        icon: Repeat,
+        roles: ["admin", "manager"],
+      },
+      {
+        to: "/rentals",
+        label: "Equipment Rentals",
+        tkey: "rentals",
+        icon: KeyRound,
+        roles: ["admin", "manager"],
+      },
     ],
   },
   {
-    label: "Marketing", tkey: "marketing",
+    label: "Marketing",
+    tkey: "marketing",
     items: [
-      { to: "/coupons", label: "Coupons", tkey: "coupons", icon: Ticket, roles: ["admin", "manager"] },
+      {
+        to: "/coupons",
+        label: "Coupons",
+        tkey: "coupons",
+        icon: Ticket,
+        roles: ["admin", "manager"],
+      },
       { to: "/gift-cards", label: "Gift Cards", tkey: "giftCards", icon: Gift },
-      { to: "/loyalty", label: "Loyalty", tkey: "loyalty", icon: Star, roles: ["admin", "manager"] },
-      { to: "/promotions", label: "Promotions", tkey: "promotions", icon: Megaphone, roles: ["admin", "manager"] },
+      {
+        to: "/loyalty",
+        label: "Loyalty",
+        tkey: "loyalty",
+        icon: Star,
+        roles: ["admin", "manager"],
+      },
+      {
+        to: "/promotions",
+        label: "Promotions",
+        tkey: "promotions",
+        icon: Megaphone,
+        roles: ["admin", "manager"],
+      },
     ],
   },
   {
-    label: "System", tkey: "system",
+    label: "System",
+    tkey: "system",
     items: [
       { to: "/portal", label: "Client Portal", tkey: "clientPortal", icon: UserCheck },
       { to: "/settings", label: "Settings", tkey: "settings", icon: Settings, roles: ["admin"] },
       { to: "/notifications", label: "Notifications", tkey: "notifications", icon: Bell },
-      { to: "/activity", label: "Activity Log", tkey: "activityLog", icon: Activity, roles: ["admin", "manager"] },
+      {
+        to: "/activity",
+        label: "Activity Log",
+        tkey: "activityLog",
+        icon: Activity,
+        roles: ["admin", "manager"],
+      },
       { to: "/profile", label: "Profile", tkey: "profile", icon: CircleUser },
       { to: "/help", label: "Help Center", tkey: "help", icon: LifeBuoy },
     ],
@@ -126,16 +274,36 @@ export const APP_GROUPS: MenuGroup[] = [
 export const PERMISSION_ROUTE_MAP: Record<string, string[]> = {
   pos: ["/pos"],
   inventory: [
-    "/products", "/categories", "/brands", "/units", "/suppliers",
-    "/purchases", "/purchases/returns", "/inventory", "/inventory/adjustments",
-    "/inventory/transfers", "/inventory/history", "/print-barcodes",
-    "/repairs", "/subscriptions", "/rentals",
-    "/coupons", "/gift-cards", "/loyalty", "/promotions",
-    "/quotations", "/delivery-challans",
+    "/products",
+    "/categories",
+    "/brands",
+    "/units",
+    "/suppliers",
+    "/purchases",
+    "/purchases/returns",
+    "/inventory",
+    "/inventory/adjustments",
+    "/inventory/transfers",
+    "/inventory/history",
+    "/print-barcodes",
+    "/repairs",
+    "/subscriptions",
+    "/rentals",
+    "/coupons",
+    "/gift-cards",
+    "/loyalty",
+    "/promotions",
+    "/quotations",
+    "/delivery-challans",
   ],
   reports: [
-    "/reports", "/customer-ledger", "/supplier-ledger",
-    "/accounts", "/vouchers", "/day-book", "/activity",
+    "/reports",
+    "/customer-ledger",
+    "/supplier-ledger",
+    "/accounts",
+    "/vouchers",
+    "/day-book",
+    "/activity",
   ],
   customers: ["/customers", "/portal"],
   expenses: ["/expenses"],
@@ -144,7 +312,16 @@ export const PERMISSION_ROUTE_MAP: Record<string, string[]> = {
 };
 
 const DEFAULT_ROLE_PERMISSIONS_FALLBACK: Record<string, string[]> = {
-  admin: ["pos", "inventory", "reports", "customers", "expenses", "discounts", "returns", "settings"],
+  admin: [
+    "pos",
+    "inventory",
+    "reports",
+    "customers",
+    "expenses",
+    "discounts",
+    "returns",
+    "settings",
+  ],
   manager: ["pos", "inventory", "reports", "customers", "expenses", "discounts", "returns"],
   cashier: ["pos", "customers", "discounts"],
 };
@@ -153,12 +330,15 @@ export function hasPermissionForRoute(
   user: any,
   routePath: string,
   isSuperAdminUser: boolean,
-  saasPlan: any
+  saasPlan: any,
 ): { allowed: boolean; reason?: string } {
   // 1. Super Admin Authorization
   if (isSuperAdminUser) return { allowed: true };
   if (routePath.startsWith("/super-admin")) {
-    return { allowed: false, reason: "You do not have permission to access the Super Admin dashboard." };
+    return {
+      allowed: false,
+      reason: "You do not have permission to access the Super Admin dashboard.",
+    };
   }
 
   // 2. Core System Routes (Always Available)
@@ -167,27 +347,27 @@ export function hasPermissionForRoute(
   }
 
   // 3. Resolve Target Path
-  const allItems = APP_GROUPS.flatMap(g => g.items);
-  
+  const allItems = APP_GROUPS.flatMap((g) => g.items);
+
   // First try to find an exact match for the route
-  let matchedItem = allItems.find(item => routePath === item.to);
-  
+  let matchedItem = allItems.find((item) => routePath === item.to);
+
   // If no exact match (e.g., dynamic routes like /products/123/edit), find the most specific parent
   if (!matchedItem) {
-    const parentMatches = allItems.filter(item => routePath.startsWith(item.to + "/"));
+    const parentMatches = allItems.filter((item) => routePath.startsWith(item.to + "/"));
     if (parentMatches.length > 0) {
       parentMatches.sort((a, b) => b.to.length - a.to.length);
       matchedItem = parentMatches[0];
     }
   }
-  
+
   const targetPath = matchedItem ? matchedItem.to : routePath;
   const label = matchedItem ? matchedItem.label : targetPath;
 
   // 4. SaaS Plan Authorization
   if (saasPlan && Array.isArray(saasPlan.features) && saasPlan.features.length > 0) {
     const requiredFeatureEntry = Object.entries(PERMISSION_ROUTE_MAP).find(([_, paths]) =>
-      paths.some(p => targetPath === p || targetPath.startsWith(p + "/"))
+      paths.some((p) => targetPath === p || targetPath.startsWith(p + "/")),
     );
     const legacyFeatureKey = requiredFeatureEntry ? requiredFeatureEntry[0] : null;
 
@@ -198,13 +378,13 @@ export function hasPermissionForRoute(
       // Otherwise allow dynamic sub-pages (like /products/123) to match their parent prefix
       return targetPath === feat || targetPath.startsWith(feat + "/");
     });
-    
+
     const planAllowsLegacy = legacyFeatureKey && saasPlan.features.includes(legacyFeatureKey);
 
     if (!planAllowsRoute && !planAllowsLegacy) {
       return {
         allowed: false,
-        reason: `The "${label}" feature is not available on your current plan (${saasPlan.name || 'Current Plan'}). Please upgrade your subscription to access this feature.`
+        reason: `The "${label}" feature is not available on your current plan (${saasPlan.name || "Current Plan"}). Please upgrade your subscription to access this feature.`,
       };
     }
   }
@@ -212,7 +392,10 @@ export function hasPermissionForRoute(
   // 5. Role-Based Authorization
   if (matchedItem?.roles && user?.role) {
     if (!matchedItem.roles.includes(user.role.toLowerCase())) {
-      return { allowed: false, reason: `Your role (${user.role}) does not have access to ${label}.` };
+      return {
+        allowed: false,
+        reason: `Your role (${user.role}) does not have access to ${label}.`,
+      };
     }
   }
 
@@ -220,17 +403,19 @@ export function hasPermissionForRoute(
   if (user?.role?.toLowerCase() !== "admin") {
     const userPerms: string[] = Array.isArray(user?.permissions)
       ? user.permissions
-      : (DEFAULT_ROLE_PERMISSIONS_FALLBACK[user?.role?.toLowerCase()] || ["pos"]);
+      : DEFAULT_ROLE_PERMISSIONS_FALLBACK[user?.role?.toLowerCase()] || ["pos"];
 
     const requiredPermEntry = Object.entries(PERMISSION_ROUTE_MAP).find(([_, paths]) =>
-      paths.some(p => targetPath === p || targetPath.startsWith(p + "/"))
+      paths.some((p) => targetPath === p || targetPath.startsWith(p + "/")),
     );
 
     if (requiredPermEntry && !userPerms.includes(requiredPermEntry[0])) {
-      return { allowed: false, reason: `You do not have permission to access "${label}". Contact your store administrator.` };
+      return {
+        allowed: false,
+        reason: `You do not have permission to access "${label}". Contact your store administrator.`,
+      };
     }
   }
 
   return { allowed: true };
 }
-

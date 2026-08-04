@@ -27,7 +27,7 @@ export function IconPicker({ value, onChange }: IconPickerProps) {
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-auto p-0 border-none shadow-none" align="start">
-        <EmojiPicker 
+        <EmojiPicker
           onEmojiClick={(emojiData: EmojiClickData) => {
             onChange(emojiData.emoji);
             setOpen(false);

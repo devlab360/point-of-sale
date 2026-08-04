@@ -20,7 +20,9 @@ export function validateEmail(email: string): { valid: boolean; error?: string }
   if (!sanitized) return { valid: false, error: "Email is required" };
   const schema = z.string().email("Invalid email format");
   const result = schema.safeParse(sanitized);
-  return result.success ? { valid: true } : { valid: false, error: result.error.errors[0]?.message };
+  return result.success
+    ? { valid: true }
+    : { valid: false, error: result.error.errors[0]?.message };
 }
 
 /**
@@ -81,7 +83,11 @@ export function validateStrongPassword(password: string): { valid: boolean; erro
     return { valid: false, error: "Password must be at least 8 characters long" };
   }
   if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^a-zA-Z\d])/.test(pwd)) {
-    return { valid: false, error: "Password must contain uppercase, lowercase, number and special character (e.g. Samim@123)" };
+    return {
+      valid: false,
+      error:
+        "Password must contain uppercase, lowercase, number and special character (e.g. Samim@123)",
+    };
   }
   return { valid: true };
 }
@@ -89,7 +95,10 @@ export function validateStrongPassword(password: string): { valid: boolean; erro
 /**
  * Validates positive number / decimal value.
  */
-export function validatePositiveNumber(value: number | string, fieldName = "Value"): { valid: boolean; error?: string } {
+export function validatePositiveNumber(
+  value: number | string,
+  fieldName = "Value",
+): { valid: boolean; error?: string } {
   const num = typeof value === "number" ? value : parseFloat(value);
   if (isNaN(num)) return { valid: false, error: `${fieldName} must be a valid number` };
   if (num < 0) return { valid: false, error: `${fieldName} cannot be negative` };

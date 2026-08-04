@@ -30,7 +30,7 @@ export function calculateItemTax(params: TaxCalculationParams): TaxCalculationRe
 
   // 1. Calculate Gross Total (before discount and tax)
   const grossTotal = price * quantity;
-  
+
   // 2. Net amount before any tax extraction (after discount)
   // Ensure we don't go below 0
   const netAmount = Math.max(0, grossTotal - discountAmt);
@@ -56,10 +56,7 @@ export function calculateItemTax(params: TaxCalculationParams): TaxCalculationRe
 
   // Rule: If customer state is empty/unknown, assume Intra-State (CGST + SGST)
   // If store state is not set, we can't reliably do IGST, so default to Intra-State
-  const isInterState =
-    storeStateCode &&
-    customerStateCode &&
-    storeStateCode !== customerStateCode;
+  const isInterState = storeStateCode && customerStateCode && storeStateCode !== customerStateCode;
 
   if (isInterState) {
     igstAmt = totalTaxAmt;

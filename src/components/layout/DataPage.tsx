@@ -96,7 +96,7 @@ export function DataPage({
                     <SheetTitle>{t("filters") || "Filters"}</SheetTitle>
                   </SheetHeader>
                   <div className="mt-6 flex-1 flex flex-col min-h-0">
-                    {typeof filtersContent === "function" 
+                    {typeof filtersContent === "function"
                       ? filtersContent({ close: () => setIsFilterOpen(false) })
                       : filtersContent}
                   </div>

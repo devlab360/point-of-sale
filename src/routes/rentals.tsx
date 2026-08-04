@@ -11,15 +11,21 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { localDb, type LocalRental } from "@/lib/db";
-import { useLiveQuery } from "dexie-react-hooks";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { getRentalsFn, createRentalFn, updateRentalStatusFn, deleteRentalFn } from "@/api/rentals";
 import { useCurrency } from "@/lib/currency";
 import { KeyRound, Plus, MoreVertical, Trash2, CheckCircle2, Loader2 } from "lucide-react";
 import { v4 as uuidv4 } from "uuid";
@@ -35,7 +41,14 @@ export const Route = createFileRoute("/rentals")({
 
 function RentalsPage() {
   const { formatCurrency } = useCurrency();
-  const rawRentals = useLiveQuery(() => localDb.rentals.filter(r => !r._deleted).reverse().toArray()) || [];
+  const orgId = PersistStore.getOrgId() || "default";
+  const queryClient = useQueryClient();
+
+  const { data: rentalsData } = useQuery({
+    queryKey: ["rentals", orgId],
+    queryFn: async () => ((await getRentalsFn({ data: {} })) as any)?.data || [],
+  });
+  const rawRentals = rentalsData || [];
 
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -69,11 +82,11 @@ function RentalsPage() {
         (r) =>
           r.rentalNo.toLowerCase().includes(lower) ||
           r.customerName.toLowerCase().includes(lower) ||
-          r.itemName.toLowerCase().includes(lower)
+          r.itemName.toLowerCase().includes(lower),
       );
     }
     if (filters.status) {
-      filtered = filtered.filter(r => r.status === filters.status);
+      filtered = filtered.filter((r) => r.status === filters.status);
     }
     return filtered.reverse();
   }, [rawRentals, debouncedSearch, filters.status]);
@@ -81,42 +94,51 @@ function RentalsPage() {
   const totalPages = Math.max(1, Math.ceil(filteredRentals.length / itemsPerPage));
   const paginated = filteredRentals.slice((page - 1) * itemsPerPage, page * itemsPerPage);
 
-  const { errors: rntErrors, validate: validateRnt, clearError: clearRntError, clearAll: clearRntAll } = useFormValidation({
+  const {
+    errors: rntErrors,
+    validate: validateRnt,
+    clearError: clearRntError,
+    clearAll: clearRntAll,
+  } = useFormValidation({
     customerName: { required: "Customer name is required" },
     itemName: { required: "Item name is required" },
     dailyRate: { required: "Daily rate is required", positive: "Rate must be positive" },
     rentStartDate: { required: "Start date is required" },
-    expectedReturnDate: { required: "Return date is required" }
+    expectedReturnDate: { required: "Return date is required" },
   });
 
   const handleCreateRental = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    const isValid = validateRnt({ customerName, itemName, dailyRate, rentStartDate, expectedReturnDate });
+
+    const isValid = validateRnt({
+      customerName,
+      itemName,
+      dailyRate,
+      rentStartDate,
+      expectedReturnDate,
+    });
     if (!isValid) return;
 
     setIsSubmitting(true);
-    await new Promise(resolve => setTimeout(resolve, 500));
+    await new Promise((resolve) => setTimeout(resolve, 500));
     try {
       const rNo = `RNT-${Date.now().toString().slice(-6)}`;
-      const rate = parseFloat(dailyRate) || 0;
-      const deposit = parseFloat(securityDeposit) || 0;
-
-      await localDb.rentals.add({
-        id: uuidv4(),
-        orgId: PersistStore.getOrgId() || "default",
-        rentalNo: rNo,
-        customerName,
-        itemName,
-        rentStartDate,
-        expectedReturnDate: expectedReturnDate || rentStartDate,
-        dailyRate: rate,
-        securityDeposit: deposit,
-        totalAmount: rate * 3 + deposit,
-        status: "rented",
-        synced: false,
+      await createRentalFn({
+        data: {
+          rental: {
+            rentalNo: rNo,
+            customerName,
+            itemName,
+            rentStartDate,
+            expectedReturnDate,
+            dailyRate: parseFloat(dailyRate) || 0,
+            securityDeposit: parseFloat(securityDeposit) || 0,
+            totalAmount: 0,
+            status: "active",
+          },
+        },
       });
-
+      queryClient.invalidateQueries({ queryKey: ["rentals"] });
       toast.success(`Rental Booking ${rNo} created!`);
       setIsAddOpen(false);
       setCustomerName("");
@@ -132,21 +154,14 @@ function RentalsPage() {
   };
 
   const markReturned = async (id: string) => {
-    await localDb.rentals.update(id, { status: "returned", synced: false });
-    toast.success("Rental item marked returned and deposit refunded!");
+    await updateRentalStatusFn({ data: { id, status: "returned" } });
+    queryClient.invalidateQueries({ queryKey: ["rentals"] });
+    toast.success("Equipment returned successfully");
   };
 
   const deleteRental = async (id: string) => {
-    await localDb.rentals.update(id, { _deleted: true, synced: false });
-    await localDb.activityLog.add({
-      id: uuidv4(),
-      orgId: PersistStore.getOrgId() || "default",
-      action: "TOMBSTONE",
-      user: "system",
-      details: JSON.stringify({ entityType: "rentals", entityId: id }),
-      timestamp: new Date().toISOString(),
-      synced: false,
-    });
+    await deleteRentalFn({ data: { id } });
+    queryClient.invalidateQueries({ queryKey: ["rentals"] });
     toast.success("Rental record deleted");
   };
 
@@ -174,13 +189,19 @@ function RentalsPage() {
                     { value: "returned", label: "Returned" },
                   ]}
                   value={draftFilters.status}
-                  onChange={(val) => setDraftFilters(prev => ({ ...prev, status: val }))}
+                  onChange={(val) => setDraftFilters((prev) => ({ ...prev, status: val }))}
                   placeholder="Filter by Status"
                 />
               </div>
             </div>
             <div className="pt-4 mt-auto">
-              <Button className="w-full" onClick={() => { setFilters(draftFilters); close(); }}>
+              <Button
+                className="w-full"
+                onClick={() => {
+                  setFilters(draftFilters);
+                  close();
+                }}
+              >
                 Apply Filters
               </Button>
             </div>
@@ -191,7 +212,11 @@ function RentalsPage() {
           <EmptyState
             icon={KeyRound}
             title="No rental bookings found"
-            description={search ? "Try adjusting your search query." : "Create your first rental booking for cameras, tools, or vehicles."}
+            description={
+              search
+                ? "Try adjusting your search query."
+                : "Create your first rental booking for cameras, tools, or vehicles."
+            }
           />
         ) : (
           <div className="space-y-4">
@@ -215,14 +240,26 @@ function RentalsPage() {
                       <td className="px-4 py-3 font-mono font-bold text-primary">{r.rentalNo}</td>
                       <td className="px-4 py-3 font-semibold">{r.customerName}</td>
                       <td className="px-4 py-3 font-medium">{r.itemName}</td>
-                      <td className="px-4 py-3 text-xs font-mono">{formatCurrency(r.dailyRate)} / day</td>
-                      <td className="px-4 py-3 text-xs font-mono text-warning-foreground font-semibold">{formatCurrency(r.securityDeposit)}</td>
-                      <td className="px-4 py-3 text-xs text-muted-foreground">{r.expectedReturnDate ? format(new Date(r.expectedReturnDate), "MMM dd, yyyy") : "-"}</td>
+                      <td className="px-4 py-3 text-xs font-mono">
+                        {formatCurrency(r.dailyRate)} / day
+                      </td>
+                      <td className="px-4 py-3 text-xs font-mono text-warning-foreground font-semibold">
+                        {formatCurrency(r.securityDeposit)}
+                      </td>
+                      <td className="px-4 py-3 text-xs text-muted-foreground">
+                        {r.expectedReturnDate
+                          ? format(new Date(r.expectedReturnDate), "MMM dd, yyyy")
+                          : "-"}
+                      </td>
                       <td className="px-4 py-3">
                         {r.status === "returned" ? (
-                          <Badge className="bg-success/15 text-success border-success/30">Returned</Badge>
+                          <Badge className="bg-success/15 text-success border-success/30">
+                            Returned
+                          </Badge>
                         ) : (
-                          <Badge className="bg-primary/15 text-primary border-primary/30">Active Rented</Badge>
+                          <Badge className="bg-primary/15 text-primary border-primary/30">
+                            Active Rented
+                          </Badge>
                         )}
                       </td>
                       <td className="px-4 py-3 text-right">
@@ -234,9 +271,13 @@ function RentalsPage() {
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
                             <DropdownMenuItem onClick={() => markReturned(r.id)}>
-                              <CheckCircle2 className="mr-2 size-4 text-success" /> Mark Returned & Refund Deposit
+                              <CheckCircle2 className="mr-2 size-4 text-success" /> Mark Returned &
+                              Refund Deposit
                             </DropdownMenuItem>
-                            <DropdownMenuItem className="text-destructive" onClick={() => deleteRental(r.id)}>
+                            <DropdownMenuItem
+                              className="text-destructive"
+                              onClick={() => deleteRental(r.id)}
+                            >
                               <Trash2 className="mr-2 size-4" /> Delete
                             </DropdownMenuItem>
                           </DropdownMenuContent>
@@ -253,9 +294,15 @@ function RentalsPage() {
       </DataPage>
 
       {/* Create Rental Booking Modal */}
-      <Dialog open={isAddOpen} onOpenChange={(open) => {
-        if (!open) { setIsAddOpen(false); clearRntAll(); }
-      }}>
+      <Dialog
+        open={isAddOpen}
+        onOpenChange={(open) => {
+          if (!open) {
+            setIsAddOpen(false);
+            clearRntAll();
+          }
+        }}
+      >
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
@@ -265,40 +312,66 @@ function RentalsPage() {
           </DialogHeader>
           <form noValidate onSubmit={handleCreateRental} className="space-y-4 pt-2">
             <div className="space-y-1.5">
-              <Label>Customer Name <span className="text-destructive">*</span></Label>
+              <Label>
+                Customer Name <span className="text-destructive">*</span>
+              </Label>
               <Input
-                placeholder="e.g. Customer Name" value={customerName}
-                onChange={(e) => { setCustomerName(e.target.value); clearRntError("customerName"); }}
-                className={rntErrors.customerName ? "border-destructive focus-visible:ring-destructive" : ""}
+                placeholder="e.g. Customer Name"
+                value={customerName}
+                onChange={(e) => {
+                  setCustomerName(e.target.value);
+                  clearRntError("customerName");
+                }}
+                className={
+                  rntErrors.customerName ? "border-destructive focus-visible:ring-destructive" : ""
+                }
               />
               <FieldError message={rntErrors.customerName} />
             </div>
             <div className="space-y-1.5">
-              <Label>Rented Equipment / Item <span className="text-destructive">*</span></Label>
+              <Label>
+                Rented Equipment / Item <span className="text-destructive">*</span>
+              </Label>
               <Input
-                placeholder="e.g. Item Name" value={itemName}
-                onChange={(e) => { setItemName(e.target.value); clearRntError("itemName"); }}
-                className={rntErrors.itemName ? "border-destructive focus-visible:ring-destructive" : ""}
+                placeholder="e.g. Item Name"
+                value={itemName}
+                onChange={(e) => {
+                  setItemName(e.target.value);
+                  clearRntError("itemName");
+                }}
+                className={
+                  rntErrors.itemName ? "border-destructive focus-visible:ring-destructive" : ""
+                }
               />
               <FieldError message={rntErrors.itemName} />
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <Label>Rent Start Date <span className="text-destructive">*</span></Label>
+                <Label>
+                  Rent Start Date <span className="text-destructive">*</span>
+                </Label>
                 <div className="mt-1">
-                  <DatePicker 
-                    date={rentStartDate ? new Date(rentStartDate) : undefined} 
-                    onDateChange={(d) => { setRentStartDate(d ? d.toISOString().split("T")[0] : ""); clearRntError("rentStartDate"); }} 
+                  <DatePicker
+                    date={rentStartDate ? new Date(rentStartDate) : undefined}
+                    onDateChange={(d) => {
+                      setRentStartDate(d ? d.toISOString().split("T")[0] : "");
+                      clearRntError("rentStartDate");
+                    }}
                   />
                 </div>
                 <FieldError message={rntErrors.rentStartDate} />
               </div>
               <div className="space-y-1.5">
-                <Label>Expected Return Date <span className="text-destructive">*</span></Label>
+                <Label>
+                  Expected Return Date <span className="text-destructive">*</span>
+                </Label>
                 <div className="mt-1">
-                  <DatePicker 
-                    date={expectedReturnDate ? new Date(expectedReturnDate) : undefined} 
-                    onDateChange={(d) => { setExpectedReturnDate(d ? d.toISOString().split("T")[0] : ""); clearRntError("expectedReturnDate"); }} 
+                  <DatePicker
+                    date={expectedReturnDate ? new Date(expectedReturnDate) : undefined}
+                    onDateChange={(d) => {
+                      setExpectedReturnDate(d ? d.toISOString().split("T")[0] : "");
+                      clearRntError("expectedReturnDate");
+                    }}
                   />
                 </div>
                 <FieldError message={rntErrors.expectedReturnDate} />
@@ -306,21 +379,48 @@ function RentalsPage() {
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <Label>Daily Rate <span className="text-destructive">*</span></Label>
+                <Label>
+                  Daily Rate <span className="text-destructive">*</span>
+                </Label>
                 <Input
-                  type="number" min="0" step="0.01" placeholder="0.00" value={dailyRate}
-                  onChange={(e) => { setDailyRate(e.target.value); clearRntError("dailyRate"); }}
-                  className={rntErrors.dailyRate ? "border-destructive focus-visible:ring-destructive" : ""}
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  placeholder="0.00"
+                  value={dailyRate}
+                  onChange={(e) => {
+                    setDailyRate(e.target.value);
+                    clearRntError("dailyRate");
+                  }}
+                  className={
+                    rntErrors.dailyRate ? "border-destructive focus-visible:ring-destructive" : ""
+                  }
                 />
                 <FieldError message={rntErrors.dailyRate} />
               </div>
               <div className="space-y-1.5">
                 <Label>Security Deposit Amount</Label>
-                <Input type="number" min="0" step="0.01" placeholder="0.00" value={securityDeposit} onChange={(e) => setSecurityDeposit(e.target.value)} />
+                <Input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  placeholder="0.00"
+                  value={securityDeposit}
+                  onChange={(e) => setSecurityDeposit(e.target.value)}
+                />
               </div>
             </div>
             <DialogFooter className="mt-6">
-              <Button type="button" variant="outline" onClick={() => { setIsAddOpen(false); clearRntAll(); }}>Cancel</Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setIsAddOpen(false);
+                  clearRntAll();
+                }}
+              >
+                Cancel
+              </Button>
               <Button type="submit" disabled={isSubmitting}>
                 {isSubmitting && <Loader2 className="size-4 animate-spin mr-2" />}
                 Dispatch Rental Booking

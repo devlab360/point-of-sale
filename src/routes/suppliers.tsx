@@ -7,7 +7,13 @@ import { useDebounce } from "@/hooks/useDebounce";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import {
@@ -26,16 +32,36 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { localDb } from "@/lib/db";
-import { useLiveQuery } from "dexie-react-hooks";
-import { Truck, Plus, Trash2, Edit2, Search, ArrowUpRight, ArrowDownLeft, Calendar, FileText, CheckCircle2, Star, Loader2 } from "lucide-react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import {
+  getSuppliersFn,
+  createSupplierFn,
+  updateSupplierFn,
+  deleteSupplierFn,
+  getSupplierLedgersFn,
+} from "@/api/suppliers";
+import {
+  Truck,
+  Plus,
+  Trash2,
+  Edit2,
+  Search,
+  ArrowUpRight,
+  ArrowDownLeft,
+  Calendar,
+  FileText,
+  CheckCircle2,
+  Star,
+  Loader2,
+} from "lucide-react";
 import { useCurrency } from "@/lib/currency";
 import { MoreVertical } from "lucide-react";
 import { v4 as uuidv4 } from "uuid";
 import { toast } from "sonner";
 import { PersistStore } from "@/lib/session-store";
-import type { LocalSupplier } from "@/lib/db";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { CardGridSkeleton } from "@/components/skeletons/CardGridSkeleton";
+import { ErrorState } from "@/components/ui/error-state";
 import { useFormValidation } from "@/hooks/useFormValidation";
 import { FieldError } from "@/components/ui/field-error";
 import { PhoneInput } from "@/components/ui/phone-input";
@@ -48,17 +74,38 @@ export const Route = createFileRoute("/suppliers")({
 function SuppliersPage() {
   const { formatCurrency } = useCurrency();
   const { t } = useLanguage();
-  const rawSuppliers = useLiveQuery(() => localDb.suppliers.filter(s => !s._deleted).toArray()) || [];
+  const orgId = PersistStore.getOrgId() || "default";
+  const queryClient = useQueryClient();
+
+  const {
+    data: rawSuppliersData,
+    isLoading: isSuppliersLoading,
+    isError: isSuppliersError,
+    refetch: refetchSuppliers,
+  } = useQuery({
+    queryKey: ["suppliers", orgId],
+    queryFn: async () => ((await getSuppliersFn({ data: {} })) as any)?.data || [],
+  });
+  const rawSuppliers = rawSuppliersData || [];
+
   const [isAddOpen, setIsAddOpen] = useState(false);
-  const [editItem, setEditItem] = useState<LocalSupplier | null>(null);
+  const [editItem, setEditItem] = useState<any | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
-  const [ledgerSupplier, setLedgerSupplier] = useState<LocalSupplier | null>(null);
+  const [ledgerSupplier, setLedgerSupplier] = useState<any | null>(null);
 
-  const supplierLedgerEntries = useLiveQuery(() => {
-    if (!ledgerSupplier) return [];
-    return localDb.supplierLedgers.where("supplierId").equals(ledgerSupplier.id).toArray();
-  }, [ledgerSupplier]) || [];
+  const { data: supplierLedgerEntriesData } = useQuery({
+    queryKey: ["supplierLedgers", ledgerSupplier?.id],
+    queryFn: async () => {
+      if (!ledgerSupplier) return [];
+      return (
+        ((await getSupplierLedgersFn({ data: { supplierId: ledgerSupplier.id } })) as any)?.data ||
+        []
+      );
+    },
+    enabled: !!ledgerSupplier,
+  });
+  const supplierLedgerEntries = supplierLedgerEntriesData || [];
 
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search, 300);
@@ -78,16 +125,17 @@ function SuppliersPage() {
     let filtered = rawSuppliers;
     if (debouncedSearch) {
       const lower = debouncedSearch.toLowerCase();
-      filtered = filtered.filter(s =>
-        s.name.toLowerCase().includes(lower) ||
-        s.contact?.toLowerCase().includes(lower) ||
-        s.email?.toLowerCase().includes(lower)
+      filtered = filtered.filter(
+        (s) =>
+          s.name.toLowerCase().includes(lower) ||
+          s.contact?.toLowerCase().includes(lower) ||
+          s.email?.toLowerCase().includes(lower),
       );
     }
     if (filters.balance === "has_balance") {
-      filtered = filtered.filter(s => s.balance > 0);
+      filtered = filtered.filter((s) => s.balance > 0);
     } else if (filters.balance === "settled") {
-      filtered = filtered.filter(s => s.balance <= 0);
+      filtered = filtered.filter((s) => s.balance <= 0);
     }
     return filtered;
   }, [rawSuppliers, debouncedSearch, filters.balance]);
@@ -102,8 +150,16 @@ function SuppliersPage() {
     return suppliers.slice(start, start + pageSize);
   }, [suppliers, page, pageSize]);
 
-  const { errors: suppErrors, validate: validateSupp, clearError: clearSuppError, clearAll: clearSuppAll } = useFormValidation({
-    name: { required: "Supplier name is required", minLength: { value: 2, message: "Name must be at least 2 characters" } },
+  const {
+    errors: suppErrors,
+    validate: validateSupp,
+    clearError: clearSuppError,
+    clearAll: clearSuppAll,
+  } = useFormValidation({
+    name: {
+      required: "Supplier name is required",
+      minLength: { value: 2, message: "Name must be at least 2 characters" },
+    },
     contact: { required: "Contact person name is required" },
     email: { email: "Enter a valid email address" },
     phone: { phone: "Enter a valid phone number" },
@@ -123,24 +179,30 @@ function SuppliersPage() {
       if (!isValid) return;
 
       if (editItem) {
-        await localDb.suppliers.update(editItem.id, { name, contact, phone, email, synced: false });
-        toast.success("Supplier updated successfully");
-        setEditItem(null);
-      } else {
-        await localDb.suppliers.add({
-          id: uuidv4(),
-          orgId: PersistStore.getOrgId() || "default",
-          name,
-          contact,
-          phone,
-          email,
-          balance: 0,
-          items: 0,
-          synced: false
+        const res = await updateSupplierFn({
+          data: { id: editItem.id, updates: { name, contact, phone, email } },
         });
-        toast.success("Supplier added successfully");
-        setIsAddOpen(false);
+        if (res?.success) {
+          toast.success("Supplier updated successfully");
+          setEditItem(null);
+        } else throw new Error(res?.error);
+      } else {
+        const res = await createSupplierFn({
+          data: {
+            supplier: {
+              name,
+              contact,
+              phone,
+              email,
+            },
+          },
+        });
+        if (res?.success) {
+          toast.success("Supplier added successfully");
+          setIsAddOpen(false);
+        } else throw new Error(res?.error);
       }
+      queryClient.invalidateQueries({ queryKey: ["suppliers"] });
       clearSuppAll();
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "An error occurred");
@@ -152,18 +214,12 @@ function SuppliersPage() {
   const handleDelete = async () => {
     if (deleteId) {
       try {
-        await localDb.suppliers.update(deleteId, { _deleted: true, synced: false });
-        await localDb.activityLog.add({
-          id: uuidv4(),
-          orgId: PersistStore.getOrgId() || "default",
-          action: "TOMBSTONE",
-          user: "system",
-          details: JSON.stringify({ entityType: "suppliers", entityId: deleteId }),
-          timestamp: new Date().toISOString(),
-          synced: false,
-        });
-        toast.success("Supplier deleted");
-        setDeleteId(null);
+        const res = await deleteSupplierFn({ data: { id: deleteId } });
+        if (res?.success) {
+          toast.success("Supplier deleted");
+          setDeleteId(null);
+          queryClient.invalidateQueries({ queryKey: ["suppliers"] });
+        } else throw new Error(res?.error);
       } catch (error) {
         toast.error("Failed to delete supplier");
       }
@@ -172,10 +228,19 @@ function SuppliersPage() {
 
   return (
     <div className="p-4 md:p-6 lg:p-8">
-      <DataPage 
-        title={t("suppliers") || "Suppliers"} 
-        description={t("manageSuppliers") || "Manage vendor relationships, purchase history, and outstanding balances."} 
-        primaryAction={{ label: t("addSupplier") || "Add Supplier", onClick: () => { setEditItem(null); setIsAddOpen(true); } }}
+      <DataPage
+        title={t("suppliers") || "Suppliers"}
+        description={
+          t("manageSuppliers") ||
+          "Manage vendor relationships, purchase history, and outstanding balances."
+        }
+        primaryAction={{
+          label: t("addSupplier") || "Add Supplier",
+          onClick: () => {
+            setEditItem(null);
+            setIsAddOpen(true);
+          },
+        }}
         searchPlaceholder={t("searchSuppliers") || "Search by name, contact, or email..."}
         searchValue={search}
         onSearchChange={setSearch}
@@ -194,35 +259,61 @@ function SuppliersPage() {
                     { value: "settled", label: "Settled" },
                   ]}
                   value={draftFilters.balance}
-                  onChange={(val) => setDraftFilters(prev => ({ ...prev, balance: val }))}
+                  onChange={(val) => setDraftFilters((prev) => ({ ...prev, balance: val }))}
                   placeholder="Filter by Balance"
                 />
               </div>
             </div>
             <div className="pt-4 mt-auto">
-              <Button className="w-full" onClick={() => { setFilters(draftFilters); close(); }}>
+              <Button
+                className="w-full"
+                onClick={() => {
+                  setFilters(draftFilters);
+                  close();
+                }}
+              >
                 Apply Filters
               </Button>
             </div>
           </div>
         )}
       >
-        {suppliers.length === 0 ? (
-          <EmptyState 
-            icon={Truck} 
-            title={t("noSuppliersFound") || "No suppliers found"} 
-            description={search ? (t("adjustSearch") || "Try adjusting your search.") : (t("noSuppliersYet") || "You haven't added any suppliers yet.")} 
+        {isSuppliersLoading ? (
+          <CardGridSkeleton cards={6} columns="grid-cols-1 md:grid-cols-2 xl:grid-cols-3" />
+        ) : isSuppliersError ? (
+          <ErrorState onRetry={refetchSuppliers} />
+        ) : suppliers.length === 0 ? (
+          <EmptyState
+            icon={Truck}
+            title={t("noSuppliersFound") || "No suppliers found"}
+            description={
+              search
+                ? t("adjustSearch") || "Try adjusting your search."
+                : t("noSuppliersYet") || "You haven't added any suppliers yet."
+            }
+            actionLabel="Add Supplier"
+            onAction={() => {
+              setEditItem(null);
+              setIsAddOpen(true);
+            }}
           />
         ) : (
           <div className="space-y-4">
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
               {paginatedSuppliers.map((s) => (
-                <div key={s.id} className="relative rounded-xl border border-border bg-card p-5 shadow-soft">
+                <div
+                  key={s.id}
+                  className="relative rounded-xl border border-border bg-card p-5 shadow-soft"
+                >
                   <div className="absolute right-4 top-4 flex items-center gap-2">
                     {s.balance > 0 ? (
-                      <span className="rounded-md bg-warning/15 px-2 py-0.5 text-xs font-semibold text-warning-foreground">{formatCurrency(s.balance)} {t("due") || "due"}</span>
+                      <span className="rounded-md bg-warning/15 px-2 py-0.5 text-xs font-semibold text-warning-foreground">
+                        {formatCurrency(s.balance)} {t("due") || "due"}
+                      </span>
                     ) : (
-                      <span className="rounded-md bg-success/10 px-2 py-0.5 text-xs font-semibold text-success">{t("settled") || "Settled"}</span>
+                      <span className="rounded-md bg-success/10 px-2 py-0.5 text-xs font-semibold text-success">
+                        {t("settled") || "Settled"}
+                      </span>
                     )}
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
@@ -231,9 +322,18 @@ function SuppliersPage() {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => setEditItem(s)}><Edit2 className="mr-2 size-4" /> Edit</DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => setLedgerSupplier(s)}><Truck className="mr-2 size-4 text-primary" /> View Khata / Ledger</DropdownMenuItem>
-                        <DropdownMenuItem className="text-destructive focus:bg-destructive/10 focus:text-destructive" onClick={() => setDeleteId(s.id)}><Trash2 className="mr-2 size-4" /> Delete</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => setEditItem(s)}>
+                          <Edit2 className="mr-2 size-4" /> Edit
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => setLedgerSupplier(s)}>
+                          <Truck className="mr-2 size-4 text-primary" /> View Khata / Ledger
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          className="text-destructive focus:bg-destructive/10 focus:text-destructive"
+                          onClick={() => setDeleteId(s.id)}
+                        >
+                          <Trash2 className="mr-2 size-4" /> Delete
+                        </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </div>
@@ -244,7 +344,9 @@ function SuppliersPage() {
                     </div>
                   </div>
                   <h3 className="mt-3 font-semibold">{s.name}</h3>
-                  <p className="text-xs text-muted-foreground">{s.contact} {s.email && `· ${s.email}`}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {s.contact} {s.email && `· ${s.email}`}
+                  </p>
                   <div className="mt-4 grid grid-cols-2 gap-2 border-t border-border pt-3 text-xs text-muted-foreground">
                     <div>
                       <div className="number font-bold text-foreground">{s.items}</div>
@@ -271,36 +373,49 @@ function SuppliersPage() {
         )}
       </DataPage>
 
-      <Dialog open={isAddOpen || !!editItem} onOpenChange={(open) => {
-        if (!open) {
-          setIsAddOpen(false);
-          setEditItem(null);
-          clearSuppAll();
-        }
-      }}>
+      <Dialog
+        open={isAddOpen || !!editItem}
+        onOpenChange={(open) => {
+          if (!open) {
+            setIsAddOpen(false);
+            setEditItem(null);
+            clearSuppAll();
+          }
+        }}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>{editItem ? "Edit Supplier" : "Add Supplier"}</DialogTitle>
           </DialogHeader>
           <form noValidate onSubmit={handleSave} className="space-y-4">
             <div className="space-y-1.5">
-              <Label htmlFor="name">Supplier Name <span className="text-destructive">*</span></Label>
+              <Label htmlFor="name">
+                Supplier Name <span className="text-destructive">*</span>
+              </Label>
               <Input
-                id="name" name="name"
+                id="name"
+                name="name"
                 placeholder="e.g. Supplier Company Name"
                 defaultValue={editItem?.name}
-                className={suppErrors.name ? "border-destructive focus-visible:ring-destructive" : ""}
+                className={
+                  suppErrors.name ? "border-destructive focus-visible:ring-destructive" : ""
+                }
                 onChange={() => clearSuppError("name")}
               />
               <FieldError message={suppErrors.name} />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="contact">Contact Person <span className="text-destructive">*</span></Label>
+              <Label htmlFor="contact">
+                Contact Person <span className="text-destructive">*</span>
+              </Label>
               <Input
-                id="contact" name="contact"
+                id="contact"
+                name="contact"
                 placeholder="e.g. Contact Person Name"
                 defaultValue={editItem?.contact}
-                className={suppErrors.contact ? "border-destructive focus-visible:ring-destructive" : ""}
+                className={
+                  suppErrors.contact ? "border-destructive focus-visible:ring-destructive" : ""
+                }
                 onChange={() => clearSuppError("contact")}
               />
               <FieldError message={suppErrors.contact} />
@@ -309,10 +424,14 @@ function SuppliersPage() {
               <div className="space-y-1.5">
                 <Label htmlFor="email">Email</Label>
                 <Input
-                  id="email" name="email" type="email"
+                  id="email"
+                  name="email"
+                  type="email"
                   placeholder="e.g. supplier@example.com"
                   defaultValue={editItem?.email}
-                  className={suppErrors.email ? "border-destructive focus-visible:ring-destructive" : ""}
+                  className={
+                    suppErrors.email ? "border-destructive focus-visible:ring-destructive" : ""
+                  }
                   onChange={() => clearSuppError("email")}
                 />
                 <FieldError message={suppErrors.email} />
@@ -320,17 +439,31 @@ function SuppliersPage() {
               <div className="space-y-1.5">
                 <Label htmlFor="phone">Phone</Label>
                 <PhoneInput
-                  id="phone" name="phone" type="tel"
+                  id="phone"
+                  name="phone"
+                  type="tel"
                   placeholder="e.g. 1700 000000"
                   defaultValue={editItem?.phone}
-                  className={suppErrors.phone ? "border-destructive focus-visible:ring-destructive" : ""}
+                  className={
+                    suppErrors.phone ? "border-destructive focus-visible:ring-destructive" : ""
+                  }
                   onChange={() => clearSuppError("phone")}
                 />
                 <FieldError message={suppErrors.phone} />
               </div>
             </div>
             <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => { setIsAddOpen(false); setEditItem(null); clearSuppAll(); }}>Cancel</Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setIsAddOpen(false);
+                  setEditItem(null);
+                  clearSuppAll();
+                }}
+              >
+                Cancel
+              </Button>
               <Button type="submit" disabled={isSaving}>
                 {isSaving && <Loader2 className="size-4 animate-spin mr-2" />}
                 Save Supplier
@@ -350,19 +483,29 @@ function SuppliersPage() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Delete</AlertDialogAction>
+            <AlertDialogAction
+              onClick={handleDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
       {/* Supplier Khata Ledger Statement Side Drawer */}
       <Sheet open={!!ledgerSupplier} onOpenChange={(open) => !open && setLedgerSupplier(null)}>
-        <SheetContent side="right" className="w-full sm:max-w-2xl overflow-y-auto p-6 bg-background border-l border-border shadow-elevated">
+        <SheetContent
+          side="right"
+          className="w-full sm:max-w-2xl overflow-y-auto p-6 bg-background border-l border-border shadow-elevated"
+        >
           <SheetHeader className="flex flex-row items-center justify-between border-b pb-4 pr-8">
             <div>
               <SheetTitle className="text-xl font-bold flex items-center gap-2">
                 <span>Supplier Khata Statement (সাপ্লায়ার লেজার)</span>
               </SheetTitle>
-              <p className="text-xs text-muted-foreground mt-0.5">{ledgerSupplier?.name} · {ledgerSupplier?.contact}</p>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                {ledgerSupplier?.name} · {ledgerSupplier?.contact}
+              </p>
             </div>
             <Button size="sm" variant="outline" onClick={() => window.print()}>
               Print Statement
@@ -372,13 +515,19 @@ function SuppliersPage() {
           <div className="space-y-6 pt-4">
             {/* Ledger KPI Summary */}
             <div className="rounded-xl border border-warning/20 bg-warning/10 p-4 text-center">
-              <div className="text-xs text-muted-foreground font-medium">Total Balance Payable / Due</div>
-              <div className="text-2xl font-bold text-warning-foreground mt-0.5">{formatCurrency(ledgerSupplier?.balance || 0)}</div>
+              <div className="text-xs text-muted-foreground font-medium">
+                Total Balance Payable / Due
+              </div>
+              <div className="text-2xl font-bold text-warning-foreground mt-0.5">
+                {formatCurrency(ledgerSupplier?.balance || 0)}
+              </div>
             </div>
 
             {/* Ledger Table */}
             <div className="space-y-3">
-              <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Purchase & Payment History</h4>
+              <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                Purchase & Payment History
+              </h4>
               <div className="overflow-hidden rounded-xl border border-border shadow-soft">
                 <table className="w-full text-sm">
                   <thead className="bg-muted/50 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
@@ -401,16 +550,22 @@ function SuppliersPage() {
                     ) : (
                       supplierLedgerEntries.map((l) => (
                         <tr key={l.id} className="hover:bg-muted/30">
-                          <td className="px-3 py-2.5 text-xs text-muted-foreground">{new Date(l.date).toLocaleString()}</td>
+                          <td className="px-3 py-2.5 text-xs text-muted-foreground">
+                            {new Date(l.date).toLocaleString()}
+                          </td>
                           <td className="px-3 py-2.5 font-medium capitalize">{l.type}</td>
                           <td className="px-3 py-2.5 font-mono text-xs">{l.referenceNo || "-"}</td>
                           <td className="px-3 py-2.5 text-right font-semibold text-warning-foreground">
-                            {l.type === 'purchase' ? formatCurrency(l.amount) : "-"}
+                            {l.type === "purchase" ? formatCurrency(l.amount) : "-"}
                           </td>
                           <td className="px-3 py-2.5 text-right font-semibold text-success">
-                            {l.type === 'payment' || l.type === 'return' ? formatCurrency(l.amount) : "-"}
+                            {l.type === "payment" || l.type === "return"
+                              ? formatCurrency(l.amount)
+                              : "-"}
                           </td>
-                          <td className="px-3 py-2.5 text-right font-bold">{formatCurrency(l.balanceAfter)}</td>
+                          <td className="px-3 py-2.5 text-right font-bold">
+                            {formatCurrency(l.balanceAfter)}
+                          </td>
                         </tr>
                       ))
                     )}

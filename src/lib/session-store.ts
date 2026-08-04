@@ -35,31 +35,42 @@ function decode(raw: string | null): string | null {
   }
 }
 
-// ─── Session Storage (cleared when browser tab closes) ────────────────────────
-// Used for: auth user ID, session ID — sensitive, should not persist
+// ─── Auth Store (persists across hard refreshes — cleared only on explicit logout) ──
+// Moved from sessionStorage to localStorage to survive Ctrl+F5 hard refreshes.
+// Values remain obfuscated with btoa. Explicit logout calls clearAll().
 
 export const SessionStore = {
-  setAuthUser: (userId: string) =>
-    sessionStorage.setItem("pos_auth_user", encode(userId)),
+  setAuthUser: (userId: string) => {
+    if (typeof window !== "undefined") localStorage.setItem("pos_auth_user", encode(userId));
+  },
 
-  getAuthUser: (): string | null =>
-    decode(sessionStorage.getItem("pos_auth_user")),
+  getAuthUser: (): string | null => {
+    if (typeof window === "undefined") return null;
+    return decode(localStorage.getItem("pos_auth_user"));
+  },
 
-  removeAuthUser: () =>
-    sessionStorage.removeItem("pos_auth_user"),
+  removeAuthUser: () => {
+    if (typeof window !== "undefined") localStorage.removeItem("pos_auth_user");
+  },
 
-  setSession: (sessionId: string) =>
-    sessionStorage.setItem("pos_saas_session", encode(sessionId)),
+  setSession: (sessionId: string) => {
+    if (typeof window !== "undefined") localStorage.setItem("pos_saas_session", encode(sessionId));
+  },
 
-  getSession: (): string | null =>
-    decode(sessionStorage.getItem("pos_saas_session")),
+  getSession: (): string | null => {
+    if (typeof window === "undefined") return null;
+    return decode(localStorage.getItem("pos_saas_session"));
+  },
 
-  removeSession: () =>
-    sessionStorage.removeItem("pos_saas_session"),
+  removeSession: () => {
+    if (typeof window !== "undefined") localStorage.removeItem("pos_saas_session");
+  },
 
   clearAll: () => {
-    sessionStorage.removeItem("pos_auth_user");
-    sessionStorage.removeItem("pos_saas_session");
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("pos_auth_user");
+      localStorage.removeItem("pos_saas_session");
+    }
   },
 };
 
@@ -68,27 +79,38 @@ export const SessionStore = {
 // These are non-sensitive identifiers — org UUID alone cannot authenticate
 
 export const PersistStore = {
-  setOrgId: (orgId: string) =>
-    localStorage.setItem("pos_org_id", encode(orgId)),
+  setOrgId: (orgId: string) => {
+    if (typeof window !== "undefined") localStorage.setItem("pos_org_id", encode(orgId));
+  },
 
-  getOrgId: (): string | null =>
-    decode(localStorage.getItem("pos_org_id")),
+  getOrgId: (): string | null => {
+    if (typeof window === "undefined") return null;
+    return decode(localStorage.getItem("pos_org_id"));
+  },
 
-  removeOrgId: () =>
-    localStorage.removeItem("pos_org_id"),
+  removeOrgId: () => {
+    if (typeof window !== "undefined") localStorage.removeItem("pos_org_id");
+  },
 
-  setLastSyncedAt: (ts: string) =>
-    localStorage.setItem("pos_last_synced_at", ts), // timestamp, not sensitive
+  setLastSyncedAt: (ts: string) => {
+    if (typeof window !== "undefined") localStorage.setItem("pos_last_synced_at", ts);
+  },
 
-  getLastSyncedAt: (): string | null =>
-    localStorage.getItem("pos_last_synced_at"),
+  getLastSyncedAt: (): string | null => {
+    if (typeof window === "undefined") return null;
+    return localStorage.getItem("pos_last_synced_at");
+  },
 
-  setFlag: (key: string) =>
-    localStorage.setItem(key, "true"),
+  setFlag: (key: string) => {
+    if (typeof window !== "undefined") localStorage.setItem(key, "true");
+  },
 
-  getFlag: (key: string): boolean =>
-    localStorage.getItem(key) === "true",
+  getFlag: (key: string): boolean => {
+    if (typeof window === "undefined") return false;
+    return localStorage.getItem(key) === "true";
+  },
 
-  removeFlag: (key: string) =>
-    localStorage.removeItem(key),
+  removeFlag: (key: string) => {
+    if (typeof window !== "undefined") localStorage.removeItem(key);
+  },
 };

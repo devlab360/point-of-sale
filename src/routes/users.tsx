@@ -3,14 +3,28 @@ import { createFileRoute } from "@tanstack/react-router";
 import { PersistStore } from "@/lib/session-store";
 import { DataPage } from "@/components/layout/DataPage";
 import { EmptyState } from "@/components/ui/empty-state";
+import { TableSkeleton } from "@/components/skeletons/TableSkeleton";
+import { ErrorState } from "@/components/ui/error-state";
 import { PaginationControls } from "@/components/ui/pagination-controls";
 import { useDebounce } from "@/hooks/useDebounce";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import {
   DropdownMenu,
@@ -28,12 +42,28 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Shield, MoreVertical, Edit2, Trash2, Loader2, UserCheck, Plus, Search, CheckCircle2, Copy, Link as LinkIcon, Award, Target, Percent, KeyRound, Check } from "lucide-react";
-import { useLiveQuery } from "dexie-react-hooks";
-import { localDb } from "@/lib/db";
+import {
+  Shield,
+  MoreVertical,
+  Edit2,
+  Trash2,
+  Loader2,
+  UserCheck,
+  Plus,
+  Search,
+  CheckCircle2,
+  Copy,
+  Link as LinkIcon,
+  Award,
+  Target,
+  Percent,
+  KeyRound,
+  Check,
+} from "lucide-react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { getUsersFn, updateUserFn, deleteUserFn, createInvitationFn } from "@/api/users";
 import { v4 as uuidv4 } from "uuid";
 import { toast } from "sonner";
-import type { LocalUser, LocalInvitation } from "@/lib/db";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "@tanstack/react-router";
 import { useFormValidation } from "@/hooks/useFormValidation";
@@ -46,7 +76,7 @@ const PERMISSION_GROUPS = [
       { id: "pos", label: "POS Terminal", desc: "Access sales register & checkout" },
       { id: "discounts", label: "Apply Discounts", desc: "Give manual cart discounts at POS" },
       { id: "returns", label: "Sales Returns", desc: "Process refunds & product returns" },
-    ]
+    ],
   },
   {
     group: "Store Operations",
@@ -54,21 +84,25 @@ const PERMISSION_GROUPS = [
       { id: "inventory", label: "Inventory & Stock", desc: "Manage products, categories & stock" },
       { id: "customers", label: "Customer Mgmt", desc: "Manage customer profiles & loyalty" },
       { id: "expenses", label: "Store Expenses", desc: "Record & view store expenditure" },
-    ]
+    ],
   },
   {
     group: "Management",
     permissions: [
-      { id: "reports", label: "Reports & Analytics", desc: "View sales, profit & business reports" },
+      {
+        id: "reports",
+        label: "Reports & Analytics",
+        desc: "View sales, profit & business reports",
+      },
       { id: "settings", label: "System Settings", desc: "Store configuration & store settings" },
-    ]
-  }
+    ],
+  },
 ];
 
-const AVAILABLE_PERMISSIONS = PERMISSION_GROUPS.flatMap(g => g.permissions);
+const AVAILABLE_PERMISSIONS = PERMISSION_GROUPS.flatMap((g) => g.permissions);
 
 const DEFAULT_ROLE_PERMISSIONS: Record<string, string[]> = {
-  admin: AVAILABLE_PERMISSIONS.map(p => p.id),
+  admin: AVAILABLE_PERMISSIONS.map((p) => p.id),
   manager: ["pos", "inventory", "reports", "customers", "expenses", "discounts", "returns"],
   cashier: ["pos", "customers", "discounts"],
 };
@@ -79,21 +113,38 @@ export const Route = createFileRoute("/users")({
 });
 
 function UsersPage() {
-  const rawUsers = useLiveQuery(() => localDb.users.toArray()) || [];
-  const uniqueRoles = useMemo(() => Array.from(new Set(rawUsers.map(u => u.role))).sort(), [rawUsers]);
+  const { user } = useAuth();
+  const orgId = user?.orgId || "default";
+  const queryClient = useQueryClient();
+
+  const {
+    data: rawUsersData,
+    isLoading: isUsersLoading,
+    isError: isUsersError,
+    refetch: refetchUsers,
+  } = useQuery({
+    queryKey: ["users", orgId],
+    queryFn: async () => (await getUsersFn({ data: {} })).data || [],
+  });
+  const rawUsers = rawUsersData || [];
+  const uniqueRoles = useMemo(
+    () => Array.from(new Set(rawUsers.map((u: any) => u.role))).sort(),
+    [rawUsers],
+  );
   const [isInviteOpen, setIsInviteOpen] = useState(false);
   const [generatedLink, setGeneratedLink] = useState("");
   const [isCopied, setIsCopied] = useState(false);
   const [inviteRole, setInviteRole] = useState("cashier");
-  const [invitePermissions, setInvitePermissions] = useState<string[]>(DEFAULT_ROLE_PERMISSIONS.cashier);
+  const [invitePermissions, setInvitePermissions] = useState<string[]>(
+    DEFAULT_ROLE_PERMISSIONS.cashier,
+  );
 
-  const [editItem, setEditItem] = useState<LocalUser | null>(null);
+  const [editItem, setEditItem] = useState<any | null>(null);
   const [editPermissions, setEditPermissions] = useState<string[]>([]);
   const [editRole, setEditRole] = useState<string>("cashier");
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
 
-  const { user } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
@@ -121,17 +172,18 @@ function UsersPage() {
     let filtered = rawUsers;
     if (debouncedSearch) {
       const lower = debouncedSearch.toLowerCase();
-      filtered = filtered.filter(u =>
-        u.name.toLowerCase().includes(lower) ||
-        u.email.toLowerCase().includes(lower) ||
-        u.role.toLowerCase().includes(lower)
+      filtered = filtered.filter(
+        (u) =>
+          u.name.toLowerCase().includes(lower) ||
+          u.email.toLowerCase().includes(lower) ||
+          u.role.toLowerCase().includes(lower),
       );
     }
     if (filters.role) {
-      filtered = filtered.filter(u => u.role === filters.role);
+      filtered = filtered.filter((u) => u.role === filters.role);
     }
     if (filters.status) {
-      filtered = filtered.filter(u => u.status === filters.status);
+      filtered = filtered.filter((u) => u.status === filters.status);
     }
     return filtered;
   }, [rawUsers, debouncedSearch, filters.role, filters.status]);
@@ -154,21 +206,25 @@ function UsersPage() {
   };
 
   const toggleInvitePermission = (permId: string) => {
-    setInvitePermissions(prev =>
-      prev.includes(permId) ? prev.filter(p => p !== permId) : [...prev, permId]
+    setInvitePermissions((prev) =>
+      prev.includes(permId) ? prev.filter((p) => p !== permId) : [...prev, permId],
     );
   };
 
   const toggleEditPermission = (permId: string) => {
-    setEditPermissions(prev =>
-      prev.includes(permId) ? prev.filter(p => p !== permId) : [...prev, permId]
+    setEditPermissions((prev) =>
+      prev.includes(permId) ? prev.filter((p) => p !== permId) : [...prev, permId],
     );
   };
 
-  const openEditModal = (userItem: LocalUser) => {
+  const openEditModal = (userItem: any) => {
     setEditItem(userItem);
     setEditRole(userItem.role || "cashier");
-    setEditPermissions(userItem.permissions || DEFAULT_ROLE_PERMISSIONS[userItem.role] || DEFAULT_ROLE_PERMISSIONS.cashier);
+    setEditPermissions(
+      userItem.permissions ||
+        DEFAULT_ROLE_PERMISSIONS[userItem.role] ||
+        DEFAULT_ROLE_PERMISSIONS.cashier,
+    );
   };
 
   const [isGenerating, setIsGenerating] = useState(false);
@@ -176,21 +232,21 @@ function UsersPage() {
   const handleGenerateInvite = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsGenerating(true);
-    await new Promise(resolve => setTimeout(resolve, 500));
+    await new Promise((resolve) => setTimeout(resolve, 500));
     try {
       const token = uuidv4();
-      const orgId = PersistStore.getOrgId() || "default";
-
-      await localDb.invitations.add({
-        id: uuidv4(),
-        orgId,
-        token,
-        role: inviteRole,
-        permissions: invitePermissions,
-        status: "pending",
-        createdAt: new Date().toISOString(),
-        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
+      const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+      const res = await createInvitationFn({
+        data: {
+          invitation: {
+            token,
+            role: inviteRole,
+            permissions: invitePermissions,
+            expiresAt,
+          },
+        },
       });
+      if (!res.success) throw new Error(res.error);
 
       const link = `${window.location.origin}/invite/${token}`;
       setGeneratedLink(link);
@@ -210,17 +266,34 @@ function UsersPage() {
 
   const handleApprove = async (id: string) => {
     try {
-      await localDb.users.update(id, { status: "active", synced: false });
-      toast.success("Employee approved successfully");
+      const res = await updateUserFn({ data: { id, updates: { status: "active" } } });
+      if (res.success) {
+        toast.success("Employee approved successfully");
+        queryClient.invalidateQueries({ queryKey: ["users"] });
+      } else throw new Error(res.error);
     } catch (error: any) {
       toast.error(error.message || "Failed to approve employee");
     }
   };
 
-  const { errors: userErrors, validate: validateUser, clearError: clearUserError, clearAll: clearUserAll } = useFormValidation({
-    name: { required: "Name is required", minLength: { value: 2, message: "Name must be at least 2 characters" } },
-    commissionRate: { required: "Commission rate is required", positive: "Commission rate must be a positive number" },
-    monthlyTarget: { required: "Monthly target is required", positive: "Monthly target must be a positive number" },
+  const {
+    errors: userErrors,
+    validate: validateUser,
+    clearError: clearUserError,
+    clearAll: clearUserAll,
+  } = useFormValidation({
+    name: {
+      required: "Name is required",
+      minLength: { value: 2, message: "Name must be at least 2 characters" },
+    },
+    commissionRate: {
+      required: "Commission rate is required",
+      positive: "Commission rate must be a positive number",
+    },
+    monthlyTarget: {
+      required: "Monthly target is required",
+      positive: "Monthly target must be a positive number",
+    },
   });
 
   const handleSaveEdit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -234,24 +307,35 @@ function UsersPage() {
       const commissionRateStr = (formData.get("commissionRate") as string)?.trim();
       const monthlyTargetStr = (formData.get("monthlyTarget") as string)?.trim();
 
-      const isValid = validateUser({ name, commissionRate: commissionRateStr, monthlyTarget: monthlyTargetStr });
+      const isValid = validateUser({
+        name,
+        commissionRate: commissionRateStr,
+        monthlyTarget: monthlyTargetStr,
+      });
       if (!isValid) return;
 
       const commissionRate = parseFloat(commissionRateStr) || 0;
       const monthlyTarget = parseFloat(monthlyTargetStr) || 0;
 
-      await localDb.users.update(editItem.id, {
-        name,
-        role: editRole,
-        status,
-        permissions: editPermissions,
-        commissionRate,
-        monthlyTarget,
-        synced: false,
+      const res = await updateUserFn({
+        data: {
+          id: editItem.id,
+          updates: {
+            name,
+            role: editRole,
+            status,
+            permissions: editPermissions,
+            commissionRate,
+            monthlyTarget,
+          },
+        },
       });
-      toast.success("Employee updated successfully");
-      setEditItem(null);
-      clearUserAll();
+      if (res.success) {
+        toast.success("Employee updated successfully");
+        setEditItem(null);
+        clearUserAll();
+        queryClient.invalidateQueries({ queryKey: ["users"] });
+      } else throw new Error(res.error);
     } catch (error: any) {
       toast.error(error.message || "Failed to update user");
     } finally {
@@ -262,9 +346,12 @@ function UsersPage() {
   const handleDelete = async () => {
     if (deleteId) {
       try {
-        await localDb.users.delete(deleteId);
-        toast.success("Employee deleted");
-        setDeleteId(null);
+        const res = await deleteUserFn({ data: { id: deleteId } });
+        if (res.success) {
+          toast.success("Employee deleted");
+          setDeleteId(null);
+          queryClient.invalidateQueries({ queryKey: ["users"] });
+        } else throw new Error(res.error);
       } catch (error: any) {
         toast.error(error.message || "Failed to delete employee");
       }
@@ -276,7 +363,13 @@ function UsersPage() {
       <DataPage
         title="Employees"
         description="Manage your team and approve new members."
-        primaryAction={{ label: "Invite Employee", onClick: () => { setIsInviteOpen(true); setGeneratedLink(""); } }}
+        primaryAction={{
+          label: "Invite Employee",
+          onClick: () => {
+            setIsInviteOpen(true);
+            setGeneratedLink("");
+          },
+        }}
         searchPlaceholder="Search employees..."
         searchValue={search}
         onSearchChange={setSearch}
@@ -291,10 +384,13 @@ function UsersPage() {
                 <SearchableSelect
                   options={[
                     { value: "", label: "All Roles" },
-                    ...uniqueRoles.map(r => ({ value: r, label: r.charAt(0).toUpperCase() + r.slice(1) }))
+                    ...uniqueRoles.map((r: any) => ({
+                      value: String(r),
+                      label: String(r).charAt(0).toUpperCase() + String(r).slice(1),
+                    })),
                   ]}
                   value={draftFilters.role}
-                  onChange={(val) => setDraftFilters(prev => ({ ...prev, role: val }))}
+                  onChange={(val) => setDraftFilters((prev) => ({ ...prev, role: val }))}
                   placeholder="Filter by Role"
                 />
               </div>
@@ -308,24 +404,38 @@ function UsersPage() {
                     { value: "suspended", label: "Suspended" },
                   ]}
                   value={draftFilters.status}
-                  onChange={(val) => setDraftFilters(prev => ({ ...prev, status: val }))}
+                  onChange={(val) => setDraftFilters((prev) => ({ ...prev, status: val }))}
                   placeholder="Filter by Status"
                 />
               </div>
             </div>
             <div className="pt-4 mt-auto">
-              <Button className="w-full" onClick={() => { setFilters(draftFilters); close(); }}>
+              <Button
+                className="w-full"
+                onClick={() => {
+                  setFilters(draftFilters);
+                  close();
+                }}
+              >
                 Apply Filters
               </Button>
             </div>
           </div>
         )}
       >
-        {users.length === 0 ? (
+        {isUsersLoading ? (
+          <TableSkeleton columns={6} rows={6} showHeaderAction={false} showFilters={false} />
+        ) : isUsersError ? (
+          <ErrorState onRetry={refetchUsers} />
+        ) : users.length === 0 ? (
           <EmptyState
             icon={Shield}
             title="No employees found"
-            description={search ? "Try adjusting your search." : "You haven't added any employees yet."}
+            description={
+              search ? "Try adjusting your search." : "You haven't added any employees yet."
+            }
+            actionLabel="Invite Employee"
+            onAction={() => setIsInviteOpen(true)}
           />
         ) : (
           <div className="space-y-4">
@@ -347,7 +457,11 @@ function UsersPage() {
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-3">
                           <div className="grid size-9 place-items-center rounded-full bg-gradient-to-br from-primary to-info text-xs font-bold text-primary-foreground">
-                            {e.name.split(" ").map((n) => n[0]).join("").slice(0, 2)}
+                            {e.name
+                              .split(" ")
+                              .map((n) => n[0])
+                              .join("")
+                              .slice(0, 2)}
                           </div>
                           <div>
                             <div className="font-semibold">{e.name}</div>
@@ -355,28 +469,60 @@ function UsersPage() {
                           </div>
                         </div>
                       </td>
-                      <td className="px-4 py-3"><Badge variant="secondary" className="capitalize"><Shield className="mr-1 size-3" />{e.role}</Badge></td>
+                      <td className="px-4 py-3">
+                        <Badge variant="secondary" className="capitalize">
+                          <Shield className="mr-1 size-3" />
+                          {e.role}
+                        </Badge>
+                      </td>
                       <td className="px-4 py-3">
                         <div className="flex flex-wrap gap-1 max-w-[200px]">
-                          {(e.permissions || DEFAULT_ROLE_PERMISSIONS[e.role] || []).length === AVAILABLE_PERMISSIONS.length ? (
-                            <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20 text-[10px]">Full Access</Badge>
+                          {(e.permissions || DEFAULT_ROLE_PERMISSIONS[e.role] || []).length ===
+                          AVAILABLE_PERMISSIONS.length ? (
+                            <Badge
+                              variant="outline"
+                              className="bg-primary/10 text-primary border-primary/20 text-[10px]"
+                            >
+                              Full Access
+                            </Badge>
                           ) : (
-                            (e.permissions || DEFAULT_ROLE_PERMISSIONS[e.role] || []).slice(0, 3).map(p => (
-                              <Badge key={p} variant="outline" className="text-[10px] uppercase font-mono">{p}</Badge>
-                            ))
+                            (e.permissions || DEFAULT_ROLE_PERMISSIONS[e.role] || [])
+                              .slice(0, 3)
+                              .map((p) => (
+                                <Badge
+                                  key={p}
+                                  variant="outline"
+                                  className="text-[10px] uppercase font-mono"
+                                >
+                                  {p}
+                                </Badge>
+                              ))
                           )}
-                          {(e.permissions || DEFAULT_ROLE_PERMISSIONS[e.role] || []).length > 3 && (e.permissions || DEFAULT_ROLE_PERMISSIONS[e.role] || []).length !== AVAILABLE_PERMISSIONS.length && (
-                            <span className="text-[10px] text-muted-foreground self-center">+{(e.permissions || DEFAULT_ROLE_PERMISSIONS[e.role] || []).length - 3} more</span>
-                          )}
+                          {(e.permissions || DEFAULT_ROLE_PERMISSIONS[e.role] || []).length > 3 &&
+                            (e.permissions || DEFAULT_ROLE_PERMISSIONS[e.role] || []).length !==
+                              AVAILABLE_PERMISSIONS.length && (
+                              <span className="text-[10px] text-muted-foreground self-center">
+                                +
+                                {(e.permissions || DEFAULT_ROLE_PERMISSIONS[e.role] || []).length -
+                                  3}{" "}
+                                more
+                              </span>
+                            )}
                         </div>
                       </td>
-                      <td className="px-4 py-3 text-muted-foreground">{e.lastActive ? new Date(e.lastActive).toLocaleString() : "Never"}</td>
+                      <td className="px-4 py-3 text-muted-foreground">
+                        {e.lastActive ? new Date(e.lastActive).toLocaleString() : "Never"}
+                      </td>
                       <td className="px-4 py-3">
-                        <Badge className={
-                          e.status === "active" ? "bg-success/10 text-success hover:bg-success/15" :
-                            e.status === "pending" ? "bg-warning/15 text-warning-foreground hover:bg-warning/20" :
-                              "bg-destructive/15 text-destructive hover:bg-destructive/20"
-                        }>
+                        <Badge
+                          className={
+                            e.status === "active"
+                              ? "bg-success/10 text-success hover:bg-success/15"
+                              : e.status === "pending"
+                                ? "bg-warning/15 text-warning-foreground hover:bg-warning/20"
+                                : "bg-destructive/15 text-destructive hover:bg-destructive/20"
+                          }
+                        >
                           {e.status}
                         </Badge>
                       </td>
@@ -394,8 +540,15 @@ function UsersPage() {
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
-                              <DropdownMenuItem onClick={() => openEditModal(e)}><Edit2 className="mr-2 size-4" /> Edit & Permissions</DropdownMenuItem>
-                              <DropdownMenuItem className="text-destructive focus:bg-destructive/10 focus:text-destructive" onClick={() => setDeleteId(e.id)}><Trash2 className="mr-2 size-4" /> Delete</DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => openEditModal(e)}>
+                                <Edit2 className="mr-2 size-4" /> Edit & Permissions
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                className="text-destructive focus:bg-destructive/10 focus:text-destructive"
+                                onClick={() => setDeleteId(e.id)}
+                              >
+                                <Trash2 className="mr-2 size-4" /> Delete
+                              </DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
                         </div>
@@ -410,12 +563,15 @@ function UsersPage() {
         )}
       </DataPage>
 
-      <Dialog open={isInviteOpen} onOpenChange={(open) => {
-        if (!open) {
-          setIsInviteOpen(false);
-          setGeneratedLink("");
-        }
-      }}>
+      <Dialog
+        open={isInviteOpen}
+        onOpenChange={(open) => {
+          if (!open) {
+            setIsInviteOpen(false);
+            setGeneratedLink("");
+          }
+        }}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Invite Employee</DialogTitle>
@@ -440,30 +596,39 @@ function UsersPage() {
               </div>
 
               <div className="space-y-2">
-                <Label className="flex items-center gap-1.5"><KeyRound className="size-3.5 text-primary" /> Module Permissions</Label>
+                <Label className="flex items-center gap-1.5">
+                  <KeyRound className="size-3.5 text-primary" /> Module Permissions
+                </Label>
                 <div className="space-y-4 border border-border rounded-lg p-4 bg-muted/20 max-h-[250px] overflow-y-auto">
-                  {PERMISSION_GROUPS.map(group => (
+                  {PERMISSION_GROUPS.map((group) => (
                     <div key={group.group} className="space-y-2">
-                      <h4 className="text-xs font-semibold text-foreground/80 uppercase tracking-wider">{group.group}</h4>
+                      <h4 className="text-xs font-semibold text-foreground/80 uppercase tracking-wider">
+                        {group.group}
+                      </h4>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                        {group.permissions.map(p => {
+                        {group.permissions.map((p) => {
                           const checked = invitePermissions.includes(p.id);
                           return (
                             <div
                               key={p.id}
                               onClick={() => toggleInvitePermission(p.id)}
-                              className={`flex items-start gap-2.5 p-2 rounded-md border cursor-pointer transition-all ${checked ? "bg-primary/5 border-primary/40 text-foreground" : "bg-card border-border/60 text-muted-foreground hover:border-border"
-                                }`}
+                              className={`flex items-start gap-2.5 p-2 rounded-md border cursor-pointer transition-all ${
+                                checked
+                                  ? "bg-primary/5 border-primary/40 text-foreground"
+                                  : "bg-card border-border/60 text-muted-foreground hover:border-border"
+                              }`}
                             >
                               <input
                                 type="checkbox"
                                 checked={checked}
-                                onChange={() => { }}
+                                onChange={() => {}}
                                 className="mt-0.5 size-4 rounded border-input text-primary accent-primary"
                               />
                               <div className="space-y-0.5 leading-none">
                                 <p className="text-sm font-medium">{p.label}</p>
-                                <p className="text-[11px] text-muted-foreground leading-snug">{p.desc}</p>
+                                <p className="text-[11px] text-muted-foreground leading-snug">
+                                  {p.desc}
+                                </p>
                               </div>
                             </div>
                           );
@@ -475,7 +640,8 @@ function UsersPage() {
               </div>
 
               <p className="text-xs text-muted-foreground">
-                Generate a unique invitation link to send to your employee. They will register their credentials and PIN, after which you can approve their account.
+                Generate a unique invitation link to send to your employee. They will register their
+                credentials and PIN, after which you can approve their account.
               </p>
               <DialogFooter>
                 <Button type="submit" disabled={isGenerating}>
@@ -489,33 +655,51 @@ function UsersPage() {
               <div className="p-4 rounded-lg bg-muted border border-border flex items-center gap-3">
                 <code className="text-sm flex-1 break-all">{generatedLink}</code>
                 <Button size="icon" variant="outline" onClick={copyLink} className="shrink-0">
-                  {isCopied ? <Check className="size-4 text-success" /> : <Copy className="size-4" />}
+                  {isCopied ? (
+                    <Check className="size-4 text-success" />
+                  ) : (
+                    <Copy className="size-4" />
+                  )}
                 </Button>
               </div>
               <p className="text-sm text-muted-foreground text-center">
-                Send this link to your employee. Once they complete registration, you will need to approve their account.
+                Send this link to your employee. Once they complete registration, you will need to
+                approve their account.
               </p>
-              <Button className="w-full" onClick={() => setIsInviteOpen(false)}>Done</Button>
+              <Button className="w-full" onClick={() => setIsInviteOpen(false)}>
+                Done
+              </Button>
             </div>
           )}
         </DialogContent>
       </Dialog>
 
-      <Dialog open={!!editItem} onOpenChange={(open) => {
-        if (!open) { setEditItem(null); clearUserAll(); }
-      }}>
+      <Dialog
+        open={!!editItem}
+        onOpenChange={(open) => {
+          if (!open) {
+            setEditItem(null);
+            clearUserAll();
+          }
+        }}
+      >
         <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>Edit Employee & Permissions</DialogTitle>
           </DialogHeader>
           <form noValidate onSubmit={handleSaveEdit} className="space-y-4">
             <div className="space-y-1.5">
-              <Label htmlFor="name">Full Name <span className="text-destructive">*</span></Label>
+              <Label htmlFor="name">
+                Full Name <span className="text-destructive">*</span>
+              </Label>
               <Input
-                id="name" name="name"
+                id="name"
+                name="name"
                 placeholder="e.g. Employee Full Name"
                 defaultValue={editItem?.name}
-                className={userErrors.name ? "border-destructive focus-visible:ring-destructive" : ""}
+                className={
+                  userErrors.name ? "border-destructive focus-visible:ring-destructive" : ""
+                }
                 onChange={() => clearUserError("name")}
               />
               <FieldError message={userErrors.name} />
@@ -539,7 +723,9 @@ function UsersPage() {
               <div className="space-y-2">
                 <Label htmlFor="status">Account Status</Label>
                 <Select name="status" defaultValue={editItem?.status || "active"}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="active">Active (Approved)</SelectItem>
                     <SelectItem value="pending">Pending Approval</SelectItem>
@@ -552,23 +738,42 @@ function UsersPage() {
             {/* Salesman Commission & Target Settings */}
             <div className="grid grid-cols-2 gap-4 border-t pt-3">
               <div className="space-y-1.5">
-                <Label htmlFor="commissionRate">Sales Commission (%) <span className="text-destructive">*</span></Label>
+                <Label htmlFor="commissionRate">
+                  Sales Commission (%) <span className="text-destructive">*</span>
+                </Label>
                 <Input
-                  id="commissionRate" name="commissionRate" type="number" min="0" step="0.1"
+                  id="commissionRate"
+                  name="commissionRate"
+                  type="number"
+                  min="0"
+                  step="0.1"
                   defaultValue={editItem?.commissionRate || 2.5}
                   placeholder="e.g. 2.5"
-                  className={userErrors.commissionRate ? "border-destructive focus-visible:ring-destructive" : ""}
+                  className={
+                    userErrors.commissionRate
+                      ? "border-destructive focus-visible:ring-destructive"
+                      : ""
+                  }
                   onChange={() => clearUserError("commissionRate")}
                 />
                 <FieldError message={userErrors.commissionRate} />
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="monthlyTarget">Monthly Sales Target <span className="text-destructive">*</span></Label>
+                <Label htmlFor="monthlyTarget">
+                  Monthly Sales Target <span className="text-destructive">*</span>
+                </Label>
                 <Input
-                  id="monthlyTarget" name="monthlyTarget" type="number" min="0"
+                  id="monthlyTarget"
+                  name="monthlyTarget"
+                  type="number"
+                  min="0"
                   defaultValue={editItem?.monthlyTarget || 10000}
                   placeholder="e.g. 10000"
-                  className={userErrors.monthlyTarget ? "border-destructive focus-visible:ring-destructive" : ""}
+                  className={
+                    userErrors.monthlyTarget
+                      ? "border-destructive focus-visible:ring-destructive"
+                      : ""
+                  }
                   onChange={() => clearUserError("monthlyTarget")}
                 />
                 <FieldError message={userErrors.monthlyTarget} />
@@ -576,30 +781,39 @@ function UsersPage() {
             </div>
 
             <div className="space-y-2">
-              <Label className="flex items-center gap-1.5"><KeyRound className="size-3.5 text-primary" /> Permissions</Label>
+              <Label className="flex items-center gap-1.5">
+                <KeyRound className="size-3.5 text-primary" /> Permissions
+              </Label>
               <div className="space-y-4 border border-border rounded-lg p-4 bg-muted/20 max-h-[250px] overflow-y-auto">
-                {PERMISSION_GROUPS.map(group => (
+                {PERMISSION_GROUPS.map((group) => (
                   <div key={group.group} className="space-y-2">
-                    <h4 className="text-xs font-semibold text-foreground/80 uppercase tracking-wider">{group.group}</h4>
+                    <h4 className="text-xs font-semibold text-foreground/80 uppercase tracking-wider">
+                      {group.group}
+                    </h4>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                      {group.permissions.map(p => {
+                      {group.permissions.map((p) => {
                         const checked = editPermissions.includes(p.id);
                         return (
                           <div
                             key={p.id}
                             onClick={() => toggleEditPermission(p.id)}
-                            className={`flex items-start gap-2.5 p-2 rounded-md border cursor-pointer transition-all ${checked ? "bg-primary/5 border-primary/40 text-foreground" : "bg-card border-border/60 text-muted-foreground hover:border-border"
-                              }`}
+                            className={`flex items-start gap-2.5 p-2 rounded-md border cursor-pointer transition-all ${
+                              checked
+                                ? "bg-primary/5 border-primary/40 text-foreground"
+                                : "bg-card border-border/60 text-muted-foreground hover:border-border"
+                            }`}
                           >
                             <input
                               type="checkbox"
                               checked={checked}
-                              onChange={() => { }}
+                              onChange={() => {}}
                               className="mt-0.5 size-4 rounded border-input text-primary accent-primary"
                             />
                             <div className="space-y-0.5 leading-none">
                               <p className="text-sm font-medium">{p.label}</p>
-                              <p className="text-[11px] text-muted-foreground leading-snug">{p.desc}</p>
+                              <p className="text-[11px] text-muted-foreground leading-snug">
+                                {p.desc}
+                              </p>
                             </div>
                           </div>
                         );
@@ -630,7 +844,12 @@ function UsersPage() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Delete</AlertDialogAction>
+            <AlertDialogAction
+              onClick={handleDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

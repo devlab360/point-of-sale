@@ -44,7 +44,7 @@ function applySecurityHeaders(response: Response): Response {
   newHeaders.set("Strict-Transport-Security", "max-age=31536000; includeSubDomains; preload");
   newHeaders.set("Referrer-Policy", "strict-origin-when-cross-origin");
   newHeaders.set("Permissions-Policy", "geolocation=(), microphone=(), camera=()");
-  
+
   return new Response(response.body, {
     status: response.status,
     statusText: response.statusText,

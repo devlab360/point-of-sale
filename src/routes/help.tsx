@@ -6,11 +6,18 @@ export const Route = createFileRoute("/help")({
   head: () => ({ meta: [{ title: "Help Center · Grocer.Pro" }] }),
   component: () => (
     <div className="space-y-6 p-4 md:p-6 lg:p-8">
-      <PageHeader title="Help Center" description="Guides, FAQs, and ways to reach our support team." />
+      <PageHeader
+        title="Help Center"
+        description="Guides, FAQs, and ways to reach our support team."
+      />
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {[
           { icon: Book, t: "Documentation", d: "Read step-by-step guides for every feature." },
-          { icon: Video, t: "Video Tutorials", d: "Watch short walk-throughs of the POS workflow." },
+          {
+            icon: Video,
+            t: "Video Tutorials",
+            d: "Watch short walk-throughs of the POS workflow.",
+          },
           { icon: MessageCircle, t: "Chat with us", d: "Average response time under 2 minutes." },
           { icon: Phone, t: "Call support", d: "Mon–Sun, 7am – 11pm local time." },
         ].map((c) => {
@@ -38,11 +45,14 @@ export const Route = createFileRoute("/help")({
           ].map((q) => (
             <details key={q} className="group py-3">
               <summary className="cursor-pointer list-none font-medium marker:hidden">
-                <span className="mr-2 text-muted-foreground group-open:rotate-90 inline-block transition-transform">›</span>
+                <span className="mr-2 text-muted-foreground group-open:rotate-90 inline-block transition-transform">
+                  ›
+                </span>
                 {q}
               </summary>
               <p className="mt-2 pl-5 text-sm text-muted-foreground">
-                Detailed walkthroughs are available in the documentation. Reach out to support if you need help.
+                Detailed walkthroughs are available in the documentation. Reach out to support if
+                you need help.
               </p>
             </details>
           ))}

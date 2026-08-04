@@ -11,17 +11,40 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { localDb, type LocalSubscription } from "@/lib/db";
-import { useLiveQuery } from "dexie-react-hooks";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import {
+  getSubscriptionsFn,
+  createSubscriptionFn,
+  updateSubscriptionFn,
+  deleteSubscriptionFn,
+} from "@/api/services";
 import { useCurrency } from "@/lib/currency";
-import { Calendar, CreditCard, RotateCcw, CheckCircle2, PauseCircle, Trash2, ShieldCheck, MoreVertical, Loader2, Repeat, Plus } from "lucide-react";
+import {
+  Calendar,
+  CreditCard,
+  RotateCcw,
+  CheckCircle2,
+  PauseCircle,
+  Trash2,
+  ShieldCheck,
+  MoreVertical,
+  Loader2,
+  Repeat,
+  Plus,
+} from "lucide-react";
 import { PhoneInput } from "@/components/ui/phone-input";
 import { v4 as uuidv4 } from "uuid";
 import { toast } from "sonner";
@@ -37,8 +60,14 @@ export const Route = createFileRoute("/subscriptions")({
 
 function SubscriptionsPage() {
   const { formatCurrency } = useCurrency();
-  const rawSubs = useLiveQuery(() => localDb.subscriptions.filter(s => !s._deleted).reverse().toArray()) || [];
-  const customers = useLiveQuery(() => localDb.customers.toArray()) || [];
+  const orgId = PersistStore.getOrgId() || "default";
+  const queryClient = useQueryClient();
+
+  const { data: rawSubsData } = useQuery({
+    queryKey: ["subscriptions", orgId],
+    queryFn: async () => ((await getSubscriptionsFn({ data: {} })) as any)?.data || [],
+  });
+  const rawSubs = rawSubsData || [];
 
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -72,11 +101,11 @@ function SubscriptionsPage() {
         (s) =>
           s.subscriptionNo.toLowerCase().includes(lower) ||
           s.customerName.toLowerCase().includes(lower) ||
-          s.planName.toLowerCase().includes(lower)
+          s.planName.toLowerCase().includes(lower),
       );
     }
     if (filters.status) {
-      filtered = filtered.filter(s => s.status === filters.status);
+      filtered = filtered.filter((s) => s.status === filters.status);
     }
     return [...filtered].reverse();
   }, [rawSubs, debouncedSearch, filters.status]);
@@ -91,10 +120,18 @@ function SubscriptionsPage() {
     setPage(1);
   }, [debouncedSearch, filters]);
 
-  const { errors: subErrors, validate: validateSub, clearError: clearSubError, clearAll: clearSubAll } = useFormValidation({
+  const {
+    errors: subErrors,
+    validate: validateSub,
+    clearError: clearSubError,
+    clearAll: clearSubAll,
+  } = useFormValidation({
     customerName: { required: "Customer name is required" },
     planName: { required: "Plan / Service name is required" },
-    amount: { required: "Recurring amount is required", positive: "Amount must be a positive number" },
+    amount: {
+      required: "Recurring amount is required",
+      positive: "Amount must be a positive number",
+    },
   });
 
   const handleCreateSub = async (e: React.FormEvent) => {
@@ -104,53 +141,62 @@ function SubscriptionsPage() {
     if (!isValid) return;
 
     setIsSubmitting(true);
-    await new Promise(resolve => setTimeout(resolve, 500));
+    await new Promise((resolve) => setTimeout(resolve, 500));
     try {
       const subNo = `SUB-${Date.now().toString().slice(-6)}`;
-      await localDb.subscriptions.add({
-        id: uuidv4(),
-        orgId: PersistStore.getOrgId() || "default",
-        subscriptionNo: subNo,
-        customerName,
-        customerPhone,
-        planName,
-        billingCycle,
-        amount: parseFloat(amount) || 0,
-        nextBillingDate: nextBillingDate || new Date().toISOString().split("T")[0],
-        status: "active",
-        synced: false
+      const res = await createSubscriptionFn({
+        data: {
+          subscription: {
+            subscriptionNo: subNo,
+            customerName,
+            customerPhone,
+            planName,
+            billingCycle,
+            amount: parseFloat(amount) || 0,
+            nextBillingDate: nextBillingDate || new Date().toISOString().split("T")[0],
+            status: "active",
+          },
+        },
       });
 
-      toast.success(`Subscription ${subNo} created successfully!`);
-      setIsAddOpen(false);
-      setCustomerName("");
-      setPlanName("");
-      setAmount("");
-      clearSubAll();
-    } catch (err) {
-      toast.error("Failed to create subscription");
+      if (res?.success) {
+        toast.success(`Subscription ${subNo} created successfully!`);
+        setIsAddOpen(false);
+        setCustomerName("");
+        setPlanName("");
+        setAmount("");
+        clearSubAll();
+        queryClient.invalidateQueries({ queryKey: ["subscriptions"] });
+      } else throw new Error(res?.error || "Failed to create subscription");
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to create subscription");
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const updateStatus = async (id: string, status: LocalSubscription["status"]) => {
-    await localDb.subscriptions.update(id, { status, synced: false });
-    toast.success(`Subscription ${status}`);
+  const updateStatus = async (id: string, status: any) => {
+    try {
+      const res = await updateSubscriptionFn({ data: { id, updates: { status } } });
+      if (res?.success) {
+        toast.success(`Subscription ${status}`);
+        queryClient.invalidateQueries({ queryKey: ["subscriptions"] });
+      } else throw new Error(res?.error);
+    } catch (err) {
+      toast.error("Failed to update status");
+    }
   };
 
   const deleteSub = async (id: string) => {
-    await localDb.subscriptions.update(id, { _deleted: true, synced: false });
-    await localDb.activityLog.add({
-      id: uuidv4(),
-      orgId: PersistStore.getOrgId() || "default",
-      action: "TOMBSTONE",
-      user: "system",
-      details: JSON.stringify({ entityType: "subscriptions", entityId: id }),
-      timestamp: new Date().toISOString(),
-      synced: false,
-    });
-    toast.success("Subscription deleted");
+    try {
+      const res = await deleteSubscriptionFn({ data: { id } });
+      if (res?.success) {
+        toast.success("Subscription deleted");
+        queryClient.invalidateQueries({ queryKey: ["subscriptions"] });
+      } else throw new Error(res?.error);
+    } catch (err) {
+      toast.error("Failed to delete subscription");
+    }
   };
 
   return (
@@ -178,13 +224,19 @@ function SubscriptionsPage() {
                     { value: "cancelled", label: "Cancelled" },
                   ]}
                   value={draftFilters.status}
-                  onChange={(val) => setDraftFilters(prev => ({ ...prev, status: val }))}
+                  onChange={(val) => setDraftFilters((prev) => ({ ...prev, status: val }))}
                   placeholder="Filter by Status"
                 />
               </div>
             </div>
             <div className="pt-4 mt-auto">
-              <Button className="w-full" onClick={() => { setFilters(draftFilters); close(); }}>
+              <Button
+                className="w-full"
+                onClick={() => {
+                  setFilters(draftFilters);
+                  close();
+                }}
+              >
                 Apply Filters
               </Button>
             </div>
@@ -195,7 +247,11 @@ function SubscriptionsPage() {
           <EmptyState
             icon={Repeat}
             title="No subscriptions found"
-            description={search ? "Try adjusting your search query." : "Create your first recurring subscription to automate billing."}
+            description={
+              search
+                ? "Try adjusting your search query."
+                : "Create your first recurring subscription to automate billing."
+            }
           />
         ) : (
           <div className="space-y-4">
@@ -216,15 +272,23 @@ function SubscriptionsPage() {
                 <tbody className="divide-y divide-border">
                   {paginated.map((s) => (
                     <tr key={s.id} className="hover:bg-muted/30">
-                      <td className="px-4 py-3 font-mono font-bold text-primary">{s.subscriptionNo}</td>
+                      <td className="px-4 py-3 font-mono font-bold text-primary">
+                        {s.subscriptionNo}
+                      </td>
                       <td className="px-4 py-3 font-semibold">{s.customerName}</td>
                       <td className="px-4 py-3 font-medium">{s.planName}</td>
                       <td className="px-4 py-3 text-xs uppercase font-mono">{s.billingCycle}</td>
                       <td className="px-4 py-3 text-right font-bold">{formatCurrency(s.amount)}</td>
-                      <td className="px-4 py-3 text-xs text-muted-foreground">{s.nextBillingDate ? format(new Date(s.nextBillingDate), "MMM dd, yyyy") : "-"}</td>
+                      <td className="px-4 py-3 text-xs text-muted-foreground">
+                        {s.nextBillingDate
+                          ? format(new Date(s.nextBillingDate), "MMM dd, yyyy")
+                          : "-"}
+                      </td>
                       <td className="px-4 py-3">
                         {s.status === "active" ? (
-                          <Badge className="bg-success/15 text-success border-success/30">Active</Badge>
+                          <Badge className="bg-success/15 text-success border-success/30">
+                            Active
+                          </Badge>
                         ) : (
                           <Badge variant="outline">{s.status}</Badge>
                         )}
@@ -241,9 +305,13 @@ function SubscriptionsPage() {
                               <CheckCircle2 className="mr-2 size-4 text-success" /> Activate
                             </DropdownMenuItem>
                             <DropdownMenuItem onClick={() => updateStatus(s.id, "paused")}>
-                              <PauseCircle className="mr-2 size-4 text-warning-foreground" /> Pause Subscription
+                              <PauseCircle className="mr-2 size-4 text-warning-foreground" /> Pause
+                              Subscription
                             </DropdownMenuItem>
-                            <DropdownMenuItem className="text-destructive" onClick={() => deleteSub(s.id)}>
+                            <DropdownMenuItem
+                              className="text-destructive"
+                              onClick={() => deleteSub(s.id)}
+                            >
                               <Trash2 className="mr-2 size-4" /> Cancel & Delete
                             </DropdownMenuItem>
                           </DropdownMenuContent>
@@ -254,11 +322,11 @@ function SubscriptionsPage() {
                 </tbody>
               </table>
             </div>
-            <PaginationControls 
-              currentPage={page} 
-              totalPages={totalPages} 
+            <PaginationControls
+              currentPage={page}
+              totalPages={totalPages}
               pageSize={pageSize}
-              onPageChange={setPage} 
+              onPageChange={setPage}
               onPageSizeChange={setPageSize}
             />
           </div>
@@ -266,9 +334,15 @@ function SubscriptionsPage() {
       </DataPage>
 
       {/* Create Subscription Modal */}
-      <Dialog open={isAddOpen} onOpenChange={(open) => {
-        if (!open) { setIsAddOpen(false); clearSubAll(); }
-      }}>
+      <Dialog
+        open={isAddOpen}
+        onOpenChange={(open) => {
+          if (!open) {
+            setIsAddOpen(false);
+            clearSubAll();
+          }
+        }}
+      >
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
@@ -278,32 +352,52 @@ function SubscriptionsPage() {
           </DialogHeader>
           <form noValidate onSubmit={handleCreateSub} className="space-y-4 pt-2">
             <div className="space-y-1.5">
-              <Label>Customer Name <span className="text-destructive">*</span></Label>
+              <Label>
+                Customer Name <span className="text-destructive">*</span>
+              </Label>
               <Input
                 placeholder="e.g. Customer Name"
                 value={customerName}
-                onChange={(e) => { setCustomerName(e.target.value); clearSubError("customerName"); }}
-                className={subErrors.customerName ? "border-destructive focus-visible:ring-destructive" : ""}
+                onChange={(e) => {
+                  setCustomerName(e.target.value);
+                  clearSubError("customerName");
+                }}
+                className={
+                  subErrors.customerName ? "border-destructive focus-visible:ring-destructive" : ""
+                }
               />
               <FieldError message={subErrors.customerName} />
             </div>
             <div className="space-y-1.5">
               <Label>Phone Number</Label>
-              <PhoneInput 
-                placeholder="e.g. 1711000000" value={customerPhone} 
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => { setCustomerPhone(e.target.value); clearSubError("customerPhone"); }}
-                className={subErrors.customerPhone ? "border-destructive focus-visible:ring-destructive" : ""}
+              <PhoneInput
+                placeholder="e.g. 1711000000"
+                value={customerPhone}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                  setCustomerPhone(e.target.value);
+                  clearSubError("customerPhone");
+                }}
+                className={
+                  subErrors.customerPhone ? "border-destructive focus-visible:ring-destructive" : ""
+                }
               />
               <FieldError message={subErrors.customerPhone} />
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <Label>Plan / Service Name <span className="text-destructive">*</span></Label>
+                <Label>
+                  Plan / Service Name <span className="text-destructive">*</span>
+                </Label>
                 <Input
                   placeholder="e.g. Plan / Service Name"
                   value={planName}
-                  onChange={(e) => { setPlanName(e.target.value); clearSubError("planName"); }}
-                  className={subErrors.planName ? "border-destructive focus-visible:ring-destructive" : ""}
+                  onChange={(e) => {
+                    setPlanName(e.target.value);
+                    clearSubError("planName");
+                  }}
+                  className={
+                    subErrors.planName ? "border-destructive focus-visible:ring-destructive" : ""
+                  }
                 />
                 <FieldError message={subErrors.planName} />
               </div>
@@ -323,27 +417,46 @@ function SubscriptionsPage() {
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <Label>Recurring Amount <span className="text-destructive">*</span></Label>
+                <Label>
+                  Recurring Amount <span className="text-destructive">*</span>
+                </Label>
                 <Input
-                  type="number" min="0" step="0.01" placeholder="0.00"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  placeholder="0.00"
                   value={amount}
-                  onChange={(e) => { setAmount(e.target.value); clearSubError("amount"); }}
-                  className={subErrors.amount ? "border-destructive focus-visible:ring-destructive" : ""}
+                  onChange={(e) => {
+                    setAmount(e.target.value);
+                    clearSubError("amount");
+                  }}
+                  className={
+                    subErrors.amount ? "border-destructive focus-visible:ring-destructive" : ""
+                  }
                 />
                 <FieldError message={subErrors.amount} />
               </div>
               <div className="space-y-1.5">
                 <Label>Next Billing Date</Label>
                 <div className="mt-1">
-                  <DatePicker 
-                    date={nextBillingDate ? new Date(nextBillingDate) : undefined} 
-                    onDateChange={(d) => setNextBillingDate(d ? d.toISOString().split("T")[0] : "")} 
+                  <DatePicker
+                    date={nextBillingDate ? new Date(nextBillingDate) : undefined}
+                    onDateChange={(d) => setNextBillingDate(d ? d.toISOString().split("T")[0] : "")}
                   />
                 </div>
               </div>
             </div>
             <DialogFooter className="mt-6">
-              <Button type="button" variant="outline" onClick={() => { setIsAddOpen(false); clearSubAll(); }}>Cancel</Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setIsAddOpen(false);
+                  clearSubAll();
+                }}
+              >
+                Cancel
+              </Button>
               <Button type="submit" disabled={isSubmitting}>
                 {isSubmitting && <Loader2 className="size-4 animate-spin mr-2" />}
                 Create Subscription

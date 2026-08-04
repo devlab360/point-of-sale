@@ -1,5 +1,15 @@
 import React, { useState, useRef } from "react";
-import { UploadCloud, X, RefreshCw, FileText, CheckCircle2, AlertCircle, Loader2, ImageIcon, User } from "lucide-react";
+import {
+  UploadCloud,
+  X,
+  RefreshCw,
+  FileText,
+  CheckCircle2,
+  AlertCircle,
+  Loader2,
+  ImageIcon,
+  User,
+} from "lucide-react";
 import { Button } from "./button";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -46,7 +56,8 @@ export function FileUpload({
   // For single-image mode: the currently selected image
   const singleUrl = !multiple && urls.length > 0 ? urls[0] : null;
   const isSingleImage = singleUrl
-    ? singleUrl.startsWith("data:image/") || /\.(jpg|jpeg|png|webp|gif|svg)(\?.*)?$/i.test(singleUrl)
+    ? singleUrl.startsWith("data:image/") ||
+      /\.(jpg|jpeg|png|webp|gif|svg)(\?.*)?$/i.test(singleUrl)
     : false;
 
   /** Simulate smooth upload progress that slows down as it approaches the cap. */
@@ -92,7 +103,7 @@ export function FileUpload({
 
     try {
       const uploadPromises = targetFiles.map((file) =>
-        uploadToVercelBlob(file, { folder, allowedTypes, maxSizeMB })
+        uploadToVercelBlob(file, { folder, allowedTypes, maxSizeMB }),
       );
 
       const results = await Promise.all(uploadPromises);
@@ -111,7 +122,7 @@ export function FileUpload({
       toast.success(
         results.length === 1
           ? `Image '${results[0].name}' uploaded!`
-          : `${results.length} images uploaded!`
+          : `${results.length} images uploaded!`,
       );
     } catch (err: any) {
       stopSimulatedProgress();
@@ -177,13 +188,15 @@ export function FileUpload({
             className={cn(
               "group relative overflow-hidden rounded-full border-4 transition-all cursor-pointer select-none size-24 shrink-0 shadow-sm bg-muted",
               isDragging ? "border-primary scale-105" : "border-background hover:border-primary/20",
-              disabled && "cursor-not-allowed opacity-60"
+              disabled && "cursor-not-allowed opacity-60",
             )}
           >
             {isUploading ? (
               <div className="size-full flex flex-col items-center justify-center bg-background/80 backdrop-blur-sm z-10">
                 <Loader2 className="size-6 text-primary animate-spin mb-1" />
-                <span className="text-[10px] font-mono font-medium text-foreground">{progress}%</span>
+                <span className="text-[10px] font-mono font-medium text-foreground">
+                  {progress}%
+                </span>
               </div>
             ) : singleUrl ? (
               <img src={singleUrl} alt="Avatar" className="size-full object-cover" />
@@ -215,16 +228,14 @@ export function FileUpload({
               onDrop={handleDrop}
               className={cn(
                 "group relative overflow-hidden rounded-xl border-2 border-dashed transition-all h-32 sm:h-40",
-                isDragging ? "border-primary scale-[1.01]" : "border-border/60 hover:border-primary/60",
-                disabled && "opacity-60 cursor-not-allowed"
+                isDragging
+                  ? "border-primary scale-[1.01]"
+                  : "border-border/60 hover:border-primary/60",
+                disabled && "opacity-60 cursor-not-allowed",
               )}
             >
               {/* Preview image fills the zone */}
-              <img
-                src={singleUrl}
-                alt="Product preview"
-                className="size-full object-cover"
-              />
+              <img src={singleUrl} alt="Product preview" className="size-full object-cover" />
 
               {/* Uploading overlay */}
               {isUploading && (
@@ -259,7 +270,10 @@ export function FileUpload({
                     size="sm"
                     variant="destructive"
                     className="h-8 px-3 text-xs font-semibold shadow-lg"
-                    onClick={(e) => { e.stopPropagation(); handleRemove(singleUrl); }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleRemove(singleUrl);
+                    }}
                   >
                     <X className="size-3.5 mr-1.5" />
                     Remove
@@ -284,9 +298,11 @@ export function FileUpload({
               onClick={() => !disabled && !isUploading && fileInputRef.current?.click()}
               className={cn(
                 "relative flex flex-col items-center justify-center rounded-xl border-2 border-dashed p-8 text-center transition-all cursor-pointer select-none",
-                isDragging ? "border-primary bg-primary/10 scale-[1.01]" : "border-border/80 bg-muted/20 hover:border-primary/50 hover:bg-muted/40",
+                isDragging
+                  ? "border-primary bg-primary/10 scale-[1.01]"
+                  : "border-border/80 bg-muted/20 hover:border-primary/50 hover:bg-muted/40",
                 disabled && "cursor-not-allowed opacity-60 hover:border-border hover:bg-muted/20",
-                uploadError && "border-destructive/60 bg-destructive/5"
+                uploadError && "border-destructive/60 bg-destructive/5",
               )}
             >
               {isUploading ? (
@@ -338,7 +354,8 @@ export function FileUpload({
       {multiple && urls.length > 0 && (
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 pt-1">
           {urls.map((url, idx) => {
-            const isImg = url.startsWith("data:image/") || /\.(jpg|jpeg|png|webp|gif|svg)(\?.*)?$/i.test(url);
+            const isImg =
+              url.startsWith("data:image/") || /\.(jpg|jpeg|png|webp|gif|svg)(\?.*)?$/i.test(url);
             return (
               <div
                 key={idx}
@@ -359,7 +376,10 @@ export function FileUpload({
                     size="icon"
                     className="size-7"
                     title="Remove file"
-                    onClick={(e) => { e.stopPropagation(); handleRemove(url); }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleRemove(url);
+                    }}
                   >
                     <X className="size-4" />
                   </Button>

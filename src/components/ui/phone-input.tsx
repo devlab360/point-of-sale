@@ -49,9 +49,15 @@ export const PhoneInput = React.forwardRef<HTMLInputElement, PhoneInputProps>(
           {...props}
         />
         {/* Hidden input for FormData (form submit) */}
-        {name && <input type="hidden" name={name} value={displayVal.trim() ? `${countryCode} ${displayVal.trim()}` : ""} />}
+        {name && (
+          <input
+            type="hidden"
+            name={name}
+            value={displayVal.trim() ? `${countryCode} ${displayVal.trim()}` : ""}
+          />
+        )}
       </div>
     );
-  }
+  },
 );
 PhoneInput.displayName = "PhoneInput";

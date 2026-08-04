@@ -3,10 +3,24 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { localDb } from "@/lib/db";
-import { useLiveQuery } from "dexie-react-hooks";
+import { useQuery } from "@tanstack/react-query";
+import { getSalesFn } from "@/api/sales";
+import { getProductsFn } from "@/api/products";
+import { getCustomersFn } from "@/api/customers";
+import { getExpensesFn } from "@/api/expenses";
+import { PersistStore } from "@/lib/session-store";
 import { useCurrency } from "@/lib/currency";
-import { Bot, Sparkles, Send, TrendingUp, AlertTriangle, PackageX, UserCheck, ShieldAlert, CheckCircle2 } from "lucide-react";
+import {
+  Bot,
+  Sparkles,
+  Send,
+  TrendingUp,
+  AlertTriangle,
+  PackageX,
+  UserCheck,
+  ShieldAlert,
+  CheckCircle2,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type Message = {
@@ -26,11 +40,31 @@ export function AiCopilotDrawer() {
   const { formatCurrency } = useCurrency();
   const [isOpen, setIsOpen] = useState(false);
   const [inputQuery, setInputQuery] = useState("");
+  const orgId = PersistStore.getOrgId() || "default";
 
-  const sales = useLiveQuery(() => localDb.offlineSales.toArray()) || [];
-  const products = useLiveQuery(() => localDb.products.toArray()) || [];
-  const customers = useLiveQuery(() => localDb.customers.toArray()) || [];
-  const expenses = useLiveQuery(() => localDb.expenses.toArray()) || [];
+  const { data: salesData } = useQuery({
+    queryKey: ["sales", orgId],
+    queryFn: async () => (await getSalesFn({ data: {} })).data || [],
+  });
+  const sales = salesData || [];
+
+  const { data: productsData } = useQuery({
+    queryKey: ["products", orgId],
+    queryFn: async () => (await getProductsFn({ data: {} })).data || [],
+  });
+  const products = productsData || [];
+
+  const { data: customersData } = useQuery({
+    queryKey: ["customers", orgId],
+    queryFn: async () => (await getCustomersFn({ data: {} })).data || [],
+  });
+  const customers = customersData || [];
+
+  const { data: expensesData } = useQuery({
+    queryKey: ["expenses", orgId],
+    queryFn: async () => (await getExpensesFn({ data: {} })).data || [],
+  });
+  const expenses = expensesData || [];
 
   // Key Shortcut Ctrl + K or Cmd + K
   useEffect(() => {
@@ -48,7 +82,7 @@ export function AiCopilotDrawer() {
   const healthAnalysis = useMemo(() => {
     const totalSalesRev = sales.reduce((sum, s) => sum + s.total, 0);
     const totalExp = expenses.reduce((sum, e) => sum + e.amount, 0);
-    
+
     let totalCogs = 0;
     sales.forEach((s) => {
       s.saleItems?.forEach((i) => {
@@ -60,7 +94,9 @@ export function AiCopilotDrawer() {
     const profitMargin = totalSalesRev > 0 ? (netProfit / totalSalesRev) * 100 : 0;
 
     // Dead Stock Calculation (Unsold products with positive stock)
-    const soldProductIds = new Set(sales.flatMap((s) => s.saleItems?.map((i) => i.productId) || []));
+    const soldProductIds = new Set(
+      sales.flatMap((s) => s.saleItems?.map((i) => i.productId) || []),
+    );
     const deadStockItems = products.filter((p) => p.stock > 0 && !soldProductIds.has(p.id));
     const totalStockValue = products.reduce((sum, p) => sum + p.stock * p.cost, 0);
     const deadStockValue = deadStockItems.reduce((sum, p) => sum + p.stock * p.cost, 0);
@@ -110,7 +146,11 @@ export function AiCopilotDrawer() {
   const dragRef = useRef({ startX: 0, startY: 0, hasMoved: false });
 
   const onPointerDown = (e: React.PointerEvent<HTMLButtonElement>) => {
-    dragRef.current = { startX: e.clientX - btnPos.x, startY: e.clientY - btnPos.y, hasMoved: false };
+    dragRef.current = {
+      startX: e.clientX - btnPos.x,
+      startY: e.clientY - btnPos.y,
+      hasMoved: false,
+    };
     setIsDragging(true);
     e.currentTarget.setPointerCapture(e.pointerId);
   };
@@ -151,18 +191,43 @@ export function AiCopilotDrawer() {
     let aiReplyText = "";
     let dataCard: Message["dataCard"] = undefined;
 
-    if (q.includes("health") || q.includes("স্কোর") || q.includes("কেমন চলছে") || q.includes("score")) {
+    if (
+      q.includes("health") ||
+      q.includes("স্কোর") ||
+      q.includes("কেমন চলছে") ||
+      q.includes("score")
+    ) {
       aiReplyText = `📊 আপনার দোকানের **Business Health Score হলো ${healthAnalysis.score}/100 [Grade: ${healthAnalysis.grade}]**।`;
       dataCard = {
         title: `Business Health Score: ${healthAnalysis.score}/100`,
         metrics: [
-          { label: "Net Profit", value: formatCurrency(healthAnalysis.netProfit), color: "text-success" },
-          { label: "Total Overdue", value: formatCurrency(healthAnalysis.totalDue), color: "text-destructive" },
-          { label: "Dead Stock Value", value: formatCurrency(healthAnalysis.deadStockValue), color: "text-warning-foreground" },
+          {
+            label: "Net Profit",
+            value: formatCurrency(healthAnalysis.netProfit),
+            color: "text-success",
+          },
+          {
+            label: "Total Overdue",
+            value: formatCurrency(healthAnalysis.totalDue),
+            color: "text-destructive",
+          },
+          {
+            label: "Dead Stock Value",
+            value: formatCurrency(healthAnalysis.deadStockValue),
+            color: "text-warning-foreground",
+          },
         ],
-        alert: healthAnalysis.score < 70 ? "⚠️ বকেয়া কালেকশন দ্রুত বাড়ান এবং অলস স্টক ডিসকাউন্টে বিক্রি করুন।" : "✅ ব্যবসা চমৎকার গতিতে লাভজনকভাবে চলছে!",
+        alert:
+          healthAnalysis.score < 70
+            ? "⚠️ বকেয়া কালেকশন দ্রুত বাড়ান এবং অলস স্টক ডিসকাউন্টে বিক্রি করুন।"
+            : "✅ ব্যবসা চমৎকার গতিতে লাভজনকভাবে চলছে!",
       };
-    } else if (q.includes("dead") || q.includes("স্টক") || q.includes("বিক্রি হচ্ছে না") || q.includes("unsold")) {
+    } else if (
+      q.includes("dead") ||
+      q.includes("স্টক") ||
+      q.includes("বিক্রি হচ্ছে না") ||
+      q.includes("unsold")
+    ) {
       aiReplyText = `📦 মোট **${healthAnalysis.deadStockItems.length}টি পণ্য (মূল্য: ${formatCurrency(healthAnalysis.deadStockValue)})** অলস পড়ে আছে যা গত ৩০ দিনে বিক্রি হয়নি।`;
       dataCard = {
         title: "Dead Stock Items (অলস স্টক তালিকা)",
@@ -171,9 +236,15 @@ export function AiCopilotDrawer() {
           subtext: `Stock: ${p.stock} ${p.unit}`,
           badge: `${formatCurrency(p.stock * p.cost)} Value`,
         })),
-        alert: "💡 পরামর্শ: এই আইটেমগুলোর ওপর ১০%-২০% স্পেশাল প্রোমোশন অফার দিয়ে দ্রুত ক্যাশ কনভার্ট করুন।",
+        alert:
+          "💡 পরামর্শ: এই আইটেমগুলোর ওপর ১০%-২০% স্পেশাল প্রোমোশন অফার দিয়ে দ্রুত ক্যাশ কনভার্ট করুন।",
       };
-    } else if (q.includes("বকেয়া") || q.includes("due") || q.includes("বাকী") || q.includes("khata")) {
+    } else if (
+      q.includes("বকেয়া") ||
+      q.includes("due") ||
+      q.includes("বাকী") ||
+      q.includes("khata")
+    ) {
       aiReplyText = `💰 কাস্টমারদের কাছে মোট **${formatCurrency(healthAnalysis.totalDue)}** টাকা বকেয়া রয়েছে।`;
       dataCard = {
         title: "Top Overdue Customers (সর্বোচ্চ বকেয়া কাস্টমার)",
@@ -184,14 +255,27 @@ export function AiCopilotDrawer() {
         })),
         alert: "📲 ১-ক্লিকে কাস্টমারদের হোয়াটসঅ্যাপে রিমাইন্ডার পাঠান।",
       };
-    } else if (q.includes("profit") || q.includes("লাভ") || q.includes("আয়") || q.includes("বিক্রি")) {
+    } else if (
+      q.includes("profit") ||
+      q.includes("লাভ") ||
+      q.includes("আয়") ||
+      q.includes("বিক্রি")
+    ) {
       aiReplyText = `📈 আপনার মোট বিক্রি **${formatCurrency(healthAnalysis.totalSalesRev)}** এবং সমস্ত খরচ বাদ দিয়ে নিট প্রফিট **${formatCurrency(healthAnalysis.netProfit)}**।`;
       dataCard = {
         title: "Financial Summary (লাভ-ক্ষতি সারসংক্ষেপ)",
         metrics: [
           { label: "Total Sales", value: formatCurrency(healthAnalysis.totalSalesRev) },
-          { label: "Expenses", value: formatCurrency(healthAnalysis.totalExp), color: "text-destructive" },
-          { label: "Net Profit", value: formatCurrency(healthAnalysis.netProfit), color: "text-success" },
+          {
+            label: "Expenses",
+            value: formatCurrency(healthAnalysis.totalExp),
+            color: "text-destructive",
+          },
+          {
+            label: "Net Profit",
+            value: formatCurrency(healthAnalysis.netProfit),
+            color: "text-success",
+          },
         ],
       };
     } else {
@@ -226,23 +310,37 @@ export function AiCopilotDrawer() {
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}
         onClick={handleClick}
-        style={{ transform: `translate(${btnPos.x}px, ${btnPos.y}px)`, cursor: isDragging ? 'grabbing' : 'grab', touchAction: 'none' }}
+        style={{
+          transform: `translate(${btnPos.x}px, ${btnPos.y}px)`,
+          cursor: isDragging ? "grabbing" : "grab",
+          touchAction: "none",
+        }}
         className="fixed bottom-6 right-6 z-50 flex items-center gap-2 rounded-full bg-primary hover:bg-primary/90 px-4 py-3 text-sm font-bold text-primary-foreground shadow-md border border-primary/20 transition-colors"
       >
         <Sparkles className="size-5 animate-pulse" />
         <span className="hidden sm:inline">AI Copilot</span>
-        <Badge variant="secondary" className="text-[9px] bg-background/20 text-white ml-1 pointer-events-none">Ctrl+K</Badge>
+        <Badge
+          variant="secondary"
+          className="text-[9px] bg-background/20 text-white ml-1 pointer-events-none"
+        >
+          Ctrl+K
+        </Badge>
       </button>
 
       {/* AI Assistant Sheet Drawer */}
       <Sheet open={isOpen} onOpenChange={setIsOpen}>
-        <SheetContent side="right" className="w-full sm:max-w-xl p-0 flex flex-col h-full bg-background border-l border-border shadow-2xl">
+        <SheetContent
+          side="right"
+          className="w-full sm:max-w-xl p-0 flex flex-col h-full bg-background border-l border-border shadow-2xl"
+        >
           <SheetHeader className="p-4 border-b bg-gradient-to-r from-primary/10 via-background to-accent/10">
             <SheetTitle className="flex items-center gap-2 text-primary font-bold">
               <Bot className="size-5" />
               <span>Grocer.Pro AI Business Advisor</span>
             </SheetTitle>
-            <p className="text-xs text-muted-foreground">Natural Language AI Store Intelligence & Analytics</p>
+            <p className="text-xs text-muted-foreground">
+              Natural Language AI Store Intelligence & Analytics
+            </p>
           </SheetHeader>
 
           {/* Quick Query Chips */}
@@ -276,11 +374,19 @@ export function AiCopilotDrawer() {
           {/* Messages Container */}
           <div className="flex-1 overflow-y-auto p-4 space-y-4">
             {messages.map((m) => (
-              <div key={m.id} className={cn("flex flex-col max-w-[88%]", m.sender === "user" ? "ml-auto items-end" : "mr-auto items-start")}>
+              <div
+                key={m.id}
+                className={cn(
+                  "flex flex-col max-w-[88%]",
+                  m.sender === "user" ? "ml-auto items-end" : "mr-auto items-start",
+                )}
+              >
                 <div
                   className={cn(
                     "rounded-2xl px-3.5 py-2.5 text-xs shadow-soft leading-relaxed",
-                    m.sender === "user" ? "bg-primary text-primary-foreground rounded-br-none" : "bg-muted/60 border border-border text-foreground rounded-bl-none"
+                    m.sender === "user"
+                      ? "bg-primary text-primary-foreground rounded-br-none"
+                      : "bg-muted/60 border border-border text-foreground rounded-bl-none",
                   )}
                 >
                   {m.text}
@@ -299,7 +405,11 @@ export function AiCopilotDrawer() {
                         {m.dataCard.metrics.map((metric, idx) => (
                           <div key={idx} className="text-center">
                             <div className="text-[10px] text-muted-foreground">{metric.label}</div>
-                            <div className={cn("font-bold mt-0.5", metric.color || "text-foreground")}>{metric.value}</div>
+                            <div
+                              className={cn("font-bold mt-0.5", metric.color || "text-foreground")}
+                            >
+                              {metric.value}
+                            </div>
                           </div>
                         ))}
                       </div>
@@ -308,12 +418,23 @@ export function AiCopilotDrawer() {
                     {m.dataCard.list && (
                       <div className="space-y-1.5">
                         {m.dataCard.list.map((item, idx) => (
-                          <div key={idx} className="flex justify-between items-center bg-muted/40 p-1.5 rounded border border-border/50 text-[11px]">
+                          <div
+                            key={idx}
+                            className="flex justify-between items-center bg-muted/40 p-1.5 rounded border border-border/50 text-[11px]"
+                          >
                             <div>
                               <div className="font-semibold">{item.label}</div>
-                              {item.subtext && <div className="text-[9px] text-muted-foreground">{item.subtext}</div>}
+                              {item.subtext && (
+                                <div className="text-[9px] text-muted-foreground">
+                                  {item.subtext}
+                                </div>
+                              )}
                             </div>
-                            {item.badge && <Badge variant="outline" className="text-[9px]">{item.badge}</Badge>}
+                            {item.badge && (
+                              <Badge variant="outline" className="text-[9px]">
+                                {item.badge}
+                              </Badge>
+                            )}
                           </div>
                         ))}
                       </div>

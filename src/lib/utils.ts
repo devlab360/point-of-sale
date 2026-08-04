@@ -24,5 +24,6 @@ export const DEFAULT_PAYMENT_CONFIG = {
   ifscCode: "",
   upiId: "",
   qrCodeUrl: "",
-  instructions: "Please make the payment using the details above and submit your Transaction ID/UTR below for verification."
+  instructions:
+    "Please make the payment using the details above and submit your Transaction ID/UTR below for verification.",
 };

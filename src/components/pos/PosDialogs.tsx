@@ -1,0 +1,503 @@
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { PhoneInput } from "@/components/ui/phone-input";
+import { SearchableSelect } from "@/components/ui/searchable-select";
+import { VirtualKeyboard } from "@/components/ui/virtual-keyboard";
+import {
+  User,
+  Search,
+  Plus,
+  Keyboard,
+  Trash2,
+  Printer,
+  MessageCircle,
+  Loader2,
+} from "lucide-react";
+import { cn } from "@/lib/utils";
+import { v4 as uuidv4 } from "uuid";
+import { createCustomerFn } from "@/api/customers";
+import { deleteHeldInvoiceFn } from "@/api/pos";
+import { toast } from "sonner";
+
+export function PosDialogs({
+  state,
+  onCheckout,
+  onResumeInvoice,
+}: {
+  state: any;
+  onCheckout: () => void;
+  onResumeInvoice: (h: any) => void;
+}) {
+  const {
+    showCustomerSearch,
+    setShowCustomerSearch,
+    showAddCustomer,
+    setShowAddCustomer,
+    showShortcutsHelp,
+    setShowShortcutsHelp,
+    customerQuery,
+    setCustomerQuery,
+    showHeld,
+    setShowHeld,
+    showCoupon,
+    setShowCoupon,
+    couponCode,
+    setCouponCode,
+    appliedCoupon,
+    setAppliedCoupon,
+    confirmCheckout,
+    setConfirmCheckout,
+    isCompletingSale,
+    keyboardOpen,
+    setKeyboardOpen,
+    activeInput,
+    setActiveInput,
+    showOpenRegister,
+    setShowOpenRegister,
+    startingCash,
+    setStartingCash,
+    saleComplete,
+    setSaleComplete,
+    printFormat,
+    setPrintFormat,
+    printData,
+    setPrintData,
+    customers,
+    setSelectedCustomerId,
+    activeCustomer,
+    heldInvoices,
+    coupons,
+    total,
+    payment,
+    changeDue,
+    isAddingCustomer,
+    setIsAddingCustomer,
+    orgId,
+    queryClient,
+    refetchHeld,
+    formatTime,
+    formatCurrency,
+    currencySymbol,
+    discountInput,
+    setDiscountInput,
+    setDiscountPct,
+    cashTendered,
+    setCashTendered,
+    splitCash,
+    setSplitCash,
+    splitCard,
+    setSplitCard,
+    splitUpi,
+    setSplitUpi,
+    handleOpenRegister,
+    applyCoupon,
+  } = state;
+
+  const handleQuickAddCustomer = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    const name = ((formData.get("name") as string) || "").trim();
+    const phone = ((formData.get("phone") as string) || "").trim();
+    const email = ((formData.get("email") as string) || "").trim();
+    const status = (formData.get("status") as string) || "new";
+    const type = (formData.get("type") as any) || "retail";
+
+    if (!name) return toast.error("Customer name is required");
+
+    setIsAddingCustomer(true);
+    try {
+      const res = await createCustomerFn({
+        data: {
+          customer: {
+            id: uuidv4(),
+            organizationId: orgId,
+            name,
+            phone: phone || null,
+            email: email || null,
+            status: status || "regular",
+            type,
+            visits: 0,
+            totalSpent: "0",
+            loyaltyPoints: 0,
+            credit: "0",
+            walletBalance: "0",
+          },
+        },
+      });
+      if (res?.success) {
+        queryClient.invalidateQueries({ queryKey: ["customers"] });
+        setSelectedCustomerId(res.data.id);
+        setShowAddCustomer(false);
+        setShowCustomerSearch(false);
+        toast.success(`Customer "${name}" added & selected!`);
+      } else {
+        toast.error(res?.error || "Failed to add customer");
+      }
+    } catch (err: any) {
+      toast.error(err.message || "Failed to add customer.");
+    } finally {
+      setIsAddingCustomer(false);
+    }
+  };
+
+  const handleKeyboardChange = (input: string) => {
+    if (activeInput === "discount") {
+      setDiscountInput(input);
+      setDiscountPct(Math.min(100, Math.max(0, parseFloat(input) || 0)));
+    } else if (activeInput === "cashTendered") {
+      setCashTendered(input);
+    } else if (activeInput === "splitCash") {
+      setSplitCash(input);
+    } else if (activeInput === "splitCard") {
+      setSplitCard(input);
+    } else if (activeInput === "splitUpi") {
+      setSplitUpi(input);
+    }
+  };
+
+  const sendWhatsApp = () => {
+    if (!saleComplete) return;
+    const cust = customers.find((c: any) => c.name === saleComplete.customer);
+    const phone = cust?.phone || "";
+    const text = `*${saleComplete.storeName}*\nReceipt: #${saleComplete.id}\nDate: ${saleComplete.date}\nTotal: ${currencySymbol}${(Number(saleComplete.total) || 0).toFixed(2)}\n\nThank you for shopping with us!`;
+    const url = `https://wa.me/${phone.replace(/\D/g, "")}?text=${encodeURIComponent(text)}`;
+    window.open(url, "_blank");
+  };
+
+  return (
+    <>
+      <Dialog open={showCustomerSearch} onOpenChange={setShowCustomerSearch}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader className="flex flex-row items-center justify-between pr-6">
+            <DialogTitle>Select Customer</DialogTitle>
+            <Button
+              size="sm"
+              onClick={() => setShowAddCustomer(true)}
+              className="h-8 gap-1 text-xs"
+            >
+              <Plus className="size-3.5" /> Add Customer
+            </Button>
+          </DialogHeader>
+          <div className="relative mb-3">
+            <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              value={customerQuery}
+              onChange={(e) => setCustomerQuery(e.target.value)}
+              placeholder="Search by name or phone..."
+              className="pl-9"
+              autoFocus
+            />
+          </div>
+          <div className="max-h-64 overflow-y-auto space-y-1">
+            <button
+              className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm hover:bg-muted"
+              onClick={() => {
+                setSelectedCustomerId(null);
+                setShowCustomerSearch(false);
+                setCustomerQuery("");
+              }}
+            >
+              <User className="size-4 text-muted-foreground" />
+              <span className="font-medium">Walk-in Customer</span>
+            </button>
+            {customers
+              .filter(
+                (c: any) =>
+                  c.name.toLowerCase().includes(customerQuery.toLowerCase()) ||
+                  c.phone?.includes(customerQuery),
+              )
+              .map((c: any) => (
+                <button
+                  key={c.id}
+                  className={cn(
+                    "flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm hover:bg-muted",
+                    activeCustomer.id === c.id && "bg-primary/10",
+                  )}
+                  onClick={() => {
+                    setSelectedCustomerId(c.id);
+                    setShowCustomerSearch(false);
+                    setCustomerQuery("");
+                  }}
+                >
+                  <div className="grid size-8 place-items-center rounded-full bg-gradient-to-br from-primary to-info text-xs font-bold text-white">
+                    {c.name
+                      .split(" ")
+                      .map((n: any) => n[0])
+                      .join("")
+                      .slice(0, 2)}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="font-semibold truncate">{c.name}</div>
+                    <div className="text-xs text-muted-foreground">
+                      {c.phone} · {c.loyaltyPoints} pts
+                    </div>
+                  </div>
+                </button>
+              ))}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showAddCustomer} onOpenChange={setShowAddCustomer}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <User className="size-5 text-primary" />
+              <span>Quick Add Customer</span>
+            </DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleQuickAddCustomer} className="space-y-4 pt-2">
+            <div className="space-y-2">
+              <Label>Full Name *</Label>
+              <Input name="name" required autoFocus />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Phone Number *</Label>
+                <PhoneInput name="phone" required />
+              </div>
+              <div className="space-y-2">
+                <Label>Email</Label>
+                <Input name="email" type="email" />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setShowAddCustomer(false)}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={isAddingCustomer}>
+                {isAddingCustomer && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Save
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showShortcutsHelp} onOpenChange={setShowShortcutsHelp}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Keyboard className="size-5 text-primary" />
+              <span>Shortcuts</span>
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-2 py-2">
+            {[
+              { key: "F1", desc: "Product Search" },
+              { key: "F2", desc: "Quick Add Customer" },
+              { key: "F8", desc: "Hold Bill" },
+              { key: "F9", desc: "Checkout" },
+            ].map((s) => (
+              <div
+                key={s.key}
+                className="flex justify-between rounded-lg border bg-muted/30 px-3 py-2 text-xs"
+              >
+                <span className="font-medium">{s.desc}</span>
+                <kbd className="rounded bg-muted px-2 py-1 font-mono font-bold shadow-xs border">
+                  {s.key}
+                </kbd>
+              </div>
+            ))}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showHeld} onOpenChange={setShowHeld}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Held Invoices ({heldInvoices.length})</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-2 max-h-64 overflow-y-auto">
+            {heldInvoices.map((h: any) => (
+              <div key={h.id} className="flex justify-between border p-3 rounded-lg">
+                <div>
+                  <div className="font-semibold text-sm">{h.customerName || "Walk-in"}</div>
+                  <div className="text-xs text-muted-foreground">{h.cart.length} items</div>
+                </div>
+                <div className="flex gap-2">
+                  <Button size="sm" onClick={() => onResumeInvoice(h)}>
+                    Resume
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={async () => {
+                      await deleteHeldInvoiceFn({ data: { id: h.id } });
+                      refetchHeld();
+                    }}
+                  >
+                    <Trash2 className="size-4 text-destructive" />
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showCoupon} onOpenChange={setShowCoupon}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Apply Coupon</DialogTitle>
+          </DialogHeader>
+          <Input
+            value={couponCode}
+            onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+            onKeyDown={(e) => e.key === "Enter" && applyCoupon()}
+            autoFocus
+          />
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowCoupon(false)}>
+              Cancel
+            </Button>
+            <Button onClick={applyCoupon}>Apply</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <AlertDialog
+        open={confirmCheckout}
+        onOpenChange={(open) => {
+          if (!isCompletingSale) setConfirmCheckout(open);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirm Payment</AlertDialogTitle>
+            <AlertDialogDescription>
+              Collect <strong>{formatCurrency(total)}</strong> via{" "}
+              <strong>{payment.toUpperCase()}</strong>.{" "}
+              {changeDue > 0 && (
+                <>
+                  Change: <strong>{formatCurrency(changeDue)}</strong>
+                </>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isCompletingSale}>Cancel</AlertDialogCancel>
+            <Button
+              onClick={onCheckout}
+              disabled={isCompletingSale}
+              className="bg-emerald-600 hover:bg-emerald-700 text-white font-medium"
+            >
+              {isCompletingSale ? (
+                <>
+                  <Loader2 className="mr-2 size-4 animate-spin" />
+                  Generating Bill...
+                </>
+              ) : (
+                "Confirm & Print"
+              )}
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <Dialog
+        open={!!saleComplete}
+        onOpenChange={(open) => {
+          if (!open) {
+            setSaleComplete(null);
+            setPrintData(null);
+          }
+        }}
+      >
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Sale Complete</DialogTitle>
+          </DialogHeader>
+          <div className="flex flex-col gap-3 py-4">
+            <Button
+              onClick={() => {
+                setPrintFormat("thermal");
+                setTimeout(() => {
+                  window.print();
+                  setSaleComplete(null);
+                  setPrintData(null);
+                }, 150);
+              }}
+            >
+              <Printer className="mr-2 size-4" /> Thermal
+            </Button>
+            <Button
+              onClick={() => {
+                setPrintFormat("a4");
+                setTimeout(() => {
+                  window.print();
+                  setSaleComplete(null);
+                  setPrintData(null);
+                }, 150);
+              }}
+              variant="outline"
+            >
+              <Printer className="mr-2 size-4" /> A4 Invoice
+            </Button>
+            {saleComplete?.customer !== "Walk-in Customer" && (
+              <Button onClick={sendWhatsApp} className="bg-[#25D366] text-white">
+                <MessageCircle className="mr-2 size-4" /> WhatsApp
+              </Button>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showOpenRegister} onOpenChange={setShowOpenRegister}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Open Register</DialogTitle>
+          </DialogHeader>
+          <Input
+            type="number"
+            value={startingCash}
+            onChange={(e) => setStartingCash(e.target.value)}
+            autoFocus
+          />
+          <DialogFooter>
+            <Button onClick={handleOpenRegister} className="w-full">
+              Open Register
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <VirtualKeyboard
+        isOpen={keyboardOpen}
+        onClose={() => setKeyboardOpen(false)}
+        inputName={activeInput || "default"}
+        inputValue={
+          activeInput === "discount"
+            ? discountInput
+            : activeInput === "cashTendered"
+              ? cashTendered
+              : activeInput === "splitCash"
+                ? splitCash
+                : activeInput === "splitCard"
+                  ? splitCard
+                  : activeInput === "splitUpi"
+                    ? splitUpi
+                    : ""
+        }
+        onChange={handleKeyboardChange}
+      />
+    </>
+  );
+}

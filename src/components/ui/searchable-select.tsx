@@ -43,7 +43,7 @@ export function SearchableSelect({
 
   const selectedOption = useMemo(
     () => options.find((opt) => opt.value === value),
-    [options, value]
+    [options, value],
   );
 
   const filteredOptions = useMemo(() => {
@@ -52,13 +52,13 @@ export function SearchableSelect({
     return options.filter(
       (opt) =>
         opt.label.toLowerCase().includes(q) ||
-        (opt.sublabel && opt.sublabel.toLowerCase().includes(q))
+        (opt.sublabel && opt.sublabel.toLowerCase().includes(q)),
     );
   }, [options, query]);
 
   const visibleOptions = useMemo(
     () => filteredOptions.slice(0, visibleCount),
-    [filteredOptions, visibleCount]
+    [filteredOptions, visibleCount],
   );
 
   // Reset batch count when search query changes or popover opens
@@ -86,7 +86,7 @@ export function SearchableSelect({
           className={cn(
             "w-full justify-between font-normal text-left h-10 px-3 border border-input bg-background hover:bg-muted/40 transition-colors",
             !selectedOption && "text-muted-foreground",
-            className
+            className,
           )}
         >
           <div className="flex items-center gap-2 truncate">
@@ -163,7 +163,7 @@ export function SearchableSelect({
                     isSelected
                       ? "bg-primary/10 font-semibold text-primary"
                       : "hover:bg-muted/60 text-foreground",
-                    option.disabled && "opacity-50 pointer-events-none"
+                    option.disabled && "opacity-50 pointer-events-none",
                   )}
                 >
                   <div className="flex items-center gap-2 truncate">
@@ -171,7 +171,9 @@ export function SearchableSelect({
                     <div className="flex flex-col truncate">
                       <span className="truncate font-medium">{option.label}</span>
                       {option.sublabel && (
-                        <span className="text-[10px] text-muted-foreground truncate">{option.sublabel}</span>
+                        <span className="text-[10px] text-muted-foreground truncate">
+                          {option.sublabel}
+                        </span>
                       )}
                     </div>
                   </div>

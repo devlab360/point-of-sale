@@ -1,14 +1,18 @@
-import React, { createContext, useContext, useState, useEffect, useMemo } from "react";
-import { useLiveQuery } from "dexie-react-hooks";
-import { localDb, type LocalUser } from "@/lib/db";
-import { initiateGoogleOAuth, initiateFacebookOAuth, GOOGLE_CLIENT_ID, FACEBOOK_APP_ID } from "@/lib/auth-social";
+import React, { createContext, useContext, useState, useEffect, useMemo, useCallback } from "react";
+import {
+  initiateGoogleOAuth,
+  initiateFacebookOAuth,
+  GOOGLE_CLIENT_ID,
+  FACEBOOK_APP_ID,
+} from "@/lib/auth-social";
 import { toast } from "sonner";
 import { useRouter } from "@tanstack/react-router";
-import { pullEverythingFn, verifyUserEmailFn } from "@/sync-api";
 import { SessionStore, PersistStore } from "@/lib/session-store";
+import { loginFn, getOrgDataFn, verifyUserEmailFn, getCurrentUserFn } from "@/api/auth";
+import { useQuery, useMutation } from "@tanstack/react-query";
 
 interface AuthContextType {
-  user: LocalUser | null;
+  user: any | null;
   isAuthenticated: boolean;
   login: (pin: string) => Promise<boolean>;
   loginWithEmail: (email: string, password: string) => Promise<boolean>;
@@ -26,87 +30,40 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<LocalUser | null>(null);
+  const [user, setUser] = useState<any | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [settings, setSettings] = useState<any>(null);
-  const [saasOrgState, setSaasOrgState] = useState<any>(null);
-  const [saasPlanState, setSaasPlanState] = useState<any>(null);
   const router = useRouter();
 
-  const liveSaasOrg = useLiveQuery(
-    () => (user?.orgId ? localDb.saasOrganizations.get(user.orgId) : undefined),
-    [user?.orgId]
-  );
-  const saasOrg = liveSaasOrg || saasOrgState;
+  const orgId = PersistStore.getOrgId();
 
-  const liveSaasPlan = useLiveQuery(
-    () => {
-      const planId = saasOrg?.currentPlanId;
-      if (!planId) return undefined;
-      return localDb.saasPlans.get(planId);
+  const { data: orgData, refetch: refetchOrgData } = useQuery({
+    queryKey: ["orgData", orgId],
+    queryFn: async () => {
+      if (!orgId) return null;
+      const res = await getOrgDataFn({ data: { orgId } });
+      if (res.success) return res;
+      return null;
     },
-    [saasOrg?.currentPlanId]
-  );
-  const saasPlan = liveSaasPlan || saasPlanState;
+    enabled: !!orgId,
+  });
 
-  useEffect(() => {
-    if (user?.orgId && !user.email?.toLowerCase().includes("superadmin")) {
-      const syncCloudPlans = async () => {
-        try {
-          const org = await localDb.saasOrganizations.get(user.orgId!);
-          const syncKey = org?.syncKey || "default-sync-key";
-          const pullResult = await pullEverythingFn({ data: { orgId: user.orgId!, syncKey } });
-          if (pullResult.success && pullResult.data) {
-            const serverPlans = pullResult.data.saasPlans || [];
-            if (serverPlans.length > 0) {
-              const formattedPlans = serverPlans.map((p: any) => ({
-                id: p.id,
-                name: p.name,
-                price: Number(p.price || 0),
-                features: Array.isArray(p.features) ? p.features : (typeof p.features === 'string' ? JSON.parse(p.features) : []),
-                limits: (typeof p.limits === 'string' ? JSON.parse(p.limits) : p.limits) || { maxUsers: 5, maxProducts: 500, maxBranches: 2, maxInvoicesPerMonth: 1000 },
-                isTrialDefault: p.isTrialDefault ?? false,
-                synced: true,
-              }));
-              await localDb.saasPlans.bulkPut(formattedPlans);
-            }
-            const serverOrgs = pullResult.data.organizations || [];
-            if (serverOrgs.length > 0) {
-              await localDb.saasOrganizations.bulkPut(serverOrgs.map((o: any) => ({ ...o, synced: true })));
-            }
-          }
-        } catch (e) {
-          console.warn("Could not sync plans from cloud on auth:", e);
-        }
-      };
-      syncCloudPlans();
-    }
-  }, [user?.orgId]);
+  const saasOrg = orgData?.org;
+  const saasPlan = orgData?.plan;
+  const settings = orgData?.settings;
 
   useEffect(() => {
     const checkAuth = async () => {
       try {
         const storedUserId = SessionStore.getAuthUser();
         if (storedUserId) {
-          const foundUser = await localDb.users.get(storedUserId);
-          if (foundUser) {
-            setUser(foundUser);
-            if (foundUser.orgId) {
-              const userSettings = await localDb.settings.where("orgId").equals(foundUser.orgId).first();
-              setSettings(userSettings || await localDb.settings.get("default"));
-
-              const org = await localDb.saasOrganizations.get(foundUser.orgId);
-              if (org) {
-                setSaasOrgState(org);
-                const plan = await localDb.saasPlans.get(org.currentPlanId);
-                if (plan) setSaasPlanState(plan);
-              }
-            } else {
-              setSettings(await localDb.settings.get("default"));
-            }
+          const res = await getCurrentUserFn();
+          if (res.success && res.user) {
+            setUser(res.user);
           } else {
             SessionStore.removeAuthUser();
           }
+        } else {
+          SessionStore.removeAuthUser();
         }
       } catch (error) {
         console.error("Auth check failed:", error);
@@ -118,238 +75,151 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     checkAuth();
   }, []);
 
-  const login = async (pin: string) => {
-    try {
-      // Find a user with the matching PIN
-      const users = await localDb.users.toArray();
-      const foundUser = users.find(u => u.pin === pin);
+  const login = useCallback(
+    async (pin: string) => {
+      try {
+        // Pass orgId from PersistStore so backend can scope PIN lookup to the correct org (C-2 security fix)
+        const currentOrgId = PersistStore.getOrgId();
+        const res = await loginFn({ data: { pin, orgId: currentOrgId } });
 
-      if (foundUser) {
-        setUser(foundUser);
-        SessionStore.setAuthUser(foundUser.id);
-        if (foundUser.orgId) {
-          PersistStore.setOrgId(foundUser.orgId);
-        }
-
-        // Update last active
-        await localDb.users.update(foundUser.id, { lastActive: new Date().toISOString() });
-
-        if (foundUser.orgId) {
-          const userSettings = await localDb.settings.where("orgId").equals(foundUser.orgId).first();
-          setSettings(userSettings || await localDb.settings.get("default"));
-          const org = await localDb.saasOrganizations.get(foundUser.orgId);
-          if (org) {
-            setSaasOrgState(org);
-            const plan = await localDb.saasPlans.get(org.currentPlanId);
-            if (plan) setSaasPlanState(plan);
+        if (res.success && res.user) {
+          setUser(res.user);
+          SessionStore.setAuthUser(res.user.id);
+          if (res.user.organizationId) {
+            const oId = res.user.organizationId;
+            PersistStore.setOrgId(oId);
+            await refetchOrgData();
           }
 
-          // Log SaaS Session
+          // Log SaaS Session (skip DB add for now until session API is built)
           const sessionId = crypto.randomUUID();
           SessionStore.setSession(sessionId);
-          await localDb.saasSessions.add({
-            id: sessionId,
-            orgId: foundUser.orgId,
-            userId: foundUser.id,
-            loginAt: new Date().toISOString(),
-            status: "live",
-            device: navigator.userAgent
-          });
-        } else {
-          setSettings(await localDb.settings.get("default"));
-        }
 
-        toast.success(`Welcome back, ${foundUser.name}`);
-        router.navigate({ to: "/" });
-        return true;
-      } else {
-        toast.error("Invalid PIN");
-        return false;
-      }
-    } catch (error) {
-      toast.error("Login failed due to system error");
-      return false;
-    }
-  };
-
-  const loginWithEmail = async (email: string, password: string) => {
-    try {
-      // Regular user: first check local DB
-      const allUsers = await localDb.users.toArray();
-      let foundUser = allUsers.find((u: LocalUser) => u.email?.toLowerCase() === email.toLowerCase().trim());
-
-      // If not found locally, try fetching from Neon DB using targeted verification endpoint
-      if (!foundUser) {
-        try {
-          const remoteResult = await verifyUserEmailFn({ data: { email } }) as any;
-          if (remoteResult.success && remoteResult.data) {
-            const remoteUser = remoteResult.data.user;
-            if (remoteUser) {
-              // Cache user locally
-              const localUserData: LocalUser = {
-                id: remoteUser.id,
-                orgId: remoteUser.organizationId || remoteUser.orgId,
-                name: remoteUser.name,
-                email: remoteUser.email,
-                role: remoteUser.role,
-                status: remoteUser.status,
-                lastActive: new Date().toISOString(),
-                pin: remoteUser.pin,
-                permissions: Array.isArray(remoteUser.permissions) ? remoteUser.permissions : (typeof remoteUser.permissions === 'string' ? JSON.parse(remoteUser.permissions) : undefined),
-                emailVerified: remoteUser.emailVerified ?? true,
-              };
-              await localDb.users.put(localUserData);
-              // Also cache organization
-              const remoteOrg = remoteResult.data.organization;
-              if (remoteOrg) {
-                await localDb.saasOrganizations.put({
-                  id: remoteOrg.id,
-                  name: remoteOrg.name,
-                  ownerEmail: remoteOrg.ownerEmail,
-                  status: remoteOrg.status,
-                  currentPlanId: remoteOrg.currentPlanId,
-                  planExpiryDate: remoteOrg.planExpiryDate,
-                  syncKey: remoteOrg.syncKey,
-                  isOnline: remoteOrg.isOnline ?? true,
-                });
-              }
-              if (remoteResult.data.settings) {
-                const s = remoteResult.data.settings;
-                await localDb.settings.put({
-                  ...s,
-                  id: s.id || "default",
-                  orgId: s.organizationId || s.orgId || localUserData.orgId,
-                  synced: true,
-                });
-              }
-              if (remoteResult.data.plans && remoteResult.data.plans.length > 0) {
-                const formattedPlans = remoteResult.data.plans.map((p: any) => ({
-                  id: p.id,
-                  name: p.name,
-                  price: Number(p.price || 0),
-                  features: Array.isArray(p.features) ? p.features : (typeof p.features === 'string' ? JSON.parse(p.features) : []),
-                  limits: (typeof p.limits === 'string' ? JSON.parse(p.limits) : p.limits) || { maxUsers: 5, maxProducts: 500, maxBranches: 2, maxInvoicesPerMonth: 1000 },
-                  isTrialDefault: p.isTrialDefault ?? false,
-                  synced: true,
-                }));
-                await localDb.saasPlans.bulkPut(formattedPlans);
-              }
-              foundUser = localUserData;
-            }
+          // Redirect based on role
+          if (
+            res.user.role === "admin" ||
+            res.user.role === "manager" ||
+            res.user.role === "store_admin"
+          ) {
+            router.navigate({ to: "/" });
+          } else if (res.user.role === "cashier") {
+            router.navigate({ to: "/pos" });
+          } else if (res.user.role === "inventory_manager") {
+            router.navigate({ to: "/inventory" });
+          } else {
+            router.navigate({ to: "/" });
           }
-        } catch (e) {
-          console.warn("Could not fetch user from cloud, offline mode");
+
+          toast.success(res.message || "Login successful");
+          return true;
         }
-      }
-
-      if (!foundUser) {
-        toast.error("No account found. Please register your business.");
+        toast.error(res.error || "Invalid PIN");
+        return false;
+      } catch (e) {
+        toast.error("Login failed");
         return false;
       }
+    },
+    [refetchOrgData, router],
+  );
 
-      // Verify password (stored as PIN)
-      if (foundUser.pin && foundUser.pin.trim() !== password.trim()) {
-        toast.error("Incorrect password");
-        return false;
-      }
-      setUser(foundUser);
-      SessionStore.setAuthUser(foundUser.id);
-      if (foundUser.orgId) {
-        PersistStore.setOrgId(foundUser.orgId);
-      }
-      await localDb.users.update(foundUser.id, { lastActive: new Date().toISOString() });
-      if (foundUser.orgId) {
-        const userSettings = await localDb.settings.where("orgId").equals(foundUser.orgId).first();
-        setSettings(userSettings || await localDb.settings.get("default"));
-        const org = await localDb.saasOrganizations.get(foundUser.orgId);
-        if (org) {
-          setSaasOrgState(org);
-          const plan = await localDb.saasPlans.get(org.currentPlanId);
-          if (plan) setSaasPlanState(plan);
+  const loginWithEmail = useCallback(
+    async (email: string, password: string) => {
+      try {
+        const res = await loginFn({ data: { email, password } });
+        if (!res.success || !res.user) {
+          toast.error(res.error || "Incorrect email or password");
+          return false;
+        }
+
+        setUser(res.user);
+        SessionStore.setAuthUser(res.user.id);
+        if (res.user.organizationId) {
+          PersistStore.setOrgId(res.user.organizationId);
+          await refetchOrgData();
         }
 
         // Log SaaS Session
         const sessionId = crypto.randomUUID();
         SessionStore.setSession(sessionId);
-        await localDb.saasSessions.add({
-          id: sessionId,
-          orgId: foundUser.orgId,
-          userId: foundUser.id,
-          loginAt: new Date().toISOString(),
-          status: "live",
-          device: navigator.userAgent
-        });
-      } else {
-        setSettings(await localDb.settings.get("default"));
-      }
 
-      toast.success(`Welcome back, ${foundUser.name}`);
-      router.navigate({ to: "/" });
-      return true;
-    } catch (error) {
-      toast.error("Login failed");
-      return false;
-    }
-  };
+        toast.success(res.message || `Welcome back, ${res.user.name}`);
 
-  const loginWithSocial = async (provider: "google" | "facebook") => {
-    try {
-      if (provider === "google" && GOOGLE_CLIENT_ID) {
-        initiateGoogleOAuth();
+        // Redirect based on role
+        if (
+          res.user.role === "admin" ||
+          res.user.role === "manager" ||
+          res.user.role === "store_admin"
+        ) {
+          router.navigate({ to: "/" });
+        } else if (res.user.role === "cashier") {
+          router.navigate({ to: "/pos" });
+        } else if (res.user.role === "inventory_manager") {
+          router.navigate({ to: "/inventory" });
+        } else {
+          router.navigate({ to: "/" });
+        }
+
         return true;
+      } catch (error) {
+        toast.error("Login failed");
+        return false;
       }
-      if (provider === "facebook" && FACEBOOK_APP_ID) {
-        initiateFacebookOAuth();
-        return true;
-      }
+    },
+    [refetchOrgData, router],
+  );
 
-      const mockEmail = provider === "google" ? "google.user@store.com" : "facebook.user@store.com";
-      const mockName = provider === "google" ? "Google User" : "Facebook User";
+  const loginWithSocial = useCallback(
+    async (provider: "google" | "facebook") => {
+      try {
+        if (provider === "google" && GOOGLE_CLIENT_ID) {
+          initiateGoogleOAuth();
+          return true;
+        }
+        if (provider === "facebook" && FACEBOOK_APP_ID) {
+          initiateFacebookOAuth();
+          return true;
+        }
 
-      const users = await localDb.users.toArray();
-      let foundUser = users.find(u => u.email === mockEmail);
+        const mockEmail =
+          provider === "google" ? "google.user@store.com" : "facebook.user@store.com";
+        const mockName = provider === "google" ? "Google User" : "Facebook User";
 
-      if (!foundUser) {
-        const newId = `social-${Date.now()}`;
-        const orgId = `org-${Date.now()}`;
-        foundUser = {
-          id: newId,
-          orgId,
+        // Mock social user for demo without DB save
+        const foundUser = {
+          id: `social-${Date.now()}`,
           name: mockName,
           email: mockEmail,
           role: "admin",
           status: "active",
           lastActive: new Date().toISOString(),
-          pin: "1234"
-        };
-        await localDb.users.add(foundUser);
-      }
+          pin: "1234",
+          organizationId: null,
+        } as any;
 
-      setUser(foundUser);
-      SessionStore.setAuthUser(foundUser.id);
-      if (foundUser.orgId) {
-        PersistStore.setOrgId(foundUser.orgId);
+        setUser(foundUser);
+        SessionStore.setAuthUser(foundUser.id);
+        if (foundUser.organizationId) {
+          PersistStore.setOrgId(foundUser.organizationId);
+        }
+        toast.success(
+          `Logged in with ${provider === "google" ? "Google" : "Facebook"} successfully!`,
+        );
+        router.navigate({ to: "/" });
+        return true;
+      } catch (err) {
+        toast.error(`Failed to login with ${provider} `);
+        return false;
       }
-      toast.success(`Logged in with ${provider === "google" ? "Google" : "Facebook"} successfully!`);
-      router.navigate({ to: "/" });
-      return true;
-    } catch (err) {
-      toast.error(`Failed to login with ${provider}`);
-      return false;
-    }
-  };
+    },
+    [router],
+  );
 
-  const logout = async () => {
-    const sessionId = SessionStore.getSession();
-    if (sessionId) {
-      await localDb.saasSessions.update(sessionId, { logoutAt: new Date().toISOString(), status: "ended" });
-    }
+  const logout = useCallback(async () => {
     SessionStore.clearAll();
     setUser(null);
-    setSaasOrgState(null);
-    setSaasPlanState(null);
     router.navigate({ to: "/login" });
-  };
+  }, [router]);
 
   const isTrialExpired = useMemo(() => {
     if (user?.email?.toLowerCase().includes("superadmin")) return false;
@@ -360,8 +230,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return new Date() > new Date(expiryDateStr);
   }, [saasOrg, settings, user]);
 
-  return (
-    <AuthContext.Provider value={{
+  const isEmailVerified = useMemo(() => {
+    return user
+      ? user.emailVerified !== false || user.email?.toLowerCase().includes("superadmin")
+      : true;
+  }, [user]);
+
+  const subscriptionStatus = useMemo(() => {
+    return saasOrg?.status || settings?.subscriptionStatus || "trial";
+  }, [saasOrg?.status, settings?.subscriptionStatus]);
+
+  const value = useMemo(
+    () => ({
       user,
       isAuthenticated: !!user,
       login,
@@ -369,16 +249,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       loginWithSocial,
       logout,
       isLoading,
-      isEmailVerified: user ? (user.emailVerified !== false || user.email?.toLowerCase().includes("superadmin")) : true,
+      isEmailVerified,
       isTrialExpired,
-      subscriptionStatus: saasOrg?.status || settings?.subscriptionStatus || "trial",
+      subscriptionStatus,
       saasOrg,
       saasPlan,
-      settings
-    }}>
-      {children}
-    </AuthContext.Provider>
+      settings,
+    }),
+    [
+      user,
+      login,
+      loginWithEmail,
+      loginWithSocial,
+      logout,
+      isLoading,
+      isEmailVerified,
+      isTrialExpired,
+      subscriptionStatus,
+      saasOrg,
+      saasPlan,
+      settings,
+    ],
   );
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
 export function useAuth() {

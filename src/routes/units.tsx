@@ -2,16 +2,25 @@ import { createFileRoute } from "@tanstack/react-router";
 import { DataPage } from "@/components/layout/DataPage";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PaginationControls } from "@/components/ui/pagination-controls";
-import { localDb } from "@/lib/db";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { getUnitsFn, createUnitFn, updateUnitFn, deleteUnitFn } from "@/api/units";
+import { getProductsFn } from "@/api/products";
 import { PersistStore } from "@/lib/session-store";
-import { useLiveQuery } from "dexie-react-hooks";
 import { Button } from "@/components/ui/button";
 import { SearchableSelect } from "@/components/ui/searchable-select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Scale, Pencil, Trash2, Loader2 } from "lucide-react";
 import { useState, useMemo, useEffect } from "react";
+import { TableSkeleton } from "@/components/skeletons/TableSkeleton";
+import { ErrorState } from "@/components/ui/error-state";
 import { useDebounce } from "@/hooks/useDebounce";
 import { v4 as uuidv4 } from "uuid";
 import { toast } from "sonner";
@@ -34,13 +43,30 @@ export const Route = createFileRoute("/units")({
 });
 
 function UnitsPage() {
-  const rawUnits = useLiveQuery(() => localDb.units.filter(u => !u._deleted).toArray()) || [];
-  const products = useLiveQuery(() => localDb.products.filter(p => !p._deleted).toArray()) || [];
+  const orgId = PersistStore.getOrgId() || "default";
+  const queryClient = useQueryClient();
+
+  const {
+    data: rawUnitsData,
+    isLoading: isUnitsLoading,
+    isError: isUnitsError,
+    refetch: refetchUnits,
+  } = useQuery({
+    queryKey: ["units", orgId],
+    queryFn: async () => ((await getUnitsFn({ data: {} })) as any)?.data || [],
+  });
+  const rawUnits = rawUnitsData || [];
+
+  const { data: productsData } = useQuery({
+    queryKey: ["products", orgId],
+    queryFn: async () => ((await getProductsFn({ data: {} })) as any)?.data || [],
+  });
+  const products = productsData || [];
 
   const unitsWithCounts = useMemo(() => {
-    return rawUnits.map(u => ({
+    return rawUnits.map((u) => ({
       ...u,
-      products: products.filter(p => p.unit === u.id || p.unit === u.name).length
+      products: products.filter((p) => p.unit === u.id || p.unit === u.name).length,
     }));
   }, [rawUnits, products]);
 
@@ -69,19 +95,21 @@ function UnitsPage() {
     let filtered = unitsWithCounts;
     if (debouncedSearch) {
       const lower = debouncedSearch.toLowerCase();
-      filtered = filtered.filter(u => u.name.toLowerCase().includes(lower) || u.short.toLowerCase().includes(lower));
+      filtered = filtered.filter(
+        (u) => u.name.toLowerCase().includes(lower) || u.short.toLowerCase().includes(lower),
+      );
     }
     if (filters.usage === "in-use") {
-      filtered = filtered.filter(u => u.products > 0);
+      filtered = filtered.filter((u) => u.products > 0);
     } else if (filters.usage === "empty") {
-      filtered = filtered.filter(u => u.products === 0);
+      filtered = filtered.filter((u) => u.products === 0);
     }
     return filtered;
   }, [unitsWithCounts, debouncedSearch, filters.usage]);
 
   useEffect(() => {
     setPage(1);
-  }, [debouncedSearch, filters]);
+  }, [debouncedSearch, filters.usage]);
 
   useEffect(() => {
     const maxPage = Math.max(1, Math.ceil(units.length / itemsPerPage));
@@ -90,7 +118,6 @@ function UnitsPage() {
 
   const totalPages = Math.ceil(units.length / itemsPerPage);
   const paginatedUnits = units.slice((page - 1) * itemsPerPage, page * itemsPerPage);
-
 
   const openNew = () => {
     setEditingUnit(null);
@@ -106,7 +133,12 @@ function UnitsPage() {
     setModalOpen(true);
   };
 
-  const { errors: unitErrors, validate: validateUnit, clearError: clearUnitError, clearAll: clearUnitAll } = useFormValidation({
+  const {
+    errors: unitErrors,
+    validate: validateUnit,
+    clearError: clearUnitError,
+    clearAll: clearUnitAll,
+  } = useFormValidation({
     name: { required: "Unit name is required" },
     short: { required: "Short code is required" },
   });
@@ -115,23 +147,27 @@ function UnitsPage() {
     if (e) e.preventDefault();
     const isValid = validateUnit({ name, short });
     if (!isValid) return;
-    
+
     setIsSaving(true);
-    await new Promise(resolve => setTimeout(resolve, 500));
+    await new Promise((resolve) => setTimeout(resolve, 500));
     try {
       if (editingUnit) {
-        await localDb.units.update(editingUnit.id, { name, short, synced: false });
-        toast.success("Unit updated");
+        const res = await updateUnitFn({ data: { id: editingUnit.id, unit: { name, short } } });
+        if (res?.success) toast.success("Unit updated");
+        else throw new Error(res?.error);
       } else {
-        await localDb.units.add({
-          id: uuidv4(),
-          orgId: PersistStore.getOrgId() || "default",
-          name,
-          short,
-          synced: false
+        const res = await createUnitFn({
+          data: {
+            unit: {
+              name,
+              short,
+            },
+          },
         });
-        toast.success("Unit created");
+        if (res?.success) toast.success("Unit created");
+        else throw new Error(res?.error);
       }
+      queryClient.invalidateQueries({ queryKey: ["units"] });
       setModalOpen(false);
       clearUnitAll();
     } catch (error) {
@@ -144,15 +180,17 @@ function UnitsPage() {
   const confirmDelete = async () => {
     if (!deleteId) return;
     try {
-      await localDb.units.update(deleteId, { _deleted: true, synced: false });
-      toast.success("Unit deleted");
+      const res = await deleteUnitFn({ data: { id: deleteId } });
+      if (res?.success) {
+        toast.success("Unit deleted");
+        queryClient.invalidateQueries({ queryKey: ["units"] });
+      } else throw new Error(res?.error);
     } catch (error) {
       toast.error("Failed to delete unit");
     } finally {
       setDeleteId(null);
     }
   };
-
 
   return (
     <div className="p-4 md:p-6 lg:p-8">
@@ -178,24 +216,43 @@ function UnitsPage() {
                     { value: "empty", label: "Empty (No products)" },
                   ]}
                   value={draftFilters.usage}
-                  onChange={(val) => setDraftFilters(prev => ({ ...prev, usage: val }))}
+                  onChange={(val) => setDraftFilters((prev) => ({ ...prev, usage: val }))}
                   placeholder="Filter by Usage"
                 />
               </div>
             </div>
             <div className="pt-4 mt-auto">
-              <Button className="w-full" onClick={() => { setFilters(draftFilters); close(); }}>
+              <Button
+                className="w-full"
+                onClick={() => {
+                  setFilters(draftFilters);
+                  close();
+                }}
+              >
                 Apply Filters
               </Button>
             </div>
           </div>
         )}
       >
-        {units.length === 0 ? (
-          <EmptyState 
-            icon={Scale} 
-            title="No units found" 
-            description={search ? "Try adjusting your search." : "You haven't created any units yet."} 
+        {isUnitsLoading ? (
+          <TableSkeleton columns={3} rows={6} showHeaderAction={false} showFilters={false} />
+        ) : isUnitsError ? (
+          <ErrorState onRetry={refetchUnits} />
+        ) : units.length === 0 ? (
+          <EmptyState
+            icon={Scale}
+            title="No units found"
+            description={
+              search ? "Try adjusting your search." : "You haven't created any units yet."
+            }
+            actionLabel="Add Unit"
+            onAction={() => {
+              setEditingUnit(null);
+              setName("");
+              setShort("");
+              setModalOpen(true);
+            }}
           />
         ) : (
           <div className="space-y-4">
@@ -209,25 +266,37 @@ function UnitsPage() {
                       <th className="px-4 py-3 text-right whitespace-nowrap">Actions</th>
                     </tr>
                   </thead>
-                <tbody className="divide-y divide-border">
-                  {paginatedUnits.map((u) => (
-                    <tr key={u.id} className="hover:bg-muted/30 group">
-                      <td className="px-4 py-3 font-semibold whitespace-nowrap">{u.name}</td>
-                      <td className="px-4 py-3 font-mono text-muted-foreground whitespace-nowrap">{u.short}</td>
-                      <td className="px-4 py-3 text-right whitespace-nowrap">
-                        <div className="flex justify-end gap-1">
-                          <Button variant="ghost" size="icon" className="size-8" onClick={() => openEdit(u)}>
-                            <Pencil className="size-4" />
-                          </Button>
-                          <Button variant="ghost" size="icon" className="size-8 text-destructive" onClick={() => setDeleteId(u.id)}>
-                            <Trash2 className="size-4" />
-                          </Button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                  <tbody className="divide-y divide-border">
+                    {paginatedUnits.map((u) => (
+                      <tr key={u.id} className="hover:bg-muted/30 group">
+                        <td className="px-4 py-3 font-semibold whitespace-nowrap">{u.name}</td>
+                        <td className="px-4 py-3 font-mono text-muted-foreground whitespace-nowrap">
+                          {u.short}
+                        </td>
+                        <td className="px-4 py-3 text-right whitespace-nowrap">
+                          <div className="flex justify-end gap-1">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="size-8"
+                              onClick={() => openEdit(u)}
+                            >
+                              <Pencil className="size-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="size-8 text-destructive"
+                              onClick={() => setDeleteId(u.id)}
+                            >
+                              <Trash2 className="size-4" />
+                            </Button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             </div>
             <PaginationControls currentPage={page} totalPages={totalPages} onPageChange={setPage} />
@@ -235,9 +304,15 @@ function UnitsPage() {
         )}
       </DataPage>
 
-      <Dialog open={modalOpen} onOpenChange={(open) => {
-        if (!open) { setModalOpen(false); clearUnitAll(); }
-      }}>
+      <Dialog
+        open={modalOpen}
+        onOpenChange={(open) => {
+          if (!open) {
+            setModalOpen(false);
+            clearUnitAll();
+          }
+        }}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>{editingUnit ? "Edit Unit" : "New Unit"}</DialogTitle>
@@ -246,29 +321,54 @@ function UnitsPage() {
             <div className="grid gap-4 py-4">
               <div className="grid grid-cols-2 gap-4">
                 <div className="grid gap-1.5">
-                  <Label htmlFor="name">Name <span className="text-destructive">*</span></Label>
+                  <Label htmlFor="name">
+                    Name <span className="text-destructive">*</span>
+                  </Label>
                   <Input
-                    id="name" value={name}
-                    onChange={(e) => { setName(e.target.value); clearUnitError("name"); }}
+                    id="name"
+                    value={name}
+                    onChange={(e) => {
+                      setName(e.target.value);
+                      clearUnitError("name");
+                    }}
                     placeholder="e.g. Kilogram"
-                    className={unitErrors.name ? "border-destructive focus-visible:ring-destructive" : ""}
+                    className={
+                      unitErrors.name ? "border-destructive focus-visible:ring-destructive" : ""
+                    }
                   />
                   <FieldError message={unitErrors.name} />
                 </div>
                 <div className="grid gap-1.5">
-                  <Label htmlFor="short">Short Code <span className="text-destructive">*</span></Label>
+                  <Label htmlFor="short">
+                    Short Code <span className="text-destructive">*</span>
+                  </Label>
                   <Input
-                    id="short" value={short}
-                    onChange={(e) => { setShort(e.target.value); clearUnitError("short"); }}
+                    id="short"
+                    value={short}
+                    onChange={(e) => {
+                      setShort(e.target.value);
+                      clearUnitError("short");
+                    }}
                     placeholder="e.g. kg"
-                    className={unitErrors.short ? "border-destructive focus-visible:ring-destructive" : ""}
+                    className={
+                      unitErrors.short ? "border-destructive focus-visible:ring-destructive" : ""
+                    }
                   />
                   <FieldError message={unitErrors.short} />
                 </div>
               </div>
             </div>
             <DialogFooter className="mt-6">
-              <Button type="button" variant="outline" onClick={() => { setModalOpen(false); clearUnitAll(); }}>Cancel</Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setModalOpen(false);
+                  clearUnitAll();
+                }}
+              >
+                Cancel
+              </Button>
               <Button type="submit" disabled={isSaving}>
                 {isSaving && <Loader2 className="size-4 animate-spin mr-2" />}
                 Save changes
@@ -288,7 +388,10 @@ function UnitsPage() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+            <AlertDialogAction
+              onClick={confirmDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
               Delete
             </AlertDialogAction>
           </AlertDialogFooter>
@@ -297,4 +400,3 @@ function UnitsPage() {
     </div>
   );
 }
-

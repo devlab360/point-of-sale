@@ -1,7 +1,7 @@
-import { useLiveQuery } from "dexie-react-hooks";
-import { localDb } from "@/lib/db";
+import { useMemo, useCallback } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { getSettingsFn } from "@/api/settings";
 import { PersistStore } from "@/lib/session-store";
-
 export interface CurrencyOption {
   symbol: string;
   code: string;
@@ -24,30 +24,42 @@ export const CURRENCY_OPTIONS: CurrencyOption[] = [
 export function useCurrency() {
   const currentOrgId = PersistStore.getOrgId();
 
-  const dbSetting = useLiveQuery(async () => {
-    if (currentOrgId) {
-      const setting = await localDb.settings.where("orgId").equals(currentOrgId).first();
-      if (setting) return setting;
-    }
-    return await localDb.settings.get("default");
-  }, [currentOrgId]);
+  const { data: dbSettingData } = useQuery({
+    queryKey: ["settings", currentOrgId || "default"],
+    queryFn: async () => {
+      const res = await getSettingsFn({ data: {} });
+      return res.data;
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const dbSetting = dbSettingData;
 
   const currencySymbol = dbSetting?.currencySymbol || "$";
   const currencyCode = dbSetting?.currencyCode || "USD";
 
-  const formatCurrency = (amount: number | string | undefined | null) => {
-    const numeric = typeof amount === "number" ? amount : parseFloat(String(amount || 0)) || 0;
-    return `${currencySymbol}${numeric.toFixed(2)}`;
-  };
+  const formatCurrency = useCallback(
+    (amount: number | string | undefined | null) => {
+      const numeric = typeof amount === "number" ? amount : parseFloat(String(amount || 0)) || 0;
+      return `${currencySymbol}${numeric.toFixed(2)}`;
+    },
+    [currencySymbol],
+  );
 
-  return {
-    currencySymbol,
-    currencyCode,
-    formatCurrency,
-  };
+  return useMemo(
+    () => ({
+      currencySymbol,
+      currencyCode,
+      formatCurrency,
+    }),
+    [currencySymbol, currencyCode, formatCurrency],
+  );
 }
 
-export function formatCurrencyStatic(amount: number | string | undefined | null, symbol: string = "$") {
+export function formatCurrencyStatic(
+  amount: number | string | undefined | null,
+  symbol: string = "$",
+) {
   const numeric = typeof amount === "number" ? amount : parseFloat(String(amount || 0)) || 0;
   return `${symbol}${numeric.toFixed(2)}`;
 }

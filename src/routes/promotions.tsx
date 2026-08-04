@@ -8,9 +8,21 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { DatePicker } from "@/components/ui/date-picker";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -27,17 +39,38 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Sparkles, Plus, Trash2, Edit2, Search, ArrowUpRight, ArrowDownLeft, Calendar, FileText, CheckCircle2, Star, Loader2, MoreVertical, Megaphone } from "lucide-react";
-import { useLiveQuery } from "dexie-react-hooks";
-import { localDb } from "@/lib/db";
+import {
+  Sparkles,
+  Plus,
+  Trash2,
+  Edit2,
+  Search,
+  ArrowUpRight,
+  ArrowDownLeft,
+  Calendar,
+  FileText,
+  CheckCircle2,
+  Star,
+  Loader2,
+  MoreVertical,
+  Megaphone,
+} from "lucide-react";
 import { useCurrency } from "@/lib/currency";
 import { v4 as uuidv4 } from "uuid";
 import { toast } from "sonner";
 import { PersistStore } from "@/lib/session-store";
-import type { LocalPromotion } from "@/lib/db";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  getPromotionsFn,
+  createPromotionFn,
+  updatePromotionFn,
+  deletePromotionFn,
+} from "@/api/promotions";
 import { useFormValidation } from "@/hooks/useFormValidation";
 import { FieldError } from "@/components/ui/field-error";
 import { usePreferences } from "@/contexts/PreferencesContext";
+import { CardGridSkeleton } from "@/components/skeletons/CardGridSkeleton";
+import { ErrorState } from "@/components/ui/error-state";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 
 export const Route = createFileRoute("/promotions")({
@@ -48,9 +81,22 @@ export const Route = createFileRoute("/promotions")({
 function PromotionsPage() {
   const { formatDate, formatTime, formatDateTime } = usePreferences();
   const { formatCurrency } = useCurrency();
-  const promotions = useLiveQuery(() => localDb.promotions.filter(p => !p._deleted).toArray()) || [];
+  const orgId = PersistStore.getOrgId() || "default";
+  const queryClient = useQueryClient();
+
+  const {
+    data: promotionsData,
+    isLoading: isPromotionsLoading,
+    isError: isPromotionsError,
+    refetch: refetchPromotions,
+  } = useQuery({
+    queryKey: ["promotions", orgId],
+    queryFn: async () => ((await getPromotionsFn({ data: {} })) as any)?.data || [],
+  });
+  const promotions = promotionsData || [];
+
   const [isAddOpen, setIsAddOpen] = useState(false);
-  const [editItem, setEditItem] = useState<LocalPromotion | null>(null);
+  const [editItem, setEditItem] = useState<any | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -75,13 +121,13 @@ function PromotionsPage() {
     let list = promotions;
     if (debouncedSearch) {
       const lower = debouncedSearch.toLowerCase();
-      list = list.filter(p => p.title.toLowerCase().includes(lower));
+      list = list.filter((p) => p.title.toLowerCase().includes(lower));
     }
     if (filters.type) {
-      list = list.filter(p => p.type === filters.type);
+      list = list.filter((p) => p.type === filters.type);
     }
     if (filters.status) {
-      list = list.filter(p => p.status === filters.status);
+      list = list.filter((p) => p.status === filters.status);
     }
     return list;
   }, [promotions, debouncedSearch, filters.type, filters.status]);
@@ -96,21 +142,29 @@ function PromotionsPage() {
   }, [filteredPromotions.length, page]);
 
   const totalPages = Math.ceil(filteredPromotions.length / itemsPerPage);
-  const paginatedPromotions = filteredPromotions.slice((page - 1) * itemsPerPage, page * itemsPerPage);
+  const paginatedPromotions = filteredPromotions.slice(
+    (page - 1) * itemsPerPage,
+    page * itemsPerPage,
+  );
 
-  const { errors: promoErrors, validate: validatePromo, clearError: clearPromoError, clearAll: clearPromoAll } = useFormValidation({
+  const {
+    errors: promoErrors,
+    validate: validatePromo,
+    clearError: clearPromoError,
+    clearAll: clearPromoAll,
+  } = useFormValidation({
     title: { required: "Promotion title is required" },
     value: { required: "Discount value is required", positive: "Value must be positive" },
     conditions: { required: "Conditions are required" },
     startDate: { required: "Start date is required" },
-    endDate: { required: "End date is required" }
+    endDate: { required: "End date is required" },
   });
 
   const handleSave = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
     setIsSaving(true);
-    await new Promise(resolve => setTimeout(resolve, 500));
+    await new Promise((resolve) => setTimeout(resolve, 500));
     try {
       const title = (formData.get("title") as string)?.trim();
       const type = formData.get("type") as string;
@@ -126,24 +180,28 @@ function PromotionsPage() {
       const value = parseFloat(valueStr);
 
       if (editItem) {
-        await localDb.promotions.update(editItem.id, { title, type, value, conditions, startDate, endDate, status, synced: false });
-        toast.success("Promotion updated successfully");
-        setEditItem(null);
+        const res = await updatePromotionFn({
+          data: {
+            id: editItem.id,
+            updates: { title, type, value, conditions, startDate, endDate, status },
+          },
+        });
+        if (res?.success) {
+          toast.success("Promotion updated successfully");
+          setEditItem(null);
+          queryClient.invalidateQueries({ queryKey: ["promotions"] });
+        } else throw new Error(res?.error);
       } else {
-          await localDb.promotions.add({
-            id: uuidv4(),
-            orgId: PersistStore.getOrgId() || "default",
-            title,
-            type,
-            value,
-            conditions,
-            startDate,
-            endDate,
-            status,
-            synced: false
-          });
-        toast.success("Promotion added successfully");
-        setIsAddOpen(false);
+        const res = await createPromotionFn({
+          data: {
+            promotion: { title, type, value, conditions, startDate, endDate, status },
+          },
+        });
+        if (res?.success) {
+          toast.success("Promotion added successfully");
+          setIsAddOpen(false);
+          queryClient.invalidateQueries({ queryKey: ["promotions"] });
+        } else throw new Error(res?.error);
       }
       clearPromoAll();
     } catch (error) {
@@ -156,18 +214,12 @@ function PromotionsPage() {
   const handleDelete = async () => {
     if (deleteId) {
       try {
-        await localDb.promotions.update(deleteId, { _deleted: true, synced: false });
-        await localDb.activityLog.add({
-          id: uuidv4(),
-          orgId: PersistStore.getOrgId() || "default",
-          action: "TOMBSTONE",
-          user: "system",
-          details: JSON.stringify({ entityType: "promotions", entityId: deleteId }),
-          timestamp: new Date().toISOString(),
-          synced: false,
-        });
-        toast.success("Promotion deleted");
-        setDeleteId(null);
+        const res = await deletePromotionFn({ data: { id: deleteId } });
+        if (res?.success) {
+          toast.success("Promotion deleted");
+          setDeleteId(null);
+          queryClient.invalidateQueries({ queryKey: ["promotions"] });
+        } else throw new Error(res?.error);
       } catch (error) {
         toast.error("Failed to delete promotion");
       }
@@ -176,9 +228,9 @@ function PromotionsPage() {
 
   return (
     <div className="p-4 md:p-6 lg:p-8">
-      <DataPage 
-        title="Promotions" 
-        description="Run automated discounts and store-wide sales." 
+      <DataPage
+        title="Promotions"
+        description="Run automated discounts and store-wide sales."
         primaryAction={{ label: "New Promotion", onClick: () => setIsAddOpen(true) }}
         searchPlaceholder="Search promotions by title..."
         searchValue={search}
@@ -199,7 +251,7 @@ function PromotionsPage() {
                     { value: "product", label: "Specific Product" },
                   ]}
                   value={draftFilters.type}
-                  onChange={(val) => setDraftFilters(prev => ({ ...prev, type: val }))}
+                  onChange={(val) => setDraftFilters((prev) => ({ ...prev, type: val }))}
                   placeholder="Filter by Type"
                 />
               </div>
@@ -212,32 +264,60 @@ function PromotionsPage() {
                     { value: "draft", label: "Draft" },
                   ]}
                   value={draftFilters.status}
-                  onChange={(val) => setDraftFilters(prev => ({ ...prev, status: val }))}
+                  onChange={(val) => setDraftFilters((prev) => ({ ...prev, status: val }))}
                   placeholder="Filter by Status"
                 />
               </div>
             </div>
             <div className="pt-4 mt-auto">
-              <Button className="w-full" onClick={() => { setFilters(draftFilters); close(); }}>
+              <Button
+                className="w-full"
+                onClick={() => {
+                  setFilters(draftFilters);
+                  close();
+                }}
+              >
                 Apply Filters
               </Button>
             </div>
           </div>
         )}
       >
-        {filteredPromotions.length === 0 ? (
+        {isPromotionsLoading ? (
+          <CardGridSkeleton cards={6} columns="grid-cols-1 md:grid-cols-2" />
+        ) : isPromotionsError ? (
+          <ErrorState onRetry={refetchPromotions} />
+        ) : filteredPromotions.length === 0 ? (
           <EmptyState
             icon={Megaphone}
             title="No promotions found"
             description={search ? "Try adjusting your search." : "No promotions active."}
+            actionLabel="New Promotion"
+            onAction={() => {
+              setEditItem(null);
+              setStartDate("");
+              setEndDate("");
+              setIsAddOpen(true);
+            }}
           />
         ) : (
           <div className="space-y-4">
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               {paginatedPromotions.map((p) => (
-                <div key={p.id} className="relative rounded-xl border border-border bg-card p-5 shadow-soft">
+                <div
+                  key={p.id}
+                  className="relative rounded-xl border border-border bg-card p-5 shadow-soft"
+                >
                   <div className="absolute right-4 top-4 flex items-center gap-2">
-                    <Badge className={p.status === "active" ? "bg-success/10 text-success hover:bg-success/15" : "bg-info/10 text-info hover:bg-info/15"}>{p.status}</Badge>
+                    <Badge
+                      className={
+                        p.status === "active"
+                          ? "bg-success/10 text-success hover:bg-success/15"
+                          : "bg-info/10 text-info hover:bg-info/15"
+                      }
+                    >
+                      {p.status}
+                    </Badge>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button variant="ghost" size="icon" className="size-8">
@@ -245,12 +325,19 @@ function PromotionsPage() {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => setEditItem(p)}><Edit2 className="mr-2 size-4" /> Edit</DropdownMenuItem>
-                        <DropdownMenuItem className="text-destructive focus:bg-destructive/10 focus:text-destructive" onClick={() => setDeleteId(p.id)}><Trash2 className="mr-2 size-4" /> Delete</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => setEditItem(p)}>
+                          <Edit2 className="mr-2 size-4" /> Edit
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          className="text-destructive focus:bg-destructive/10 focus:text-destructive"
+                          onClick={() => setDeleteId(p.id)}
+                        >
+                          <Trash2 className="mr-2 size-4" /> Delete
+                        </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </div>
-                  
+
                   <div className="flex items-start justify-between pr-24">
                     <div>
                       <h3 className="font-semibold">{p.title}</h3>
@@ -258,9 +345,12 @@ function PromotionsPage() {
                     </div>
                   </div>
                   <div className="mt-4 rounded-lg bg-primary/5 px-3 py-2 text-sm font-semibold text-primary">
-                    {p.type === "percentage" ? `${p.value}%` : formatCurrency(p.value)} OFF - {p.conditions}
+                    {p.type === "percentage" ? `${p.value}%` : formatCurrency(p.value)} OFF -{" "}
+                    {p.conditions}
                   </div>
-                  <div className="mt-3 text-xs text-muted-foreground">Runs {formatDate(p.startDate)} → {formatDate(p.endDate)}</div>
+                  <div className="mt-3 text-xs text-muted-foreground">
+                    Runs {formatDate(p.startDate)} → {formatDate(p.endDate)}
+                  </div>
                 </div>
               ))}
             </div>
@@ -269,23 +359,33 @@ function PromotionsPage() {
         )}
       </DataPage>
 
-      <Dialog open={isAddOpen || !!editItem} onOpenChange={(open) => {
-        if (!open) {
-          setIsAddOpen(false);
-          setEditItem(null);
-          clearPromoAll();
-        }
-      }}>
+      <Dialog
+        open={isAddOpen || !!editItem}
+        onOpenChange={(open) => {
+          if (!open) {
+            setIsAddOpen(false);
+            setEditItem(null);
+            clearPromoAll();
+          }
+        }}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>{editItem ? "Edit Promotion" : "Add Promotion"}</DialogTitle>
           </DialogHeader>
           <form noValidate onSubmit={handleSave} className="space-y-4">
             <div className="space-y-1.5">
-              <Label htmlFor="title">Promotion Title <span className="text-destructive">*</span></Label>
+              <Label htmlFor="title">
+                Promotion Title <span className="text-destructive">*</span>
+              </Label>
               <Input
-                id="title" name="title" defaultValue={editItem?.title} placeholder="e.g. Campaign Name"
-                className={promoErrors.title ? "border-destructive focus-visible:ring-destructive" : ""}
+                id="title"
+                name="title"
+                defaultValue={editItem?.title}
+                placeholder="e.g. Campaign Name"
+                className={
+                  promoErrors.title ? "border-destructive focus-visible:ring-destructive" : ""
+                }
                 onChange={() => clearPromoError("title")}
               />
               <FieldError message={promoErrors.title} />
@@ -294,7 +394,9 @@ function PromotionsPage() {
               <div className="space-y-1.5">
                 <Label htmlFor="type">Scope Type</Label>
                 <Select name="type" defaultValue={editItem?.type || "storewide"}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="storewide">Storewide</SelectItem>
                     <SelectItem value="category">Specific Category</SelectItem>
@@ -303,42 +405,81 @@ function PromotionsPage() {
                 </Select>
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="value">Discount Value (%) <span className="text-destructive">*</span></Label>
+                <Label htmlFor="value">
+                  Discount Value (%) <span className="text-destructive">*</span>
+                </Label>
                 <Input
-                  id="value" name="value" type="number" min="0" step="0.01" placeholder="e.g. 10.00" defaultValue={editItem?.value}
-                  className={promoErrors.value ? "border-destructive focus-visible:ring-destructive" : ""}
+                  id="value"
+                  name="value"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  placeholder="e.g. 10.00"
+                  defaultValue={editItem?.value}
+                  className={
+                    promoErrors.value ? "border-destructive focus-visible:ring-destructive" : ""
+                  }
                   onChange={() => clearPromoError("value")}
                 />
                 <FieldError message={promoErrors.value} />
               </div>
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="conditions">Conditions <span className="text-destructive">*</span></Label>
+              <Label htmlFor="conditions">
+                Conditions <span className="text-destructive">*</span>
+              </Label>
               <Input
-                id="conditions" name="conditions" defaultValue={editItem?.conditions} placeholder="e.g. Conditions or Rules"
-                className={promoErrors.conditions ? "border-destructive focus-visible:ring-destructive" : ""}
+                id="conditions"
+                name="conditions"
+                defaultValue={editItem?.conditions}
+                placeholder="e.g. Conditions or Rules"
+                className={
+                  promoErrors.conditions ? "border-destructive focus-visible:ring-destructive" : ""
+                }
                 onChange={() => clearPromoError("conditions")}
               />
               <FieldError message={promoErrors.conditions} />
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <Label htmlFor="startDate">Start Date <span className="text-destructive">*</span></Label>
-                <div className="hidden"><Input name="startDate" value={startDate || (editItem ? editItem.startDate : "")} readOnly /></div>
-                <DatePicker 
-                  name="startDate" 
-                  date={startDate || (editItem ? editItem.startDate : "")} 
-                  onDateChange={(d) => { setStartDate(d ? d.toISOString().split("T")[0] : ""); clearPromoError("startDate"); }} 
+                <Label htmlFor="startDate">
+                  Start Date <span className="text-destructive">*</span>
+                </Label>
+                <div className="hidden">
+                  <Input
+                    name="startDate"
+                    value={startDate || (editItem ? editItem.startDate : "")}
+                    readOnly
+                  />
+                </div>
+                <DatePicker
+                  name="startDate"
+                  date={startDate || (editItem ? editItem.startDate : "")}
+                  onDateChange={(d) => {
+                    setStartDate(d ? d.toISOString().split("T")[0] : "");
+                    clearPromoError("startDate");
+                  }}
                 />
                 <FieldError message={promoErrors.startDate} />
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="endDate">End Date <span className="text-destructive">*</span></Label>
-                <div className="hidden"><Input name="endDate" value={endDate || (editItem ? editItem.endDate : "")} readOnly /></div>
-                <DatePicker 
-                  name="endDate" 
-                  date={endDate || (editItem ? editItem.endDate : "")} 
-                  onDateChange={(d) => { setEndDate(d ? d.toISOString().split("T")[0] : ""); clearPromoError("endDate"); }} 
+                <Label htmlFor="endDate">
+                  End Date <span className="text-destructive">*</span>
+                </Label>
+                <div className="hidden">
+                  <Input
+                    name="endDate"
+                    value={endDate || (editItem ? editItem.endDate : "")}
+                    readOnly
+                  />
+                </div>
+                <DatePicker
+                  name="endDate"
+                  date={endDate || (editItem ? editItem.endDate : "")}
+                  onDateChange={(d) => {
+                    setEndDate(d ? d.toISOString().split("T")[0] : "");
+                    clearPromoError("endDate");
+                  }}
                 />
                 <FieldError message={promoErrors.endDate} />
               </div>
@@ -346,7 +487,9 @@ function PromotionsPage() {
             <div className="space-y-1.5">
               <Label htmlFor="status">Status</Label>
               <Select name="status" defaultValue={editItem?.status || "active"}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="active">Active</SelectItem>
                   <SelectItem value="scheduled">Scheduled</SelectItem>
@@ -355,7 +498,17 @@ function PromotionsPage() {
               </Select>
             </div>
             <DialogFooter className="mt-6">
-              <Button type="button" variant="outline" onClick={() => { setIsAddOpen(false); setEditItem(null); clearPromoAll(); }}>Cancel</Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setIsAddOpen(false);
+                  setEditItem(null);
+                  clearPromoAll();
+                }}
+              >
+                Cancel
+              </Button>
               <Button type="submit" disabled={isSaving}>
                 {isSaving && <Loader2 className="size-4 animate-spin mr-2" />}
                 Save Promotion
@@ -375,7 +528,12 @@ function PromotionsPage() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Delete</AlertDialogAction>
+            <AlertDialogAction
+              onClick={handleDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

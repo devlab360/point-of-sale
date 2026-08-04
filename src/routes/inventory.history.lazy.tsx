@@ -1,7 +1,8 @@
 import { createLazyFileRoute } from "@tanstack/react-router";
 import { Badge } from "@/components/ui/badge";
-import { useLiveQuery } from "dexie-react-hooks";
-import { localDb } from "@/lib/db";
+import { PersistStore } from "@/lib/session-store";
+import { useQuery } from "@tanstack/react-query";
+import { getInventoryMovementsFn } from "@/api/inventory";
 import { cn } from "@/lib/utils";
 import { useState, useMemo } from "react";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -16,7 +17,12 @@ export const Route = createLazyFileRoute("/inventory/history")({
 
 function HistoryPage() {
   const { formatDate, formatTime, formatDateTime } = usePreferences();
-  const rawMovements = useLiveQuery(() => localDb.inventoryMovements.filter(m => !m._deleted).reverse().toArray()) || [];
+  const orgId = PersistStore.getOrgId() || "default";
+  const { data: movementsData } = useQuery({
+    queryKey: ["inventoryMovements", orgId],
+    queryFn: async () => ((await getInventoryMovementsFn({ data: {} })) as any)?.data || [],
+  });
+  const rawMovements = movementsData || [];
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search, 300);
   const [page, setPage] = useState(1);
@@ -24,7 +30,7 @@ function HistoryPage() {
 
   const filteredMovements = useMemo(() => {
     return rawMovements.filter((m) =>
-      m.productName.toLowerCase().includes(debouncedSearch.toLowerCase())
+      m.productName.toLowerCase().includes(debouncedSearch.toLowerCase()),
     );
   }, [rawMovements, debouncedSearch]);
 
@@ -34,7 +40,9 @@ function HistoryPage() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <p className="text-sm text-muted-foreground">Complete audit trail of all stock changes across the store.</p>
+        <p className="text-sm text-muted-foreground">
+          Complete audit trail of all stock changes across the store.
+        </p>
       </div>
       {rawMovements.length > 0 && (
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
@@ -54,7 +62,11 @@ function HistoryPage() {
         <EmptyState
           icon={History}
           title="No stock history yet"
-          description={search ? "Try adjusting your search." : "Stock changes will appear here after purchases, sales, and adjustments."}
+          description={
+            search
+              ? "Try adjusting your search."
+              : "Stock changes will appear here after purchases, sales, and adjustments."
+          }
         />
       ) : (
         <div className="space-y-4">
@@ -76,21 +88,29 @@ function HistoryPage() {
                     </td>
                     <td className="px-4 py-3 font-semibold">{m.productName}</td>
                     <td className="px-4 py-3">
-                      <Badge variant="outline" className="capitalize">{m.action.replace('_', ' ')}</Badge>
+                      <Badge variant="outline" className="capitalize">
+                        {m.action.replace("_", " ")}
+                      </Badge>
                     </td>
-                    <td className={cn("number px-4 py-3 text-right font-semibold", m.quantity < 0 ? "text-destructive" : "text-success")}>
-                      {m.quantity > 0 ? "+" : ""}{m.quantity}
+                    <td
+                      className={cn(
+                        "number px-4 py-3 text-right font-semibold",
+                        m.quantity < 0 ? "text-destructive" : "text-success",
+                      )}
+                    >
+                      {m.quantity > 0 ? "+" : ""}
+                      {m.quantity}
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
-          <PaginationControls 
-            currentPage={page} 
-            totalPages={totalPages} 
+          <PaginationControls
+            currentPage={page}
+            totalPages={totalPages}
             pageSize={pageSize}
-            onPageChange={setPage} 
+            onPageChange={setPage}
             onPageSizeChange={setPageSize}
           />
         </div>

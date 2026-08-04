@@ -42,7 +42,9 @@ function validateField(value: string, rules: FieldRules): string {
   if (rules.phone) {
     const clean = strVal.replace(/[\s\-\+\(\)]/g, "");
     if (!/^\d{10,15}$/.test(clean)) {
-      return typeof rules.phone === "string" ? rules.phone : "Enter a valid 10-15 digit phone number";
+      return typeof rules.phone === "string"
+        ? rules.phone
+        : "Enter a valid 10-15 digit phone number";
     }
   }
 
@@ -79,7 +81,7 @@ export function useFormValidation<T extends Record<string, any>>(schema: Schema)
       setErrors(newErrors);
       return Object.keys(newErrors).length === 0;
     },
-    [schema]
+    [schema],
   );
 
   const clearError = useCallback((field: string) => {

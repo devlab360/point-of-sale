@@ -33,7 +33,7 @@ export const DATE_FORMATS = [
 export function formatDateCustom(
   dateInput: string | Date | number,
   formatPattern: string = "DD/MM/YYYY",
-  timeZone?: string
+  timeZone?: string,
 ): string {
   if (!dateInput) return "";
   const d = new Date(dateInput);

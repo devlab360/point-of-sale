@@ -2,8 +2,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
-import { useLiveQuery } from "dexie-react-hooks";
-import { localDb } from "@/lib/db";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { getUserFn, updateUserFn } from "@/api/users";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 import { useLanguage, LANGUAGES } from "@/contexts/LanguageContext";
@@ -12,6 +12,8 @@ import { SearchableSelect } from "@/components/ui/searchable-select";
 import { FieldError } from "@/components/ui/field-error";
 import { useAuth } from "@/contexts/AuthContext";
 import { FileUpload } from "@/components/ui/file-upload";
+import { ProfileSkeleton } from "@/components/skeletons/ProfileSkeleton";
+import { ErrorState } from "@/components/ui/error-state";
 
 export const Route = createFileRoute("/profile")({
   head: () => ({ meta: [{ title: "Profile · Grocer.Pro" }] }),
@@ -22,11 +24,20 @@ function ProfilePage() {
   const { language, setLanguage, t } = useLanguage();
   const { user: authUser } = useAuth();
 
-  // Use the actual logged-in user's ID (not hardcoded "me")
-  const dbProfile = useLiveQuery(
-    () => authUser?.id ? localDb.users.get(authUser.id) : undefined,
-    [authUser?.id]
-  );
+  const queryClient = useQueryClient();
+
+  const {
+    data: userData,
+    isLoading: isProfileLoading,
+    isError: isProfileError,
+    refetch: refetchProfile,
+  } = useQuery({
+    queryKey: ["userProfile", authUser?.id],
+    queryFn: async () =>
+      authUser?.id ? ((await getUserFn({ data: { id: authUser.id } })) as any)?.data || null : null,
+    enabled: !!authUser?.id,
+  });
+  const dbProfile = userData;
 
   const defaultProfile = {
     id: authUser?.id || "me",
@@ -50,7 +61,7 @@ function ProfilePage() {
 
   useEffect(() => {
     if (dbProfile) {
-      setProfile(p => ({ ...defaultProfile, ...dbProfile as any }));
+      setProfile((p) => ({ ...defaultProfile, ...(dbProfile as any) }));
     } else if (authUser) {
       setProfile(defaultProfile);
     }
@@ -61,13 +72,19 @@ function ProfilePage() {
 
   const handleChange = (key: string, value: string) => {
     setProfile((prev) => ({ ...prev, [key]: value }));
-    if (profileErrors[key]) setProfileErrors(prev => { const n = {...prev}; delete n[key]; return n; });
+    if (profileErrors[key])
+      setProfileErrors((prev) => {
+        const n = { ...prev };
+        delete n[key];
+        return n;
+      });
   };
 
   const handleSave = async () => {
     const errors: Record<string, string> = {};
     if (!profile.name?.trim()) errors.name = "Full name is required";
-    if (profile.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(profile.email.trim())) errors.email = "Enter a valid email address";
+    if (profile.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(profile.email.trim()))
+      errors.email = "Enter a valid email address";
     if (profile.phone) {
       const clean = profile.phone.replace(/[\s\-\+\(\)]/g, "");
       if (!/^\d{10,15}$/.test(clean)) errors.phone = "Enter a valid 10-15 digit phone number";
@@ -79,9 +96,9 @@ function ProfilePage() {
     }
     try {
       setIsSaving(true);
-    await new Promise(resolve => setTimeout(resolve, 500));
-      // Save to local DB with correct user ID — SyncEngine pushes to Neon DB
-      await localDb.users.put({ ...profile, id: authUser?.id || profile.id, synced: false });
+      await new Promise((resolve) => setTimeout(resolve, 500));
+      await updateUserFn({ data: { id: authUser?.id || profile.id, updates: profile } });
+      queryClient.invalidateQueries({ queryKey: ["userProfile", authUser?.id] });
       toast.success("Profile updated successfully.");
     } catch (error) {
       console.error("Profile save error:", error);
@@ -91,7 +108,6 @@ function ProfilePage() {
     }
   };
 
-
   const initials = (profile.name || "U")
     .split(" ")
     .filter(Boolean)
@@ -100,18 +116,37 @@ function ProfilePage() {
     .substring(0, 2)
     .toUpperCase();
 
+  if (isProfileLoading) {
+    return (
+      <div className="p-4 md:p-6 lg:p-8">
+        <ProfileSkeleton />
+      </div>
+    );
+  }
+
+  if (isProfileError && !dbProfile) {
+    return (
+      <div className="p-4 md:p-6 lg:p-8">
+        <ErrorState
+          onRetry={refetchProfile}
+          title="Failed to load profile"
+          description="Unable to fetch user profile details. Click below to retry."
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 p-4 md:p-6 lg:p-8">
-      <PageHeader 
-        title={t("profile") || "Your Profile"} 
-        description="Personal details and preferences." 
+      <PageHeader
+        title={t("profile") || "Your Profile"}
+        description="Personal details and preferences."
         actions={
           <Button onClick={handleSave} disabled={isSaving}>
             {isSaving && <Loader2 className="size-4 animate-spin mr-2" />}
             {t("save")}
           </Button>
-        } 
+        }
       />
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div className="rounded-xl border border-border bg-card p-6 text-center shadow-soft flex flex-col items-center">
@@ -127,102 +162,136 @@ function ProfilePage() {
             />
           </div>
           <h2 className="text-lg font-bold">{profile.name}</h2>
-          <p className="text-sm text-muted-foreground">{profile.role} · {profile.location?.split(' ')[0]}</p>
+          <p className="text-sm text-muted-foreground">
+            {profile.role} · {profile.location?.split(" ")[0]}
+          </p>
         </div>
         <div className="rounded-xl border border-border bg-card p-6 shadow-soft lg:col-span-2">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <label className="block">
-              <span className="mb-1.5 block text-xs font-semibold text-muted-foreground">Full name <span className="text-destructive">*</span></span>
+              <span className="mb-1.5 block text-xs font-semibold text-muted-foreground">
+                Full name <span className="text-destructive">*</span>
+              </span>
               <input
                 value={profile.name}
-                onChange={e => handleChange('name', e.target.value)}
-                className={`w-full rounded-lg border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring/20 ${profileErrors.name ? 'border-destructive focus:border-destructive' : 'border-border focus:border-ring'}`}
+                onChange={(e) => handleChange("name", e.target.value)}
+                className={`w-full rounded-lg border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring/20 ${profileErrors.name ? "border-destructive focus:border-destructive" : "border-border focus:border-ring"}`}
               />
               <FieldError message={profileErrors.name} />
             </label>
             <label className="block">
-              <span className="mb-1.5 block text-xs font-semibold text-muted-foreground">Email</span>
+              <span className="mb-1.5 block text-xs font-semibold text-muted-foreground">
+                Email
+              </span>
               <input
                 value={profile.email}
-                onChange={e => handleChange('email', e.target.value)}
-                className={`w-full rounded-lg border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring/20 ${profileErrors.email ? 'border-destructive focus:border-destructive' : 'border-border focus:border-ring'}`}
+                onChange={(e) => handleChange("email", e.target.value)}
+                className={`w-full rounded-lg border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring/20 ${profileErrors.email ? "border-destructive focus:border-destructive" : "border-border focus:border-ring"}`}
               />
               <FieldError message={profileErrors.email} />
             </label>
             <label className="block">
-              <span className="mb-1.5 block text-xs font-semibold text-muted-foreground">Phone</span>
+              <span className="mb-1.5 block text-xs font-semibold text-muted-foreground">
+                Phone
+              </span>
               <input
                 value={profile.phone || ""}
-                onChange={e => handleChange('phone', e.target.value)}
-                className={`w-full rounded-lg border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring/20 ${profileErrors.phone ? 'border-destructive focus:border-destructive' : 'border-border focus:border-ring'}`}
+                onChange={(e) => handleChange("phone", e.target.value)}
+                className={`w-full rounded-lg border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring/20 ${profileErrors.phone ? "border-destructive focus:border-destructive" : "border-border focus:border-ring"}`}
               />
               <FieldError message={profileErrors.phone} />
             </label>
             <label className="block">
               <span className="mb-1.5 block text-xs font-semibold text-muted-foreground">Role</span>
-              <input value={profile.role} onChange={e => handleChange('role', e.target.value)} className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/20" />
+              <input
+                value={profile.role}
+                onChange={(e) => handleChange("role", e.target.value)}
+                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/20"
+              />
             </label>
             <label className="block">
-              <span className="mb-1.5 block text-xs font-semibold text-muted-foreground">Location</span>
-              <input value={profile.location || ""} onChange={e => handleChange('location', e.target.value)} className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/20" />
+              <span className="mb-1.5 block text-xs font-semibold text-muted-foreground">
+                Location
+              </span>
+              <input
+                value={profile.location || ""}
+                onChange={(e) => handleChange("location", e.target.value)}
+                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/20"
+              />
             </label>
             <label className="block">
-              <span className="mb-1.5 block text-xs font-semibold text-muted-foreground">Joined</span>
-              <input value={profile.joined || ""} onChange={e => handleChange('joined', e.target.value)} className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/20" />
+              <span className="mb-1.5 block text-xs font-semibold text-muted-foreground">
+                Joined
+              </span>
+              <input
+                value={profile.joined || ""}
+                onChange={(e) => handleChange("joined", e.target.value)}
+                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/20"
+              />
             </label>
 
             {/* Dynamic Locale, Timezone, Date Format & Language Settings */}
             <div className="sm:col-span-2 pt-4 border-t border-border mt-2 space-y-4">
-              <h3 className="text-sm font-bold text-foreground">Localization & Regional Preferences</h3>
+              <h3 className="text-sm font-bold text-foreground">
+                Localization & Regional Preferences
+              </h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <label className="block">
-                  <span className="mb-1.5 block text-xs font-semibold text-muted-foreground">{t("countryCode")}</span>
-                  <SearchableSelect 
-                    value={profile.countryCode || "+880"} 
-                    onChange={val => handleChange('countryCode', val)}
-                    options={COUNTRY_CODES.map(c => ({
+                  <span className="mb-1.5 block text-xs font-semibold text-muted-foreground">
+                    {t("countryCode")}
+                  </span>
+                  <SearchableSelect
+                    value={profile.countryCode || "+880"}
+                    onChange={(val) => handleChange("countryCode", val)}
+                    options={COUNTRY_CODES.map((c) => ({
                       value: c.code,
-                      label: `${c.flag} ${c.code} (${c.country})`
+                      label: `${c.flag} ${c.code} (${c.country})`,
                     }))}
                   />
                 </label>
 
                 <label className="block">
-                  <span className="mb-1.5 block text-xs font-semibold text-muted-foreground">{t("language")}</span>
-                  <SearchableSelect 
-                    value={language} 
-                    onChange={val => {
+                  <span className="mb-1.5 block text-xs font-semibold text-muted-foreground">
+                    {t("language")}
+                  </span>
+                  <SearchableSelect
+                    value={language}
+                    onChange={(val) => {
                       const lang = val as any;
                       setLanguage(lang);
-                      handleChange('language', lang);
+                      handleChange("language", lang);
                     }}
-                    options={LANGUAGES.map(l => ({
+                    options={LANGUAGES.map((l) => ({
                       value: l.code,
-                      label: `${l.flag} ${l.nativeName} (${l.label})`
+                      label: `${l.flag} ${l.nativeName} (${l.label})`,
                     }))}
                   />
                 </label>
 
                 <label className="block">
-                  <span className="mb-1.5 block text-xs font-semibold text-muted-foreground">{t("timezone")}</span>
-                  <SearchableSelect 
-                    value={profile.timeZone || "Asia/Dhaka"} 
-                    onChange={val => handleChange('timeZone', val)}
-                    options={TIMEZONES.map(tz => ({
+                  <span className="mb-1.5 block text-xs font-semibold text-muted-foreground">
+                    {t("timezone")}
+                  </span>
+                  <SearchableSelect
+                    value={profile.timeZone || "Asia/Dhaka"}
+                    onChange={(val) => handleChange("timeZone", val)}
+                    options={TIMEZONES.map((tz) => ({
                       value: tz.value,
-                      label: tz.label
+                      label: tz.label,
                     }))}
                   />
                 </label>
 
                 <label className="block">
-                  <span className="mb-1.5 block text-xs font-semibold text-muted-foreground">{t("dateFormat")}</span>
-                  <SearchableSelect 
-                    value={profile.dateFormat || "DD/MM/YYYY"} 
-                    onChange={val => handleChange('dateFormat', val)}
-                    options={DATE_FORMATS.map(df => ({
+                  <span className="mb-1.5 block text-xs font-semibold text-muted-foreground">
+                    {t("dateFormat")}
+                  </span>
+                  <SearchableSelect
+                    value={profile.dateFormat || "DD/MM/YYYY"}
+                    onChange={(val) => handleChange("dateFormat", val)}
+                    options={DATE_FORMATS.map((df) => ({
                       value: df.value,
-                      label: df.label
+                      label: df.label,
                     }))}
                   />
                 </label>

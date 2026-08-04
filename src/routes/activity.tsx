@@ -1,8 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { DataPage } from "@/components/layout/DataPage";
 import { EmptyState } from "@/components/ui/empty-state";
-import { useLiveQuery } from "dexie-react-hooks";
-import { localDb } from "@/lib/db";
+import { useQuery } from "@tanstack/react-query";
+import { getActivityLogFn } from "@/api/activity";
+import { PersistStore } from "@/lib/session-store";
 import { Activity } from "lucide-react";
 import { usePreferences } from "@/contexts/PreferencesContext";
 
@@ -13,7 +14,18 @@ export const Route = createFileRoute("/activity")({
 
 function ActivityPage() {
   const { formatDate, formatTime, formatDateTime } = usePreferences();
-  const activityLog = useLiveQuery(() => localDb.activityLog.reverse().toArray()) || [];
+  const orgId = PersistStore.getOrgId() || "default";
+  const { data: activityData } = useQuery({
+    queryKey: ["activityLog", orgId],
+    queryFn: async () => ((await getActivityLogFn({ data: {} })) as any)?.data || [],
+  });
+  const rawActivityLog = activityData || [];
+  const activityLog = rawActivityLog
+    .slice()
+    .sort(
+      (a: any, b: any) =>
+        new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime(),
+    );
 
   const renderLogMessage = (a: any) => {
     if (a.action === "TOMBSTONE") {
@@ -55,11 +67,13 @@ function ActivityPage() {
               {activityLog.map((a) => (
                 <li key={a.id} className="relative">
                   <span className="absolute -left-[31px] top-1.5 grid size-5 place-items-center rounded-full border-4 border-card bg-primary text-[10px] font-bold text-primary-foreground">
-                    {a.user.split(" ").map((n) => n[0]).join("")}
+                    {a.user
+                      .split(" ")
+                      .map((n) => n[0])
+                      .join("")}
                   </span>
                   <div className="text-sm">
-                    <span className="font-semibold">{a.user}</span>{" "}
-                    {renderLogMessage(a)}
+                    <span className="font-semibold">{a.user}</span> {renderLogMessage(a)}
                   </div>
                   <div className="text-xs text-muted-foreground">{formatDateTime(a.timestamp)}</div>
                 </li>

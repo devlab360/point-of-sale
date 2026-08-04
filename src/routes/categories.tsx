@@ -5,15 +5,31 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { PaginationControls } from "@/components/ui/pagination-controls";
 import { IconPicker } from "@/components/ui/icon-picker";
 import * as LucideIcons from "lucide-react";
-import { localDb, type LocalCategory } from "@/lib/db";
+
 import { PersistStore } from "@/lib/session-store";
-import { useLiveQuery } from "dexie-react-hooks";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  getCategoriesFn,
+  createCategoryFn,
+  updateCategoryFn,
+  deleteCategoryFn,
+} from "@/api/categories";
+import { getProductsFn } from "@/api/products";
 import { Button } from "@/components/ui/button";
 import { SearchableSelect } from "@/components/ui/searchable-select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useState, useMemo, useEffect } from "react";
+import { useLanguage } from "@/contexts/LanguageContext";
+import { TableSkeleton } from "@/components/skeletons/TableSkeleton";
+import { ErrorState } from "@/components/ui/error-state";
 import { useDebounce } from "@/hooks/useDebounce";
 import { v4 as uuidv4 } from "uuid";
 import { toast } from "sonner";
@@ -36,20 +52,37 @@ export const Route = createFileRoute("/categories")({
 });
 
 function CategoriesPage() {
-  const rawCategories = useLiveQuery(() => localDb.categories.filter(c => !c._deleted).toArray()) || [];
-  const products = useLiveQuery(() => localDb.products.filter(p => !p._deleted).toArray()) || [];
-  
+  const orgId = PersistStore.getOrgId() || "default";
+  const queryClient = useQueryClient();
+
+  const {
+    data: rawCategoriesData,
+    isLoading: isCategoriesLoading,
+    isError: isCategoriesError,
+    refetch: refetchCategories,
+  } = useQuery({
+    queryKey: ["categories", orgId],
+    queryFn: async () => ((await getCategoriesFn({ data: {} })) as any)?.data || [],
+  });
+  const rawCategories = rawCategoriesData || [];
+
+  const { data: productsData } = useQuery({
+    queryKey: ["products", orgId],
+    queryFn: async () => ((await getProductsFn({ data: {} })) as any)?.data || [],
+  });
+  const products = productsData || [];
+
   const categoriesWithCounts = useMemo(() => {
-    return rawCategories.map(c => ({
+    return rawCategories.map((c) => ({
       ...c,
-      count: products.filter(p => p.category === c.name || p.category === c.id).length
+      count: products.filter((p) => p.category === c.name || p.category === c.id).length,
     }));
   }, [rawCategories, products]);
 
   const [modalOpen, setModalOpen] = useState(false);
-  const [editingCat, setEditingCat] = useState<LocalCategory | null>(null);
+  const [editingCat, setEditingCat] = useState<any | null>(null);
   const [isSaving, setIsSaving] = useState(false);
-  
+
   const [name, setName] = useState("");
   const [icon, setIcon] = useState("ShoppingCart");
   const [color, setColor] = useState("var(--color-primary)");
@@ -73,12 +106,12 @@ function CategoriesPage() {
     let filtered = categoriesWithCounts;
     if (debouncedSearch) {
       const lower = debouncedSearch.toLowerCase();
-      filtered = filtered.filter(c => c.name.toLowerCase().includes(lower));
+      filtered = filtered.filter((c) => c.name.toLowerCase().includes(lower));
     }
     if (filters.usage === "in-use") {
-      filtered = filtered.filter(c => c.count > 0);
+      filtered = filtered.filter((c) => c.count > 0);
     } else if (filters.usage === "empty") {
-      filtered = filtered.filter(c => c.count === 0);
+      filtered = filtered.filter((c) => c.count === 0);
     }
     return filtered;
   }, [categoriesWithCounts, debouncedSearch, filters.usage]);
@@ -95,7 +128,6 @@ function CategoriesPage() {
   const totalPages = Math.ceil(categories.length / itemsPerPage);
   const paginatedCategories = categories.slice((page - 1) * itemsPerPage, page * itemsPerPage);
 
-
   const openNew = () => {
     setEditingCat(null);
     setName("");
@@ -104,7 +136,7 @@ function CategoriesPage() {
     setModalOpen(true);
   };
 
-  const openEdit = (cat: LocalCategory) => {
+  const openEdit = (cat: any) => {
     setEditingCat(cat);
     setName(cat.name);
     setIcon(cat.icon);
@@ -112,7 +144,12 @@ function CategoriesPage() {
     setModalOpen(true);
   };
 
-  const { errors: catErrors, validate: validateCat, clearError: clearCatError, clearAll: clearCatAll } = useFormValidation({
+  const {
+    errors: catErrors,
+    validate: validateCat,
+    clearError: clearCatError,
+    clearAll: clearCatAll,
+  } = useFormValidation({
     name: { required: "Category name is required" },
   });
 
@@ -120,24 +157,28 @@ function CategoriesPage() {
     e.preventDefault();
     const isValid = validateCat({ name });
     if (!isValid) return;
-    
+
     setIsSaving(true);
-    await new Promise(resolve => setTimeout(resolve, 500));
+    await new Promise((resolve) => setTimeout(resolve, 500));
     try {
       if (editingCat) {
-        await localDb.categories.update(editingCat.id, { name, icon, color, synced: false });
-        toast.success("Category updated");
+        const res = await updateCategoryFn({
+          data: { id: editingCat.id, category: { name, icon, color } },
+        } as any);
+        if (res?.success) {
+          toast.success("Category updated");
+          queryClient.invalidateQueries({ queryKey: ["categories"] });
+        } else throw new Error(res?.error);
       } else {
-        await localDb.categories.add({
-          id: uuidv4(),
-          orgId: PersistStore.getOrgId() || "default",
-          name,
-          icon,
-          color,
-          count: 0,
-          synced: false
-        });
-        toast.success("Category created");
+        const res = await createCategoryFn({
+          data: {
+            category: { id: uuidv4(), organizationId: PersistStore.getOrgId(), name, icon, color },
+          },
+        } as any);
+        if (res?.success) {
+          toast.success("Category created");
+          queryClient.invalidateQueries({ queryKey: ["categories"] });
+        } else throw new Error(res?.error);
       }
       setModalOpen(false);
       clearCatAll();
@@ -151,15 +192,17 @@ function CategoriesPage() {
   const confirmDelete = async () => {
     if (!deleteId) return;
     try {
-      await localDb.categories.update(deleteId, { _deleted: true, synced: false });
-      toast.success("Category deleted");
+      const res = await deleteCategoryFn({ data: { id: deleteId } } as any);
+      if (res?.success) {
+        toast.success("Category deleted");
+        queryClient.invalidateQueries({ queryKey: ["categories"] });
+      } else throw new Error(res?.error);
     } catch (error) {
       toast.error("Failed to delete category");
     } finally {
       setDeleteId(null);
     }
   };
-
 
   return (
     <div className="p-4 md:p-6 lg:p-8">
@@ -185,24 +228,42 @@ function CategoriesPage() {
                     { value: "empty", label: "Empty (No products)" },
                   ]}
                   value={draftFilters.usage}
-                  onChange={(val) => setDraftFilters(prev => ({ ...prev, usage: val }))}
+                  onChange={(val) => setDraftFilters((prev) => ({ ...prev, usage: val }))}
                   placeholder="Filter by Usage"
                 />
               </div>
             </div>
             <div className="pt-4 mt-auto">
-              <Button className="w-full" onClick={() => { setFilters(draftFilters); close(); }}>
+              <Button
+                className="w-full"
+                onClick={() => {
+                  setFilters(draftFilters);
+                  close();
+                }}
+              >
                 Apply Filters
               </Button>
             </div>
           </div>
         )}
       >
-        {categories.length === 0 ? (
-          <EmptyState 
-            icon={LayoutGrid} 
-            title="No categories found" 
-            description={search ? "Try adjusting your search." : "You haven't created any categories yet."} 
+        {isCategoriesLoading ? (
+          <TableSkeleton columns={3} rows={6} showHeaderAction={false} showFilters={false} />
+        ) : isCategoriesError ? (
+          <ErrorState onRetry={refetchCategories} />
+        ) : categories.length === 0 ? (
+          <EmptyState
+            icon={LayoutGrid}
+            title="No categories found"
+            description={
+              search ? "Try adjusting your search." : "You haven't created any categories yet."
+            }
+            actionLabel="Add Category"
+            onAction={() => {
+              setEditingCat(null);
+              setName("");
+              setModalOpen(true);
+            }}
           />
         ) : (
           <div className="space-y-4">
@@ -223,10 +284,20 @@ function CategoriesPage() {
                     <div className="text-xs text-muted-foreground">{c.count || 0} products</div>
                   </div>
                   <div className="flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
-                    <Button variant="ghost" size="icon" className="size-8" onClick={() => openEdit(c)}>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="size-8"
+                      onClick={() => openEdit(c)}
+                    >
                       <Pencil className="size-4" />
                     </Button>
-                    <Button variant="ghost" size="icon" className="size-8 text-destructive" onClick={() => setDeleteId(c.id)}>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="size-8 text-destructive"
+                      onClick={() => setDeleteId(c.id)}
+                    >
                       <Trash2 className="size-4" />
                     </Button>
                   </div>
@@ -238,9 +309,15 @@ function CategoriesPage() {
         )}
       </DataPage>
 
-      <Dialog open={modalOpen} onOpenChange={(open) => {
-        if (!open) { setModalOpen(false); clearCatAll(); }
-      }}>
+      <Dialog
+        open={modalOpen}
+        onOpenChange={(open) => {
+          if (!open) {
+            setModalOpen(false);
+            clearCatAll();
+          }
+        }}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>{editingCat ? "Edit Category" : "New Category"}</DialogTitle>
@@ -248,12 +325,20 @@ function CategoriesPage() {
           <form onSubmit={save} noValidate>
             <div className="grid gap-4 py-4">
               <div className="grid gap-1.5">
-                <Label htmlFor="name">Name <span className="text-destructive">*</span></Label>
+                <Label htmlFor="name">
+                  Name <span className="text-destructive">*</span>
+                </Label>
                 <Input
-                  id="name" value={name}
-                  onChange={(e) => { setName(e.target.value); clearCatError("name"); }}
+                  id="name"
+                  value={name}
+                  onChange={(e) => {
+                    setName(e.target.value);
+                    clearCatError("name");
+                  }}
                   placeholder="e.g. Beverages"
-                  className={catErrors.name ? "border-destructive focus-visible:ring-destructive" : ""}
+                  className={
+                    catErrors.name ? "border-destructive focus-visible:ring-destructive" : ""
+                  }
                 />
                 <FieldError message={catErrors.name} />
               </div>
@@ -264,12 +349,26 @@ function CategoriesPage() {
                 </div>
                 <div className="grid gap-1.5">
                   <Label htmlFor="color">Theme Color</Label>
-                  <Input id="color" value={color} onChange={(e) => setColor(e.target.value)} placeholder="var(--color-primary)" />
+                  <Input
+                    id="color"
+                    value={color}
+                    onChange={(e) => setColor(e.target.value)}
+                    placeholder="var(--color-primary)"
+                  />
                 </div>
               </div>
             </div>
             <DialogFooter className="mt-6">
-              <Button type="button" variant="outline" onClick={() => { setModalOpen(false); clearCatAll(); }}>Cancel</Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setModalOpen(false);
+                  clearCatAll();
+                }}
+              >
+                Cancel
+              </Button>
               <Button type="submit" disabled={isSaving}>
                 {isSaving && <Loader2 className="size-4 animate-spin mr-2" />}
                 Save changes
@@ -289,7 +388,10 @@ function CategoriesPage() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+            <AlertDialogAction
+              onClick={confirmDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
               Delete
             </AlertDialogAction>
           </AlertDialogFooter>

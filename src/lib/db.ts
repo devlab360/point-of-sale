@@ -36,53 +36,308 @@ export interface Product {
   _deleted?: boolean;
 }
 
-export interface LocalCategory { id: string; orgId?: string; name: string; color: string; icon: string; count: number; synced?: boolean; syncRetryCount?: number; _deleted?: boolean; }
-export interface LocalBrand { id: string; orgId?: string; name: string; products: number; synced?: boolean; syncRetryCount?: number; _deleted?: boolean; }
-export interface LocalUnit { id: string; orgId?: string; name: string; short: string; synced?: boolean; syncRetryCount?: number; _deleted?: boolean; }
-export interface OfflineSale { id: string; orgId?: string; customerId?: string; customerName?: string; date: string | Date; status: string; total: number; subtotal?: number; tax?: number; discount?: number; due?: number; paymentMethod?: string; paidAmount?: number; changeAmount?: number; saleItems?: any[]; synced?: boolean; syncRetryCount?: number; _deleted?: boolean; }
-export interface LocalSupplier { id: string; orgId?: string; name: string; contact: string; phone: string; email?: string; balance: number; items: number; gstin?: string; stateCode?: string; synced?: boolean; syncRetryCount?: number; _deleted?: boolean; }
-export interface LocalLocation { id: string; name: string; type: string; status: string; synced?: boolean; syncRetryCount?: number; _deleted?: boolean; }
-export interface LocalPurchase { 
-  id: string; 
+export interface LocalCategory {
+  id: string;
+  orgId?: string;
+  name: string;
+  color: string;
+  icon: string;
+  count: number;
+  synced?: boolean;
+  syncRetryCount?: number;
+  _deleted?: boolean;
+}
+export interface LocalBrand {
+  id: string;
+  orgId?: string;
+  name: string;
+  products: number;
+  synced?: boolean;
+  syncRetryCount?: number;
+  _deleted?: boolean;
+}
+export interface LocalUnit {
+  id: string;
+  orgId?: string;
+  name: string;
+  short: string;
+  synced?: boolean;
+  syncRetryCount?: number;
+  _deleted?: boolean;
+}
+export interface OfflineSale {
+  id: string;
+  orgId?: string;
+  customerId?: string;
+  customerName?: string;
+  date: string | Date;
+  status: string;
+  total: number;
+  subtotal?: number;
+  tax?: number;
+  discount?: number;
+  due?: number;
+  paymentMethod?: string;
+  paidAmount?: number;
+  changeAmount?: number;
+  saleItems?: any[];
+  synced?: boolean;
+  syncRetryCount?: number;
+  _deleted?: boolean;
+}
+export interface LocalSupplier {
+  id: string;
+  orgId?: string;
+  name: string;
+  contact: string;
+  phone: string;
+  email?: string;
+  balance: number;
+  items: number;
+  gstin?: string;
+  stateCode?: string;
+  synced?: boolean;
+  syncRetryCount?: number;
+  _deleted?: boolean;
+}
+export interface LocalLocation {
+  id: string;
+  name: string;
+  type: string;
+  status: string;
+  synced?: boolean;
+  syncRetryCount?: number;
+  _deleted?: boolean;
+}
+export interface LocalPurchase {
+  id: string;
   orgId?: string;
   supplierId?: string;
-  supplier: string; 
-  date: string | Date; 
+  supplier: string;
+  date: string | Date;
   invoiceNo?: string;
-  items: number; 
-  status: string; 
+  items: number;
+  status: string;
   subtotal?: number;
   discountAmt?: number;
   taxAmt?: number;
   cgstAmt?: number;
   sgstAmt?: number;
   igstAmt?: number;
-  total: number; 
+  total: number;
   paid?: number;
   due?: number;
-  purchaseItems?: { productId: string; productName: string; quantity: number; cost: number; total: number; cgst?: number; sgst?: number; igst?: number }[];
+  purchaseItems?: {
+    productId: string;
+    productName: string;
+    quantity: number;
+    cost: number;
+    total: number;
+    cgst?: number;
+    sgst?: number;
+    igst?: number;
+  }[];
   synced?: boolean;
   syncRetryCount?: number;
   _deleted?: boolean;
 }
-export interface LocalInventoryMovement { id?: number; productName: string; orgId?: string; action: string; quantity: number; createdAt: string | Date; synced?: boolean; syncRetryCount?: number; _deleted?: boolean; }
-export interface LocalPurchaseReturn { id: string; orgId?: string; ref: string; purchaseId: string; supplier: string; reason: string; items?: any[]; total: number; status: string; date: string; stockRestored: boolean; synced?: boolean; syncRetryCount?: number; _deleted?: boolean; }
-export interface LocalAdjustment { id: string; orgId?: string; ref: string; date: string | Date; reason: string; items: number; net: number; status: string; synced?: boolean; syncRetryCount?: number; _deleted?: boolean; }
-export interface LocalTransfer { id: string; orgId?: string; ref: string; date: string | Date; destination: string; items: number; status: string; synced?: boolean; syncRetryCount?: number; _deleted?: boolean; }
-export interface LocalExpense { id: string; orgId?: string; date: string; category: string; description: string; amount: number; status: string; synced?: boolean; syncRetryCount?: number; _deleted?: boolean; }
-export interface LocalCoupon { id: string; orgId?: string; code: string; type: string; discount: number; usageLimit: number; used: number; expires: string; status: string; synced?: boolean; syncRetryCount?: number; _deleted?: boolean; }
-export interface LocalGiftCard { id: string; orgId?: string; code: string; balance: number; initialBalance?: number; customer?: string; issued?: string; expires: string; status: string; synced?: boolean; syncRetryCount?: number; _deleted?: boolean; }
-export interface LocalPromotion { id: string; orgId?: string; title: string; type: string; value: number; conditions: string; startDate: string; endDate: string; status: string; synced?: boolean; syncRetryCount?: number; _deleted?: boolean; }
-export interface LocalActivity { id: string; orgId?: string; user: string; action: string; details?: string; timestamp: string; type?: string; synced?: boolean; syncRetryCount?: number; }
-export interface LocalUser { id: string; orgId?: string; name: string; role: string; email: string; lastActive: string; status: string; avatar?: string; phone?: string; location?: string; joined?: string; pin?: string; permissions?: string[]; commissionRate?: number; monthlyTarget?: number; earnedCommission?: number; emailVerified?: boolean; emailVerificationToken?: string; countryCode?: string; timeZone?: string; dateFormat?: string; language?: string; synced?: boolean; syncRetryCount?: number; }
-export interface LocalNotification { id: string; orgId?: string; title: string; description?: string; message?: string; type: string; timestamp: string; createdAt?: string; read: boolean; link?: string; synced?: boolean; syncRetryCount?: number; }
-export interface LocalInvitation { id: string; orgId: string; token: string; role: string; permissions?: string[]; status: string; createdAt: string; expiresAt: string; synced?: boolean; syncRetryCount?: number; }
-export interface LocalSaaSSession { id: string; orgId: string; userId: string; loginAt: string; logoutAt?: string; ipAddress?: string; device?: string; status: "live" | "ended"; synced?: boolean; syncRetryCount?: number; }
-export interface LocalOrganization { id: string; name: string; ownerEmail: string; status: "trial" | "active" | "suspended" | string; currentPlanId: string; planExpiryDate: string; syncKey?: string; isOnline: boolean; synced?: boolean; syncRetryCount?: number; }
-export interface LocalSubscriptionPlan { 
-  id: string; 
-  name: string; 
-  price: number; 
+export interface LocalInventoryMovement {
+  id?: number;
+  productName: string;
+  orgId?: string;
+  action: string;
+  quantity: number;
+  createdAt: string | Date;
+  synced?: boolean;
+  syncRetryCount?: number;
+  _deleted?: boolean;
+}
+export interface LocalPurchaseReturn {
+  id: string;
+  orgId?: string;
+  ref: string;
+  purchaseId: string;
+  supplier: string;
+  reason: string;
+  items?: any[];
+  total: number;
+  status: string;
+  date: string;
+  stockRestored: boolean;
+  synced?: boolean;
+  syncRetryCount?: number;
+  _deleted?: boolean;
+}
+export interface LocalAdjustment {
+  id: string;
+  orgId?: string;
+  ref: string;
+  date: string | Date;
+  reason: string;
+  items: number;
+  net: number;
+  status: string;
+  synced?: boolean;
+  syncRetryCount?: number;
+  _deleted?: boolean;
+}
+export interface LocalTransfer {
+  id: string;
+  orgId?: string;
+  ref: string;
+  date: string | Date;
+  destination: string;
+  items: number;
+  status: string;
+  synced?: boolean;
+  syncRetryCount?: number;
+  _deleted?: boolean;
+}
+export interface LocalExpense {
+  id: string;
+  orgId?: string;
+  date: string;
+  category: string;
+  description: string;
+  amount: number;
+  status: string;
+  synced?: boolean;
+  syncRetryCount?: number;
+  _deleted?: boolean;
+}
+export interface LocalCoupon {
+  id: string;
+  orgId?: string;
+  code: string;
+  type: string;
+  discount: number;
+  usageLimit: number;
+  used: number;
+  expires: string;
+  status: string;
+  synced?: boolean;
+  syncRetryCount?: number;
+  _deleted?: boolean;
+}
+export interface LocalGiftCard {
+  id: string;
+  orgId?: string;
+  code: string;
+  balance: number;
+  initialBalance?: number;
+  customer?: string;
+  issued?: string;
+  expires: string;
+  status: string;
+  synced?: boolean;
+  syncRetryCount?: number;
+  _deleted?: boolean;
+}
+export interface LocalPromotion {
+  id: string;
+  orgId?: string;
+  title: string;
+  type: string;
+  value: number;
+  conditions: string;
+  startDate: string;
+  endDate: string;
+  status: string;
+  synced?: boolean;
+  syncRetryCount?: number;
+  _deleted?: boolean;
+}
+export interface LocalActivity {
+  id: string;
+  orgId?: string;
+  user: string;
+  action: string;
+  details?: string;
+  timestamp: string;
+  type?: string;
+  synced?: boolean;
+  syncRetryCount?: number;
+}
+export interface LocalUser {
+  id: string;
+  orgId?: string;
+  name: string;
+  role: string;
+  email: string;
+  lastActive: string;
+  status: string;
+  avatar?: string;
+  phone?: string;
+  location?: string;
+  joined?: string;
+  pin?: string;
+  permissions?: string[];
+  commissionRate?: number;
+  monthlyTarget?: number;
+  earnedCommission?: number;
+  emailVerified?: boolean;
+  emailVerificationToken?: string;
+  countryCode?: string;
+  timeZone?: string;
+  dateFormat?: string;
+  language?: string;
+  synced?: boolean;
+  syncRetryCount?: number;
+}
+export interface LocalNotification {
+  id: string;
+  orgId?: string;
+  title: string;
+  description?: string;
+  message?: string;
+  type: string;
+  timestamp: string;
+  createdAt?: string;
+  read: boolean;
+  link?: string;
+  synced?: boolean;
+  syncRetryCount?: number;
+}
+export interface LocalInvitation {
+  id: string;
+  orgId: string;
+  token: string;
+  role: string;
+  permissions?: string[];
+  status: string;
+  createdAt: string;
+  expiresAt: string;
+  synced?: boolean;
+  syncRetryCount?: number;
+}
+export interface LocalSaaSSession {
+  id: string;
+  orgId: string;
+  userId: string;
+  loginAt: string;
+  logoutAt?: string;
+  ipAddress?: string;
+  device?: string;
+  status: "live" | "ended";
+  synced?: boolean;
+  syncRetryCount?: number;
+}
+export interface LocalOrganization {
+  id: string;
+  name: string;
+  ownerEmail: string;
+  status: "trial" | "active" | "suspended" | string;
+  currentPlanId: string;
+  planExpiryDate: string;
+  syncKey?: string;
+  isOnline: boolean;
+  synced?: boolean;
+  syncRetryCount?: number;
+}
+export interface LocalSubscriptionPlan {
+  id: string;
+  name: string;
+  price: number;
   features: string[];
   limits: {
     maxUsers: number;
@@ -187,7 +442,13 @@ export interface LocalQuotation {
   customerPhone?: string;
   date: string;
   validUntil: string;
-  items: { productId: string; productName: string; quantity: number; price: number; total: number }[];
+  items: {
+    productId: string;
+    productName: string;
+    quantity: number;
+    price: number;
+    total: number;
+  }[];
   subtotal: number;
   discountAmt: number;
   taxAmt: number;
@@ -342,7 +603,13 @@ export interface LocalSaleReturn {
   saleId: string;
   customerName: string;
   reason: string;
-  items: { productId: string; productName: string; quantity: number; price: number; total: number }[];
+  items: {
+    productId: string;
+    productName: string;
+    quantity: number;
+    price: number;
+    total: number;
+  }[];
   total: number;
   status: string;
   date: string;
@@ -825,7 +1092,7 @@ export class POSDatabase extends Dexie {
       rentals: "id, orgId, customerId, productId, status, returnDate",
       saasOrganizations: "id, status, currentPlanId",
       saasPlans: "id, name",
-      saasSessions: "id, orgId, userId, status"
+      saasSessions: "id, orgId, userId, status",
     });
   }
 }
@@ -838,7 +1105,7 @@ export async function addSystemNotification(
   title: string,
   description: string,
   type: "info" | "warning" | "success" | "destructive" | string = "info",
-  link?: string
+  link?: string,
 ) {
   try {
     const orgId = PersistStore.getOrgId() || "default";
@@ -851,7 +1118,7 @@ export async function addSystemNotification(
       timestamp: new Date().toISOString(),
       read: false,
       link,
-      synced: false
+      synced: false,
     });
   } catch (e) {
     console.error("Failed to add notification:", e);

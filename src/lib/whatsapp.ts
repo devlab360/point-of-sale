@@ -1,4 +1,3 @@
-import { usePreferences } from "@/contexts/PreferencesContext";
 
 /**
  * WhatsApp CRM Utility Helper
@@ -19,15 +18,17 @@ export function sendWhatsAppInvoice(
   invoiceNo: string,
   totalAmount: number,
   currencySymbol: string,
-  items: { productName: string; quantity: number; price: number }[]
+  items: { productName: string; quantity: number; price: number }[],
 ) {
-    const { formatDate, formatTime, formatDateTime } = usePreferences();
   const cleanPhone = formatWhatsAppPhone(customerPhone || "");
   const itemListText = items
-    .map((item) => `• ${item.productName} (x${item.quantity}) - ${currencySymbol}${item.price * item.quantity}`)
+    .map(
+      (item) =>
+        `• ${item.productName} (x${item.quantity}) - ${currencySymbol}${item.price * item.quantity}`,
+    )
     .join("\n");
 
-  const message = `🧾 *INVOICE ACKNOWLEDGEMENT - GROCER.PRO*\n\nDear *${customerName}*,\nThank you for shopping with us!\n\n*Invoice No:* #${invoiceNo}\n*Date:* ${formatDate(new Date())}\n\n*Purchased Items:*\n${itemListText}\n\n*Total Paid:* *${currencySymbol}${totalAmount}*\n\nThank you for your business! 🙏`;
+  const message = `🧾 *INVOICE ACKNOWLEDGEMENT - GROCER.PRO*\n\nDear *${customerName}*,\nThank you for shopping with us!\n\n*Invoice No:* #${invoiceNo}\n*Date:* ${new Date().toLocaleDateString()}\n\n*Purchased Items:*\n${itemListText}\n\n*Total Paid:* *${currencySymbol}${totalAmount}*\n\nThank you for your business! 🙏`;
 
   const url = cleanPhone
     ? `https://api.whatsapp.com/send?phone=${cleanPhone}&text=${encodeURIComponent(message)}`
@@ -40,7 +41,7 @@ export function sendWhatsAppDueReminder(
   customerPhone: string,
   customerName: string,
   dueAmount: number,
-  currencySymbol: string
+  currencySymbol: string,
 ) {
   const cleanPhone = formatWhatsAppPhone(customerPhone || "");
 

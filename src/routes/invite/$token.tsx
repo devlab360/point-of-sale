@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input, PasswordInput } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { localDb, type LocalInvitation } from "@/lib/db";
+import { getInvitationFn, acceptInvitationFn } from "@/api/auth";
 import { v4 as uuidv4 } from "uuid";
 import { Store, CheckCircle2, Loader2 } from "lucide-react";
 
@@ -16,23 +16,29 @@ export const Route = createFileRoute("/invite/$token")({
 function InvitePage() {
   const { token } = Route.useParams();
   const navigate = useNavigate();
-  
-  const [invitation, setInvitation] = useState<LocalInvitation | null>(null);
+
+  const [invitation, setInvitation] = useState<any | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSuccess, setIsSuccess] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  
+
   const [formData, setFormData] = useState({
     name: "",
     email: "",
-    password: ""
+    password: "",
   });
 
   useEffect(() => {
     const verifyToken = async () => {
       try {
-        const inv = await localDb.invitations.where("token").equals(token).first();
-        if (inv && inv.status === "pending" && new Date(inv.expiresAt) > new Date()) {
+        const res = await getInvitationFn({ data: { token } });
+        const inv = res.data;
+        if (
+          res.success &&
+          inv &&
+          inv.status === "pending" &&
+          new Date(inv.expiresAt) > new Date()
+        ) {
           setInvitation(inv);
         } else {
           toast.error("Invitation is invalid or has expired.");
@@ -60,22 +66,19 @@ function InvitePage() {
     }
 
     setIsSaving(true);
-    await new Promise(resolve => setTimeout(resolve, 500));
+    await new Promise((resolve) => setTimeout(resolve, 500));
     try {
-      await localDb.users.add({
-        id: uuidv4(),
-        orgId: invitation.orgId,
-        name: formData.name,
-        email: formData.email,
-        role: invitation.role,
-        permissions: invitation.permissions || [],
-        status: "pending",
-        lastActive: new Date().toISOString(),
-        pin: formData.password,
-        emailVerified: true,
+      const res = await acceptInvitationFn({
+        data: {
+          invitationId: invitation.id,
+          role: invitation.role,
+          permissions: invitation.permissions || [],
+          name: formData.name,
+          email: formData.email,
+          pin: formData.password,
+        },
       });
-
-      await localDb.invitations.update(invitation.id, { status: "accepted" });
+      if (!res.success) throw new Error(res.error || "Failed to complete registration");
       setIsSuccess(true);
     } catch (error: any) {
       toast.error(error.message || "Failed to complete registration");
@@ -98,7 +101,9 @@ function InvitePage() {
         <div className="w-full max-w-md text-center p-8 bg-card border border-border shadow-soft rounded-2xl">
           <Store className="size-12 text-muted-foreground mx-auto mb-4" />
           <h2 className="text-2xl font-bold mb-2">Invalid Invitation</h2>
-          <p className="text-muted-foreground mb-6">This invitation link has expired or is invalid.</p>
+          <p className="text-muted-foreground mb-6">
+            This invitation link has expired or is invalid.
+          </p>
           <Button onClick={() => navigate({ to: "/login" })}>Go to Login</Button>
         </div>
       </div>
@@ -108,13 +113,15 @@ function InvitePage() {
   return (
     <div className="min-h-screen bg-muted/30 flex items-center justify-center p-4">
       <div className="w-full max-w-md bg-card border border-border shadow-soft rounded-2xl overflow-hidden">
-        
         <div className="bg-primary/5 p-6 border-b border-border text-center">
           <div className="mx-auto flex size-12 items-center justify-center rounded-xl bg-primary shadow-sm mb-4">
             <Store className="size-6 text-primary-foreground" />
           </div>
           <h1 className="text-xl font-bold">You've been invited!</h1>
-          <p className="text-sm text-muted-foreground mt-1">Join your team as a <span className="font-semibold text-foreground capitalize">{invitation?.role}</span></p>
+          <p className="text-sm text-muted-foreground mt-1">
+            Join your team as a{" "}
+            <span className="font-semibold text-foreground capitalize">{invitation?.role}</span>
+          </p>
         </div>
 
         <div className="p-6">
@@ -123,26 +130,47 @@ function InvitePage() {
               <CheckCircle2 className="size-16 text-success mx-auto mb-4" />
               <h2 className="text-xl font-bold mb-2">Registration Complete</h2>
               <p className="text-muted-foreground text-sm mb-6">
-                Your account has been created and is awaiting approval from the store owner. 
-                You will be able to log in once they approve it.
+                Your account has been created and is awaiting approval from the store owner. You
+                will be able to log in once they approve it.
               </p>
-              <Button className="w-full" onClick={() => navigate({ to: "/login" })}>Return to Login</Button>
+              <Button className="w-full" onClick={() => navigate({ to: "/login" })}>
+                Return to Login
+              </Button>
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
                 <Label>Full Name</Label>
-                <Input name="name" value={formData.name} onChange={handleChange} required placeholder="John Doe" />
+                <Input
+                  name="name"
+                  value={formData.name}
+                  onChange={handleChange}
+                  required
+                  placeholder="John Doe"
+                />
               </div>
               <div className="space-y-2">
                 <Label>Email</Label>
-                <Input type="email" name="email" value={formData.email} onChange={handleChange} required placeholder="john@example.com" />
+                <Input
+                  type="email"
+                  name="email"
+                  value={formData.email}
+                  onChange={handleChange}
+                  required
+                  placeholder="john@example.com"
+                />
               </div>
               <div className="space-y-2">
                 <Label>Set your password</Label>
-                <PasswordInput name="password" value={formData.password} onChange={handleChange} required placeholder="••••••••" />
+                <PasswordInput
+                  name="password"
+                  value={formData.password}
+                  onChange={handleChange}
+                  required
+                  placeholder="••••••••"
+                />
               </div>
-              
+
               <Button type="submit" className="w-full mt-4" disabled={isSaving}>
                 {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Accept Invitation

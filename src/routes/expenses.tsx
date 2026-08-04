@@ -12,8 +12,20 @@ import { StatCard } from "@/components/layout/StatCard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -31,16 +43,17 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Wallet, TrendingDown, Receipt, MoreVertical, Edit2, Trash2, Loader2 } from "lucide-react";
-import { useLiveQuery } from "dexie-react-hooks";
-import { localDb } from "@/lib/db";
 import { useCurrency } from "@/lib/currency";
 import { v4 as uuidv4 } from "uuid";
 import { toast } from "sonner";
 import { PersistStore } from "@/lib/session-store";
-import type { LocalExpense } from "@/lib/db";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { getExpensesFn, createExpenseFn, updateExpenseFn, deleteExpenseFn } from "@/api/expenses";
 import { useFormValidation } from "@/hooks/useFormValidation";
 import { FieldError } from "@/components/ui/field-error";
 import { usePreferences } from "@/contexts/PreferencesContext";
+import { TableSkeleton } from "@/components/skeletons/TableSkeleton";
+import { ErrorState } from "@/components/ui/error-state";
 
 export const Route = createFileRoute("/expenses")({
   head: () => ({ meta: [{ title: "Expenses · Grocer.Pro" }] }),
@@ -51,9 +64,22 @@ function ExpensesPage() {
   const { formatDate, formatTime, formatDateTime } = usePreferences();
   const { formatCurrency } = useCurrency();
   const { t } = useLanguage();
-  const rawExpenses = useLiveQuery(() => localDb.expenses.filter(e => !e._deleted).toArray()) || [];
+  const orgId = PersistStore.getOrgId() || "default";
+  const queryClient = useQueryClient();
+
+  const {
+    data: rawExpensesData,
+    isLoading: isExpensesLoading,
+    isError: isExpensesError,
+    refetch: refetchExpenses,
+  } = useQuery({
+    queryKey: ["expenses", orgId],
+    queryFn: async () => ((await getExpensesFn({ data: {} })) as any)?.data || [],
+  });
+  const rawExpenses = rawExpensesData || [];
+
   const [isAddOpen, setIsAddOpen] = useState(false);
-  const [editItem, setEditItem] = useState<LocalExpense | null>(null);
+  const [editItem, setEditItem] = useState<any | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [expenseDate, setExpenseDate] = useState<string>("");
@@ -62,7 +88,7 @@ function ExpensesPage() {
   const debouncedSearch = useDebounce(search, 300);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
-  
+
   const [filters, setFilters] = useState({ category: "", status: "" });
   const [draftFilters, setDraftFilters] = useState({ category: "", status: "" });
   const activeFilterCount = (filters.category ? 1 : 0) + (filters.status ? 1 : 0);
@@ -76,16 +102,16 @@ function ExpensesPage() {
     let filtered = rawExpenses;
     if (debouncedSearch) {
       const lower = debouncedSearch.toLowerCase();
-      filtered = filtered.filter(e =>
-        e.category.toLowerCase().includes(lower) ||
-        e.description.toLowerCase().includes(lower)
+      filtered = filtered.filter(
+        (e) =>
+          e.category.toLowerCase().includes(lower) || e.description.toLowerCase().includes(lower),
       );
     }
     if (filters.category) {
-      filtered = filtered.filter(e => e.category === filters.category);
+      filtered = filtered.filter((e) => e.category === filters.category);
     }
     if (filters.status) {
-      filtered = filtered.filter(e => e.status === filters.status);
+      filtered = filtered.filter((e) => e.status === filters.status);
     }
     return filtered;
   }, [rawExpenses, debouncedSearch, filters.category, filters.status]);
@@ -100,31 +126,46 @@ function ExpensesPage() {
     return expenses.slice(start, start + pageSize);
   }, [expenses, page, pageSize]);
 
-  const uniqueCategories = useMemo(() => Array.from(new Set(rawExpenses.map(e => e.category))), [rawExpenses]);
+  const uniqueCategories = useMemo(
+    () => Array.from(new Set(rawExpenses.map((e) => String(e.category)))),
+    [rawExpenses],
+  );
 
-  const total = rawExpenses.reduce((acc, e) => acc + e.amount, 0);
-  const pending = rawExpenses.filter(e => e.status !== "paid").length;
+  const total = rawExpenses.reduce((acc, e) => acc + Number(e.amount), 0);
+  const pending = rawExpenses.filter((e) => e.status !== "paid").length;
 
   // Calculate largest category
-  const catMap = rawExpenses.reduce((acc, e) => {
-    acc[e.category] = (acc[e.category] || 0) + e.amount;
-    return acc;
-  }, {} as Record<string, number>);
-  const largestCategory = Object.entries(catMap).sort((a, b) => b[1] - a[1])[0]?.[0] || "N/A";
+  const catMap = rawExpenses.reduce(
+    (acc, e: any) => {
+      acc[e.category] = (acc[e.category] || 0) + (Number(e.amount) || 0);
+      return acc;
+    },
+    {} as Record<string, number>,
+  );
+  const largestCategory =
+    Object.entries(catMap).sort((a, b) => (b[1] as number) - (a[1] as number))[0]?.[0] || "N/A";
 
-  const { errors: expErrors, validate: validateExp, clearError: clearExpError, clearAll: clearExpAll } = useFormValidation({
+  const {
+    errors: expErrors,
+    validate: validateExp,
+    clearError: clearExpError,
+    clearAll: clearExpAll,
+  } = useFormValidation({
     date: { required: "Date is required" },
     category: { required: "Category is required" },
-    description: { required: "Description is required", minLength: { value: 3, message: "Description must be at least 3 characters" } },
+    description: {
+      required: "Description is required",
+      minLength: { value: 3, message: "Description must be at least 3 characters" },
+    },
     amount: { required: "Amount is required", positive: "Amount must be a positive number" },
   });
 
   const handleSave = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
-    
+
     setIsSaving(true);
-    await new Promise(resolve => setTimeout(resolve, 500));
+    await new Promise((resolve) => setTimeout(resolve, 500));
     try {
       const date = (formData.get("date") as string)?.trim();
       const category = (formData.get("category") as string)?.trim();
@@ -142,22 +183,34 @@ function ExpensesPage() {
       }
 
       if (editItem) {
-        await localDb.expenses.update(editItem.id, { date, category, description, amount, status, synced: false });
-        toast.success("Expense updated successfully");
-        setEditItem(null);
-      } else {
-        await localDb.expenses.add({
-          id: uuidv4(),
-          orgId: PersistStore.getOrgId() || "default",
-          date,
-          category,
-          description,
-          amount,
-          status,
-          synced: false
+        const res = await updateExpenseFn({
+          data: {
+            id: editItem.id,
+            updates: { date, category, description, amount, status },
+          },
         });
-        toast.success("Expense added successfully");
-        setIsAddOpen(false);
+        if (res?.success) {
+          toast.success("Expense updated successfully");
+          setEditItem(null);
+          queryClient.invalidateQueries({ queryKey: ["expenses"] });
+        } else throw new Error(res?.error);
+      } else {
+        const res = await createExpenseFn({
+          data: {
+            expense: {
+              date,
+              category,
+              description,
+              amount,
+              status,
+            },
+          },
+        });
+        if (res?.success) {
+          toast.success("Expense added successfully");
+          setIsAddOpen(false);
+          queryClient.invalidateQueries({ queryKey: ["expenses"] });
+        } else throw new Error(res?.error);
       }
       clearExpAll();
     } catch (error) {
@@ -170,18 +223,12 @@ function ExpensesPage() {
   const handleDelete = async () => {
     if (deleteId) {
       try {
-        await localDb.expenses.update(deleteId, { _deleted: true, synced: false });
-        await localDb.activityLog.add({
-          id: uuidv4(),
-          orgId: PersistStore.getOrgId() || "default",
-          action: "TOMBSTONE",
-          user: "system",
-          details: JSON.stringify({ entityType: "expenses", entityId: deleteId }),
-          timestamp: new Date().toISOString(),
-          synced: false,
-        });
-        toast.success("Expense deleted");
-        setDeleteId(null);
+        const res = await deleteExpenseFn({ data: { id: deleteId } });
+        if (res?.success) {
+          toast.success("Expense deleted");
+          setDeleteId(null);
+          queryClient.invalidateQueries({ queryKey: ["expenses"] });
+        } else throw new Error(res?.error);
       } catch (error) {
         toast.error("Failed to delete expense");
       }
@@ -191,14 +238,33 @@ function ExpensesPage() {
   return (
     <div className="space-y-6 p-4 md:p-6 lg:p-8">
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <StatCard label={t("totalExpenses") || "Total Expenses"} value={formatCurrency(total)} icon={Wallet} accent="primary" />
-        <StatCard label={t("largestCategory") || "Largest Category"} value={largestCategory} hint="By amount" icon={Receipt} accent="info" />
-        <StatCard label={t("pending") || "Pending"} value={pending.toString()} icon={TrendingDown} accent="warning" />
+        <StatCard
+          label={t("totalExpenses") || "Total Expenses"}
+          value={formatCurrency(total)}
+          icon={Wallet}
+          accent="primary"
+        />
+        <StatCard
+          label={t("largestCategory") || "Largest Category"}
+          value={largestCategory}
+          hint="By amount"
+          icon={Receipt}
+          accent="info"
+        />
+        <StatCard
+          label={t("pending") || "Pending"}
+          value={pending.toString()}
+          icon={TrendingDown}
+          accent="warning"
+        />
       </div>
       <DataPage
         title={t("expenses") || "Expenses"}
         description={t("manageExpenses") || "Track operating costs across all categories."}
-        primaryAction={{ label: t("addExpense") || "Add Expense", onClick: () => setIsAddOpen(true) }}
+        primaryAction={{
+          label: t("addExpense") || "Add Expense",
+          onClick: () => setIsAddOpen(true),
+        }}
         searchPlaceholder={t("searchExpenses") || "Search by category or description..."}
         searchValue={search}
         onSearchChange={setSearch}
@@ -210,43 +276,63 @@ function ExpensesPage() {
             <div className="flex-1 space-y-4">
               <div className="space-y-2">
                 <Label>Category</Label>
-                <SearchableSelect 
+                <SearchableSelect
                   options={[
                     { value: "", label: "All Categories" },
-                    ...uniqueCategories.map(c => ({ value: c, label: c }))
-                  ]} 
-                  value={draftFilters.category} 
-                  onChange={(val) => setDraftFilters(prev => ({ ...prev, category: val }))} 
+                    ...uniqueCategories.map((c: any) => ({ value: String(c), label: String(c) })),
+                  ]}
+                  value={draftFilters.category}
+                  onChange={(val) => setDraftFilters((prev) => ({ ...prev, category: val }))}
                   placeholder="Filter by Category"
                 />
               </div>
               <div className="space-y-2">
                 <Label>Status</Label>
-                <SearchableSelect 
+                <SearchableSelect
                   options={[
                     { value: "", label: "All Statuses" },
                     { value: "paid", label: "Paid" },
-                    { value: "pending", label: "Pending" }
-                  ]} 
-                  value={draftFilters.status} 
-                  onChange={(val) => setDraftFilters(prev => ({ ...prev, status: val }))} 
+                    { value: "pending", label: "Pending" },
+                  ]}
+                  value={draftFilters.status}
+                  onChange={(val) => setDraftFilters((prev) => ({ ...prev, status: val }))}
                   placeholder="Filter by Status"
                 />
               </div>
             </div>
             <div className="pt-4 mt-auto">
-              <Button className="w-full" onClick={() => { setFilters(draftFilters); close(); }}>
+              <Button
+                className="w-full"
+                onClick={() => {
+                  setFilters(draftFilters);
+                  close();
+                }}
+              >
                 Apply Filters
               </Button>
             </div>
           </div>
         )}
       >
-        {expenses.length === 0 ? (
+        {isExpensesLoading ? (
+          <TableSkeleton columns={5} rows={6} showHeaderAction={false} showFilters={false} />
+        ) : isExpensesError ? (
+          <ErrorState onRetry={refetchExpenses} />
+        ) : expenses.length === 0 ? (
           <EmptyState
             icon={Wallet}
             title={t("noExpensesFound") || "No expenses found"}
-            description={search ? (t("adjustSearch") || "Try adjusting your search.") : (t("noExpensesYet") || "No expenses have been recorded yet.")}
+            description={
+              search
+                ? t("adjustSearch") || "Try adjusting your search."
+                : t("noExpensesYet") || "No expenses have been recorded yet."
+            }
+            actionLabel="Add Expense"
+            onAction={() => {
+              setEditItem(null);
+              setExpenseDate(new Date().toISOString().slice(0, 10));
+              setIsAddOpen(true);
+            }}
           />
         ) : (
           <div className="space-y-4">
@@ -266,10 +352,24 @@ function ExpensesPage() {
                   {paginatedExpenses.map((e) => (
                     <tr key={e.id} className="hover:bg-muted/30">
                       <td className="px-4 py-3 text-muted-foreground">{formatDate(e.date)}</td>
-                      <td className="px-4 py-3"><Badge variant="secondary">{e.category}</Badge></td>
+                      <td className="px-4 py-3">
+                        <Badge variant="secondary">{e.category}</Badge>
+                      </td>
                       <td className="px-4 py-3 font-semibold">{e.description}</td>
-                      <td className="px-4 py-3"><Badge className={e.status === "paid" ? "bg-success/10 text-success hover:bg-success/15" : "bg-warning/15 text-warning-foreground hover:bg-warning/20"}>{e.status}</Badge></td>
-                      <td className="number px-4 py-3 text-right font-semibold">{formatCurrency(e.amount)}</td>
+                      <td className="px-4 py-3">
+                        <Badge
+                          className={
+                            e.status === "paid"
+                              ? "bg-success/10 text-success hover:bg-success/15"
+                              : "bg-warning/15 text-warning-foreground hover:bg-warning/20"
+                          }
+                        >
+                          {e.status}
+                        </Badge>
+                      </td>
+                      <td className="number px-4 py-3 text-right font-semibold">
+                        {formatCurrency(e.amount)}
+                      </td>
                       <td className="px-4 py-3 text-right">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
@@ -278,8 +378,15 @@ function ExpensesPage() {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => setEditItem(e)}><Edit2 className="mr-2 size-4" /> Edit</DropdownMenuItem>
-                            <DropdownMenuItem className="text-destructive focus:bg-destructive/10 focus:text-destructive" onClick={() => setDeleteId(e.id)}><Trash2 className="mr-2 size-4" /> Delete</DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => setEditItem(e)}>
+                              <Edit2 className="mr-2 size-4" /> Edit
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              className="text-destructive focus:bg-destructive/10 focus:text-destructive"
+                              onClick={() => setDeleteId(e.id)}
+                            >
+                              <Trash2 className="mr-2 size-4" /> Delete
+                            </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </td>
@@ -301,13 +408,16 @@ function ExpensesPage() {
         )}
       </DataPage>
 
-      <Dialog open={isAddOpen || !!editItem} onOpenChange={(open) => {
-        if (!open) {
-          setIsAddOpen(false);
-          setEditItem(null);
-          clearExpAll();
-        }
-      }}>
+      <Dialog
+        open={isAddOpen || !!editItem}
+        onOpenChange={(open) => {
+          if (!open) {
+            setIsAddOpen(false);
+            setEditItem(null);
+            clearExpAll();
+          }
+        }}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>{editItem ? "Edit Expense" : "Add Expense"}</DialogTitle>
@@ -315,45 +425,71 @@ function ExpensesPage() {
           <form id="expense-form" noValidate onSubmit={handleSave} className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <Label htmlFor="date">Date <span className="text-destructive">*</span></Label>
+                <Label htmlFor="date">
+                  Date <span className="text-destructive">*</span>
+                </Label>
                 <DatePicker
                   name="date"
-                  date={expenseDate || (editItem ? editItem.date : new Date().toISOString().split('T')[0])}
-                  onDateChange={(d) => { setExpenseDate(d ? d.toISOString().split("T")[0] : ""); clearExpError("date"); }}
+                  date={
+                    expenseDate ||
+                    (editItem ? editItem.date : new Date().toISOString().split("T")[0])
+                  }
+                  onDateChange={(d) => {
+                    setExpenseDate(d ? d.toISOString().split("T")[0] : "");
+                    clearExpError("date");
+                  }}
                 />
                 <FieldError message={expErrors.date} />
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="category">Category <span className="text-destructive">*</span></Label>
+                <Label htmlFor="category">
+                  Category <span className="text-destructive">*</span>
+                </Label>
                 <Input
-                  id="category" name="category"
+                  id="category"
+                  name="category"
                   defaultValue={editItem?.category}
                   placeholder="e.g. Utilities"
-                  className={expErrors.category ? "border-destructive focus-visible:ring-destructive" : ""}
+                  className={
+                    expErrors.category ? "border-destructive focus-visible:ring-destructive" : ""
+                  }
                   onChange={() => clearExpError("category")}
                 />
                 <FieldError message={expErrors.category} />
               </div>
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="description">Description <span className="text-destructive">*</span></Label>
+              <Label htmlFor="description">
+                Description <span className="text-destructive">*</span>
+              </Label>
               <Input
-                id="description" name="description"
+                id="description"
+                name="description"
                 placeholder="e.g. Electricity bill for July"
                 defaultValue={editItem?.description}
-                className={expErrors.description ? "border-destructive focus-visible:ring-destructive" : ""}
+                className={
+                  expErrors.description ? "border-destructive focus-visible:ring-destructive" : ""
+                }
                 onChange={() => clearExpError("description")}
               />
               <FieldError message={expErrors.description} />
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <Label htmlFor="amount">Amount ($) <span className="text-destructive">*</span></Label>
+                <Label htmlFor="amount">
+                  Amount ($) <span className="text-destructive">*</span>
+                </Label>
                 <Input
-                  id="amount" name="amount" type="number" min="0" step="0.01"
+                  id="amount"
+                  name="amount"
+                  type="number"
+                  min="0"
+                  step="0.01"
                   placeholder="e.g. 150.00"
                   defaultValue={editItem?.amount}
-                  className={expErrors.amount ? "border-destructive focus-visible:ring-destructive" : ""}
+                  className={
+                    expErrors.amount ? "border-destructive focus-visible:ring-destructive" : ""
+                  }
                   onChange={() => clearExpError("amount")}
                 />
                 <FieldError message={expErrors.amount} />
@@ -363,10 +499,10 @@ function ExpensesPage() {
                 <SearchableSelect
                   options={[
                     { value: "pending", label: "Pending" },
-                    { value: "paid", label: "Paid" }
+                    { value: "paid", label: "Paid" },
                   ]}
                   value={editItem?.status || "pending"}
-                  onChange={val => {
+                  onChange={(val) => {
                     const input = document.createElement("input");
                     input.type = "hidden";
                     input.name = "status";
@@ -379,7 +515,17 @@ function ExpensesPage() {
               </div>
             </div>
             <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => { setIsAddOpen(false); setEditItem(null); clearExpAll(); }}>Cancel</Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setIsAddOpen(false);
+                  setEditItem(null);
+                  clearExpAll();
+                }}
+              >
+                Cancel
+              </Button>
               <Button type="submit" disabled={isSaving}>
                 {isSaving && <Loader2 className="size-4 animate-spin mr-2" />}
                 Save Expense
@@ -399,7 +545,12 @@ function ExpensesPage() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Delete</AlertDialogAction>
+            <AlertDialogAction
+              onClick={handleDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from "react";
 
 export type LanguageCode = "en" | "bn" | "ar" | "hi" | "zh";
 
@@ -312,7 +312,7 @@ export const TRANSLATIONS: Record<LanguageCode, Record<string, string>> = {
     giftCards: "গিফট কার্ড",
     loyalty: "লয়্যালটি",
     promotions: "প্রোমোশন",
-    system: "সিস্টেম",
+    system: "সিستم",
     superAdmin: "সুপার অ্যাডমিন",
     clientPortal: "ক্লাইন্ট পোর্টাল",
     activityLog: "অ্যাক্টিভিটি লগ",
@@ -456,7 +456,7 @@ export const TRANSLATIONS: Record<LanguageCode, Record<string, string>> = {
     repairs: "أوراق عمل الإصلاح",
     subscriptions: "الاشتراكات",
     rentals: "تأجير المعدات",
-    marketing: "التسويق",
+    marketing: "营销",
     coupons: "الكوبونات",
     giftCards: "بطاقات الهدايا",
     loyalty: "الولاء",
@@ -784,12 +784,12 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
     return "en";
   });
 
-  const setLanguage = (lang: LanguageCode) => {
+  const setLanguage = useCallback((lang: LanguageCode) => {
     setLanguageState(lang);
     if (typeof window !== "undefined") {
       localStorage.setItem("pos_app_language", lang);
     }
-  };
+  }, []);
 
   const currentOption = LANGUAGES.find((l) => l.code === language) || LANGUAGES[0];
   const dir = currentOption.dir;
@@ -801,15 +801,16 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
     }
   }, [language, dir]);
 
-  const t = (key: string): string => {
-    return TRANSLATIONS[language]?.[key] || TRANSLATIONS["en"]?.[key] || key;
-  };
-
-  return (
-    <LanguageContext.Provider value={{ language, setLanguage, t, dir }}>
-      {children}
-    </LanguageContext.Provider>
+  const t = useCallback(
+    (key: string): string => {
+      return TRANSLATIONS[language]?.[key] || TRANSLATIONS["en"]?.[key] || key;
+    },
+    [language],
   );
+
+  const value = useMemo(() => ({ language, setLanguage, t, dir }), [language, setLanguage, t, dir]);
+
+  return <LanguageContext.Provider value={value}>{children}</LanguageContext.Provider>;
 }
 
 export function useLanguage() {

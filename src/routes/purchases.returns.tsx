@@ -6,20 +6,40 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { PaginationControls } from "@/components/ui/pagination-controls";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import {
-  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
-  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import {
-  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { MoreVertical, Trash2, Loader2 } from "lucide-react";
-import { useLiveQuery } from "dexie-react-hooks";
-import { localDb } from "@/lib/db";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  getPurchaseReturnsFn,
+  createPurchaseReturnFn,
+  deletePurchaseReturnFn,
+  getPurchasesFn,
+} from "@/api/purchases";
+import { getProductsFn } from "@/api/products";
 import { PersistStore } from "@/lib/session-store";
 import { useCurrency } from "@/lib/currency";
-import type { LocalPurchaseReturn } from "@/lib/db";
 import { v4 as uuidv4 } from "uuid";
 import { toast } from "sonner";
 import { useState, useMemo, useEffect } from "react";
@@ -34,9 +54,26 @@ export const Route = createFileRoute("/purchases/returns")({
 function PurchaseReturnsPage() {
   const { formatDate, formatTime, formatDateTime } = usePreferences();
   const { formatCurrency } = useCurrency();
-  const rawReturns = useLiveQuery(() => localDb.purchaseReturns.toArray()) || [];
-  const purchases = useLiveQuery(() => localDb.purchases.filter(p => !p._deleted).toArray()) || [];
-  const products = useLiveQuery(() => localDb.products.toArray()) || [];
+  const orgId = PersistStore.getOrgId() || "default";
+  const queryClient = useQueryClient();
+
+  const { data: rawReturnsData } = useQuery({
+    queryKey: ["purchaseReturns", orgId],
+    queryFn: async () => ((await getPurchaseReturnsFn({ data: {} })) as any)?.data || [],
+  });
+  const rawReturns = rawReturnsData || [];
+
+  const { data: purchasesData } = useQuery({
+    queryKey: ["purchases", orgId],
+    queryFn: async () => ((await getPurchasesFn({ data: {} })) as any)?.data || [],
+  });
+  const purchases = purchasesData || [];
+
+  const { data: productsData } = useQuery({
+    queryKey: ["products", orgId],
+    queryFn: async () => ((await getProductsFn({ data: {} })) as any)?.data || [],
+  });
+  const products = productsData || [];
 
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
@@ -48,7 +85,9 @@ function PurchaseReturnsPage() {
   const [purchaseId, setPurchaseId] = useState("");
   const [supplier, setSupplier] = useState("");
   const [reason, setReason] = useState("");
-  const [returnItems, setReturnItems] = useState<{ productId: string; productName: string; quantity: number; cost: number; total: number }[]>([]);
+  const [returnItems, setReturnItems] = useState<
+    { productId: string; productName: string; quantity: number; cost: number; total: number }[]
+  >([]);
 
   const [filters, setFilters] = useState({ status: "" });
   const [draftFilters, setDraftFilters] = useState({ status: "" });
@@ -63,10 +102,15 @@ function PurchaseReturnsPage() {
     let res = rawReturns;
     if (search) {
       const q = search.toLowerCase();
-      res = res.filter(r => r.ref.toLowerCase().includes(q) || r.supplier.toLowerCase().includes(q) || r.reason.toLowerCase().includes(q));
+      res = res.filter(
+        (r) =>
+          r.ref.toLowerCase().includes(q) ||
+          r.supplier.toLowerCase().includes(q) ||
+          r.reason.toLowerCase().includes(q),
+      );
     }
     if (filters.status) {
-      res = res.filter(r => r.status === filters.status);
+      res = res.filter((r) => r.status === filters.status);
     }
     return [...res].reverse();
   }, [rawReturns, search, filters.status]);
@@ -82,76 +126,81 @@ function PurchaseReturnsPage() {
   }, [search, filters]);
 
   const addReturnItem = () => {
-    setReturnItems(prev => [...prev, { productId: "", productName: "", quantity: 1, cost: 0, total: 0 }]);
+    setReturnItems((prev) => [
+      ...prev,
+      { productId: "", productName: "", quantity: 1, cost: 0, total: 0 },
+    ]);
   };
 
   const updateReturnItem = (idx: number, field: string, value: any) => {
-    setReturnItems(prev => {
+    setReturnItems((prev) => {
       const updated = [...prev];
       updated[idx] = { ...updated[idx], [field]: value };
       if (field === "productId") {
-        const prod = products.find(p => p.id === value);
-        if (prod) { updated[idx].productName = prod.name; updated[idx].cost = prod.cost; }
+        const prod = products.find((p) => p.id === value);
+        if (prod) {
+          updated[idx].productName = prod.name;
+          updated[idx].cost = prod.cost;
+        }
       }
       updated[idx].total = updated[idx].quantity * updated[idx].cost;
       return updated;
     });
   };
 
-  const removeReturnItem = (idx: number) => setReturnItems(prev => prev.filter((_, i) => i !== idx));
+  const removeReturnItem = (idx: number) =>
+    setReturnItems((prev) => prev.filter((_, i) => i !== idx));
 
   const handleAdd = async () => {
     try {
-      if (!purchaseId) { toast.error("Please select a purchase"); return; }
-      if (!supplier.trim()) { toast.error("Supplier name is required"); return; }
-      if (!reason.trim()) { toast.error("Reason is required"); return; }
-      if (returnItems.length === 0) { toast.error("Add at least one item"); return; }
-      if (returnItems.some(i => !i.productId)) { toast.error("All items must have a product selected"); return; }
+      if (!purchaseId) {
+        toast.error("Please select a purchase");
+        return;
+      }
+      if (!supplier.trim()) {
+        toast.error("Supplier name is required");
+        return;
+      }
+      if (!reason.trim()) {
+        toast.error("Reason is required");
+        return;
+      }
+      if (returnItems.length === 0) {
+        toast.error("Add at least one item");
+        return;
+      }
+      if (returnItems.some((i) => !i.productId)) {
+        toast.error("All items must have a product selected");
+        return;
+      }
 
       setIsSubmitting(true);
-      await new Promise(resolve => setTimeout(resolve, 500));
+      await new Promise((resolve) => setTimeout(resolve, 500));
 
       const totalQty = returnItems.reduce((s, i) => s + i.quantity, 0);
       const totalRefund = returnItems.reduce((s, i) => s + i.total, 0);
-      const purchase = purchases.find(p => p.id === purchaseId);
+      const purchase = purchases.find((p) => p.id === purchaseId);
       if (!purchase) throw new Error("Purchase not found");
 
-      const returnId = uuidv4();
-      await localDb.purchaseReturns.add({
-        id: returnId,
-        orgId: PersistStore.getOrgId() || "default",
-        ref: `PR-${Math.floor(Math.random() * 90000) + 10000}`,
-        purchaseId: purchase.id,
-        supplier,
-        reason,
-        items: returnItems,
-        total: parseFloat(totalRefund.toFixed(2)),
-        status: "processed",
-        date: new Date().toISOString(),
-        stockRestored: true,
-        synced: false
+      const res = await createPurchaseReturnFn({
+        data: {
+          purchaseReturn: {
+            ref: `PR-${Math.floor(Math.random() * 90000) + 10000}`,
+            purchaseId: purchase.id,
+            supplier,
+            reason,
+            items: returnItems,
+            total: parseFloat(totalRefund.toFixed(2)),
+            status: "processed",
+            date: new Date().toISOString(),
+            stockRestored: true,
+          },
+        },
       });
+      if (!res?.success) throw new Error(res?.error);
 
-      for (const line of returnItems) {
-        if (line.quantity > 0) {
-          const prod = products.find(p => p.id === line.productId);
-          if (prod) {
-            await localDb.inventoryMovements.add({
-              productName: prod.name,
-              orgId: PersistStore.getOrgId() || "default",
-              action: "purchase_return",
-              quantity: -line.quantity,
-              createdAt: new Date().toISOString(),
-              synced: false
-            });
-            await localDb.products.update(prod.id, {
-              stock: Math.max(0, prod.stock - line.quantity),
-              synced: false
-            });
-          }
-        }
-      }
-
+      queryClient.invalidateQueries({ queryKey: ["purchaseReturns"] });
+      queryClient.invalidateQueries({ queryKey: ["products"] });
       toast.success(`Purchase return recorded`);
       setIsAddOpen(false);
       setPurchaseId("");
@@ -168,9 +217,12 @@ function PurchaseReturnsPage() {
   const handleDelete = async () => {
     if (!deleteId) return;
     try {
-      await localDb.purchaseReturns.delete(deleteId);
-      toast.success("Return record deleted");
-      setDeleteId(null);
+      const res = await deletePurchaseReturnFn({ data: { id: deleteId } });
+      if (res?.success) {
+        toast.success("Return record deleted");
+        setDeleteId(null);
+        queryClient.invalidateQueries({ queryKey: ["purchaseReturns"] });
+      } else throw new Error(res?.error);
     } catch {
       toast.error("Failed to delete return");
     }
@@ -201,13 +253,19 @@ function PurchaseReturnsPage() {
                     { value: "rejected", label: "Rejected" },
                   ]}
                   value={draftFilters.status}
-                  onChange={(val) => setDraftFilters(prev => ({ ...prev, status: val }))}
+                  onChange={(val) => setDraftFilters((prev) => ({ ...prev, status: val }))}
                   placeholder="Filter by Status"
                 />
               </div>
             </div>
             <div className="pt-4 mt-auto">
-              <Button className="w-full" onClick={() => { setFilters(draftFilters); close(); }}>
+              <Button
+                className="w-full"
+                onClick={() => {
+                  setFilters(draftFilters);
+                  close();
+                }}
+              >
                 Apply Filters
               </Button>
             </div>
@@ -230,28 +288,47 @@ function PurchaseReturnsPage() {
             </thead>
             <tbody className="divide-y divide-border">
               {filteredReturns.length === 0 ? (
-                <tr><td colSpan={8} className="py-8 text-center text-muted-foreground">No purchase returns recorded.</td></tr>
+                <tr>
+                  <td colSpan={8} className="py-8 text-center text-muted-foreground">
+                    No purchase returns recorded.
+                  </td>
+                </tr>
               ) : (
-                paginatedReturns.map(r => (
+                paginatedReturns.map((r) => (
                   <tr key={r.id} className="hover:bg-muted/30">
                     <td className="px-4 py-3 font-mono text-xs font-semibold">{r.ref}</td>
                     <td className="px-4 py-3 font-semibold">{r.supplier}</td>
                     <td className="px-4 py-3 text-muted-foreground">{r.reason}</td>
                     <td className="px-4 py-3 text-muted-foreground">{formatDate(r.date)}</td>
-                    <td className="px-4 py-3 text-right">{r.items?.reduce((s, i) => s + (i.quantity || 0), 0) || 0}</td>
+                    <td className="px-4 py-3 text-right">
+                      {r.items?.reduce((s, i) => s + (i.quantity || 0), 0) || 0}
+                    </td>
                     <td className="px-4 py-3">
-                      <Badge className={cn(r.status === "approved" && "bg-success/10 text-success hover:bg-success/15", r.status === "pending" && "bg-warning/15 text-warning-foreground")}>
+                      <Badge
+                        className={cn(
+                          r.status === "approved" &&
+                            "bg-success/10 text-success hover:bg-success/15",
+                          r.status === "pending" && "bg-warning/15 text-warning-foreground",
+                        )}
+                      >
                         {r.status}
                       </Badge>
                     </td>
-                    <td className="number px-4 py-3 text-right font-semibold">{formatCurrency(r.total)}</td>
+                    <td className="number px-4 py-3 text-right font-semibold">
+                      {formatCurrency(r.total)}
+                    </td>
                     <td className="px-4 py-3">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon"><MoreVertical className="size-4" /></Button>
+                          <Button variant="ghost" size="icon">
+                            <MoreVertical className="size-4" />
+                          </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem className="text-destructive" onClick={() => setDeleteId(r.id)}>
+                          <DropdownMenuItem
+                            className="text-destructive"
+                            onClick={() => setDeleteId(r.id)}
+                          >
                             <Trash2 className="size-4 mr-2" /> Delete
                           </DropdownMenuItem>
                         </DropdownMenuContent>
@@ -277,20 +354,22 @@ function PurchaseReturnsPage() {
       {/* New Purchase Return Dialog */}
       <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
         <DialogContent className="sm:max-w-2xl">
-          <DialogHeader><DialogTitle>New Purchase Return</DialogTitle></DialogHeader>
+          <DialogHeader>
+            <DialogTitle>New Purchase Return</DialogTitle>
+          </DialogHeader>
           <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-1">
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="space-y-1">
                 <Label>Purchase Order</Label>
                 <SearchableSelect
-                  options={purchases.map(p => ({
+                  options={purchases.map((p) => ({
                     value: p.id,
-                    label: `${p.id.slice(0, 8).toUpperCase()} · ${p.supplier}`
+                    label: `${p.id.slice(0, 8).toUpperCase()} · ${p.supplier}`,
                   }))}
                   value={purchaseId}
-                  onChange={val => {
+                  onChange={(val) => {
                     setPurchaseId(val);
-                    const p = purchases.find(pr => pr.id === val);
+                    const p = purchases.find((pr) => pr.id === val);
                     if (p) setSupplier(p.supplier);
                   }}
                   placeholder="— select purchase —"
@@ -298,52 +377,87 @@ function PurchaseReturnsPage() {
               </div>
               <div className="space-y-1">
                 <Label>Supplier</Label>
-                <Input value={supplier} onChange={e => setSupplier(e.target.value)} placeholder="Supplier name" />
+                <Input
+                  value={supplier}
+                  onChange={(e) => setSupplier(e.target.value)}
+                  placeholder="Supplier name"
+                />
               </div>
               <div className="space-y-1 sm:col-span-2">
                 <Label>Reason</Label>
-                <Input value={reason} onChange={e => setReason(e.target.value)} placeholder="e.g. Damaged goods, Over-delivery, Quality issue" />
+                <Input
+                  value={reason}
+                  onChange={(e) => setReason(e.target.value)}
+                  placeholder="e.g. Damaged goods, Over-delivery, Quality issue"
+                />
               </div>
             </div>
 
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <Label>Items Being Returned</Label>
-                <Button type="button" size="sm" variant="outline" onClick={addReturnItem}>+ Add Item</Button>
+                <Button type="button" size="sm" variant="outline" onClick={addReturnItem}>
+                  + Add Item
+                </Button>
               </div>
               {returnItems.map((item, idx) => (
                 <div key={idx} className="grid grid-cols-[1fr_80px_80px_auto] gap-2 items-end">
                   <div className="min-w-[120px]">
                     <Label className="text-xs">Product</Label>
                     <SearchableSelect
-                      options={products.map(p => ({ value: p.id, label: p.name }))}
+                      options={products.map((p) => ({ value: p.id, label: p.name }))}
                       value={item.productId}
-                      onChange={val => updateReturnItem(idx, "productId", val)}
+                      onChange={(val) => updateReturnItem(idx, "productId", val)}
                       placeholder="Select product"
                     />
                   </div>
                   <div>
                     <Label className="text-xs">Qty</Label>
-                    <Input type="number" min={1} value={item.quantity} onChange={e => updateReturnItem(idx, "quantity", parseInt(e.target.value) || 1)} className="mt-1 h-9" />
+                    <Input
+                      type="number"
+                      min={1}
+                      value={item.quantity}
+                      onChange={(e) =>
+                        updateReturnItem(idx, "quantity", parseInt(e.target.value) || 1)
+                      }
+                      className="mt-1 h-9"
+                    />
                   </div>
                   <div>
                     <Label className="text-xs">Cost</Label>
-                    <Input type="number" min={0} value={item.cost} onChange={e => updateReturnItem(idx, "cost", parseFloat(e.target.value) || 0)} className="mt-1 h-9" />
+                    <Input
+                      type="number"
+                      min={0}
+                      value={item.cost}
+                      onChange={(e) =>
+                        updateReturnItem(idx, "cost", parseFloat(e.target.value) || 0)
+                      }
+                      className="mt-1 h-9"
+                    />
                   </div>
-                  <Button type="button" size="icon" variant="ghost" onClick={() => removeReturnItem(idx)} className="mb-0 text-destructive">
+                  <Button
+                    type="button"
+                    size="icon"
+                    variant="ghost"
+                    onClick={() => removeReturnItem(idx)}
+                    className="mb-0 text-destructive"
+                  >
                     <Trash2 className="size-4" />
                   </Button>
                 </div>
               ))}
               {returnItems.length > 0 && (
                 <div className="rounded-lg bg-muted/40 p-2 text-sm text-right">
-                  Total: <strong>{formatCurrency(returnItems.reduce((s, i) => s + i.total, 0))}</strong>
+                  Total:{" "}
+                  <strong>{formatCurrency(returnItems.reduce((s, i) => s + i.total, 0))}</strong>
                 </div>
               )}
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsAddOpen(false)}>Cancel</Button>
+            <Button variant="outline" onClick={() => setIsAddOpen(false)}>
+              Cancel
+            </Button>
             <Button onClick={handleAdd} disabled={isSubmitting}>
               {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Submit Return
@@ -353,15 +467,22 @@ function PurchaseReturnsPage() {
       </Dialog>
 
       {/* Delete Confirm */}
-      <AlertDialog open={!!deleteId} onOpenChange={open => !open && setDeleteId(null)}>
+      <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Return Record?</AlertDialogTitle>
-            <AlertDialogDescription>This will remove the return record. Stock adjustments will not be reversed.</AlertDialogDescription>
+            <AlertDialogDescription>
+              This will remove the return record. Stock adjustments will not be reversed.
+            </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction className="bg-destructive text-destructive-foreground" onClick={handleDelete}>Delete</AlertDialogAction>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground"
+              onClick={handleDelete}
+            >
+              Delete
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

@@ -1,5 +1,4 @@
 import { toast } from "sonner";
-import { sendEmailWorkerFn } from "@/sync-api";
 
 export interface SmtpConfig {
   host: string;
@@ -27,6 +26,29 @@ export function getTrialDaysFromEnv(): number {
 
 export function generateVerificationOtp(): string {
   return Math.floor(100000 + Math.random() * 900000).toString();
+}
+
+/**
+ * Helper to call the local Vite dev server nodemailer API route
+ */
+async function sendEmailWorkerFn({
+  data,
+}: {
+  data: { to: string; subject: string; html: string };
+}) {
+  try {
+    const response = await fetch("/api/send-email", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(data),
+    });
+    return await response.json();
+  } catch (error) {
+    console.error("Error calling send-email api:", error);
+    return { success: false };
+  }
 }
 
 /**
@@ -107,4 +129,3 @@ export async function sendPasswordResetEmail(email: string, otpCode: string): Pr
     return true;
   }
 }
-

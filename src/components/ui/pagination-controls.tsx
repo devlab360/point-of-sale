@@ -44,22 +44,22 @@ export function PaginationControls({
     }
   } else {
     pages.push(1);
-    
+
     if (currentPage > 3) {
       pages.push("...");
     }
-    
+
     const start = Math.max(2, currentPage - 1);
     const end = Math.min(totalPages - 1, currentPage + 1);
-    
+
     for (let i = start; i <= end; i++) {
       pages.push(i);
     }
-    
+
     if (currentPage < totalPages - 2) {
       pages.push("...");
     }
-    
+
     pages.push(totalPages);
   }
 
@@ -110,7 +110,10 @@ export function PaginationControls({
       {onPageSizeChange && pageSize && (
         <div className="ml-4 flex items-center space-x-2">
           <span className="text-xs text-muted-foreground whitespace-nowrap">Items per page:</span>
-          <Select value={pageSize.toString()} onValueChange={(val) => onPageSizeChange(Number(val))}>
+          <Select
+            value={pageSize.toString()}
+            onValueChange={(val) => onPageSizeChange(Number(val))}
+          >
             <SelectTrigger className="h-8 w-[70px] text-xs">
               <SelectValue />
             </SelectTrigger>

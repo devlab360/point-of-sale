@@ -4,14 +4,28 @@ import { Button } from "@/components/ui/button";
 import { Input, PasswordInput } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { Briefcase, CheckCircle2, ChevronLeft, ChevronRight, Store, User, Loader2 } from "lucide-react";
-import { localDb } from "@/lib/db";
+import {
+  Briefcase,
+  CheckCircle2,
+  ChevronLeft,
+  ChevronRight,
+  Store,
+  User,
+  Loader2,
+} from "lucide-react";
 import { v4 as uuidv4 } from "uuid";
+import { registerOrgFn } from "@/api/auth";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { INDUSTRY_SEEDS } from "@/lib/industry-seeds";
 import { getTrialDaysFromEnv } from "@/lib/email-service";
-import { getTrialPlanFn } from "@/sync-api";
-import { validateEmail, validateMobile, validatePassword, validateStrongPassword, sanitizeInput } from "@/lib/validation";
+
+import {
+  validateEmail,
+  validateMobile,
+  validatePassword,
+  validateStrongPassword,
+  sanitizeInput,
+} from "@/lib/validation";
 import { SessionStore, PersistStore } from "@/lib/session-store";
 import { PhoneInput } from "@/components/ui/phone-input";
 
@@ -21,9 +35,16 @@ export const Route = createFileRoute("/register")({
 });
 
 const INDUSTRIES = [
-  "Saloon & Spa", "Grocery Shop", "Hotel & Restaurant",
-  "Beauty and Cosmetics", "Super Market", "Hyper Market",
-  "Home Decor & Furniture", "Apparel", "Electronics", "Books & Toys"
+  "Saloon & Spa",
+  "Grocery Shop",
+  "Hotel & Restaurant",
+  "Beauty and Cosmetics",
+  "Super Market",
+  "Hyper Market",
+  "Home Decor & Furniture",
+  "Apparel",
+  "Electronics",
+  "Books & Toys",
 ];
 
 function RegisterPage() {
@@ -36,7 +57,7 @@ function RegisterPage() {
     companyName: "",
     phone: "",
     industry: "",
-    plan: "monthly"
+    plan: "monthly",
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isRegistering, setIsRegistering] = useState(false);
@@ -86,9 +107,11 @@ function RegisterPage() {
       newErrors.companyName = "Company / Store Name is required";
     }
 
-    const phoneCheck = validateMobile(formData.phone);
-    if (!phoneCheck.valid) {
-      newErrors.phone = phoneCheck.error || "Enter a valid phone number";
+    if (formData.phone && formData.phone.trim() !== "") {
+      const phoneCheck = validateMobile(formData.phone);
+      if (!phoneCheck.valid) {
+        newErrors.phone = phoneCheck.error || "Enter a valid phone number";
+      }
     }
 
     if (!formData.industry) {
@@ -130,80 +153,25 @@ function RegisterPage() {
 
       const seedData = INDUSTRY_SEEDS[formData.industry];
 
-      await localDb.settings.put({
-        id: "default",
-        orgId,
-        trialEndsAt,
-        subscriptionStatus: "trial",
-        currencySymbol: "$",
-        currencyCode: "USD",
-        storeName: formData.companyName,
-        taxId: "",
-        address: "",
-        phone: formData.phone,
-        email: formData.email,
-        standardRate: 0,
-        reducedRate: 0,
-        pricesIncludeTax: false,
-        showTaxBreakdown: true,
-        headerNote: seedData?.settings.headerNote || `Welcome to ${formData.companyName}`,
-        footerNote: "Thank you for your business!",
-        emailReceiptDefault: true,
-        printStoreLogo: true,
-      });
-
       let assignedPlanId = "basic";
-      let assignedPlanName = "Basic Plan (Trial)";
-      try {
-        const trialPlanResult = await getTrialPlanFn({ data: {} });
-        if (trialPlanResult.success && trialPlanResult.plan) {
-          assignedPlanId = trialPlanResult.plan.id;
-          assignedPlanName = trialPlanResult.plan.name;
-          await localDb.saasPlans.put({
-            id: trialPlanResult.plan.id,
-            name: trialPlanResult.plan.name,
-            price: Number(trialPlanResult.plan.price),
-            features: (trialPlanResult.plan.features as string[]) || [],
-            limits: (trialPlanResult.plan.limits as any) || { maxUsers: 2, maxProducts: 100, maxBranches: 1, maxInvoicesPerMonth: 500 },
-          });
-        }
-      } catch (e) {
-        console.warn("Using default basic trial plan");
-      }
 
-      await localDb.saasOrganizations.put({
-        id: orgId,
-        name: formData.companyName,
-        ownerEmail: formData.email,
-        status: "trial",
-        currentPlanId: assignedPlanId,
-        planExpiryDate: trialEndsAt,
-        isOnline: true,
-        synced: false
+      const res = await registerOrgFn({
+        data: {
+          orgId,
+          ownerId,
+          trialEndsAt: new Date(trialEndsAt).getTime(),
+          companyName: formData.companyName,
+          email: formData.email,
+          phone: formData.phone,
+          ownerName: formData.ownerName,
+          password: formData.password,
+          assignedPlanId,
+          seedData: seedData || undefined,
+        },
       });
 
-      await localDb.users.put({
-        id: ownerId,
-        orgId,
-        name: formData.ownerName,
-        email: formData.email,
-        role: "admin",
-        status: "pending_verification",
-        lastActive: new Date().toISOString(),
-        pin: formData.password,
-        emailVerified: false,
-        synced: false
-      });
-
-      if (seedData) {
-        if (seedData.categories.length > 0) {
-          const mappedCats = seedData.categories.map(c => ({ ...c, orgId }));
-          await localDb.categories.bulkAdd(mappedCats);
-        }
-        if (seedData.units.length > 0) {
-          const mappedUnits = seedData.units.map(u => ({ ...u, orgId }));
-          await localDb.units.bulkAdd(mappedUnits);
-        }
+      if (!res.success) {
+        throw new Error(res.error || "Registration failed on server.");
       }
 
       SessionStore.setAuthUser(ownerId);
@@ -227,7 +195,9 @@ function RegisterPage() {
       <div className="relative hidden w-1/2 flex-col justify-between p-12 text-white lg:flex overflow-hidden">
         <div
           className="absolute inset-0 bg-cover bg-center transition-transform duration-1000 scale-105"
-          style={{ backgroundImage: `url('https://images.unsplash.com/photo-1556742049-0a6754099a6d?auto=format&fit=crop&q=80&w=1600')` }}
+          style={{
+            backgroundImage: `url('https://images.unsplash.com/photo-1556742049-0a6754099a6d?auto=format&fit=crop&q=80&w=1600')`,
+          }}
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/60 to-black/40 backdrop-blur-[2px]" />
 
@@ -247,17 +217,17 @@ function RegisterPage() {
               Transform your retail & wholesale business with AI Intelligence.
             </h2>
             <p className="text-sm leading-relaxed text-white/80">
-              Join 10,000+ modern retailers managing POS sales, inventory, double-entry accounting, repair job sheets & WhatsApp CRM in one unified platform.
+              Join 10,000+ modern retailers managing POS sales, inventory, double-entry accounting,
+              repair job sheets & WhatsApp CRM in one unified platform.
             </p>
           </div>
         </div>
 
         <div className="relative z-10 rounded-2xl border border-white/20 bg-white/10 p-6 backdrop-blur-md shadow-2xl space-y-3 max-w-md">
-          <div className="flex items-center gap-1 text-warning">
-            {"★".repeat(5)}
-          </div>
+          <div className="flex items-center gap-1 text-warning">{"★".repeat(5)}</div>
           <p className="text-xs italic text-white/90">
-            "Grocer.Pro doubled our checkout speed and simplified customer khata balance reminders over WhatsApp. Essential for modern retail!"
+            "Grocer.Pro doubled our checkout speed and simplified customer khata balance reminders
+            over WhatsApp. Essential for modern retail!"
           </p>
           <div className="flex items-center justify-between text-xs pt-2 border-t border-white/10">
             <span className="font-bold text-white">Supermarket Chain Owner</span>
@@ -273,19 +243,25 @@ function RegisterPage() {
       <div className="flex w-full flex-col justify-center px-8 sm:px-16 lg:w-1/2 xl:px-24">
         <div className="mx-auto w-full max-w-md">
           <div className="mb-8">
-            <h1 className="text-3xl font-bold tracking-tight text-foreground">Create your account</h1>
-            <p className="mt-2 text-sm text-muted-foreground">Follow the steps below to setup your store.</p>
+            <h1 className="text-3xl font-bold tracking-tight text-foreground">
+              Create your account
+            </h1>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Follow the steps below to setup your store.
+            </p>
           </div>
 
           {/* Stepper */}
           <div className="mb-8 flex items-center justify-between px-12">
             {[1, 2].map((i) => (
               <div key={i} className="flex flex-col items-center gap-2">
-                <div className={`flex size-9 items-center justify-center rounded-full border-2 text-xs font-semibold ${step >= i ? 'border-primary bg-primary text-primary-foreground' : 'border-muted-foreground/30 text-muted-foreground'}`}>
+                <div
+                  className={`flex size-9 items-center justify-center rounded-full border-2 text-xs font-semibold ${step >= i ? "border-primary bg-primary text-primary-foreground" : "border-muted-foreground/30 text-muted-foreground"}`}
+                >
                   {step > i ? <CheckCircle2 className="size-5" /> : i}
                 </div>
                 <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                  {i === 1 ? 'Account Setup' : 'Store Details'}
+                  {i === 1 ? "Account Setup" : "Store Details"}
                 </span>
               </div>
             ))}
@@ -306,7 +282,11 @@ function RegisterPage() {
                       placeholder="e.g. Your Full Name"
                     />
                   </div>
-                  {errors.ownerName && <p className="text-xs font-semibold text-destructive mt-1">{errors.ownerName}</p>}
+                  {errors.ownerName && (
+                    <p className="text-xs font-semibold text-destructive mt-1">
+                      {errors.ownerName}
+                    </p>
+                  )}
                 </div>
 
                 <div className="space-y-1.5">
@@ -316,10 +296,14 @@ function RegisterPage() {
                     name="email"
                     value={formData.email}
                     onChange={handleChange}
-                    className={errors.email ? "border-destructive focus-visible:ring-destructive" : ""}
+                    className={
+                      errors.email ? "border-destructive focus-visible:ring-destructive" : ""
+                    }
                     placeholder="e.g. you@example.com"
                   />
-                  {errors.email && <p className="text-xs font-semibold text-destructive mt-1">{errors.email}</p>}
+                  {errors.email && (
+                    <p className="text-xs font-semibold text-destructive mt-1">{errors.email}</p>
+                  )}
                 </div>
 
                 <div className="space-y-1.5">
@@ -328,10 +312,14 @@ function RegisterPage() {
                     name="password"
                     value={formData.password}
                     onChange={handleChange}
-                    className={errors.password ? "border-destructive focus-visible:ring-destructive" : ""}
+                    className={
+                      errors.password ? "border-destructive focus-visible:ring-destructive" : ""
+                    }
                     placeholder="••••••••"
                   />
-                  {errors.password && <p className="text-xs font-semibold text-destructive mt-1">{errors.password}</p>}
+                  {errors.password && (
+                    <p className="text-xs font-semibold text-destructive mt-1">{errors.password}</p>
+                  )}
                 </div>
               </div>
             )}
@@ -350,7 +338,11 @@ function RegisterPage() {
                       placeholder="e.g. Store or Company Name"
                     />
                   </div>
-                  {errors.companyName && <p className="text-xs font-semibold text-destructive mt-1">{errors.companyName}</p>}
+                  {errors.companyName && (
+                    <p className="text-xs font-semibold text-destructive mt-1">
+                      {errors.companyName}
+                    </p>
+                  )}
                 </div>
 
                 <div className="space-y-1.5">
@@ -360,24 +352,30 @@ function RegisterPage() {
                     name="phone"
                     value={formData.phone}
                     onChange={handleChange}
-                    className={errors.phone ? "border-destructive focus-visible:ring-destructive" : ""}
+                    className={
+                      errors.phone ? "border-destructive focus-visible:ring-destructive" : ""
+                    }
                     placeholder="e.g. 1700 000000"
                   />
-                  {errors.phone && <p className="text-xs font-semibold text-destructive mt-1">{errors.phone}</p>}
+                  {errors.phone && (
+                    <p className="text-xs font-semibold text-destructive mt-1">{errors.phone}</p>
+                  )}
                 </div>
 
                 <div className="space-y-1.5">
                   <Label>Industry</Label>
                   <SearchableSelect
-                    options={INDUSTRIES.map(ind => ({ value: ind, label: ind }))}
+                    options={INDUSTRIES.map((ind) => ({ value: ind, label: ind }))}
                     value={formData.industry}
                     onChange={(val) => {
-                      setFormData(p => ({ ...p, industry: val }));
-                      if (errors.industry) setErrors(e => ({ ...e, industry: "" }));
+                      setFormData((p) => ({ ...p, industry: val }));
+                      if (errors.industry) setErrors((e) => ({ ...e, industry: "" }));
                     }}
                     placeholder="Select your industry"
                   />
-                  {errors.industry && <p className="text-xs font-semibold text-destructive mt-1">{errors.industry}</p>}
+                  {errors.industry && (
+                    <p className="text-xs font-semibold text-destructive mt-1">{errors.industry}</p>
+                  )}
                 </div>
               </div>
             )}
@@ -389,16 +387,25 @@ function RegisterPage() {
                 </Button>
               )}
               <Button type="submit" className="w-full" disabled={isRegistering}>
-                {isRegistering
-                  ? <><Loader2 className="size-4 animate-spin mr-2" /> Processing...</>
-                  : <>{step === 2 ? `Start ${getTrialDaysFromEnv()}-Day Free Trial` : "Continue"} {step < 2 && <ChevronRight className="size-4 ml-2" />}</>
-                }
+                {isRegistering ? (
+                  <>
+                    <Loader2 className="size-4 animate-spin mr-2" /> Processing...
+                  </>
+                ) : (
+                  <>
+                    {step === 2 ? `Start ${getTrialDaysFromEnv()}-Day Free Trial` : "Continue"}{" "}
+                    {step < 2 && <ChevronRight className="size-4 ml-2" />}
+                  </>
+                )}
               </Button>
             </div>
           </form>
 
           <p className="mt-8 text-center text-sm text-muted-foreground">
-            Already have an account? <Link to="/login" className="font-semibold text-primary hover:underline">Sign in</Link>
+            Already have an account?{" "}
+            <Link to="/login" className="font-semibold text-primary hover:underline">
+              Sign in
+            </Link>
           </p>
         </div>
       </div>

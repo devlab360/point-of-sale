@@ -51,7 +51,7 @@ export function DatePicker({
             className={cn(
               "w-full justify-start text-left font-normal h-10 px-3 border-input bg-background hover:bg-muted/50 hover:text-foreground",
               !selectedDate && "text-muted-foreground",
-              className
+              className,
             )}
           >
             <CalendarIcon className="mr-2 size-4 text-primary shrink-0" />
@@ -70,7 +70,10 @@ export function DatePicker({
             )}
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-auto p-0 border-border bg-popover shadow-elevated rounded-xl" align="start">
+        <PopoverContent
+          className="w-auto p-0 border-border bg-popover shadow-elevated rounded-xl"
+          align="start"
+        >
           <Calendar
             mode="single"
             selected={selectedDate}

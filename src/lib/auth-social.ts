@@ -15,11 +15,11 @@ export function initiateGoogleOAuth() {
   const redirectUri = `${window.location.origin}/login`;
   const scope = "email profile";
   const responseType = "token";
-  
+
   const googleAuthUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${encodeURIComponent(
-    GOOGLE_CLIENT_ID
+    GOOGLE_CLIENT_ID,
   )}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${encodeURIComponent(
-    scope
+    scope,
   )}&response_type=${responseType}`;
 
   window.location.href = googleAuthUrl;
@@ -36,11 +36,11 @@ export function initiateFacebookOAuth() {
 
   const redirectUri = `${window.location.origin}/login`;
   const scope = "email,public_profile";
-  
+
   const facebookAuthUrl = `https://www.facebook.com/v12.0/dialog/oauth?client_id=${encodeURIComponent(
-    FACEBOOK_APP_ID
+    FACEBOOK_APP_ID,
   )}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${encodeURIComponent(
-    scope
+    scope,
   )}&response_type=token`;
 
   window.location.href = facebookAuthUrl;

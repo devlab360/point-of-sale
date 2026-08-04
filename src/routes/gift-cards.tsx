@@ -7,10 +7,22 @@ import { useDebounce } from "@/hooks/useDebounce";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { DatePicker } from "@/components/ui/date-picker";
 import { SearchableSelect } from "@/components/ui/searchable-select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -27,17 +39,37 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Gift, Plus, Trash2, Edit2, Search, ArrowUpRight, ArrowDownLeft, Calendar, FileText, CheckCircle2, Star, Loader2, MoreVertical } from "lucide-react";
-import { useLiveQuery } from "dexie-react-hooks";
-import { localDb } from "@/lib/db";
+import {
+  Gift,
+  Plus,
+  Trash2,
+  Edit2,
+  Search,
+  ArrowUpRight,
+  ArrowDownLeft,
+  Calendar,
+  FileText,
+  CheckCircle2,
+  Star,
+  Loader2,
+  MoreVertical,
+} from "lucide-react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  getGiftCardsFn,
+  createGiftCardFn,
+  updateGiftCardStatusFn,
+  deleteGiftCardFn,
+} from "@/api/gift-cards";
 import { useCurrency } from "@/lib/currency";
 import { v4 as uuidv4 } from "uuid";
 import { toast } from "sonner";
 import { PersistStore } from "@/lib/session-store";
-import type { LocalGiftCard } from "@/lib/db";
 import { useFormValidation } from "@/hooks/useFormValidation";
 import { FieldError } from "@/components/ui/field-error";
 import { usePreferences } from "@/contexts/PreferencesContext";
+import { CardGridSkeleton } from "@/components/skeletons/CardGridSkeleton";
+import { ErrorState } from "@/components/ui/error-state";
 
 export const Route = createFileRoute("/gift-cards")({
   head: () => ({ meta: [{ title: "Gift Cards · Grocer.Pro" }] }),
@@ -47,9 +79,22 @@ export const Route = createFileRoute("/gift-cards")({
 function GiftCardsPage() {
   const { formatDate, formatTime, formatDateTime } = usePreferences();
   const { formatCurrency } = useCurrency();
-  const giftCards = useLiveQuery(() => localDb.giftCards.filter(g => !g._deleted).toArray()) || [];
+  const orgId = PersistStore.getOrgId() || "default";
+  const queryClient = useQueryClient();
+
+  const {
+    data: giftCardsData,
+    isLoading: isGiftCardsLoading,
+    isError: isGiftCardsError,
+    refetch: refetchGiftCards,
+  } = useQuery({
+    queryKey: ["giftCards", orgId],
+    queryFn: async () => ((await getGiftCardsFn({ data: {} })) as any)?.data || [],
+  });
+  const giftCards = giftCardsData || [];
+
   const [isAddOpen, setIsAddOpen] = useState(false);
-  const [editItem, setEditItem] = useState<LocalGiftCard | null>(null);
+  const [editItem, setEditItem] = useState<any | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [expiresDate, setExpiresDate] = useState<string>("");
@@ -72,10 +117,12 @@ function GiftCardsPage() {
     let list = giftCards;
     if (debouncedSearch) {
       const lower = debouncedSearch.toLowerCase();
-      list = list.filter(c => c.code.toLowerCase().includes(lower) || c.customer?.toLowerCase().includes(lower));
+      list = list.filter(
+        (c) => c.code.toLowerCase().includes(lower) || c.customer?.toLowerCase().includes(lower),
+      );
     }
     if (filters.status) {
-      list = list.filter(c => c.status === filters.status);
+      list = list.filter((c) => c.status === filters.status);
     }
     return list;
   }, [giftCards, debouncedSearch, filters.status]);
@@ -92,17 +139,25 @@ function GiftCardsPage() {
   const totalPages = Math.ceil(filteredCards.length / itemsPerPage);
   const paginatedCards = filteredCards.slice((page - 1) * itemsPerPage, page * itemsPerPage);
 
-  const { errors: giftErrors, validate: validateGift, clearError: clearGiftError, clearAll: clearGiftAll } = useFormValidation({
+  const {
+    errors: giftErrors,
+    validate: validateGift,
+    clearError: clearGiftError,
+    clearAll: clearGiftAll,
+  } = useFormValidation({
     code: { required: "Card code is required" },
-    initialBalance: { required: "Initial balance is required", positive: "Balance must be positive" },
-    expires: { required: "Expiry date is required" }
+    initialBalance: {
+      required: "Initial balance is required",
+      positive: "Balance must be positive",
+    },
+    expires: { required: "Expiry date is required" },
   });
 
   const handleSave = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
     setIsSaving(true);
-    await new Promise(resolve => setTimeout(resolve, 500));
+    await new Promise((resolve) => setTimeout(resolve, 500));
     try {
       const code = (formData.get("code") as string)?.trim();
       const customer = formData.get("customer") as string;
@@ -116,22 +171,33 @@ function GiftCardsPage() {
       const initialBalance = parseFloat(initialBalanceStr);
 
       if (editItem) {
-        await localDb.giftCards.update(editItem.id, { code, customer, initialBalance, expires, status, synced: false });
+        await createGiftCardFn({
+          data: {
+            card: {
+              id: editItem.id,
+              code,
+              balance: initialBalance,
+              status,
+              expiryDate: expires,
+            },
+          },
+        });
+        queryClient.invalidateQueries({ queryKey: ["giftCards"] });
         toast.success("Gift Card updated successfully");
         setEditItem(null);
       } else {
-          await localDb.giftCards.add({
-            id: uuidv4(),
-            orgId: PersistStore.getOrgId() || "default",
-            code,
-            balance: initialBalance,
-            initialBalance,
-            customer,
-            issued: new Date().toISOString(),
-            expires,
-            status,
-            synced: false
-          });
+        await createGiftCardFn({
+          data: {
+            card: {
+              code,
+              balance: initialBalance,
+              status,
+              issueDate: new Date().toISOString(),
+              expiryDate: expires,
+            },
+          },
+        });
+        queryClient.invalidateQueries({ queryKey: ["giftCards"] });
         toast.success("Gift Card issued successfully");
         setIsAddOpen(false);
       }
@@ -146,16 +212,8 @@ function GiftCardsPage() {
   const handleDelete = async () => {
     if (deleteId) {
       try {
-        await localDb.giftCards.update(deleteId, { _deleted: true, synced: false });
-        await localDb.activityLog.add({
-          id: uuidv4(),
-          orgId: PersistStore.getOrgId() || "default",
-          action: "TOMBSTONE",
-          user: "system",
-          details: JSON.stringify({ entityType: "giftCards", entityId: deleteId }),
-          timestamp: new Date().toISOString(),
-          synced: false,
-        });
+        await deleteGiftCardFn({ data: { id: deleteId } });
+        queryClient.invalidateQueries({ queryKey: ["giftCards"] });
         toast.success("Gift Card deleted");
         setDeleteId(null);
       } catch (error) {
@@ -166,9 +224,9 @@ function GiftCardsPage() {
 
   return (
     <div className="p-4 md:p-6 lg:p-8">
-      <DataPage 
-        title="Gift Cards" 
-        description="Issued cards, balances, and expirations." 
+      <DataPage
+        title="Gift Cards"
+        description="Issued cards, balances, and expirations."
         primaryAction={{ label: "Issue Gift Card", onClick: () => setIsAddOpen(true) }}
         searchPlaceholder="Search by code or customer..."
         searchValue={search}
@@ -189,30 +247,49 @@ function GiftCardsPage() {
                     { value: "used", label: "Used" },
                   ]}
                   value={draftFilters.status}
-                  onChange={(val) => setDraftFilters(prev => ({ ...prev, status: val }))}
+                  onChange={(val) => setDraftFilters((prev) => ({ ...prev, status: val }))}
                   placeholder="Filter by Status"
                 />
               </div>
             </div>
             <div className="pt-4 mt-auto">
-              <Button className="w-full" onClick={() => { setFilters(draftFilters); close(); }}>
+              <Button
+                className="w-full"
+                onClick={() => {
+                  setFilters(draftFilters);
+                  close();
+                }}
+              >
                 Apply Filters
               </Button>
             </div>
           </div>
         )}
       >
-        {filteredCards.length === 0 ? (
+        {isGiftCardsLoading ? (
+          <CardGridSkeleton cards={6} columns="grid-cols-1 md:grid-cols-2 xl:grid-cols-3" />
+        ) : isGiftCardsError ? (
+          <ErrorState onRetry={refetchGiftCards} />
+        ) : filteredCards.length === 0 ? (
           <EmptyState
             icon={Gift}
             title="No gift cards found"
             description={search ? "Try adjusting your search." : "No gift cards issued yet."}
+            actionLabel="Issue Gift Card"
+            onAction={() => {
+              setEditItem(null);
+              setExpiresDate("");
+              setIsAddOpen(true);
+            }}
           />
         ) : (
           <div className="space-y-4">
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
               {paginatedCards.map((g) => (
-                <div key={g.id} className="relative overflow-hidden rounded-xl border border-border bg-gradient-to-br from-primary/15 via-card to-info/10 p-5 shadow-soft">
+                <div
+                  key={g.id}
+                  className="relative overflow-hidden rounded-xl border border-border bg-gradient-to-br from-primary/15 via-card to-info/10 p-5 shadow-soft"
+                >
                   <div className="absolute right-4 top-4 z-10 flex items-center gap-2">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
@@ -221,23 +298,41 @@ function GiftCardsPage() {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => setEditItem(g)}><Edit2 className="mr-2 size-4" /> Edit</DropdownMenuItem>
-                        <DropdownMenuItem className="text-destructive focus:bg-destructive/10 focus:text-destructive" onClick={() => setDeleteId(g.id)}><Trash2 className="mr-2 size-4" /> Delete</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => setEditItem(g)}>
+                          <Edit2 className="mr-2 size-4" /> Edit
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          className="text-destructive focus:bg-destructive/10 focus:text-destructive"
+                          onClick={() => setDeleteId(g.id)}
+                        >
+                          <Trash2 className="mr-2 size-4" /> Delete
+                        </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </div>
-                  
+
                   <div className="flex items-start justify-between pr-10">
                     <Gift className="size-7 text-primary" />
-                    <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${g.status === "active" ? "bg-success/15 text-success" : "bg-muted text-muted-foreground"}`}>{g.status}</span>
+                    <span
+                      className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${g.status === "active" ? "bg-success/15 text-success" : "bg-muted text-muted-foreground"}`}
+                    >
+                      {g.status}
+                    </span>
                   </div>
                   <div className="mt-6 font-mono text-xs text-muted-foreground">{g.code}</div>
-                  <div className="mt-1 text-xs text-muted-foreground">To: <span className="font-semibold text-foreground">{g.customer || "Walk-in"}</span></div>
+                  <div className="mt-1 text-xs text-muted-foreground">
+                    To:{" "}
+                    <span className="font-semibold text-foreground">{g.customer || "Walk-in"}</span>
+                  </div>
                   <div className="mt-4 flex items-baseline justify-between">
-                    <span className="text-xs uppercase tracking-wider text-muted-foreground">Balance</span>
+                    <span className="text-xs uppercase tracking-wider text-muted-foreground">
+                      Balance
+                    </span>
                     <span className="number text-2xl font-bold">{formatCurrency(g.balance)}</span>
                   </div>
-                  <div className="mt-1 text-xs text-muted-foreground">expires {formatDate(g.expires)}</div>
+                  <div className="mt-1 text-xs text-muted-foreground">
+                    expires {formatDate(g.expires)}
+                  </div>
                 </div>
               ))}
             </div>
@@ -246,46 +341,77 @@ function GiftCardsPage() {
         )}
       </DataPage>
 
-      <Dialog open={isAddOpen || !!editItem} onOpenChange={(open) => {
-        if (!open) {
-          setIsAddOpen(false);
-          setEditItem(null);
-          clearGiftAll();
-        }
-      }}>
+      <Dialog
+        open={isAddOpen || !!editItem}
+        onOpenChange={(open) => {
+          if (!open) {
+            setIsAddOpen(false);
+            setEditItem(null);
+            clearGiftAll();
+          }
+        }}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>{editItem ? "Edit Gift Card" : "Issue Gift Card"}</DialogTitle>
           </DialogHeader>
           <form noValidate onSubmit={handleSave} className="space-y-4">
             <div className="space-y-1.5">
-              <Label htmlFor="code">Card Code <span className="text-destructive">*</span></Label>
+              <Label htmlFor="code">
+                Card Code <span className="text-destructive">*</span>
+              </Label>
               <Input
-                id="code" name="code" defaultValue={editItem?.code || `GC-${Math.floor(1000 + Math.random() * 9000)}-${Math.floor(1000 + Math.random() * 9000)}`}
-                className={`uppercase font-mono ${giftErrors.code ? 'border-destructive focus-visible:ring-destructive' : ''}`}
+                id="code"
+                name="code"
+                defaultValue={
+                  editItem?.code ||
+                  `GC-${Math.floor(1000 + Math.random() * 9000)}-${Math.floor(1000 + Math.random() * 9000)}`
+                }
+                className={`uppercase font-mono ${giftErrors.code ? "border-destructive focus-visible:ring-destructive" : ""}`}
                 onChange={() => clearGiftError("code")}
               />
               <FieldError message={giftErrors.code} />
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="customer">Customer Name (Optional)</Label>
-              <Input id="customer" name="customer" defaultValue={editItem?.customer} placeholder="Leave blank for Walk-in" />
+              <Input
+                id="customer"
+                name="customer"
+                defaultValue={editItem?.customer}
+                placeholder="Leave blank for Walk-in"
+              />
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <Label htmlFor="initialBalance">Initial Balance ($) <span className="text-destructive">*</span></Label>
+                <Label htmlFor="initialBalance">
+                  Initial Balance ($) <span className="text-destructive">*</span>
+                </Label>
                 <Input
-                  id="initialBalance" name="initialBalance" type="number" step="0.01" defaultValue={editItem?.initialBalance}
-                  className={giftErrors.initialBalance ? 'border-destructive focus-visible:ring-destructive' : ''}
+                  id="initialBalance"
+                  name="initialBalance"
+                  type="number"
+                  step="0.01"
+                  defaultValue={editItem?.initialBalance}
+                  className={
+                    giftErrors.initialBalance
+                      ? "border-destructive focus-visible:ring-destructive"
+                      : ""
+                  }
                   onChange={() => clearGiftError("initialBalance")}
                 />
                 <FieldError message={giftErrors.initialBalance} />
-                {editItem && <p className="text-[10px] text-muted-foreground">Changing this will not update current available balance directly.</p>}
+                {editItem && (
+                  <p className="text-[10px] text-muted-foreground">
+                    Changing this will not update current available balance directly.
+                  </p>
+                )}
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="status">Status</Label>
                 <Select name="status" defaultValue={editItem?.status || "active"}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="active">Active</SelectItem>
                     <SelectItem value="inactive">Inactive</SelectItem>
@@ -294,17 +420,38 @@ function GiftCardsPage() {
               </div>
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="expires">Expiry Date <span className="text-destructive">*</span></Label>
-              <div className="hidden"><Input name="expires" value={expiresDate || (editItem ? editItem.expires : "")} readOnly /></div>
-              <DatePicker 
-                name="expires" 
-                date={expiresDate || (editItem ? editItem.expires : "")} 
-                onDateChange={(d) => { setExpiresDate(d ? d.toISOString().split("T")[0] : ""); clearGiftError("expires"); }} 
+              <Label htmlFor="expires">
+                Expiry Date <span className="text-destructive">*</span>
+              </Label>
+              <div className="hidden">
+                <Input
+                  name="expires"
+                  value={expiresDate || (editItem ? editItem.expires : "")}
+                  readOnly
+                />
+              </div>
+              <DatePicker
+                name="expires"
+                date={expiresDate || (editItem ? editItem.expires : "")}
+                onDateChange={(d) => {
+                  setExpiresDate(d ? d.toISOString().split("T")[0] : "");
+                  clearGiftError("expires");
+                }}
               />
               <FieldError message={giftErrors.expires} />
             </div>
             <DialogFooter className="mt-6">
-              <Button type="button" variant="outline" onClick={() => { setIsAddOpen(false); setEditItem(null); clearGiftAll(); }}>Cancel</Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setIsAddOpen(false);
+                  setEditItem(null);
+                  clearGiftAll();
+                }}
+              >
+                Cancel
+              </Button>
               <Button type="submit" disabled={isSaving}>
                 {isSaving && <Loader2 className="size-4 animate-spin mr-2" />}
                 Save Gift Card
@@ -324,7 +471,12 @@ function GiftCardsPage() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Delete</AlertDialogAction>
+            <AlertDialogAction
+              onClick={handleDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
