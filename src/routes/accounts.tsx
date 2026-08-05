@@ -35,7 +35,7 @@ import { FieldError } from "@/components/ui/field-error";
 import { usePreferences } from "@/contexts/PreferencesContext";
 
 export const Route = createFileRoute("/accounts")({
-  head: () => ({ meta: [{ title: "Chart of Accounts & Vouchers · Grocer.Pro" }] }),
+  head: () => ({ meta: [{ title: "Chart of Accounts & Vouchers · NexisPOS" }] }),
   component: AccountsPage,
 });
 
@@ -479,7 +479,8 @@ function AccountsPage() {
                 pageSize={pageSize}
                 onPageChange={setPage}
                 onPageSizeChange={setPageSize}
-               totalItems={filteredVouchers.length} />
+                totalItems={filteredVouchers.length}
+              />
             )}
           </div>
         )}

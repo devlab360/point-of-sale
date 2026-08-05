@@ -1,5 +1,5 @@
-const fs = require('fs');
-const path = require('path');
+const fs = require("fs");
+const path = require("path");
 
 function fixFiles(dirPath) {
   const files = fs.readdirSync(dirPath);
@@ -7,15 +7,15 @@ function fixFiles(dirPath) {
     const fullPath = path.join(dirPath, file);
     if (fs.statSync(fullPath).isDirectory()) {
       fixFiles(fullPath);
-    } else if (fullPath.endsWith('.tsx') || fullPath.endsWith('.ts')) {
-      let content = fs.readFileSync(fullPath, 'utf8');
-      
+    } else if (fullPath.endsWith(".tsx") || fullPath.endsWith(".ts")) {
+      let content = fs.readFileSync(fullPath, "utf8");
+
       const regex1 = /\(await\s+([a-zA-Z]+Fn)\(\s*as\s*any\{/g;
-      
+
       let modified = false;
       if (regex1.test(content)) {
-        content = content.replace(regex1, 'await $1({');
-        
+        content = content.replace(regex1, "await $1({");
+
         // Also fix the end parenthesis that is now unmatched
         // because it used to be (await fn(...));
         // We will just do a general regex for cases where the closing paren is missing,
@@ -28,7 +28,7 @@ function fixFiles(dirPath) {
         // `const res = await fn({...});` which is correct!
         modified = true;
       }
-      
+
       if (modified) {
         fs.writeFileSync(fullPath, content);
         console.log("Fixed syntax in", file);
@@ -37,4 +37,4 @@ function fixFiles(dirPath) {
   }
 }
 
-fixFiles(path.join(__dirname, 'src/routes'));
+fixFiles(path.join(__dirname, "src/routes"));

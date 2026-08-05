@@ -18,6 +18,13 @@ import { getProductsFn } from "@/api/products";
 import { Button } from "@/components/ui/button";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   Dialog,
   DialogContent,
   DialogHeader,
@@ -47,7 +54,7 @@ import { useFormValidation } from "@/hooks/useFormValidation";
 import { FieldError } from "@/components/ui/field-error";
 
 export const Route = createFileRoute("/categories")({
-  head: () => ({ meta: [{ title: "Categories · Grocer.Pro" }] }),
+  head: () => ({ meta: [{ title: "Categories · NexisPOS" }] }),
   component: CategoriesPage,
 });
 
@@ -101,6 +108,17 @@ function CategoriesPage() {
     setFilters({ usage: "" });
     setDraftFilters({ usage: "" });
   };
+
+  const PREDEFINED_COLORS = [
+    { value: "var(--color-primary)", label: "Primary (Brand)" },
+    { value: "var(--color-info)", label: "Blue (Info)" },
+    { value: "var(--color-success)", label: "Green (Success)" },
+    { value: "var(--color-warning)", label: "Orange (Warning)" },
+    { value: "var(--color-destructive)", label: "Red (Destructive)" },
+    { value: "#8b5cf6", label: "Purple" },
+    { value: "#ec4899", label: "Pink" },
+    { value: "#14b8a6", label: "Teal" },
+  ];
 
   const categories = useMemo(() => {
     let filtered = categoriesWithCounts;
@@ -304,7 +322,13 @@ function CategoriesPage() {
                 </div>
               ))}
             </div>
-            <PaginationControls currentPage={page} totalPages={totalPages} onPageChange={setPage} totalItems={categories.length} className="rounded-xl border" />
+            <PaginationControls
+              currentPage={page}
+              totalPages={totalPages}
+              onPageChange={setPage}
+              totalItems={categories.length}
+              className="rounded-xl border"
+            />
           </div>
         )}
       </DataPage>
@@ -342,19 +366,31 @@ function CategoriesPage() {
                 />
                 <FieldError message={catErrors.name} />
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="grid gap-1.5">
                   <Label htmlFor="icon">Category Icon</Label>
                   <IconPicker value={icon} onChange={setIcon} />
                 </div>
                 <div className="grid gap-1.5">
                   <Label htmlFor="color">Theme Color</Label>
-                  <Input
-                    id="color"
-                    value={color}
-                    onChange={(e) => setColor(e.target.value)}
-                    placeholder="var(--color-primary)"
-                  />
+                  <Select value={color} onValueChange={setColor}>
+                    <SelectTrigger id="color">
+                      <SelectValue placeholder="Select a color" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {PREDEFINED_COLORS.map((c) => (
+                        <SelectItem key={c.value} value={c.value}>
+                          <div className="flex items-center gap-2">
+                            <div
+                              className="size-3.5 rounded-full border border-border"
+                              style={{ backgroundColor: c.value }}
+                            />
+                            {c.label}
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
             </div>

@@ -233,54 +233,55 @@ function TransfersPage() {
       ) : (
         <div className="space-y-4">
           <div className="overflow-hidden rounded-xl border border-border bg-card shadow-soft">
-              <div className="overflow-hidden rounded-xl border border-border bg-card shadow-soft">
+            <div className="overflow-hidden rounded-xl border border-border bg-card shadow-soft">
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-sm">
-                <thead className="bg-muted/50 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                  <tr>
-                    <th className="px-4 py-3 whitespace-nowrap">Ref</th>
-                    <th className="px-4 py-3 whitespace-nowrap">Date</th>
-                    <th className="px-4 py-3 whitespace-nowrap">From / To</th>
-                    <th className="px-4 py-3 whitespace-nowrap">Items transferred</th>
-                    <th className="px-4 py-3 whitespace-nowrap">Status</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border">
-                  {paginatedTransfers.map((r) => (
-                    <tr key={r.ref} className="hover:bg-muted/30">
-                      <td className="px-4 py-3 font-mono text-xs whitespace-nowrap">{r.ref}</td>
-                      <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">
-                        {new Date(r.date).toLocaleDateString()}
-                      </td>
-                      <td className="px-4 py-3 whitespace-nowrap">
-                        <div className="flex items-center gap-2">
-                          <span className="text-muted-foreground">Main Store</span>
-                          <ArrowRightLeft className="size-3 text-muted-foreground" />
-                          <span className="font-medium">{r.destination}</span>
-                        </div>
-                      </td>
-                      <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">
-                        {r.items}
-                      </td>
-                      <td className="px-4 py-3 whitespace-nowrap">
-                        <Badge className="bg-success/10 text-success hover:bg-success/15">
-                          {r.status}
-                        </Badge>
-                      </td>
+                  <thead className="bg-muted/50 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                    <tr>
+                      <th className="px-4 py-3 whitespace-nowrap">Ref</th>
+                      <th className="px-4 py-3 whitespace-nowrap">Date</th>
+                      <th className="px-4 py-3 whitespace-nowrap">From / To</th>
+                      <th className="px-4 py-3 whitespace-nowrap">Items transferred</th>
+                      <th className="px-4 py-3 whitespace-nowrap">Status</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody className="divide-y divide-border">
+                    {paginatedTransfers.map((r) => (
+                      <tr key={r.ref} className="hover:bg-muted/30">
+                        <td className="px-4 py-3 font-mono text-xs whitespace-nowrap">{r.ref}</td>
+                        <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">
+                          {new Date(r.date).toLocaleDateString()}
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap">
+                          <div className="flex items-center gap-2">
+                            <span className="text-muted-foreground">Main Store</span>
+                            <ArrowRightLeft className="size-3 text-muted-foreground" />
+                            <span className="font-medium">{r.destination}</span>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">
+                          {r.items}
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap">
+                          <Badge className="bg-success/10 text-success hover:bg-success/15">
+                            {r.status}
+                          </Badge>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
               <PaginationControls
-            currentPage={page}
-            totalPages={totalPages}
-            pageSize={pageSize}
-            onPageChange={setPage}
-            onPageSizeChange={setPageSize}
-           totalItems={filteredTransfers.length}/>
+                currentPage={page}
+                totalPages={totalPages}
+                pageSize={pageSize}
+                onPageChange={setPage}
+                onPageSizeChange={setPageSize}
+                totalItems={filteredTransfers.length}
+              />
             </div>
-            </div>
+          </div>
         </div>
       )}
     </div>

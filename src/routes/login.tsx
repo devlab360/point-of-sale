@@ -14,7 +14,7 @@ import { useFormValidation } from "@/hooks/useFormValidation";
 import { FieldError } from "@/components/ui/field-error";
 
 export const Route = createFileRoute("/login")({
-  head: () => ({ meta: [{ title: "Login · Grocer.Pro" }] }),
+  head: () => ({ meta: [{ title: "Login · NexisPOS" }] }),
   component: LoginPage,
 });
 
@@ -234,7 +234,7 @@ function LoginPage() {
           <div className="mb-4 grid size-12 place-items-center rounded-xl bg-primary/10 text-primary">
             <Store className="size-6" />
           </div>
-          <h1 className="text-2xl font-bold tracking-tight">Grocer.Pro SaaS</h1>
+          <h1 className="text-2xl font-bold tracking-tight">NexisPOS SaaS</h1>
           <p className="text-sm text-muted-foreground">
             {mode === "pin"
               ? "Enter your PIN to access the register"

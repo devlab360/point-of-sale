@@ -122,3 +122,119 @@ export const deleteSubscriptionFn = createServerFn({ method: "POST" })
       return handleApiError(e);
     }
   });
+
+// --- SERVICES TABLE CRUD ---
+
+import { desc, ilike, or, sql } from "drizzle-orm";
+
+export const getServicesListFn = createServerFn({ method: "GET" })
+  .validator((data: any) => data || {})
+  .handler(async ({ data }) => {
+    try {
+      const session = await requireAuth();
+      const orgId = session.orgId;
+      const page = data.page || 1;
+      const pageSize = data.pageSize || 50;
+
+      const conditions = [eq(schema.services.organizationId, orgId)];
+      if (data.query) {
+        conditions.push(ilike(schema.services.name, `%${data.query}%`));
+      }
+      if (data.categoryId && data.categoryId !== "all") {
+        conditions.push(eq(schema.services.category, data.categoryId));
+      }
+      if (data.status) {
+        conditions.push(eq(schema.services.status, data.status));
+      }
+
+      const whereClause = and(...conditions);
+
+      const items = await db
+        .select()
+        .from(schema.services)
+        .where(whereClause)
+        .orderBy(desc(schema.services.createdAt))
+        .limit(pageSize)
+        .offset((page - 1) * pageSize);
+
+      const countRes = await db
+        .select({ count: sql`count(*)` })
+        .from(schema.services)
+        .where(whereClause);
+      const totalCount = Number(countRes[0].count);
+
+      return { success: true, data: items, total: totalCount };
+    } catch (e) {
+      return handleApiError(e);
+    }
+  });
+
+export const createServiceItemFn = createServerFn({ method: "POST" })
+  .validator((data: any) => data)
+  .handler(async ({ data }) => {
+    try {
+      const session = await requireAuth();
+      const orgId = session.orgId;
+
+      const payload = {
+        id: data.id || uuidv4(),
+        organizationId: orgId,
+        name: data.name,
+        category: data.category || "General",
+        price: String(data.price || 0),
+        cost: String(data.cost || 0),
+        duration: data.duration ? Number(data.duration) : null,
+        status: data.status || "active",
+      };
+
+      await db.insert(schema.services).values(payload);
+      return { success: true, data: payload };
+    } catch (e) {
+      return handleApiError(e);
+    }
+  });
+
+export const updateServiceItemFn = createServerFn({ method: "POST" })
+  .validator((data: any) => data)
+  .handler(async ({ data }) => {
+    try {
+      const session = await requireAuth();
+      const orgId = session.orgId;
+
+      const payload: any = {};
+      if (data.name !== undefined) payload.name = data.name;
+      if (data.category !== undefined) payload.category = data.category;
+      if (data.price !== undefined) payload.price = String(data.price);
+      if (data.cost !== undefined) payload.cost = String(data.cost);
+      if (data.duration !== undefined)
+        payload.duration = data.duration ? Number(data.duration) : null;
+      if (data.status !== undefined) payload.status = data.status;
+      payload.updatedAt = new Date().toISOString();
+
+      await db
+        .update(schema.services)
+        .set(payload)
+        .where(and(eq(schema.services.id, data.id), eq(schema.services.organizationId, orgId)));
+
+      return { success: true };
+    } catch (e) {
+      return handleApiError(e);
+    }
+  });
+
+export const deleteServiceItemFn = createServerFn({ method: "POST" })
+  .validator((data: any) => data)
+  .handler(async ({ data }) => {
+    try {
+      const session = await requireAuth();
+      const orgId = session.orgId;
+
+      await db
+        .delete(schema.services)
+        .where(and(eq(schema.services.id, data.id), eq(schema.services.organizationId, orgId)));
+
+      return { success: true };
+    } catch (e) {
+      return handleApiError(e);
+    }
+  });

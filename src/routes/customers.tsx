@@ -5,6 +5,7 @@ import { PaginationControls } from "@/components/ui/pagination-controls";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { useDebounce } from "@/hooks/useDebounce";
 import { DataPage } from "@/components/layout/DataPage";
+import { sendAutomatedDueReminder } from "@/lib/automation/due-bot";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -57,6 +58,7 @@ import {
   getCustomerLedgersFn,
   createCustomerLedgerFn,
 } from "@/api/customers";
+import { getSettingsFn } from "@/api/settings";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { TableSkeleton } from "@/components/skeletons/TableSkeleton";
 import { ErrorState } from "@/components/ui/error-state";
@@ -64,7 +66,7 @@ import { useFormValidation } from "@/hooks/useFormValidation";
 import { FieldError } from "@/components/ui/field-error";
 
 export const Route = createFileRoute("/customers")({
-  head: () => ({ meta: [{ title: "Customers · Grocer.Pro" }] }),
+  head: () => ({ meta: [{ title: "Customers · NexisPOS" }] }),
   component: CustomersPage,
 });
 
@@ -92,6 +94,12 @@ function CustomersPage() {
     enabled: !!ledgerCustomer,
   });
   const customerLedgerEntries = customerLedgerEntriesData || [];
+
+  const { data: settingsData } = useQuery({
+    queryKey: ["settings", orgId],
+    queryFn: async () => ((await getSettingsFn({ data: {} })) as any)?.data,
+  });
+  const settings: any = settingsData;
 
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search, 300);
@@ -157,8 +165,12 @@ function CustomersPage() {
       const name = (formData.get("name") as string)?.trim();
       const email = (formData.get("email") as string)?.trim();
       const phone = (formData.get("phone") as string)?.trim();
-      const status = formData.get("status") as string;
-      const type = (formData.get("type") as any) || "retail";
+      const statuses = formData.getAll("status");
+      const status = (
+        statuses.length > 0 ? statuses[statuses.length - 1] : editItem?.status || "active"
+      ) as string;
+      const types = formData.getAll("type");
+      const type = (types.length > 0 ? types[types.length - 1] : editItem?.type || "retail") as any;
       const creditLimit = parseFloat(formData.get("creditLimit") as string) || 5000;
 
       const isValid = validateCust({ name, email, phone, creditLimit: String(creditLimit) });
@@ -361,118 +373,134 @@ function CustomersPage() {
             <div className="overflow-hidden rounded-xl border border-border bg-card shadow-soft">
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-sm min-w-[1000px]">
-                <thead className="bg-muted/50 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                  <tr>
-                    <th className="px-4 py-3 whitespace-nowrap">{t("customer") || "Customer"}</th>
-                    <th className="px-4 py-3 whitespace-nowrap">{t("contact") || "Contact"}</th>
-                    <th className="px-4 py-3 text-right whitespace-nowrap">{t("visits") || "Visits"}</th>
-                    <th className="px-4 py-3 text-right whitespace-nowrap">{t("lifetime") || "Lifetime"}</th>
-                    <th className="px-4 py-3 text-right whitespace-nowrap">{t("points") || "Points"}</th>
-                    <th className="px-4 py-3 text-right whitespace-nowrap">{t("credit") || "Credit"}</th>
-                    <th className="px-4 py-3 text-right whitespace-nowrap">{t("wallet") || "Wallet"}</th>
-                    <th className="px-4 py-3 whitespace-nowrap">{t("tier") || "Tier"}</th>
-                    <th className="px-4 py-3 text-right whitespace-nowrap">{t("actions") || "Actions"}</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border">
-                  {customers.map((c: any) => (
-                    <tr key={c.id} className="hover:bg-muted/30">
-                      <td className="px-4 py-3 whitespace-nowrap">
-                        <div className="flex items-center gap-3">
-                          <div className="grid size-9 place-items-center rounded-full bg-gradient-to-br from-primary to-info text-xs font-bold text-primary-foreground">
-                            {c.name
-                              .split(" ")
-                              .map((n) => n[0])
-                              .join("")
-                              .slice(0, 2)}
-                          </div>
-                          <span className="font-semibold">{c.name}</span>
-                        </div>
-                      </td>
-                      <td className="px-4 py-3 whitespace-nowrap">
-                        <div className="flex flex-col gap-0.5 text-xs text-muted-foreground">
-                          <span className="flex items-center gap-1.5">
-                            <Mail className="size-3" /> {c.email}
-                          </span>
-                          <span className="flex items-center gap-1.5">
-                            <Phone className="size-3" /> {c.phone}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="number px-4 py-3 text-right whitespace-nowrap">{c.visits}</td>
-                      <td className="number px-4 py-3 text-right font-semibold whitespace-nowrap">
-                        {formatCurrency(c.totalSpent)}
-                      </td>
-                      <td className="number px-4 py-3 text-right whitespace-nowrap">
-                        {c.loyaltyPoints.toLocaleString()}
-                      </td>
-                      <td
-                        className={`number px-4 py-3 text-right whitespace-nowrap ${c.credit > 0 ? "text-destructive font-bold" : "text-muted-foreground"}`}
-                      >
-                        {formatCurrency(c.credit)}
-                      </td>
-                      <td className="number px-4 py-3 text-right font-semibold text-success whitespace-nowrap">
-                        {formatCurrency(c.walletBalance || 0)}
-                      </td>
-                      <td className="px-4 py-3 whitespace-nowrap">
-                        <div className="flex flex-col gap-1 items-start">
-                          {c.type === "wholesale" ? (
-                            <Badge className="bg-primary/15 text-primary border-primary/20">
-                              Wholesale
-                            </Badge>
-                          ) : c.type === "dealer" ? (
-                            <Badge className="bg-warning/15 text-warning-foreground border-warning/20">
-                              Dealer
-                            </Badge>
-                          ) : c.type === "corporate" ? (
-                            <Badge className="bg-info/15 text-info border-info/20">Corporate</Badge>
-                          ) : (
-                            <Badge variant="outline" className="text-muted-foreground">
-                              Retail
-                            </Badge>
-                          )}
-                          {c.status === "vip" ? (
-                            <span className="text-[10px] font-semibold text-warning">★ VIP</span>
-                          ) : null}
-                        </div>
-                      </td>
-                      <td className="px-4 py-3 text-right whitespace-nowrap">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="size-8">
-                              <MoreVertical className="size-4 text-muted-foreground" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => setEditItem(c)}>
-                              <Edit2 className="mr-2 size-4" /> Edit
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => setLedgerCustomer(c)}>
-                              <Users className="mr-2 size-4 text-primary" /> View Khata / Ledger
-                            </DropdownMenuItem>
-                            {c.credit > 0 && (
-                              <DropdownMenuItem
-                                onClick={() => {
-                                  setSettleItem(c);
-                                  setSettleAmount(c.credit.toString());
-                                }}
-                              >
-                                <Star className="mr-2 size-4" /> Settle Balance
-                              </DropdownMenuItem>
-                            )}
-                            <DropdownMenuItem
-                              className="text-destructive focus:bg-destructive/10 focus:text-destructive"
-                              onClick={() => setDeleteId(c.id)}
-                            >
-                              <Trash2 className="mr-2 size-4" /> Delete
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </td>
+                  <thead className="bg-muted/50 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                    <tr>
+                      <th className="px-4 py-3 whitespace-nowrap">{t("customer") || "Customer"}</th>
+                      <th className="px-4 py-3 whitespace-nowrap">{t("contact") || "Contact"}</th>
+                      <th className="px-4 py-3 text-right whitespace-nowrap">
+                        {t("visits") || "Visits"}
+                      </th>
+                      <th className="px-4 py-3 text-right whitespace-nowrap">
+                        {t("lifetime") || "Lifetime"}
+                      </th>
+                      <th className="px-4 py-3 text-right whitespace-nowrap">
+                        {t("points") || "Points"}
+                      </th>
+                      <th className="px-4 py-3 text-right whitespace-nowrap">
+                        {t("credit") || "Credit"}
+                      </th>
+                      <th className="px-4 py-3 text-right whitespace-nowrap">
+                        {t("wallet") || "Wallet"}
+                      </th>
+                      <th className="px-4 py-3 whitespace-nowrap">{t("tier") || "Tier"}</th>
+                      <th className="px-4 py-3 text-right whitespace-nowrap">
+                        {t("actions") || "Actions"}
+                      </th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody className="divide-y divide-border">
+                    {customers.map((c: any) => (
+                      <tr key={c.id} className="hover:bg-muted/30">
+                        <td className="px-4 py-3 whitespace-nowrap">
+                          <div className="flex items-center gap-3">
+                            <div className="grid size-9 place-items-center rounded-full bg-gradient-to-br from-primary to-info text-xs font-bold text-primary-foreground">
+                              {c.name
+                                .split(" ")
+                                .map((n) => n[0])
+                                .join("")
+                                .slice(0, 2)}
+                            </div>
+                            <span className="font-semibold">{c.name}</span>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap">
+                          <div className="flex flex-col gap-0.5 text-xs text-muted-foreground">
+                            <span className="flex items-center gap-1.5">
+                              <Mail className="size-3" /> {c.email}
+                            </span>
+                            <span className="flex items-center gap-1.5">
+                              <Phone className="size-3" /> {c.phone}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="number px-4 py-3 text-right whitespace-nowrap">
+                          {c.visits}
+                        </td>
+                        <td className="number px-4 py-3 text-right font-semibold whitespace-nowrap">
+                          {formatCurrency(c.totalSpent)}
+                        </td>
+                        <td className="number px-4 py-3 text-right whitespace-nowrap">
+                          {c.loyaltyPoints.toLocaleString()}
+                        </td>
+                        <td
+                          className={`number px-4 py-3 text-right whitespace-nowrap ${c.credit > 0 ? "text-destructive font-bold" : "text-muted-foreground"}`}
+                        >
+                          {formatCurrency(c.credit)}
+                        </td>
+                        <td className="number px-4 py-3 text-right font-semibold text-success whitespace-nowrap">
+                          {formatCurrency(c.walletBalance || 0)}
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap">
+                          <div className="flex flex-col gap-1 items-start">
+                            {c.type === "wholesale" ? (
+                              <Badge className="bg-primary/15 text-primary border-primary/20">
+                                Wholesale
+                              </Badge>
+                            ) : c.type === "dealer" ? (
+                              <Badge className="bg-warning/15 text-warning-foreground border-warning/20">
+                                Dealer
+                              </Badge>
+                            ) : c.type === "corporate" ? (
+                              <Badge className="bg-info/15 text-info border-info/20">
+                                Corporate
+                              </Badge>
+                            ) : (
+                              <Badge variant="outline" className="text-muted-foreground">
+                                Retail
+                              </Badge>
+                            )}
+                            {c.status === "vip" ? (
+                              <span className="text-[10px] font-semibold text-warning">★ VIP</span>
+                            ) : null}
+                          </div>
+                        </td>
+                        <td className="px-4 py-3 text-right whitespace-nowrap">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon" className="size-8">
+                                <MoreVertical className="size-4 text-muted-foreground" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem onClick={() => setEditItem(c)}>
+                                <Edit2 className="mr-2 size-4" /> Edit
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => setLedgerCustomer(c)}>
+                                <Users className="mr-2 size-4 text-primary" /> View Khata / Ledger
+                              </DropdownMenuItem>
+                              {c.credit > 0 && (
+                                <DropdownMenuItem
+                                  onClick={() => {
+                                    setSettleItem(c);
+                                    setSettleAmount(c.credit.toString());
+                                  }}
+                                >
+                                  <Star className="mr-2 size-4" /> Settle Balance
+                                </DropdownMenuItem>
+                              )}
+                              <DropdownMenuItem
+                                className="text-destructive focus:bg-destructive/10 focus:text-destructive"
+                                onClick={() => setDeleteId(c.id)}
+                              >
+                                <Trash2 className="mr-2 size-4" /> Delete
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
               <PaginationControls
                 currentPage={page}
@@ -705,18 +733,23 @@ function CustomersPage() {
                   variant="outline"
                   className="bg-emerald-500/10 text-emerald-600 border-emerald-500/30 hover:bg-emerald-500/20 font-semibold flex-1 sm:flex-none"
                   onClick={() =>
-                    sendWhatsAppDueReminder(
-                      ledgerCustomer.phone || "",
+                    sendAutomatedDueReminder(
+                      settings?.storeName || "NexisPOS",
                       ledgerCustomer.name,
+                      ledgerCustomer.phone || "",
                       ledgerCustomer.credit,
-                      currencySymbol,
                     )
                   }
                 >
-                  📲 WhatsApp
+                  🤖 Send AI Reminder
                 </Button>
               )}
-              <Button size="sm" variant="outline" className="flex-1 sm:flex-none" onClick={() => window.print()}>
+              <Button
+                size="sm"
+                variant="outline"
+                className="flex-1 sm:flex-none"
+                onClick={() => window.print()}
+              >
                 Print
               </Button>
               <Button
@@ -808,7 +841,9 @@ function CustomersPage() {
                               {l.type}
                             </span>
                           </td>
-                          <td className="px-3 py-2.5 font-mono text-xs whitespace-nowrap">{l.referenceNo || "-"}</td>
+                          <td className="px-3 py-2.5 font-mono text-xs whitespace-nowrap">
+                            {l.referenceNo || "-"}
+                          </td>
                           <td className="px-3 py-2.5 text-right font-semibold text-destructive whitespace-nowrap">
                             {l.type === "invoice" ? formatCurrency(l.amount) : "-"}
                           </td>

@@ -16,7 +16,7 @@ import {
 import { toast } from "sonner";
 import { useEffect, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { getSettingsFn, updateSettingsFn } from "@/api/settings";
+import { getSettingsFn, updateSettingsFn, getAllSaasPlansFn } from "@/api/settings";
 import { updateUserFn } from "@/api/users";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
@@ -55,7 +55,7 @@ import { FieldError } from "@/components/ui/field-error";
 import { PhoneInput } from "@/components/ui/phone-input";
 
 export const Route = createFileRoute("/settings")({
-  head: () => ({ meta: [{ title: "Settings · Grocer.Pro" }] }),
+  head: () => ({ meta: [{ title: "Settings · NexisPOS" }] }),
   validateSearch: (search: Record<string, unknown>): { tab?: string } => {
     return {
       tab: typeof search.tab === "string" ? search.tab : undefined,
@@ -100,7 +100,11 @@ function SettingsPage() {
   });
   const dbSettings = dbSettingsData || null;
 
-  const rawSaasPlans: any[] = [];
+  const { data: plansData, isLoading: isLoadingPlans } = useQuery({
+    queryKey: ["saas_plans"],
+    queryFn: async () => (await getAllSaasPlansFn({ data: {} })).data || [],
+  });
+  const rawSaasPlans: any[] = plansData || [];
   const saasPlans = rawSaasPlans.filter((p) => p.id !== "super_admin_payment_config");
   const cloudPaymentConfigPlan = rawSaasPlans.find((p) => p.id === "super_admin_payment_config");
   const localPaymentConfig = null;
@@ -582,50 +586,66 @@ function SettingsPage() {
               desc="Overview of your active SaaS plan and tenant account."
             >
               <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <h3 className="font-semibold text-lg">{saasPlan?.name || "Trial Plan"}</h3>
-                      <Badge
-                        variant="outline"
-                        className={
-                          subscriptionStatus === "active"
-                            ? "bg-success/10 text-success border-success/20"
-                            : "bg-warning/10 text-warning border-warning/20"
-                        }
-                      >
-                        {subscriptionStatus === "active" ? "Active Subscription" : "Trial Account"}
-                      </Badge>
+                {isSettingsLoading ? (
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 animate-pulse">
+                    <div className="space-y-3 w-1/2">
+                      <div className="flex items-center gap-2">
+                        <div className="h-6 w-32 bg-muted rounded"></div>
+                        <div className="h-5 w-24 bg-muted rounded-full"></div>
+                      </div>
+                      <div className="h-4 w-48 bg-muted rounded"></div>
                     </div>
-                    {subscriptionStatus === "trial" ? (
-                      <p className="text-sm text-muted-foreground mt-1">
-                        {(() => {
-                          const expiryStr = saasOrg?.planExpiryDate || settings.trialEndsAt;
-                          if (!expiryStr) return "Trial active";
-                          const days = getTrialDaysLeft(expiryStr);
-                          if (days <= 0 || isTrialExpired)
-                            return (
-                              <span className="text-destructive font-semibold">Trial Expired</span>
-                            );
-                          return `${days} days remaining in trial`;
-                        })()}
-                      </p>
-                    ) : (
-                      <p className="text-sm text-muted-foreground mt-1">
-                        Your subscription is active and in good standing.
-                      </p>
-                    )}
-                  </div>
-                  <div className="text-left sm:text-right">
-                    <div className="text-2xl font-bold">
-                      ₹{saasPlan?.price || 0}
-                      <span className="text-sm font-normal text-muted-foreground">/mo</span>
+                    <div className="text-left sm:text-right space-y-2 w-1/3 flex flex-col sm:items-end">
+                      <div className="h-8 w-24 bg-muted rounded"></div>
+                      <div className="h-3 w-32 bg-muted rounded"></div>
                     </div>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Tenant ID: {user?.orgId || "N/A"}
-                    </p>
                   </div>
-                </div>
+                ) : (
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-semibold text-lg">{saasPlan?.name || "Trial Plan"}</h3>
+                        <Badge
+                          variant="outline"
+                          className={
+                            subscriptionStatus === "active"
+                              ? "bg-success/10 text-success border-success/20"
+                              : "bg-warning/10 text-warning border-warning/20"
+                          }
+                        >
+                          {subscriptionStatus === "active" ? "Active Subscription" : "Trial Account"}
+                        </Badge>
+                      </div>
+                      {subscriptionStatus === "trial" ? (
+                        <p className="text-sm text-muted-foreground mt-1">
+                          {(() => {
+                            const expiryStr = saasOrg?.planExpiryDate || settings.trialEndsAt;
+                            if (!expiryStr) return "Trial active";
+                            const days = getTrialDaysLeft(expiryStr);
+                            if (days <= 0 || isTrialExpired)
+                              return (
+                                <span className="text-destructive font-semibold">Trial Expired</span>
+                              );
+                            return `${days} days remaining in trial`;
+                          })()}
+                        </p>
+                      ) : (
+                        <p className="text-sm text-muted-foreground mt-1">
+                          Your subscription is active and in good standing.
+                        </p>
+                      )}
+                    </div>
+                    <div className="text-left sm:text-right">
+                      <div className="text-2xl font-bold">
+                        ₹{saasPlan?.price || 0}
+                        <span className="text-sm font-normal text-muted-foreground">/mo</span>
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Tenant ID: {user?.orgId || "N/A"}
+                      </p>
+                    </div>
+                  </div>
+                )}
               </div>
             </Card>
 
@@ -639,7 +659,28 @@ function SettingsPage() {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                {saasPlans.length === 0 ? (
+                {isLoadingPlans ? (
+                  Array.from({ length: 3 }).map((_, i) => (
+                    <div key={i} className="rounded-xl border p-5 flex flex-col justify-between bg-card h-80 animate-pulse">
+                      <div className="space-y-4">
+                        <div>
+                          <div className="h-5 w-1/2 bg-muted rounded mb-2"></div>
+                          <div className="h-8 w-1/3 bg-muted rounded"></div>
+                        </div>
+                        <div className="space-y-2 py-3 border-t border-b border-border/60">
+                          {[1, 2, 3, 4].map(j => (
+                            <div key={j} className="flex justify-between">
+                              <div className="h-3 w-1/3 bg-muted rounded"></div>
+                              <div className="h-3 w-1/4 bg-muted rounded"></div>
+                            </div>
+                          ))}
+                        </div>
+                        <div className="h-16 w-full bg-muted rounded"></div>
+                      </div>
+                      <div className="h-9 w-full bg-muted rounded mt-6"></div>
+                    </div>
+                  ))
+                ) : saasPlans.length === 0 ? (
                   <div className="col-span-full p-8 text-center border rounded-xl bg-muted/20 text-muted-foreground text-sm">
                     No subscription plans found. Super Admin has not published any plans yet.
                   </div>

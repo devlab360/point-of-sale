@@ -14,7 +14,7 @@ export function getSmtpConfig(): SmtpConfig {
     port: parseInt(import.meta.env.VITE_SMTP_PORT || "587", 10),
     user: import.meta.env.VITE_SMTP_USER || "",
     pass: import.meta.env.VITE_SMTP_PASS || "",
-    from: import.meta.env.VITE_SMTP_FROM || "Grocer.Pro SaaS <noreply@grocer.pro>",
+    from: import.meta.env.VITE_SMTP_FROM || "NexisPOS SaaS <noreply@nexispos.com>",
   };
 }
 
@@ -59,10 +59,10 @@ export async function sendVerificationEmail(email: string, otpCode: string): Pro
 
   if (config.user && config.pass) {
     try {
-      const subject = "Your Grocer.Pro Verification Code";
+      const subject = "Your NexisPOS Verification Code";
       const body = `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eaeaec; border-radius: 10px;">
-          <h2 style="color: #4f46e5; text-align: center;">Grocer.Pro SaaS</h2>
+          <h2 style="color: #4f46e5; text-align: center;">NexisPOS SaaS</h2>
           <p style="font-size: 16px; color: #333;">Hello,</p>
           <p style="font-size: 16px; color: #333;">Your email verification code is:</p>
           <div style="background-color: #f3f4f6; padding: 15px; text-align: center; border-radius: 8px; margin: 20px 0;">
@@ -99,10 +99,10 @@ export async function sendPasswordResetEmail(email: string, otpCode: string): Pr
 
   if (config.user && config.pass) {
     try {
-      const subject = "Reset Your Password - Grocer.Pro SaaS";
+      const subject = "Reset Your Password - NexisPOS SaaS";
       const body = `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eaeaec; border-radius: 10px;">
-          <h2 style="color: #4f46e5; text-align: center;">Grocer.Pro SaaS</h2>
+          <h2 style="color: #4f46e5; text-align: center;">NexisPOS SaaS</h2>
           <p style="font-size: 16px; color: #333;">Hello,</p>
           <p style="font-size: 16px; color: #333;">We received a request to reset your password. Your verification OTP code is:</p>
           <div style="background-color: #f3f4f6; padding: 15px; text-align: center; border-radius: 8px; margin: 20px 0;">

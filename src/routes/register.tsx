@@ -30,7 +30,7 @@ import { SessionStore, PersistStore } from "@/lib/session-store";
 import { PhoneInput } from "@/components/ui/phone-input";
 
 export const Route = createFileRoute("/register")({
-  head: () => ({ meta: [{ title: "Register · Grocer.Pro SaaS" }] }),
+  head: () => ({ meta: [{ title: "Register · NexisPOS SaaS" }] }),
   component: RegisterPage,
 });
 
@@ -206,7 +206,7 @@ function RegisterPage() {
             <div className="grid size-10 place-items-center rounded-xl bg-primary text-white shadow-lg">
               <Store className="size-6" />
             </div>
-            <span className="text-white drop-shadow-md">Grocer.Pro SaaS</span>
+            <span className="text-white drop-shadow-md">NexisPOS SaaS</span>
           </div>
 
           <div className="mt-12 space-y-4 max-w-md">
@@ -226,7 +226,7 @@ function RegisterPage() {
         <div className="relative z-10 rounded-2xl border border-white/20 bg-white/10 p-6 backdrop-blur-md shadow-2xl space-y-3 max-w-md">
           <div className="flex items-center gap-1 text-warning">{"★".repeat(5)}</div>
           <p className="text-xs italic text-white/90">
-            "Grocer.Pro doubled our checkout speed and simplified customer khata balance reminders
+            "NexisPOS doubled our checkout speed and simplified customer khata balance reminders
             over WhatsApp. Essential for modern retail!"
           </p>
           <div className="flex items-center justify-between text-xs pt-2 border-t border-white/10">
@@ -236,7 +236,7 @@ function RegisterPage() {
         </div>
 
         <div className="relative z-10 text-xs text-white/60">
-          © 2026 Grocer.Pro Inc. All rights reserved.
+          © 2026 NexisPOS Inc. All rights reserved.
         </div>
       </div>
 

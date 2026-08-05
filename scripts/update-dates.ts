@@ -16,9 +16,13 @@ for (const file of files) {
   let content = fs.readFileSync(file, "utf8");
   let hasChanges = false;
 
-  if (dateStringRegex.test(content) || dateTimeStringRegex.test(content) || timeStringRegex.test(content)) {
+  if (
+    dateStringRegex.test(content) ||
+    dateTimeStringRegex.test(content) ||
+    timeStringRegex.test(content)
+  ) {
     hasChanges = true;
-    
+
     content = content.replace(dateStringRegex, (match, innerArgs) => {
       return `formatDate(${innerArgs || "new Date()"})`;
     });
@@ -37,7 +41,10 @@ for (const file of files) {
       const importLines = content.match(/^import .*$/gm);
       if (importLines) {
         const lastImport = importLines[importLines.length - 1];
-        content = content.replace(lastImport, `${lastImport}\nimport { usePreferences } from "@/contexts/PreferencesContext";`);
+        content = content.replace(
+          lastImport,
+          `${lastImport}\nimport { usePreferences } from "@/contexts/PreferencesContext";`,
+        );
       } else {
         content = `import { usePreferences } from "@/contexts/PreferencesContext";\n` + content;
       }
@@ -46,26 +53,31 @@ for (const file of files) {
     // Inject hook into component/function bodies
     // Look for `function X() {` or `const X = () => {`
     // and inject `const { formatDate, formatTime, formatDateTime } = usePreferences();`
-    
+
     // A simple heuristic: inject after the first `{` of functions that contain `formatDate` etc.
-    const funcRegex = /(function\s+\w+\s*\([^)]*\)\s*\{|const\s+\w+\s*=\s*(?:\([^)]*\)|[a-zA-Z_]\w*)\s*=>\s*\{)/g;
-    
+    const funcRegex =
+      /(function\s+\w+\s*\([^)]*\)\s*\{|const\s+\w+\s*=\s*(?:\([^)]*\)|[a-zA-Z_]\w*)\s*=>\s*\{)/g;
+
     let lastIndex = 0;
     let newContent = "";
     let match;
-    
+
     while ((match = funcRegex.exec(content)) !== null) {
       newContent += content.substring(lastIndex, match.index + match[0].length);
-      
+
       // We will blindly inject into all top-level functions in the file if they are components/hooks
       // To be safer, we inject it. Since we only modified files that have changes, it's safe to put it in the main component.
       // Usually there's one main component per route file.
       // We'll inject it if the name starts with uppercase (Component) or "use" (Hook) or "Route"
-      if (/[A-Z]/.test(match[0][0]) || match[0].includes("function ") || match[0].includes("const ")) {
-          // just inject
-          newContent += `\n  const { formatDate, formatTime, formatDateTime } = usePreferences();`;
+      if (
+        /[A-Z]/.test(match[0][0]) ||
+        match[0].includes("function ") ||
+        match[0].includes("const ")
+      ) {
+        // just inject
+        newContent += `\n  const { formatDate, formatTime, formatDateTime } = usePreferences();`;
       }
-      
+
       lastIndex = match.index + match[0].length;
     }
     newContent += content.substring(lastIndex);

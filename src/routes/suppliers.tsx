@@ -67,7 +67,7 @@ import { FieldError } from "@/components/ui/field-error";
 import { PhoneInput } from "@/components/ui/phone-input";
 
 export const Route = createFileRoute("/suppliers")({
-  head: () => ({ meta: [{ title: "Suppliers · Grocer.Pro" }] }),
+  head: () => ({ meta: [{ title: "Suppliers · NexisPOS" }] }),
   component: SuppliersPage,
 });
 
@@ -367,7 +367,8 @@ function SuppliersPage() {
                 pageSize={pageSize}
                 onPageChange={setPage}
                 onPageSizeChange={setPageSize}
-               totalItems={suppliers.length} />
+                totalItems={suppliers.length}
+              />
             )}
           </div>
         )}
@@ -508,7 +509,12 @@ function SuppliersPage() {
               </p>
             </div>
             <div className="flex flex-wrap w-full sm:w-auto gap-2 mt-2 sm:mt-0">
-              <Button size="sm" variant="outline" className="flex-1 sm:flex-none w-full sm:w-auto" onClick={() => window.print()}>
+              <Button
+                size="sm"
+                variant="outline"
+                className="flex-1 sm:flex-none w-full sm:w-auto"
+                onClick={() => window.print()}
+              >
                 Print Statement
               </Button>
             </div>
@@ -555,8 +561,12 @@ function SuppliersPage() {
                           <td className="px-3 py-2.5 text-xs text-muted-foreground whitespace-nowrap">
                             {new Date(l.date).toLocaleString()}
                           </td>
-                          <td className="px-3 py-2.5 font-medium capitalize whitespace-nowrap">{l.type}</td>
-                          <td className="px-3 py-2.5 font-mono text-xs whitespace-nowrap">{l.referenceNo || "-"}</td>
+                          <td className="px-3 py-2.5 font-medium capitalize whitespace-nowrap">
+                            {l.type}
+                          </td>
+                          <td className="px-3 py-2.5 font-mono text-xs whitespace-nowrap">
+                            {l.referenceNo || "-"}
+                          </td>
                           <td className="px-3 py-2.5 text-right font-semibold text-warning-foreground whitespace-nowrap">
                             {l.type === "purchase" ? formatCurrency(l.amount) : "-"}
                           </td>

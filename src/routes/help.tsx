@@ -3,7 +3,7 @@ import { PageHeader } from "@/components/layout/PageHeader";
 import { Book, MessageCircle, Phone, Video } from "lucide-react";
 
 export const Route = createFileRoute("/help")({
-  head: () => ({ meta: [{ title: "Help Center · Grocer.Pro" }] }),
+  head: () => ({ meta: [{ title: "Help Center · NexisPOS" }] }),
   component: () => (
     <div className="space-y-6 p-4 md:p-6 lg:p-8">
       <PageHeader

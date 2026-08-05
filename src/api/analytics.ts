@@ -8,17 +8,23 @@ import { requireAuth } from "@/lib/auth-utils";
 
 export const getDashboardStatsFn = createServerFn({ method: "GET" })
   .validator(
-    z.object({
-      startDate: z.string().optional(),
-      endDate: z.string().optional(),
-    }).optional().default({})
+    z
+      .object({
+        startDate: z.string().optional(),
+        endDate: z.string().optional(),
+      })
+      .optional()
+      .default({}),
   )
   .handler(async ({ data }) => {
     try {
       const session = await requireAuth();
       const orgId = session.orgId;
 
-      const salesConditions = [eq(schema.sales.organizationId, orgId), eq(schema.sales.status, "completed")];
+      const salesConditions = [
+        eq(schema.sales.organizationId, orgId),
+        eq(schema.sales.status, "completed"),
+      ];
       const expensesConditions = [eq(schema.expenses.organizationId, orgId)];
 
       if (data?.startDate) {
@@ -40,6 +46,24 @@ export const getDashboardStatsFn = createServerFn({ method: "GET" })
         .from(schema.sales)
         .where(and(...salesConditions));
 
+      // Revenue by Type
+      const revenueByType = await db
+        .select({
+          referenceType: schema.saleItems.referenceType,
+          total: sql`COALESCE(SUM(CAST(${schema.saleItems.total} AS NUMERIC)), 0)`,
+        })
+        .from(schema.saleItems)
+        .innerJoin(schema.sales, eq(schema.saleItems.saleId, schema.sales.id))
+        .where(and(...salesConditions))
+        .groupBy(schema.saleItems.referenceType);
+
+      let totalProductRevenue = 0;
+      let totalServiceRevenue = 0;
+      revenueByType.forEach((rt) => {
+        if (rt.referenceType === "PRODUCT") totalProductRevenue = Number(rt.total);
+        if (rt.referenceType === "SERVICE") totalServiceRevenue = Number(rt.total);
+      });
+
       // 2. Total Expenses
       const [expenseStats] = await db
         .select({
@@ -48,7 +72,7 @@ export const getDashboardStatsFn = createServerFn({ method: "GET" })
         .from(schema.expenses)
         .where(and(...expensesConditions));
 
-      // 3. Customer & Product Counts
+      // 3. Customer, Product & Service Counts
       const [customerStats] = await db
         .select({ count: sql`COUNT(*)` })
         .from(schema.customers)
@@ -59,6 +83,11 @@ export const getDashboardStatsFn = createServerFn({ method: "GET" })
         .from(schema.products)
         .where(eq(schema.products.organizationId, orgId));
 
+      const [serviceStats] = await db
+        .select({ count: sql`COUNT(*)` })
+        .from(schema.services)
+        .where(eq(schema.services.organizationId, orgId));
+
       // 4. Low Stock Count
       const [lowStockStats] = await db
         .select({ count: sql`COUNT(*)` })
@@ -66,19 +95,22 @@ export const getDashboardStatsFn = createServerFn({ method: "GET" })
         .where(
           and(
             eq(schema.products.organizationId, orgId),
-            sql`${schema.products.stock} <= COALESCE(${schema.products.reorderLevel}, 5)`
-          )
+            sql`${schema.products.stock} <= COALESCE(${schema.products.reorderLevel}, 5)`,
+          ),
         );
 
       return {
         success: true,
         data: {
           totalRevenue: Number(salesStats.totalRevenue),
+          totalProductRevenue,
+          totalServiceRevenue,
           totalSubtotal: Number(salesStats.totalSubtotal),
           salesCount: Number(salesStats.salesCount),
           totalExpenses: Number(expenseStats.totalExpenses),
           totalCustomers: Number(customerStats.count),
           totalProducts: Number(productStats.count),
+          totalServices: Number(serviceStats.count),
           lowStockCount: Number(lowStockStats.count),
         },
       };

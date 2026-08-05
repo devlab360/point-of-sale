@@ -11,28 +11,30 @@ import { loadEnv } from "vite";
 
 function emailDevPlugin() {
   return {
-    name: 'configure-server',
+    name: "configure-server",
     configureServer(server: any) {
-      server.middlewares.use('/api/send-email', (req: any, res: any) => {
-        if (req.method !== 'POST') {
+      server.middlewares.use("/api/send-email", (req: any, res: any) => {
+        if (req.method !== "POST") {
           res.statusCode = 405;
-          res.end('Method Not Allowed');
+          res.end("Method Not Allowed");
           return;
         }
-        
-        let body = '';
-        req.on('data', (chunk: any) => { body += chunk.toString(); });
-        
-        req.on('end', async () => {
+
+        let body = "";
+        req.on("data", (chunk: any) => {
+          body += chunk.toString();
+        });
+
+        req.on("end", async () => {
           try {
             const data = JSON.parse(body);
             // Load env variables since this runs in node
-            const env = loadEnv('', process.cwd(), '');
-            
+            const env = loadEnv("", process.cwd(), "");
+
             const transporter = nodemailer.createTransport({
-              host: env.VITE_SMTP_HOST || 'smtp.gmail.com',
-              port: parseInt(env.VITE_SMTP_PORT || '587', 10),
-              secure: parseInt(env.VITE_SMTP_PORT || '587', 10) === 465,
+              host: env.VITE_SMTP_HOST || "smtp.gmail.com",
+              port: parseInt(env.VITE_SMTP_PORT || "587", 10),
+              secure: parseInt(env.VITE_SMTP_PORT || "587", 10) === 465,
               auth: {
                 user: env.VITE_SMTP_USER,
                 pass: env.VITE_SMTP_PASS,
@@ -46,94 +48,100 @@ function emailDevPlugin() {
               html: data.html,
             });
 
-            res.setHeader('Content-Type', 'application/json');
+            res.setHeader("Content-Type", "application/json");
             res.end(JSON.stringify({ success: true, messageId: info.messageId }));
           } catch (error: any) {
-            console.error('Email error:', error);
+            console.error("Email error:", error);
             res.statusCode = 500;
-            res.setHeader('Content-Type', 'application/json');
+            res.setHeader("Content-Type", "application/json");
             res.end(JSON.stringify({ success: false, error: error.message }));
           }
         });
       });
-    }
-  }
+    },
+  };
 }
 
 export default defineConfig({
   vite: {
     plugins: [
       emailDevPlugin(),
-      VitePWA({ 
-        registerType: 'autoUpdate',
-        devOptions: { enabled: true, type: 'module', navigateFallback: '/', suppressWarnings: true }, // Enable PWA in dev mode for testing offline
+      VitePWA({
+        registerType: "autoUpdate",
+        devOptions: {
+          enabled: true,
+          type: "module",
+          navigateFallback: "/",
+          suppressWarnings: true,
+        }, // Enable PWA in dev mode for testing offline
         manifest: {
-          name: 'Grocer.Pro POS',
-          short_name: 'GrocerPOS',
-          description: 'Premium POS and inventory management for grocery, daily goods, and retail chains.',
-          theme_color: '#ffffff',
-          background_color: '#ffffff',
-          display: 'standalone',
-          orientation: 'portrait',
-          start_url: '/',
+          name: "NexisPOS POS",
+          short_name: "GrocerPOS",
+          description:
+            "Premium POS and inventory management for grocery, daily goods, and retail chains.",
+          theme_color: "#ffffff",
+          background_color: "#ffffff",
+          display: "standalone",
+          orientation: "portrait",
+          start_url: "/",
           icons: [
             {
-              src: '/icon-192x192.png',
-              sizes: '192x192',
-              type: 'image/png'
+              src: "/icon-192x192.png",
+              sizes: "192x192",
+              type: "image/png",
             },
             {
-              src: '/icon-512x512.png',
-              sizes: '512x512',
-              type: 'image/png'
+              src: "/icon-512x512.png",
+              sizes: "512x512",
+              type: "image/png",
             },
             {
-              src: '/icon.svg',
-              sizes: 'any',
-              type: 'image/svg+xml',
-              purpose: 'any maskable'
-            }
-          ]
+              src: "/icon.svg",
+              sizes: "any",
+              type: "image/svg+xml",
+              purpose: "any maskable",
+            },
+          ],
         },
         workbox: {
-          globPatterns: ['**/*.{js,css,html,ico,png,svg,json}'],
+          globPatterns: ["**/*.{js,css,html,ico,png,svg,json}"],
           cleanupOutdatedCaches: true,
           clientsClaim: true,
           skipWaiting: true,
-          navigateFallback: '/',
+          navigateFallback: "/",
           runtimeCaching: [
             {
               urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
-              handler: 'CacheFirst',
+              handler: "CacheFirst",
               options: {
-                cacheName: 'google-fonts-cache',
+                cacheName: "google-fonts-cache",
                 expiration: {
                   maxEntries: 10,
-                  maxAgeSeconds: 60 * 60 * 24 * 365 // <== 365 days
+                  maxAgeSeconds: 60 * 60 * 24 * 365, // <== 365 days
                 },
                 cacheableResponse: {
-                  statuses: [0, 200]
-                }
-              }
+                  statuses: [0, 200],
+                },
+              },
             },
             {
               urlPattern: /^https:\/\/fonts\.gstatic\.com\/.*/i,
-              handler: 'CacheFirst',
+              handler: "CacheFirst",
               options: {
-                cacheName: 'gstatic-fonts-cache',
+                cacheName: "gstatic-fonts-cache",
                 expiration: {
                   maxEntries: 10,
-                  maxAgeSeconds: 60 * 60 * 24 * 365 // <== 365 days
+                  maxAgeSeconds: 60 * 60 * 24 * 365, // <== 365 days
                 },
                 cacheableResponse: {
-                  statuses: [0, 200]
+                  statuses: [0, 200],
                 },
-              }
-            }
-          ]
-        }
-      })
-    ]
+              },
+            },
+          ],
+        },
+      }),
+    ],
   },
   tanstackStart: {
     // Redirect TanStack Start's bundled server entry to src/server.ts (our SSR error wrapper).
@@ -144,4 +152,3 @@ export default defineConfig({
     },
   },
 });
-

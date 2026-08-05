@@ -9,7 +9,7 @@ import { PersistStore } from "@/lib/session-store";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/loyalty")({
-  head: () => ({ meta: [{ title: "Loyalty Program · Grocer.Pro" }] }),
+  head: () => ({ meta: [{ title: "Loyalty Program · NexisPOS" }] }),
   component: LoyaltyPage,
 });
 

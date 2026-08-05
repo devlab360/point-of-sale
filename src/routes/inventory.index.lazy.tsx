@@ -215,86 +215,89 @@ function StockList() {
           {expiringCount > 0 && <span className="text-warning">· {expiringCount} expiring</span>}
         </div>
         <div className="overflow-hidden rounded-xl border border-border bg-card shadow-soft">
-              <div className="overflow-hidden rounded-xl border border-border bg-card shadow-soft">
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-sm">
-              <thead className="bg-muted/50 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                <tr>
-                  <th className="px-4 py-3 whitespace-nowrap">Product</th>
-                  <th className="px-4 py-3 whitespace-nowrap">SKU</th>
-                  <th className="px-4 py-3 text-right whitespace-nowrap">On hand</th>
-                  <th className="px-4 py-3 text-right whitespace-nowrap">Reorder</th>
-                  <th className="px-4 py-3 text-right whitespace-nowrap">Value</th>
-                  <th className="px-4 py-3 whitespace-nowrap">Status</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border">
-                {paginatedProducts.map((p) => {
-                  const low = p.stock <= p.reorderLevel;
-                  const out = p.stock <= 0;
-                  return (
-                    <tr key={p.id} className="hover:bg-muted/30">
-                      <td className="px-4 py-3 whitespace-nowrap">
-                        <div className="flex items-center gap-3">
-                          <div className="grid size-9 shrink-0 place-items-center rounded-lg bg-muted overflow-hidden">
-                            <img src={p.image} alt="" className="size-full object-cover" />
+          <div className="overflow-hidden rounded-xl border border-border bg-card shadow-soft">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-sm">
+                <thead className="bg-muted/50 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                  <tr>
+                    <th className="px-4 py-3 whitespace-nowrap">Product</th>
+                    <th className="px-4 py-3 whitespace-nowrap">SKU</th>
+                    <th className="px-4 py-3 text-right whitespace-nowrap">On hand</th>
+                    <th className="px-4 py-3 text-right whitespace-nowrap">Reorder</th>
+                    <th className="px-4 py-3 text-right whitespace-nowrap">Value</th>
+                    <th className="px-4 py-3 whitespace-nowrap">Status</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {paginatedProducts.map((p) => {
+                    const low = p.stock <= p.reorderLevel;
+                    const out = p.stock <= 0;
+                    return (
+                      <tr key={p.id} className="hover:bg-muted/30">
+                        <td className="px-4 py-3 whitespace-nowrap">
+                          <div className="flex items-center gap-3">
+                            <div className="grid size-9 shrink-0 place-items-center rounded-lg bg-muted overflow-hidden">
+                              <img src={p.image} alt="" className="size-full object-cover" />
+                            </div>
+                            <span className="font-semibold">{p.name}</span>
                           </div>
-                          <span className="font-semibold">{p.name}</span>
-                        </div>
-                      </td>
-                      <td className="px-4 py-3 font-mono text-xs text-muted-foreground whitespace-nowrap">
-                        {p.sku}
-                      </td>
-                      <td
-                        className={cn(
-                          "number px-4 py-3 text-right font-semibold whitespace-nowrap",
-                          low && "text-destructive",
-                        )}
-                      >
-                        {p.stock} {units.find((u) => u.id === p.unit)?.name || p.unit || ""}
-                      </td>
-                      <td className="px-4 py-3 text-right text-muted-foreground whitespace-nowrap">
-                        {p.reorderLevel}
-                      </td>
-                      <td className="number px-4 py-3 text-right whitespace-nowrap">
-                        {formatCurrency(p.stock * p.cost)}
-                      </td>
-                      <td className="px-4 py-3 whitespace-nowrap">
-                        <div className="flex gap-1 flex-wrap">
-                          {isExpired(p.expiryDate) && <Badge variant="destructive">Expired</Badge>}
-                          {isExpiringSoon(p.expiryDate) && (
-                            <Badge className="bg-warning/15 text-warning-foreground hover:bg-warning/20">
-                              Expiring
-                            </Badge>
+                        </td>
+                        <td className="px-4 py-3 font-mono text-xs text-muted-foreground whitespace-nowrap">
+                          {p.sku}
+                        </td>
+                        <td
+                          className={cn(
+                            "number px-4 py-3 text-right font-semibold whitespace-nowrap",
+                            low && "text-destructive",
                           )}
-                          {out ? (
-                            <Badge variant="destructive">Out</Badge>
-                          ) : low ? (
-                            <Badge className="bg-warning/15 text-warning-foreground hover:bg-warning/20">
-                              Low
-                            </Badge>
-                          ) : (
-                            <Badge className="bg-success/10 text-success hover:bg-success/15">
-                              In stock
-                            </Badge>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-              </div>
-              <PaginationControls
-          currentPage={page}
-          totalPages={totalPages}
-          pageSize={pageSize}
-          onPageChange={setPage}
-          onPageSizeChange={setPageSize}
-         totalItems={filteredProducts.length}/>
+                        >
+                          {p.stock} {units.find((u) => u.id === p.unit)?.name || p.unit || ""}
+                        </td>
+                        <td className="px-4 py-3 text-right text-muted-foreground whitespace-nowrap">
+                          {p.reorderLevel}
+                        </td>
+                        <td className="number px-4 py-3 text-right whitespace-nowrap">
+                          {formatCurrency(p.stock * p.cost)}
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap">
+                          <div className="flex gap-1 flex-wrap">
+                            {isExpired(p.expiryDate) && (
+                              <Badge variant="destructive">Expired</Badge>
+                            )}
+                            {isExpiringSoon(p.expiryDate) && (
+                              <Badge className="bg-warning/15 text-warning-foreground hover:bg-warning/20">
+                                Expiring
+                              </Badge>
+                            )}
+                            {out ? (
+                              <Badge variant="destructive">Out</Badge>
+                            ) : low ? (
+                              <Badge className="bg-warning/15 text-warning-foreground hover:bg-warning/20">
+                                Low
+                              </Badge>
+                            ) : (
+                              <Badge className="bg-success/10 text-success hover:bg-success/15">
+                                In stock
+                              </Badge>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
             </div>
-            </div>
+            <PaginationControls
+              currentPage={page}
+              totalPages={totalPages}
+              pageSize={pageSize}
+              onPageChange={setPage}
+              onPageSizeChange={setPageSize}
+              totalItems={filteredProducts.length}
+            />
+          </div>
+        </div>
       </DataPage>
 
       <Dialog open={showForecast} onOpenChange={setShowForecast}>

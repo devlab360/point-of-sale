@@ -9,7 +9,7 @@ async function main() {
 
   try {
     console.log("Creating tables if they don't exist...");
-    
+
     await db.execute(`
       CREATE TABLE IF NOT EXISTS "inventory_adjustments" (
         "id" text PRIMARY KEY NOT NULL,
@@ -41,7 +41,7 @@ async function main() {
         "created_at" timestamp DEFAULT now() NOT NULL
       );
     `);
-    
+
     console.log("Tables created successfully!");
   } catch (e: any) {
     console.error("====== DATABASE ERROR ======");

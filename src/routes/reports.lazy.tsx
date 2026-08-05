@@ -132,7 +132,10 @@ function ReportsPage() {
   const mtdOrders = sales.length;
   const taxPayable = mtdRevenue * 0.08;
   const totalExpenses = expenses.reduce((s, e) => s + (Number(e.amount) || 0), 0);
-  const stockValue = products.reduce((s, p) => s + (Number(p.stock) || 0) * (Number(p.cost) || 0), 0);
+  const stockValue = products.reduce(
+    (s, p) => s + (Number(p.stock) || 0) * (Number(p.cost) || 0),
+    0,
+  );
 
   const monthly = Array.from({ length: 12 }).map((_, i) => {
     const d = new Date();
@@ -164,7 +167,11 @@ function ReportsPage() {
     d.setDate(d.getDate() - (6 - i));
     const day = d.toLocaleDateString("default", { weekday: "short" });
     const daySales = sales.filter((s) => new Date(s.date).toDateString() === d.toDateString());
-    return { day, sales: daySales.reduce((sum, s) => sum + (Number(s.total) || 0), 0), orders: daySales.length };
+    return {
+      day,
+      sales: daySales.reduce((sum, s) => sum + (Number(s.total) || 0), 0),
+      orders: daySales.length,
+    };
   });
 
   // Category share from real sales data
@@ -229,7 +236,8 @@ function ReportsPage() {
         "\n" +
         expenses
           .map(
-            (e) => `${e.date},${e.category},${e.description},${currencySymbol}${Number(e.amount).toFixed(2)},${e.status}`,
+            (e) =>
+              `${e.date},${e.category},${e.description},${currencySymbol}${Number(e.amount).toFixed(2)},${e.status}`,
           )
           .join("\n");
       filename = "expense-report.csv";
@@ -621,7 +629,10 @@ function ReportsPage() {
 
       {/* Report Drawer */}
       <Sheet open={!!activeReport} onOpenChange={(open) => !open && setActiveReport(null)}>
-        <SheetContent side="right" className="w-full sm:max-w-3xl lg:max-w-5xl overflow-y-auto sm:p-6">
+        <SheetContent
+          side="right"
+          className="w-full sm:max-w-3xl lg:max-w-5xl overflow-y-auto sm:p-6"
+        >
           <SheetHeader className="mb-4">
             <SheetTitle className="capitalize flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pr-6">
               <span>
@@ -706,8 +717,12 @@ function ReportsPage() {
                           <td className="px-3 py-2 font-mono text-xs whitespace-nowrap">
                             {s.id.slice(0, 8).toUpperCase()}
                           </td>
-                          <td className="px-3 py-2 whitespace-nowrap">{s.customerName || "Walk-in"}</td>
-                          <td className="px-3 py-2 text-muted-foreground whitespace-nowrap">{formatDate(s.date)}</td>
+                          <td className="px-3 py-2 whitespace-nowrap">
+                            {s.customerName || "Walk-in"}
+                          </td>
+                          <td className="px-3 py-2 text-muted-foreground whitespace-nowrap">
+                            {formatDate(s.date)}
+                          </td>
                           <td className="px-3 py-2 text-right font-semibold whitespace-nowrap">
                             {formatCurrency(s.total)}
                           </td>
@@ -724,11 +739,15 @@ function ReportsPage() {
                   <table className="w-full text-sm min-w-[700px]">
                     <thead className="bg-muted z-10 text-[11px] uppercase tracking-wider text-muted-foreground sticky top-0 shadow-sm">
                       <tr>
-                        <th className="px-3 py-2 text-left whitespace-nowrap">Sales Representative</th>
+                        <th className="px-3 py-2 text-left whitespace-nowrap">
+                          Sales Representative
+                        </th>
                         <th className="px-3 py-2 text-center whitespace-nowrap">Comm. Rate</th>
                         <th className="px-3 py-2 text-right whitespace-nowrap">Target</th>
                         <th className="px-3 py-2 text-right whitespace-nowrap">Achieved Sales</th>
-                        <th className="px-3 py-2 text-right whitespace-nowrap">Earned Commission</th>
+                        <th className="px-3 py-2 text-right whitespace-nowrap">
+                          Earned Commission
+                        </th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-border">
@@ -783,8 +802,12 @@ function ReportsPage() {
                           )
                           .map((r, i) => (
                             <tr key={i} className="hover:bg-muted/30">
-                              <td className="px-3 py-2 font-semibold text-primary whitespace-nowrap">{r.name}</td>
-                              <td className="px-3 py-2 text-center text-xs font-mono whitespace-nowrap">2.5%</td>
+                              <td className="px-3 py-2 font-semibold text-primary whitespace-nowrap">
+                                {r.name}
+                              </td>
+                              <td className="px-3 py-2 text-center text-xs font-mono whitespace-nowrap">
+                                2.5%
+                              </td>
                               <td className="px-3 py-2 text-right text-xs font-mono whitespace-nowrap">
                                 {formatCurrency(10000)}
                               </td>
@@ -862,7 +885,9 @@ function ReportsPage() {
                         <tr key={e.id} className="hover:bg-muted/30">
                           <td className="px-3 py-2 whitespace-nowrap">{e.date}</td>
                           <td className="px-3 py-2 whitespace-nowrap">{e.category}</td>
-                          <td className="px-3 py-2 text-muted-foreground whitespace-nowrap">{e.description}</td>
+                          <td className="px-3 py-2 text-muted-foreground whitespace-nowrap">
+                            {e.description}
+                          </td>
                           <td className="px-3 py-2 text-right font-semibold whitespace-nowrap">
                             {formatCurrency(e.amount)}
                           </td>
@@ -966,7 +991,9 @@ function ReportsPage() {
                           {p.id.slice(0, 8).toUpperCase()}
                         </td>
                         <td className="px-3 py-2 whitespace-nowrap">{p.supplier}</td>
-                        <td className="px-3 py-2 text-muted-foreground whitespace-nowrap">{formatDate(p.date)}</td>
+                        <td className="px-3 py-2 text-muted-foreground whitespace-nowrap">
+                          {formatDate(p.date)}
+                        </td>
                         <td className="px-3 py-2 text-right font-semibold whitespace-nowrap">
                           {formatCurrency(p.total)}
                         </td>

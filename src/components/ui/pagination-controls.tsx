@@ -56,7 +56,7 @@ export function PaginationControls({
     <div
       className={cn(
         "flex flex-col sm:flex-row items-center justify-between border-t border-border px-4 py-3 bg-card",
-        className
+        className,
       )}
     >
       <div className="text-sm text-muted-foreground mb-4 sm:mb-0">
@@ -99,13 +99,13 @@ export function PaginationControls({
                 "h-8 w-8 hidden sm:inline-flex",
                 currentPage === page
                   ? "bg-primary/10 text-primary hover:bg-primary/20 border-transparent font-bold"
-                  : ""
+                  : "",
               )}
               onClick={() => onPageChange(page as number)}
             >
               {page}
             </Button>
-          )
+          ),
         )}
 
         <Button

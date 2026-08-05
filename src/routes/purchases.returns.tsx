@@ -47,7 +47,7 @@ import { cn } from "@/lib/utils";
 import { usePreferences } from "@/contexts/PreferencesContext";
 
 export const Route = createFileRoute("/purchases/returns")({
-  head: () => ({ meta: [{ title: "Purchase Returns · Grocer.Pro" }] }),
+  head: () => ({ meta: [{ title: "Purchase Returns · NexisPOS" }] }),
   component: PurchaseReturnsPage,
 });
 
@@ -273,82 +273,89 @@ function PurchaseReturnsPage() {
         )}
       >
         <div className="overflow-hidden rounded-xl border border-border bg-card shadow-soft">
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-sm min-w-[700px]">
-            <thead className="bg-muted/50 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-              <tr>
-                <th className="px-4 py-3 whitespace-nowrap">Ref</th>
-                <th className="px-4 py-3 whitespace-nowrap">Supplier</th>
-                <th className="px-4 py-3 whitespace-nowrap">Reason</th>
-                <th className="px-4 py-3 whitespace-nowrap">Date</th>
-                <th className="px-4 py-3 text-right whitespace-nowrap">Items</th>
-                <th className="px-4 py-3 whitespace-nowrap">Status</th>
-                <th className="px-4 py-3 text-right whitespace-nowrap">Total</th>
-                <th className="px-4 py-3 whitespace-nowrap"></th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border">
-              {filteredReturns.length === 0 ? (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-sm min-w-[700px]">
+              <thead className="bg-muted/50 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
                 <tr>
-                  <td colSpan={8} className="py-8 text-center text-muted-foreground">
-                    No purchase returns recorded.
-                  </td>
+                  <th className="px-4 py-3 whitespace-nowrap">Ref</th>
+                  <th className="px-4 py-3 whitespace-nowrap">Supplier</th>
+                  <th className="px-4 py-3 whitespace-nowrap">Reason</th>
+                  <th className="px-4 py-3 whitespace-nowrap">Date</th>
+                  <th className="px-4 py-3 text-right whitespace-nowrap">Items</th>
+                  <th className="px-4 py-3 whitespace-nowrap">Status</th>
+                  <th className="px-4 py-3 text-right whitespace-nowrap">Total</th>
+                  <th className="px-4 py-3 whitespace-nowrap"></th>
                 </tr>
-              ) : (
-                paginatedReturns.map((r) => (
-                  <tr key={r.id} className="hover:bg-muted/30">
-                    <td className="px-4 py-3 font-mono text-xs font-semibold whitespace-nowrap">{r.ref}</td>
-                    <td className="px-4 py-3 font-semibold whitespace-nowrap">{r.supplier}</td>
-                    <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">{r.reason}</td>
-                    <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">{formatDate(r.date)}</td>
-                    <td className="px-4 py-3 text-right whitespace-nowrap">
-                      {r.items?.reduce((s, i) => s + (i.quantity || 0), 0) || 0}
-                    </td>
-                    <td className="px-4 py-3 whitespace-nowrap">
-                      <Badge
-                        className={cn(
-                          r.status === "approved" &&
-                            "bg-success/10 text-success hover:bg-success/15",
-                          r.status === "pending" && "bg-warning/15 text-warning-foreground",
-                        )}
-                      >
-                        {r.status}
-                      </Badge>
-                    </td>
-                    <td className="number px-4 py-3 text-right font-semibold whitespace-nowrap">
-                      {formatCurrency(r.total)}
-                    </td>
-                    <td className="px-4 py-3 whitespace-nowrap">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon">
-                            <MoreVertical className="size-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem
-                            className="text-destructive"
-                            onClick={() => setDeleteId(r.id)}
-                          >
-                            <Trash2 className="size-4 mr-2" /> Delete
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {filteredReturns.length === 0 ? (
+                  <tr>
+                    <td colSpan={8} className="py-8 text-center text-muted-foreground">
+                      No purchase returns recorded.
                     </td>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-              </div>
-              <PaginationControls
+                ) : (
+                  paginatedReturns.map((r) => (
+                    <tr key={r.id} className="hover:bg-muted/30">
+                      <td className="px-4 py-3 font-mono text-xs font-semibold whitespace-nowrap">
+                        {r.ref}
+                      </td>
+                      <td className="px-4 py-3 font-semibold whitespace-nowrap">{r.supplier}</td>
+                      <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">
+                        {r.reason}
+                      </td>
+                      <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">
+                        {formatDate(r.date)}
+                      </td>
+                      <td className="px-4 py-3 text-right whitespace-nowrap">
+                        {r.items?.reduce((s, i) => s + (i.quantity || 0), 0) || 0}
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap">
+                        <Badge
+                          className={cn(
+                            r.status === "approved" &&
+                              "bg-success/10 text-success hover:bg-success/15",
+                            r.status === "pending" && "bg-warning/15 text-warning-foreground",
+                          )}
+                        >
+                          {r.status}
+                        </Badge>
+                      </td>
+                      <td className="number px-4 py-3 text-right font-semibold whitespace-nowrap">
+                        {formatCurrency(r.total)}
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon">
+                              <MoreVertical className="size-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem
+                              className="text-destructive"
+                              onClick={() => setDeleteId(r.id)}
+                            >
+                              <Trash2 className="size-4 mr-2" /> Delete
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+          <PaginationControls
             currentPage={page}
             totalPages={totalPages}
             pageSize={pageSize}
             onPageChange={setPage}
             onPageSizeChange={setPageSize}
-           totalItems={filteredReturns.length}/>
-            </div>
+            totalItems={filteredReturns.length}
+          />
+        </div>
       </DataPage>
 
       {/* New Purchase Return Dialog */}

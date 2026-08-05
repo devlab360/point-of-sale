@@ -60,11 +60,7 @@ export function DataPage({
   return (
     <div className="space-y-6">
       {!hideHeader && title && (
-        <PageHeader
-          title={title}
-          description={description}
-          actions={actionsContent}
-        />
+        <PageHeader title={title} description={description} actions={actionsContent} />
       )}
 
       {!hideToolbar && (

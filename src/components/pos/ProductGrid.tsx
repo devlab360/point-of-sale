@@ -28,53 +28,41 @@ export function ProductGrid({ state }: { state: any }) {
         mobileTab === "cart" ? "hidden md:flex" : "flex",
       )}
     >
-      <div className="flex flex-col gap-3 border-b border-border bg-background p-4 lg:flex-row lg:items-center">
+      <div className="flex flex-row gap-3 border-b border-border bg-background p-4 items-center">
         <div className="relative flex-1">
           <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search products by name, SKU or barcode... (F1)"
+            placeholder="Search products by name, SKU or barcode..."
             className="h-11 w-full rounded-xl border border-border bg-card pl-10 pr-3 text-sm focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/20"
           />
         </div>
-        <div className="flex items-center gap-2 w-full lg:w-auto">
-          <Button
-            variant="outline"
-            size="sm"
-            className="h-11 shrink-0 gap-1.5 px-3 text-xs"
-            onClick={() => setShowShortcutsHelp(true)}
-            title="Keyboard Shortcuts (?)"
-          >
-            <Keyboard className="size-4 text-primary" />{" "}
-            <span className="hidden sm:inline">Shortcuts</span>
-          </Button>
-          <div className="relative flex-1 lg:w-72">
-            <ScanBarcode className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-primary" />
-            <input
-              placeholder="Scan barcode..."
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  const b = e.currentTarget.value;
-                  if (b.length > 2) {
-                    const product = products.find((p: any) => p.barcode === b || p.sku === b);
-                    if (product) {
-                      if (product.stock <= 0) {
-                        toast.error(`${product.name} is out of stock`);
-                      } else {
-                        addToCart(product.id);
-                        toast.success(`Scanned: ${product.name}`);
-                      }
+        <div className="relative flex-1 lg:max-w-[320px]">
+          <ScanBarcode className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-primary" />
+          <input
+            placeholder="Scan barcode..."
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                const b = e.currentTarget.value;
+                if (b.length > 2) {
+                  const product = products.find((p: any) => p.barcode === b || p.sku === b);
+                  if (product) {
+                    if (product.stock <= 0) {
+                      toast.error(`${product.name} is out of stock`);
                     } else {
-                      toast.error(`Unknown barcode: ${b}`);
+                      addToCart(product.id);
+                      toast.success(`Scanned: ${product.name}`);
                     }
+                  } else {
+                    toast.error(`Unknown barcode: ${b}`);
                   }
-                  e.currentTarget.value = "";
                 }
-              }}
-              className="h-11 w-full rounded-xl border border-primary/30 bg-primary/5 pl-10 pr-3 font-mono text-sm placeholder:text-primary/60 focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/20"
-            />
-          </div>
+                e.currentTarget.value = "";
+              }
+            }}
+            className="h-11 w-full rounded-xl border border-primary/30 bg-primary/5 pl-10 pr-3 font-mono text-sm placeholder:text-primary/60 focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/20"
+          />
         </div>
       </div>
 
@@ -133,14 +121,19 @@ export function ProductGrid({ state }: { state: any }) {
                       loading="lazy"
                       className="w-full h-full object-cover"
                     />
-                    {low && !out && (
+                    {low && !out && p.referenceType !== "SERVICE" && (
                       <span className="absolute left-2 top-2 rounded bg-warning/90 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-warning-foreground shadow-sm backdrop-blur-sm">
                         Low Stock
                       </span>
                     )}
-                    {out && (
+                    {out && p.referenceType !== "SERVICE" && (
                       <span className="absolute left-2 top-2 rounded bg-destructive/90 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-white shadow-sm backdrop-blur-sm">
                         Out of Stock
+                      </span>
+                    )}
+                    {p.referenceType === "SERVICE" && (
+                      <span className="absolute left-2 top-2 rounded bg-primary/90 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-primary-foreground shadow-sm backdrop-blur-sm">
+                        Service
                       </span>
                     )}
                     <div className="absolute inset-x-0 bottom-0 translate-y-full bg-primary/90 py-1.5 text-center text-[11px] font-bold text-primary-foreground backdrop-blur-sm transition-transform duration-300 group-hover:translate-y-0 flex items-center justify-center gap-1 shadow-inner">

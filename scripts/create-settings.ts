@@ -49,8 +49,8 @@ async function run() {
     // If the table already existed but without logoUrl, let's ensure logo_url exists.
     try {
       await client`ALTER TABLE "settings" ADD COLUMN IF NOT EXISTS "logo_url" text;`;
-    } catch(e) {}
-    
+    } catch (e) {}
+
     await client`
       CREATE INDEX IF NOT EXISTS "settings_org_idx" ON "settings" USING btree ("organization_id");
     `;

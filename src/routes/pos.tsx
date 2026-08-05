@@ -10,6 +10,8 @@ import { ProductGrid } from "@/components/pos/ProductGrid";
 import { CartPanel } from "@/components/pos/CartPanel";
 import { PosDialogs } from "@/components/pos/PosDialogs";
 import { PosPrintLayouts } from "@/components/pos/PosPrintLayouts";
+import { sendAutomatedReceipt } from "@/lib/automation/receipt-bot";
+import { sendAutomatedLowStockAlert } from "@/lib/automation/inventory-bot";
 
 import { POSSkeleton } from "@/components/skeletons/POSSkeleton";
 import { ErrorState } from "@/components/ui/error-state";
@@ -17,7 +19,7 @@ import { ErrorState } from "@/components/ui/error-state";
 export const Route = createFileRoute("/pos")({
   head: () => ({
     meta: [
-      { title: "POS Terminal · Grocer.Pro" },
+      { title: "POS Terminal · NexisPOS" },
       {
         name: "description",
         content:
@@ -224,6 +226,8 @@ function PosScreen() {
       }
 
       const saleItems = lines.map((l: any) => ({
+        referenceType: l.product.referenceType || "PRODUCT",
+        referenceId: l.product.referenceId || l.product.id,
         productId: l.product.id,
         productName: l.product.name,
         quantity: l.qty,
@@ -278,6 +282,39 @@ function PosScreen() {
       queryClient.invalidateQueries({ queryKey: ["products"] });
       queryClient.invalidateQueries({ queryKey: ["customers"] });
       queryClient.invalidateQueries({ queryKey: ["coupons"] });
+
+      // Automation: Send WhatsApp Receipt if customer is registered and has phone
+      if (activeCustomer.id !== "walkin" && activeCustomer.phone) {
+        // Run asynchronously without blocking the checkout UI
+        sendAutomatedReceipt(
+          state.settings?.storeName || "NexisPOS",
+          activeCustomer.name,
+          activeCustomer.phone,
+          invNum,
+          total,
+          saleItems.map((i: any) => ({ name: i.productName, quantity: i.quantity })),
+        ).catch(console.error);
+      }
+
+      // Automation: Low Stock Alerts
+      const adminPhone = state.settings?.phone; // Assuming store phone belongs to admin/owner
+      if (adminPhone) {
+        const lowStockAlertItems = saleItems
+          .map((item: any) => {
+            const p = products.find((prod: any) => prod.id === item.productId);
+            if (!p) return null;
+            const remaining = p.stock - item.quantity;
+            if (remaining <= (p.reorderLevel || 5)) {
+              return { name: p.name, remainingStock: remaining };
+            }
+            return null;
+          })
+          .filter(Boolean) as { name: string; remainingStock: number }[];
+
+        if (lowStockAlertItems.length > 0) {
+          sendAutomatedLowStockAlert(adminPhone, lowStockAlertItems).catch(console.error);
+        }
+      }
 
       const printObj = {
         id: invNum,

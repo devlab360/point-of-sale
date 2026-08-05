@@ -9,6 +9,7 @@ import {
   Loader2,
   ImageIcon,
   User,
+  Camera,
 } from "lucide-react";
 import { Button } from "./button";
 import { cn } from "@/lib/utils";
@@ -180,37 +181,51 @@ export function FileUpload({
 
       {variant === "avatar" ? (
         <div className="flex flex-col items-center justify-center w-full">
-          <div
-            onDragOver={handleDragOver}
-            onDragLeave={handleDragLeave}
-            onDrop={handleDrop}
-            onClick={() => !disabled && !isUploading && fileInputRef.current?.click()}
-            className={cn(
-              "group relative overflow-hidden rounded-full border-4 transition-all cursor-pointer select-none size-24 shrink-0 shadow-sm bg-muted",
-              isDragging ? "border-primary scale-105" : "border-background hover:border-primary/20",
-              disabled && "cursor-not-allowed opacity-60",
-            )}
-          >
-            {isUploading ? (
-              <div className="size-full flex flex-col items-center justify-center bg-background/80 backdrop-blur-sm z-10">
-                <Loader2 className="size-6 text-primary animate-spin mb-1" />
-                <span className="text-[10px] font-mono font-medium text-foreground">
-                  {progress}%
-                </span>
-              </div>
-            ) : singleUrl ? (
-              <img src={singleUrl} alt="Avatar" className="size-full object-cover" />
-            ) : (
-              <div className="size-full flex flex-col items-center justify-center text-muted-foreground bg-gradient-to-br from-primary/5 to-info/5">
-                <User className="size-8 opacity-40 mb-1" />
-              </div>
-            )}
+          <div className="relative">
+            <div
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onDrop={handleDrop}
+              onClick={() => !disabled && !isUploading && fileInputRef.current?.click()}
+              className={cn(
+                "group relative overflow-hidden rounded-full border-4 transition-all cursor-pointer select-none size-24 shrink-0 shadow-sm bg-muted",
+                isDragging
+                  ? "border-primary scale-105"
+                  : "border-background hover:border-primary/20",
+                disabled && "cursor-not-allowed opacity-60",
+              )}
+            >
+              {isUploading ? (
+                <div className="size-full flex flex-col items-center justify-center bg-background/80 backdrop-blur-sm z-10">
+                  <Loader2 className="size-6 text-primary animate-spin mb-1" />
+                  <span className="text-[10px] font-mono font-medium text-foreground">
+                    {progress}%
+                  </span>
+                </div>
+              ) : singleUrl ? (
+                <img src={singleUrl} alt="Avatar" className="size-full object-cover" />
+              ) : (
+                <div className="size-full flex flex-col items-center justify-center text-muted-foreground bg-gradient-to-br from-primary/5 to-info/5">
+                  <User className="size-8 opacity-40 mb-1" />
+                </div>
+              )}
 
-            {/* Hover overlay with pencil/image icon */}
+              {/* Hover overlay with pencil/image icon */}
+              {!isUploading && !disabled && (
+                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center">
+                  <Camera className="size-5 text-white mb-1" />
+                  <span className="text-[10px] text-white font-medium">Change</span>
+                </div>
+              )}
+            </div>
+
+            {/* Permanent edit icon badge for mobile visibility */}
             {!isUploading && !disabled && (
-              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center">
-                <ImageIcon className="size-5 text-white mb-1" />
-                <span className="text-[10px] text-white font-medium">Change</span>
+              <div
+                className="absolute bottom-0 right-0 p-1.5 bg-primary text-primary-foreground rounded-full shadow-md cursor-pointer border-2 border-background hover:bg-primary/90 transition-colors"
+                onClick={() => !disabled && !isUploading && fileInputRef.current?.click()}
+              >
+                <Camera className="size-3.5" />
               </div>
             )}
           </div>

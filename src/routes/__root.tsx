@@ -89,20 +89,20 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Grocer.Pro — Modern Grocery POS" },
+      { title: "NexisPOS — Advanced Universal POS" },
       {
         name: "description",
         content:
           "Premium POS and inventory management for grocery, daily goods, and retail chains.",
       },
-      { property: "og:title", content: "Grocer.Pro — Modern Grocery POS" },
+      { property: "og:title", content: "NexisPOS — Advanced Universal POS" },
       {
         property: "og:description",
         content: "Premium POS and inventory management for grocery and retail.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
-      { name: "twitter:title", content: "Grocer.Pro — Modern Grocery POS" },
+      { name: "twitter:title", content: "NexisPOS — Advanced Universal POS" },
       {
         name: "description",
         content:

@@ -178,6 +178,11 @@ export function CartPanel({ state }: { state: any }) {
                             {l.priceTierLabel}
                           </span>
                         )}
+                        {l.product.referenceType === "SERVICE" && (
+                          <span className="rounded bg-primary/10 px-1 py-0.2 text-[9px] font-bold text-primary uppercase">
+                            SERVICE
+                          </span>
+                        )}
                       </div>
                       <div className="flex items-center gap-2">
                         <button

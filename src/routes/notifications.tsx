@@ -16,7 +16,7 @@ import { Bell, ExternalLink } from "lucide-react";
 import { usePreferences } from "@/contexts/PreferencesContext";
 
 export const Route = createFileRoute("/notifications")({
-  head: () => ({ meta: [{ title: "Notifications · Grocer.Pro" }] }),
+  head: () => ({ meta: [{ title: "Notifications · NexisPOS" }] }),
   component: NotificationsPage,
 });
 

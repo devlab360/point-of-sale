@@ -72,7 +72,7 @@ import { CardGridSkeleton } from "@/components/skeletons/CardGridSkeleton";
 import { ErrorState } from "@/components/ui/error-state";
 
 export const Route = createFileRoute("/gift-cards")({
-  head: () => ({ meta: [{ title: "Gift Cards · Grocer.Pro" }] }),
+  head: () => ({ meta: [{ title: "Gift Cards · NexisPOS" }] }),
   component: GiftCardsPage,
 });
 
@@ -336,7 +336,12 @@ function GiftCardsPage() {
                 </div>
               ))}
             </div>
-            <PaginationControls currentPage={page} totalPages={totalPages} onPageChange={setPage}  totalItems={filteredCards.length} />
+            <PaginationControls
+              currentPage={page}
+              totalPages={totalPages}
+              onPageChange={setPage}
+              totalItems={filteredCards.length}
+            />
           </div>
         )}
       </DataPage>

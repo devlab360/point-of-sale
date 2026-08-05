@@ -56,7 +56,7 @@ import { TableSkeleton } from "@/components/skeletons/TableSkeleton";
 import { ErrorState } from "@/components/ui/error-state";
 
 export const Route = createFileRoute("/expenses")({
-  head: () => ({ meta: [{ title: "Expenses · Grocer.Pro" }] }),
+  head: () => ({ meta: [{ title: "Expenses · NexisPOS" }] }),
   component: ExpensesPage,
 });
 
@@ -339,62 +339,72 @@ function ExpensesPage() {
             <div className="overflow-hidden rounded-xl border border-border bg-card shadow-soft">
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-sm min-w-[700px]">
-                <thead className="bg-muted/50 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                  <tr>
-                    <th className="px-4 py-3 whitespace-nowrap">{t("date") || "Date"}</th>
-                    <th className="px-4 py-3 whitespace-nowrap">{t("category") || "Category"}</th>
-                    <th className="px-4 py-3 whitespace-nowrap">{t("description") || "Description"}</th>
-                    <th className="px-4 py-3 whitespace-nowrap">{t("status") || "Status"}</th>
-                    <th className="px-4 py-3 text-right whitespace-nowrap">{t("amount") || "Amount"}</th>
-                    <th className="px-4 py-3 text-right whitespace-nowrap">{t("actions") || "Actions"}</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border">
-                  {paginatedExpenses.map((e) => (
-                    <tr key={e.id} className="hover:bg-muted/30">
-                      <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">{formatDate(e.date)}</td>
-                      <td className="px-4 py-3 whitespace-nowrap">
-                        <Badge variant="secondary">{e.category}</Badge>
-                      </td>
-                      <td className="px-4 py-3 font-semibold whitespace-nowrap">{e.description}</td>
-                      <td className="px-4 py-3 whitespace-nowrap">
-                        <Badge
-                          className={
-                            e.status === "paid"
-                              ? "bg-success/10 text-success hover:bg-success/15"
-                              : "bg-warning/15 text-warning-foreground hover:bg-warning/20"
-                          }
-                        >
-                          {e.status}
-                        </Badge>
-                      </td>
-                      <td className="number px-4 py-3 text-right font-semibold whitespace-nowrap">
-                        {formatCurrency(e.amount)}
-                      </td>
-                      <td className="px-4 py-3 text-right whitespace-nowrap">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="size-8">
-                              <MoreVertical className="size-4 text-muted-foreground" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => setEditItem(e)}>
-                              <Edit2 className="mr-2 size-4" /> Edit
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              className="text-destructive focus:bg-destructive/10 focus:text-destructive"
-                              onClick={() => setDeleteId(e.id)}
-                            >
-                              <Trash2 className="mr-2 size-4" /> Delete
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </td>
+                  <thead className="bg-muted/50 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                    <tr>
+                      <th className="px-4 py-3 whitespace-nowrap">{t("date") || "Date"}</th>
+                      <th className="px-4 py-3 whitespace-nowrap">{t("category") || "Category"}</th>
+                      <th className="px-4 py-3 whitespace-nowrap">
+                        {t("description") || "Description"}
+                      </th>
+                      <th className="px-4 py-3 whitespace-nowrap">{t("status") || "Status"}</th>
+                      <th className="px-4 py-3 text-right whitespace-nowrap">
+                        {t("amount") || "Amount"}
+                      </th>
+                      <th className="px-4 py-3 text-right whitespace-nowrap">
+                        {t("actions") || "Actions"}
+                      </th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody className="divide-y divide-border">
+                    {paginatedExpenses.map((e) => (
+                      <tr key={e.id} className="hover:bg-muted/30">
+                        <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">
+                          {formatDate(e.date)}
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap">
+                          <Badge variant="secondary">{e.category}</Badge>
+                        </td>
+                        <td className="px-4 py-3 font-semibold whitespace-nowrap">
+                          {e.description}
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap">
+                          <Badge
+                            className={
+                              e.status === "paid"
+                                ? "bg-success/10 text-success hover:bg-success/15"
+                                : "bg-warning/15 text-warning-foreground hover:bg-warning/20"
+                            }
+                          >
+                            {e.status}
+                          </Badge>
+                        </td>
+                        <td className="number px-4 py-3 text-right font-semibold whitespace-nowrap">
+                          {formatCurrency(e.amount)}
+                        </td>
+                        <td className="px-4 py-3 text-right whitespace-nowrap">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon" className="size-8">
+                                <MoreVertical className="size-4 text-muted-foreground" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem onClick={() => setEditItem(e)}>
+                                <Edit2 className="mr-2 size-4" /> Edit
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                className="text-destructive focus:bg-destructive/10 focus:text-destructive"
+                                onClick={() => setDeleteId(e.id)}
+                              >
+                                <Trash2 className="mr-2 size-4" /> Delete
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
               <PaginationControls
                 currentPage={page}
@@ -402,7 +412,8 @@ function ExpensesPage() {
                 pageSize={pageSize}
                 onPageChange={setPage}
                 onPageSizeChange={setPageSize}
-               totalItems={expenses.length}/>
+                totalItems={expenses.length}
+              />
             </div>
           </div>
         )}

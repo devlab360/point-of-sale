@@ -8,7 +8,7 @@ import { Activity } from "lucide-react";
 import { usePreferences } from "@/contexts/PreferencesContext";
 
 export const Route = createFileRoute("/activity")({
-  head: () => ({ meta: [{ title: "Activity Log · Grocer.Pro" }] }),
+  head: () => ({ meta: [{ title: "Activity Log · NexisPOS" }] }),
   component: ActivityPage,
 });
 

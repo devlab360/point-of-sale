@@ -74,6 +74,13 @@ export const APP_GROUPS: MenuGroup[] = [
         roles: ["admin", "manager"],
       },
       {
+        to: "/services",
+        label: "Services",
+        tkey: "services",
+        icon: Wrench,
+        roles: ["admin", "manager"],
+      },
+      {
         to: "/categories",
         label: "Categories",
         tkey: "categories",
@@ -275,6 +282,7 @@ export const PERMISSION_ROUTE_MAP: Record<string, string[]> = {
   pos: ["/pos"],
   inventory: [
     "/products",
+    "/services",
     "/categories",
     "/brands",
     "/units",
@@ -342,7 +350,7 @@ export function hasPermissionForRoute(
   }
 
   // 2. Core System Routes (Always Available)
-  if (routePath === "/" || routePath === "/profile" || routePath.startsWith("/profile/")) {
+  if (routePath === "/" || routePath === "/settings" || routePath === "/profile" || routePath.startsWith("/profile/")) {
     return { allowed: true };
   }
 

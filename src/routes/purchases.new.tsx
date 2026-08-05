@@ -31,7 +31,7 @@ import { PersistStore } from "@/lib/session-store";
 import { Badge } from "@/components/ui/badge";
 
 export const Route = createFileRoute("/purchases/new")({
-  head: () => ({ meta: [{ title: "New Purchase Order · Grocer.Pro" }] }),
+  head: () => ({ meta: [{ title: "New Purchase Order · NexisPOS" }] }),
   component: NewPurchase,
 });
 

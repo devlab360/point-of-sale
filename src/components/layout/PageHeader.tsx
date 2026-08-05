@@ -12,12 +12,12 @@ export function PageHeader({ title, description, actions, className }: Props) {
   return (
     <div
       className={cn(
-        "flex flex-row items-start justify-between gap-3 sm:items-center",
+        "flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center",
         className,
       )}
     >
-      <div className="min-w-0">
-        <h1 className="truncate text-2xl font-bold tracking-tight text-foreground sm:text-[26px]">
+      <div className="w-full sm:min-w-0">
+        <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-[26px] break-words">
           {title}
         </h1>
         {description && (

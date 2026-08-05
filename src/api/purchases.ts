@@ -152,7 +152,7 @@ export const createPurchaseFn = createServerFn({ method: "POST" })
             quantity: line.quantity,
             createdAt: new Date().toISOString(),
           }));
-          
+
           const pItems = rawItems.map((line: any) => ({
             organizationId: session.orgId,
             purchaseId: purchaseId,
@@ -290,7 +290,7 @@ export const createPurchaseReturnFn = createServerFn({ method: "POST" })
 
         if (data.items && data.purchaseReturn.stockRestored) {
           const validItems = data.items.filter((line: any) => line.quantity > 0);
-          
+
           if (validItems.length > 0) {
             const movements = validItems.map((line: any) => ({
               organizationId: session.orgId,

@@ -86,15 +86,15 @@ export const createSalesReturnFn = createServerFn({ method: "POST" })
         if (newReturn.stockRestored && items.length > 0) {
           for (const item of items) {
             if (!item.productId || !item.quantity) continue;
-            
+
             await tx
               .update(schema.products)
               .set({ stock: sql`${schema.products.stock} + ${item.quantity}` })
               .where(
                 and(
                   eq(schema.products.id, item.productId),
-                  eq(schema.products.organizationId, orgId)
-                )
+                  eq(schema.products.organizationId, orgId),
+                ),
               );
           }
         }

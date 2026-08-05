@@ -272,7 +272,7 @@ export function AppHeader() {
 
   const profile = user || {
     name: "Admin",
-    email: "admin@grocer.pro",
+    email: "admin@nexispos.com",
   };
   const initials = (profile.name || "U")
     .split(" ")
@@ -354,13 +354,13 @@ export function AppHeader() {
       <div className="flex flex-1 items-center justify-end gap-2 md:flex-none">
         <div
           onClick={() => setSearchOpen(true)}
-          className="relative hidden md:block cursor-pointer"
+          className="relative hidden md:block cursor-pointer shrink-1 min-w-0"
         >
           <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-          <div className="flex items-center h-9 w-64 rounded-lg border border-border bg-muted/50 pl-9 pr-12 text-sm text-muted-foreground select-none hover:border-ring transition-colors xl:w-80">
-            Search app, products, orders...
+          <div className="flex items-center h-9 w-48 lg:w-64 xl:w-80 rounded-lg border border-border bg-muted/50 pl-9 pr-2 lg:pr-12 text-sm text-muted-foreground select-none hover:border-ring transition-colors overflow-hidden">
+            <span className="truncate">Search app, products, orders...</span>
           </div>
-          <kbd className="pointer-events-none absolute right-2 top-1/2 hidden -translate-y-1/2 items-center gap-1 rounded border border-border bg-background px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground xl:inline-flex">
+          <kbd className="pointer-events-none absolute right-2 top-1/2 hidden -translate-y-1/2 items-center gap-1 rounded border border-border bg-background px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground lg:inline-flex">
             <Command className="size-3" />K
           </kbd>
         </div>

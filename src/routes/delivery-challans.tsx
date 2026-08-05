@@ -53,7 +53,7 @@ import { FieldError } from "@/components/ui/field-error";
 import { usePreferences } from "@/contexts/PreferencesContext";
 
 export const Route = createFileRoute("/delivery-challans")({
-  head: () => ({ meta: [{ title: "Delivery Challans · Grocer.Pro" }] }),
+  head: () => ({ meta: [{ title: "Delivery Challans · NexisPOS" }] }),
   component: DeliveryChallansPage,
 });
 
@@ -404,82 +404,87 @@ function DeliveryChallansPage() {
           <div className="space-y-4">
             <div className="overflow-hidden rounded-xl border border-border bg-card shadow-soft">
               <div className="overflow-hidden rounded-xl border border-border bg-card shadow-soft">
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-sm min-w-[700px]">
-                <thead className="bg-muted/50 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                  <tr>
-                    <th className="px-4 py-3 whitespace-nowrap">Challan #</th>
-                    <th className="px-4 py-3 whitespace-nowrap">Customer</th>
-                    <th className="px-4 py-3 whitespace-nowrap">Date</th>
-                    <th className="px-4 py-3 whitespace-nowrap">Transport / Vehicle</th>
-                    <th className="px-4 py-3 whitespace-nowrap">Status</th>
-                    <th className="px-4 py-3 text-right whitespace-nowrap">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border">
-                  {paginated.map((c) => (
-                    <tr key={c.id} className="hover:bg-muted/30">
-                      <td className="px-4 py-3 font-mono font-bold text-primary whitespace-nowrap">{c.challanNo}</td>
-                      <td className="px-4 py-3 font-semibold whitespace-nowrap">{c.customerName}</td>
-                      <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">
-                        {formatDate(c.date)}
-                      </td>
-                      <td className="px-4 py-3 text-xs whitespace-nowrap">
-                        {c.transportName
-                          ? `${c.transportName} (${c.vehicleNo || "N/A"})`
-                          : "Self / Local"}
-                      </td>
-                      <td className="px-4 py-3 whitespace-nowrap">
-                        {c.status === "invoiced" ? (
-                          <Badge className="bg-success/15 text-success border-success/30">
-                            Invoiced
-                          </Badge>
-                        ) : (
-                          <Badge className="bg-warning/15 text-warning-foreground border-warning/30">
-                            Delivered
-                          </Badge>
-                        )}
-                      </td>
-                      <td className="px-4 py-3 text-right">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="size-8">
-                              <MoreVertical className="size-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => setViewItem(c)}>
-                              <Truck className="mr-2 size-4 text-primary" /> View / Print Challan
-                              Slip
-                            </DropdownMenuItem>
-                            {c.status !== "invoiced" && (
-                              <DropdownMenuItem onClick={() => convertChallanToInvoice(c)}>
-                                <ArrowRightLeft className="mr-2 size-4 text-success" /> Convert to
-                                Invoice
-                              </DropdownMenuItem>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-sm min-w-[700px]">
+                    <thead className="bg-muted/50 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                      <tr>
+                        <th className="px-4 py-3 whitespace-nowrap">Challan #</th>
+                        <th className="px-4 py-3 whitespace-nowrap">Customer</th>
+                        <th className="px-4 py-3 whitespace-nowrap">Date</th>
+                        <th className="px-4 py-3 whitespace-nowrap">Transport / Vehicle</th>
+                        <th className="px-4 py-3 whitespace-nowrap">Status</th>
+                        <th className="px-4 py-3 text-right whitespace-nowrap">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-border">
+                      {paginated.map((c) => (
+                        <tr key={c.id} className="hover:bg-muted/30">
+                          <td className="px-4 py-3 font-mono font-bold text-primary whitespace-nowrap">
+                            {c.challanNo}
+                          </td>
+                          <td className="px-4 py-3 font-semibold whitespace-nowrap">
+                            {c.customerName}
+                          </td>
+                          <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">
+                            {formatDate(c.date)}
+                          </td>
+                          <td className="px-4 py-3 text-xs whitespace-nowrap">
+                            {c.transportName
+                              ? `${c.transportName} (${c.vehicleNo || "N/A"})`
+                              : "Self / Local"}
+                          </td>
+                          <td className="px-4 py-3 whitespace-nowrap">
+                            {c.status === "invoiced" ? (
+                              <Badge className="bg-success/15 text-success border-success/30">
+                                Invoiced
+                              </Badge>
+                            ) : (
+                              <Badge className="bg-warning/15 text-warning-foreground border-warning/30">
+                                Delivered
+                              </Badge>
                             )}
-                            <DropdownMenuItem
-                              className="text-destructive"
-                              onClick={() => deleteChallan(c.id)}
-                            >
-                              <Trash2 className="mr-2 size-4" /> Delete
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                          </td>
+                          <td className="px-4 py-3 text-right">
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon" className="size-8">
+                                  <MoreVertical className="size-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem onClick={() => setViewItem(c)}>
+                                  <Truck className="mr-2 size-4 text-primary" /> View / Print
+                                  Challan Slip
+                                </DropdownMenuItem>
+                                {c.status !== "invoiced" && (
+                                  <DropdownMenuItem onClick={() => convertChallanToInvoice(c)}>
+                                    <ArrowRightLeft className="mr-2 size-4 text-success" /> Convert
+                                    to Invoice
+                                  </DropdownMenuItem>
+                                )}
+                                <DropdownMenuItem
+                                  className="text-destructive"
+                                  onClick={() => deleteChallan(c.id)}
+                                >
+                                  <Trash2 className="mr-2 size-4" /> Delete
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                <PaginationControls
+                  currentPage={page}
+                  totalPages={totalPages}
+                  pageSize={pageSize}
+                  onPageChange={setPage}
+                  onPageSizeChange={setPageSize}
+                  totalItems={filteredChallans.length}
+                />
               </div>
-              <PaginationControls
-              currentPage={page}
-              totalPages={totalPages}
-              pageSize={pageSize}
-              onPageChange={setPage}
-              onPageSizeChange={setPageSize}
-             totalItems={filteredChallans.length}/>
-            </div>
             </div>
           </div>
         )}
@@ -578,7 +583,9 @@ function DeliveryChallansPage() {
               <div className="space-y-2.5 pt-2">
                 <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center justify-between">
                   <span>Dispatched Items</span>
-                  <Badge variant="secondary" className="rounded-full text-[10px] px-2">{lineItems.length}</Badge>
+                  <Badge variant="secondary" className="rounded-full text-[10px] px-2">
+                    {lineItems.length}
+                  </Badge>
                 </Label>
                 <div className="space-y-2">
                   {lineItems.map((item) => {
@@ -666,11 +673,20 @@ function DeliveryChallansPage() {
               </p>
             </div>
             <div className="flex w-full sm:w-auto gap-2 mt-2 sm:mt-0">
-              <Button size="sm" variant="outline" className="flex-1 sm:flex-none" onClick={() => window.print()}>
+              <Button
+                size="sm"
+                variant="outline"
+                className="flex-1 sm:flex-none"
+                onClick={() => window.print()}
+              >
                 <Printer className="mr-1 size-3.5" /> Print Challan
               </Button>
               {viewItem?.status !== "invoiced" && (
-                <Button size="sm" className="flex-1 sm:flex-none" onClick={() => viewItem && convertChallanToInvoice(viewItem)}>
+                <Button
+                  size="sm"
+                  className="flex-1 sm:flex-none"
+                  onClick={() => viewItem && convertChallanToInvoice(viewItem)}
+                >
                   <CheckCircle2 className="mr-1 size-3.5" /> Convert to Invoice
                 </Button>
               )}
@@ -718,9 +734,15 @@ function DeliveryChallansPage() {
                     <tbody className="divide-y">
                       {viewItem.items.map((i, idx) => (
                         <tr key={idx}>
-                          <td className="p-2.5 font-mono text-muted-foreground whitespace-nowrap">{idx + 1}</td>
-                          <td className="p-2.5 font-semibold text-foreground whitespace-nowrap">{i.productName}</td>
-                          <td className="p-2.5 text-right font-bold text-base whitespace-nowrap">{i.quantity}</td>
+                          <td className="p-2.5 font-mono text-muted-foreground whitespace-nowrap">
+                            {idx + 1}
+                          </td>
+                          <td className="p-2.5 font-semibold text-foreground whitespace-nowrap">
+                            {i.productName}
+                          </td>
+                          <td className="p-2.5 text-right font-bold text-base whitespace-nowrap">
+                            {i.quantity}
+                          </td>
                           <td className="p-2.5 text-left font-medium text-muted-foreground whitespace-nowrap">
                             {getUnitDisplay(i.unit)}
                           </td>

@@ -53,7 +53,7 @@ import { FieldError } from "@/components/ui/field-error";
 import { usePreferences } from "@/contexts/PreferencesContext";
 
 export const Route = createFileRoute("/quotations")({
-  head: () => ({ meta: [{ title: "B2B Quotations · Grocer.Pro" }] }),
+  head: () => ({ meta: [{ title: "B2B Quotations · NexisPOS" }] }),
   component: QuotationsPage,
 });
 
@@ -372,84 +372,89 @@ function QuotationsPage() {
           <div className="space-y-4">
             <div className="overflow-hidden rounded-xl border border-border bg-card shadow-soft">
               <div className="overflow-hidden rounded-xl border border-border bg-card shadow-soft">
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-sm min-w-[800px]">
-                <thead className="bg-muted/50 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                  <tr>
-                    <th className="px-4 py-3 whitespace-nowrap">Quotation #</th>
-                    <th className="px-4 py-3 whitespace-nowrap">Customer</th>
-                    <th className="px-4 py-3 whitespace-nowrap">Date</th>
-                    <th className="px-4 py-3 whitespace-nowrap">Valid Until</th>
-                    <th className="px-4 py-3 text-right whitespace-nowrap">Total Amount</th>
-                    <th className="px-4 py-3 whitespace-nowrap">Status</th>
-                    <th className="px-4 py-3 text-right whitespace-nowrap">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border">
-                  {paginated.map((q) => (
-                    <tr key={q.id} className="hover:bg-muted/30">
-                      <td className="px-4 py-3 font-mono font-bold text-primary whitespace-nowrap">
-                        {q.quotationNo}
-                      </td>
-                      <td className="px-4 py-3 font-semibold whitespace-nowrap">{q.customerName}</td>
-                      <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">
-                        {formatDate(q.date)}
-                      </td>
-                      <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">
-                        {formatDate(q.validUntil)}
-                      </td>
-                      <td className="px-4 py-3 text-right font-bold whitespace-nowrap">{formatCurrency(q.total)}</td>
-                      <td className="px-4 py-3 whitespace-nowrap">
-                        {q.status === "converted" ? (
-                          <Badge className="bg-success/15 text-success border-success/30">
-                            Converted to Invoice
-                          </Badge>
-                        ) : q.status === "sent" ? (
-                          <Badge className="bg-info/15 text-info border-info/30">Sent</Badge>
-                        ) : (
-                          <Badge variant="outline">{q.status}</Badge>
-                        )}
-                      </td>
-                      <td className="px-4 py-3 text-right whitespace-nowrap">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="size-8">
-                              <MoreVertical className="size-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => setViewItem(q)}>
-                              <FileText className="mr-2 size-4 text-primary" /> View / Print
-                              Quotation
-                            </DropdownMenuItem>
-                            {q.status !== "converted" && (
-                              <DropdownMenuItem onClick={() => convertToInvoice(q)}>
-                                <ArrowRightLeft className="mr-2 size-4 text-success" /> Convert to
-                                Invoice
-                              </DropdownMenuItem>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-sm min-w-[800px]">
+                    <thead className="bg-muted/50 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                      <tr>
+                        <th className="px-4 py-3 whitespace-nowrap">Quotation #</th>
+                        <th className="px-4 py-3 whitespace-nowrap">Customer</th>
+                        <th className="px-4 py-3 whitespace-nowrap">Date</th>
+                        <th className="px-4 py-3 whitespace-nowrap">Valid Until</th>
+                        <th className="px-4 py-3 text-right whitespace-nowrap">Total Amount</th>
+                        <th className="px-4 py-3 whitespace-nowrap">Status</th>
+                        <th className="px-4 py-3 text-right whitespace-nowrap">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-border">
+                      {paginated.map((q) => (
+                        <tr key={q.id} className="hover:bg-muted/30">
+                          <td className="px-4 py-3 font-mono font-bold text-primary whitespace-nowrap">
+                            {q.quotationNo}
+                          </td>
+                          <td className="px-4 py-3 font-semibold whitespace-nowrap">
+                            {q.customerName}
+                          </td>
+                          <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">
+                            {formatDate(q.date)}
+                          </td>
+                          <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">
+                            {formatDate(q.validUntil)}
+                          </td>
+                          <td className="px-4 py-3 text-right font-bold whitespace-nowrap">
+                            {formatCurrency(q.total)}
+                          </td>
+                          <td className="px-4 py-3 whitespace-nowrap">
+                            {q.status === "converted" ? (
+                              <Badge className="bg-success/15 text-success border-success/30">
+                                Converted to Invoice
+                              </Badge>
+                            ) : q.status === "sent" ? (
+                              <Badge className="bg-info/15 text-info border-info/30">Sent</Badge>
+                            ) : (
+                              <Badge variant="outline">{q.status}</Badge>
                             )}
-                            <DropdownMenuItem
-                              className="text-destructive"
-                              onClick={() => deleteQuotation(q.id)}
-                            >
-                              <Trash2 className="mr-2 size-4" /> Delete
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                          </td>
+                          <td className="px-4 py-3 text-right whitespace-nowrap">
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon" className="size-8">
+                                  <MoreVertical className="size-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem onClick={() => setViewItem(q)}>
+                                  <FileText className="mr-2 size-4 text-primary" /> View / Print
+                                  Quotation
+                                </DropdownMenuItem>
+                                {q.status !== "converted" && (
+                                  <DropdownMenuItem onClick={() => convertToInvoice(q)}>
+                                    <ArrowRightLeft className="mr-2 size-4 text-success" /> Convert
+                                    to Invoice
+                                  </DropdownMenuItem>
+                                )}
+                                <DropdownMenuItem
+                                  className="text-destructive"
+                                  onClick={() => deleteQuotation(q.id)}
+                                >
+                                  <Trash2 className="mr-2 size-4" /> Delete
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                <PaginationControls
+                  currentPage={page}
+                  totalPages={totalPages}
+                  pageSize={pageSize}
+                  onPageChange={setPage}
+                  onPageSizeChange={setPageSize}
+                  totalItems={filteredQuotations.length}
+                />
               </div>
-              <PaginationControls
-              currentPage={page}
-              totalPages={totalPages}
-              pageSize={pageSize}
-              onPageChange={setPage}
-              onPageSizeChange={setPageSize}
-             totalItems={filteredQuotations.length}/>
-            </div>
             </div>
           </div>
         )}
@@ -537,7 +542,9 @@ function QuotationsPage() {
                     <tr>
                       <th className="p-2 text-left whitespace-nowrap">Item</th>
                       <th className="p-2 text-center w-20 whitespace-nowrap">Qty</th>
-                      <th className="p-2 text-right w-28 whitespace-nowrap">Unit Price ({currencySymbol})</th>
+                      <th className="p-2 text-right w-28 whitespace-nowrap">
+                        Unit Price ({currencySymbol})
+                      </th>
                       <th className="p-2 text-right w-24 whitespace-nowrap">Total</th>
                       <th className="p-2 text-center w-12 whitespace-nowrap"></th>
                     </tr>
@@ -644,11 +651,20 @@ function QuotationsPage() {
               </p>
             </div>
             <div className="flex w-full sm:w-auto gap-2 mt-2 sm:mt-0">
-              <Button size="sm" variant="outline" className="flex-1 sm:flex-none" onClick={() => window.print()}>
+              <Button
+                size="sm"
+                variant="outline"
+                className="flex-1 sm:flex-none"
+                onClick={() => window.print()}
+              >
                 <Printer className="mr-1 size-3.5" /> Print PDF
               </Button>
               {viewItem?.status !== "converted" && (
-                <Button size="sm" className="flex-1 sm:flex-none" onClick={() => viewItem && convertToInvoice(viewItem)}>
+                <Button
+                  size="sm"
+                  className="flex-1 sm:flex-none"
+                  onClick={() => viewItem && convertToInvoice(viewItem)}
+                >
                   <CheckCircle2 className="mr-1 size-3.5" /> Convert to Invoice
                 </Button>
               )}
@@ -700,9 +716,15 @@ function QuotationsPage() {
                       {viewItem.items.map((i, idx) => (
                         <tr key={idx}>
                           <td className="p-2.5 font-medium whitespace-nowrap">{i.productName}</td>
-                          <td className="p-2.5 text-center font-bold whitespace-nowrap">{i.quantity}</td>
-                          <td className="p-2.5 text-right whitespace-nowrap">{formatCurrency(i.price)}</td>
-                          <td className="p-2.5 text-right font-bold whitespace-nowrap">{formatCurrency(i.total)}</td>
+                          <td className="p-2.5 text-center font-bold whitespace-nowrap">
+                            {i.quantity}
+                          </td>
+                          <td className="p-2.5 text-right whitespace-nowrap">
+                            {formatCurrency(i.price)}
+                          </td>
+                          <td className="p-2.5 text-right font-bold whitespace-nowrap">
+                            {formatCurrency(i.total)}
+                          </td>
                         </tr>
                       ))}
                     </tbody>

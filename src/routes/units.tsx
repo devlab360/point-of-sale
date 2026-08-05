@@ -38,7 +38,7 @@ import { useFormValidation } from "@/hooks/useFormValidation";
 import { FieldError } from "@/components/ui/field-error";
 
 export const Route = createFileRoute("/units")({
-  head: () => ({ meta: [{ title: "Units · Grocer.Pro" }] }),
+  head: () => ({ meta: [{ title: "Units · NexisPOS" }] }),
   component: UnitsPage,
 });
 
@@ -258,49 +258,54 @@ function UnitsPage() {
           <div className="space-y-4">
             <div className="overflow-hidden rounded-xl border border-border bg-card shadow-soft">
               <div className="overflow-hidden rounded-xl border border-border bg-card shadow-soft">
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-sm">
-                  <thead className="bg-muted/50 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                    <tr>
-                      <th className="px-4 py-3 whitespace-nowrap">Unit</th>
-                      <th className="px-4 py-3 whitespace-nowrap">Short code</th>
-                      <th className="px-4 py-3 text-right whitespace-nowrap">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-border">
-                    {paginatedUnits.map((u) => (
-                      <tr key={u.id} className="hover:bg-muted/30 group">
-                        <td className="px-4 py-3 font-semibold whitespace-nowrap">{u.name}</td>
-                        <td className="px-4 py-3 font-mono text-muted-foreground whitespace-nowrap">
-                          {u.short}
-                        </td>
-                        <td className="px-4 py-3 text-right whitespace-nowrap">
-                          <div className="flex justify-end gap-1">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="size-8"
-                              onClick={() => openEdit(u)}
-                            >
-                              <Pencil className="size-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="size-8 text-destructive"
-                              onClick={() => setDeleteId(u.id)}
-                            >
-                              <Trash2 className="size-4" />
-                            </Button>
-                          </div>
-                        </td>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-sm">
+                    <thead className="bg-muted/50 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                      <tr>
+                        <th className="px-4 py-3 whitespace-nowrap">Unit</th>
+                        <th className="px-4 py-3 whitespace-nowrap">Short code</th>
+                        <th className="px-4 py-3 text-right whitespace-nowrap">Actions</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody className="divide-y divide-border">
+                      {paginatedUnits.map((u) => (
+                        <tr key={u.id} className="hover:bg-muted/30 group">
+                          <td className="px-4 py-3 font-semibold whitespace-nowrap">{u.name}</td>
+                          <td className="px-4 py-3 font-mono text-muted-foreground whitespace-nowrap">
+                            {u.short}
+                          </td>
+                          <td className="px-4 py-3 text-right whitespace-nowrap">
+                            <div className="flex justify-end gap-1">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="size-8"
+                                onClick={() => openEdit(u)}
+                              >
+                                <Pencil className="size-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="size-8 text-destructive"
+                                onClick={() => setDeleteId(u.id)}
+                              >
+                                <Trash2 className="size-4" />
+                              </Button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                <PaginationControls
+                  currentPage={page}
+                  totalPages={totalPages}
+                  onPageChange={setPage}
+                  totalItems={units.length}
+                />
               </div>
-              <PaginationControls currentPage={page} totalPages={totalPages} onPageChange={setPage}  totalItems={units.length}/>
-            </div>
             </div>
           </div>
         )}

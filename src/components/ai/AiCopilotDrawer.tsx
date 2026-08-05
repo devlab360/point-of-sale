@@ -136,7 +136,7 @@ export function AiCopilotDrawer() {
     {
       id: "welcome",
       sender: "ai",
-      text: "👋 আসসালামু আলাইকুম! আমি আপনার **Grocer.Pro AI Copilot**। আপনার দোকানের লাভ-ক্ষতি, বকেয়া হিসাব, স্টক প্রেডিকশন বা বিজনেস হেলথ স্কোর নিয়ে প্রশ্ন করতে পারেন।",
+      text: "👋 WellCome! আমি আপনার **NexisPOS AI Copilot**। আপনার দোকানের লাভ-ক্ষতি, বকেয়া হিসাব, স্টক প্রেডিকশন বা বিজনেস হেলথ স্কোর নিয়ে প্রশ্ন করতে পারেন।",
       timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
     },
   ]);
@@ -315,16 +315,18 @@ export function AiCopilotDrawer() {
           cursor: isDragging ? "grabbing" : "grab",
           touchAction: "none",
         }}
-        className="fixed bottom-6 right-6 z-50 flex items-center gap-2 rounded-full bg-primary hover:bg-primary/90 px-4 py-3 text-sm font-bold text-primary-foreground shadow-md border border-primary/20 transition-colors"
+        className="fixed bottom-6 right-6 z-50 flex items-center gap-2 rounded-full bg-primary hover:bg-primary/90 px-3 py-3 text-sm font-bold text-primary-foreground shadow-md border border-primary/20 transition-colors"
       >
         <Sparkles className="size-5 animate-pulse" />
-        <span className="hidden sm:inline">AI Copilot</span>
-        <Badge
-          variant="secondary"
-          className="text-[9px] bg-background/20 text-white ml-1 pointer-events-none"
-        >
-          Ctrl+K
-        </Badge>
+        <span className="hidden sm:inline">
+          AI Copilot
+          <Badge
+            variant="secondary"
+            className="text-[9px] bg-background/20 text-white ml-1 pointer-events-none"
+          >
+            Ctrl+K
+          </Badge>
+        </span>
       </button>
 
       {/* AI Assistant Sheet Drawer */}
@@ -336,7 +338,7 @@ export function AiCopilotDrawer() {
           <SheetHeader className="p-4 border-b bg-gradient-to-r from-primary/10 via-background to-accent/10">
             <SheetTitle className="flex items-center gap-2 text-primary font-bold">
               <Bot className="size-5" />
-              <span>Grocer.Pro AI Business Advisor</span>
+              <span>NexisPOS AI Business Advisor</span>
             </SheetTitle>
             <p className="text-xs text-muted-foreground">
               Natural Language AI Store Intelligence & Analytics

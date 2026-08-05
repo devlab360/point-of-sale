@@ -74,7 +74,7 @@ import { getSettingsFn } from "@/api/settings";
 
 export const Route = createFileRoute("/products")({
   head: () => ({
-    meta: [{ title: "Products · Grocer.Pro" }],
+    meta: [{ title: "Products · NexisPOS" }],
   }),
   component: ProductsPage,
 });
@@ -581,8 +581,8 @@ function ProductsPage() {
             <DialogTitle>{editingProd ? "Edit Product" : "New Product"}</DialogTitle>
           </DialogHeader>
           <form onSubmit={save} noValidate>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 py-4">
-              <div className="grid gap-1.5 col-span-1 sm:col-span-2">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-4">
+              <div className="grid gap-1.5 col-span-1 md:col-span-2">
                 <Label>
                   Product Name <span className="text-destructive">*</span>
                 </Label>
@@ -786,7 +786,7 @@ function ProductsPage() {
                   placeholder="Select expiry date"
                 />
               </div>
-              <div className="grid gap-2 col-span-2">
+              <div className="grid gap-2 col-span-1 md:col-span-2">
                 <Label>Product Image</Label>
                 <FileUpload
                   value={
@@ -812,7 +812,7 @@ function ProductsPage() {
               </div>
 
               {/* Warehouse Rack / Shelf Location Fields */}
-              <div className="grid grid-cols-3 gap-2 col-span-2 rounded-xl border p-3 bg-muted/20">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-2 col-span-1 md:col-span-2 rounded-xl border p-3 bg-muted/20">
                 <div>
                   <Label className="text-xs">Rack No.</Label>
                   <Input
@@ -843,7 +843,7 @@ function ProductsPage() {
               </div>
 
               {/* Electronics IMEI / Serial Tracking Toggle */}
-              <div className="col-span-2 rounded-xl border border-primary/20 bg-primary/5 p-3 space-y-3">
+              <div className="col-span-1 md:col-span-2 rounded-xl border border-primary/20 bg-primary/5 p-3 space-y-3">
                 <div className="flex items-center gap-2">
                   <input
                     type="checkbox"
@@ -876,9 +876,9 @@ function ProductsPage() {
               </div>
 
               {settings?.enableGST && (
-                <div className="col-span-2 rounded-xl border border-border bg-card p-4 space-y-4">
+                <div className="col-span-1 md:col-span-2 rounded-xl border border-border bg-card p-4 space-y-4">
                   <h3 className="text-sm font-semibold mb-2">Tax & Compliance (GST)</h3>
-                  <div className="grid grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
                       <Label className="text-xs">HSN / SAC Code</Label>
                       <Input
@@ -926,7 +926,7 @@ function ProductsPage() {
               )}
 
               {/* Pharmacy Batch & Expiry Tracking Toggle */}
-              <div className="col-span-2 rounded-xl border border-info/20 bg-info/5 p-3 space-y-3">
+              <div className="col-span-1 md:col-span-2 rounded-xl border border-info/20 bg-info/5 p-3 space-y-3">
                 <div className="flex items-center gap-2">
                   <input
                     type="checkbox"
@@ -943,7 +943,7 @@ function ProductsPage() {
                   </Label>
                 </div>
                 {formData.hasBatch && (
-                  <div className="grid grid-cols-3 gap-2 pl-6">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pl-0 md:pl-6">
                     <div>
                       <Label className="text-xs">Batch Number</Label>
                       <Input
@@ -1115,126 +1115,126 @@ function TableView({
   return (
     <div className="overflow-x-auto">
       <table className="w-full text-left text-sm min-w-[1000px]">
-          <thead className="sticky top-0 bg-muted/50 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-            <tr>
-              <th className="px-4 py-3 whitespace-nowrap">
+        <thead className="sticky top-0 bg-muted/50 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+          <tr>
+            <th className="px-4 py-3 whitespace-nowrap">
+              <input type="checkbox" className="rounded border-border" />
+            </th>
+            <th className="px-4 py-3 whitespace-nowrap">{t("product") || "Product"}</th>
+            <th className="px-4 py-3 whitespace-nowrap">{t("sku") || "SKU"}</th>
+            <th className="px-4 py-3 whitespace-nowrap">{t("category") || "Category"}</th>
+            <th className="px-4 py-3 text-right whitespace-nowrap">{t("price") || "Price"}</th>
+            <th className="px-4 py-3 text-right whitespace-nowrap">{t("stock") || "Stock"}</th>
+            <th className="px-4 py-3 whitespace-nowrap">{t("status") || "Status"}</th>
+            <th className="px-4 py-3 whitespace-nowrap"></th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-border">
+          {products.map((p) => (
+            <tr key={p.id} className="group hover:bg-muted/30">
+              <td className="px-4 py-3 whitespace-nowrap">
                 <input type="checkbox" className="rounded border-border" />
-              </th>
-              <th className="px-4 py-3 whitespace-nowrap">{t("product") || "Product"}</th>
-              <th className="px-4 py-3 whitespace-nowrap">{t("sku") || "SKU"}</th>
-              <th className="px-4 py-3 whitespace-nowrap">{t("category") || "Category"}</th>
-              <th className="px-4 py-3 text-right whitespace-nowrap">{t("price") || "Price"}</th>
-              <th className="px-4 py-3 text-right whitespace-nowrap">{t("stock") || "Stock"}</th>
-              <th className="px-4 py-3 whitespace-nowrap">{t("status") || "Status"}</th>
-              <th className="px-4 py-3 whitespace-nowrap"></th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-border">
-            {products.map((p) => (
-              <tr key={p.id} className="group hover:bg-muted/30">
-                <td className="px-4 py-3 whitespace-nowrap">
-                  <input type="checkbox" className="rounded border-border" />
-                </td>
-                <td className="px-4 py-3 whitespace-nowrap">
-                  <div className="flex items-center gap-3">
-                    <div className="grid size-10 shrink-0 place-items-center rounded-lg bg-muted overflow-hidden">
-                      <img src={p.image} alt="" className="size-full object-cover" />
-                    </div>
-                    <div>
-                      <div className="font-semibold">{p.name}</div>
-                      <div className="text-xs text-muted-foreground">
-                        {brands.find((b) => b.id === p.brand)?.name || p.brand || ""}
-                      </div>
+              </td>
+              <td className="px-4 py-3 whitespace-nowrap">
+                <div className="flex items-center gap-3">
+                  <div className="grid size-10 shrink-0 place-items-center rounded-lg bg-muted overflow-hidden">
+                    <img src={p.image} alt="" className="size-full object-cover" />
+                  </div>
+                  <div>
+                    <div className="font-semibold">{p.name}</div>
+                    <div className="text-xs text-muted-foreground">
+                      {brands.find((b) => b.id === p.brand)?.name || p.brand || ""}
                     </div>
                   </div>
-                </td>
-                <td className="px-4 py-3 font-mono text-xs text-muted-foreground whitespace-nowrap">
-                  {p.sku}
-                </td>
-                <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">
-                  {categories.find((c) => c.id === p.category)?.name || p.category || "-"}
-                </td>
-                <td className="number px-4 py-3 text-right whitespace-nowrap">
-                  <div className="font-semibold">{formatCurrency(p.price)}</div>
-                  {(p.wholesalePrice > 0 || p.dealerPrice > 0) && (
-                    <div className="flex flex-col items-end gap-0.5 text-[10px] text-muted-foreground mt-0.5">
-                      {p.wholesalePrice > 0 && (
-                        <span className="text-info font-medium">
-                          WS: {formatCurrency(p.wholesalePrice)}
-                        </span>
-                      )}
-                      {p.dealerPrice > 0 && (
-                        <span className="text-warning font-medium">
-                          Dealer: {formatCurrency(p.dealerPrice)}
-                        </span>
-                      )}
-                    </div>
+                </div>
+              </td>
+              <td className="px-4 py-3 font-mono text-xs text-muted-foreground whitespace-nowrap">
+                {p.sku}
+              </td>
+              <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">
+                {categories.find((c) => c.id === p.category)?.name || p.category || "-"}
+              </td>
+              <td className="number px-4 py-3 text-right whitespace-nowrap">
+                <div className="font-semibold">{formatCurrency(p.price)}</div>
+                {(p.wholesalePrice > 0 || p.dealerPrice > 0) && (
+                  <div className="flex flex-col items-end gap-0.5 text-[10px] text-muted-foreground mt-0.5">
+                    {p.wholesalePrice > 0 && (
+                      <span className="text-info font-medium">
+                        WS: {formatCurrency(p.wholesalePrice)}
+                      </span>
+                    )}
+                    {p.dealerPrice > 0 && (
+                      <span className="text-warning font-medium">
+                        Dealer: {formatCurrency(p.dealerPrice)}
+                      </span>
+                    )}
+                  </div>
+                )}
+              </td>
+              <td className="px-4 py-3 text-right whitespace-nowrap">
+                <span
+                  className={cn(
+                    "number font-semibold",
+                    p.stock <= p.reorderLevel && "text-destructive",
                   )}
-                </td>
-                <td className="px-4 py-3 text-right whitespace-nowrap">
-                  <span
-                    className={cn(
-                      "number font-semibold",
-                      p.stock <= p.reorderLevel && "text-destructive",
-                    )}
-                  >
-                    {p.stock}
-                  </span>
-                  <span className="ml-1 text-xs text-muted-foreground">
-                    {units.find((u) => u.id === p.unit)?.name || p.unit || ""}
-                  </span>
-                </td>
-                <td className="px-4 py-3 whitespace-nowrap">
-                  <div className="flex flex-col gap-1 items-start">
-                    {p.stock <= p.reorderLevel ? (
-                      <Badge variant="destructive">Low stock</Badge>
-                    ) : (
-                      <Badge className="bg-success/10 text-success hover:bg-success/15">
-                        In stock
-                      </Badge>
-                    )}
-                    {p.hasSerial && (
-                      <span className="rounded bg-primary/10 px-1.5 py-0.5 text-[9px] font-bold text-primary">
-                        IMEI: {p.serials?.length || 0} Avail
-                      </span>
-                    )}
-                    {p.hasBatch && p.batches?.[0] && (
-                      <span className="rounded bg-info/10 px-1.5 py-0.5 text-[9px] font-bold text-info">
-                        Batch: {p.batches[0].batchNo} ({p.batches[0].expiryDate})
-                      </span>
-                    )}
-                    {p.locationRack && (
-                      <span className="rounded bg-muted border px-1.5 py-0.5 text-[9px] font-mono text-muted-foreground font-bold">
-                        Rack: {p.locationRack} {p.locationShelf ? `· ${p.locationShelf}` : ""}
-                      </span>
-                    )}
-                  </div>
-                </td>
-                <td className="px-4 py-3 text-right whitespace-nowrap">
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon" className="size-8">
-                        <MoreHorizontal className="size-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => onEdit(p)}>
-                        <Pencil className="size-4" /> Edit
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => onPrint(p)}>
-                        <Printer className="size-4" /> Print Label
-                      </DropdownMenuItem>
-                      <DropdownMenuItem className="text-destructive" onClick={() => onDelete(p.id)}>
-                        <Trash2 className="size-4" /> Delete
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+                >
+                  {p.stock}
+                </span>
+                <span className="ml-1 text-xs text-muted-foreground">
+                  {units.find((u) => u.id === p.unit)?.name || p.unit || ""}
+                </span>
+              </td>
+              <td className="px-4 py-3 whitespace-nowrap">
+                <div className="flex flex-col gap-1 items-start">
+                  {p.stock <= p.reorderLevel ? (
+                    <Badge variant="destructive">Low stock</Badge>
+                  ) : (
+                    <Badge className="bg-success/10 text-success hover:bg-success/15">
+                      In stock
+                    </Badge>
+                  )}
+                  {p.hasSerial && (
+                    <span className="rounded bg-primary/10 px-1.5 py-0.5 text-[9px] font-bold text-primary">
+                      IMEI: {p.serials?.length || 0} Avail
+                    </span>
+                  )}
+                  {p.hasBatch && p.batches?.[0] && (
+                    <span className="rounded bg-info/10 px-1.5 py-0.5 text-[9px] font-bold text-info">
+                      Batch: {p.batches[0].batchNo} ({p.batches[0].expiryDate})
+                    </span>
+                  )}
+                  {p.locationRack && (
+                    <span className="rounded bg-muted border px-1.5 py-0.5 text-[9px] font-mono text-muted-foreground font-bold">
+                      Rack: {p.locationRack} {p.locationShelf ? `· ${p.locationShelf}` : ""}
+                    </span>
+                  )}
+                </div>
+              </td>
+              <td className="px-4 py-3 text-right whitespace-nowrap">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon" className="size-8">
+                      <MoreHorizontal className="size-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => onEdit(p)}>
+                      <Pencil className="size-4" /> Edit
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => onPrint(p)}>
+                      <Printer className="size-4" /> Print Label
+                    </DropdownMenuItem>
+                    <DropdownMenuItem className="text-destructive" onClick={() => onDelete(p.id)}>
+                      <Trash2 className="size-4" /> Delete
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
   );
 }
 

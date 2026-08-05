@@ -74,7 +74,7 @@ import { ErrorState } from "@/components/ui/error-state";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 
 export const Route = createFileRoute("/promotions")({
-  head: () => ({ meta: [{ title: "Promotions · Grocer.Pro" }] }),
+  head: () => ({ meta: [{ title: "Promotions · NexisPOS" }] }),
   component: PromotionsPage,
 });
 
@@ -354,7 +354,12 @@ function PromotionsPage() {
                 </div>
               ))}
             </div>
-            <PaginationControls currentPage={page} totalPages={totalPages} onPageChange={setPage}  totalItems={filteredPromotions.length} />
+            <PaginationControls
+              currentPage={page}
+              totalPages={totalPages}
+              onPageChange={setPage}
+              totalItems={filteredPromotions.length}
+            />
           </div>
         )}
       </DataPage>

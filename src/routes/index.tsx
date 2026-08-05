@@ -50,17 +50,20 @@ import { getSalesFn } from "@/api/sales";
 import { getCustomersFn } from "@/api/customers";
 import { getExpensesFn } from "@/api/expenses";
 import { getCategoriesFn } from "@/api/categories";
+import { getSettingsFn } from "@/api/settings";
 import { PersistStore } from "@/lib/session-store";
 import { cn } from "@/lib/utils";
 import { useCurrency } from "@/lib/currency";
 import { useAuth } from "@/contexts/AuthContext";
 import { DashboardSkeleton } from "@/components/skeletons/DashboardSkeleton";
 import { ErrorState } from "@/components/ui/error-state";
+import { sendAutomatedReport } from "@/lib/automation/report-bot";
+import { MessageCircle } from "lucide-react";
 
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Dashboard · Grocer.Pro" },
+      { title: "Dashboard · NexisPOS" },
       {
         name: "description",
         content: "Real-time sales, revenue, low-stock alerts and operational KPIs for your store.",
@@ -131,13 +134,17 @@ function Dashboard() {
   });
   const expenses = expensesData || [];
 
-  const {
-    data: categoriesData,
-  } = useQuery({
+  const { data: categoriesData } = useQuery({
     queryKey: ["categories", orgId],
     queryFn: async () => ((await getCategoriesFn({ data: {} })) as any)?.data || [],
   });
   const categories = categoriesData || [];
+
+  const { data: settingsData } = useQuery({
+    queryKey: ["settings", orgId],
+    queryFn: async () => ((await getSettingsFn({ data: {} })) as any)?.data,
+  });
+  const settings: any = settingsData;
 
   const isLoading = isProductsLoading || isSalesLoading || isCustomersLoading || isExpensesLoading;
   const isError = isProductsError || isSalesError || isCustomersError || isExpensesError;
@@ -323,11 +330,13 @@ function Dashboard() {
         const prod = products.find((p: any) => p.id === i.productId);
         let catName = "General";
         if (prod?.category) {
-          const cat = categories.find((c: any) => c.id === prod.category || c.name === prod.category);
+          const cat = categories.find(
+            (c: any) => c.id === prod.category || c.name === prod.category,
+          );
           if (cat) {
-             catName = cat.name;
+            catName = cat.name;
           } else if (prod.category.length < 20) {
-             catName = prod.category; // fallback if it's already a short name
+            catName = prod.category; // fallback if it's already a short name
           }
         }
         const itemTotal = Number(i.total) || (Number(i.price) || 0) * (i.quantity || 1);
@@ -403,9 +412,26 @@ function Dashboard() {
         actions={
           <>
             {canAccessReports && (
-              <Button variant="outline" size="sm" onClick={() => setIsDailyReportOpen(true)}>
-                <Receipt className="size-4" /> Daily report
-              </Button>
+              <>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="bg-green-500/10 text-green-600 border-green-500/20 hover:bg-green-500/20 hidden sm:flex"
+                  onClick={() => {
+                    const topItems = topSelling.map((i) => i.name);
+                    sendAutomatedReport(user?.phone || settings?.phone || "", "Daily", {
+                      totalRevenue: todayRevenue,
+                      totalOrders: todayOrders,
+                      topItems,
+                    });
+                  }}
+                >
+                  <MessageCircle className="size-4" /> Send AI Report
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => setIsDailyReportOpen(true)}>
+                  <Receipt className="size-4" /> Daily report
+                </Button>
+              </>
             )}
             {canAccessPos && (
               <Button size="sm" asChild>
@@ -504,7 +530,7 @@ function Dashboard() {
       <div className="rounded-xl border border-primary/30 bg-gradient-to-r from-primary/10 via-background to-accent/10 p-5 shadow-soft">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className="flex size-14 items-center justify-center rounded-2xl bg-primary text-primary-foreground font-extrabold text-2xl shadow-elevated">
+            <div className="flex size-14 shrink-0 items-center justify-center rounded-2xl bg-primary text-primary-foreground font-extrabold text-2xl shadow-elevated">
               {healthAnalysis.score}
             </div>
             <div>

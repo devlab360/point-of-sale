@@ -1,9 +1,9 @@
-import { drizzle } from 'drizzle-orm/postgres-js';
-import postgres from 'postgres';
-import * as dotenv from 'dotenv';
-import path from 'path';
+import { drizzle } from "drizzle-orm/postgres-js";
+import postgres from "postgres";
+import * as dotenv from "dotenv";
+import path from "path";
 
-dotenv.config({ path: path.resolve(process.cwd(), '.env') });
+dotenv.config({ path: path.resolve(process.cwd(), ".env") });
 
 const connectionString = process.env.NEON_DB;
 if (!connectionString) {
@@ -57,13 +57,16 @@ async function main() {
     // 2. Migrate salesReturns items
     console.log("Migrating Sales Returns items...");
     // Check if items column still exists
-    const srCols = await sql`SELECT column_name FROM information_schema.columns WHERE table_name = 'sales_returns' AND column_name = 'items'`;
+    const srCols =
+      await sql`SELECT column_name FROM information_schema.columns WHERE table_name = 'sales_returns' AND column_name = 'items'`;
     if (srCols.length > 0) {
       const salesReturns = await sql`SELECT id, organization_id, items FROM "sales_returns"`;
       for (const ret of salesReturns) {
         let items = [];
-        if (typeof ret.items === 'string') {
-          try { items = JSON.parse(ret.items); } catch (e) { }
+        if (typeof ret.items === "string") {
+          try {
+            items = JSON.parse(ret.items);
+          } catch (e) {}
         } else if (Array.isArray(ret.items)) {
           items = ret.items;
         }
@@ -74,7 +77,7 @@ async function main() {
                INSERT INTO "sales_return_items" 
                ("organization_id", "return_id", "product_id", "product_name", "quantity", "price", "total")
                VALUES
-               (${ret.organization_id}, ${ret.id}, ${item.productId || ''}, ${item.productName || 'Unknown'}, ${item.quantity || 1}, ${item.price || 0}, ${item.total || 0})
+               (${ret.organization_id}, ${ret.id}, ${item.productId || ""}, ${item.productName || "Unknown"}, ${item.quantity || 1}, ${item.price || 0}, ${item.total || 0})
              `;
           }
         }
@@ -87,13 +90,16 @@ async function main() {
 
     // 3. Migrate purchaseReturns items
     console.log("Migrating Purchase Returns items...");
-    const prCols = await sql`SELECT column_name FROM information_schema.columns WHERE table_name = 'purchase_returns' AND column_name = 'items'`;
+    const prCols =
+      await sql`SELECT column_name FROM information_schema.columns WHERE table_name = 'purchase_returns' AND column_name = 'items'`;
     if (prCols.length > 0) {
       const purchaseReturns = await sql`SELECT id, organization_id, items FROM "purchase_returns"`;
       for (const ret of purchaseReturns) {
         let items = [];
-        if (typeof ret.items === 'string') {
-          try { items = JSON.parse(ret.items); } catch (e) { }
+        if (typeof ret.items === "string") {
+          try {
+            items = JSON.parse(ret.items);
+          } catch (e) {}
         } else if (Array.isArray(ret.items)) {
           items = ret.items;
         }
@@ -104,7 +110,7 @@ async function main() {
                INSERT INTO "purchase_return_items" 
                ("organization_id", "return_id", "product_id", "product_name", "quantity", "cost", "total")
                VALUES
-               (${ret.organization_id}, ${ret.id}, ${item.productId || ''}, ${item.productName || 'Unknown'}, ${item.quantity || 1}, ${item.cost || item.price || 0}, ${item.total || 0})
+               (${ret.organization_id}, ${ret.id}, ${item.productId || ""}, ${item.productName || "Unknown"}, ${item.quantity || 1}, ${item.cost || item.price || 0}, ${item.total || 0})
              `;
           }
         }

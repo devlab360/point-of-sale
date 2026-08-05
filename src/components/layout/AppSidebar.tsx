@@ -172,7 +172,7 @@ export function AppSidebar({ onNavigate }: { onNavigate?: () => void }) {
       <button
         onClick={toggleMinimize}
         className={cn(
-          "absolute -right-3 top-5 z-50 flex size-6 cursor-pointer items-center justify-center rounded-full border border-border bg-background text-muted-foreground shadow-sm transition-all hover:bg-accent hover:text-foreground hover:scale-110",
+          "absolute -right-3 top-5 z-50 hidden lg:flex size-6 cursor-pointer items-center justify-center rounded-full border border-border bg-background text-muted-foreground shadow-sm transition-all hover:bg-accent hover:text-foreground hover:scale-110",
           isMinimized && "rotate-180",
         )}
       >
@@ -245,9 +245,7 @@ export function AppSidebar({ onNavigate }: { onNavigate?: () => void }) {
                     )}
                   />
                   {!isMinimized && (
-                    <span className="truncate text-left">
-                      {t(group.tkey) || group.label}
-                    </span>
+                    <span className="truncate text-left">{t(group.tkey) || group.label}</span>
                   )}
                 </span>
                 {!isMinimized && (

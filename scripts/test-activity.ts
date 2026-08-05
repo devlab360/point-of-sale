@@ -10,12 +10,12 @@ async function main() {
       action: "Test Action",
       details: "Test Details",
       timestamp: new Date().toISOString(),
-      type: "invoice"
+      type: "invoice",
     };
-    
+
     const tableColumns = Object.keys(activityLog);
     console.log("tableColumns keys:", tableColumns);
-    
+
     // Simulate what sync-api.ts does
     const filteredData: any = {};
     for (const key of Object.keys(insertData)) {
@@ -26,13 +26,15 @@ async function main() {
       }
     }
     console.log("filteredData:", filteredData);
-    
-    await db.insert(activityLog).values(filteredData)
+
+    await db
+      .insert(activityLog)
+      .values(filteredData)
       .onConflictDoUpdate({
         target: activityLog.id,
-        set: { user: "Test User" }
+        set: { user: "Test User" },
       });
-      
+
     console.log("Insert successful!");
   } catch (e) {
     console.error("Insert failed:", e);

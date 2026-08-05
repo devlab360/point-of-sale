@@ -41,9 +41,9 @@ scenarios:
           capture:
             - json: "$.success"
               as: "pullSuccess"
-      
+
       - think: 5 # Shortened think time in Artillery to simulate higher concurrency intensity
-      
+
       # 2. Push Offline Changes (pushEverythingFn) - Occurs after offline sales accumulate
       - post:
           url: "/_server/pushEverythingFn"

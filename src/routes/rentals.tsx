@@ -35,7 +35,7 @@ import { useFormValidation } from "@/hooks/useFormValidation";
 import { FieldError } from "@/components/ui/field-error";
 
 export const Route = createFileRoute("/rentals")({
-  head: () => ({ meta: [{ title: "Equipment Rentals & Booking · Grocer.Pro" }] }),
+  head: () => ({ meta: [{ title: "Equipment Rentals & Booking · NexisPOS" }] }),
   component: RentalsPage,
 });
 
@@ -222,76 +222,85 @@ function RentalsPage() {
           <div className="space-y-4">
             <div className="overflow-hidden rounded-xl border border-border bg-card shadow-soft">
               <div className="overflow-hidden rounded-xl border border-border bg-card shadow-soft">
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-sm min-w-[900px]">
-                <thead className="bg-muted/50 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                  <tr>
-                    <th className="px-4 py-3 whitespace-nowrap">Rental #</th>
-                    <th className="px-4 py-3 whitespace-nowrap">Customer</th>
-                    <th className="px-4 py-3 whitespace-nowrap">Rented Item</th>
-                    <th className="px-4 py-3 whitespace-nowrap">Daily Rate</th>
-                    <th className="px-4 py-3 whitespace-nowrap">Security Deposit</th>
-                    <th className="px-4 py-3 whitespace-nowrap">Return Due Date</th>
-                    <th className="px-4 py-3 whitespace-nowrap">Status</th>
-                    <th className="px-4 py-3 text-right whitespace-nowrap">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border">
-                  {paginated.map((r) => (
-                    <tr key={r.id} className="hover:bg-muted/30">
-                      <td className="px-4 py-3 font-mono font-bold text-primary whitespace-nowrap">{r.rentalNo}</td>
-                      <td className="px-4 py-3 font-semibold whitespace-nowrap">{r.customerName}</td>
-                      <td className="px-4 py-3 font-medium whitespace-nowrap">{r.itemName}</td>
-                      <td className="px-4 py-3 text-xs font-mono whitespace-nowrap">
-                        {formatCurrency(r.dailyRate)} / day
-                      </td>
-                      <td className="px-4 py-3 text-xs font-mono text-warning-foreground font-semibold whitespace-nowrap">
-                        {formatCurrency(r.securityDeposit)}
-                      </td>
-                      <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">
-                        {r.expectedReturnDate
-                          ? format(new Date(r.expectedReturnDate), "MMM dd, yyyy")
-                          : "-"}
-                      </td>
-                      <td className="px-4 py-3 whitespace-nowrap">
-                        {r.status === "returned" ? (
-                          <Badge className="bg-success/15 text-success border-success/30">
-                            Returned
-                          </Badge>
-                        ) : (
-                          <Badge className="bg-primary/15 text-primary border-primary/30">
-                            Active Rented
-                          </Badge>
-                        )}
-                      </td>
-                      <td className="px-4 py-3 text-right whitespace-nowrap">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="size-8">
-                              <MoreVertical className="size-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => markReturned(r.id)}>
-                              <CheckCircle2 className="mr-2 size-4 text-success" /> Mark Returned &
-                              Refund Deposit
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              className="text-destructive"
-                              onClick={() => deleteRental(r.id)}
-                            >
-                              <Trash2 className="mr-2 size-4" /> Delete
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-sm min-w-[900px]">
+                    <thead className="bg-muted/50 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                      <tr>
+                        <th className="px-4 py-3 whitespace-nowrap">Rental #</th>
+                        <th className="px-4 py-3 whitespace-nowrap">Customer</th>
+                        <th className="px-4 py-3 whitespace-nowrap">Rented Item</th>
+                        <th className="px-4 py-3 whitespace-nowrap">Daily Rate</th>
+                        <th className="px-4 py-3 whitespace-nowrap">Security Deposit</th>
+                        <th className="px-4 py-3 whitespace-nowrap">Return Due Date</th>
+                        <th className="px-4 py-3 whitespace-nowrap">Status</th>
+                        <th className="px-4 py-3 text-right whitespace-nowrap">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-border">
+                      {paginated.map((r) => (
+                        <tr key={r.id} className="hover:bg-muted/30">
+                          <td className="px-4 py-3 font-mono font-bold text-primary whitespace-nowrap">
+                            {r.rentalNo}
+                          </td>
+                          <td className="px-4 py-3 font-semibold whitespace-nowrap">
+                            {r.customerName}
+                          </td>
+                          <td className="px-4 py-3 font-medium whitespace-nowrap">{r.itemName}</td>
+                          <td className="px-4 py-3 text-xs font-mono whitespace-nowrap">
+                            {formatCurrency(r.dailyRate)} / day
+                          </td>
+                          <td className="px-4 py-3 text-xs font-mono text-warning-foreground font-semibold whitespace-nowrap">
+                            {formatCurrency(r.securityDeposit)}
+                          </td>
+                          <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">
+                            {r.expectedReturnDate
+                              ? format(new Date(r.expectedReturnDate), "MMM dd, yyyy")
+                              : "-"}
+                          </td>
+                          <td className="px-4 py-3 whitespace-nowrap">
+                            {r.status === "returned" ? (
+                              <Badge className="bg-success/15 text-success border-success/30">
+                                Returned
+                              </Badge>
+                            ) : (
+                              <Badge className="bg-primary/15 text-primary border-primary/30">
+                                Active Rented
+                              </Badge>
+                            )}
+                          </td>
+                          <td className="px-4 py-3 text-right whitespace-nowrap">
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon" className="size-8">
+                                  <MoreVertical className="size-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem onClick={() => markReturned(r.id)}>
+                                  <CheckCircle2 className="mr-2 size-4 text-success" /> Mark
+                                  Returned & Refund Deposit
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  className="text-destructive"
+                                  onClick={() => deleteRental(r.id)}
+                                >
+                                  <Trash2 className="mr-2 size-4" /> Delete
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                <PaginationControls
+                  currentPage={page}
+                  totalPages={totalPages}
+                  onPageChange={setPage}
+                  totalItems={filteredRentals.length}
+                />
               </div>
-              <PaginationControls currentPage={page} totalPages={totalPages} onPageChange={setPage}  totalItems={filteredRentals.length}/>
-            </div>
             </div>
           </div>
         )}

@@ -15,7 +15,7 @@ async function main() {
     const orgId = "c8b4088d-9b98-447a-87ff-36a9a783add9";
     const adjId = uuidv4();
     console.log("Attempting insert...");
-    
+
     await db.insert(schema.inventoryAdjustments).values({
       id: adjId,
       organizationId: orgId,
@@ -27,7 +27,7 @@ async function main() {
       status: "approved",
     });
     console.log("Insert successful!");
-    
+
     await db.delete(schema.inventoryAdjustments).where(schema.inventoryAdjustments.id.eq(adjId));
   } catch (e: any) {
     console.error("====== DATABASE ERROR ======");

@@ -47,3 +47,14 @@ export const updateSettingsFn = createServerFn({ method: "POST" })
       return handleApiError(e);
     }
   });
+
+export const getAllSaasPlansFn = createServerFn({ method: "GET" })
+  .validator((data: any) => data)
+  .handler(async () => {
+    try {
+      const plans = await db.select().from(schema.saasPlans);
+      return { success: true, data: plans };
+    } catch (e) {
+      return handleApiError(e);
+    }
+  });

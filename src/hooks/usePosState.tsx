@@ -22,6 +22,7 @@ import {
   getHeldInvoicesFn,
   createHeldInvoiceFn,
   deleteHeldInvoiceFn,
+  getPosItemsFn,
 } from "@/api/pos";
 
 export type CartLine = { id: string; qty: number };
@@ -41,8 +42,8 @@ export function usePosState() {
     isError: isProductsError,
     refetch: refetchProducts,
   } = useQuery({
-    queryKey: ["products", orgId],
-    queryFn: async () => ((await getProductsFn({ data: { pageSize: 1000 } })) as any)?.data || [],
+    queryKey: ["posItems", orgId],
+    queryFn: async () => ((await getPosItemsFn({ data: {} })) as any)?.data || [],
     staleTime: 30000,
   });
   const products: any[] = productsData || [];
@@ -308,10 +309,10 @@ export function usePosState() {
       const fefoSortedBatches =
         p.hasBatch && p.batches
           ? [...p.batches].sort(
-            (a: any, b: any) =>
-              new Date(a.expiryDate || "2099-12-31").getTime() -
-              new Date(b.expiryDate || "2099-12-31").getTime(),
-          )
+              (a: any, b: any) =>
+                new Date(a.expiryDate || "2099-12-31").getTime() -
+                new Date(b.expiryDate || "2099-12-31").getTime(),
+            )
           : [];
       const selectedBatch = fefoSortedBatches[0]?.batchNo
         ? `${fefoSortedBatches[0].batchNo} (${fefoSortedBatches[0].expiryDate})`

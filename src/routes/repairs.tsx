@@ -46,7 +46,7 @@ import { useFormValidation } from "@/hooks/useFormValidation";
 import { FieldError } from "@/components/ui/field-error";
 
 export const Route = createFileRoute("/repairs")({
-  head: () => ({ meta: [{ title: "Service & Repair Management · Grocer.Pro" }] }),
+  head: () => ({ meta: [{ title: "Service & Repair Management · NexisPOS" }] }),
   component: RepairsPage,
 });
 
@@ -244,94 +244,104 @@ function RepairsPage() {
           <div className="space-y-4">
             <div className="overflow-hidden rounded-xl border border-border bg-card shadow-soft">
               <div className="overflow-hidden rounded-xl border border-border bg-card shadow-soft">
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-sm min-w-[900px]">
-                <thead className="bg-muted/50 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                  <tr>
-                    <th className="px-4 py-3 whitespace-nowrap">Ticket #</th>
-                    <th className="px-4 py-3 whitespace-nowrap">Customer</th>
-                    <th className="px-4 py-3 whitespace-nowrap">Device / Model</th>
-                    <th className="px-4 py-3 whitespace-nowrap">Serial / IMEI</th>
-                    <th className="px-4 py-3 text-right whitespace-nowrap">Est. Cost</th>
-                    <th className="px-4 py-3 text-right whitespace-nowrap">Advance Paid</th>
-                    <th className="px-4 py-3 whitespace-nowrap">Status</th>
-                    <th className="px-4 py-3 text-right whitespace-nowrap">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border">
-                  {paginated.map((r) => (
-                    <tr key={r.id} className="hover:bg-muted/30">
-                      <td className="px-4 py-3 font-mono font-bold text-primary whitespace-nowrap">{r.ticketNo}</td>
-                      <td className="px-4 py-3 whitespace-nowrap">
-                        <div className="font-semibold">{r.customerName}</div>
-                        <div className="text-xs text-muted-foreground">{r.customerPhone}</div>
-                      </td>
-                      <td className="px-4 py-3 font-medium whitespace-nowrap">{r.deviceName}</td>
-                      <td className="px-4 py-3 font-mono text-xs text-muted-foreground whitespace-nowrap">
-                        {r.serialOrImei || "-"}
-                      </td>
-                      <td className="px-4 py-3 text-right font-semibold whitespace-nowrap">
-                        {formatCurrency(r.estimatedCost)}
-                      </td>
-                      <td className="px-4 py-3 text-right font-semibold text-success whitespace-nowrap">
-                        {formatCurrency(r.advancePaid)}
-                      </td>
-                      <td className="px-4 py-3 whitespace-nowrap">
-                        {r.status === "delivered" ? (
-                          <Badge className="bg-success/15 text-success border-success/30">
-                            Delivered
-                          </Badge>
-                        ) : r.status === "repaired" ? (
-                          <Badge className="bg-info/15 text-info border-info/30">
-                            Repaired & Ready
-                          </Badge>
-                        ) : r.status === "diagnosing" ? (
-                          <Badge className="bg-warning/15 text-warning-foreground border-warning/30">
-                            In Diagnosis
-                          </Badge>
-                        ) : (
-                          <Badge variant="outline">Received</Badge>
-                        )}
-                      </td>
-                      <td className="px-4 py-3 text-right whitespace-nowrap">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="size-8">
-                              <MoreVertical className="size-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => setViewItem(r)}>
-                              <Printer className="mr-2 size-4 text-primary" /> View / Print Repair
-                              Ticket
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => updateStatus(r.id, "diagnosing")}>
-                              <Wrench className="mr-2 size-4 text-warning-foreground" /> Mark In
-                              Diagnosis
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => updateStatus(r.id, "repaired")}>
-                              <CheckCircle2 className="mr-2 size-4 text-info" /> Mark Repaired &
-                              Ready
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => updateStatus(r.id, "delivered")}>
-                              <ShieldCheck className="mr-2 size-4 text-success" /> Mark Delivered
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              className="text-destructive"
-                              onClick={() => deleteRepair(r.id)}
-                            >
-                              <Trash2 className="mr-2 size-4" /> Delete Ticket
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-sm min-w-[900px]">
+                    <thead className="bg-muted/50 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                      <tr>
+                        <th className="px-4 py-3 whitespace-nowrap">Ticket #</th>
+                        <th className="px-4 py-3 whitespace-nowrap">Customer</th>
+                        <th className="px-4 py-3 whitespace-nowrap">Device / Model</th>
+                        <th className="px-4 py-3 whitespace-nowrap">Serial / IMEI</th>
+                        <th className="px-4 py-3 text-right whitespace-nowrap">Est. Cost</th>
+                        <th className="px-4 py-3 text-right whitespace-nowrap">Advance Paid</th>
+                        <th className="px-4 py-3 whitespace-nowrap">Status</th>
+                        <th className="px-4 py-3 text-right whitespace-nowrap">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-border">
+                      {paginated.map((r) => (
+                        <tr key={r.id} className="hover:bg-muted/30">
+                          <td className="px-4 py-3 font-mono font-bold text-primary whitespace-nowrap">
+                            {r.ticketNo}
+                          </td>
+                          <td className="px-4 py-3 whitespace-nowrap">
+                            <div className="font-semibold">{r.customerName}</div>
+                            <div className="text-xs text-muted-foreground">{r.customerPhone}</div>
+                          </td>
+                          <td className="px-4 py-3 font-medium whitespace-nowrap">
+                            {r.deviceName}
+                          </td>
+                          <td className="px-4 py-3 font-mono text-xs text-muted-foreground whitespace-nowrap">
+                            {r.serialOrImei || "-"}
+                          </td>
+                          <td className="px-4 py-3 text-right font-semibold whitespace-nowrap">
+                            {formatCurrency(r.estimatedCost)}
+                          </td>
+                          <td className="px-4 py-3 text-right font-semibold text-success whitespace-nowrap">
+                            {formatCurrency(r.advancePaid)}
+                          </td>
+                          <td className="px-4 py-3 whitespace-nowrap">
+                            {r.status === "delivered" ? (
+                              <Badge className="bg-success/15 text-success border-success/30">
+                                Delivered
+                              </Badge>
+                            ) : r.status === "repaired" ? (
+                              <Badge className="bg-info/15 text-info border-info/30">
+                                Repaired & Ready
+                              </Badge>
+                            ) : r.status === "diagnosing" ? (
+                              <Badge className="bg-warning/15 text-warning-foreground border-warning/30">
+                                In Diagnosis
+                              </Badge>
+                            ) : (
+                              <Badge variant="outline">Received</Badge>
+                            )}
+                          </td>
+                          <td className="px-4 py-3 text-right whitespace-nowrap">
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon" className="size-8">
+                                  <MoreVertical className="size-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem onClick={() => setViewItem(r)}>
+                                  <Printer className="mr-2 size-4 text-primary" /> View / Print
+                                  Repair Ticket
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => updateStatus(r.id, "diagnosing")}>
+                                  <Wrench className="mr-2 size-4 text-warning-foreground" /> Mark In
+                                  Diagnosis
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => updateStatus(r.id, "repaired")}>
+                                  <CheckCircle2 className="mr-2 size-4 text-info" /> Mark Repaired &
+                                  Ready
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => updateStatus(r.id, "delivered")}>
+                                  <ShieldCheck className="mr-2 size-4 text-success" /> Mark
+                                  Delivered
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  className="text-destructive"
+                                  onClick={() => deleteRepair(r.id)}
+                                >
+                                  <Trash2 className="mr-2 size-4" /> Delete Ticket
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                <PaginationControls
+                  currentPage={page}
+                  totalPages={totalPages}
+                  onPageChange={setPage}
+                  totalItems={filteredRepairs.length}
+                />
               </div>
-              <PaginationControls currentPage={page} totalPages={totalPages} onPageChange={setPage}  totalItems={filteredRepairs.length}/>
-            </div>
             </div>
           </div>
         )}
@@ -436,7 +446,11 @@ function RepairsPage() {
                   setProblemDescription(e.target.value);
                   clearRepError("problemDescription");
                 }}
-                className={repErrors.problemDescription ? "border-destructive focus-visible:ring-destructive" : ""}
+                className={
+                  repErrors.problemDescription
+                    ? "border-destructive focus-visible:ring-destructive"
+                    : ""
+                }
               />
               <FieldError message={repErrors.problemDescription} />
             </div>

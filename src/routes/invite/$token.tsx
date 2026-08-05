@@ -9,7 +9,7 @@ import { v4 as uuidv4 } from "uuid";
 import { Store, CheckCircle2, Loader2 } from "lucide-react";
 
 export const Route = createFileRoute("/invite/$token")({
-  head: () => ({ meta: [{ title: "Accept Invitation · Grocer.Pro SaaS" }] }),
+  head: () => ({ meta: [{ title: "Accept Invitation · NexisPOS SaaS" }] }),
   component: InvitePage,
 });
 

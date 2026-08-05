@@ -71,52 +71,53 @@ function HistoryPage() {
       ) : (
         <div className="space-y-4">
           <div className="overflow-hidden rounded-xl border border-border bg-card shadow-soft">
-              <div className="overflow-hidden rounded-xl border border-border bg-card shadow-soft">
+            <div className="overflow-hidden rounded-xl border border-border bg-card shadow-soft">
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-sm min-w-[500px]">
-              <thead className="bg-muted/50 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                <tr>
-                  <th className="px-4 py-3 whitespace-nowrap">Date &amp; Time</th>
-                  <th className="px-4 py-3 whitespace-nowrap">Product</th>
-                  <th className="px-4 py-3 whitespace-nowrap">Action</th>
-                  <th className="px-4 py-3 text-right whitespace-nowrap">Quantity</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border">
-                {movements.map((m, i) => (
-                  <tr key={m.id || i} className="hover:bg-muted/30">
-                    <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">
-                      {formatDateTime(m.createdAt)}
-                    </td>
-                    <td className="px-4 py-3 font-semibold min-w-[150px]">{m.productName}</td>
-                    <td className="px-4 py-3 whitespace-nowrap">
-                      <Badge variant="outline" className="capitalize">
-                        {m.action.replace("_", " ")}
-                      </Badge>
-                    </td>
-                    <td
-                      className={cn(
-                        "number px-4 py-3 text-right font-semibold whitespace-nowrap",
-                        m.quantity < 0 ? "text-destructive" : "text-success",
-                      )}
-                    >
-                      {m.quantity > 0 ? "+" : ""}
-                      {m.quantity}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                  <thead className="bg-muted/50 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                    <tr>
+                      <th className="px-4 py-3 whitespace-nowrap">Date &amp; Time</th>
+                      <th className="px-4 py-3 whitespace-nowrap">Product</th>
+                      <th className="px-4 py-3 whitespace-nowrap">Action</th>
+                      <th className="px-4 py-3 text-right whitespace-nowrap">Quantity</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border">
+                    {movements.map((m, i) => (
+                      <tr key={m.id || i} className="hover:bg-muted/30">
+                        <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">
+                          {formatDateTime(m.createdAt)}
+                        </td>
+                        <td className="px-4 py-3 font-semibold min-w-[150px]">{m.productName}</td>
+                        <td className="px-4 py-3 whitespace-nowrap">
+                          <Badge variant="outline" className="capitalize">
+                            {m.action.replace("_", " ")}
+                          </Badge>
+                        </td>
+                        <td
+                          className={cn(
+                            "number px-4 py-3 text-right font-semibold whitespace-nowrap",
+                            m.quantity < 0 ? "text-destructive" : "text-success",
+                          )}
+                        >
+                          {m.quantity > 0 ? "+" : ""}
+                          {m.quantity}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
               <PaginationControls
-            currentPage={page}
-            totalPages={totalPages}
-            pageSize={pageSize}
-            onPageChange={setPage}
-            onPageSizeChange={setPageSize}
-           totalItems={filteredMovements.length}/>
+                currentPage={page}
+                totalPages={totalPages}
+                pageSize={pageSize}
+                onPageChange={setPage}
+                onPageSizeChange={setPageSize}
+                totalItems={filteredMovements.length}
+              />
             </div>
-            </div>
+          </div>
         </div>
       )}
     </div>

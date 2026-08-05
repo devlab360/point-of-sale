@@ -10,7 +10,7 @@ async function main() {
   try {
     const res = await client`SELECT id, organization_id, store_name FROM settings`;
     console.log("Settings rows:", res);
-    
+
     const users = await client`SELECT id, organization_id, name, email FROM users`;
     console.log("Users rows:", users);
   } catch (e: any) {

@@ -108,7 +108,7 @@ const DEFAULT_ROLE_PERMISSIONS: Record<string, string[]> = {
 };
 
 export const Route = createFileRoute("/users")({
-  head: () => ({ meta: [{ title: "Employees · Grocer.Pro" }] }),
+  head: () => ({ meta: [{ title: "Employees · NexisPOS" }] }),
   component: UsersPage,
 });
 
@@ -441,127 +441,137 @@ function UsersPage() {
           <div className="space-y-4">
             <div className="overflow-hidden rounded-xl border border-border bg-card shadow-soft">
               <div className="overflow-hidden rounded-xl border border-border bg-card shadow-soft">
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-sm min-w-[800px]">
-                <thead className="bg-muted/50 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                  <tr>
-                    <th className="px-4 py-3 whitespace-nowrap">Employee</th>
-                    <th className="px-4 py-3 whitespace-nowrap">Role</th>
-                    <th className="px-4 py-3 whitespace-nowrap">Permissions</th>
-                    <th className="px-4 py-3 whitespace-nowrap">Last Active</th>
-                    <th className="px-4 py-3 whitespace-nowrap">Status</th>
-                    <th className="px-4 py-3 text-right whitespace-nowrap">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border">
-                  {paginatedUsers.map((e) => (
-                    <tr key={e.id} className="hover:bg-muted/30">
-                      <td className="px-4 py-3 whitespace-nowrap">
-                        <div className="flex items-center gap-3">
-                          <div className="grid size-9 place-items-center rounded-full bg-gradient-to-br from-primary to-info text-xs font-bold text-primary-foreground">
-                            {e.name
-                              .split(" ")
-                              .map((n) => n[0])
-                              .join("")
-                              .slice(0, 2)}
-                          </div>
-                          <div>
-                            <div className="font-semibold">{e.name}</div>
-                            <div className="text-xs text-muted-foreground">{e.email}</div>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-4 py-3 whitespace-nowrap">
-                        <Badge variant="secondary" className="capitalize">
-                          <Shield className="mr-1 size-3" />
-                          {e.role}
-                        </Badge>
-                      </td>
-                      <td className="px-4 py-3 whitespace-nowrap">
-                        <div className="flex flex-wrap gap-1 max-w-[200px]">
-                          {(e.permissions || DEFAULT_ROLE_PERMISSIONS[e.role] || []).length ===
-                          AVAILABLE_PERMISSIONS.length ? (
-                            <Badge
-                              variant="outline"
-                              className="bg-primary/10 text-primary border-primary/20 text-[10px]"
-                            >
-                              Full Access
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-sm min-w-[800px]">
+                    <thead className="bg-muted/50 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                      <tr>
+                        <th className="px-4 py-3 whitespace-nowrap">Employee</th>
+                        <th className="px-4 py-3 whitespace-nowrap">Role</th>
+                        <th className="px-4 py-3 whitespace-nowrap">Permissions</th>
+                        <th className="px-4 py-3 whitespace-nowrap">Last Active</th>
+                        <th className="px-4 py-3 whitespace-nowrap">Status</th>
+                        <th className="px-4 py-3 text-right whitespace-nowrap">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-border">
+                      {paginatedUsers.map((e) => (
+                        <tr key={e.id} className="hover:bg-muted/30">
+                          <td className="px-4 py-3 whitespace-nowrap">
+                            <div className="flex items-center gap-3">
+                              <div className="grid size-9 place-items-center rounded-full bg-gradient-to-br from-primary to-info text-xs font-bold text-primary-foreground">
+                                {e.name
+                                  .split(" ")
+                                  .map((n) => n[0])
+                                  .join("")
+                                  .slice(0, 2)}
+                              </div>
+                              <div>
+                                <div className="font-semibold">{e.name}</div>
+                                <div className="text-xs text-muted-foreground">{e.email}</div>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-4 py-3 whitespace-nowrap">
+                            <Badge variant="secondary" className="capitalize">
+                              <Shield className="mr-1 size-3" />
+                              {e.role}
                             </Badge>
-                          ) : (
-                            (e.permissions || DEFAULT_ROLE_PERMISSIONS[e.role] || [])
-                              .slice(0, 3)
-                              .map((p) => (
+                          </td>
+                          <td className="px-4 py-3 whitespace-nowrap">
+                            <div className="flex flex-wrap gap-1 max-w-[200px]">
+                              {(e.permissions || DEFAULT_ROLE_PERMISSIONS[e.role] || []).length ===
+                              AVAILABLE_PERMISSIONS.length ? (
                                 <Badge
-                                  key={p}
                                   variant="outline"
-                                  className="text-[10px] uppercase font-mono"
+                                  className="bg-primary/10 text-primary border-primary/20 text-[10px]"
                                 >
-                                  {p}
+                                  Full Access
                                 </Badge>
-                              ))
-                          )}
-                          {(e.permissions || DEFAULT_ROLE_PERMISSIONS[e.role] || []).length > 3 &&
-                            (e.permissions || DEFAULT_ROLE_PERMISSIONS[e.role] || []).length !==
-                              AVAILABLE_PERMISSIONS.length && (
-                              <span className="text-[10px] text-muted-foreground self-center">
-                                +
-                                {(e.permissions || DEFAULT_ROLE_PERMISSIONS[e.role] || []).length -
-                                  3}{" "}
-                                more
-                              </span>
-                            )}
-                        </div>
-                      </td>
-                      <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">
-                        {e.lastActive ? new Date(e.lastActive).toLocaleString() : "Never"}
-                      </td>
-                      <td className="px-4 py-3 whitespace-nowrap">
-                        <Badge
-                          className={
-                            e.status === "active"
-                              ? "bg-success/10 text-success hover:bg-success/15"
-                              : e.status === "pending"
-                                ? "bg-warning/15 text-warning-foreground hover:bg-warning/20"
-                                : "bg-destructive/15 text-destructive hover:bg-destructive/20"
-                          }
-                        >
-                          {e.status}
-                        </Badge>
-                      </td>
-                      <td className="px-4 py-3 text-right whitespace-nowrap">
-                        <div className="flex justify-end items-center gap-2">
-                          {e.status === "pending" && (
-                            <Button size="sm" onClick={() => handleApprove(e.id)} className="h-8">
-                              <CheckCircle2 className="size-4 mr-1" /> Approve
-                            </Button>
-                          )}
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="icon" className="size-8">
-                                <MoreVertical className="size-4 text-muted-foreground" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem onClick={() => openEditModal(e)}>
-                                <Edit2 className="mr-2 size-4" /> Edit & Permissions
-                              </DropdownMenuItem>
-                              <DropdownMenuItem
-                                className="text-destructive focus:bg-destructive/10 focus:text-destructive"
-                                onClick={() => setDeleteId(e.id)}
-                              >
-                                <Trash2 className="mr-2 size-4" /> Delete
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                              ) : (
+                                (e.permissions || DEFAULT_ROLE_PERMISSIONS[e.role] || [])
+                                  .slice(0, 3)
+                                  .map((p) => (
+                                    <Badge
+                                      key={p}
+                                      variant="outline"
+                                      className="text-[10px] uppercase font-mono"
+                                    >
+                                      {p}
+                                    </Badge>
+                                  ))
+                              )}
+                              {(e.permissions || DEFAULT_ROLE_PERMISSIONS[e.role] || []).length >
+                                3 &&
+                                (e.permissions || DEFAULT_ROLE_PERMISSIONS[e.role] || []).length !==
+                                  AVAILABLE_PERMISSIONS.length && (
+                                  <span className="text-[10px] text-muted-foreground self-center">
+                                    +
+                                    {(e.permissions || DEFAULT_ROLE_PERMISSIONS[e.role] || [])
+                                      .length - 3}{" "}
+                                    more
+                                  </span>
+                                )}
+                            </div>
+                          </td>
+                          <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">
+                            {e.lastActive ? new Date(e.lastActive).toLocaleString() : "Never"}
+                          </td>
+                          <td className="px-4 py-3 whitespace-nowrap">
+                            <Badge
+                              className={
+                                e.status === "active"
+                                  ? "bg-success/10 text-success hover:bg-success/15"
+                                  : e.status === "pending"
+                                    ? "bg-warning/15 text-warning-foreground hover:bg-warning/20"
+                                    : "bg-destructive/15 text-destructive hover:bg-destructive/20"
+                              }
+                            >
+                              {e.status}
+                            </Badge>
+                          </td>
+                          <td className="px-4 py-3 text-right whitespace-nowrap">
+                            <div className="flex justify-end items-center gap-2">
+                              {e.status === "pending" && (
+                                <Button
+                                  size="sm"
+                                  onClick={() => handleApprove(e.id)}
+                                  className="h-8"
+                                >
+                                  <CheckCircle2 className="size-4 mr-1" /> Approve
+                                </Button>
+                              )}
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button variant="ghost" size="icon" className="size-8">
+                                    <MoreVertical className="size-4 text-muted-foreground" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                  <DropdownMenuItem onClick={() => openEditModal(e)}>
+                                    <Edit2 className="mr-2 size-4" /> Edit & Permissions
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    className="text-destructive focus:bg-destructive/10 focus:text-destructive"
+                                    onClick={() => setDeleteId(e.id)}
+                                  >
+                                    <Trash2 className="mr-2 size-4" /> Delete
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                <PaginationControls
+                  currentPage={page}
+                  totalPages={totalPages}
+                  onPageChange={setPage}
+                  totalItems={users.length}
+                />
               </div>
-              <PaginationControls currentPage={page} totalPages={totalPages} onPageChange={setPage}  totalItems={users.length}/>
-            </div>
             </div>
           </div>
         )}

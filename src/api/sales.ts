@@ -105,12 +105,16 @@ export const getSaleItemsFn = createServerFn({ method: "GET" })
   });
 
 const SaleItemSchema = z.object({
-  productId: z.string(),
+  referenceType: z.enum(["PRODUCT", "SERVICE"]).default("PRODUCT"),
+  referenceId: z.string(),
+  productId: z.string().optional(),
   productName: z.string(),
   quantity: z.number().positive(),
   price: z.number().nonnegative(),
   taxAmt: z.number().optional().nullable(),
   discountAmt: z.number().optional().nullable(),
+  serialNumber: z.string().optional().nullable(),
+  batchNo: z.string().optional().nullable(),
 });
 
 const SaleSchema = z.object({
@@ -120,14 +124,20 @@ const SaleSchema = z.object({
   status: z.string(),
   paymentMethod: z.string(),
   paid: z.number().optional().nullable(),
+  payments: z.array(z.any()).optional().nullable(),
+  salesmanName: z.string().optional().nullable(),
 });
 
 export const createSaleFn = createServerFn({ method: "POST" })
-  .validator((data: any) => data)
+  .validator(
+    z.object({
+      sale: SaleSchema,
+      items: z.array(SaleItemSchema),
+    }),
+  )
   .handler(async ({ data }) => {
     try {
       const session = await requireAuth();
-
       const saleId = uuidv4();
       let subtotal = 0;
       let totalTax = 0;
@@ -168,11 +178,29 @@ export const createSaleFn = createServerFn({ method: "POST" })
           payments: Array.isArray(data.sale.payments) ? data.sale.payments : null,
         } as any);
 
-        if (data.items && data.items.length > 0) {
-          const itemsWithSaleId = data.items.map((item: any) => ({
+        if (
+          data.sale.payments &&
+          Array.isArray(data.sale.payments) &&
+          data.sale.payments.length > 0
+        ) {
+          const paymentsToInsert = data.sale.payments.map((p: any) => ({
             organizationId: session.orgId,
             saleId,
-            productId: item.productId,
+            amount: p.amount?.toString() || total.toFixed(2),
+            method: p.method || data.sale.paymentMethod || "cash",
+            transactionRef: p.transactionRef || null,
+            date: new Date().toISOString(),
+          }));
+          await tx.insert(schema.salePayments).values(paymentsToInsert as any);
+        }
+
+        if (data.items && data.items.length > 0) {
+          const itemsWithSaleId = data.items.map((item) => ({
+            organizationId: session.orgId,
+            saleId,
+            referenceType: item.referenceType,
+            referenceId: item.referenceId,
+            productId: item.productId || item.referenceId, // For backwards compatibility
             productName: item.productName,
             quantity: item.quantity,
             price: item.price.toString(),
@@ -186,42 +214,44 @@ export const createSaleFn = createServerFn({ method: "POST" })
           }));
           await tx.insert(schema.saleItems).values(itemsWithSaleId as any);
 
-          // H-5 fix: Deduct stock and trigger low-stock notifications
+          // Only deduct stock for PRODUCT types
           for (const item of data.items) {
-            const prodRes = await tx
-              .select()
-              .from(schema.products)
-              .where(
-                and(
-                  eq(schema.products.id, item.productId),
-                  eq(schema.products.organizationId, session.orgId),
-                ),
-              )
-              .limit(1);
-            if (prodRes.length > 0) {
-              const currentStock = prodRes[0].stock || 0;
-              const newStock = Math.max(0, currentStock - item.quantity);
-              await tx
-                .update(schema.products)
-                .set({ stock: newStock })
-                .where(eq(schema.products.id, item.productId));
+            if (item.referenceType === "PRODUCT") {
+              const prodRes = await tx
+                .select()
+                .from(schema.products)
+                .where(
+                  and(
+                    eq(schema.products.id, item.referenceId),
+                    eq(schema.products.organizationId, session.orgId),
+                  ),
+                )
+                .limit(1);
+              if (prodRes.length > 0) {
+                const currentStock = prodRes[0].stock || 0;
+                const newStock = Math.max(0, currentStock - item.quantity);
+                await tx
+                  .update(schema.products)
+                  .set({ stock: newStock })
+                  .where(eq(schema.products.id, item.referenceId));
 
-              if (newStock <= Number(prodRes[0].reorderLevel || 5)) {
-                await tx.insert(schema.notifications).values({
-                  id: uuidv4(),
-                  organizationId: session.orgId,
-                  title: newStock <= 0 ? "Out of Stock Alert" : "Low Stock Alert",
-                  description: `Product "${prodRes[0].name}" is ${newStock <= 0 ? "out of stock" : `down to ${newStock} units`}`,
-                  type: "inventory",
-                  timestamp: new Date().toISOString(),
-                  read: false,
-                });
+                if (newStock <= Number(prodRes[0].reorderLevel || 5)) {
+                  await tx.insert(schema.notifications).values({
+                    id: uuidv4(),
+                    organizationId: session.orgId,
+                    title: newStock <= 0 ? "Out of Stock Alert" : "Low Stock Alert",
+                    description: `Product "${prodRes[0].name}" is ${newStock <= 0 ? "out of stock" : `down to ${newStock} units`}`,
+                    type: "inventory",
+                    timestamp: new Date().toISOString(),
+                    read: false,
+                  });
+                }
               }
             }
           }
         }
       });
-      return { success: true };
+      return { success: true, data: { id: saleId } };
     } catch (e) {
       return handleApiError(e);
     }

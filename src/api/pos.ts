@@ -13,6 +13,39 @@ const insertSchema = schema.shifts
   : z.any();
 const updateSchema = schema.shifts ? createInsertSchema(schema.shifts).partial() : z.any();
 
+export const getPosItemsFn = createServerFn({ method: "GET" })
+  .validator((data: any) => data)
+  .handler(async () => {
+    try {
+      const session = await requireAuth();
+      const orgId = session.orgId;
+      const products = await db
+        .select()
+        .from(schema.products)
+        .where(eq(schema.products.organizationId, orgId));
+
+      const services = await db
+        .select()
+        .from(schema.services)
+        .where(eq(schema.services.organizationId, orgId));
+
+      const unifiedItems = [
+        ...products.map((p) => ({ ...p, referenceType: "PRODUCT", referenceId: p.id })),
+        ...services.map((s) => ({
+          ...s,
+          referenceType: "SERVICE",
+          referenceId: s.id,
+          stock: Infinity,
+          hasSerial: false,
+          hasBatch: false,
+        })),
+      ];
+      return { success: true, data: unifiedItems };
+    } catch (e) {
+      return handleApiError(e);
+    }
+  });
+
 export const getShiftsFn = createServerFn({ method: "GET" })
   .validator((data: any) => data)
   .handler(async () => {
@@ -172,10 +205,7 @@ export const completePosSaleFn = createServerFn({ method: "POST" })
           .select()
           .from(schema.products)
           .where(
-            and(
-              inArray(schema.products.id, productIds),
-              eq(schema.products.organizationId, orgId)
-            )
+            and(inArray(schema.products.id, productIds), eq(schema.products.organizationId, orgId)),
           );
 
         const productsMap = new Map(productsList.map((p) => [p.id, p]));
@@ -197,7 +227,7 @@ export const completePosSaleFn = createServerFn({ method: "POST" })
           // Enforce stock non-negativity — prevent overselling
           if ((p.stock ?? 0) < item.quantity) {
             throw new Error(
-              `Insufficient stock for "${p.name}". Available: ${p.stock ?? 0}, Requested: ${item.quantity}`
+              `Insufficient stock for "${p.name}". Available: ${p.stock ?? 0}, Requested: ${item.quantity}`,
             );
           }
 
@@ -249,7 +279,7 @@ export const completePosSaleFn = createServerFn({ method: "POST" })
         const globalDiscount = Number(data.sale.discountAmt) || 0;
         const serverTotal = Math.max(
           0,
-          serverSubtotal + serverTotalTax - serverTotalDiscount - globalDiscount
+          serverSubtotal + serverTotalTax - serverTotalDiscount - globalDiscount,
         );
         const saleId = data.sale.id || uuidv4();
 
@@ -301,8 +331,8 @@ export const completePosSaleFn = createServerFn({ method: "POST" })
               .where(
                 and(
                   eq(schema.products.id, update.productId),
-                  eq(schema.products.organizationId, orgId)
-                )
+                  eq(schema.products.organizationId, orgId),
+                ),
               );
           }
 

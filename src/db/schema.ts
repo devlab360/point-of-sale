@@ -215,6 +215,29 @@ export const products = pgTable(
   }),
 );
 
+export const services = pgTable(
+  "services",
+  {
+    id: text("id").primaryKey(),
+    organizationId: text("organization_id")
+      .notNull()
+      .references(() => organizations.id),
+    name: text("name").notNull(),
+    category: text("category").notNull(),
+    price: numeric("price", { precision: 10, scale: 2 }).notNull(),
+    cost: numeric("cost", { precision: 10, scale: 2 }).notNull().default("0"),
+    duration: integer("duration"), // in minutes
+    status: text("status").notNull().default("active"),
+    createdAt: timestamp("created_at", { mode: "string" }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { mode: "string" }).defaultNow().notNull(),
+  },
+  (t) => ({
+    orgIdx: index("services_org_idx").on(t.organizationId),
+    categoryIdx: index("services_category_idx").on(t.category),
+    statusIdx: index("services_status_idx").on(t.organizationId, t.status),
+  }),
+);
+
 export const customers = pgTable(
   "customers",
   {
@@ -286,9 +309,9 @@ export const saleItems = pgTable(
     saleId: text("sale_id")
       .notNull()
       .references(() => sales.id, { onDelete: "cascade" }),
-    productId: text("product_id")
-      .notNull()
-      .references(() => products.id),
+    referenceType: text("reference_type").notNull().default("PRODUCT"),
+    referenceId: text("reference_id").notNull().default("UNKNOWN"),
+    productId: text("product_id"),
     productName: text("product_name").notNull(),
     quantity: integer("quantity").notNull(),
     price: numeric("price", { precision: 10, scale: 2 }).notNull(),
@@ -299,7 +322,47 @@ export const saleItems = pgTable(
   (t) => ({
     orgIdx: index("sale_items_org_idx").on(t.organizationId),
     saleIdx: index("sale_items_sale_idx").on(t.saleId),
-    productIdx: index("sale_items_prod_idx").on(t.productId),
+    referenceIdx: index("sale_items_ref_idx").on(t.referenceType, t.referenceId),
+  }),
+);
+
+export const salePayments = pgTable(
+  "sale_payments",
+  {
+    id: serial("id").primaryKey(),
+    organizationId: text("organization_id")
+      .notNull()
+      .references(() => organizations.id),
+    saleId: text("sale_id")
+      .notNull()
+      .references(() => sales.id, { onDelete: "cascade" }),
+    amount: numeric("amount", { precision: 12, scale: 2 }).notNull(),
+    method: text("method").notNull(),
+    transactionRef: text("transaction_ref"),
+    date: timestamp("date", { mode: "string" }).defaultNow().notNull(),
+  },
+  (t) => ({
+    orgIdx: index("sale_payments_org_idx").on(t.organizationId),
+    saleIdx: index("sale_payments_sale_idx").on(t.saleId),
+  }),
+);
+
+export const saleTaxes = pgTable(
+  "sale_taxes",
+  {
+    id: serial("id").primaryKey(),
+    organizationId: text("organization_id")
+      .notNull()
+      .references(() => organizations.id),
+    saleId: text("sale_id")
+      .notNull()
+      .references(() => sales.id, { onDelete: "cascade" }),
+    taxName: text("tax_name").notNull(),
+    amount: numeric("amount", { precision: 12, scale: 2 }).notNull(),
+  },
+  (t) => ({
+    orgIdx: index("sale_taxes_org_idx").on(t.organizationId),
+    saleIdx: index("sale_taxes_sale_idx").on(t.saleId),
   }),
 );
 
