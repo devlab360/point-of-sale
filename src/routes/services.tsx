@@ -229,7 +229,7 @@ function ServicesPage() {
         }}
         filtersContent={({ close }) => (
           <div className="flex flex-col h-full gap-4">
-            <div className="space-y-2 flex-1">
+            <div className="space-y-2">
               <Label>Category</Label>
               <SearchableSelect
                 value={draftFilters.category}
@@ -241,7 +241,7 @@ function ServicesPage() {
                 placeholder="Select category..."
               />
             </div>
-            <div className="space-y-2 flex-1">
+            <div className="space-y-2">
               <Label>Status</Label>
               <Select
                 value={draftFilters.status}
@@ -402,18 +402,14 @@ function ServicesPage() {
                 </table>
               </div>
 
-              {totalPages > 1 && (
-                <div className="border-t border-border p-4 bg-muted/20">
-                  <PaginationControls
-                    currentPage={page}
-                    totalPages={totalPages}
-                    onPageChange={setPage}
-                    pageSize={pageSize}
-                    onPageSizeChange={setPageSize}
-                    totalItems={totalItems}
-                  />
-                </div>
-              )}
+              <PaginationControls
+                currentPage={page}
+                totalPages={totalPages}
+                onPageChange={setPage}
+                pageSize={pageSize}
+                onPageSizeChange={setPageSize}
+                totalItems={totalItems}
+              />
             </div>
           )}
         </div>
