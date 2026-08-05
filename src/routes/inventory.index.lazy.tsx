@@ -18,6 +18,7 @@ import { SearchableSelect } from "@/components/ui/searchable-select";
 import { PaginationControls } from "@/components/ui/pagination-controls";
 import { Label } from "@/components/ui/label";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useCurrency } from "@/lib/currency";
 
 export const Route = createLazyFileRoute("/inventory/")({
   component: StockList,
@@ -47,6 +48,7 @@ function StockList() {
   const outCount = products.filter((p) => p.stock <= 0).length;
 
   const { t } = useLanguage();
+  const { formatCurrency } = useCurrency();
   const [showForecast, setShowForecast] = useState(false);
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search, 300);
@@ -131,9 +133,10 @@ function StockList() {
   ).length;
 
   return (
-    <div className="p-4 md:p-6 lg:p-8">
+    <div className="p-2 md:p-4 lg:p-4">
       <DataPage
         title="Stock Inventory"
+        hideHeader={true}
         description="Monitor your current stock levels and AI forecasts."
         searchPlaceholder="Search inventory by name or SKU..."
         searchValue={search}
@@ -212,8 +215,9 @@ function StockList() {
           {expiringCount > 0 && <span className="text-warning">· {expiringCount} expiring</span>}
         </div>
         <div className="overflow-hidden rounded-xl border border-border bg-card shadow-soft">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm">
+              <div className="overflow-hidden rounded-xl border border-border bg-card shadow-soft">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-sm">
               <thead className="bg-muted/50 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
                 <tr>
                   <th className="px-4 py-3 whitespace-nowrap">Product</th>
@@ -253,7 +257,7 @@ function StockList() {
                         {p.reorderLevel}
                       </td>
                       <td className="number px-4 py-3 text-right whitespace-nowrap">
-                        ${(p.stock * p.cost).toFixed(0)}
+                        {formatCurrency(p.stock * p.cost)}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap">
                         <div className="flex gap-1 flex-wrap">
@@ -281,16 +285,16 @@ function StockList() {
                 })}
               </tbody>
             </table>
-          </div>
-        </div>
-
-        <PaginationControls
+              </div>
+              <PaginationControls
           currentPage={page}
           totalPages={totalPages}
           pageSize={pageSize}
           onPageChange={setPage}
           onPageSizeChange={setPageSize}
-        />
+         totalItems={filteredProducts.length}/>
+            </div>
+            </div>
       </DataPage>
 
       <Dialog open={showForecast} onOpenChange={setShowForecast}>

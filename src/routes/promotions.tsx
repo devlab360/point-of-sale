@@ -354,7 +354,7 @@ function PromotionsPage() {
                 </div>
               ))}
             </div>
-            <PaginationControls currentPage={page} totalPages={totalPages} onPageChange={setPage} />
+            <PaginationControls currentPage={page} totalPages={totalPages} onPageChange={setPage}  totalItems={filteredPromotions.length} />
           </div>
         )}
       </DataPage>
@@ -390,7 +390,7 @@ function PromotionsPage() {
               />
               <FieldError message={promoErrors.title} />
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1.5">
                 <Label htmlFor="type">Scope Type</Label>
                 <Select name="type" defaultValue={editItem?.type || "storewide"}>
@@ -440,7 +440,7 @@ function PromotionsPage() {
               />
               <FieldError message={promoErrors.conditions} />
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1.5">
                 <Label htmlFor="startDate">
                   Start Date <span className="text-destructive">*</span>

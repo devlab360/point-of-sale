@@ -22,7 +22,7 @@ const accentBg: Record<NonNullable<Props["accent"]>, string> = {
 export function StatCard({ label, value, delta, hint, icon: Icon, accent = "primary" }: Props) {
   const positive = (delta ?? 0) >= 0;
   return (
-    <div className="group relative overflow-hidden rounded-xl border border-border bg-card p-5 shadow-soft transition-shadow hover:shadow-elevated">
+    <div className="group relative overflow-hidden rounded-xl border border-border bg-card p-4 sm:p-5 shadow-soft transition-shadow hover:shadow-elevated">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">

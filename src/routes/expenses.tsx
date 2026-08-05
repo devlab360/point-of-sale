@@ -42,7 +42,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Wallet, TrendingDown, Receipt, MoreVertical, Edit2, Trash2, Loader2 } from "lucide-react";
+import { Wallet, TrendingDown, PieChart, MoreVertical, Edit2, Trash2, Loader2 } from "lucide-react";
 import { useCurrency } from "@/lib/currency";
 import { v4 as uuidv4 } from "uuid";
 import { toast } from "sonner";
@@ -248,7 +248,7 @@ function ExpensesPage() {
           label={t("largestCategory") || "Largest Category"}
           value={largestCategory}
           hint="By amount"
-          icon={Receipt}
+          icon={PieChart}
           accent="info"
         />
         <StatCard
@@ -337,26 +337,27 @@ function ExpensesPage() {
         ) : (
           <div className="space-y-4">
             <div className="overflow-hidden rounded-xl border border-border bg-card shadow-soft">
-              <table className="w-full text-left text-sm">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-sm min-w-[700px]">
                 <thead className="bg-muted/50 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
                   <tr>
-                    <th className="px-4 py-3">{t("date") || "Date"}</th>
-                    <th className="px-4 py-3">{t("category") || "Category"}</th>
-                    <th className="px-4 py-3">{t("description") || "Description"}</th>
-                    <th className="px-4 py-3">{t("status") || "Status"}</th>
-                    <th className="px-4 py-3 text-right">{t("amount") || "Amount"}</th>
-                    <th className="px-4 py-3 text-right">{t("actions") || "Actions"}</th>
+                    <th className="px-4 py-3 whitespace-nowrap">{t("date") || "Date"}</th>
+                    <th className="px-4 py-3 whitespace-nowrap">{t("category") || "Category"}</th>
+                    <th className="px-4 py-3 whitespace-nowrap">{t("description") || "Description"}</th>
+                    <th className="px-4 py-3 whitespace-nowrap">{t("status") || "Status"}</th>
+                    <th className="px-4 py-3 text-right whitespace-nowrap">{t("amount") || "Amount"}</th>
+                    <th className="px-4 py-3 text-right whitespace-nowrap">{t("actions") || "Actions"}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
                   {paginatedExpenses.map((e) => (
                     <tr key={e.id} className="hover:bg-muted/30">
-                      <td className="px-4 py-3 text-muted-foreground">{formatDate(e.date)}</td>
-                      <td className="px-4 py-3">
+                      <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">{formatDate(e.date)}</td>
+                      <td className="px-4 py-3 whitespace-nowrap">
                         <Badge variant="secondary">{e.category}</Badge>
                       </td>
-                      <td className="px-4 py-3 font-semibold">{e.description}</td>
-                      <td className="px-4 py-3">
+                      <td className="px-4 py-3 font-semibold whitespace-nowrap">{e.description}</td>
+                      <td className="px-4 py-3 whitespace-nowrap">
                         <Badge
                           className={
                             e.status === "paid"
@@ -367,10 +368,10 @@ function ExpensesPage() {
                           {e.status}
                         </Badge>
                       </td>
-                      <td className="number px-4 py-3 text-right font-semibold">
+                      <td className="number px-4 py-3 text-right font-semibold whitespace-nowrap">
                         {formatCurrency(e.amount)}
                       </td>
-                      <td className="px-4 py-3 text-right">
+                      <td className="px-4 py-3 text-right whitespace-nowrap">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <Button variant="ghost" size="icon" className="size-8">
@@ -394,16 +395,15 @@ function ExpensesPage() {
                   ))}
                 </tbody>
               </table>
-            </div>
-            {expenses.length > 0 && (
+              </div>
               <PaginationControls
                 currentPage={page}
                 totalPages={totalPages}
                 pageSize={pageSize}
                 onPageChange={setPage}
                 onPageSizeChange={setPageSize}
-              />
-            )}
+               totalItems={expenses.length}/>
+            </div>
           </div>
         )}
       </DataPage>
@@ -423,7 +423,7 @@ function ExpensesPage() {
             <DialogTitle>{editItem ? "Edit Expense" : "Add Expense"}</DialogTitle>
           </DialogHeader>
           <form id="expense-form" noValidate onSubmit={handleSave} className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1.5">
                 <Label htmlFor="date">
                   Date <span className="text-destructive">*</span>
@@ -474,7 +474,7 @@ function ExpensesPage() {
               />
               <FieldError message={expErrors.description} />
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1.5">
                 <Label htmlFor="amount">
                   Amount ($) <span className="text-destructive">*</span>

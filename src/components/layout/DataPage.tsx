@@ -7,7 +7,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/co
 import { useLanguage } from "@/contexts/LanguageContext";
 
 type Props = {
-  title: string;
+  title?: string;
   description?: string;
   primaryAction?: { label: string; onClick?: () => void; icon?: typeof Plus };
   children: ReactNode;
@@ -16,6 +16,7 @@ type Props = {
   searchValue?: string;
   onSearchChange?: (value: string) => void;
   hideToolbar?: boolean;
+  hideHeader?: boolean;
   filtersContent?: ReactNode | ((props: { close: () => void }) => ReactNode);
   onResetFilters?: () => void;
   activeFilterCount?: number;
@@ -31,6 +32,7 @@ export function DataPage({
   searchValue,
   onSearchChange,
   hideToolbar = false,
+  hideHeader = false,
   filtersContent,
   onResetFilters,
   activeFilterCount,
@@ -38,27 +40,32 @@ export function DataPage({
   const Icon = primaryAction?.icon ?? Plus;
   const { t } = useLanguage();
   const [isFilterOpen, setIsFilterOpen] = useState(false);
+
+  const actionsContent = (
+    <>
+      <Button variant="outline" size="sm">
+        <Upload className="size-4" /> Import
+      </Button>
+      <Button variant="outline" size="sm">
+        <Download className="size-4" /> Export
+      </Button>
+      {primaryAction && (
+        <Button size="sm" onClick={primaryAction.onClick}>
+          <Icon className="size-4" /> {primaryAction.label}
+        </Button>
+      )}
+    </>
+  );
+
   return (
     <div className="space-y-6">
-      <PageHeader
-        title={title}
-        description={description}
-        actions={
-          <>
-            <Button variant="outline" size="sm">
-              <Upload className="size-4" /> Import
-            </Button>
-            <Button variant="outline" size="sm">
-              <Download className="size-4" /> Export
-            </Button>
-            {primaryAction && (
-              <Button size="sm" onClick={primaryAction.onClick}>
-                <Icon className="size-4" /> {primaryAction.label}
-              </Button>
-            )}
-          </>
-        }
-      />
+      {!hideHeader && title && (
+        <PageHeader
+          title={title}
+          description={description}
+          actions={actionsContent}
+        />
+      )}
 
       {!hideToolbar && (
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -73,6 +80,7 @@ export function DataPage({
             />
           </div>
           <div className="flex flex-wrap items-center gap-2">
+            {hideHeader && actionsContent}
             {toolbar}
             {activeFilterCount && activeFilterCount > 0 && onResetFilters ? (
               <Button variant="outline" size="sm" onClick={onResetFilters} className="mr-1">

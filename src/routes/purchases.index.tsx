@@ -139,28 +139,29 @@ function PurchasesPage() {
         ) : (
           <div className="space-y-4">
             <div className="overflow-hidden rounded-xl border border-border bg-card shadow-soft">
-              <table className="w-full text-left text-sm">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-sm min-w-[700px]">
                 <thead className="bg-muted/50 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
                   <tr>
-                    <th className="px-4 py-3">{t("po") || "PO"}</th>
-                    <th className="px-4 py-3">{t("supplier") || "Supplier"}</th>
-                    <th className="px-4 py-3">{t("date") || "Date"}</th>
-                    <th className="px-4 py-3 text-right">{t("items") || "Items"}</th>
-                    <th className="px-4 py-3">{t("status") || "Status"}</th>
-                    <th className="px-4 py-3 text-right">{t("total") || "Total"}</th>
-                    <th className="px-4 py-3"></th>
+                    <th className="px-4 py-3 whitespace-nowrap">{t("po") || "PO"}</th>
+                    <th className="px-4 py-3 whitespace-nowrap">{t("supplier") || "Supplier"}</th>
+                    <th className="px-4 py-3 whitespace-nowrap">{t("date") || "Date"}</th>
+                    <th className="px-4 py-3 text-right whitespace-nowrap">{t("items") || "Items"}</th>
+                    <th className="px-4 py-3 whitespace-nowrap">{t("status") || "Status"}</th>
+                    <th className="px-4 py-3 text-right whitespace-nowrap">{t("total") || "Total"}</th>
+                    <th className="px-4 py-3 whitespace-nowrap"></th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
                   {purchases.map((p) => (
                     <tr key={p.id} className="hover:bg-muted/30">
-                      <td className="px-4 py-3 font-mono text-xs font-semibold">
+                      <td className="px-4 py-3 font-mono text-xs font-semibold whitespace-nowrap">
                         {p.id.slice(0, 8).toUpperCase()}
                       </td>
-                      <td className="px-4 py-3 font-semibold">{p.supplier}</td>
-                      <td className="px-4 py-3 text-muted-foreground">{formatDate(p.date)}</td>
-                      <td className="px-4 py-3 text-right">{p.items}</td>
-                      <td className="px-4 py-3">
+                      <td className="px-4 py-3 font-semibold whitespace-nowrap">{p.supplier}</td>
+                      <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">{formatDate(p.date)}</td>
+                      <td className="px-4 py-3 text-right whitespace-nowrap">{p.items}</td>
+                      <td className="px-4 py-3 whitespace-nowrap">
                         <Badge
                           className={cn(
                             p.status === "received" &&
@@ -173,10 +174,10 @@ function PurchasesPage() {
                           {p.status}
                         </Badge>
                       </td>
-                      <td className="number px-4 py-3 text-right font-semibold">
+                      <td className="number px-4 py-3 text-right font-semibold whitespace-nowrap">
                         {formatCurrency(p.total)}
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-4 py-3 whitespace-nowrap">
                         <Button
                           variant="ghost"
                           size="icon"
@@ -190,16 +191,16 @@ function PurchasesPage() {
                   ))}
                 </tbody>
               </table>
-            </div>
-            {purchases.length > 0 && (
+              </div>
               <PaginationControls
                 currentPage={page}
                 totalPages={totalPages}
                 pageSize={pageSize}
+                totalItems={purchases.length}
                 onPageChange={setPage}
                 onPageSizeChange={setPageSize}
               />
-            )}
+            </div>
           </div>
         )}
       </DataPage>

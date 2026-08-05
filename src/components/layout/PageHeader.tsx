@@ -12,7 +12,7 @@ export function PageHeader({ title, description, actions, className }: Props) {
   return (
     <div
       className={cn(
-        "flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between",
+        "flex flex-row items-start justify-between gap-3 sm:items-center",
         className,
       )}
     >

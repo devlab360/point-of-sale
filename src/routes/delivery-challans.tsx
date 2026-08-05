@@ -32,6 +32,7 @@ import {
 } from "@/api/delivery-challans";
 import { getCustomersFn } from "@/api/customers";
 import { getProductsFn, updateProductFn } from "@/api/products";
+import { getUnitsFn } from "@/api/units";
 import { createSaleFn } from "@/api/sales";
 import { createInventoryMovementFn } from "@/api/inventory";
 import { useCurrency } from "@/lib/currency";
@@ -87,6 +88,20 @@ function DeliveryChallansPage() {
     queryFn: async () => ((await getProductsFn({ data: {} })) as any)?.data || [],
   });
   const products = productsData || [];
+
+  const { data: unitsData } = useQuery({
+    queryKey: ["units", orgId],
+    queryFn: async () => ((await getUnitsFn({ data: {} })) as any)?.data || [],
+  });
+  const units = unitsData || [];
+
+  const getUnitDisplay = (unitIdOrName: string) => {
+    if (!unitIdOrName) return "";
+    const found = units.find((u: any) => u.id === unitIdOrName || u.name === unitIdOrName);
+    if (found) return found.short || found.name;
+    if (unitIdOrName.length > 20 && unitIdOrName.includes("-")) return "unit";
+    return unitIdOrName;
+  };
 
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [viewItem, setViewItem] = useState<any | null>(null);
@@ -235,10 +250,12 @@ function DeliveryChallansPage() {
           });
           await createInventoryMovementFn({
             data: {
-              productId: prod.id,
-              productName: prod.name,
-              action: `Challan ${chNo}`,
-              quantity: -item.quantity,
+              movement: {
+                productId: prod.id,
+                productName: prod.name,
+                action: `Challan ${chNo}`,
+                quantity: -item.quantity,
+              },
             },
           });
         }
@@ -386,31 +403,33 @@ function DeliveryChallansPage() {
         ) : (
           <div className="space-y-4">
             <div className="overflow-hidden rounded-xl border border-border bg-card shadow-soft">
-              <table className="w-full text-left text-sm">
+              <div className="overflow-hidden rounded-xl border border-border bg-card shadow-soft">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-sm min-w-[700px]">
                 <thead className="bg-muted/50 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
                   <tr>
-                    <th className="px-4 py-3">Challan #</th>
-                    <th className="px-4 py-3">Customer</th>
-                    <th className="px-4 py-3">Date</th>
-                    <th className="px-4 py-3">Transport / Vehicle</th>
-                    <th className="px-4 py-3">Status</th>
-                    <th className="px-4 py-3 text-right">Actions</th>
+                    <th className="px-4 py-3 whitespace-nowrap">Challan #</th>
+                    <th className="px-4 py-3 whitespace-nowrap">Customer</th>
+                    <th className="px-4 py-3 whitespace-nowrap">Date</th>
+                    <th className="px-4 py-3 whitespace-nowrap">Transport / Vehicle</th>
+                    <th className="px-4 py-3 whitespace-nowrap">Status</th>
+                    <th className="px-4 py-3 text-right whitespace-nowrap">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
                   {paginated.map((c) => (
                     <tr key={c.id} className="hover:bg-muted/30">
-                      <td className="px-4 py-3 font-mono font-bold text-primary">{c.challanNo}</td>
-                      <td className="px-4 py-3 font-semibold">{c.customerName}</td>
-                      <td className="px-4 py-3 text-xs text-muted-foreground">
+                      <td className="px-4 py-3 font-mono font-bold text-primary whitespace-nowrap">{c.challanNo}</td>
+                      <td className="px-4 py-3 font-semibold whitespace-nowrap">{c.customerName}</td>
+                      <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">
                         {formatDate(c.date)}
                       </td>
-                      <td className="px-4 py-3 text-xs">
+                      <td className="px-4 py-3 text-xs whitespace-nowrap">
                         {c.transportName
                           ? `${c.transportName} (${c.vehicleNo || "N/A"})`
                           : "Self / Local"}
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-4 py-3 whitespace-nowrap">
                         {c.status === "invoiced" ? (
                           <Badge className="bg-success/15 text-success border-success/30">
                             Invoiced
@@ -452,14 +471,16 @@ function DeliveryChallansPage() {
                   ))}
                 </tbody>
               </table>
-            </div>
-            <PaginationControls
+              </div>
+              <PaginationControls
               currentPage={page}
               totalPages={totalPages}
               pageSize={pageSize}
               onPageChange={setPage}
               onPageSizeChange={setPageSize}
-            />
+             totalItems={filteredChallans.length}/>
+            </div>
+            </div>
           </div>
         )}
       </DataPage>
@@ -552,51 +573,60 @@ function DeliveryChallansPage() {
               <FieldError message={chErrors.lineItems} />
             </div>
 
-            {/* Line Items Table */}
+            {/* Line Items List */}
             {lineItems.length > 0 && (
-              <div className="overflow-hidden rounded-lg border border-border">
-                <table className="w-full text-xs">
-                  <thead className="bg-muted/50 font-semibold uppercase text-muted-foreground">
-                    <tr>
-                      <th className="p-2 text-left">Dispatched Item</th>
-                      <th className="p-2 text-center w-24">Quantity</th>
-                      <th className="p-2 text-left w-20">Unit</th>
-                      <th className="p-2 text-center w-12"></th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-border">
-                    {lineItems.map((item) => (
-                      <tr key={item.productId}>
-                        <td className="p-2 font-medium">{item.productName}</td>
-                        <td className="p-2 text-center">
-                          <Input
-                            type="number"
-                            min="1"
-                            required
-                            placeholder="1"
-                            value={item.quantity}
-                            onChange={(e) =>
-                              updateLineQty(item.productId, parseInt(e.target.value) || 1)
-                            }
-                            className="h-7 w-16 text-center text-xs"
-                          />
-                        </td>
-                        <td className="p-2 text-left text-muted-foreground font-semibold">
-                          {item.unit}
-                        </td>
-                        <td className="p-2 text-center">
-                          <button
+              <div className="space-y-2.5 pt-2">
+                <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center justify-between">
+                  <span>Dispatched Items</span>
+                  <Badge variant="secondary" className="rounded-full text-[10px] px-2">{lineItems.length}</Badge>
+                </Label>
+                <div className="space-y-2">
+                  {lineItems.map((item) => {
+                    const displayUnit = getUnitDisplay(item.unit);
+                    return (
+                      <div
+                        key={item.productId}
+                        className="group flex items-center justify-between gap-3 rounded-lg border border-border/60 bg-card p-2.5 shadow-sm transition-all hover:border-primary/30 hover:shadow-md"
+                      >
+                        <div className="flex-1 min-w-0">
+                          <p className="truncate text-sm font-semibold text-foreground">
+                            {item.productName}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <div className="flex h-9 items-center rounded-md border border-input bg-background overflow-hidden focus-within:ring-1 focus-within:ring-ring">
+                            <Input
+                              type="number"
+                              min="1"
+                              required
+                              value={item.quantity}
+                              onChange={(e) =>
+                                updateLineQty(item.productId, parseInt(e.target.value) || 1)
+                              }
+                              className="h-full w-16 border-0 bg-transparent px-2 text-center text-sm font-bold shadow-none focus-visible:ring-0"
+                            />
+                            {displayUnit && (
+                              <div className="flex h-full items-center justify-center bg-muted/50 px-3 border-l border-input">
+                                <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                                  {displayUnit}
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                          <Button
                             type="button"
+                            variant="ghost"
+                            size="icon"
                             onClick={() => updateLineQty(item.productId, 0)}
-                            className="text-destructive hover:underline font-bold"
+                            className="h-8 w-8 text-muted-foreground hover:bg-destructive/10 hover:text-destructive shrink-0 transition-colors"
                           >
-                            ×
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                            <Trash2 className="size-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
             )}
 
@@ -626,21 +656,21 @@ function DeliveryChallansPage() {
           side="right"
           className="w-full sm:max-w-2xl overflow-y-auto p-6 bg-background border-l border-border"
         >
-          <SheetHeader className="flex flex-row items-center justify-between border-b pb-4 pr-8">
-            <div>
-              <SheetTitle className="text-xl font-bold text-primary">
+          <SheetHeader className="flex flex-col sm:flex-row items-start justify-between gap-3 border-b pb-4 pr-6 sm:pr-8 text-left">
+            <div className="w-full sm:w-auto text-left">
+              <SheetTitle className="text-lg sm:text-xl font-bold text-primary text-left">
                 {viewItem?.challanNo}
               </SheetTitle>
-              <p className="text-xs text-muted-foreground mt-0.5">
+              <p className="text-xs text-muted-foreground mt-0.5 text-left">
                 Delivery Slip for {viewItem?.customerName}
               </p>
             </div>
-            <div className="flex gap-2">
-              <Button size="sm" variant="outline" onClick={() => window.print()}>
+            <div className="flex w-full sm:w-auto gap-2 mt-2 sm:mt-0">
+              <Button size="sm" variant="outline" className="flex-1 sm:flex-none" onClick={() => window.print()}>
                 <Printer className="mr-1 size-3.5" /> Print Challan
               </Button>
               {viewItem?.status !== "invoiced" && (
-                <Button size="sm" onClick={() => viewItem && convertChallanToInvoice(viewItem)}>
+                <Button size="sm" className="flex-1 sm:flex-none" onClick={() => viewItem && convertChallanToInvoice(viewItem)}>
                   <CheckCircle2 className="mr-1 size-3.5" /> Convert to Invoice
                 </Button>
               )}
@@ -675,24 +705,24 @@ function DeliveryChallansPage() {
                 <h4 className="font-bold text-xs uppercase text-muted-foreground">
                   Dispatched Goods List
                 </h4>
-                <div className="overflow-hidden rounded-xl border">
-                  <table className="w-full text-xs">
+                <div className="overflow-x-auto rounded-xl border">
+                  <table className="w-full text-xs min-w-[500px]">
                     <thead className="bg-muted/50 font-semibold uppercase text-muted-foreground">
                       <tr>
-                        <th className="p-2.5 text-left">#</th>
-                        <th className="p-2.5 text-left">Description of Goods</th>
-                        <th className="p-2.5 text-right">Quantity</th>
-                        <th className="p-2.5 text-left">Unit</th>
+                        <th className="p-2.5 text-left whitespace-nowrap">#</th>
+                        <th className="p-2.5 text-left whitespace-nowrap">Description of Goods</th>
+                        <th className="p-2.5 text-right whitespace-nowrap">Quantity</th>
+                        <th className="p-2.5 text-left whitespace-nowrap">Unit</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y">
                       {viewItem.items.map((i, idx) => (
                         <tr key={idx}>
-                          <td className="p-2.5 font-mono text-muted-foreground">{idx + 1}</td>
-                          <td className="p-2.5 font-semibold text-foreground">{i.productName}</td>
-                          <td className="p-2.5 text-right font-bold text-base">{i.quantity}</td>
-                          <td className="p-2.5 text-left font-medium text-muted-foreground">
-                            {i.unit}
+                          <td className="p-2.5 font-mono text-muted-foreground whitespace-nowrap">{idx + 1}</td>
+                          <td className="p-2.5 font-semibold text-foreground whitespace-nowrap">{i.productName}</td>
+                          <td className="p-2.5 text-right font-bold text-base whitespace-nowrap">{i.quantity}</td>
+                          <td className="p-2.5 text-left font-medium text-muted-foreground whitespace-nowrap">
+                            {getUnitDisplay(i.unit)}
                           </td>
                         </tr>
                       ))}

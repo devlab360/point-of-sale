@@ -299,37 +299,39 @@ function CouponsPage() {
         ) : (
           <div className="space-y-4">
             <div className="overflow-hidden rounded-xl border border-border bg-card shadow-soft">
-              <table className="w-full text-left text-sm">
+              <div className="overflow-hidden rounded-xl border border-border bg-card shadow-soft">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-sm min-w-[800px]">
                 <thead className="bg-muted/50 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
                   <tr>
-                    <th className="px-4 py-3">Code</th>
-                    <th className="px-4 py-3">Type</th>
-                    <th className="px-4 py-3">Discount</th>
-                    <th className="px-4 py-3">Uses</th>
-                    <th className="px-4 py-3">Expires</th>
-                    <th className="px-4 py-3">Status</th>
-                    <th className="px-4 py-3 text-right">Actions</th>
+                    <th className="px-4 py-3 whitespace-nowrap">Code</th>
+                    <th className="px-4 py-3 whitespace-nowrap">Type</th>
+                    <th className="px-4 py-3 whitespace-nowrap">Discount</th>
+                    <th className="px-4 py-3 whitespace-nowrap">Uses</th>
+                    <th className="px-4 py-3 whitespace-nowrap">Expires</th>
+                    <th className="px-4 py-3 whitespace-nowrap">Status</th>
+                    <th className="px-4 py-3 text-right whitespace-nowrap">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
                   {paginatedCoupons.map((c) => (
                     <tr key={c.id} className="hover:bg-muted/30">
-                      <td className="px-4 py-3">
+                      <td className="px-4 py-3 whitespace-nowrap">
                         <code className="rounded bg-muted px-2 py-1 text-xs font-bold">
                           {c.code}
                         </code>
                       </td>
-                      <td className="px-4 py-3 text-muted-foreground">{c.type}</td>
-                      <td className="px-4 py-3 font-semibold">
+                      <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">{c.type}</td>
+                      <td className="px-4 py-3 font-semibold whitespace-nowrap">
                         {c.type === "percent" ? `${c.value}%` : formatCurrency(c.value)}
                       </td>
-                      <td className="px-4 py-3 text-sm text-muted-foreground">
+                      <td className="px-4 py-3 text-sm text-muted-foreground whitespace-nowrap">
                         {c.usedCount} / {c.usageLimit || "∞"}
                       </td>
-                      <td className="px-4 py-3 text-sm text-muted-foreground">
+                      <td className="px-4 py-3 text-sm text-muted-foreground whitespace-nowrap">
                         {c.validUntil ? formatDate(new Date(c.validUntil).toISOString()) : "Never"}
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-4 py-3 whitespace-nowrap">
                         <Badge
                           className={
                             c.status === "active"
@@ -342,7 +344,7 @@ function CouponsPage() {
                           {c.status}
                         </Badge>
                       </td>
-                      <td className="px-4 py-3 text-right">
+                      <td className="px-4 py-3 text-right whitespace-nowrap">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <Button variant="ghost" size="icon" className="size-8">
@@ -366,8 +368,10 @@ function CouponsPage() {
                   ))}
                 </tbody>
               </table>
+              </div>
+              <PaginationControls currentPage={page} totalPages={totalPages} onPageChange={setPage}  totalItems={filteredCoupons.length}/>
             </div>
-            <PaginationControls currentPage={page} totalPages={totalPages} onPageChange={setPage} />
+            </div>
           </div>
         )}
       </DataPage>
@@ -387,7 +391,7 @@ function CouponsPage() {
             <DialogTitle>{editItem ? "Edit Coupon" : "Add Coupon"}</DialogTitle>
           </DialogHeader>
           <form noValidate onSubmit={handleSave} className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1.5">
                 <Label htmlFor="code">
                   Coupon Code <span className="text-destructive">*</span>
@@ -414,7 +418,7 @@ function CouponsPage() {
                 </Select>
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1.5">
                 <Label htmlFor="discount">
                   Discount Value <span className="text-destructive">*</span>

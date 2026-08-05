@@ -479,7 +479,7 @@ function AccountsPage() {
                 pageSize={pageSize}
                 onPageChange={setPage}
                 onPageSizeChange={setPageSize}
-              />
+               totalItems={filteredVouchers.length} />
             )}
           </div>
         )}

@@ -67,7 +67,7 @@ export function CartPanel({ state }: { state: any }) {
   return (
     <aside
       className={cn(
-        "flex min-h-0 flex-col border-t border-border bg-card w-full md:border-l md:border-t-0 md:w-[var(--drawer-width)]",
+        "flex flex-1 min-h-0 flex-col border-t border-border bg-card w-full md:border-l md:border-t-0 md:w-[var(--drawer-width)]",
         mobileTab === "products" ? "hidden md:flex" : "flex",
       )}
       style={{ "--drawer-width": `${drawerWidth}px` } as React.CSSProperties}
@@ -215,8 +215,8 @@ export function CartPanel({ state }: { state: any }) {
       </div>
 
       {/* Order Summary & Actions */}
-      <div className="border-t border-border p-3 bg-background shrink-0">
-        <div className="mb-2 grid grid-cols-[1fr_auto_auto] gap-2">
+      <div className="border-t border-border p-2 md:p-3 bg-background shrink-0">
+        <div className="mb-1.5 md:mb-2 grid grid-cols-[1fr_auto_auto] gap-1.5 md:gap-2">
           <div className="relative">
             <div className="flex items-center gap-1.5 rounded-lg border border-border bg-muted/20 px-2.5 h-9 transition-colors focus-within:border-primary focus-within:ring-1 focus-within:ring-primary">
               <Percent className="size-3.5 text-muted-foreground shrink-0" />
@@ -258,7 +258,7 @@ export function CartPanel({ state }: { state: any }) {
           </Button>
         </div>
 
-        <div className="space-y-1 rounded-lg bg-muted/40 p-2 text-sm border border-border/50">
+        <div className="space-y-0.5 md:space-y-1 rounded-lg bg-muted/40 p-1.5 md:p-2 text-xs md:text-sm border border-border/50">
           <Row label="Subtotal" value={formatCurrency(subtotal)} />
           {discountAmt > 0 && (
             <Row label="Discount" value={`-${formatCurrency(discountAmt)}`} negative />
@@ -282,7 +282,7 @@ export function CartPanel({ state }: { state: any }) {
         </div>
 
         {payment === "cash" && (
-          <div className="mt-2.5 space-y-2 bg-muted/20 p-2 rounded-lg border border-border/50">
+          <div className="mt-1.5 md:mt-2.5 space-y-1.5 md:space-y-2 bg-muted/20 p-1.5 md:p-2 rounded-lg border border-border/50">
             <div className="flex items-center gap-2 cursor-pointer">
               <Label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground shrink-0">
                 Cash:
@@ -331,7 +331,7 @@ export function CartPanel({ state }: { state: any }) {
         )}
 
         {payment === "split" && (
-          <div className="mt-2.5 grid grid-cols-3 gap-2 bg-muted/20 p-2 rounded-lg border border-border/50">
+          <div className="mt-1.5 md:mt-2.5 grid grid-cols-3 gap-1 md:gap-2 bg-muted/20 p-1.5 md:p-2 rounded-lg border border-border/50">
             <div>
               <Label className="text-[10px] font-bold uppercase text-muted-foreground">Cash</Label>
               <input
@@ -379,7 +379,7 @@ export function CartPanel({ state }: { state: any }) {
           </div>
         )}
 
-        <div className="mt-2.5 grid grid-cols-6 gap-1">
+        <div className="mt-1.5 md:mt-2.5 grid grid-cols-6 gap-1">
           <PayBtn
             icon={Banknote}
             label="Cash"
@@ -418,10 +418,10 @@ export function CartPanel({ state }: { state: any }) {
           />
         </div>
 
-        <div className="mt-2.5 grid grid-cols-[1fr_auto] gap-2">
+        <div className="mt-1.5 md:mt-2.5 grid grid-cols-[1fr_auto] gap-1.5 md:gap-2">
           <Button
             size="lg"
-            className="h-14 text-base font-bold shadow-lg hover:shadow-xl transition-all relative overflow-hidden group w-full"
+            className="h-12 md:h-14 text-sm md:text-base font-bold shadow-lg hover:shadow-xl transition-all relative overflow-hidden group w-full"
             disabled={lines.length === 0}
             onClick={() => setConfirmCheckout(true)}
           >
@@ -438,7 +438,7 @@ export function CartPanel({ state }: { state: any }) {
           <Button
             size="lg"
             variant="outline"
-            className="h-14 w-14 shrink-0 shadow-sm hover:bg-muted"
+            className="h-12 w-12 md:h-14 md:w-14 shrink-0 shadow-sm hover:bg-muted"
             aria-label="Print"
             onClick={() => window.print()}
           >
@@ -476,7 +476,7 @@ function PayBtn({
     <button
       onClick={onClick}
       className={cn(
-        "flex flex-col items-center justify-center gap-1 rounded-lg border h-14 text-[9px] font-bold transition-all shadow-sm outline-none focus-visible:ring-2 focus-visible:ring-primary min-w-0 w-full px-1",
+        "flex flex-col items-center justify-center gap-0.5 md:gap-1 rounded-lg border h-10 md:h-14 text-[9px] font-bold transition-all shadow-sm outline-none focus-visible:ring-2 focus-visible:ring-primary min-w-0 w-full px-1",
         active
           ? "border-primary bg-primary/10 text-primary ring-1 ring-primary shadow-inner"
           : "border-border bg-card text-muted-foreground hover:border-primary/50 hover:bg-muted/50 hover:text-foreground",

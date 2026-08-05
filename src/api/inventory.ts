@@ -7,7 +7,7 @@ import { z } from "zod";
 import { db } from "@/db";
 import * as schema from "@/db/schema";
 
-import { eq, and, sql } from "drizzle-orm";
+import { eq, and, sql, desc } from "drizzle-orm";
 
 export const getInventoryMovementsFn = createServerFn({ method: "GET" })
   .validator((data: any) => data)
@@ -18,7 +18,8 @@ export const getInventoryMovementsFn = createServerFn({ method: "GET" })
       const res = await db
         .select()
         .from(schema.inventoryMovements)
-        .where(eq(schema.inventoryMovements.organizationId, orgId));
+        .where(eq(schema.inventoryMovements.organizationId, orgId))
+        .orderBy(desc(schema.inventoryMovements.createdAt));
       return { success: true, data: res };
     } catch (e) {
       return handleApiError(e);

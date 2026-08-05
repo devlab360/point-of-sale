@@ -271,30 +271,31 @@ function SalesPage() {
             </div>
 
             <div className="overflow-hidden rounded-xl border border-border bg-card shadow-soft">
-              <table className="w-full text-left text-sm">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-sm min-w-[800px]">
                 <thead className="bg-muted/50 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
                   <tr>
-                    <th className="px-4 py-3">{t("invoice") || "Invoice"}</th>
-                    <th className="px-4 py-3">{t("customer") || "Customer"}</th>
-                    <th className="px-4 py-3">{t("date") || "Date"}</th>
-                    <th className="px-4 py-3 text-right">{t("items") || "Items"}</th>
-                    <th className="px-4 py-3">{t("payment") || "Payment"}</th>
-                    <th className="px-4 py-3">{t("sync") || "Sync"}</th>
-                    <th className="px-4 py-3">{t("status") || "Status"}</th>
-                    <th className="px-4 py-3 text-right">{t("total") || "Total"}</th>
-                    <th className="px-4 py-3"></th>
+                    <th className="px-4 py-3 whitespace-nowrap">{t("invoice") || "Invoice"}</th>
+                    <th className="px-4 py-3 whitespace-nowrap">{t("customer") || "Customer"}</th>
+                    <th className="px-4 py-3 whitespace-nowrap">{t("date") || "Date"}</th>
+                    <th className="px-4 py-3 text-right whitespace-nowrap">{t("items") || "Items"}</th>
+                    <th className="px-4 py-3 whitespace-nowrap">{t("payment") || "Payment"}</th>
+                    <th className="px-4 py-3 whitespace-nowrap">{t("sync") || "Sync"}</th>
+                    <th className="px-4 py-3 whitespace-nowrap">{t("status") || "Status"}</th>
+                    <th className="px-4 py-3 text-right whitespace-nowrap">{t("total") || "Total"}</th>
+                    <th className="px-4 py-3 whitespace-nowrap"></th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
                   {sales.map((s) => (
                     <tr key={s.id} className="hover:bg-muted/30">
-                      <td className="px-4 py-3 font-mono text-xs font-semibold">
+                      <td className="px-4 py-3 font-mono text-xs font-semibold whitespace-nowrap">
                         {s.id.slice(0, 8).toUpperCase()}
                       </td>
-                      <td className="px-4 py-3 font-semibold">{s.customerName || "Walk-in"}</td>
-                      <td className="px-4 py-3 text-muted-foreground">{formatDateTime(s.date)}</td>
-                      <td className="px-4 py-3 text-right">{s.items}</td>
-                      <td className="px-4 py-3 text-muted-foreground capitalize">
+                      <td className="px-4 py-3 font-semibold whitespace-nowrap">{s.customerName || "Walk-in"}</td>
+                      <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">{formatDateTime(s.date)}</td>
+                      <td className="px-4 py-3 text-right whitespace-nowrap">{s.items}</td>
+                      <td className="px-4 py-3 text-muted-foreground capitalize whitespace-nowrap">
                         {s.paymentMethod === "split" && s.payments && s.payments.length > 0 ? (
                           <div className="flex flex-col gap-0.5 text-[10px]">
                             <span className="font-bold text-primary">SPLIT</span>
@@ -310,7 +311,7 @@ function SalesPage() {
                           </span>
                         )}
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-4 py-3 whitespace-nowrap">
                         <Badge
                           variant="outline"
                           className={cn(
@@ -322,7 +323,7 @@ function SalesPage() {
                           {s.synced ? "Synced" : "Pending"}
                         </Badge>
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-4 py-3 whitespace-nowrap">
                         <Badge
                           className={cn(
                             s.status === "completed" &&
@@ -336,10 +337,10 @@ function SalesPage() {
                           {s.status}
                         </Badge>
                       </td>
-                      <td className="number px-4 py-3 text-right font-semibold">
+                      <td className="number px-4 py-3 text-right font-semibold whitespace-nowrap">
                         {formatCurrency(s.total)}
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-4 py-3 whitespace-nowrap">
                         <div className="flex gap-1">
                           <Button
                             variant="ghost"
@@ -363,16 +364,16 @@ function SalesPage() {
                   ))}
                 </tbody>
               </table>
-            </div>
-            {sales.length > 0 && (
+              </div>
               <PaginationControls
                 currentPage={page}
                 totalPages={totalPages}
                 pageSize={pageSize}
+                totalItems={sales.length}
                 onPageChange={setPage}
                 onPageSizeChange={setPageSize}
               />
-            )}
+            </div>
           </div>
         )}
       </DataPage>
@@ -415,23 +416,23 @@ function SalesPage() {
                   </Badge>
                 </div>
               </div>
-              <div className="rounded-lg border border-border overflow-hidden">
-                <table className="w-full text-sm">
+              <div className="rounded-lg border border-border overflow-x-auto">
+                <table className="w-full text-sm min-w-[400px]">
                   <thead className="bg-muted/50 text-[11px] uppercase tracking-wider text-muted-foreground">
                     <tr>
-                      <th className="px-3 py-2 text-left">Item</th>
-                      <th className="px-3 py-2 text-right">Qty</th>
-                      <th className="px-3 py-2 text-right">Price</th>
-                      <th className="px-3 py-2 text-right">Total</th>
+                      <th className="px-3 py-2 text-left whitespace-nowrap">Item</th>
+                      <th className="px-3 py-2 text-right whitespace-nowrap">Qty</th>
+                      <th className="px-3 py-2 text-right whitespace-nowrap">Price</th>
+                      <th className="px-3 py-2 text-right whitespace-nowrap">Total</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border">
                     {viewSale.saleItems?.map((item, i) => (
                       <tr key={i}>
-                        <td className="px-3 py-2">{item.productName}</td>
-                        <td className="px-3 py-2 text-right">{item.quantity}</td>
-                        <td className="px-3 py-2 text-right">{formatCurrency(item.price)}</td>
-                        <td className="px-3 py-2 text-right font-semibold">
+                        <td className="px-3 py-2 whitespace-nowrap">{item.productName}</td>
+                        <td className="px-3 py-2 text-right whitespace-nowrap">{item.quantity}</td>
+                        <td className="px-3 py-2 text-right whitespace-nowrap">{formatCurrency(item.price)}</td>
+                        <td className="px-3 py-2 text-right font-semibold whitespace-nowrap">
                           {formatCurrency(item.total)}
                         </td>
                       </tr>

@@ -336,7 +336,7 @@ function GiftCardsPage() {
                 </div>
               ))}
             </div>
-            <PaginationControls currentPage={page} totalPages={totalPages} onPageChange={setPage} />
+            <PaginationControls currentPage={page} totalPages={totalPages} onPageChange={setPage}  totalItems={filteredCards.length} />
           </div>
         )}
       </DataPage>

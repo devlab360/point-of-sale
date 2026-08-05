@@ -23,6 +23,7 @@ import {
   Calendar,
   BookOpen,
   Users,
+  ChevronRight,
 } from "lucide-react";
 import {
   Bar,
@@ -38,7 +39,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
@@ -117,7 +118,7 @@ function ReportsPage() {
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
 
-  const mtdRevenue = sales.reduce((sum, s) => sum + s.total, 0);
+  const mtdRevenue = sales.reduce((sum, s) => sum + (Number(s.total) || 0), 0);
 
   let mtdCost = 0;
   sales.forEach((sale) => {
@@ -130,8 +131,8 @@ function ReportsPage() {
 
   const mtdOrders = sales.length;
   const taxPayable = mtdRevenue * 0.08;
-  const totalExpenses = expenses.reduce((s, e) => s + e.amount, 0);
-  const stockValue = products.reduce((s, p) => s + p.stock * p.cost, 0);
+  const totalExpenses = expenses.reduce((s, e) => s + (Number(e.amount) || 0), 0);
+  const stockValue = products.reduce((s, p) => s + (Number(p.stock) || 0) * (Number(p.cost) || 0), 0);
 
   const monthly = Array.from({ length: 12 }).map((_, i) => {
     const d = new Date();
@@ -142,10 +143,10 @@ function ReportsPage() {
         new Date(s.date).getMonth() === d.getMonth() &&
         new Date(s.date).getFullYear() === d.getFullYear(),
     );
-    const revenue = monthSales.reduce((sum, s) => sum + s.total, 0);
+    const revenue = monthSales.reduce((sum, s) => sum + (Number(s.total) || 0), 0);
     const expense = expenses
       .filter((e) => new Date(e.date).getMonth() === d.getMonth())
-      .reduce((s, e) => s + e.amount, 0);
+      .reduce((s, e) => s + (Number(e.amount) || 0), 0);
 
     let cogs = 0;
     monthSales.forEach((sale) => {
@@ -163,7 +164,7 @@ function ReportsPage() {
     d.setDate(d.getDate() - (6 - i));
     const day = d.toLocaleDateString("default", { weekday: "short" });
     const daySales = sales.filter((s) => new Date(s.date).toDateString() === d.toDateString());
-    return { day, sales: daySales.reduce((sum, s) => sum + s.total, 0), orders: daySales.length };
+    return { day, sales: daySales.reduce((sum, s) => sum + (Number(s.total) || 0), 0), orders: daySales.length };
   });
 
   // Category share from real sales data
@@ -171,7 +172,10 @@ function ReportsPage() {
   sales.forEach((sale) => {
     sale.saleItems?.forEach((item) => {
       const prod = products.find((p) => p.id === item.productId);
-      if (prod) catSalesMap[prod.category] = (catSalesMap[prod.category] || 0) + item.total;
+      if (prod) {
+        const catName = categories.find((c) => c.id === prod.category)?.name || prod.category;
+        catSalesMap[catName] = (catSalesMap[catName] || 0) + (Number(item.total) || 0);
+      }
     });
   });
   const COLORS = [
@@ -204,7 +208,7 @@ function ReportsPage() {
         sales
           .map(
             (s) =>
-              `${s.id.slice(0, 8)},${s.customerName || "Walk-in"},${formatDate(s.date)},${s.paymentMethod},${s.items},$${s.total.toFixed(2)}`,
+              `${s.id.slice(0, 8)},${s.customerName || "Walk-in"},${formatDate(s.date)},${s.paymentMethod},${s.items},${currencySymbol}${Number(s.total).toFixed(2)}`,
           )
           .join("\n");
       filename = "sales-report.csv";
@@ -215,7 +219,7 @@ function ReportsPage() {
         products
           .map(
             (p) =>
-              `${p.name},${p.sku},${p.stock},${p.reorderLevel},$${(p.stock * p.cost).toFixed(2)}`,
+              `${p.name},${p.sku},${p.stock},${p.reorderLevel},${currencySymbol}${(Number(p.stock) * Number(p.cost)).toFixed(2)}`,
           )
           .join("\n");
       filename = "inventory-report.csv";
@@ -225,7 +229,7 @@ function ReportsPage() {
         "\n" +
         expenses
           .map(
-            (e) => `${e.date},${e.category},${e.description},$${e.amount.toFixed(2)},${e.status}`,
+            (e) => `${e.date},${e.category},${e.description},${currencySymbol}${Number(e.amount).toFixed(2)},${e.status}`,
           )
           .join("\n");
       filename = "expense-report.csv";
@@ -413,36 +417,44 @@ function ReportsPage() {
         }
       />
 
-      {/* KPI Stats */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard
-          label="MTD Revenue"
-          value={formatCurrency(mtdRevenue)}
-          delta={0}
-          icon={DollarSign}
-          accent="primary"
-        />
-        <StatCard
-          label="MTD Profit"
-          value={formatCurrency(mtdProfit)}
-          delta={0}
-          icon={TrendingUp}
-          accent="success"
-        />
-        <StatCard
-          label="MTD Orders"
-          value={mtdOrders.toString()}
-          delta={0}
-          icon={ShoppingCart}
-          accent="info"
-        />
-        <StatCard
-          label="Tax Payable"
-          value={formatCurrency(taxPayable)}
-          delta={0}
-          icon={Percent}
-          accent="warning"
-        />
+      {/* Key Metrics */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {!Number.isNaN(mtdRevenue) && (
+          <StatCard
+            label="MTD Revenue"
+            value={formatCurrency(mtdRevenue)}
+            icon={DollarSign}
+            accent="success"
+            delta={0}
+          />
+        )}
+        {!Number.isNaN(mtdProfit) && (
+          <StatCard
+            label="MTD Profit"
+            value={formatCurrency(mtdProfit)}
+            icon={TrendingUp}
+            accent="primary"
+            delta={0}
+          />
+        )}
+        {!Number.isNaN(mtdOrders) && (
+          <StatCard
+            label="MTD Orders"
+            value={mtdOrders.toString()}
+            icon={ShoppingCart}
+            accent="info"
+            delta={0}
+          />
+        )}
+        {!Number.isNaN(taxPayable) && (
+          <StatCard
+            label="Tax Payable"
+            value={formatCurrency(taxPayable)}
+            icon={Percent}
+            accent="warning"
+            delta={0}
+          />
+        )}
       </div>
 
       {/* Charts */}
@@ -534,9 +546,7 @@ function ReportsPage() {
                 <span className="size-2.5 rounded-full shrink-0" style={{ background: c.color }} />
                 <span className="flex-1 truncate text-muted-foreground">{c.name}</span>
                 <span className="number font-semibold">
-                  $
-                  {typeof c.value === "number" && catData.length > 0 ? c.value.toFixed(0) : c.value}
-                  %
+                  {catData.length > 0 ? formatCurrency(c.value) : `${c.value}%`}
                 </span>
               </li>
             ))}
@@ -601,16 +611,19 @@ function ReportsPage() {
                 <h3 className="font-semibold text-sm">{r.name}</h3>
                 <p className="mt-0.5 text-xs text-muted-foreground">{r.desc}</p>
               </div>
+              <div className="flex items-center self-stretch justify-center">
+                <ChevronRight className="size-5 text-muted-foreground/50 group-hover:text-primary transition-colors" />
+              </div>
             </button>
           );
         })}
       </div>
 
-      {/* Report Modal */}
-      <Dialog open={!!activeReport} onOpenChange={(open) => !open && setActiveReport(null)}>
-        <DialogContent className="sm:max-w-5xl max-h-[85vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="capitalize flex items-center justify-between pr-6">
+      {/* Report Drawer */}
+      <Sheet open={!!activeReport} onOpenChange={(open) => !open && setActiveReport(null)}>
+        <SheetContent side="right" className="w-full sm:max-w-3xl lg:max-w-5xl overflow-y-auto sm:p-6">
+          <SheetHeader className="mb-4">
+            <SheetTitle className="capitalize flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pr-6">
               <span>
                 {activeReport === "pnl" ? "Profit & Loss Statement" : `${activeReport} Report`}
               </span>
@@ -618,13 +631,13 @@ function ReportsPage() {
                 size="sm"
                 variant="outline"
                 onClick={() => window.print()}
-                className="font-semibold bg-primary/10 border-primary/20 text-primary hover:text-primary hover:bg-primary/20 hover:border-primary/30"
+                className="font-semibold bg-primary/10 border-primary/20 text-primary hover:text-primary hover:bg-primary/20 hover:border-primary/30 w-full sm:w-auto"
               >
                 {" "}
                 Print Report
               </Button>
-            </DialogTitle>
-          </DialogHeader>
+            </SheetTitle>
+          </SheetHeader>
 
           <div className="space-y-4 pt-2">
             {/* Date Filter Bar */}
@@ -661,7 +674,7 @@ function ReportsPage() {
 
             {activeReport === "sales" && (
               <div className="space-y-3">
-                <div className="grid grid-cols-3 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <div className="rounded-lg bg-muted/40 p-3 text-center">
                     <div className="text-2xl font-bold">{mtdOrders}</div>
                     <div className="text-xs text-muted-foreground">Total Orders</div>
@@ -677,25 +690,25 @@ function ReportsPage() {
                     <div className="text-xs text-muted-foreground">Avg Order</div>
                   </div>
                 </div>
-                <div className="overflow-hidden rounded-lg border border-border max-h-64 overflow-y-auto">
-                  <table className="w-full text-sm">
+                <div className="overflow-x-auto rounded-lg border border-border max-h-64 shadow-soft">
+                  <table className="w-full text-sm min-w-[500px]">
                     <thead className="bg-muted z-10 text-[11px] uppercase tracking-wider text-muted-foreground sticky top-0 shadow-sm">
                       <tr>
-                        <th className="px-3 py-2 text-left">Invoice</th>
-                        <th className="px-3 py-2 text-left">Customer</th>
-                        <th className="px-3 py-2 text-left">Date</th>
-                        <th className="px-3 py-2 text-right">Total</th>
+                        <th className="px-3 py-2 text-left whitespace-nowrap">Invoice</th>
+                        <th className="px-3 py-2 text-left whitespace-nowrap">Customer</th>
+                        <th className="px-3 py-2 text-left whitespace-nowrap">Date</th>
+                        <th className="px-3 py-2 text-right whitespace-nowrap">Total</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-border">
                       {sales.slice(0, 20).map((s) => (
                         <tr key={s.id} className="hover:bg-muted/30">
-                          <td className="px-3 py-2 font-mono text-xs">
+                          <td className="px-3 py-2 font-mono text-xs whitespace-nowrap">
                             {s.id.slice(0, 8).toUpperCase()}
                           </td>
-                          <td className="px-3 py-2">{s.customerName || "Walk-in"}</td>
-                          <td className="px-3 py-2 text-muted-foreground">{formatDate(s.date)}</td>
-                          <td className="px-3 py-2 text-right font-semibold">
+                          <td className="px-3 py-2 whitespace-nowrap">{s.customerName || "Walk-in"}</td>
+                          <td className="px-3 py-2 text-muted-foreground whitespace-nowrap">{formatDate(s.date)}</td>
+                          <td className="px-3 py-2 text-right font-semibold whitespace-nowrap">
                             {formatCurrency(s.total)}
                           </td>
                         </tr>
@@ -707,15 +720,15 @@ function ReportsPage() {
             )}
             {activeReport === "salesman" && (
               <div className="space-y-3">
-                <div className="overflow-hidden rounded-lg border border-border">
-                  <table className="w-full text-sm">
+                <div className="overflow-x-auto rounded-lg border border-border shadow-soft">
+                  <table className="w-full text-sm min-w-[700px]">
                     <thead className="bg-muted z-10 text-[11px] uppercase tracking-wider text-muted-foreground sticky top-0 shadow-sm">
                       <tr>
-                        <th className="px-3 py-2 text-left">Sales Representative</th>
-                        <th className="px-3 py-2 text-center">Comm. Rate</th>
-                        <th className="px-3 py-2 text-right">Target</th>
-                        <th className="px-3 py-2 text-right">Achieved Sales</th>
-                        <th className="px-3 py-2 text-right">Earned Commission</th>
+                        <th className="px-3 py-2 text-left whitespace-nowrap">Sales Representative</th>
+                        <th className="px-3 py-2 text-center whitespace-nowrap">Comm. Rate</th>
+                        <th className="px-3 py-2 text-right whitespace-nowrap">Target</th>
+                        <th className="px-3 py-2 text-right whitespace-nowrap">Achieved Sales</th>
+                        <th className="px-3 py-2 text-right whitespace-nowrap">Earned Commission</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-border">
@@ -770,15 +783,15 @@ function ReportsPage() {
                           )
                           .map((r, i) => (
                             <tr key={i} className="hover:bg-muted/30">
-                              <td className="px-3 py-2 font-semibold text-primary">{r.name}</td>
-                              <td className="px-3 py-2 text-center text-xs font-mono">2.5%</td>
-                              <td className="px-3 py-2 text-right text-xs font-mono">
+                              <td className="px-3 py-2 font-semibold text-primary whitespace-nowrap">{r.name}</td>
+                              <td className="px-3 py-2 text-center text-xs font-mono whitespace-nowrap">2.5%</td>
+                              <td className="px-3 py-2 text-right text-xs font-mono whitespace-nowrap">
                                 {formatCurrency(10000)}
                               </td>
-                              <td className="px-3 py-2 text-right font-bold">
+                              <td className="px-3 py-2 text-right font-bold whitespace-nowrap">
                                 {formatCurrency(r.sales)}
                               </td>
-                              <td className="px-3 py-2 text-right font-bold text-success">
+                              <td className="px-3 py-2 text-right font-bold text-success whitespace-nowrap">
                                 {formatCurrency(r.commission)}
                               </td>
                             </tr>
@@ -791,23 +804,23 @@ function ReportsPage() {
             )}
 
             {activeReport === "inventory" && (
-              <div className="overflow-hidden rounded-lg border border-border max-h-72 overflow-y-auto">
-                <table className="w-full text-sm">
+              <div className="overflow-x-auto rounded-lg border border-border max-h-72 shadow-soft">
+                <table className="w-full text-sm min-w-[500px]">
                   <thead className="bg-muted z-10 text-[11px] uppercase tracking-wider text-muted-foreground sticky top-0 shadow-sm">
                     <tr>
-                      <th className="px-3 py-2 text-left">Product</th>
-                      <th className="px-3 py-2 text-right">Stock</th>
-                      <th className="px-3 py-2 text-right">Reorder</th>
-                      <th className="px-3 py-2 text-right">Value</th>
+                      <th className="px-3 py-2 text-left whitespace-nowrap">Product</th>
+                      <th className="px-3 py-2 text-right whitespace-nowrap">Stock</th>
+                      <th className="px-3 py-2 text-right whitespace-nowrap">Reorder</th>
+                      <th className="px-3 py-2 text-right whitespace-nowrap">Value</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border">
                     {products.map((p) => (
                       <tr key={p.id} className="hover:bg-muted/30">
-                        <td className="px-3 py-2">{p.name}</td>
-                        <td className="px-3 py-2 text-right">{p.stock}</td>
-                        <td className="px-3 py-2 text-right">{p.reorderLevel}</td>
-                        <td className="px-3 py-2 text-right font-semibold">
+                        <td className="px-3 py-2 whitespace-nowrap">{p.name}</td>
+                        <td className="px-3 py-2 text-right whitespace-nowrap">{p.stock}</td>
+                        <td className="px-3 py-2 text-right whitespace-nowrap">{p.reorderLevel}</td>
+                        <td className="px-3 py-2 text-right font-semibold whitespace-nowrap">
                           {formatCurrency(p.stock * p.cost)}
                         </td>
                       </tr>
@@ -834,23 +847,23 @@ function ReportsPage() {
                     {formatCurrency(totalExpenses)}
                   </span>
                 </div>
-                <div className="overflow-hidden rounded-lg border border-border max-h-64 overflow-y-auto">
-                  <table className="w-full text-sm">
+                <div className="overflow-x-auto rounded-lg border border-border max-h-64 shadow-soft">
+                  <table className="w-full text-sm min-w-[500px]">
                     <thead className="bg-muted z-10 text-[11px] uppercase tracking-wider text-muted-foreground sticky top-0 shadow-sm">
                       <tr>
-                        <th className="px-3 py-2 text-left">Date</th>
-                        <th className="px-3 py-2 text-left">Category</th>
-                        <th className="px-3 py-2 text-left">Description</th>
-                        <th className="px-3 py-2 text-right">Amount</th>
+                        <th className="px-3 py-2 text-left whitespace-nowrap">Date</th>
+                        <th className="px-3 py-2 text-left whitespace-nowrap">Category</th>
+                        <th className="px-3 py-2 text-left whitespace-nowrap">Description</th>
+                        <th className="px-3 py-2 text-right whitespace-nowrap">Amount</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-border">
                       {expenses.map((e) => (
                         <tr key={e.id} className="hover:bg-muted/30">
-                          <td className="px-3 py-2">{e.date}</td>
-                          <td className="px-3 py-2">{e.category}</td>
-                          <td className="px-3 py-2 text-muted-foreground">{e.description}</td>
-                          <td className="px-3 py-2 text-right font-semibold">
+                          <td className="px-3 py-2 whitespace-nowrap">{e.date}</td>
+                          <td className="px-3 py-2 whitespace-nowrap">{e.category}</td>
+                          <td className="px-3 py-2 text-muted-foreground whitespace-nowrap">{e.description}</td>
+                          <td className="px-3 py-2 text-right font-semibold whitespace-nowrap">
                             {formatCurrency(e.amount)}
                           </td>
                         </tr>
@@ -863,7 +876,7 @@ function ReportsPage() {
 
             {activeReport === "tax" && (
               <div className="space-y-3">
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div className="rounded-lg bg-muted/40 p-3">
                     <div className="text-xs text-muted-foreground">Gross Revenue</div>
                     <div className="text-xl font-bold">{formatCurrency(mtdRevenue)}</div>
@@ -907,7 +920,7 @@ function ReportsPage() {
                       axisLine={false}
                       tickLine={false}
                       tick={{ fill: "var(--color-muted-foreground)", fontSize: 11 }}
-                      tickFormatter={(v) => `$${v}`}
+                      tickFormatter={(v) => `${currencySymbol}${v}`}
                     />
                     <Tooltip
                       contentStyle={{
@@ -916,7 +929,7 @@ function ReportsPage() {
                         borderRadius: 12,
                         fontSize: 12,
                       }}
-                      formatter={(v: number) => `$${v.toFixed(2)}`}
+                      formatter={(v: number) => formatCurrency(v)}
                     />
                     <Bar
                       dataKey="revenue"
@@ -936,25 +949,25 @@ function ReportsPage() {
             )}
 
             {activeReport === "purchase" && (
-              <div className="overflow-hidden rounded-lg border border-border max-h-64 overflow-y-auto">
-                <table className="w-full text-sm">
+              <div className="overflow-x-auto rounded-lg border border-border max-h-64 shadow-soft">
+                <table className="w-full text-sm min-w-[500px]">
                   <thead className="bg-muted/50 text-[11px] uppercase tracking-wider text-muted-foreground sticky top-0">
                     <tr>
-                      <th className="px-3 py-2 text-left">PO</th>
-                      <th className="px-3 py-2 text-left">Supplier</th>
-                      <th className="px-3 py-2 text-left">Date</th>
-                      <th className="px-3 py-2 text-right">Total</th>
+                      <th className="px-3 py-2 text-left whitespace-nowrap">PO</th>
+                      <th className="px-3 py-2 text-left whitespace-nowrap">Supplier</th>
+                      <th className="px-3 py-2 text-left whitespace-nowrap">Date</th>
+                      <th className="px-3 py-2 text-right whitespace-nowrap">Total</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border">
                     {purchases.map((p) => (
                       <tr key={p.id} className="hover:bg-muted/30">
-                        <td className="px-3 py-2 font-mono text-xs">
+                        <td className="px-3 py-2 font-mono text-xs whitespace-nowrap">
                           {p.id.slice(0, 8).toUpperCase()}
                         </td>
-                        <td className="px-3 py-2">{p.supplier}</td>
-                        <td className="px-3 py-2 text-muted-foreground">{formatDate(p.date)}</td>
-                        <td className="px-3 py-2 text-right font-semibold">
+                        <td className="px-3 py-2 whitespace-nowrap">{p.supplier}</td>
+                        <td className="px-3 py-2 text-muted-foreground whitespace-nowrap">{formatDate(p.date)}</td>
+                        <td className="px-3 py-2 text-right font-semibold whitespace-nowrap">
                           {formatCurrency(p.total)}
                         </td>
                       </tr>
@@ -972,7 +985,7 @@ function ReportsPage() {
                   const todaySales = sales.filter((s) => new Date(s.date).toDateString() === today);
                   const todayRevenue = todaySales.reduce((s, sale) => s + sale.total, 0);
                   return (
-                    <div className="grid grid-cols-3 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                       <div className="rounded-lg bg-muted/40 p-3 text-center">
                         <div className="text-2xl font-bold">{todaySales.length}</div>
                         <div className="text-xs text-muted-foreground">Orders</div>
@@ -993,8 +1006,8 @@ function ReportsPage() {
               </div>
             )}
           </div>
-        </DialogContent>
-      </Dialog>
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }

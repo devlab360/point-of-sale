@@ -247,6 +247,7 @@ function BrandsPage() {
         ) : (
           <div className="space-y-4">
             <div className="overflow-hidden rounded-xl border border-border bg-card shadow-soft">
+              <div className="overflow-hidden rounded-xl border border-border bg-card shadow-soft">
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-sm">
                   <thead className="bg-muted/50 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
@@ -301,8 +302,9 @@ function BrandsPage() {
                   </tbody>
                 </table>
               </div>
+              <PaginationControls currentPage={page} totalPages={totalPages} onPageChange={setPage}  totalItems={brands.length}/>
             </div>
-            <PaginationControls currentPage={page} totalPages={totalPages} onPageChange={setPage} />
+            </div>
           </div>
         )}
       </DataPage>

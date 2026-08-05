@@ -303,7 +303,7 @@ function SuppliersPage() {
               {paginatedSuppliers.map((s) => (
                 <div
                   key={s.id}
-                  className="relative rounded-xl border border-border bg-card p-5 shadow-soft"
+                  className="relative rounded-xl border border-border bg-card p-4 sm:p-5 shadow-soft"
                 >
                   <div className="absolute right-4 top-4 flex items-center gap-2">
                     {s.balance > 0 ? (
@@ -367,7 +367,7 @@ function SuppliersPage() {
                 pageSize={pageSize}
                 onPageChange={setPage}
                 onPageSizeChange={setPageSize}
-              />
+               totalItems={suppliers.length} />
             )}
           </div>
         )}
@@ -498,18 +498,20 @@ function SuppliersPage() {
           side="right"
           className="w-full sm:max-w-2xl overflow-y-auto p-6 bg-background border-l border-border shadow-elevated"
         >
-          <SheetHeader className="flex flex-row items-center justify-between border-b pb-4 pr-8">
-            <div>
-              <SheetTitle className="text-xl font-bold flex items-center gap-2">
+          <SheetHeader className="flex flex-col sm:flex-row items-start justify-between gap-3 border-b pb-4 pr-6 sm:pr-8 text-left">
+            <div className="w-full sm:w-auto text-left">
+              <SheetTitle className="text-lg sm:text-xl font-bold flex items-center gap-2 text-left">
                 <span>Supplier Khata Statement (সাপ্লায়ার লেজার)</span>
               </SheetTitle>
-              <p className="text-xs text-muted-foreground mt-0.5">
+              <p className="text-xs text-muted-foreground mt-0.5 text-left">
                 {ledgerSupplier?.name} · {ledgerSupplier?.contact}
               </p>
             </div>
-            <Button size="sm" variant="outline" onClick={() => window.print()}>
-              Print Statement
-            </Button>
+            <div className="flex flex-wrap w-full sm:w-auto gap-2 mt-2 sm:mt-0">
+              <Button size="sm" variant="outline" className="flex-1 sm:flex-none w-full sm:w-auto" onClick={() => window.print()}>
+                Print Statement
+              </Button>
+            </div>
           </SheetHeader>
 
           <div className="space-y-6 pt-4">
@@ -528,16 +530,16 @@ function SuppliersPage() {
               <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
                 Purchase & Payment History
               </h4>
-              <div className="overflow-hidden rounded-xl border border-border shadow-soft">
-                <table className="w-full text-sm">
+              <div className="overflow-x-auto rounded-xl border border-border shadow-soft">
+                <table className="w-full text-sm min-w-[700px]">
                   <thead className="bg-muted/50 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
                     <tr>
-                      <th className="px-3 py-2.5 text-left">Date</th>
-                      <th className="px-3 py-2.5 text-left">Type</th>
-                      <th className="px-3 py-2.5 text-left">Ref #</th>
-                      <th className="px-3 py-2.5 text-right">Debit (+Payable)</th>
-                      <th className="px-3 py-2.5 text-right">Credit (-Paid)</th>
-                      <th className="px-3 py-2.5 text-right">Balance</th>
+                      <th className="px-3 py-2.5 text-left whitespace-nowrap">Date</th>
+                      <th className="px-3 py-2.5 text-left whitespace-nowrap">Type</th>
+                      <th className="px-3 py-2.5 text-left whitespace-nowrap">Ref #</th>
+                      <th className="px-3 py-2.5 text-right whitespace-nowrap">Debit (+Payable)</th>
+                      <th className="px-3 py-2.5 text-right whitespace-nowrap">Credit (-Paid)</th>
+                      <th className="px-3 py-2.5 text-right whitespace-nowrap">Balance</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border">
@@ -550,20 +552,20 @@ function SuppliersPage() {
                     ) : (
                       supplierLedgerEntries.map((l) => (
                         <tr key={l.id} className="hover:bg-muted/30">
-                          <td className="px-3 py-2.5 text-xs text-muted-foreground">
+                          <td className="px-3 py-2.5 text-xs text-muted-foreground whitespace-nowrap">
                             {new Date(l.date).toLocaleString()}
                           </td>
-                          <td className="px-3 py-2.5 font-medium capitalize">{l.type}</td>
-                          <td className="px-3 py-2.5 font-mono text-xs">{l.referenceNo || "-"}</td>
-                          <td className="px-3 py-2.5 text-right font-semibold text-warning-foreground">
+                          <td className="px-3 py-2.5 font-medium capitalize whitespace-nowrap">{l.type}</td>
+                          <td className="px-3 py-2.5 font-mono text-xs whitespace-nowrap">{l.referenceNo || "-"}</td>
+                          <td className="px-3 py-2.5 text-right font-semibold text-warning-foreground whitespace-nowrap">
                             {l.type === "purchase" ? formatCurrency(l.amount) : "-"}
                           </td>
-                          <td className="px-3 py-2.5 text-right font-semibold text-success">
+                          <td className="px-3 py-2.5 text-right font-semibold text-success whitespace-nowrap">
                             {l.type === "payment" || l.type === "return"
                               ? formatCurrency(l.amount)
                               : "-"}
                           </td>
-                          <td className="px-3 py-2.5 text-right font-bold">
+                          <td className="px-3 py-2.5 text-right font-bold whitespace-nowrap">
                             {formatCurrency(l.balanceAfter)}
                           </td>
                         </tr>

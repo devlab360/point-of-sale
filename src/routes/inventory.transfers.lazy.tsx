@@ -233,8 +233,9 @@ function TransfersPage() {
       ) : (
         <div className="space-y-4">
           <div className="overflow-hidden rounded-xl border border-border bg-card shadow-soft">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm">
+              <div className="overflow-hidden rounded-xl border border-border bg-card shadow-soft">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-sm">
                 <thead className="bg-muted/50 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
                   <tr>
                     <th className="px-4 py-3 whitespace-nowrap">Ref</th>
@@ -270,15 +271,16 @@ function TransfersPage() {
                   ))}
                 </tbody>
               </table>
-            </div>
-          </div>
-          <PaginationControls
+              </div>
+              <PaginationControls
             currentPage={page}
             totalPages={totalPages}
             pageSize={pageSize}
             onPageChange={setPage}
             onPageSizeChange={setPageSize}
-          />
+           totalItems={filteredTransfers.length}/>
+            </div>
+            </div>
         </div>
       )}
     </div>

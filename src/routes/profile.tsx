@@ -148,9 +148,11 @@ function ProfilePage() {
           </Button>
         }
       />
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        <div className="rounded-xl border border-border bg-card p-6 text-center shadow-soft flex flex-col items-center">
-          <div className="w-full flex justify-center mb-4">
+      <div className="w-full">
+        <div className="rounded-xl border border-border bg-card shadow-soft overflow-hidden">
+          <div className="grid grid-cols-1 md:grid-cols-3">
+            <div className="p-6 md:border-r border-border bg-muted/10 text-center flex flex-col items-center justify-center">
+              <div className="w-full flex justify-center mb-4">
             <FileUpload
               variant="avatar"
               label=""
@@ -161,12 +163,12 @@ function ProfilePage() {
               maxSizeMB={2}
             />
           </div>
-          <h2 className="text-lg font-bold">{profile.name}</h2>
-          <p className="text-sm text-muted-foreground">
+          <h2 className="text-xl font-bold mt-2">{profile.name}</h2>
+          <p className="text-sm text-muted-foreground mt-1">
             {profile.role} · {profile.location?.split(" ")[0]}
           </p>
         </div>
-        <div className="rounded-xl border border-border bg-card p-6 shadow-soft lg:col-span-2">
+        <div className="p-6 md:col-span-2">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <label className="block">
               <span className="mb-1.5 block text-xs font-semibold text-muted-foreground">
@@ -299,6 +301,8 @@ function ProfilePage() {
             </div>
           </div>
         </div>
+      </div>
+      </div>
       </div>
     </div>
   );

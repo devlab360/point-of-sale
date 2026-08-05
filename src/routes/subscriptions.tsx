@@ -256,35 +256,37 @@ function SubscriptionsPage() {
         ) : (
           <div className="space-y-4">
             <div className="overflow-hidden rounded-xl border border-border bg-card shadow-soft">
-              <table className="w-full text-left text-sm">
+              <div className="overflow-hidden rounded-xl border border-border bg-card shadow-soft">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-sm min-w-[900px]">
                 <thead className="bg-muted/50 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
                   <tr>
-                    <th className="px-4 py-3">Subscription #</th>
-                    <th className="px-4 py-3">Customer</th>
-                    <th className="px-4 py-3">Plan Name</th>
-                    <th className="px-4 py-3">Cycle</th>
-                    <th className="px-4 py-3 text-right">Recurring Rate</th>
-                    <th className="px-4 py-3">Next Renewal</th>
-                    <th className="px-4 py-3">Status</th>
-                    <th className="px-4 py-3 text-right">Actions</th>
+                    <th className="px-4 py-3 whitespace-nowrap">Subscription #</th>
+                    <th className="px-4 py-3 whitespace-nowrap">Customer</th>
+                    <th className="px-4 py-3 whitespace-nowrap">Plan Name</th>
+                    <th className="px-4 py-3 whitespace-nowrap">Cycle</th>
+                    <th className="px-4 py-3 text-right whitespace-nowrap">Recurring Rate</th>
+                    <th className="px-4 py-3 whitespace-nowrap">Next Renewal</th>
+                    <th className="px-4 py-3 whitespace-nowrap">Status</th>
+                    <th className="px-4 py-3 text-right whitespace-nowrap">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
                   {paginated.map((s) => (
                     <tr key={s.id} className="hover:bg-muted/30">
-                      <td className="px-4 py-3 font-mono font-bold text-primary">
+                      <td className="px-4 py-3 font-mono font-bold text-primary whitespace-nowrap">
                         {s.subscriptionNo}
                       </td>
-                      <td className="px-4 py-3 font-semibold">{s.customerName}</td>
-                      <td className="px-4 py-3 font-medium">{s.planName}</td>
-                      <td className="px-4 py-3 text-xs uppercase font-mono">{s.billingCycle}</td>
-                      <td className="px-4 py-3 text-right font-bold">{formatCurrency(s.amount)}</td>
-                      <td className="px-4 py-3 text-xs text-muted-foreground">
+                      <td className="px-4 py-3 font-semibold whitespace-nowrap">{s.customerName}</td>
+                      <td className="px-4 py-3 font-medium whitespace-nowrap">{s.planName}</td>
+                      <td className="px-4 py-3 text-xs uppercase font-mono whitespace-nowrap">{s.billingCycle}</td>
+                      <td className="px-4 py-3 text-right font-bold whitespace-nowrap">{formatCurrency(s.amount)}</td>
+                      <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">
                         {s.nextBillingDate
                           ? format(new Date(s.nextBillingDate), "MMM dd, yyyy")
                           : "-"}
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-4 py-3 whitespace-nowrap">
                         {s.status === "active" ? (
                           <Badge className="bg-success/15 text-success border-success/30">
                             Active
@@ -293,7 +295,7 @@ function SubscriptionsPage() {
                           <Badge variant="outline">{s.status}</Badge>
                         )}
                       </td>
-                      <td className="px-4 py-3 text-right">
+                      <td className="px-4 py-3 text-right whitespace-nowrap">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <Button variant="ghost" size="icon" className="size-8">
@@ -321,14 +323,16 @@ function SubscriptionsPage() {
                   ))}
                 </tbody>
               </table>
-            </div>
-            <PaginationControls
+              </div>
+              <PaginationControls
               currentPage={page}
               totalPages={totalPages}
               pageSize={pageSize}
               onPageChange={setPage}
               onPageSizeChange={setPageSize}
-            />
+             totalItems={filteredSubs.length}/>
+            </div>
+            </div>
           </div>
         )}
       </DataPage>
@@ -383,7 +387,7 @@ function SubscriptionsPage() {
               />
               <FieldError message={subErrors.customerPhone} />
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1.5">
                 <Label>
                   Plan / Service Name <span className="text-destructive">*</span>
@@ -415,7 +419,7 @@ function SubscriptionsPage() {
                 />
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1.5">
                 <Label>
                   Recurring Amount <span className="text-destructive">*</span>

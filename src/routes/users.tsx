@@ -440,21 +440,23 @@ function UsersPage() {
         ) : (
           <div className="space-y-4">
             <div className="overflow-hidden rounded-xl border border-border bg-card shadow-soft">
-              <table className="w-full text-left text-sm">
+              <div className="overflow-hidden rounded-xl border border-border bg-card shadow-soft">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-sm min-w-[800px]">
                 <thead className="bg-muted/50 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
                   <tr>
-                    <th className="px-4 py-3">Employee</th>
-                    <th className="px-4 py-3">Role</th>
-                    <th className="px-4 py-3">Permissions</th>
-                    <th className="px-4 py-3">Last Active</th>
-                    <th className="px-4 py-3">Status</th>
-                    <th className="px-4 py-3 text-right">Actions</th>
+                    <th className="px-4 py-3 whitespace-nowrap">Employee</th>
+                    <th className="px-4 py-3 whitespace-nowrap">Role</th>
+                    <th className="px-4 py-3 whitespace-nowrap">Permissions</th>
+                    <th className="px-4 py-3 whitespace-nowrap">Last Active</th>
+                    <th className="px-4 py-3 whitespace-nowrap">Status</th>
+                    <th className="px-4 py-3 text-right whitespace-nowrap">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
                   {paginatedUsers.map((e) => (
                     <tr key={e.id} className="hover:bg-muted/30">
-                      <td className="px-4 py-3">
+                      <td className="px-4 py-3 whitespace-nowrap">
                         <div className="flex items-center gap-3">
                           <div className="grid size-9 place-items-center rounded-full bg-gradient-to-br from-primary to-info text-xs font-bold text-primary-foreground">
                             {e.name
@@ -469,13 +471,13 @@ function UsersPage() {
                           </div>
                         </div>
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-4 py-3 whitespace-nowrap">
                         <Badge variant="secondary" className="capitalize">
                           <Shield className="mr-1 size-3" />
                           {e.role}
                         </Badge>
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-4 py-3 whitespace-nowrap">
                         <div className="flex flex-wrap gap-1 max-w-[200px]">
                           {(e.permissions || DEFAULT_ROLE_PERMISSIONS[e.role] || []).length ===
                           AVAILABLE_PERMISSIONS.length ? (
@@ -510,10 +512,10 @@ function UsersPage() {
                             )}
                         </div>
                       </td>
-                      <td className="px-4 py-3 text-muted-foreground">
+                      <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">
                         {e.lastActive ? new Date(e.lastActive).toLocaleString() : "Never"}
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-4 py-3 whitespace-nowrap">
                         <Badge
                           className={
                             e.status === "active"
@@ -526,7 +528,7 @@ function UsersPage() {
                           {e.status}
                         </Badge>
                       </td>
-                      <td className="px-4 py-3 text-right">
+                      <td className="px-4 py-3 text-right whitespace-nowrap">
                         <div className="flex justify-end items-center gap-2">
                           {e.status === "pending" && (
                             <Button size="sm" onClick={() => handleApprove(e.id)} className="h-8">
@@ -557,8 +559,10 @@ function UsersPage() {
                   ))}
                 </tbody>
               </table>
+              </div>
+              <PaginationControls currentPage={page} totalPages={totalPages} onPageChange={setPage}  totalItems={users.length}/>
             </div>
-            <PaginationControls currentPage={page} totalPages={totalPages} onPageChange={setPage} />
+            </div>
           </div>
         )}
       </DataPage>
@@ -704,7 +708,7 @@ function UsersPage() {
               />
               <FieldError message={userErrors.name} />
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="role">Role (e.g. Manager, Chef, Mechanic)</Label>
                 <Input
@@ -736,7 +740,7 @@ function UsersPage() {
             </div>
 
             {/* Salesman Commission & Target Settings */}
-            <div className="grid grid-cols-2 gap-4 border-t pt-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 border-t pt-3">
               <div className="space-y-1.5">
                 <Label htmlFor="commissionRate">
                   Sales Commission (%) <span className="text-destructive">*</span>

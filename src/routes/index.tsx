@@ -49,6 +49,7 @@ import { getProductsFn } from "@/api/products";
 import { getSalesFn } from "@/api/sales";
 import { getCustomersFn } from "@/api/customers";
 import { getExpensesFn } from "@/api/expenses";
+import { getCategoriesFn } from "@/api/categories";
 import { PersistStore } from "@/lib/session-store";
 import { cn } from "@/lib/utils";
 import { useCurrency } from "@/lib/currency";
@@ -129,6 +130,14 @@ function Dashboard() {
     queryFn: async () => ((await getExpensesFn({ data: {} })) as any)?.data || [],
   });
   const expenses = expensesData || [];
+
+  const {
+    data: categoriesData,
+  } = useQuery({
+    queryKey: ["categories", orgId],
+    queryFn: async () => ((await getCategoriesFn({ data: {} })) as any)?.data || [],
+  });
+  const categories = categoriesData || [];
 
   const isLoading = isProductsLoading || isSalesLoading || isCustomersLoading || isExpensesLoading;
   const isError = isProductsError || isSalesError || isCustomersError || isExpensesError;
@@ -312,9 +321,17 @@ function Dashboard() {
     if (Array.isArray(s.saleItems)) {
       s.saleItems.forEach((i: any) => {
         const prod = products.find((p: any) => p.id === i.productId);
-        const cat = prod?.category || "General";
+        let catName = "General";
+        if (prod?.category) {
+          const cat = categories.find((c: any) => c.id === prod.category || c.name === prod.category);
+          if (cat) {
+             catName = cat.name;
+          } else if (prod.category.length < 20) {
+             catName = prod.category; // fallback if it's already a short name
+          }
+        }
         const itemTotal = Number(i.total) || (Number(i.price) || 0) * (i.quantity || 1);
-        categoryTotalsMap.set(cat, (categoryTotalsMap.get(cat) || 0) + itemTotal);
+        categoryTotalsMap.set(catName, (categoryTotalsMap.get(catName) || 0) + itemTotal);
       });
     }
   });

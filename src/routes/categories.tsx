@@ -304,7 +304,7 @@ function CategoriesPage() {
                 </div>
               ))}
             </div>
-            <PaginationControls currentPage={page} totalPages={totalPages} onPageChange={setPage} />
+            <PaginationControls currentPage={page} totalPages={totalPages} onPageChange={setPage} totalItems={categories.length} className="rounded-xl border" />
           </div>
         )}
       </DataPage>

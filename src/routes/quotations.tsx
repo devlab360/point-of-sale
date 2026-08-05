@@ -371,33 +371,35 @@ function QuotationsPage() {
         ) : (
           <div className="space-y-4">
             <div className="overflow-hidden rounded-xl border border-border bg-card shadow-soft">
-              <table className="w-full text-left text-sm">
+              <div className="overflow-hidden rounded-xl border border-border bg-card shadow-soft">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-sm min-w-[800px]">
                 <thead className="bg-muted/50 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
                   <tr>
-                    <th className="px-4 py-3">Quotation #</th>
-                    <th className="px-4 py-3">Customer</th>
-                    <th className="px-4 py-3">Date</th>
-                    <th className="px-4 py-3">Valid Until</th>
-                    <th className="px-4 py-3 text-right">Total Amount</th>
-                    <th className="px-4 py-3">Status</th>
-                    <th className="px-4 py-3 text-right">Actions</th>
+                    <th className="px-4 py-3 whitespace-nowrap">Quotation #</th>
+                    <th className="px-4 py-3 whitespace-nowrap">Customer</th>
+                    <th className="px-4 py-3 whitespace-nowrap">Date</th>
+                    <th className="px-4 py-3 whitespace-nowrap">Valid Until</th>
+                    <th className="px-4 py-3 text-right whitespace-nowrap">Total Amount</th>
+                    <th className="px-4 py-3 whitespace-nowrap">Status</th>
+                    <th className="px-4 py-3 text-right whitespace-nowrap">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
                   {paginated.map((q) => (
                     <tr key={q.id} className="hover:bg-muted/30">
-                      <td className="px-4 py-3 font-mono font-bold text-primary">
+                      <td className="px-4 py-3 font-mono font-bold text-primary whitespace-nowrap">
                         {q.quotationNo}
                       </td>
-                      <td className="px-4 py-3 font-semibold">{q.customerName}</td>
-                      <td className="px-4 py-3 text-xs text-muted-foreground">
+                      <td className="px-4 py-3 font-semibold whitespace-nowrap">{q.customerName}</td>
+                      <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">
                         {formatDate(q.date)}
                       </td>
-                      <td className="px-4 py-3 text-xs text-muted-foreground">
+                      <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">
                         {formatDate(q.validUntil)}
                       </td>
-                      <td className="px-4 py-3 text-right font-bold">{formatCurrency(q.total)}</td>
-                      <td className="px-4 py-3">
+                      <td className="px-4 py-3 text-right font-bold whitespace-nowrap">{formatCurrency(q.total)}</td>
+                      <td className="px-4 py-3 whitespace-nowrap">
                         {q.status === "converted" ? (
                           <Badge className="bg-success/15 text-success border-success/30">
                             Converted to Invoice
@@ -408,7 +410,7 @@ function QuotationsPage() {
                           <Badge variant="outline">{q.status}</Badge>
                         )}
                       </td>
-                      <td className="px-4 py-3 text-right">
+                      <td className="px-4 py-3 text-right whitespace-nowrap">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <Button variant="ghost" size="icon" className="size-8">
@@ -439,14 +441,16 @@ function QuotationsPage() {
                   ))}
                 </tbody>
               </table>
-            </div>
-            <PaginationControls
+              </div>
+              <PaginationControls
               currentPage={page}
               totalPages={totalPages}
               pageSize={pageSize}
               onPageChange={setPage}
               onPageSizeChange={setPageSize}
-            />
+             totalItems={filteredQuotations.length}/>
+            </div>
+            </div>
           </div>
         )}
       </DataPage>
@@ -527,22 +531,22 @@ function QuotationsPage() {
 
             {/* Line Items Table */}
             {lineItems.length > 0 && (
-              <div className="overflow-hidden rounded-lg border border-border">
-                <table className="w-full text-xs">
+              <div className="overflow-x-auto rounded-lg border border-border">
+                <table className="w-full text-xs min-w-[500px]">
                   <thead className="bg-muted/50 font-semibold uppercase text-muted-foreground">
                     <tr>
-                      <th className="p-2 text-left">Item</th>
-                      <th className="p-2 text-center w-20">Qty</th>
-                      <th className="p-2 text-right w-28">Unit Price ({currencySymbol})</th>
-                      <th className="p-2 text-right w-24">Total</th>
-                      <th className="p-2 text-center w-12"></th>
+                      <th className="p-2 text-left whitespace-nowrap">Item</th>
+                      <th className="p-2 text-center w-20 whitespace-nowrap">Qty</th>
+                      <th className="p-2 text-right w-28 whitespace-nowrap">Unit Price ({currencySymbol})</th>
+                      <th className="p-2 text-right w-24 whitespace-nowrap">Total</th>
+                      <th className="p-2 text-center w-12 whitespace-nowrap"></th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border">
                     {lineItems.map((item) => (
                       <tr key={item.productId}>
-                        <td className="p-2 font-medium">{item.productName}</td>
-                        <td className="p-2 text-center">
+                        <td className="p-2 font-medium whitespace-nowrap">{item.productName}</td>
+                        <td className="p-2 text-center whitespace-nowrap">
                           <Input
                             type="number"
                             min="1"
@@ -555,7 +559,7 @@ function QuotationsPage() {
                             className="h-7 w-16 text-center text-xs"
                           />
                         </td>
-                        <td className="p-2 text-right">
+                        <td className="p-2 text-right whitespace-nowrap">
                           <Input
                             type="number"
                             step="0.01"
@@ -569,10 +573,10 @@ function QuotationsPage() {
                             className="h-7 w-24 text-right text-xs"
                           />
                         </td>
-                        <td className="p-2 text-right font-bold">
+                        <td className="p-2 text-right font-bold whitespace-nowrap">
                           {formatCurrency(item.price * item.quantity)}
                         </td>
-                        <td className="p-2 text-center">
+                        <td className="p-2 text-center whitespace-nowrap">
                           <button
                             type="button"
                             onClick={() => updateLineQty(item.productId, 0)}
@@ -630,21 +634,21 @@ function QuotationsPage() {
           side="right"
           className="w-full sm:max-w-2xl overflow-y-auto p-6 bg-background border-l border-border"
         >
-          <SheetHeader className="flex flex-row items-center justify-between border-b pb-4 pr-8">
-            <div>
-              <SheetTitle className="text-xl font-bold text-primary">
+          <SheetHeader className="flex flex-col sm:flex-row items-start justify-between gap-3 border-b pb-4 pr-6 sm:pr-8 text-left">
+            <div className="w-full sm:w-auto text-left">
+              <SheetTitle className="text-lg sm:text-xl font-bold text-primary text-left">
                 {viewItem?.quotationNo}
               </SheetTitle>
-              <p className="text-xs text-muted-foreground mt-0.5">
+              <p className="text-xs text-muted-foreground mt-0.5 text-left">
                 Quotation for {viewItem?.customerName}
               </p>
             </div>
-            <div className="flex gap-2">
-              <Button size="sm" variant="outline" onClick={() => window.print()}>
+            <div className="flex w-full sm:w-auto gap-2 mt-2 sm:mt-0">
+              <Button size="sm" variant="outline" className="flex-1 sm:flex-none" onClick={() => window.print()}>
                 <Printer className="mr-1 size-3.5" /> Print PDF
               </Button>
               {viewItem?.status !== "converted" && (
-                <Button size="sm" onClick={() => viewItem && convertToInvoice(viewItem)}>
+                <Button size="sm" className="flex-1 sm:flex-none" onClick={() => viewItem && convertToInvoice(viewItem)}>
                   <CheckCircle2 className="mr-1 size-3.5" /> Convert to Invoice
                 </Button>
               )}
@@ -682,23 +686,23 @@ function QuotationsPage() {
                 <h4 className="font-bold text-xs uppercase text-muted-foreground">
                   Quoted Line Items
                 </h4>
-                <div className="overflow-hidden rounded-xl border">
-                  <table className="w-full text-xs">
+                <div className="overflow-x-auto rounded-xl border">
+                  <table className="w-full text-xs min-w-[400px]">
                     <thead className="bg-muted/50 font-semibold uppercase text-muted-foreground">
                       <tr>
-                        <th className="p-2.5 text-left">Item Name</th>
-                        <th className="p-2.5 text-center">Qty</th>
-                        <th className="p-2.5 text-right">Price</th>
-                        <th className="p-2.5 text-right">Total</th>
+                        <th className="p-2.5 text-left whitespace-nowrap">Item Name</th>
+                        <th className="p-2.5 text-center whitespace-nowrap">Qty</th>
+                        <th className="p-2.5 text-right whitespace-nowrap">Price</th>
+                        <th className="p-2.5 text-right whitespace-nowrap">Total</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y">
                       {viewItem.items.map((i, idx) => (
                         <tr key={idx}>
-                          <td className="p-2.5 font-medium">{i.productName}</td>
-                          <td className="p-2.5 text-center font-bold">{i.quantity}</td>
-                          <td className="p-2.5 text-right">{formatCurrency(i.price)}</td>
-                          <td className="p-2.5 text-right font-bold">{formatCurrency(i.total)}</td>
+                          <td className="p-2.5 font-medium whitespace-nowrap">{i.productName}</td>
+                          <td className="p-2.5 text-center font-bold whitespace-nowrap">{i.quantity}</td>
+                          <td className="p-2.5 text-right whitespace-nowrap">{formatCurrency(i.price)}</td>
+                          <td className="p-2.5 text-right font-bold whitespace-nowrap">{formatCurrency(i.total)}</td>
                         </tr>
                       ))}
                     </tbody>

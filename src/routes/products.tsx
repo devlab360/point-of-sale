@@ -521,39 +521,55 @@ function ProductsPage() {
         ) : (
           <div className="space-y-4">
             {view === "list" ? (
-              <TableView
-                products={products}
-                categories={categories}
-                brands={brands}
-                units={units}
-                onEdit={openEdit}
-                onDelete={deleteProd}
-                onPrint={(p) => {
-                  setPrintProduct(p);
-                  setPrintCount(1);
-                }}
-              />
+              <div className="overflow-hidden rounded-xl border border-border bg-card shadow-soft">
+                <TableView
+                  products={products}
+                  categories={categories}
+                  brands={brands}
+                  units={units}
+                  onEdit={openEdit}
+                  onDelete={deleteProd}
+                  onPrint={(p) => {
+                    setPrintProduct(p);
+                    setPrintCount(1);
+                  }}
+                />
+                {products.length > 0 && (
+                  <PaginationControls
+                    currentPage={page}
+                    totalPages={totalPages}
+                    pageSize={pageSize}
+                    onPageChange={setPage}
+                    onPageSizeChange={setPageSize}
+                    totalItems={products.length}
+                  />
+                )}
+              </div>
             ) : (
-              <GridView
-                products={products}
-                categories={categories}
-                brands={brands}
-                units={units}
-                onEdit={openEdit}
-                onPrint={(p) => {
-                  setPrintProduct(p);
-                  setPrintCount(1);
-                }}
-              />
-            )}
-            {products.length > 0 && (
-              <PaginationControls
-                currentPage={page}
-                totalPages={totalPages}
-                pageSize={pageSize}
-                onPageChange={setPage}
-                onPageSizeChange={setPageSize}
-              />
+              <>
+                <GridView
+                  products={products}
+                  categories={categories}
+                  brands={brands}
+                  units={units}
+                  onEdit={openEdit}
+                  onPrint={(p) => {
+                    setPrintProduct(p);
+                    setPrintCount(1);
+                  }}
+                />
+                {products.length > 0 && (
+                  <PaginationControls
+                    currentPage={page}
+                    totalPages={totalPages}
+                    pageSize={pageSize}
+                    onPageChange={setPage}
+                    onPageSizeChange={setPageSize}
+                    totalItems={products.length}
+                    className="rounded-xl border"
+                  />
+                )}
+              </>
             )}
           </div>
         )}
@@ -1097,9 +1113,8 @@ function TableView({
   const { formatCurrency } = useCurrency();
   const { t } = useLanguage();
   return (
-    <div className="overflow-hidden rounded-xl border border-border bg-card shadow-soft">
-      <div className="overflow-x-auto">
-        <table className="w-full text-left text-sm">
+    <div className="overflow-x-auto">
+      <table className="w-full text-left text-sm min-w-[1000px]">
           <thead className="sticky top-0 bg-muted/50 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
             <tr>
               <th className="px-4 py-3 whitespace-nowrap">
@@ -1220,7 +1235,6 @@ function TableView({
           </tbody>
         </table>
       </div>
-    </div>
   );
 }
 

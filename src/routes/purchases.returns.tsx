@@ -273,17 +273,18 @@ function PurchaseReturnsPage() {
         )}
       >
         <div className="overflow-hidden rounded-xl border border-border bg-card shadow-soft">
-          <table className="w-full text-left text-sm">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-sm min-w-[700px]">
             <thead className="bg-muted/50 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
               <tr>
-                <th className="px-4 py-3">Ref</th>
-                <th className="px-4 py-3">Supplier</th>
-                <th className="px-4 py-3">Reason</th>
-                <th className="px-4 py-3">Date</th>
-                <th className="px-4 py-3 text-right">Items</th>
-                <th className="px-4 py-3">Status</th>
-                <th className="px-4 py-3 text-right">Total</th>
-                <th className="px-4 py-3"></th>
+                <th className="px-4 py-3 whitespace-nowrap">Ref</th>
+                <th className="px-4 py-3 whitespace-nowrap">Supplier</th>
+                <th className="px-4 py-3 whitespace-nowrap">Reason</th>
+                <th className="px-4 py-3 whitespace-nowrap">Date</th>
+                <th className="px-4 py-3 text-right whitespace-nowrap">Items</th>
+                <th className="px-4 py-3 whitespace-nowrap">Status</th>
+                <th className="px-4 py-3 text-right whitespace-nowrap">Total</th>
+                <th className="px-4 py-3 whitespace-nowrap"></th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
@@ -296,14 +297,14 @@ function PurchaseReturnsPage() {
               ) : (
                 paginatedReturns.map((r) => (
                   <tr key={r.id} className="hover:bg-muted/30">
-                    <td className="px-4 py-3 font-mono text-xs font-semibold">{r.ref}</td>
-                    <td className="px-4 py-3 font-semibold">{r.supplier}</td>
-                    <td className="px-4 py-3 text-muted-foreground">{r.reason}</td>
-                    <td className="px-4 py-3 text-muted-foreground">{formatDate(r.date)}</td>
-                    <td className="px-4 py-3 text-right">
+                    <td className="px-4 py-3 font-mono text-xs font-semibold whitespace-nowrap">{r.ref}</td>
+                    <td className="px-4 py-3 font-semibold whitespace-nowrap">{r.supplier}</td>
+                    <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">{r.reason}</td>
+                    <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">{formatDate(r.date)}</td>
+                    <td className="px-4 py-3 text-right whitespace-nowrap">
                       {r.items?.reduce((s, i) => s + (i.quantity || 0), 0) || 0}
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-3 whitespace-nowrap">
                       <Badge
                         className={cn(
                           r.status === "approved" &&
@@ -314,10 +315,10 @@ function PurchaseReturnsPage() {
                         {r.status}
                       </Badge>
                     </td>
-                    <td className="number px-4 py-3 text-right font-semibold">
+                    <td className="number px-4 py-3 text-right font-semibold whitespace-nowrap">
                       {formatCurrency(r.total)}
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-3 whitespace-nowrap">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button variant="ghost" size="icon">
@@ -339,16 +340,15 @@ function PurchaseReturnsPage() {
               )}
             </tbody>
           </table>
-        </div>
-        {filteredReturns.length > 0 && (
-          <PaginationControls
+              </div>
+              <PaginationControls
             currentPage={page}
             totalPages={totalPages}
             pageSize={pageSize}
             onPageChange={setPage}
             onPageSizeChange={setPageSize}
-          />
-        )}
+           totalItems={filteredReturns.length}/>
+            </div>
       </DataPage>
 
       {/* New Purchase Return Dialog */}

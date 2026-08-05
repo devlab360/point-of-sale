@@ -359,24 +359,25 @@ function CustomersPage() {
         ) : (
           <div className="space-y-4">
             <div className="overflow-hidden rounded-xl border border-border bg-card shadow-soft">
-              <table className="w-full text-left text-sm">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-sm min-w-[1000px]">
                 <thead className="bg-muted/50 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
                   <tr>
-                    <th className="px-4 py-3">{t("customer") || "Customer"}</th>
-                    <th className="px-4 py-3">{t("contact") || "Contact"}</th>
-                    <th className="px-4 py-3 text-right">{t("visits") || "Visits"}</th>
-                    <th className="px-4 py-3 text-right">{t("lifetime") || "Lifetime"}</th>
-                    <th className="px-4 py-3 text-right">{t("points") || "Points"}</th>
-                    <th className="px-4 py-3 text-right">{t("credit") || "Credit"}</th>
-                    <th className="px-4 py-3 text-right">{t("wallet") || "Wallet"}</th>
-                    <th className="px-4 py-3">{t("tier") || "Tier"}</th>
-                    <th className="px-4 py-3 text-right">{t("actions") || "Actions"}</th>
+                    <th className="px-4 py-3 whitespace-nowrap">{t("customer") || "Customer"}</th>
+                    <th className="px-4 py-3 whitespace-nowrap">{t("contact") || "Contact"}</th>
+                    <th className="px-4 py-3 text-right whitespace-nowrap">{t("visits") || "Visits"}</th>
+                    <th className="px-4 py-3 text-right whitespace-nowrap">{t("lifetime") || "Lifetime"}</th>
+                    <th className="px-4 py-3 text-right whitespace-nowrap">{t("points") || "Points"}</th>
+                    <th className="px-4 py-3 text-right whitespace-nowrap">{t("credit") || "Credit"}</th>
+                    <th className="px-4 py-3 text-right whitespace-nowrap">{t("wallet") || "Wallet"}</th>
+                    <th className="px-4 py-3 whitespace-nowrap">{t("tier") || "Tier"}</th>
+                    <th className="px-4 py-3 text-right whitespace-nowrap">{t("actions") || "Actions"}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
                   {customers.map((c: any) => (
                     <tr key={c.id} className="hover:bg-muted/30">
-                      <td className="px-4 py-3">
+                      <td className="px-4 py-3 whitespace-nowrap">
                         <div className="flex items-center gap-3">
                           <div className="grid size-9 place-items-center rounded-full bg-gradient-to-br from-primary to-info text-xs font-bold text-primary-foreground">
                             {c.name
@@ -388,7 +389,7 @@ function CustomersPage() {
                           <span className="font-semibold">{c.name}</span>
                         </div>
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-4 py-3 whitespace-nowrap">
                         <div className="flex flex-col gap-0.5 text-xs text-muted-foreground">
                           <span className="flex items-center gap-1.5">
                             <Mail className="size-3" /> {c.email}
@@ -398,22 +399,22 @@ function CustomersPage() {
                           </span>
                         </div>
                       </td>
-                      <td className="number px-4 py-3 text-right">{c.visits}</td>
-                      <td className="number px-4 py-3 text-right font-semibold">
+                      <td className="number px-4 py-3 text-right whitespace-nowrap">{c.visits}</td>
+                      <td className="number px-4 py-3 text-right font-semibold whitespace-nowrap">
                         {formatCurrency(c.totalSpent)}
                       </td>
-                      <td className="number px-4 py-3 text-right">
+                      <td className="number px-4 py-3 text-right whitespace-nowrap">
                         {c.loyaltyPoints.toLocaleString()}
                       </td>
                       <td
-                        className={`number px-4 py-3 text-right ${c.credit > 0 ? "text-destructive font-bold" : "text-muted-foreground"}`}
+                        className={`number px-4 py-3 text-right whitespace-nowrap ${c.credit > 0 ? "text-destructive font-bold" : "text-muted-foreground"}`}
                       >
                         {formatCurrency(c.credit)}
                       </td>
-                      <td className="number px-4 py-3 text-right font-semibold text-success">
+                      <td className="number px-4 py-3 text-right font-semibold text-success whitespace-nowrap">
                         {formatCurrency(c.walletBalance || 0)}
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-4 py-3 whitespace-nowrap">
                         <div className="flex flex-col gap-1 items-start">
                           {c.type === "wholesale" ? (
                             <Badge className="bg-primary/15 text-primary border-primary/20">
@@ -435,7 +436,7 @@ function CustomersPage() {
                           ) : null}
                         </div>
                       </td>
-                      <td className="px-4 py-3 text-right">
+                      <td className="px-4 py-3 text-right whitespace-nowrap">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <Button variant="ghost" size="icon" className="size-8">
@@ -472,16 +473,16 @@ function CustomersPage() {
                   ))}
                 </tbody>
               </table>
-            </div>
-            {customers.length > 0 && (
+              </div>
               <PaginationControls
                 currentPage={page}
                 totalPages={totalPages}
                 pageSize={pageSize}
+                totalItems={customers.length}
                 onPageChange={setPage}
                 onPageSizeChange={setPageSize}
               />
-            )}
+            </div>
           </div>
         )}
       </DataPage>
@@ -688,21 +689,21 @@ function CustomersPage() {
           side="right"
           className="w-full sm:max-w-2xl overflow-y-auto p-6 bg-background border-l border-border shadow-elevated"
         >
-          <SheetHeader className="flex flex-row items-center justify-between border-b pb-4 pr-8">
-            <div>
-              <SheetTitle className="text-xl font-bold flex items-center gap-2">
+          <SheetHeader className="flex flex-col sm:flex-row items-start justify-between gap-3 border-b pb-4 pr-6 sm:pr-8 text-left">
+            <div className="w-full sm:w-auto text-left">
+              <SheetTitle className="text-lg sm:text-xl font-bold flex items-center gap-2 text-left">
                 <span>Khata Statement (লেজার খাতা)</span>
               </SheetTitle>
-              <p className="text-xs text-muted-foreground mt-0.5">
+              <p className="text-xs text-muted-foreground mt-0.5 text-left">
                 {ledgerCustomer?.name} · {ledgerCustomer?.phone}
               </p>
             </div>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap w-full sm:w-auto gap-2 mt-2 sm:mt-0">
               {ledgerCustomer?.phone && ledgerCustomer?.credit > 0 && (
                 <Button
                   size="sm"
                   variant="outline"
-                  className="bg-emerald-500/10 text-emerald-600 border-emerald-500/30 hover:bg-emerald-500/20 font-semibold"
+                  className="bg-emerald-500/10 text-emerald-600 border-emerald-500/30 hover:bg-emerald-500/20 font-semibold flex-1 sm:flex-none"
                   onClick={() =>
                     sendWhatsAppDueReminder(
                       ledgerCustomer.phone || "",
@@ -712,14 +713,15 @@ function CustomersPage() {
                     )
                   }
                 >
-                  📲 WhatsApp Reminder
+                  📲 WhatsApp
                 </Button>
               )}
-              <Button size="sm" variant="outline" onClick={() => window.print()}>
-                Print Statement
+              <Button size="sm" variant="outline" className="flex-1 sm:flex-none" onClick={() => window.print()}>
+                Print
               </Button>
               <Button
                 size="sm"
+                className="flex-1 sm:flex-none w-full sm:w-auto"
                 onClick={() => {
                   if (ledgerCustomer) {
                     setSettleItem(ledgerCustomer);
@@ -769,16 +771,16 @@ function CustomersPage() {
               <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
                 Transaction History Statement
               </h4>
-              <div className="overflow-hidden rounded-xl border border-border shadow-soft">
-                <table className="w-full text-sm">
+              <div className="overflow-x-auto rounded-xl border border-border shadow-soft">
+                <table className="w-full text-sm min-w-[700px]">
                   <thead className="bg-muted/50 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
                     <tr>
-                      <th className="px-3 py-2.5 text-left">Date</th>
-                      <th className="px-3 py-2.5 text-left">Type</th>
-                      <th className="px-3 py-2.5 text-left">Ref #</th>
-                      <th className="px-3 py-2.5 text-right">Debit (+Due)</th>
-                      <th className="px-3 py-2.5 text-right">Credit (-Paid)</th>
-                      <th className="px-3 py-2.5 text-right">Balance</th>
+                      <th className="px-3 py-2.5 text-left whitespace-nowrap">Date</th>
+                      <th className="px-3 py-2.5 text-left whitespace-nowrap">Type</th>
+                      <th className="px-3 py-2.5 text-left whitespace-nowrap">Ref #</th>
+                      <th className="px-3 py-2.5 text-right whitespace-nowrap">Debit (+Due)</th>
+                      <th className="px-3 py-2.5 text-right whitespace-nowrap">Credit (-Paid)</th>
+                      <th className="px-3 py-2.5 text-right whitespace-nowrap">Balance</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border">
@@ -791,10 +793,10 @@ function CustomersPage() {
                     ) : (
                       customerLedgerEntries.map((l) => (
                         <tr key={l.id} className="hover:bg-muted/30">
-                          <td className="px-3 py-2.5 text-xs text-muted-foreground">
+                          <td className="px-3 py-2.5 text-xs text-muted-foreground whitespace-nowrap">
                             {new Date(l.date).toLocaleString()}
                           </td>
-                          <td className="px-3 py-2.5 font-medium capitalize">
+                          <td className="px-3 py-2.5 font-medium capitalize whitespace-nowrap">
                             <span
                               className={cn(
                                 "inline-block rounded px-1.5 py-0.5 text-[10px] font-bold uppercase",
@@ -806,16 +808,16 @@ function CustomersPage() {
                               {l.type}
                             </span>
                           </td>
-                          <td className="px-3 py-2.5 font-mono text-xs">{l.referenceNo || "-"}</td>
-                          <td className="px-3 py-2.5 text-right font-semibold text-destructive">
+                          <td className="px-3 py-2.5 font-mono text-xs whitespace-nowrap">{l.referenceNo || "-"}</td>
+                          <td className="px-3 py-2.5 text-right font-semibold text-destructive whitespace-nowrap">
                             {l.type === "invoice" ? formatCurrency(l.amount) : "-"}
                           </td>
-                          <td className="px-3 py-2.5 text-right font-semibold text-success">
+                          <td className="px-3 py-2.5 text-right font-semibold text-success whitespace-nowrap">
                             {l.type === "payment" || l.type === "return"
                               ? formatCurrency(l.amount)
                               : "-"}
                           </td>
-                          <td className="px-3 py-2.5 text-right font-bold">
+                          <td className="px-3 py-2.5 text-right font-bold whitespace-nowrap">
                             {formatCurrency(l.balanceAfter)}
                           </td>
                         </tr>

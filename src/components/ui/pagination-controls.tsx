@@ -1,20 +1,6 @@
-import {
-  Pagination,
-  PaginationContent,
-  PaginationEllipsis,
-  PaginationItem,
-  PaginationLink,
-  PaginationNext,
-  PaginationPrevious,
-} from "@/components/ui/pagination";
-
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 interface PaginationControlsProps {
   currentPage: number;
@@ -23,23 +9,23 @@ interface PaginationControlsProps {
   pageSize?: number;
   onPageSizeChange?: (size: number) => void;
   className?: string;
+  totalItems?: number;
 }
 
 export function PaginationControls({
   currentPage,
   totalPages,
   onPageChange,
-  pageSize,
+  pageSize = 10,
   onPageSizeChange,
   className,
+  totalItems = 0,
 }: PaginationControlsProps) {
-  if (totalPages <= 1 && !onPageSizeChange) return null;
-
   const maxVisiblePages = 5;
   const pages: (number | string)[] = [];
 
   if (totalPages <= maxVisiblePages) {
-    for (let i = 1; i <= totalPages; i++) {
+    for (let i = 1; i <= Math.max(1, totalPages); i++) {
       pages.push(i);
     }
   } else {
@@ -63,69 +49,84 @@ export function PaginationControls({
     pages.push(totalPages);
   }
 
+  const startItem = totalItems === 0 ? 0 : (currentPage - 1) * pageSize + 1;
+  const endItem = Math.min(currentPage * pageSize, totalItems);
+
   return (
-    <Pagination className={className}>
-      <PaginationContent>
-        <PaginationItem>
-          <PaginationPrevious
-            href="#"
-            onClick={(e) => {
-              e.preventDefault();
-              if (currentPage > 1) onPageChange(currentPage - 1);
-            }}
-            className={currentPage === 1 ? "pointer-events-none opacity-50" : ""}
-          />
-        </PaginationItem>
-
-        {pages.map((page, index) => (
-          <PaginationItem key={index}>
-            {page === "..." ? (
-              <PaginationEllipsis />
-            ) : (
-              <PaginationLink
-                href="#"
-                isActive={page === currentPage}
-                onClick={(e) => {
-                  e.preventDefault();
-                  onPageChange(page as number);
-                }}
-              >
-                {page}
-              </PaginationLink>
-            )}
-          </PaginationItem>
-        ))}
-
-        <PaginationItem>
-          <PaginationNext
-            href="#"
-            onClick={(e) => {
-              e.preventDefault();
-              if (currentPage < totalPages) onPageChange(currentPage + 1);
-            }}
-            className={currentPage === totalPages ? "pointer-events-none opacity-50" : ""}
-          />
-        </PaginationItem>
-      </PaginationContent>
-      {onPageSizeChange && pageSize && (
-        <div className="ml-4 flex items-center space-x-2">
-          <span className="text-xs text-muted-foreground whitespace-nowrap">Items per page:</span>
-          <Select
-            value={pageSize.toString()}
-            onValueChange={(val) => onPageSizeChange(Number(val))}
-          >
-            <SelectTrigger className="h-8 w-[70px] text-xs">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="10">10</SelectItem>
-              <SelectItem value="25">25</SelectItem>
-              <SelectItem value="50">50</SelectItem>
-              <SelectItem value="100">100</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+    <div
+      className={cn(
+        "flex flex-col sm:flex-row items-center justify-between border-t border-border px-4 py-3 bg-card",
+        className
       )}
-    </Pagination>
+    >
+      <div className="text-sm text-muted-foreground mb-4 sm:mb-0">
+        Showing <span className="font-medium text-foreground">{startItem}</span> to{" "}
+        <span className="font-medium text-foreground">{endItem}</span> of{" "}
+        <span className="font-medium text-foreground">{totalItems}</span> results
+      </div>
+
+      <div className="flex items-center space-x-1">
+        <Button
+          variant="outline"
+          size="icon"
+          className="h-8 w-8 hidden sm:inline-flex"
+          onClick={() => onPageChange(1)}
+          disabled={currentPage === 1 || totalPages === 0}
+        >
+          <ChevronsLeft className="h-4 w-4" />
+        </Button>
+        <Button
+          variant="outline"
+          size="icon"
+          className="h-8 w-8"
+          onClick={() => onPageChange(currentPage - 1)}
+          disabled={currentPage === 1 || totalPages === 0}
+        >
+          <ChevronLeft className="h-4 w-4" />
+        </Button>
+
+        {pages.map((page, i) =>
+          page === "..." ? (
+            <span key={i} className="px-2 text-muted-foreground hidden sm:inline-block">
+              ...
+            </span>
+          ) : (
+            <Button
+              key={i}
+              variant={currentPage === page ? "default" : "outline"}
+              size="icon"
+              className={cn(
+                "h-8 w-8 hidden sm:inline-flex",
+                currentPage === page
+                  ? "bg-primary/10 text-primary hover:bg-primary/20 border-transparent font-bold"
+                  : ""
+              )}
+              onClick={() => onPageChange(page as number)}
+            >
+              {page}
+            </Button>
+          )
+        )}
+
+        <Button
+          variant="outline"
+          size="icon"
+          className="h-8 w-8"
+          onClick={() => onPageChange(currentPage + 1)}
+          disabled={currentPage === totalPages || totalPages === 0}
+        >
+          <ChevronRight className="h-4 w-4" />
+        </Button>
+        <Button
+          variant="outline"
+          size="icon"
+          className="h-8 w-8 hidden sm:inline-flex"
+          onClick={() => onPageChange(totalPages)}
+          disabled={currentPage === totalPages || totalPages === 0}
+        >
+          <ChevronsRight className="h-4 w-4" />
+        </Button>
+      </div>
+    </div>
   );
 }

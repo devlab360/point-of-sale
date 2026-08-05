@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog,
   DialogContent,
@@ -242,38 +243,40 @@ function RepairsPage() {
         ) : (
           <div className="space-y-4">
             <div className="overflow-hidden rounded-xl border border-border bg-card shadow-soft">
-              <table className="w-full text-left text-sm">
+              <div className="overflow-hidden rounded-xl border border-border bg-card shadow-soft">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-sm min-w-[900px]">
                 <thead className="bg-muted/50 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
                   <tr>
-                    <th className="px-4 py-3">Ticket #</th>
-                    <th className="px-4 py-3">Customer</th>
-                    <th className="px-4 py-3">Device / Model</th>
-                    <th className="px-4 py-3">Serial / IMEI</th>
-                    <th className="px-4 py-3 text-right">Est. Cost</th>
-                    <th className="px-4 py-3 text-right">Advance Paid</th>
-                    <th className="px-4 py-3">Status</th>
-                    <th className="px-4 py-3 text-right">Actions</th>
+                    <th className="px-4 py-3 whitespace-nowrap">Ticket #</th>
+                    <th className="px-4 py-3 whitespace-nowrap">Customer</th>
+                    <th className="px-4 py-3 whitespace-nowrap">Device / Model</th>
+                    <th className="px-4 py-3 whitespace-nowrap">Serial / IMEI</th>
+                    <th className="px-4 py-3 text-right whitespace-nowrap">Est. Cost</th>
+                    <th className="px-4 py-3 text-right whitespace-nowrap">Advance Paid</th>
+                    <th className="px-4 py-3 whitespace-nowrap">Status</th>
+                    <th className="px-4 py-3 text-right whitespace-nowrap">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
                   {paginated.map((r) => (
                     <tr key={r.id} className="hover:bg-muted/30">
-                      <td className="px-4 py-3 font-mono font-bold text-primary">{r.ticketNo}</td>
-                      <td className="px-4 py-3">
+                      <td className="px-4 py-3 font-mono font-bold text-primary whitespace-nowrap">{r.ticketNo}</td>
+                      <td className="px-4 py-3 whitespace-nowrap">
                         <div className="font-semibold">{r.customerName}</div>
                         <div className="text-xs text-muted-foreground">{r.customerPhone}</div>
                       </td>
-                      <td className="px-4 py-3 font-medium">{r.deviceName}</td>
-                      <td className="px-4 py-3 font-mono text-xs text-muted-foreground">
+                      <td className="px-4 py-3 font-medium whitespace-nowrap">{r.deviceName}</td>
+                      <td className="px-4 py-3 font-mono text-xs text-muted-foreground whitespace-nowrap">
                         {r.serialOrImei || "-"}
                       </td>
-                      <td className="px-4 py-3 text-right font-semibold">
+                      <td className="px-4 py-3 text-right font-semibold whitespace-nowrap">
                         {formatCurrency(r.estimatedCost)}
                       </td>
-                      <td className="px-4 py-3 text-right font-semibold text-success">
+                      <td className="px-4 py-3 text-right font-semibold text-success whitespace-nowrap">
                         {formatCurrency(r.advancePaid)}
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-4 py-3 whitespace-nowrap">
                         {r.status === "delivered" ? (
                           <Badge className="bg-success/15 text-success border-success/30">
                             Delivered
@@ -290,7 +293,7 @@ function RepairsPage() {
                           <Badge variant="outline">Received</Badge>
                         )}
                       </td>
-                      <td className="px-4 py-3 text-right">
+                      <td className="px-4 py-3 text-right whitespace-nowrap">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <Button variant="ghost" size="icon" className="size-8">
@@ -326,8 +329,10 @@ function RepairsPage() {
                   ))}
                 </tbody>
               </table>
+              </div>
+              <PaginationControls currentPage={page} totalPages={totalPages} onPageChange={setPage}  totalItems={filteredRepairs.length}/>
             </div>
-            <PaginationControls currentPage={page} totalPages={totalPages} onPageChange={setPage} />
+            </div>
           </div>
         )}
       </DataPage>
@@ -350,7 +355,7 @@ function RepairsPage() {
             </DialogTitle>
           </DialogHeader>
           <form noValidate onSubmit={handleCreateRepair} className="space-y-4 pt-2">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1.5">
                 <Label>
                   Customer Name <span className="text-destructive">*</span>
@@ -391,7 +396,7 @@ function RepairsPage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1.5">
                 <Label>
                   Device / Model Name <span className="text-destructive">*</span>
@@ -423,7 +428,7 @@ function RepairsPage() {
               <Label>
                 Problem / Fault Description <span className="text-destructive">*</span>
               </Label>
-              <textarea
+              <Textarea
                 rows={2}
                 placeholder="e.g. Describe the device issue or fault"
                 value={problemDescription}
@@ -431,12 +436,12 @@ function RepairsPage() {
                   setProblemDescription(e.target.value);
                   clearRepError("problemDescription");
                 }}
-                className={`w-full rounded-md border bg-background p-2 text-xs ${repErrors.problemDescription ? "border-destructive focus-visible:ring-destructive" : "border-input"}`}
+                className={repErrors.problemDescription ? "border-destructive focus-visible:ring-destructive" : ""}
               />
               <FieldError message={repErrors.problemDescription} />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Estimated Cost</Label>
                 <Input

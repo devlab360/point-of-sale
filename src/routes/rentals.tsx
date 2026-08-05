@@ -221,37 +221,39 @@ function RentalsPage() {
         ) : (
           <div className="space-y-4">
             <div className="overflow-hidden rounded-xl border border-border bg-card shadow-soft">
-              <table className="w-full text-left text-sm">
+              <div className="overflow-hidden rounded-xl border border-border bg-card shadow-soft">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-sm min-w-[900px]">
                 <thead className="bg-muted/50 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
                   <tr>
-                    <th className="px-4 py-3">Rental #</th>
-                    <th className="px-4 py-3">Customer</th>
-                    <th className="px-4 py-3">Rented Item</th>
-                    <th className="px-4 py-3">Daily Rate</th>
-                    <th className="px-4 py-3">Security Deposit</th>
-                    <th className="px-4 py-3">Return Due Date</th>
-                    <th className="px-4 py-3">Status</th>
-                    <th className="px-4 py-3 text-right">Actions</th>
+                    <th className="px-4 py-3 whitespace-nowrap">Rental #</th>
+                    <th className="px-4 py-3 whitespace-nowrap">Customer</th>
+                    <th className="px-4 py-3 whitespace-nowrap">Rented Item</th>
+                    <th className="px-4 py-3 whitespace-nowrap">Daily Rate</th>
+                    <th className="px-4 py-3 whitespace-nowrap">Security Deposit</th>
+                    <th className="px-4 py-3 whitespace-nowrap">Return Due Date</th>
+                    <th className="px-4 py-3 whitespace-nowrap">Status</th>
+                    <th className="px-4 py-3 text-right whitespace-nowrap">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
                   {paginated.map((r) => (
                     <tr key={r.id} className="hover:bg-muted/30">
-                      <td className="px-4 py-3 font-mono font-bold text-primary">{r.rentalNo}</td>
-                      <td className="px-4 py-3 font-semibold">{r.customerName}</td>
-                      <td className="px-4 py-3 font-medium">{r.itemName}</td>
-                      <td className="px-4 py-3 text-xs font-mono">
+                      <td className="px-4 py-3 font-mono font-bold text-primary whitespace-nowrap">{r.rentalNo}</td>
+                      <td className="px-4 py-3 font-semibold whitespace-nowrap">{r.customerName}</td>
+                      <td className="px-4 py-3 font-medium whitespace-nowrap">{r.itemName}</td>
+                      <td className="px-4 py-3 text-xs font-mono whitespace-nowrap">
                         {formatCurrency(r.dailyRate)} / day
                       </td>
-                      <td className="px-4 py-3 text-xs font-mono text-warning-foreground font-semibold">
+                      <td className="px-4 py-3 text-xs font-mono text-warning-foreground font-semibold whitespace-nowrap">
                         {formatCurrency(r.securityDeposit)}
                       </td>
-                      <td className="px-4 py-3 text-xs text-muted-foreground">
+                      <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">
                         {r.expectedReturnDate
                           ? format(new Date(r.expectedReturnDate), "MMM dd, yyyy")
                           : "-"}
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-4 py-3 whitespace-nowrap">
                         {r.status === "returned" ? (
                           <Badge className="bg-success/15 text-success border-success/30">
                             Returned
@@ -262,7 +264,7 @@ function RentalsPage() {
                           </Badge>
                         )}
                       </td>
-                      <td className="px-4 py-3 text-right">
+                      <td className="px-4 py-3 text-right whitespace-nowrap">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <Button variant="ghost" size="icon" className="size-8">
@@ -287,8 +289,10 @@ function RentalsPage() {
                   ))}
                 </tbody>
               </table>
+              </div>
+              <PaginationControls currentPage={page} totalPages={totalPages} onPageChange={setPage}  totalItems={filteredRentals.length}/>
             </div>
-            <PaginationControls currentPage={page} totalPages={totalPages} onPageChange={setPage} />
+            </div>
           </div>
         )}
       </DataPage>
@@ -345,7 +349,7 @@ function RentalsPage() {
               />
               <FieldError message={rntErrors.itemName} />
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1.5">
                 <Label>
                   Rent Start Date <span className="text-destructive">*</span>
@@ -377,7 +381,7 @@ function RentalsPage() {
                 <FieldError message={rntErrors.expectedReturnDate} />
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1.5">
                 <Label>
                   Daily Rate <span className="text-destructive">*</span>
