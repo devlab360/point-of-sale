@@ -406,7 +406,12 @@ function ProductsPage() {
   };
 
   const handleExport = () => {
-    exportToCSV(products, [
+    const exportData = products.map(p => ({
+      ...p,
+      category: categories.find(c => c.id === p.category)?.name || 'General',
+      brand: brands.find(b => b.id === p.brand)?.name || 'N/A'
+    }));
+    exportToCSV(exportData, [
       { key: 'name', label: 'Name' },
       { key: 'sku', label: 'SKU' },
       { key: 'barcode', label: 'Barcode' },
@@ -437,8 +442,8 @@ function ProductsPage() {
                 name: row['Name'],
                 sku: row['SKU'] || `SKU-${Math.floor(Math.random() * 100000)}`,
                 barcode: row['Barcode'] || '',
-                category: row['Category'] || 'General',
-                brand: row['Brand'] || '',
+                category: categories.find(c => c.name.toLowerCase() === (row['Category'] || '').toLowerCase())?.id || categories[0]?.id || 'General',
+                brand: brands.find(b => b.name.toLowerCase() === (row['Brand'] || '').toLowerCase())?.id || brands[0]?.id || '',
                 cost: parseFloat(row['Cost'] || '0'),
                 price: parseFloat(row['Price'] || '0'),
                 stock: parseInt(row['Stock'] || '0'),

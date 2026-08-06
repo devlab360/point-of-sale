@@ -214,7 +214,11 @@ function ServicesPage() {
   };
 
   const handleExport = () => {
-    exportToCSV(services, [
+    const exportData = services.map(s => ({
+      ...s,
+      category: categories.find((c: any) => c.id === s.category)?.name || 'General'
+    }));
+    exportToCSV(exportData, [
       { key: 'name', label: 'Name' },
       { key: 'sku', label: 'SKU' },
       { key: 'category', label: 'Category' },
@@ -239,7 +243,7 @@ function ServicesPage() {
                 id: uuidv4(), 
                 name: row['Name'],
                 sku: row['SKU'] || `SRV-${Math.floor(Math.random() * 100000)}`,
-                category: row['Category'] || 'General',
+                category: categories.find((c: any) => c.name.toLowerCase() === (row['Category'] || '').toLowerCase())?.id || categories[0]?.id || 'General',
                 price: parseFloat(row['Price'] || '0'),
                 duration: parseInt(row['Duration (min)'] || '30'),
                 description: '',

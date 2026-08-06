@@ -15,7 +15,13 @@ export function exportToCSV<T>(
     return columns
       .map((col) => {
         const value = item[col.key as keyof T];
-        const stringValue = value === null || value === undefined ? '' : String(value);
+        let stringValue = value === null || value === undefined ? '' : String(value);
+        
+        // Prevent Excel from converting long numbers (like barcodes) to scientific notation
+        if (/^\d{11,}$/.test(stringValue)) {
+          return `"=""${stringValue}"""`; // Excel formula: ="123456789012"
+        }
+        
         return `"${stringValue.replace(/"/g, '""')}"`;
       })
       .join(',');
@@ -63,7 +69,14 @@ export function parseCSV(file: File): Promise<Record<string, string>[]> {
           if (currentLine.length === headers.length || currentLine.length > 0) {
             const obj: Record<string, string> = {};
             for (let j = 0; j < headers.length; j++) {
-              obj[headers[j]?.trim()] = currentLine[j]?.trim() || '';
+              let val = currentLine[j]?.trim() || '';
+              if (val.startsWith('"') && val.endsWith('"')) {
+                val = val.substring(1, val.length - 1).replace(/""/g, '"');
+              }
+              if (val.startsWith('="') && val.endsWith('"')) {
+                val = val.substring(2, val.length - 1).replace(/""/g, '"');
+              }
+              obj[headers[j]?.trim()] = val;
             }
             result.push(obj);
           }
