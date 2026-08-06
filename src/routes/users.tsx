@@ -222,8 +222,8 @@ function UsersPage() {
     setEditRole(userItem.role || "cashier");
     setEditPermissions(
       userItem.permissions ||
-        DEFAULT_ROLE_PERMISSIONS[userItem.role] ||
-        DEFAULT_ROLE_PERMISSIONS.cashier,
+      DEFAULT_ROLE_PERMISSIONS[userItem.role] ||
+      DEFAULT_ROLE_PERMISSIONS.cashier,
     );
   };
 
@@ -480,7 +480,7 @@ function UsersPage() {
                           <td className="px-4 py-3 whitespace-nowrap">
                             <div className="flex flex-wrap gap-1 max-w-[200px]">
                               {(e.permissions || DEFAULT_ROLE_PERMISSIONS[e.role] || []).length ===
-                              AVAILABLE_PERMISSIONS.length ? (
+                                AVAILABLE_PERMISSIONS.length ? (
                                 <Badge
                                   variant="outline"
                                   className="bg-primary/10 text-primary border-primary/20 text-[10px]"
@@ -503,7 +503,7 @@ function UsersPage() {
                               {(e.permissions || DEFAULT_ROLE_PERMISSIONS[e.role] || []).length >
                                 3 &&
                                 (e.permissions || DEFAULT_ROLE_PERMISSIONS[e.role] || []).length !==
-                                  AVAILABLE_PERMISSIONS.length && (
+                                AVAILABLE_PERMISSIONS.length && (
                                   <span className="text-[10px] text-muted-foreground self-center">
                                     +
                                     {(e.permissions || DEFAULT_ROLE_PERMISSIONS[e.role] || [])
@@ -626,16 +626,15 @@ function UsersPage() {
                             <div
                               key={p.id}
                               onClick={() => toggleInvitePermission(p.id)}
-                              className={`flex items-start gap-2.5 p-2 rounded-md border cursor-pointer transition-all ${
-                                checked
-                                  ? "bg-primary/5 border-primary/40 text-foreground"
-                                  : "bg-card border-border/60 text-muted-foreground hover:border-border"
-                              }`}
+                              className={`flex items-start gap-2.5 p-2 rounded-md border cursor-pointer transition-all ${checked
+                                ? "bg-primary/5 border-primary/40 text-foreground"
+                                : "bg-card border-border/60 text-muted-foreground hover:border-border"
+                                }`}
                             >
                               <input
                                 type="checkbox"
                                 checked={checked}
-                                onChange={() => {}}
+                                onChange={() => { }}
                                 className="mt-0.5 size-4 rounded border-input text-primary accent-primary"
                               />
                               <div className="space-y-0.5 leading-none">
@@ -811,16 +810,15 @@ function UsersPage() {
                           <div
                             key={p.id}
                             onClick={() => toggleEditPermission(p.id)}
-                            className={`flex items-start gap-2.5 p-2 rounded-md border cursor-pointer transition-all ${
-                              checked
-                                ? "bg-primary/5 border-primary/40 text-foreground"
-                                : "bg-card border-border/60 text-muted-foreground hover:border-border"
-                            }`}
+                            className={`flex items-start gap-2.5 p-2 rounded-md border cursor-pointer transition-all ${checked
+                              ? "bg-primary/5 border-primary/40 text-foreground"
+                              : "bg-card border-border/60 text-muted-foreground hover:border-border"
+                              }`}
                           >
                             <input
                               type="checkbox"
                               checked={checked}
-                              onChange={() => {}}
+                              onChange={() => { }}
                               className="mt-0.5 size-4 rounded border-input text-primary accent-primary"
                             />
                             <div className="space-y-0.5 leading-none">

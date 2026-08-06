@@ -6,7 +6,7 @@ import { Input, PasswordInput } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Store, UserCircle2, KeyRound, ArrowLeft, Loader2, Mail, ShieldCheck } from "lucide-react";
 import { generateVerificationOtp, sendPasswordResetEmail } from "@/lib/email-service";
-import { resetPasswordFn } from "@/api/auth";
+import { resetPasswordFn, sendPasswordResetOtpFn } from "@/api/auth";
 import { toast } from "sonner";
 import { validateEmail, validatePassword, sanitizeInput } from "@/lib/validation";
 import { checkRateLimit } from "@/lib/api-response";
@@ -157,6 +157,9 @@ function LoginPage() {
       const otp = generateVerificationOtp();
       setGeneratedOtp(otp);
 
+      // Save OTP to DB for secure backend validation
+      await sendPasswordResetOtpFn({ data: { email: targetEmail, code: otp } });
+
       const success = await sendPasswordResetEmail(targetEmail, otp);
       if (success) {
         setForgotStep("verify");
@@ -181,7 +184,8 @@ function LoginPage() {
       return;
     }
 
-    if (otpInput.trim() !== generatedOtp && otpInput.trim() !== "123456") {
+    // Client-side quick check (optional, but good for UX if they haven't reloaded)
+    if (generatedOtp && otpInput.trim() !== generatedOtp && otpInput.trim() !== "123456") {
       toast.error("Invalid OTP code. Please check your email and try again.");
       return;
     }
@@ -199,7 +203,7 @@ function LoginPage() {
     setIsResetting(true);
     await new Promise((resolve) => setTimeout(resolve, 500));
     try {
-      const res = await resetPasswordFn({ data: { email: targetEmail, newPassword } });
+      const res = await resetPasswordFn({ data: { email: targetEmail, newPassword, otp: otpInput.trim() } });
       if (!res?.success) {
         throw new Error(res?.error || "Failed to reset password.");
       }

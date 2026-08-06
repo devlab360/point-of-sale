@@ -1,3 +1,4 @@
+import React, { useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -17,6 +18,14 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
+import { FileUpload } from "@/components/ui/file-upload";
 import { Label } from "@/components/ui/label";
 import { PhoneInput } from "@/components/ui/phone-input";
 import { SearchableSelect } from "@/components/ui/searchable-select";
@@ -34,6 +43,8 @@ import {
 import { cn } from "@/lib/utils";
 import { v4 as uuidv4 } from "uuid";
 import { createCustomerFn } from "@/api/customers";
+import { createProductFn } from "@/api/products";
+import { createServiceItemFn } from "@/api/services";
 import { deleteHeldInvoiceFn } from "@/api/pos";
 import { toast } from "sonner";
 
@@ -51,6 +62,10 @@ export function PosDialogs({
     setShowCustomerSearch,
     showAddCustomer,
     setShowAddCustomer,
+    showAddProduct,
+    setShowAddProduct,
+    showAddService,
+    setShowAddService,
     showShortcutsHelp,
     setShowShortcutsHelp,
     customerQuery,
@@ -90,6 +105,10 @@ export function PosDialogs({
     changeDue,
     isAddingCustomer,
     setIsAddingCustomer,
+    isAddingProduct,
+    setIsAddingProduct,
+    isAddingService,
+    setIsAddingService,
     orgId,
     queryClient,
     refetchHeld,
@@ -109,7 +128,22 @@ export function PosDialogs({
     setSplitUpi,
     handleOpenRegister,
     applyCoupon,
+    categories,
+    brands,
+    units,
   } = state;
+
+  const [newProductCategory, setNewProductCategory] = useState("");
+  const [newProductBrand, setNewProductBrand] = useState("");
+  const [newServiceCategory, setNewServiceCategory] = useState("");
+  const [newProductBarcode, setNewProductBarcode] = useState("");
+  const [newProductImage, setNewProductImage] = useState("");
+  const [newServiceImage, setNewServiceImage] = useState("");
+
+  const generateBarcode = () => {
+    const code = Math.floor(100000000000 + Math.random() * 900000000000).toString();
+    setNewProductBarcode(code);
+  };
 
   const handleQuickAddCustomer = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -155,6 +189,100 @@ export function PosDialogs({
       toast.error(err.message || "Failed to add customer.");
     } finally {
       setIsAddingCustomer(false);
+    }
+  };
+
+  const handleQuickAddProduct = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    const name = ((formData.get("name") as string) || "").trim();
+    const price = parseFloat(formData.get("price") as string) || 0;
+    const cost = parseFloat(formData.get("cost") as string) || 0;
+    const category = (formData.get("category") as string) || "";
+    const brand = (formData.get("brand") as string) || "";
+    const barcode = ((formData.get("barcode") as string) || "").trim();
+    const stock = parseInt(formData.get("stock") as string, 10) || 0;
+
+    if (!name) return toast.error("Product name is required");
+    if (price <= 0) return toast.error("Valid price is required");
+
+    setIsAddingProduct(true);
+    try {
+      const payload = {
+        name,
+        sku: barcode || `SKU-${Math.floor(Math.random() * 100000)}`,
+        barcode: barcode || "",
+        category,
+        brand,
+        unit: "",
+        price,
+        cost,
+        stock,
+        reorderLevel: 5,
+        image: newProductImage,
+        synced: false,
+      };
+
+      const res = await createProductFn({
+        data: { product: payload },
+      });
+      if (res?.success) {
+        queryClient.invalidateQueries({ queryKey: ["posItems"] });
+        queryClient.invalidateQueries({ queryKey: ["products"] });
+        setShowAddProduct(false);
+        setNewProductBarcode(""); // Reset barcode field
+        setNewProductImage(""); // Reset image field
+        toast.success(`Product "${name}" added successfully!`);
+      } else {
+        toast.error(res?.error || "Failed to add product");
+      }
+    } catch (err: any) {
+      toast.error(err.message || "Failed to add product.");
+    } finally {
+      setIsAddingProduct(false);
+    }
+  };
+
+  const handleQuickAddService = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    const name = ((formData.get("name") as string) || "").trim();
+    const price = parseFloat(formData.get("price") as string) || 0;
+    const categoryId = (formData.get("category") as string) || "";
+    const duration = (formData.get("duration") as string) || "";
+
+    if (!name) return toast.error("Service name is required");
+    if (price < 0) return toast.error("Valid price is required");
+
+    setIsAddingService(true);
+    try {
+      const payload = {
+        name,
+        category: categoryId,
+        price: price.toString(),
+        cost: "0",
+        duration,
+        image: newServiceImage,
+        status: "active",
+      };
+
+      const res = await createServiceItemFn({
+        data: payload,
+      });
+
+      if (res?.success) {
+        queryClient.invalidateQueries({ queryKey: ["posItems"] });
+        queryClient.invalidateQueries({ queryKey: ["services"] });
+        setShowAddService(false);
+        setNewServiceImage(""); // Reset image field
+        toast.success(`Service "${name}" added successfully!`);
+      } else {
+        toast.error(res?.error || "Failed to add service");
+      }
+    } catch (err: any) {
+      toast.error(err.message || "Failed to add service.");
+    } finally {
+      setIsAddingService(false);
     }
   };
 
@@ -285,6 +413,150 @@ export function PosDialogs({
               </Button>
               <Button type="submit" disabled={isAddingCustomer}>
                 {isAddingCustomer && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Save
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showAddProduct} onOpenChange={setShowAddProduct}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Plus className="size-5 text-primary" />
+              <span>Quick Add Product</span>
+            </DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleQuickAddProduct} className="space-y-4 pt-2">
+            <div className="space-y-2">
+              <Label>Product Image</Label>
+              <FileUpload
+                value={newProductImage}
+                onChange={setNewProductImage}
+                folder="products"
+                accept="image/*"
+                maxSizeMB={5}
+                className="h-28"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Product Name *</Label>
+              <Input name="name" placeholder="e.g. Wireless Mouse" required autoFocus />
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Retail Price *</Label>
+                <Input name="price" type="number" step="0.01" min="0" placeholder="0.00" required />
+              </div>
+              <div className="space-y-2">
+                <Label>Cost Price *</Label>
+                <Input name="cost" type="number" step="0.01" min="0" placeholder="0.00" required />
+              </div>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Opening Stock</Label>
+                <Input name="stock" type="number" min="0" placeholder="0" defaultValue="0" />
+              </div>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label>Barcode / SKU</Label>
+                  <button type="button" onClick={generateBarcode} className="text-[10px] font-medium text-primary hover:underline focus:outline-none">
+                    Generate
+                  </button>
+                </div>
+                <Input 
+                  name="barcode" 
+                  placeholder="Scan or enter code" 
+                  value={newProductBarcode}
+                  onChange={(e) => setNewProductBarcode(e.target.value)}
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Category</Label>
+                <input type="hidden" name="category" value={newProductCategory} />
+                <SearchableSelect
+                  value={newProductCategory}
+                  onChange={setNewProductCategory}
+                  options={categories.map((c: any) => ({ value: c.id, label: c.name }))}
+                  placeholder="Select Category"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Brand</Label>
+                <input type="hidden" name="brand" value={newProductBrand} />
+                <SearchableSelect
+                  value={newProductBrand}
+                  onChange={setNewProductBrand}
+                  options={brands.map((b: any) => ({ value: b.id, label: b.name }))}
+                  placeholder="Select Brand"
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setShowAddProduct(false)}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={isAddingProduct}>
+                {isAddingProduct && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Save Product
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showAddService} onOpenChange={setShowAddService}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Plus className="size-5 text-primary" />
+              <span>Quick Add Service</span>
+            </DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleQuickAddService} className="space-y-4 pt-2">
+            <div className="space-y-2">
+              <Label>Service Image</Label>
+              <FileUpload
+                value={newServiceImage}
+                onChange={setNewServiceImage}
+                folder="services"
+                accept="image/*"
+                maxSizeMB={5}
+                className="h-28"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Service Name *</Label>
+              <Input name="name" placeholder="Enter service name" required autoFocus />
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Price *</Label>
+                <Input name="price" type="number" step="0.01" min="0" placeholder="0.00" required />
+              </div>
+              <div className="space-y-2">
+                <Label>Duration (Mins)</Label>
+                <Input name="duration" type="number" min="0" placeholder="e.g. 30" />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Category</Label>
+              <input type="hidden" name="category" value={newServiceCategory} />
+              <SearchableSelect
+                value={newServiceCategory}
+                onChange={setNewServiceCategory}
+                options={categories.map((c: any) => ({ value: c.id, label: c.name }))}
+                placeholder="Select Category"
+              />
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setShowAddService(false)}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={isAddingService}>
+                {isAddingService && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Save Service
               </Button>
             </DialogFooter>
           </form>

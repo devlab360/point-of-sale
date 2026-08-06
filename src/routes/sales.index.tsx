@@ -91,7 +91,7 @@ function SalesPage() {
   };
   const [viewSale, setViewSale] = useState<any | null>(null);
 
-  const storeName = settings?.storeName || "GROCER.PRO";
+  const storeName = settings?.storeName || "";
   const storeAddress = settings?.address || "";
   const storePhone = settings?.phone || "";
 
@@ -278,15 +278,11 @@ function SalesPage() {
                       <th className="px-4 py-3 whitespace-nowrap">{t("invoice") || "Invoice"}</th>
                       <th className="px-4 py-3 whitespace-nowrap">{t("customer") || "Customer"}</th>
                       <th className="px-4 py-3 whitespace-nowrap">{t("date") || "Date"}</th>
-                      <th className="px-4 py-3 text-right whitespace-nowrap">
-                        {t("items") || "Items"}
-                      </th>
+                      <th className="px-4 py-3 text-right whitespace-nowrap">{t("items") || "Items"}</th>
                       <th className="px-4 py-3 whitespace-nowrap">{t("payment") || "Payment"}</th>
                       <th className="px-4 py-3 whitespace-nowrap">{t("sync") || "Sync"}</th>
                       <th className="px-4 py-3 whitespace-nowrap">{t("status") || "Status"}</th>
-                      <th className="px-4 py-3 text-right whitespace-nowrap">
-                        {t("total") || "Total"}
-                      </th>
+                      <th className="px-4 py-3 text-right whitespace-nowrap">{t("total") || "Total"}</th>
                       <th className="px-4 py-3 whitespace-nowrap"></th>
                     </tr>
                   </thead>
@@ -296,12 +292,8 @@ function SalesPage() {
                         <td className="px-4 py-3 font-mono text-xs font-semibold whitespace-nowrap">
                           {s.id.slice(0, 8).toUpperCase()}
                         </td>
-                        <td className="px-4 py-3 font-semibold whitespace-nowrap">
-                          {s.customerName || "Walk-in"}
-                        </td>
-                        <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">
-                          {formatDateTime(s.date)}
-                        </td>
+                        <td className="px-4 py-3 font-semibold whitespace-nowrap">{s.customerName || "Walk-in"}</td>
+                        <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">{formatDateTime(s.date)}</td>
                         <td className="px-4 py-3 text-right whitespace-nowrap">{s.items}</td>
                         <td className="px-4 py-3 text-muted-foreground capitalize whitespace-nowrap">
                           {s.paymentMethod === "split" && s.payments && s.payments.length > 0 ? (
@@ -335,11 +327,11 @@ function SalesPage() {
                           <Badge
                             className={cn(
                               s.status === "completed" &&
-                                "bg-success/10 text-success hover:bg-success/15",
+                              "bg-success/10 text-success hover:bg-success/15",
                               s.status === "pending" &&
-                                "bg-warning/15 text-warning-foreground hover:bg-warning/20",
+                              "bg-warning/15 text-warning-foreground hover:bg-warning/20",
                               s.status === "refunded" &&
-                                "bg-muted text-muted-foreground hover:bg-muted",
+                              "bg-muted text-muted-foreground hover:bg-muted",
                             )}
                           >
                             {s.status}
@@ -413,11 +405,11 @@ function SalesPage() {
                     variant="outline"
                     className={cn(
                       viewSale.status === "completed" &&
-                        "bg-success/10 text-success hover:bg-success/20 border-success/20",
+                      "bg-success/10 text-success hover:bg-success/20 border-success/20",
                       viewSale.status === "pending" &&
-                        "bg-warning/10 text-warning hover:bg-warning/20 border-warning/20",
+                      "bg-warning/10 text-warning hover:bg-warning/20 border-warning/20",
                       viewSale.status === "cancelled" &&
-                        "bg-destructive/10 text-destructive hover:bg-destructive/20 border-destructive/20",
+                      "bg-destructive/10 text-destructive hover:bg-destructive/20 border-destructive/20",
                     )}
                   >
                     {viewSale.status}
@@ -439,9 +431,7 @@ function SalesPage() {
                       <tr key={i}>
                         <td className="px-3 py-2 whitespace-nowrap">{item.productName}</td>
                         <td className="px-3 py-2 text-right whitespace-nowrap">{item.quantity}</td>
-                        <td className="px-3 py-2 text-right whitespace-nowrap">
-                          {formatCurrency(item.price)}
-                        </td>
+                        <td className="px-3 py-2 text-right whitespace-nowrap">{formatCurrency(item.price)}</td>
                         <td className="px-3 py-2 text-right font-semibold whitespace-nowrap">
                           {formatCurrency(item.total)}
                         </td>

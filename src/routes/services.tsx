@@ -446,7 +446,7 @@ function ServicesPage() {
                 <Input
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  placeholder="e.g. Haircut"
+                  placeholder="Enter service name"
                 />
               </div>
 

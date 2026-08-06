@@ -195,7 +195,7 @@ export function AppSidebar({ onNavigate }: { onNavigate?: () => void }) {
         {!isMinimized && (
           <div className="min-w-0 flex-1">
             <div className="truncate text-sm font-extrabold tracking-tight text-foreground">
-              GROCER.PRO
+              NexisPOS
             </div>
             <div className="text-[10px] font-semibold uppercase tracking-widest text-primary/80 flex items-center gap-1 min-w-0">
               <span className="size-1.5 rounded-full bg-success inline-block animate-pulse shrink-0"></span>
@@ -245,7 +245,9 @@ export function AppSidebar({ onNavigate }: { onNavigate?: () => void }) {
                     )}
                   />
                   {!isMinimized && (
-                    <span className="truncate text-left">{t(group.tkey) || group.label}</span>
+                    <span className="truncate text-left">
+                      {t(group.tkey) || group.label}
+                    </span>
                   )}
                 </span>
                 {!isMinimized && (

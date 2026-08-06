@@ -17,8 +17,8 @@ export function PreferencesProvider({ children }: { children: React.ReactNode })
   const { user } = useAuth();
 
   const dateFormat = user?.dateFormat || "DD/MM/YYYY";
-  const timeZone = user?.timeZone || "Asia/Dhaka";
-  const countryCode = user?.countryCode || "+880";
+  const timeZone = user?.timeZone || "Asia/Kolkata";
+  const countryCode = user?.countryCode || "+91";
 
   const formatters = useMemo(() => {
     // Utility to get date parts mapped to the given timezone

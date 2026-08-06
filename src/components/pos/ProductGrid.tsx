@@ -1,4 +1,4 @@
-import { Search, Keyboard, ScanBarcode, Plus } from "lucide-react";
+import { Search, Keyboard, ScanBarcode, Plus, Image as ImageIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -28,14 +28,14 @@ export function ProductGrid({ state }: { state: any }) {
         mobileTab === "cart" ? "hidden md:flex" : "flex",
       )}
     >
-      <div className="flex flex-row gap-3 border-b border-border bg-background p-4 items-center">
+      <div className="flex flex-row gap-3 border-b border-border bg-background p-2 items-center">
         <div className="relative flex-1">
           <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search products by name, SKU or barcode..."
-            className="h-11 w-full rounded-xl border border-border bg-card pl-10 pr-3 text-sm focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/20"
+            className="h-9 w-full rounded-lg border border-border bg-card pl-10 pr-3 text-sm focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/20"
           />
         </div>
         <div className="relative flex-1 lg:max-w-[320px]">
@@ -61,17 +61,34 @@ export function ProductGrid({ state }: { state: any }) {
                 e.currentTarget.value = "";
               }
             }}
-            className="h-11 w-full rounded-xl border border-primary/30 bg-primary/5 pl-10 pr-3 font-mono text-sm placeholder:text-primary/60 focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/20"
+            className="h-9 w-full rounded-lg border border-primary/30 bg-primary/5 pl-10 pr-3 font-mono text-sm placeholder:text-primary/60 focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/20"
           />
+        </div>
+        <div className="flex items-center gap-2 hidden md:flex">
+          <Button
+            onClick={() => state.setShowAddProduct(true)}
+            className="h-9 shrink-0 rounded-lg px-4 gap-2"
+          >
+            <Plus className="size-4" />
+            Product
+          </Button>
+          <Button
+            onClick={() => state.setShowAddService(true)}
+            variant="outline"
+            className="h-9 shrink-0 rounded-lg px-4 gap-2 border-primary/30 text-primary hover:bg-primary/10"
+          >
+            <Plus className="size-4" />
+            Service
+          </Button>
         </div>
       </div>
 
-      <div className="flex gap-2 overflow-x-auto border-b border-border bg-background px-4 py-2.5">
+      <div className="flex gap-2 overflow-x-auto border-b border-border bg-background px-4 py-2">
         <CatChip
           active={activeCat === "all"}
           onClick={() => setActiveCat("all")}
-          icon="🛒"
-          label="All"
+          icon=""
+          label="All Products"
         />
         {Array.from(
           new Map(categories.map((c: any) => [c.name.trim().toLowerCase(), c])).values(),
@@ -112,15 +129,18 @@ export function ProductGrid({ state }: { state: any }) {
                   )}
                 >
                   <div className="relative w-full aspect-[4/3] overflow-hidden bg-muted flex items-center justify-center shrink-0 border-b border-border/50">
-                    <img
-                      src={
-                        p.image ||
-                        "https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&q=80&w=300&h=300"
-                      }
-                      alt={p.name}
-                      loading="lazy"
-                      className="w-full h-full object-cover"
-                    />
+                    {p.image && !p.image.includes("1542838132") && !p.image.includes("unsplash") ? (
+                      <img
+                        src={p.image}
+                        alt={p.name}
+                        loading="lazy"
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="flex flex-col items-center justify-center text-muted-foreground/30">
+                        <ImageIcon className="size-10" strokeWidth={1.5} />
+                      </div>
+                    )}
                     {low && !out && p.referenceType !== "SERVICE" && (
                       <span className="absolute left-2 top-2 rounded bg-warning/90 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-warning-foreground shadow-sm backdrop-blur-sm">
                         Low Stock

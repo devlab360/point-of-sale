@@ -167,6 +167,8 @@ export function usePosState() {
 
   const [activeCustomerType, setActiveCustomerType] = useState("retail");
   const [isAddingCustomer, setIsAddingCustomer] = useState(false);
+  const [isAddingProduct, setIsAddingProduct] = useState(false);
+  const [isAddingService, setIsAddingService] = useState(false);
 
   const [activeCat, setActiveCat] = useState<string>("all");
   const [query, setQuery] = useState("");
@@ -188,6 +190,8 @@ export function usePosState() {
   // Dialogs
   const [showCustomerSearch, setShowCustomerSearch] = useState(false);
   const [showAddCustomer, setShowAddCustomer] = useState(false);
+  const [showAddProduct, setShowAddProduct] = useState(false);
+  const [showAddService, setShowAddService] = useState(false);
   const [showShortcutsHelp, setShowShortcutsHelp] = useState(false);
   const [customerQuery, setCustomerQuery] = useState("");
   const [showHeld, setShowHeld] = useState(false);
@@ -421,6 +425,10 @@ export function usePosState() {
     setActiveCustomerType,
     isAddingCustomer,
     setIsAddingCustomer,
+    isAddingProduct,
+    setIsAddingProduct,
+    isAddingService,
+    setIsAddingService,
     activeCat,
     setActiveCat,
     query,
@@ -449,6 +457,10 @@ export function usePosState() {
     setShowCustomerSearch,
     showAddCustomer,
     setShowAddCustomer,
+    showAddProduct,
+    setShowAddProduct,
+    showAddService,
+    setShowAddService,
     showShortcutsHelp,
     setShowShortcutsHelp,
     customerQuery,

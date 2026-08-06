@@ -200,35 +200,42 @@ export const completePosSaleFn = createServerFn({ method: "POST" })
 
         if (productIds.length === 0) throw new Error("Sale must contain at least one item.");
 
-        // BULK FETCH: Get all products in one query to eliminate N+1 latency
-        const productsList = await tx
-          .select()
-          .from(schema.products)
-          .where(
+        // BULK FETCH: Get all products and services in one query to eliminate N+1 latency
+        const [productsList, servicesList] = await Promise.all([
+          tx.select().from(schema.products).where(
             and(inArray(schema.products.id, productIds), eq(schema.products.organizationId, orgId)),
-          );
+          ),
+          tx.select().from(schema.services).where(
+            and(inArray(schema.services.id, productIds), eq(schema.services.organizationId, orgId)),
+          )
+        ]);
 
-        const productsMap = new Map(productsList.map((p) => [p.id, p]));
+        const itemsMap = new Map();
+        for (const p of productsList) itemsMap.set(p.id, { ...p, _type: 'product' });
+        for (const s of servicesList) itemsMap.set(s.id, { ...s, _type: 'service' });
+
         const lowStockNotifications: any[] = [];
         const stockUpdates: { productId: string; newStock: number }[] = [];
 
         for (const item of data.items) {
-          const p = productsMap.get(item.productId);
+          const p = itemsMap.get(item.productId);
           if (!p) throw new Error(`Product not found: ${item.productId}`);
 
-          // M-4 fix: Reject expired products at checkout
-          if ((p as any).expiryDate) {
-            const expiry = new Date((p as any).expiryDate);
-            if (!isNaN(expiry.getTime()) && expiry < new Date()) {
-              throw new Error(`Product "${p.name}" has expired and cannot be sold.`);
+          if (p._type === 'product') {
+            // M-4 fix: Reject expired products at checkout
+            if ((p as any).expiryDate) {
+              const expiry = new Date((p as any).expiryDate);
+              if (!isNaN(expiry.getTime()) && expiry < new Date()) {
+                throw new Error(`Product "${p.name}" has expired and cannot be sold.`);
+              }
             }
-          }
 
-          // Enforce stock non-negativity — prevent overselling
-          if ((p.stock ?? 0) < item.quantity) {
-            throw new Error(
-              `Insufficient stock for "${p.name}". Available: ${p.stock ?? 0}, Requested: ${item.quantity}`,
-            );
+            // Enforce stock non-negativity — prevent overselling
+            if ((p.stock ?? 0) < item.quantity) {
+              throw new Error(
+                `Insufficient stock for "${p.name}". Available: ${p.stock ?? 0}, Requested: ${item.quantity}`,
+              );
+            }
           }
 
           const unitPrice = Number(p.price) || 0;
@@ -254,24 +261,26 @@ export const completePosSaleFn = createServerFn({ method: "POST" })
             batchNo: item.batchNo || null,
           });
 
-          // PREPARE STOCK UPDATE (In-memory calculation)
-          const currentStock = p.stock || 0;
-          const newStock = Math.max(0, currentStock - item.quantity);
-          stockUpdates.push({
-            productId: item.productId,
-            newStock,
-          });
-
-          if (newStock <= Number(p.reorderLevel || 5)) {
-            lowStockNotifications.push({
-              id: uuidv4(),
-              organizationId: orgId,
-              title: newStock <= 0 ? "Out of Stock Alert" : "Low Stock Alert",
-              description: `Product "${p.name}" is ${newStock <= 0 ? "out of stock" : `down to ${newStock} units`}`,
-              type: "inventory",
-              timestamp: new Date().toISOString(),
-              read: false,
+          if (p._type === 'product') {
+            // PREPARE STOCK UPDATE (In-memory calculation)
+            const currentStock = p.stock || 0;
+            const newStock = Math.max(0, currentStock - item.quantity);
+            stockUpdates.push({
+              productId: item.productId,
+              newStock,
             });
+
+            if (newStock <= Number(p.reorderLevel || 5)) {
+              lowStockNotifications.push({
+                id: uuidv4(),
+                organizationId: orgId,
+                title: newStock <= 0 ? "Out of Stock Alert" : "Low Stock Alert",
+                description: `Product "${p.name}" is ${newStock <= 0 ? "out of stock" : `down to ${newStock} units`}`,
+                type: "inventory",
+                timestamp: new Date().toISOString(),
+                read: false,
+              });
+            }
           }
         }
 

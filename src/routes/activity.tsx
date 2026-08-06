@@ -24,7 +24,7 @@ function ActivityPage() {
     .slice()
     .sort(
       (a: any, b: any) =>
-        new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime(),
+        new Date(b.timestamp || 0).getTime() - new Date(a.timestamp || 0).getTime(),
     );
 
   const renderLogMessage = (a: any) => {

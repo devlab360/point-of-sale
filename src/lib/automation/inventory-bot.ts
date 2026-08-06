@@ -1,4 +1,4 @@
-import { generateAIText } from "./openai";
+import { generateAIText } from "./gemini";
 import { sendWhatsAppText } from "./whatsapp";
 
 /**

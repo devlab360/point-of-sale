@@ -22,7 +22,7 @@ export const Route = createFileRoute("/profile")({
 
 function ProfilePage() {
   const { language, setLanguage, t } = useLanguage();
-  const { user: authUser } = useAuth();
+  const { user: authUser, refreshUser } = useAuth();
 
   const queryClient = useQueryClient();
 
@@ -49,8 +49,8 @@ function ProfilePage() {
     joined: "",
     lastActive: new Date().toISOString(),
     status: "active" as const,
-    countryCode: "+880",
-    timeZone: "Asia/Dhaka",
+    countryCode: "+91",
+    timeZone: "Asia/Kolkata",
     dateFormat: "DD/MM/YYYY",
     language: "en",
     pin: authUser?.pin || "",
@@ -99,6 +99,7 @@ function ProfilePage() {
       await new Promise((resolve) => setTimeout(resolve, 500));
       await updateUserFn({ data: { id: authUser?.id || profile.id, updates: profile } });
       queryClient.invalidateQueries({ queryKey: ["userProfile", authUser?.id] });
+      await refreshUser();
       toast.success("Profile updated successfully.");
     } catch (error) {
       console.error("Profile save error:", error);
@@ -163,7 +164,7 @@ function ProfilePage() {
                   maxSizeMB={2}
                 />
               </div>
-              <h2 className="text-xl font-bold ">{profile.name}</h2>
+              <h2 className="text-xl font-bold">{profile.name}</h2>
               <p className="text-sm text-muted-foreground mt-1">
                 {profile.role} · {profile.location?.split(" ")[0]}
               </p>
@@ -204,9 +205,7 @@ function ProfilePage() {
                   <FieldError message={profileErrors.phone} />
                 </label>
                 <label className="block">
-                  <span className="mb-1.5 block text-xs font-semibold text-muted-foreground">
-                    Role
-                  </span>
+                  <span className="mb-1.5 block text-xs font-semibold text-muted-foreground">Role</span>
                   <input
                     value={profile.role}
                     onChange={(e) => handleChange("role", e.target.value)}

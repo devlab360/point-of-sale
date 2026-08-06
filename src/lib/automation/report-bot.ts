@@ -1,4 +1,4 @@
-import { generateAIText } from "./openai";
+import { generateAIText } from "./gemini";
 import { sendWhatsAppText } from "./whatsapp";
 import { toast } from "sonner";
 
@@ -7,7 +7,7 @@ import { toast } from "sonner";
  */
 export const sendAutomatedReport = async (
   adminPhone: string,
-  reportType: "Daily" | "Weekly",
+  reportType: "Daily" | "Weekly" | "Monthly",
   salesData: { totalRevenue: number; totalOrders: number; topItems: string[] },
 ) => {
   if (!adminPhone) {

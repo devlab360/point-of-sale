@@ -25,6 +25,7 @@ interface AuthContextType {
   saasOrg: any;
   saasPlan: any;
   settings?: any;
+  refreshUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -240,6 +241,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return saasOrg?.status || settings?.subscriptionStatus || "trial";
   }, [saasOrg?.status, settings?.subscriptionStatus]);
 
+  const refreshUser = useCallback(async () => {
+    try {
+      const storedUserId = SessionStore.getAuthUser();
+      if (storedUserId) {
+        const res = await getCurrentUserFn();
+        if (res.success && res.user) {
+          setUser(res.user);
+        }
+      }
+    } catch (error) {
+      console.error("User refresh failed:", error);
+    }
+  }, []);
+
   const value = useMemo(
     () => ({
       user,
@@ -255,6 +270,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       saasOrg,
       saasPlan,
       settings,
+      refreshUser,
     }),
     [
       user,
@@ -269,6 +285,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       saasOrg,
       saasPlan,
       settings,
+      refreshUser,
     ],
   );
 

@@ -67,7 +67,7 @@ export function CartPanel({ state }: { state: any }) {
   return (
     <aside
       className={cn(
-        "flex flex-1 min-h-0 flex-col border-t border-border bg-card w-full md:border-l md:border-t-0 md:w-[var(--drawer-width)]",
+        "flex flex-1 md:flex-none min-h-0 flex-col border-t border-border bg-card w-full md:border-l md:border-t-0 md:w-[var(--drawer-width)] shrink-0",
         mobileTab === "products" ? "hidden md:flex" : "flex",
       )}
       style={{ "--drawer-width": `${drawerWidth}px` } as React.CSSProperties}

@@ -23,6 +23,7 @@ import { X } from "lucide-react";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { PreferencesProvider } from "@/contexts/PreferencesContext";
 import { AiCopilotDrawer } from "@/components/ai/AiCopilotDrawer";
+import { ReportAutomation } from "@/components/automation/ReportAutomation";
 import { DashboardSkeleton } from "@/components/skeletons/DashboardSkeleton";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -183,6 +184,7 @@ function RootComponent() {
       <LanguageProvider>
         <AuthProvider>
           <PreferencesProvider>
+            <ReportAutomation />
             <AppLayout />
           </PreferencesProvider>
         </AuthProvider>
@@ -439,7 +441,7 @@ function AppLayout() {
           <AppHeader />
           <main className="flex-1 overflow-y-auto bg-muted/20 relative">
             {isAuthenticated &&
-            (isSuspended || (isTrialExpired && location.pathname !== "/settings")) ? (
+              (isSuspended || (isTrialExpired && location.pathname !== "/settings")) ? (
               <div className="flex h-full w-full items-center justify-center opacity-10 select-none pointer-events-none">
                 <svg
                   className="size-32 text-destructive"
