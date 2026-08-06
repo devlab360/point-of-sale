@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { DataPage } from "@/components/layout/DataPage";
+import { exportToCSV, parseCSV } from "@/lib/csv";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PaginationControls } from "@/components/ui/pagination-controls";
 import { useDebounce } from "@/hooks/useDebounce";
@@ -208,6 +209,54 @@ function CouponsPage() {
     }
   };
 
+  const handleExport = () => {
+    exportToCSV(coupons, [
+      { key: 'code', label: 'Code' },
+      { key: 'type', label: 'Type' },
+      { key: 'value', label: 'Value' },
+      { key: 'minPurchase', label: 'Min Purchase' },
+      { key: 'maxDiscount', label: 'Max Discount' },
+      { key: 'status', label: 'Status' }
+    ], 'coupons');
+  };
+
+  const handleImport = async (file: File) => {
+    try {
+      const data = await parseCSV(file);
+      if (data.length === 0) {
+        toast.error("No data found in the CSV");
+        return;
+      }
+
+      let count = 0;
+      for (const row of data) {
+        if (row['Code']) {
+          await createCouponFn({ 
+            data: { 
+              coupon: { 
+                id: uuidv4(), 
+                code: row['Code'],
+                type: (row['Type'] as any) || 'percentage',
+                value: parseFloat(row['Value'] || '0'),
+                minPurchase: parseFloat(row['Min Purchase'] || '0'),
+                maxDiscount: parseFloat(row['Max Discount'] || '0'),
+                status: (row['Status'] as any) || 'active',
+                usageLimit: 0,
+                usedCount: 0
+              } 
+            } 
+          });
+          count++;
+        }
+      }
+      
+      queryClient.invalidateQueries({ queryKey: ["coupons"] });
+      toast.success(`Successfully imported ${count} coupons`);
+    } catch (error) {
+      toast.error("Failed to parse CSV file");
+    }
+  };
+
   const handleDelete = async () => {
     if (deleteId) {
       try {
@@ -228,10 +277,12 @@ function CouponsPage() {
         title="Coupons"
         description="Discount codes redeemable at POS and online."
         primaryAction={{ label: "New Coupon", onClick: () => setIsAddOpen(true) }}
-        searchPlaceholder="Search by coupon code..."
+        searchPlaceholder="Search coupons by code..."
         searchValue={search}
         onSearchChange={setSearch}
         hideToolbar={coupons.length === 0}
+        onExport={handleExport}
+        onImport={handleImport}
         onResetFilters={handleResetFilters}
         activeFilterCount={activeFilterCount}
         filtersContent={({ close }) => (

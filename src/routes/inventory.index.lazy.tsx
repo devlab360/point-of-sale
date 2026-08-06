@@ -13,6 +13,7 @@ import { toast } from "sonner";
 import { useState, useMemo, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { DataPage } from "@/components/layout/DataPage";
+import { exportToCSV } from "@/lib/csv";
 import { useDebounce } from "@/hooks/useDebounce";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { PaginationControls } from "@/components/ui/pagination-controls";
@@ -144,6 +145,22 @@ function StockList() {
         hideToolbar={products.length === 0}
         onResetFilters={handleResetFilters}
         activeFilterCount={activeFilterCount}
+        onExport={() => {
+          const exportData = filteredProducts.map(p => ({
+            name: p.name,
+            sku: p.sku,
+            stock: p.stock,
+            reorderLevel: p.reorderLevel,
+            value: p.stock * p.cost
+          }));
+          exportToCSV(exportData, [
+            { key: 'name', label: 'Product' },
+            { key: 'sku', label: 'SKU' },
+            { key: 'stock', label: 'Stock' },
+            { key: 'reorderLevel', label: 'Reorder' },
+            { key: 'value', label: 'Value' }
+          ], 'inventory');
+        }}
         filtersContent={({ close }) => (
           <div className="space-y-4 flex flex-col h-full min-h-[50vh]">
             <div className="flex-1 space-y-4">
@@ -185,25 +202,6 @@ function StockList() {
               onClick={() => setShowForecast(true)}
             >
               <Brain className="size-4 mr-1.5" /> AI Forecast
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                const csv = ["Product,SKU,Stock,Reorder,Value"];
-                filteredProducts.forEach((p) =>
-                  csv.push(`${p.name},${p.sku},${p.stock},${p.reorderLevel},${p.stock * p.cost}`),
-                );
-                const blob = new Blob([csv.join("\\n")], { type: "text/csv" });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement("a");
-                a.href = url;
-                a.download = `inventory-${new Date().toISOString().split("T")[0]}.csv`;
-                a.click();
-                toast.success("Inventory exported");
-              }}
-            >
-              <Download className="size-4" /> Export CSV
             </Button>
           </div>
         }

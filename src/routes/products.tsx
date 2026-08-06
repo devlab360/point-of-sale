@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { exportToCSV, parseCSV } from "@/lib/csv";
 import {
   Grid3x3,
   List,
@@ -404,6 +405,61 @@ function ProductsPage() {
     setIsPrinting(true);
   };
 
+  const handleExport = () => {
+    exportToCSV(products, [
+      { key: 'name', label: 'Name' },
+      { key: 'sku', label: 'SKU' },
+      { key: 'barcode', label: 'Barcode' },
+      { key: 'category', label: 'Category' },
+      { key: 'brand', label: 'Brand' },
+      { key: 'cost', label: 'Cost' },
+      { key: 'price', label: 'Price' },
+      { key: 'stock', label: 'Stock' },
+      { key: 'reorderLevel', label: 'Reorder Level' },
+    ], 'products');
+  };
+
+  const handleImport = async (file: File) => {
+    try {
+      const data = await parseCSV(file);
+      if (data.length === 0) {
+        toast.error("No data found in the CSV");
+        return;
+      }
+
+      let count = 0;
+      for (const row of data) {
+        if (row['Name'] && row['Price']) {
+          await createProductFn({ 
+            data: { 
+              product: { 
+                id: uuidv4(), 
+                name: row['Name'],
+                sku: row['SKU'] || `SKU-${Math.floor(Math.random() * 100000)}`,
+                barcode: row['Barcode'] || '',
+                category: row['Category'] || 'General',
+                brand: row['Brand'] || '',
+                cost: parseFloat(row['Cost'] || '0'),
+                price: parseFloat(row['Price'] || '0'),
+                stock: parseInt(row['Stock'] || '0'),
+                reorderLevel: parseInt(row['Reorder Level'] || '0'),
+                type: 'standard',
+                unit: 'pcs',
+                status: 'active'
+              } 
+            } 
+          });
+          count++;
+        }
+      }
+      
+      queryClient.invalidateQueries({ queryKey: ["products"] });
+      toast.success(`Successfully imported ${count} products`);
+    } catch (error) {
+      toast.error("Failed to parse CSV file");
+    }
+  };
+
   return (
     <div className="p-4 md:p-6 lg:p-8">
       <DataPage
@@ -416,6 +472,8 @@ function ProductsPage() {
         searchValue={search}
         onSearchChange={setSearch}
         hideToolbar={products.length === 0}
+        onExport={handleExport}
+        onImport={handleImport}
         toolbar={
           <div className="inline-flex rounded-lg border border-border bg-muted/30 p-0.5">
             <button

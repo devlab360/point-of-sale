@@ -1,5 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { exportToCSV } from "@/lib/csv";
 import { TableSkeleton } from "@/components/skeletons/TableSkeleton";
 import { ErrorState } from "@/components/ui/error-state";
 import { Badge } from "@/components/ui/badge";
@@ -99,6 +100,16 @@ function SalesPage() {
     setPage(1);
   }, [debouncedQuery, filters]);
 
+  const handleExport = () => {
+    exportToCSV(sales, [
+      { key: 'id', label: 'Invoice No' },
+      { key: 'date', label: 'Date' },
+      { key: 'customerName', label: 'Customer' },
+      { key: 'total', label: 'Total' },
+      { key: 'status', label: 'Status' }
+    ], 'sales');
+  };
+
   const summaries = useMemo(() => {
     let cash = 0,
       card = 0,
@@ -149,10 +160,11 @@ function SalesPage() {
           onClick: () => navigate({ to: "/pos" }),
           icon: Plus,
         }}
-        searchPlaceholder={t("searchSales") || "Search by invoice or customer..."}
+        searchPlaceholder={t("searchSales") || "Search by Invoice No..."}
         searchValue={query}
         onSearchChange={setQuery}
         hideToolbar={sales.length === 0}
+        onExport={handleExport}
         onResetFilters={handleResetFilters}
         activeFilterCount={activeFilterCount}
         filtersContent={({ close }) => (

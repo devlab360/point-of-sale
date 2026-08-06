@@ -20,6 +20,8 @@ type Props = {
   filtersContent?: ReactNode | ((props: { close: () => void }) => ReactNode);
   onResetFilters?: () => void;
   activeFilterCount?: number;
+  onExport?: () => void;
+  onImport?: (file: File) => void;
 };
 
 export function DataPage({
@@ -36,6 +38,8 @@ export function DataPage({
   filtersContent,
   onResetFilters,
   activeFilterCount,
+  onExport,
+  onImport,
 }: Props) {
   const Icon = primaryAction?.icon ?? Plus;
   const { t } = useLanguage();
@@ -43,12 +47,28 @@ export function DataPage({
 
   const actionsContent = (
     <>
-      <Button variant="outline" size="sm">
-        <Upload className="size-4" /> Import
-      </Button>
-      <Button variant="outline" size="sm">
-        <Download className="size-4" /> Export
-      </Button>
+      {onImport && (
+        <Button variant="outline" size="sm" onClick={() => document.getElementById('data-page-import')?.click()}>
+          <Upload className="size-4" /> Import
+          <input 
+            type="file" 
+            id="data-page-import" 
+            className="hidden" 
+            accept=".csv" 
+            onChange={(e) => {
+              if (e.target.files?.[0]) {
+                onImport(e.target.files[0]);
+                e.target.value = '';
+              }
+            }} 
+          />
+        </Button>
+      )}
+      {onExport && (
+        <Button variant="outline" size="sm" onClick={onExport}>
+          <Download className="size-4" /> Export
+        </Button>
+      )}
       {primaryAction && (
         <Button size="sm" onClick={primaryAction.onClick}>
           <Icon className="size-4" /> {primaryAction.label}

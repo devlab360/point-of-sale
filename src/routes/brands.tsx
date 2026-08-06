@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { DataPage } from "@/components/layout/DataPage";
+import { exportToCSV, parseCSV } from "@/lib/csv";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PaginationControls } from "@/components/ui/pagination-controls";
 import { PersistStore } from "@/lib/session-store";
@@ -183,6 +184,33 @@ function BrandsPage() {
     }
   };
 
+  const handleExport = () => {
+    exportToCSV(rawBrands, [{ key: 'name', label: 'Brand Name' }], 'brands');
+  };
+
+  const handleImport = async (file: File) => {
+    try {
+      const data = await parseCSV(file);
+      if (data.length === 0) {
+        toast.error("No data found in the CSV");
+        return;
+      }
+
+      let count = 0;
+      for (const row of data) {
+        if (row['Brand Name']) {
+          await createBrandFn({ data: { brand: { id: uuidv4(), name: row['Brand Name'] } } });
+          count++;
+        }
+      }
+      
+      queryClient.invalidateQueries({ queryKey: ["brands"] });
+      toast.success(`Successfully imported ${count} brands`);
+    } catch (error) {
+      toast.error("Failed to parse CSV file");
+    }
+  };
+
   return (
     <div className="p-4 md:p-6 lg:p-8">
       <DataPage
@@ -195,6 +223,8 @@ function BrandsPage() {
         hideToolbar={rawBrands.length === 0}
         onResetFilters={handleResetFilters}
         activeFilterCount={activeFilterCount}
+        onExport={handleExport}
+        onImport={handleImport}
         filtersContent={({ close }) => (
           <div className="space-y-4 flex flex-col h-full min-h-[50vh]">
             <div className="flex-1 space-y-4">

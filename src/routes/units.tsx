@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { DataPage } from "@/components/layout/DataPage";
+import { exportToCSV, parseCSV } from "@/lib/csv";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PaginationControls } from "@/components/ui/pagination-controls";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -192,6 +193,44 @@ function UnitsPage() {
     }
   };
 
+  const handleExport = () => {
+    exportToCSV(rawUnits, [
+      { key: 'name', label: 'Unit Name' },
+      { key: 'shortName', label: 'Short Name' }
+    ], 'units');
+  };
+
+  const handleImport = async (file: File) => {
+    try {
+      const data = await parseCSV(file);
+      if (data.length === 0) {
+        toast.error("No data found in the CSV");
+        return;
+      }
+
+      let count = 0;
+      for (const row of data) {
+        if (row['Unit Name']) {
+          await createUnitFn({ 
+            data: { 
+              unit: { 
+                id: uuidv4(), 
+                name: row['Unit Name'],
+                shortName: row['Short Name'] || ''
+              } 
+            } 
+          });
+          count++;
+        }
+      }
+      
+      queryClient.invalidateQueries({ queryKey: ["units"] });
+      toast.success(`Successfully imported ${count} units`);
+    } catch (error) {
+      toast.error("Failed to parse CSV file");
+    }
+  };
+
   return (
     <div className="p-4 md:p-6 lg:p-8">
       <DataPage
@@ -202,6 +241,8 @@ function UnitsPage() {
         searchValue={search}
         onSearchChange={setSearch}
         hideToolbar={rawUnits.length === 0}
+        onExport={handleExport}
+        onImport={handleImport}
         onResetFilters={handleResetFilters}
         activeFilterCount={activeFilterCount}
         filtersContent={({ close }) => (

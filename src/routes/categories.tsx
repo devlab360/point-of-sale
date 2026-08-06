@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Pencil, Tag, Trash2, Plus, LayoutGrid, Loader2 } from "lucide-react";
 import { DataPage } from "@/components/layout/DataPage";
+import { exportToCSV, parseCSV } from "@/lib/csv";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PaginationControls } from "@/components/ui/pagination-controls";
 import { IconPicker } from "@/components/ui/icon-picker";
@@ -210,7 +211,7 @@ function CategoriesPage() {
   const confirmDelete = async () => {
     if (!deleteId) return;
     try {
-      const res = await deleteCategoryFn({ data: { id: deleteId } } as any);
+      const res = await deleteCategoryFn({ data: { id: deleteId } });
       if (res?.success) {
         toast.success("Category deleted");
         queryClient.invalidateQueries({ queryKey: ["categories"] });
@@ -219,6 +220,46 @@ function CategoriesPage() {
       toast.error("Failed to delete category");
     } finally {
       setDeleteId(null);
+    }
+  };
+
+  const handleExport = () => {
+    exportToCSV(rawCategories, [
+      { key: 'name', label: 'Category Name' },
+      { key: 'description', label: 'Description' }
+    ], 'categories');
+  };
+
+  const handleImport = async (file: File) => {
+    try {
+      const data = await parseCSV(file);
+      if (data.length === 0) {
+        toast.error("No data found in the CSV");
+        return;
+      }
+
+      let count = 0;
+      for (const row of data) {
+        if (row['Category Name']) {
+          await createCategoryFn({ 
+            data: { 
+              category: { 
+                id: uuidv4(), 
+                name: row['Category Name'],
+                description: row['Description'] || '',
+                color: 'bg-primary/10',
+                icon: 'Tag'
+              } 
+            } 
+          });
+          count++;
+        }
+      }
+      
+      queryClient.invalidateQueries({ queryKey: ["categories"] });
+      toast.success(`Successfully imported ${count} categories`);
+    } catch (error) {
+      toast.error("Failed to parse CSV file");
     }
   };
 
@@ -234,6 +275,8 @@ function CategoriesPage() {
         hideToolbar={rawCategories.length === 0}
         onResetFilters={handleResetFilters}
         activeFilterCount={activeFilterCount}
+        onExport={handleExport}
+        onImport={handleImport}
         filtersContent={({ close }) => (
           <div className="space-y-4 flex flex-col h-full min-h-[50vh]">
             <div className="flex-1 space-y-4">

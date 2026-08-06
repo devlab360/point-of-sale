@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
 import { createFileRoute } from "@tanstack/react-router";
+import { exportToCSV, parseCSV } from "@/lib/csv";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PaginationControls } from "@/components/ui/pagination-controls";
 import { SearchableSelect } from "@/components/ui/searchable-select";
@@ -285,6 +286,52 @@ function CustomersPage() {
     }
   };
 
+  const handleExport = () => {
+    exportToCSV(customers, [
+      { key: 'name', label: 'Name' },
+      { key: 'email', label: 'Email' },
+      { key: 'phone', label: 'Phone' },
+      { key: 'address', label: 'Address' },
+      { key: 'type', label: 'Type' },
+      { key: 'points', label: 'Points' }
+    ], 'customers');
+  };
+
+  const handleImport = async (file: File) => {
+    try {
+      const data = await parseCSV(file);
+      if (data.length === 0) {
+        toast.error("No data found in the CSV");
+        return;
+      }
+
+      let count = 0;
+      for (const row of data) {
+        if (row['Name']) {
+          await createCustomerFn({ 
+            data: { 
+              customer: { 
+                id: uuidv4(), 
+                name: row['Name'],
+                email: row['Email'] || '',
+                phone: row['Phone'] || '',
+                address: row['Address'] || '',
+                type: (row['Type'] as any) || 'retail',
+                points: parseInt(row['Points'] || '0')
+              } 
+            } 
+          });
+          count++;
+        }
+      }
+      
+      queryClient.invalidateQueries({ queryKey: ["customers"] });
+      toast.success(`Successfully imported ${count} customers`);
+    } catch (error) {
+      toast.error("Failed to parse CSV file");
+    }
+  };
+
   return (
     <div className="p-4 md:p-6 lg:p-8">
       <DataPage
@@ -301,6 +348,8 @@ function CustomersPage() {
         searchValue={search}
         onSearchChange={setSearch}
         hideToolbar={customers.length === 0}
+        onExport={handleExport}
+        onImport={handleImport}
         onResetFilters={handleResetFilters}
         activeFilterCount={activeFilterCount}
         filtersContent={({ close }) => (

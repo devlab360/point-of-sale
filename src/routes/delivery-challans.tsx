@@ -302,20 +302,21 @@ function DeliveryChallansPage() {
       const saleRes = await createSaleFn({
         data: {
           sale: {
-            id: uuidv4(),
-            organizationId: ch.organizationId,
             customerId: ch.customerId,
             customerName: ch.customerName,
             date: new Date().toISOString(),
-            items: ch.items.reduce((acc: number, item: any) => acc + item.quantity, 0),
-            subtotal,
-            discountAmt: 0,
-            taxAmt,
-            total: grandTotal,
             paymentMethod: "credit",
             status: "completed",
+            paid: grandTotal,
           },
-          items: saleItems,
+          items: ch.items.map((i: any) => ({
+            referenceType: "PRODUCT",
+            referenceId: i.productId,
+            productId: i.productId,
+            productName: i.productName || i.name || "Unknown Product",
+            quantity: i.quantity,
+            price: parseFloat(i.price) || 0,
+          })),
         },
       });
       if (!saleRes.success) throw new Error(saleRes.error);

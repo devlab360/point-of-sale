@@ -1,6 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { List, MoreHorizontal, Pencil, Plus, Trash2, PackageSearch, Loader2 } from "lucide-react";
 import { useState, useMemo } from "react";
+import { exportToCSV, parseCSV } from "@/lib/csv";
+import { v4 as uuidv4 } from "uuid";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PaginationControls } from "@/components/ui/pagination-controls";
 import { useDebounce } from "@/hooks/useDebounce";
@@ -211,14 +213,69 @@ function ServicesPage() {
     }
   };
 
+  const handleExport = () => {
+    exportToCSV(services, [
+      { key: 'name', label: 'Name' },
+      { key: 'sku', label: 'SKU' },
+      { key: 'category', label: 'Category' },
+      { key: 'price', label: 'Price' },
+      { key: 'duration', label: 'Duration (min)' }
+    ], 'services');
+  };
+
+  const handleImport = async (file: File) => {
+    try {
+      const data = await parseCSV(file);
+      if (data.length === 0) {
+        toast.error("No data found in the CSV");
+        return;
+      }
+
+      let count = 0;
+      for (const row of data) {
+        if (row['Name'] && row['Price']) {
+          await createServiceItemFn({ 
+            data: { 
+                id: uuidv4(), 
+                name: row['Name'],
+                sku: row['SKU'] || `SRV-${Math.floor(Math.random() * 100000)}`,
+                category: row['Category'] || 'General',
+                price: parseFloat(row['Price'] || '0'),
+                duration: parseInt(row['Duration (min)'] || '30'),
+                description: '',
+                status: 'active'
+            } 
+          });
+          count++;
+        }
+      }
+      
+      queryClient.invalidateQueries({ queryKey: ["services"] });
+      toast.success(`Successfully imported ${count} services`);
+    } catch (error) {
+      toast.error("Failed to parse CSV file");
+    }
+  };
+
+  const handleResetFilters = () => {
+    setDraftFilters({ category: "", status: "" });
+    setFilters({ category: "", status: "" });
+    setPage(1);
+  };
+
+  const activeFilterCount = (filters.category ? 1 : 0) + (filters.status && filters.status !== "all" ? 1 : 0);
+
   return (
     <div className="p-4 md:p-6 lg:p-8">
       <DataPage
         title="Services"
         description="Manage your billable services and durations"
-        searchPlaceholder="Search services..."
+        searchPlaceholder="Search services by name or SKU..."
         searchValue={search}
         onSearchChange={setSearch}
+        hideToolbar={services.length === 0}
+        onExport={handleExport}
+        onImport={handleImport}
         primaryAction={{
           label: "Add Service",
           icon: Plus,

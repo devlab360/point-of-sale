@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { DataPage } from "@/components/layout/DataPage";
+import { exportToCSV, parseCSV } from "@/lib/csv";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PaginationControls } from "@/components/ui/pagination-controls";
 import { useDebounce } from "@/hooks/useDebounce";
@@ -209,6 +210,49 @@ function GiftCardsPage() {
     }
   };
 
+  const handleExport = () => {
+    exportToCSV(giftCards, [
+      { key: 'code', label: 'Code' },
+      { key: 'initialBalance', label: 'Initial Balance' },
+      { key: 'currentBalance', label: 'Current Balance' },
+      { key: 'status', label: 'Status' }
+    ], 'gift-cards');
+  };
+
+  const handleImport = async (file: File) => {
+    try {
+      const data = await parseCSV(file);
+      if (data.length === 0) {
+        toast.error("No data found in the CSV");
+        return;
+      }
+
+      let count = 0;
+      for (const row of data) {
+        if (row['Code']) {
+          await createGiftCardFn({ 
+            data: { 
+              card: { 
+                id: uuidv4(), 
+                code: row['Code'],
+                initialBalance: parseFloat(row['Initial Balance'] || '0'),
+                currentBalance: parseFloat(row['Current Balance'] || '0'),
+                status: (row['Status'] as any) || 'active',
+                issueDate: new Date().toISOString()
+              } 
+            } 
+          });
+          count++;
+        }
+      }
+      
+      queryClient.invalidateQueries({ queryKey: ["giftCards"] });
+      toast.success(`Successfully imported ${count} gift cards`);
+    } catch (error) {
+      toast.error("Failed to parse CSV file");
+    }
+  };
+
   const handleDelete = async () => {
     if (deleteId) {
       try {
@@ -228,10 +272,12 @@ function GiftCardsPage() {
         title="Gift Cards"
         description="Issued cards, balances, and expirations."
         primaryAction={{ label: "Issue Gift Card", onClick: () => setIsAddOpen(true) }}
-        searchPlaceholder="Search by code or customer..."
+        searchPlaceholder="Search by card code..."
         searchValue={search}
         onSearchChange={setSearch}
         hideToolbar={giftCards.length === 0}
+        onExport={handleExport}
+        onImport={handleImport}
         onResetFilters={handleResetFilters}
         activeFilterCount={activeFilterCount}
         filtersContent={({ close }) => (

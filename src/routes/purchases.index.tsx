@@ -1,4 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { exportToCSV } from "@/lib/csv";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -70,6 +71,16 @@ function PurchasesPage() {
     setPage(1);
   }, [debouncedQuery, filters]);
 
+  const handleExport = () => {
+    exportToCSV(purchases, [
+      { key: 'id', label: 'PO ID' },
+      { key: 'date', label: 'Date' },
+      { key: 'supplier', label: 'Supplier' },
+      { key: 'total', label: 'Total' },
+      { key: 'status', label: 'Status' }
+    ], 'purchases');
+  };
+
   return (
     <div className="p-4 md:p-6 lg:p-8">
       <DataPage
@@ -86,6 +97,7 @@ function PurchasesPage() {
         searchValue={query}
         onSearchChange={setQuery}
         hideToolbar={purchases.length === 0}
+        onExport={handleExport}
         onResetFilters={handleResetFilters}
         activeFilterCount={activeFilterCount}
         filtersContent={({ close }) => (

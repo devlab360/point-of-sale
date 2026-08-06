@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { DataPage } from "@/components/layout/DataPage";
+import { exportToCSV, parseCSV } from "@/lib/csv";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -279,6 +280,49 @@ function AccountsPage() {
     }
   };
 
+  const handleExport = () => {
+    exportToCSV(rawAccounts, [
+      { key: 'name', label: 'Name' },
+      { key: 'type', label: 'Type' },
+      { key: 'balance', label: 'Balance' },
+      { key: 'description', label: 'Description' }
+    ], 'accounts');
+  };
+
+  const handleImport = async (file: File) => {
+    try {
+      const data = await parseCSV(file);
+      if (data.length === 0) {
+        toast.error("No data found in the CSV");
+        return;
+      }
+
+      let count = 0;
+      for (const row of data) {
+        if (row['Name']) {
+          await createAccountFn({ 
+            data: { 
+              account: { 
+                id: uuidv4(), 
+                name: row['Name'],
+                type: (row['Type'] as any) || 'asset',
+                balance: parseFloat(row['Balance'] || '0'),
+                description: row['Description'] || '',
+                isDefault: false
+              } 
+            } 
+          });
+          count++;
+        }
+      }
+      
+      queryClient.invalidateQueries({ queryKey: ["accounts"] });
+      toast.success(`Successfully imported ${count} accounts`);
+    } catch (error) {
+      toast.error("Failed to parse CSV file");
+    }
+  };
+
   return (
     <div className="p-4 md:p-6 lg:p-8 space-y-6">
       <DataPage
@@ -289,10 +333,12 @@ function AccountsPage() {
           onClick: () =>
             activeTab === "accounts" ? setIsAddAccountOpen(true) : setIsAddVoucherOpen(true),
         }}
-        searchPlaceholder={activeTab === "vouchers" ? "Search vouchers..." : ""}
-        searchValue={activeTab === "vouchers" ? search : ""}
-        onSearchChange={activeTab === "vouchers" ? setSearch : () => {}}
-        hideToolbar={activeTab === "accounts" || rawVouchers.length === 0}
+        searchPlaceholder={activeTab === "vouchers" ? "Search vouchers..." : "Search accounts by name..."}
+        searchValue={activeTab === "vouchers" ? search : search}
+        onSearchChange={setSearch}
+        hideToolbar={activeTab === "accounts" ? rawAccounts.length === 0 : rawVouchers.length === 0}
+        onExport={activeTab === "accounts" ? handleExport : undefined}
+        onImport={activeTab === "accounts" ? handleImport : undefined}
         onResetFilters={handleResetFilters}
         activeFilterCount={activeFilterCount}
         filtersContent={

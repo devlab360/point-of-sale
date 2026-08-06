@@ -2,6 +2,7 @@ import { useState, useMemo, useEffect } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { PersistStore } from "@/lib/session-store";
 import { DataPage } from "@/components/layout/DataPage";
+import { exportToCSV, parseCSV } from "@/lib/csv";
 import { EmptyState } from "@/components/ui/empty-state";
 import { TableSkeleton } from "@/components/skeletons/TableSkeleton";
 import { ErrorState } from "@/components/ui/error-state";
@@ -61,7 +62,7 @@ import {
   Check,
 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { getUsersFn, updateUserFn, deleteUserFn, createInvitationFn } from "@/api/users";
+import { getUsersFn, updateUserFn, deleteUserFn, createInvitationFn, createUserFn } from "@/api/users";
 import { v4 as uuidv4 } from "uuid";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
@@ -257,6 +258,51 @@ function UsersPage() {
     }
   };
 
+  const handleExport = () => {
+    exportToCSV(rawUsers, [
+      { key: 'name', label: 'Name' },
+      { key: 'email', label: 'Email' },
+      { key: 'role', label: 'Role' },
+      { key: 'status', label: 'Status' }
+    ], 'users');
+  };
+
+  const handleImport = async (file: File) => {
+    try {
+      const data = await parseCSV(file);
+      if (data.length === 0) {
+        toast.error("No data found in the CSV");
+        return;
+      }
+
+      let count = 0;
+      for (const row of data) {
+        if (row['Name'] && row['Email']) {
+          await createUserFn({ 
+            data: { 
+              user: { 
+                id: uuidv4(), 
+                name: row['Name'],
+                email: row['Email'],
+                role: (row['Role'] as any) || 'cashier',
+                status: (row['Status'] as any) || 'active',
+                storeId: PersistStore.getOrgId() || "default",
+                lastLogin: '',
+                permissions: []
+              } 
+            } 
+          });
+          count++;
+        }
+      }
+      
+      queryClient.invalidateQueries({ queryKey: ["users"] });
+      toast.success(`Successfully imported ${count} users`);
+    } catch (error) {
+      toast.error("Failed to parse CSV file");
+    }
+  };
+
   const copyLink = () => {
     navigator.clipboard.writeText(generatedLink);
     setIsCopied(true);
@@ -370,10 +416,12 @@ function UsersPage() {
             setGeneratedLink("");
           },
         }}
-        searchPlaceholder="Search employees..."
+        searchPlaceholder="Search by name, email, or role..."
         searchValue={search}
         onSearchChange={setSearch}
         hideToolbar={rawUsers.length === 0}
+        onExport={handleExport}
+        onImport={handleImport}
         onResetFilters={handleResetFilters}
         activeFilterCount={activeFilterCount}
         filtersContent={({ close }) => (

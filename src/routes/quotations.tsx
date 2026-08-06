@@ -259,25 +259,19 @@ function QuotationsPage() {
       const saleRes = await createSaleFn({
         data: {
           sale: {
-            id: uuidv4(),
-            organizationId: quot.organizationId,
             customerId: quot.customerId,
             customerName: quot.customerName,
             date: new Date().toISOString(),
-            items: quot.items.reduce((acc: number, item: any) => acc + item.quantity, 0),
-            subtotal: parseFloat(quot.subtotal),
-            discountAmt: parseFloat(quot.discountAmt),
-            taxAmt: parseFloat(quot.taxAmt),
-            total: parseFloat(quot.total),
             paymentMethod: "credit",
             status: "completed",
           },
           items: quot.items.map((i: any) => ({
+            referenceType: "PRODUCT",
+            referenceId: i.productId,
             productId: i.productId,
-            productName: i.productName,
+            productName: i.productName || i.name || "Unknown Product",
             quantity: i.quantity,
-            price: parseFloat(i.price),
-            total: parseFloat(i.total),
+            price: parseFloat(i.price) || 0,
           })),
         },
       });
