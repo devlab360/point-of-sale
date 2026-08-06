@@ -264,18 +264,25 @@ export function CartPanel({ state }: { state: any }) {
         </div>
 
         <div className="space-y-0.5 md:space-y-1 rounded-lg bg-muted/40 p-1.5 md:p-2 text-xs md:text-sm border border-border/50">
-          <Row label="Subtotal" value={formatCurrency(subtotal)} />
+          <div className="flex items-center justify-between text-muted-foreground">
+            <div>
+              Subtotal: <span className="font-medium text-foreground ml-1">{formatCurrency(subtotal)}</span>
+            </div>
+            {!settings?.enableGST && (
+              <div>
+                Tax ({(taxRate * 100).toFixed(0)}%): <span className="font-medium text-foreground ml-1">{formatCurrency(taxAmt)}</span>
+              </div>
+            )}
+          </div>
           {discountAmt > 0 && (
             <Row label="Discount" value={`-${formatCurrency(discountAmt)}`} negative />
           )}
-          {settings?.enableGST ? (
+          {settings?.enableGST && (
             <>
               {totalCgst > 0 && <Row label="CGST" value={formatCurrency(totalCgst)} />}
               {totalSgst > 0 && <Row label="SGST" value={formatCurrency(totalSgst)} />}
               {totalIgst > 0 && <Row label="IGST" value={formatCurrency(totalIgst)} />}
             </>
-          ) : (
-            <Row label={`Tax (${(taxRate * 100).toFixed(0)}%)`} value={formatCurrency(taxAmt)} />
           )}
           <div className="my-1 border-t border-border/60" />
           <div className="flex items-baseline justify-between">

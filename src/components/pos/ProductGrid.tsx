@@ -28,46 +28,48 @@ export function ProductGrid({ state }: { state: any }) {
         mobileTab === "cart" ? "hidden md:flex" : "flex",
       )}
     >
-      <div className="flex flex-row gap-3 border-b border-border bg-background p-2 items-center">
-        <div className="relative flex-1">
-          <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-          <input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search products by name, SKU or barcode..."
-            className="h-9 w-full rounded-lg border border-border bg-card pl-10 pr-3 text-sm focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/20"
-          />
-        </div>
-        <div className="relative flex-1 lg:max-w-[320px]">
-          <ScanBarcode className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-primary" />
-          <input
-            placeholder="Scan barcode..."
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                const b = e.currentTarget.value;
-                if (b.length > 2) {
-                  const product = products.find((p: any) => p.barcode === b || p.sku === b);
-                  if (product) {
-                    if (product.stock <= 0) {
-                      toast.error(`${product.name} is out of stock`);
+      <div className="flex flex-col md:flex-row gap-3 border-b border-border bg-background p-2 md:items-center">
+        <div className="flex gap-2 w-full">
+          <div className="relative flex-1">
+            <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+            <input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search products by name, SKU or barcode..."
+              className="h-9 w-full rounded-lg border border-border bg-card pl-10 pr-3 text-sm focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/20"
+            />
+          </div>
+          <div className="relative flex-1 lg:max-w-[320px]">
+            <ScanBarcode className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-primary" />
+            <input
+              placeholder="Scan barcode..."
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  const b = e.currentTarget.value;
+                  if (b.length > 2) {
+                    const product = products.find((p: any) => p.barcode === b || p.sku === b);
+                    if (product) {
+                      if (product.stock <= 0) {
+                        toast.error(`${product.name} is out of stock`);
+                      } else {
+                        addToCart(product.id);
+                        toast.success(`Scanned: ${product.name}`);
+                      }
                     } else {
-                      addToCart(product.id);
-                      toast.success(`Scanned: ${product.name}`);
+                      toast.error(`Unknown barcode: ${b}`);
                     }
-                  } else {
-                    toast.error(`Unknown barcode: ${b}`);
                   }
+                  e.currentTarget.value = "";
                 }
-                e.currentTarget.value = "";
-              }
-            }}
-            className="h-9 w-full rounded-lg border border-primary/30 bg-primary/5 pl-10 pr-3 font-mono text-sm placeholder:text-primary/60 focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/20"
-          />
+              }}
+              className="h-9 w-full rounded-lg border border-primary/30 bg-primary/5 pl-10 pr-3 font-mono text-sm placeholder:text-primary/60 focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/20"
+            />
+          </div>
         </div>
-        <div className="flex items-center gap-2 hidden md:flex">
+        <div className="flex items-center gap-2 w-full md:w-auto">
           <Button
             onClick={() => state.setShowAddProduct(true)}
-            className="h-9 shrink-0 rounded-lg px-4 gap-2"
+            className="flex-1 md:flex-none h-9 shrink-0 rounded-lg px-4 gap-2"
           >
             <Plus className="size-4" />
             Product
@@ -75,7 +77,7 @@ export function ProductGrid({ state }: { state: any }) {
           <Button
             onClick={() => state.setShowAddService(true)}
             variant="outline"
-            className="h-9 shrink-0 rounded-lg px-4 gap-2 border-primary/30 text-primary hover:bg-primary/10"
+            className="flex-1 md:flex-none h-9 shrink-0 rounded-lg px-4 gap-2 border-primary/30 text-primary hover:bg-primary/10"
           >
             <Plus className="size-4" />
             Service

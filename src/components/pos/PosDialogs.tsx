@@ -420,7 +420,7 @@ export function PosDialogs({
       </Dialog>
 
       <Dialog open={showAddProduct} onOpenChange={setShowAddProduct}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className=" max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Plus className="size-5 text-primary" />
@@ -436,7 +436,6 @@ export function PosDialogs({
                 folder="products"
                 accept="image/*"
                 maxSizeMB={5}
-                className="h-28"
               />
             </div>
             <div className="space-y-2">
@@ -465,9 +464,9 @@ export function PosDialogs({
                     Generate
                   </button>
                 </div>
-                <Input 
-                  name="barcode" 
-                  placeholder="Scan or enter code" 
+                <Input
+                  name="barcode"
+                  placeholder="Scan or enter code"
                   value={newProductBarcode}
                   onChange={(e) => setNewProductBarcode(e.target.value)}
                 />
@@ -508,7 +507,7 @@ export function PosDialogs({
       </Dialog>
 
       <Dialog open={showAddService} onOpenChange={setShowAddService}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Plus className="size-5 text-primary" />
@@ -524,7 +523,6 @@ export function PosDialogs({
                 folder="services"
                 accept="image/*"
                 maxSizeMB={5}
-                className="h-28"
               />
             </div>
             <div className="space-y-2">
