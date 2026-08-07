@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useRef, useEffect } from "react";
-import { Check, ChevronsUpDown, Search, X } from "lucide-react";
+import { Check, ChevronsUpDown, Search, X, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -23,6 +23,7 @@ interface SearchableSelectProps {
   disabled?: boolean;
   clearable?: boolean;
   batchSize?: number;
+  onCreate?: (value: string) => Promise<string | void>;
 }
 
 export function SearchableSelect({
@@ -35,15 +36,18 @@ export function SearchableSelect({
   disabled = false,
   clearable = true,
   batchSize = 20,
+  onCreate,
 }: SearchableSelectProps) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [visibleCount, setVisibleCount] = useState(batchSize);
+  const [isCreating, setIsCreating] = useState(false);
+  const [createdOption, setCreatedOption] = useState<SearchableOption | null>(null);
   const listRef = useRef<HTMLDivElement>(null);
 
   const selectedOption = useMemo(
-    () => options.find((opt) => opt.value === value),
-    [options, value],
+    () => options.find((opt) => opt.value === value) || (createdOption?.value === value ? createdOption : undefined),
+    [options, value, createdOption],
   );
 
   const filteredOptions = useMemo(() => {
@@ -117,15 +121,49 @@ export function SearchableSelect({
       <PopoverContent className="w-[--radix-popover-trigger-width] p-0 shadow-elevated border border-border bg-popover text-popover-foreground z-50">
         {/* Search Input Bar */}
         <div className="flex items-center border-b border-border px-3 py-2 bg-muted/20">
-          <Search className="size-4 shrink-0 text-muted-foreground mr-2" />
+          {isCreating ? (
+            <Loader2 className="size-4 shrink-0 text-muted-foreground mr-2 animate-spin" />
+          ) : (
+            <Search className="size-4 shrink-0 text-muted-foreground mr-2" />
+          )}
           <Input
             placeholder={searchPlaceholder}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
+            onKeyDown={async (e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                if (!query.trim() || isCreating) return;
+
+                const exactMatch = options.find((opt) => opt.label.toLowerCase() === query.trim().toLowerCase());
+                if (exactMatch) {
+                  onChange(exactMatch.value);
+                  setOpen(false);
+                  return;
+                }
+
+                if (onCreate) {
+                  try {
+                    setIsCreating(true);
+                    const newValue = await onCreate(query.trim());
+                    if (newValue) {
+                      setCreatedOption({ value: newValue, label: query.trim() });
+                      onChange(newValue);
+                      setOpen(false);
+                    }
+                  } catch (error) {
+                    console.error("Failed to create option", error);
+                  } finally {
+                    setIsCreating(false);
+                  }
+                }
+              }
+            }}
             className="h-8 border-none bg-transparent p-0 text-xs focus-visible:ring-0 shadow-none"
             autoFocus
+            disabled={isCreating}
           />
-          {query && (
+          {query && !isCreating && (
             <Button
               variant="ghost"
               size="icon"
@@ -145,7 +183,7 @@ export function SearchableSelect({
         >
           {visibleOptions.length === 0 ? (
             <div className="py-6 text-center text-xs text-muted-foreground">
-              No matching options found.
+              {query && onCreate ? "" : "No matching options found."}
             </div>
           ) : (
             visibleOptions.map((option) => {
@@ -186,6 +224,31 @@ export function SearchableSelect({
           {visibleCount < filteredOptions.length && (
             <div className="py-2 text-center text-[10px] text-muted-foreground font-mono">
               Loading more options ({visibleCount} of {filteredOptions.length})...
+            </div>
+          )}
+
+          {query.trim() && onCreate && !options.some(opt => opt.label.toLowerCase() === query.trim().toLowerCase()) && (
+            <div 
+              className={cn("px-2.5 py-2 text-xs border-t border-border flex items-center justify-between text-muted-foreground cursor-pointer hover:bg-muted/60 transition-colors mt-1", isCreating && "opacity-50 pointer-events-none")}
+              onClick={async () => {
+                if (isCreating) return;
+                try {
+                  setIsCreating(true);
+                  const newValue = await onCreate(query.trim());
+                  if (newValue) {
+                    setCreatedOption({ value: newValue, label: query.trim() });
+                    onChange(newValue);
+                    setOpen(false);
+                  }
+                } catch (error) {
+                  console.error(error);
+                } finally {
+                  setIsCreating(false);
+                }
+              }}
+            >
+              <span>Create "{query.trim()}"</span>
+              {isCreating ? <Loader2 className="size-3.5 animate-spin" /> : <kbd className="text-[10px] bg-background border px-1.5 py-0.5 rounded-md font-sans">Enter</kbd>}
             </div>
           )}
         </div>

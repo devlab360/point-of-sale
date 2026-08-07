@@ -56,7 +56,7 @@ import {
   updateServiceItemFn,
   deleteServiceItemFn,
 } from "@/api/services";
-import { getCategoriesFn } from "@/api/categories";
+import { getCategoriesFn, createCategoryFn } from "@/api/categories";
 
 export const Route = createFileRoute("/services")({
   head: () => ({
@@ -188,8 +188,20 @@ function ServicesPage() {
       setShowDelete(false);
       setActiveItem(null);
     },
-    onError: () => toast.error("Failed to delete service"),
     onSettled: () => setIsSubmitting(false),
+  });
+
+  const createCategoryMutation = useMutation({
+    mutationFn: async (name: string) => await createCategoryFn({ data: { category: { name } } }),
+    onSuccess: (res) => {
+      if (res?.success) {
+        queryClient.invalidateQueries({ queryKey: ["categories"] });
+        toast.success("Category created successfully");
+      } else {
+        toast.error("Failed to create category");
+      }
+    },
+    onError: () => toast.error("Failed to create category"),
   });
 
   const handleSave = () => {
@@ -238,22 +250,22 @@ function ServicesPage() {
       let count = 0;
       for (const row of data) {
         if (row['Name'] && row['Price']) {
-          await createServiceItemFn({ 
-            data: { 
-                id: uuidv4(), 
-                name: row['Name'],
-                sku: row['SKU'] || `SRV-${Math.floor(Math.random() * 100000)}`,
-                category: categories.find((c: any) => c.name.toLowerCase() === (row['Category'] || '').toLowerCase())?.id || categories[0]?.id || 'General',
-                price: parseFloat(row['Price'] || '0'),
-                duration: parseInt(row['Duration (min)'] || '30'),
-                description: '',
-                status: 'active'
-            } 
+          await createServiceItemFn({
+            data: {
+              id: uuidv4(),
+              name: row['Name'],
+              sku: row['SKU'] || `SRV-${Math.floor(Math.random() * 100000)}`,
+              category: categories.find((c: any) => c.name.toLowerCase() === (row['Category'] || '').toLowerCase())?.id || categories[0]?.id || 'General',
+              price: parseFloat(row['Price'] || '0'),
+              duration: parseInt(row['Duration (min)'] || '30'),
+              description: '',
+              status: 'active'
+            }
           });
           count++;
         }
       }
-      
+
       queryClient.invalidateQueries({ queryKey: ["services"] });
       toast.success(`Successfully imported ${count} services`);
     } catch (error) {
@@ -518,6 +530,10 @@ function ServicesPage() {
                   onChange={setCategoryId}
                   options={categories.map((c: any) => ({ value: c.id, label: c.name }))}
                   placeholder="Select category..."
+                  onCreate={async (name) => {
+                    const res = await createCategoryMutation.mutateAsync(name);
+                    return res?.data?.id;
+                  }}
                 />
               </div>
 

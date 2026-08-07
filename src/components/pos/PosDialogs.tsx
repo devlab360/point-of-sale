@@ -41,6 +41,9 @@ import {
   Loader2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+// Use queryClient from state
+import { createCategoryFn } from "@/api/categories";
+import { createBrandFn } from "@/api/brands";
 import { v4 as uuidv4 } from "uuid";
 import { createCustomerFn } from "@/api/customers";
 import { createProductFn } from "@/api/products";
@@ -481,6 +484,13 @@ export function PosDialogs({
                   onChange={setNewProductCategory}
                   options={categories.map((c: any) => ({ value: c.id, label: c.name }))}
                   placeholder="Select Category"
+                  onCreate={async (name) => {
+                    const res = await createCategoryFn({ data: { category: { name } } });
+                    if (res?.success) {
+                      queryClient.invalidateQueries({ queryKey: ["categories"] });
+                      return res.data?.id;
+                    }
+                  }}
                 />
               </div>
               <div className="space-y-2">
@@ -491,6 +501,13 @@ export function PosDialogs({
                   onChange={setNewProductBrand}
                   options={brands.map((b: any) => ({ value: b.id, label: b.name }))}
                   placeholder="Select Brand"
+                  onCreate={async (name) => {
+                    const res = await createBrandFn({ data: { brand: { name } } });
+                    if (res?.success) {
+                      queryClient.invalidateQueries({ queryKey: ["brands"] });
+                      return res.data?.id;
+                    }
+                  }}
                 />
               </div>
             </div>
@@ -547,6 +564,13 @@ export function PosDialogs({
                 onChange={setNewServiceCategory}
                 options={categories.map((c: any) => ({ value: c.id, label: c.name }))}
                 placeholder="Select Category"
+                onCreate={async (name) => {
+                  const res = await createCategoryFn({ data: { category: { name } } });
+                  if (res?.success) {
+                    queryClient.invalidateQueries({ queryKey: ["categories"] });
+                    return res.data?.id;
+                  }
+                }}
               />
             </div>
             <DialogFooter>

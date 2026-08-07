@@ -68,9 +68,9 @@ import { useFormValidation } from "@/hooks/useFormValidation";
 import { FieldError } from "@/components/ui/field-error";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getProductsFn, createProductFn, updateProductFn, deleteProductFn } from "@/api/products";
-import { getCategoriesFn } from "@/api/categories";
-import { getBrandsFn } from "@/api/brands";
-import { getUnitsFn } from "@/api/units";
+import { getCategoriesFn, createCategoryFn } from "@/api/categories";
+import { getBrandsFn, createBrandFn } from "@/api/brands";
+import { getUnitsFn, createUnitFn } from "@/api/units";
 import { getSettingsFn } from "@/api/settings";
 
 export const Route = createFileRoute("/products")({
@@ -709,6 +709,13 @@ function ProductsPage() {
                   value={formData.category}
                   onChange={(val) => setFormData({ ...formData, category: val })}
                   placeholder={t("selectCategory") || "Select category..."}
+                  onCreate={async (name) => {
+                    const res = await createCategoryFn({ data: { category: { name } } });
+                    if (res?.success) {
+                      queryClient.invalidateQueries({ queryKey: ["categories"] });
+                      return res.data?.id;
+                    }
+                  }}
                 />
               </div>
               <div className="space-y-1.5">
@@ -718,6 +725,13 @@ function ProductsPage() {
                   value={formData.brand}
                   onChange={(val) => setFormData({ ...formData, brand: val })}
                   placeholder={t("selectBrand") || "Select brand..."}
+                  onCreate={async (name) => {
+                    const res = await createBrandFn({ data: { brand: { name } } });
+                    if (res?.success) {
+                      queryClient.invalidateQueries({ queryKey: ["brands"] });
+                      return res.data?.id;
+                    }
+                  }}
                 />
               </div>
               <div className="space-y-1.5">
@@ -727,6 +741,13 @@ function ProductsPage() {
                   value={formData.unit}
                   onChange={(val) => setFormData({ ...formData, unit: val })}
                   placeholder={t("selectUnit") || "Select unit..."}
+                  onCreate={async (name) => {
+                    const res = await createUnitFn({ data: { unit: { name, shortName: name } } });
+                    if (res?.success) {
+                      queryClient.invalidateQueries({ queryKey: ["units"] });
+                      return res.data?.id;
+                    }
+                  }}
                 />
               </div>
               <div className="grid gap-1.5">

@@ -32,7 +32,7 @@ import {
   updateQuotationFn,
   deleteQuotationFn,
 } from "@/api/quotations";
-import { getCustomersFn } from "@/api/customers";
+import { getCustomersFn, createCustomerFn } from "@/api/customers";
 import { getProductsFn, updateProductFn } from "@/api/products";
 import { createSaleFn } from "@/api/sales";
 import { useCurrency } from "@/lib/currency";
@@ -491,6 +491,13 @@ function QuotationsPage() {
                       clearQuotError("selectedCustomerId");
                     }}
                     placeholder="Search customer..."
+                    onCreate={async (name) => {
+                      const res = await createCustomerFn({ data: { customer: { name } } });
+                      if (res?.success) {
+                        queryClient.invalidateQueries({ queryKey: ["customers"] });
+                        return res.data?.id;
+                      }
+                    }}
                   />
                 </div>
                 <FieldError message={quotErrors.selectedCustomerId} />

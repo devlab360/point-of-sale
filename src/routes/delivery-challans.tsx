@@ -30,7 +30,7 @@ import {
   updateDeliveryChallanStatusFn,
   deleteDeliveryChallanFn,
 } from "@/api/delivery-challans";
-import { getCustomersFn } from "@/api/customers";
+import { getCustomersFn, createCustomerFn } from "@/api/customers";
 import { getProductsFn, updateProductFn } from "@/api/products";
 import { getUnitsFn } from "@/api/units";
 import { createSaleFn } from "@/api/sales";
@@ -527,6 +527,13 @@ function DeliveryChallansPage() {
                     clearChError("selectedCustomerId");
                   }}
                   placeholder="Select a customer..."
+                  onCreate={async (name) => {
+                    const res = await createCustomerFn({ data: { customer: { name } } });
+                    if (res?.success) {
+                      queryClient.invalidateQueries({ queryKey: ["customers"] });
+                      return res.data?.id;
+                    }
+                  }}
                 />
               </div>
               <FieldError message={chErrors.selectedCustomerId} />
