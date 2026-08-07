@@ -6,6 +6,13 @@ import { DayButton, DayPicker, getDefaultClassNames } from "react-day-picker";
 
 import { cn } from "@/lib/utils";
 import { Button, buttonVariants } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 function Calendar({
   className,
@@ -127,6 +134,34 @@ function Calendar({
                 {children}
               </div>
             </td>
+          );
+        },
+        Dropdown: ({ value, onChange, options, ...props }: any) => {
+          const selected = options?.find((child: any) => child.value === value);
+          const handleChange = (val: string) => {
+            const changeEvent = {
+              target: { value: val },
+            } as React.ChangeEvent<HTMLSelectElement>;
+            onChange?.(changeEvent);
+          };
+          return (
+            <Select
+              value={value?.toString()}
+              onValueChange={(val) => {
+                handleChange(val);
+              }}
+            >
+              <SelectTrigger className="h-8 w-fit gap-1 pr-1.5 focus:ring-0 border-none bg-transparent hover:bg-muted font-medium shadow-none">
+                <SelectValue>{selected?.label}</SelectValue>
+              </SelectTrigger>
+              <SelectContent position="popper" className="max-h-[200px]">
+                {options?.map((option: any, id: number) => (
+                  <SelectItem key={`${option.value}-${id}`} value={option.value?.toString() ?? ""}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           );
         },
         ...components,

@@ -11,6 +11,7 @@ import { CartPanel } from "@/components/pos/CartPanel";
 import { PosDialogs } from "@/components/pos/PosDialogs";
 import { PosPrintLayouts } from "@/components/pos/PosPrintLayouts";
 import { sendAutomatedReceipt } from "@/lib/automation/receipt-bot";
+import { numberToWords } from "@/lib/number-to-words";
 import { sendAutomatedLowStockAlert } from "@/lib/automation/inventory-bot";
 
 import { POSSkeleton } from "@/components/skeletons/POSSkeleton";
@@ -323,7 +324,12 @@ function PosScreen() {
         storePhone: state.settings?.phone,
         receiptHeader: state.settings?.headerNote,
         receiptFooter: state.settings?.footerNote,
+        receiptDeclaration: state.settings?.receiptDeclaration,
+        bankDetails: state.settings?.bankDetails,
+        upiId: state.settings?.upiId,
         customer: activeCustomer.name,
+        customerObj: activeCustomer,
+        amountInWords: numberToWords(total),
         date: state.formatDateTime(new Date()),
         lines,
         subtotal,

@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Check,
   Trash2,
@@ -41,6 +42,8 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
+import { PosPrintLayouts } from "@/components/pos/PosPrintLayouts";
+import { numberToWords } from "@/lib/number-to-words";
 import { Input, PasswordInput } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { CURRENCY_OPTIONS } from "@/lib/currency";
@@ -53,6 +56,11 @@ import { FileUpload } from "@/components/ui/file-upload";
 import { useFormValidation } from "@/hooks/useFormValidation";
 import { FieldError } from "@/components/ui/field-error";
 import { PhoneInput } from "@/components/ui/phone-input";
+import {
+  ResizablePanelGroup,
+  ResizablePanel,
+  ResizableHandle,
+} from "@/components/ui/resizable";
 
 export const Route = createFileRoute("/settings")({
   head: () => ({ meta: [{ title: "Settings · NexisPOS" }] }),
@@ -79,14 +87,22 @@ const defaultSettings: any = {
   showTaxBreakdown: true,
   headerNote: "",
   footerNote: "",
+  receiptDeclaration: "",
   emailReceiptDefault: true,
   printStoreLogo: true,
+  enableGST: false,
+  gstin: "",
+  stateCode: "",
+  businessType: "",
+  bankDetails: "",
+  upiId: "",
 };
 
 function SettingsPage() {
   const { user, isTrialExpired, subscriptionStatus, saasOrg, saasPlan } = useAuth();
   const orgId = user?.organizationId || "default";
   const queryClient = useQueryClient();
+  const [previewFormat, setPreviewFormat] = useState<"thermal" | "a4">("thermal");
 
   const {
     data: dbSettingsData,
@@ -132,8 +148,8 @@ function SettingsPage() {
       // Payment proof handled here
       toast.success(
         "Payment proof submitted successfully! Super Admin will verify UTR: " +
-          paymentForm.utrNumber +
-          " and activate your subscription within 2-4 hours.",
+        paymentForm.utrNumber +
+        " and activate your subscription within 2-4 hours.",
       );
       setSelectedPlanForUpgrade(null);
       setPaymentForm({ utrNumber: "", paymentMethod: "UPI / QR Scan", note: "" });
@@ -200,8 +216,20 @@ function SettingsPage() {
               logoUrl: settings.logoUrl,
               headerNote: settings.headerNote,
               footerNote: settings.footerNote,
+              receiptDeclaration: settings.receiptDeclaration,
+              bankDetails: settings.bankDetails,
+              upiId: settings.upiId,
               emailReceiptDefault: settings.emailReceiptDefault,
               printStoreLogo: settings.printStoreLogo,
+              signatureUrl: settings.signatureUrl,
+              standardRate: settings.standardRate?.toString() || "0",
+              reducedRate: settings.reducedRate?.toString() || "0",
+              pricesIncludeTax: settings.pricesIncludeTax,
+              showTaxBreakdown: settings.showTaxBreakdown,
+              enableGST: settings.enableGST,
+              gstin: settings.gstin,
+              stateCode: settings.stateCode,
+              businessType: settings.businessType,
             },
           },
         });
@@ -354,9 +382,23 @@ function SettingsPage() {
       </div>
     );
   }
+  const parseBankDetails = (str: string) => {
+    try {
+      if (str && str.trim().startsWith('{')) return JSON.parse(str);
+    } catch (e) { }
+    return { bankName: str || '', holderName: '', accountNo: '', ifscCode: '' };
+  };
+  const bankInfo = parseBankDetails(settings.bankDetails || "");
+  const handleBankChange = (field: string, val: string) => {
+    const updated = { ...bankInfo, [field]: val };
+    handleChange("bankDetails", JSON.stringify(updated));
+  };
 
   return (
-    <div className="p-4 md:p-6 lg:p-8">
+    <div className="mx-auto container p-4 sm:p-6 pb-20 w-full animate-in fade-in slide-in-from-bottom-2 duration-300 relative">
+      {/* <div className="absolute inset-0 -z-10 bg-[linear-gradient(to_right,#f0f0f0_1px,transparent_1px),linear-gradient(to_bottom,#f0f0f0_1px,transparent_1px)] bg-[size:6rem_4rem] [mask-image:radial-gradient(ellipse_80%_50%_at_50%_0%,#000_70%,transparent_110%)] opacity-30" />
+      <div className="absolute inset-0 -z-10 bg-gradient-to-tr from-primary/5 via-transparent to-primary/5 opacity-50 blur-3xl pointer-events-none" /> */}
+
       {/* {isTrialExpired && (
         <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-6 text-center max-w-xl mx-auto">
           <h3 className="font-bold text-lg">Trial Expired</h3>
@@ -367,22 +409,52 @@ function SettingsPage() {
         </div>
       )} */}
       <PageHeader title="Settings" description="Configure your store, taxes, printer and locale." />
-
       <Tabs
         value={activeTab}
         onValueChange={setActiveTab}
-        className="mt-6 flex flex-col lg:flex-row gap-6"
+        orientation="horizontal"
+        className="flex flex-col gap-6 w-full"
       >
-        <TabsList className="flex flex-col h-auto w-full lg:w-[220px] items-stretch justify-start bg-transparent p-0 space-y-1">
-          {sections.map((s) => (
-            <TabsTrigger
-              key={s.id}
-              value={s.id}
-              className="justify-start px-3 py-2 text-sm font-medium data-[state=active]:bg-muted data-[state=active]:shadow-none data-[state=active]:text-foreground text-muted-foreground hover:bg-muted/60 hover:text-foreground border border-transparent data-[state=active]:border-border"
-            >
-              {s.label}
-            </TabsTrigger>
-          ))}
+        <TabsList className="flex flex-row overflow-x-auto h-auto w-full bg-transparent space-x-2 space-y-0 p-0 justify-start items-center border-b border-border pb-3 scrollbar-hide">
+          <TabsTrigger
+            value="store"
+            className="shrink-0 justify-start rounded-lg px-4 py-2.5 text-sm font-medium data-[state=active]:bg-muted data-[state=active]:text-foreground text-muted-foreground hover:bg-muted/50"
+          >
+            Store Information
+          </TabsTrigger>
+          <TabsTrigger
+            value="security"
+            className="shrink-0 justify-start rounded-lg px-4 py-2.5 text-sm font-medium data-[state=active]:bg-muted data-[state=active]:text-foreground text-muted-foreground hover:bg-muted/50"
+          >
+            Security & Password
+          </TabsTrigger>
+          <TabsTrigger
+            value="billing"
+            className="shrink-0 justify-start rounded-lg px-4 py-2.5 text-sm font-medium data-[state=active]:bg-muted data-[state=active]:text-foreground text-muted-foreground hover:bg-muted/50 relative"
+          >
+            Billing
+            {isTrialExpired && subscriptionStatus !== "active" && (
+              <span className="absolute top-1 right-1 size-2 rounded-full bg-destructive animate-pulse" />
+            )}
+          </TabsTrigger>
+          <TabsTrigger
+            value="tax"
+            className="shrink-0 justify-start rounded-lg px-4 py-2.5 text-sm font-medium data-[state=active]:bg-muted data-[state=active]:text-foreground text-muted-foreground hover:bg-muted/50"
+          >
+            Taxes
+          </TabsTrigger>
+          <TabsTrigger
+            value="receipt"
+            className="shrink-0 justify-start rounded-lg px-4 py-2.5 text-sm font-medium data-[state=active]:bg-muted data-[state=active]:text-foreground text-muted-foreground hover:bg-muted/50"
+          >
+            Receipts
+          </TabsTrigger>
+          <TabsTrigger
+            value="data"
+            className="shrink-0 justify-start rounded-lg px-4 py-2.5 text-sm font-medium data-[state=active]:bg-muted data-[state=active]:text-foreground text-muted-foreground hover:bg-muted/50"
+          >
+            Data Management
+          </TabsTrigger>
         </TabsList>
 
         <div className="flex-1 space-y-6">
@@ -851,36 +923,180 @@ function SettingsPage() {
           </TabsContent>
 
           <TabsContent value="receipt" className="mt-0 outline-none">
-            <Card title="Receipt" desc="Customise the printed and emailed receipts.">
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <Field label="Header note">
-                  <input
-                    className="inp"
-                    value={settings.headerNote}
-                    onChange={(e) => handleChange("headerNote", e.target.value)}
-                  />
-                </Field>
-                <Field label="Footer note">
-                  <input
-                    className="inp"
-                    value={settings.footerNote}
-                    onChange={(e) => handleChange("footerNote", e.target.value)}
-                  />
-                </Field>
-                <ToggleRow
-                  label="Email receipt by default"
-                  on={settings.emailReceiptDefault}
-                  onChange={() =>
-                    handleChange("emailReceiptDefault", !settings.emailReceiptDefault)
-                  }
-                />
-                <ToggleRow
-                  label="Print store logo"
-                  on={settings.printStoreLogo}
-                  onChange={() => handleChange("printStoreLogo", !settings.printStoreLogo)}
-                />
-              </div>
-            </Card>
+            <ResizablePanelGroup direction="horizontal" className="items-stretch w-full gap-4">
+              <ResizablePanel defaultSize={55} minSize={30}>
+                <div className="h-full pr-1">
+                  <Card title="Receipt Configuration" desc="Customise the printed and emailed receipts.">
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                      <Field label="Header note">
+                        <input
+                          className="inp"
+                          value={settings.headerNote}
+                          onChange={(e) => handleChange("headerNote", e.target.value)}
+                        />
+                      </Field>
+                      <Field label="Footer note">
+                        <input
+                          className="inp"
+                          value={settings.footerNote}
+                          onChange={(e) => handleChange("footerNote", e.target.value)}
+                        />
+                      </Field>
+                      <div className="sm:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4 border p-4 rounded-xl bg-card/50">
+                        <h3 className="sm:col-span-2 text-sm font-semibold text-foreground border-b pb-2 mb-2">Bank Details (For NEFT/IMPS)</h3>
+                        <Field label="Bank Name">
+                          <input
+                            className="inp"
+                            placeholder="e.g., SBI"
+                            value={bankInfo.bankName}
+                            onChange={(e) => handleBankChange("bankName", e.target.value)}
+                          />
+                        </Field>
+                        <Field label="Account Holder Name">
+                          <input
+                            className="inp"
+                            placeholder="e.g., Samim Aktar"
+                            value={bankInfo.holderName}
+                            onChange={(e) => handleBankChange("holderName", e.target.value)}
+                          />
+                        </Field>
+                        <Field label="Account Number">
+                          <input
+                            className="inp"
+                            placeholder="e.g., 1234567890"
+                            value={bankInfo.accountNo}
+                            onChange={(e) => handleBankChange("accountNo", e.target.value)}
+                          />
+                        </Field>
+                        <Field label="IFSC Code">
+                          <input
+                            className="inp"
+                            placeholder="e.g., SBIN000123"
+                            value={bankInfo.ifscCode}
+                            onChange={(e) => handleBankChange("ifscCode", e.target.value)}
+                          />
+                        </Field>
+                      </div>
+                      <Field label="UPI ID (For QR Code)">
+                        <input
+                          className="inp"
+                          placeholder="e.g., store@upi"
+                          value={settings.upiId || ""}
+                          onChange={(e) => handleChange("upiId", e.target.value)}
+                        />
+                      </Field>
+                      <Field label="Declaration">
+                        <Textarea
+                          className="min-h-[80px]"
+                          value={settings.receiptDeclaration || ""}
+                          onChange={(e) => handleChange("receiptDeclaration", e.target.value)}
+                        />
+                      </Field>
+                      <div className="sm:col-span-2 mt-2">
+                        <FileUpload
+                          label="Authentication Signature (For Receipt)"
+                          description="Upload a signature image (transparent PNG recommended) to display on printed receipts in place of the default 'Authorized Signatory' text."
+                          value={settings.signatureUrl || ""}
+                          onChange={(url) => handleChange("signatureUrl", url)}
+                          folder="signatures"
+                          maxSizeMB={2}
+                        />
+                      </div>
+                      <ToggleRow
+                        label="Email receipt by default"
+                        on={settings.emailReceiptDefault}
+                        onChange={() =>
+                          handleChange("emailReceiptDefault", !settings.emailReceiptDefault)
+                        }
+                      />
+                      <ToggleRow
+                        label="Print store logo"
+                        on={settings.printStoreLogo}
+                        onChange={() => handleChange("printStoreLogo", !settings.printStoreLogo)}
+                      />
+                    </div>
+                  </Card>
+                </div>
+              </ResizablePanel>
+
+              <ResizableHandle withHandle />
+
+              <ResizablePanel defaultSize={45} minSize={30}>
+                <div className="h-full pl-1">
+                  <Card
+                    title="Live Preview"
+                    desc={previewFormat === "thermal" ? "Thermal Receipt (80mm)" : "A4 Invoice"}
+                    headerRight={
+                      <div className="flex bg-muted rounded-md p-1 border">
+                        <button
+                          type="button"
+                          onClick={() => setPreviewFormat("thermal")}
+                          className={`px-3 py-1.5 text-xs font-semibold rounded-sm transition-colors ${previewFormat === "thermal" ? "bg-background shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"}`}
+                        >
+                          Thermal
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setPreviewFormat("a4")}
+                          className={`px-3 py-1.5 text-xs font-semibold rounded-sm transition-colors ${previewFormat === "a4" ? "bg-background shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"}`}
+                        >
+                          A4
+                        </button>
+                      </div>
+                    }
+                  >
+                    <div className={`bg-gray-100 rounded-lg overflow-auto flex justify-center py-8 min-h-[600px] border relative ${previewFormat === 'a4' ? 'px-8' : ''}`}>
+                      <PosPrintLayouts
+                        preview={true}
+                        state={{
+                          printFormat: previewFormat,
+                          settings: { ...settings },
+                          printData: {
+                            id: "INV-12345",
+                            date: new Date().toLocaleString(),
+                            storeName: settings.storeName || "My Store",
+                            storeAddress: settings.address || "123 Store Street",
+                            storePhone: settings.phone || "123-456-7890",
+                            customer: "Walk-in Customer",
+                            payment: "Cash",
+                            lines: [
+                              {
+                                product: { name: "Sample Item 1" },
+                                qty: 2,
+                                unitPrice: 15.0,
+                                total: 30.0,
+                              },
+                              {
+                                product: { name: "Sample Item 2" },
+                                qty: 1,
+                                unitPrice: 20.0,
+                                total: 20.0,
+                              },
+                            ],
+                            subtotal: 50.0,
+                            discountAmt: 5.0,
+                            taxAmt: 2.5,
+                            cgstAmt: 1.25,
+                            sgstAmt: 1.25,
+                            igstAmt: 0,
+                            total: 47.5,
+                            cashTendered: 50.0,
+                            changeDue: 2.5,
+                            receiptHeader: settings.headerNote,
+                            receiptFooter: settings.footerNote,
+                            receiptDeclaration: settings.receiptDeclaration,
+                            bankDetails: settings.bankDetails,
+                            upiId: settings.upiId,
+                            amountInWords: numberToWords(47.5),
+                            signatureUrl: settings.signatureUrl,
+                          },
+                        }}
+                      />
+                    </div>
+                  </Card>
+                </div>
+              </ResizablePanel>
+            </ResizablePanelGroup>
           </TabsContent>
 
           <TabsContent value="data" className="mt-0 outline-none">
@@ -1066,11 +1282,10 @@ function SettingsPage() {
                       <div
                         key={method.id}
                         onClick={() => setPaymentForm({ ...paymentForm, paymentMethod: method.id })}
-                        className={`cursor-pointer rounded-xl border p-3 flex flex-col items-center justify-center text-center transition-all duration-200 select-none ${
-                          isSelected
-                            ? "border-primary bg-primary/10 shadow-sm ring-2 ring-primary/20 text-primary font-medium"
-                            : "border-border bg-card hover:bg-muted/50 text-foreground"
-                        }`}
+                        className={`cursor-pointer rounded-xl border p-3 flex flex-col items-center justify-center text-center transition-all duration-200 select-none ${isSelected
+                          ? "border-primary bg-primary/10 shadow-sm ring-2 ring-primary/20 text-primary font-medium"
+                          : "border-border bg-card hover:bg-muted/50 text-foreground"
+                          }`}
                       >
                         <Icon
                           className={`size-5 mb-1.5 ${isSelected ? "text-primary" : "text-muted-foreground"}`}
@@ -1171,19 +1386,24 @@ function SettingsPage() {
 function Card({
   title,
   desc,
+  headerRight,
   children,
 }: {
   title: string;
   desc: string;
+  headerRight?: React.ReactNode;
   children: React.ReactNode;
 }) {
   return (
-    <section className="rounded-xl border border-border bg-card p-5 shadow-soft">
-      <header className="mb-4 border-b border-border pb-3">
-        <h2 className="text-base font-semibold">{title}</h2>
-        <p className="text-xs text-muted-foreground">{desc}</p>
+    <section className="rounded-xl border border-border bg-card p-5 shadow-soft flex flex-col h-full">
+      <header className="mb-4 border-b border-border pb-3 flex justify-between items-start gap-4">
+        <div>
+          <h2 className="text-base font-semibold">{title}</h2>
+          <p className="text-xs text-muted-foreground">{desc}</p>
+        </div>
+        {headerRight && <div>{headerRight}</div>}
       </header>
-      {children}
+      <div className="flex-1">{children}</div>
     </section>
   );
 }

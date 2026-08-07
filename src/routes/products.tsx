@@ -321,9 +321,9 @@ function ProductsPage() {
     // Parse serials
     const serialsList = formData.hasSerial
       ? formData.serialsInput
-          .split(/[\n,]+/)
-          .map((s) => s.trim())
-          .filter(Boolean)
+        .split(/[\n,]+/)
+        .map((s) => s.trim())
+        .filter(Boolean)
       : [];
 
     const computedStock =
@@ -332,12 +332,12 @@ function ProductsPage() {
     const batchesList =
       formData.hasBatch && formData.batchNoInput
         ? [
-            {
-              batchNo: formData.batchNoInput,
-              expiryDate: formData.batchExpiryInput,
-              stock: formData.batchStockInput || computedStock,
-            },
-          ]
+          {
+            batchNo: formData.batchNoInput,
+            expiryDate: formData.batchExpiryInput,
+            stock: formData.batchStockInput || computedStock,
+          },
+        ]
         : [];
 
     const payload = {
@@ -435,10 +435,10 @@ function ProductsPage() {
       let count = 0;
       for (const row of data) {
         if (row['Name'] && row['Price']) {
-          await createProductFn({ 
-            data: { 
-              product: { 
-                id: uuidv4(), 
+          await createProductFn({
+            data: {
+              product: {
+                id: uuidv4(),
                 name: row['Name'],
                 sku: row['SKU'] || `SKU-${Math.floor(Math.random() * 100000)}`,
                 barcode: row['Barcode'] || '',
@@ -451,13 +451,13 @@ function ProductsPage() {
                 type: 'standard',
                 unit: 'pcs',
                 status: 'active'
-              } 
-            } 
+              }
+            }
           });
           count++;
         }
       }
-      
+
       queryClient.invalidateQueries({ queryKey: ["products"] });
       toast.success(`Successfully imported ${count} products`);
     } catch (error) {

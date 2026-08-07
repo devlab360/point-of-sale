@@ -130,6 +130,7 @@ function ServicesPage() {
   const [price, setPrice] = useState("");
   const [cost, setCost] = useState("");
   const [duration, setDuration] = useState("");
+  const [durationUnit, setDurationUnit] = useState("mins");
   const [image, setImage] = useState("");
   const [status, setStatus] = useState("active");
 
@@ -139,6 +140,7 @@ function ServicesPage() {
     setPrice("");
     setCost("");
     setDuration("");
+    setDurationUnit("mins");
     setImage("");
     setStatus("active");
     setActiveItem(null);
@@ -150,7 +152,17 @@ function ServicesPage() {
     setCategoryId(item.category || "");
     setPrice(item.price || "");
     setCost(item.cost || "");
-    setDuration(item.duration ? String(item.duration) : "");
+    const d = item.duration || 0;
+    if (d > 0 && d % 1440 === 0) {
+      setDurationUnit("days");
+      setDuration(String(d / 1440));
+    } else if (d > 0 && d % 60 === 0) {
+      setDurationUnit("hours");
+      setDuration(String(d / 60));
+    } else {
+      setDurationUnit("mins");
+      setDuration(d ? String(d) : "");
+    }
     setImage(item.image || "");
     setStatus(item.status || "active");
     setShowEdit(true);
@@ -206,14 +218,23 @@ function ServicesPage() {
 
   const handleSave = () => {
     if (!name.trim()) return toast.error("Name is required");
-    setIsSubmitting(true);
+    if (!price || parseFloat(price) < 0) {
+      toast.error("Valid price is required");
+      return;
+    }
 
+    const rawDuration = parseFloat(duration) || 0;
+    let durationMins = rawDuration;
+    if (durationUnit === "hours") durationMins = rawDuration * 60;
+    if (durationUnit === "days") durationMins = rawDuration * 1440;
+
+    setIsSubmitting(true);
     const payload = {
       name,
       category: categoryId,
       price,
       cost,
-      duration,
+      duration: durationMins > 0 ? durationMins.toString() : "",
       image,
       status,
     };
@@ -563,14 +584,28 @@ function ServicesPage() {
               </div>
 
               <div className="grid grid-cols-2 gap-4">
-                <div className="grid gap-2">
-                  <Label>Duration (Minutes)</Label>
-                  <Input
-                    type="number"
-                    value={duration}
-                    onChange={(e) => setDuration(e.target.value)}
-                    placeholder="e.g. 30"
-                  />
+                <div className="space-y-2">
+                  <Label>Duration</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      type="number"
+                      min="0"
+                      placeholder="e.g. 30"
+                      value={duration}
+                      onChange={(e) => setDuration(e.target.value)}
+                      className="flex-1"
+                    />
+                    <Select value={durationUnit} onValueChange={setDurationUnit}>
+                      <SelectTrigger className="w-[120px]">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="mins">Minutes</SelectItem>
+                        <SelectItem value="hours">Hours</SelectItem>
+                        <SelectItem value="days">Days</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
                 <div className="grid gap-2">
                   <Label>Status</Label>

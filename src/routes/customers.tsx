@@ -164,8 +164,11 @@ function CustomersPage() {
     await new Promise((resolve) => setTimeout(resolve, 500));
     try {
       const name = (formData.get("name") as string)?.trim();
-      const email = (formData.get("email") as string)?.trim();
-      const phone = (formData.get("phone") as string)?.trim();
+      const email = (formData.get("email") as string)?.trim() || null;
+      const phone = (formData.get("phone") as string)?.trim() || null;
+      const address = (formData.get("address") as string)?.trim() || null;
+      const city = (formData.get("city") as string)?.trim() || null;
+      const zipCode = (formData.get("zipCode") as string)?.trim() || null;
       const statuses = formData.getAll("status");
       const status = (
         statuses.length > 0 ? statuses[statuses.length - 1] : editItem?.status || "active"
@@ -185,7 +188,7 @@ function CustomersPage() {
         const res = await updateCustomerFn({
           data: {
             id: editItem.id,
-            updates: { name, email, phone, status, type, creditLimit },
+            updates: { name, email, phone, address, city, zipCode, status, type, creditLimit },
           },
         });
         if (res?.success) {
@@ -200,6 +203,9 @@ function CustomersPage() {
               name,
               email,
               phone,
+              address,
+              city,
+              zipCode,
               status,
               type,
               creditLimit,
@@ -625,6 +631,35 @@ function CustomersPage() {
                   onChange={() => clearCustError("phone")}
                 />
                 <FieldError message={custErrors.phone} />
+              </div>
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="address">Address</Label>
+              <Input
+                id="address"
+                name="address"
+                placeholder="e.g. 123 Main St"
+                defaultValue={editItem?.address || ""}
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <Label htmlFor="city">City</Label>
+                <Input
+                  id="city"
+                  name="city"
+                  placeholder="e.g. New York"
+                  defaultValue={editItem?.city || ""}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="zipCode">Zip / Postal Code</Label>
+                <Input
+                  id="zipCode"
+                  name="zipCode"
+                  placeholder="e.g. 10001"
+                  defaultValue={editItem?.zipCode || ""}
+                />
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4">

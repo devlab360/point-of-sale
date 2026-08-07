@@ -30,30 +30,41 @@ export function handleApiError(
     if (e.message === "Not found") {
       return { success: false, code: 404, error: e.message };
     }
-    // M-3 fix: Detect PostgreSQL unique constraint violation (error code 23505)
+    // Check for PostgreSQL constraint violations (works for Drizzle + Neon)
+    const cause = (e as any).cause || {};
+    const errorCode = (e as any).code || cause.code;
+    const errorDetail = (e as any).detail || cause.detail || "";
+    const errorMessage = e.message || cause.message || "";
+    const errorString = (errorMessage + " " + errorDetail).toLowerCase();
+
+    // Foreign key violation
+    if (errorCode === "23503" || errorString.includes("foreign key") || errorString.includes("violates foreign key constraint")) {
+      return { success: false, code: 409, error: "Invalid reference. Please select a valid option from the list." };
+    }
+
+    // Unique constraint violation
     if (
-      (e as any).code === "23505" ||
-      e.message.includes("unique constraint") ||
-      e.message.includes("duplicate key")
+      errorCode === "23505" ||
+      errorString.includes("unique constraint") ||
+      errorString.includes("duplicate key")
     ) {
-      const detail = (e as any).detail || e.message;
-      if (detail.includes("sku_idx") || detail.includes("sku")) {
+      if (errorString.includes("sku_idx") || errorString.includes("sku")) {
         return { success: false, code: 409, error: "A product with this SKU already exists." };
       }
-      if (detail.includes("barcode_idx") || detail.includes("barcode")) {
+      if (errorString.includes("barcode_idx") || errorString.includes("barcode")) {
         return { success: false, code: 409, error: "A product with this barcode already exists." };
       }
-      if (detail.includes("user_email_idx") || detail.includes("email")) {
+      if (errorString.includes("user_email_idx") || errorString.includes("email")) {
         return {
           success: false,
           code: 409,
           error: "A user with this email already exists in this organization.",
         };
       }
-      if (detail.includes("cat_name_idx")) {
+      if (errorString.includes("cat_name_idx") || errorString.includes("categories_name_unique")) {
         return { success: false, code: 409, error: "A category with this name already exists." };
       }
-      if (detail.includes("brand_name_idx")) {
+      if (errorString.includes("brand_name_idx") || errorString.includes("brands_name_unique")) {
         return { success: false, code: 409, error: "A brand with this name already exists." };
       }
       return { success: false, code: 409, error: "A record with these details already exists." };

@@ -84,6 +84,9 @@ const CustomerInputSchema = z
       .nullable()
       .optional()
       .transform((v) => (v !== null && v !== undefined ? String(v) : v)),
+    address: z.string().nullable().optional(),
+    city: z.string().nullable().optional(),
+    zipCode: z.string().nullable().optional(),
     loyaltyPoints: z.number().optional(),
     visits: z.number().optional(),
     totalSpent: z

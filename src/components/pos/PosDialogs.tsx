@@ -25,6 +25,13 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { FileUpload } from "@/components/ui/file-upload";
 import { Label } from "@/components/ui/label";
 import { PhoneInput } from "@/components/ui/phone-input";
@@ -154,6 +161,9 @@ export function PosDialogs({
     const name = ((formData.get("name") as string) || "").trim();
     const phone = ((formData.get("phone") as string) || "").trim();
     const email = ((formData.get("email") as string) || "").trim();
+    const address = ((formData.get("address") as string) || "").trim();
+    const city = ((formData.get("city") as string) || "").trim();
+    const zipCode = ((formData.get("zipCode") as string) || "").trim();
     const status = (formData.get("status") as string) || "new";
     const type = (formData.get("type") as any) || "retail";
 
@@ -169,6 +179,9 @@ export function PosDialogs({
             name,
             phone: phone || null,
             email: email || null,
+            address: address || null,
+            city: city || null,
+            zipCode: zipCode || null,
             status: status || "regular",
             type,
             visits: 0,
@@ -252,7 +265,13 @@ export function PosDialogs({
     const name = ((formData.get("name") as string) || "").trim();
     const price = parseFloat(formData.get("price") as string) || 0;
     const categoryId = (formData.get("category") as string) || "";
-    const duration = (formData.get("duration") as string) || "";
+    
+    const rawDuration = parseFloat(formData.get("duration") as string) || 0;
+    const durationUnit = (formData.get("durationUnit") as string) || "mins";
+    let durationMins = rawDuration;
+    if (durationUnit === "hours") durationMins = rawDuration * 60;
+    if (durationUnit === "days") durationMins = rawDuration * 1440;
+    const duration = durationMins > 0 ? durationMins.toString() : "";
 
     if (!name) return toast.error("Service name is required");
     if (price < 0) return toast.error("Valid price is required");
@@ -410,6 +429,20 @@ export function PosDialogs({
                 <Input name="email" type="email" />
               </div>
             </div>
+            <div className="space-y-2">
+              <Label>Address</Label>
+              <Input name="address" placeholder="e.g. 123 Main St" />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>City</Label>
+                <Input name="city" />
+              </div>
+              <div className="space-y-2">
+                <Label>Zip Code</Label>
+                <Input name="zipCode" />
+              </div>
+            </div>
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setShowAddCustomer(false)}>
                 Cancel
@@ -552,8 +585,20 @@ export function PosDialogs({
                 <Input name="price" type="number" step="0.01" min="0" placeholder="0.00" required />
               </div>
               <div className="space-y-2">
-                <Label>Duration (Mins)</Label>
-                <Input name="duration" type="number" min="0" placeholder="e.g. 30" />
+                <Label>Duration</Label>
+                <div className="flex gap-2">
+                  <Input name="duration" type="number" min="0" placeholder="e.g. 30" className="flex-1" />
+                  <Select name="durationUnit" defaultValue="mins">
+                    <SelectTrigger className="w-[120px]">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="mins">Minutes</SelectItem>
+                      <SelectItem value="hours">Hours</SelectItem>
+                      <SelectItem value="days">Days</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
             </div>
             <div className="space-y-2">
