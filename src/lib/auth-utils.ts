@@ -5,7 +5,7 @@ import * as schema from "@/db/schema";
 import { eq } from "drizzle-orm";
 
 if (process.env.NODE_ENV === "production" && !process.env.JWT_SECRET) {
-  throw new Error("FATAL ERROR: JWT_SECRET environment variable is missing in production.");
+  console.error("FATAL ERROR: JWT_SECRET environment variable is missing in production. Authentication will fail or behave unpredictably.");
 }
 
 const JWT_SECRET = new TextEncoder().encode(
