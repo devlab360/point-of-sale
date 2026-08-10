@@ -743,7 +743,7 @@ export function PosDialogs({
               {isCompletingSale ? (
                 <>
                   <Loader2 className="mr-2 size-4 animate-spin" />
-                  Generating Bill...
+                  Generating..
                 </>
               ) : (
                 "Confirm & Print"
