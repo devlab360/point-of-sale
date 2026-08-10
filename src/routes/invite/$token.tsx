@@ -71,8 +71,8 @@ function InvitePage() {
       const res = await acceptInvitationFn({
         data: {
           invitationId: invitation.id,
+          orgId: invitation.organizationId,
           role: invitation.role,
-          permissions: invitation.permissions || [],
           name: formData.name,
           email: formData.email,
           pin: formData.password,

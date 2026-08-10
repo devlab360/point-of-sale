@@ -4,29 +4,36 @@ import { getProductsFn } from "@/api/products";
 import { getSettingsFn } from "@/api/settings";
 import { sendAutomatedReport } from "@/lib/automation/report-bot";
 import { PersistStore } from "@/lib/session-store";
+import { useAuth } from "@/contexts/AuthContext";
 
 const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
 
 export function ReportAutomation() {
   const hasRun = useRef(false);
+  const { isAuthenticated } = useAuth();
 
   useEffect(() => {
+    if (!isAuthenticated) {
+      hasRun.current = false; // Reset if logged out
+      return;
+    }
+
     if (hasRun.current) return;
     hasRun.current = true;
 
     const runAutomation = async () => {
       try {
         const orgId = PersistStore.getOrgId() || "default";
-        
+
         // Fetch Settings for Admin Phone
         const settingsRes: any = await getSettingsFn({ data: {} });
         const settings = settingsRes?.data;
         const adminPhone = settings?.phone;
-        
+
         if (!adminPhone) return;
 
         const now = new Date();
-        
+
         const lastWeeklyStr = localStorage.getItem("last_weekly_report_date");
         const lastMonthlyStr = localStorage.getItem("last_monthly_report_date");
 
@@ -56,14 +63,14 @@ export function ReportAutomation() {
         // Fetch Data for Reports
         const salesRes: any = await getSalesFn({ data: { pageSize: 1000 } });
         const productsRes: any = await getProductsFn({ data: { pageSize: 1000 } });
-        
+
         const sales = salesRes?.data || [];
         const products = productsRes?.data || [];
 
         // Helper to generate report data based on date filter
         const generateReportData = (startDate: Date) => {
           const filteredSales = sales.filter((s: any) => new Date(s.date) >= startDate);
-          
+
           const totalRevenue = filteredSales.reduce((sum: number, s: any) => sum + (Number(s.total) || 0), 0);
           const totalOrders = filteredSales.length;
 
@@ -92,7 +99,7 @@ export function ReportAutomation() {
         if (needsMonthly) {
           const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
           const data = generateReportData(startOfLastMonth);
-          
+
           const success = await sendAutomatedReport(adminPhone, "Monthly" as any, data);
           if (success) {
             localStorage.setItem("last_monthly_report_date", now.toISOString());
@@ -104,10 +111,10 @@ export function ReportAutomation() {
           if (needsMonthly) {
             await new Promise(resolve => setTimeout(resolve, 5000));
           }
-          
+
           const sevenDaysAgo = new Date(now.getTime() - SEVEN_DAYS_MS);
           const data = generateReportData(sevenDaysAgo);
-          
+
           const success = await sendAutomatedReport(adminPhone, "Weekly", data);
           if (success) {
             localStorage.setItem("last_weekly_report_date", now.toISOString());
@@ -120,7 +127,7 @@ export function ReportAutomation() {
     };
 
     setTimeout(runAutomation, 5000);
-  }, []);
+  }, [isAuthenticated]);
 
   return null;
 }

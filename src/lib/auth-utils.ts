@@ -4,6 +4,10 @@ import { db } from "@/db";
 import * as schema from "@/db/schema";
 import { eq } from "drizzle-orm";
 
+if (process.env.NODE_ENV === "production" && !process.env.JWT_SECRET) {
+  throw new Error("FATAL ERROR: JWT_SECRET environment variable is missing in production.");
+}
+
 const JWT_SECRET = new TextEncoder().encode(
   process.env.JWT_SECRET || "pos-super-secret-key-development",
 );
@@ -43,6 +47,18 @@ export async function requireAuth(): Promise<SessionPayload> {
   if (!payload) {
     throw new Error("Unauthorized");
   }
+
+  // Active User Verification (Token Revocation Check)
+  const users = await db
+    .select()
+    .from(schema.users)
+    .where(eq(schema.users.id, payload.userId))
+    .limit(1);
+
+  if (users.length === 0 || users[0].status === "suspended") {
+    throw new Error("Unauthorized: Account suspended or deleted");
+  }
+
   return payload;
 }
 

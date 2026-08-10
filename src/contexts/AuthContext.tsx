@@ -12,19 +12,21 @@ import { loginFn, getOrgDataFn, verifyUserEmailFn, getCurrentUserFn } from "@/ap
 import { useQuery, useMutation } from "@tanstack/react-query";
 
 interface AuthContextType {
-  user: any | null;
   isAuthenticated: boolean;
-  login: (pin: string) => Promise<boolean>;
-  loginWithEmail: (email: string, password: string) => Promise<boolean>;
-  loginWithSocial: (provider: "google" | "facebook") => Promise<boolean>;
-  logout: () => void;
   isLoading: boolean;
+  user: any | null;
+  saasOrg: any;
+  saasPlan: any;
+  settings: any;
+  loginWithEmail: (email: string, password: string) => Promise<boolean>;
+  loginWithOtp: (email: string, otp: string) => Promise<boolean>;
+  loginWithSocial: (provider: "google") => Promise<boolean>;
+  loginWithGoogleToken: (token: string) => Promise<boolean>;
+  loginWithFirebasePhone: (idToken: string) => Promise<boolean>;
+  logout: () => void;
   isEmailVerified: boolean;
   isTrialExpired: boolean;
   subscriptionStatus: string;
-  saasOrg: any;
-  saasPlan: any;
-  settings?: any;
   refreshUser: () => Promise<void>;
 }
 
@@ -76,12 +78,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     checkAuth();
   }, []);
 
-  const login = useCallback(
-    async (pin: string) => {
+  const loginWithOtp = useCallback(
+    async (email: string, otp: string) => {
       try {
-        // Pass orgId from PersistStore so backend can scope PIN lookup to the correct org (C-2 security fix)
-        const currentOrgId = PersistStore.getOrgId();
-        const res = await loginFn({ data: { pin, orgId: currentOrgId } });
+        const { loginWithOtpFn } = await import("@/api/auth");
+        const res = await loginWithOtpFn({ data: { email, otp } });
 
         if (res.success && res.user) {
           setUser(res.user);
@@ -92,7 +93,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             await refetchOrgData();
           }
 
-          // Log SaaS Session (skip DB add for now until session API is built)
+          // Log SaaS Session
           const sessionId = crypto.randomUUID();
           SessionStore.setSession(sessionId);
 
@@ -114,7 +115,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           toast.success(res.message || "Login successful");
           return true;
         }
-        toast.error(res.error || "Invalid PIN");
+        toast.error(res.error || "Invalid OTP code");
         return false;
       } catch (e) {
         toast.error("Login failed");
@@ -170,21 +171,104 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     [refetchOrgData, router],
   );
 
+  const loginWithGoogleToken = useCallback(
+    async (accessToken: string) => {
+      try {
+        const { loginWithGoogleFn } = await import("@/api/auth");
+        const res = await loginWithGoogleFn({ data: { accessToken } });
+
+        if (res.success && res.user) {
+          setUser(res.user);
+          SessionStore.setAuthUser(res.user.id);
+          if (res.user.organizationId) {
+            PersistStore.setOrgId(res.user.organizationId);
+            await refetchOrgData();
+          }
+
+          const sessionId = crypto.randomUUID();
+          SessionStore.setSession(sessionId);
+
+          if (
+            res.user.role === "admin" ||
+            res.user.role === "manager" ||
+            res.user.role === "store_admin"
+          ) {
+            router.navigate({ to: "/" });
+          } else if (res.user.role === "cashier") {
+            router.navigate({ to: "/pos" });
+          } else if (res.user.role === "inventory_manager") {
+            router.navigate({ to: "/inventory" });
+          } else {
+            router.navigate({ to: "/" });
+          }
+
+          toast.success(res.message || "Login successful");
+          return true;
+        }
+        toast.error(res.error || "Failed to login with Google");
+        return false;
+      } catch (e) {
+        toast.error("Google Login failed");
+        return false;
+      }
+    },
+    [refetchOrgData, router],
+  );
+
+  const loginWithFirebasePhone = useCallback(
+    async (idToken: string) => {
+      try {
+        const { loginWithFirebasePhoneFn } = await import("@/api/auth");
+        const res = await loginWithFirebasePhoneFn({ data: { idToken } });
+
+        if (res.success && res.user) {
+          setUser(res.user);
+          SessionStore.setAuthUser(res.user.id);
+          if (res.user.organizationId) {
+            PersistStore.setOrgId(res.user.organizationId);
+            await refetchOrgData();
+          }
+
+          const sessionId = crypto.randomUUID();
+          SessionStore.setSession(sessionId);
+
+          if (
+            res.user.role === "admin" ||
+            res.user.role === "manager" ||
+            res.user.role === "store_admin"
+          ) {
+            router.navigate({ to: "/" });
+          } else if (res.user.role === "cashier") {
+            router.navigate({ to: "/pos" });
+          } else if (res.user.role === "inventory_manager") {
+            router.navigate({ to: "/inventory" });
+          } else {
+            router.navigate({ to: "/" });
+          }
+
+          toast.success(res.message || "Login successful");
+          return true;
+        }
+        toast.error(res.error || "Failed to login with phone number");
+        return false;
+      } catch (e) {
+        toast.error("Phone Login failed");
+        return false;
+      }
+    },
+    [refetchOrgData, router],
+  );
+
   const loginWithSocial = useCallback(
-    async (provider: "google" | "facebook") => {
+    async (provider: "google") => {
       try {
         if (provider === "google" && GOOGLE_CLIENT_ID) {
           initiateGoogleOAuth();
           return true;
         }
-        if (provider === "facebook" && FACEBOOK_APP_ID) {
-          initiateFacebookOAuth();
-          return true;
-        }
 
-        const mockEmail =
-          provider === "google" ? "google.user@store.com" : "facebook.user@store.com";
-        const mockName = provider === "google" ? "Google User" : "Facebook User";
+        const mockEmail = "google.user@store.com";
+        const mockName = "Google User";
 
         // Mock social user for demo without DB save
         const foundUser = {
@@ -203,13 +287,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (foundUser.organizationId) {
           PersistStore.setOrgId(foundUser.organizationId);
         }
-        toast.success(
-          `Logged in with ${provider === "google" ? "Google" : "Facebook"} successfully!`,
-        );
+        toast.success("Logged in with Google successfully!");
         router.navigate({ to: "/" });
         return true;
       } catch (err) {
-        toast.error(`Failed to login with ${provider} `);
+        toast.error(`Failed to login with ${provider}`);
         return false;
       }
     },
@@ -259,9 +341,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     () => ({
       user,
       isAuthenticated: !!user,
-      login,
+      loginWithOtp,
       loginWithEmail,
       loginWithSocial,
+      loginWithGoogleToken,
+      loginWithFirebasePhone,
       logout,
       isLoading,
       isEmailVerified,
@@ -274,9 +358,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }),
     [
       user,
-      login,
+      loginWithOtp,
       loginWithEmail,
       loginWithSocial,
+      loginWithGoogleToken,
+      loginWithFirebasePhone,
       logout,
       isLoading,
       isEmailVerified,

@@ -72,15 +72,7 @@ export function ProductGrid({ state }: { state: any }) {
             className="flex-1 md:flex-none h-9 shrink-0 rounded-lg px-4 gap-2"
           >
             <Plus className="size-4" />
-            Product
-          </Button>
-          <Button
-            onClick={() => state.setShowAddService(true)}
-            variant="outline"
-            className="flex-1 md:flex-none h-9 shrink-0 rounded-lg px-4 gap-2 border-primary/30 text-primary hover:bg-primary/10"
-          >
-            <Plus className="size-4" />
-            Service
+            Add
           </Button>
         </div>
       </div>

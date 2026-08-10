@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input, PasswordInput } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -14,7 +14,7 @@ import {
   Loader2,
 } from "lucide-react";
 import { v4 as uuidv4 } from "uuid";
-import { registerOrgFn } from "@/api/auth";
+import { registerOrgFn, checkEmailAvailabilityFn } from "@/api/auth";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { INDUSTRY_SEEDS } from "@/lib/industry-seeds";
 import { getTrialDaysFromEnv } from "@/lib/email-service";
@@ -62,6 +62,43 @@ function RegisterPage() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isRegistering, setIsRegistering] = useState(false);
 
+  const [emailStatus, setEmailStatus] = useState<"idle" | "checking" | "available" | "taken">("idle");
+  const [emailMessage, setEmailMessage] = useState("");
+
+  useEffect(() => {
+    const checkEmail = async () => {
+      const cleanEmail = sanitizeInput(formData.email);
+      if (!cleanEmail) {
+        setEmailStatus("idle");
+        setEmailMessage("");
+        return;
+      }
+
+      const emailCheck = validateEmail(cleanEmail);
+      if (!emailCheck.valid) {
+        setEmailStatus("idle");
+        return; // wait for valid format before checking backend
+      }
+
+      setEmailStatus("checking");
+      try {
+        const res = await checkEmailAvailabilityFn({ data: { email: cleanEmail } });
+        if (res.success && "available" in res && res.available) {
+          setEmailStatus("available");
+          setEmailMessage("");
+        } else {
+          setEmailStatus("taken");
+          setEmailMessage("message" in res ? (res.message as string) : "Email is already taken");
+        }
+      } catch (e) {
+        setEmailStatus("idle");
+      }
+    };
+
+    const timeoutId = setTimeout(checkEmail, 500);
+    return () => clearTimeout(timeoutId);
+  }, [formData.email]);
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -82,6 +119,8 @@ function RegisterPage() {
     const emailCheck = validateEmail(cleanEmail);
     if (!emailCheck.valid) {
       newErrors.email = emailCheck.error || "Invalid email address";
+    } else if (emailStatus === "taken") {
+      newErrors.email = emailMessage || "Email is already taken";
     }
 
     const passCheck = validateStrongPassword(formData.password);
@@ -291,18 +330,30 @@ function RegisterPage() {
 
                 <div className="space-y-1.5">
                   <Label>Email Address</Label>
-                  <Input
-                    type="email"
-                    name="email"
-                    value={formData.email}
-                    onChange={handleChange}
-                    className={
-                      errors.email ? "border-destructive focus-visible:ring-destructive" : ""
-                    }
-                    placeholder="e.g. you@example.com"
-                  />
-                  {errors.email && (
-                    <p className="text-xs font-semibold text-destructive mt-1">{errors.email}</p>
+                  <div className="relative">
+                    <Input
+                      type="email"
+                      name="email"
+                      value={formData.email}
+                      onChange={handleChange}
+                      className={`pr-10 ${
+                        errors.email || emailStatus === "taken"
+                          ? "border-destructive focus-visible:ring-destructive"
+                          : emailStatus === "available"
+                            ? "border-green-500 focus-visible:ring-green-500"
+                            : ""
+                      }`}
+                      placeholder="e.g. you@example.com"
+                    />
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center">
+                      {emailStatus === "checking" && <Loader2 className="size-4 animate-spin text-muted-foreground" />}
+                      {emailStatus === "available" && <CheckCircle2 className="size-4 text-green-500" />}
+                    </div>
+                  </div>
+                  {(errors.email || emailStatus === "taken") && (
+                    <p className="text-xs font-semibold text-destructive mt-1">
+                      {errors.email || emailMessage}
+                    </p>
                   )}
                 </div>
 

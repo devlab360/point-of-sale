@@ -61,6 +61,7 @@ import {
   ResizablePanel,
   ResizableHandle,
 } from "@/components/ui/resizable";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 export const Route = createFileRoute("/settings")({
   head: () => ({ meta: [{ title: "Settings · NexisPOS" }] }),
@@ -163,6 +164,7 @@ function SettingsPage() {
   const [activeTab, setActiveTab] = useState(isTrialExpired ? "billing" : search.tab || "store");
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     if (user && user.role !== "admin") {
@@ -462,7 +464,7 @@ function SettingsPage() {
             <Card title="Store Information" desc="Used on receipts and reports.">
               <div className="mb-6">
                 <FileUpload
-                  label="Store Custom Logo (Vercel Blob Powered)"
+                  label="Store Custom Logo"
                   description="Upload your store logo via Vercel Blob (PNG/JPG/WEBP). Will dynamically show on printed bills, sidebar, and receipts."
                   value={settings.logoUrl || ""}
                   onChange={(url) => handleChange("logoUrl", url)}
@@ -503,10 +505,14 @@ function SettingsPage() {
                 </Field>
                 <Field label="Email">
                   <input
-                    className="inp"
+                    className="inp bg-muted text-muted-foreground cursor-not-allowed"
                     value={settings.email}
-                    onChange={(e) => handleChange("email", e.target.value)}
+                    readOnly
+                    disabled
                   />
+                  <p className="text-[10px] text-muted-foreground mt-1">
+                    Email cannot be changed as it is used for login.
+                  </p>
                 </Field>
                 <Field label={t("currency") || "Store Currency Preset"}>
                   <SearchableSelect
@@ -923,7 +929,10 @@ function SettingsPage() {
           </TabsContent>
 
           <TabsContent value="receipt" className="mt-0 outline-none">
-            <ResizablePanelGroup direction="horizontal" className="items-stretch w-full gap-4">
+            <ResizablePanelGroup
+              direction={isMobile ? "vertical" : "horizontal"}
+              className={`items-stretch w-full gap-4 ${isMobile ? 'min-h-[1200px]' : ''}`}
+            >
               <ResizablePanel defaultSize={55} minSize={30}>
                 <div className="h-full pr-1">
                   <Card title="Receipt Configuration" desc="Customise the printed and emailed receipts.">

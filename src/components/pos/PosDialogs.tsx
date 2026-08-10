@@ -25,6 +25,7 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Select,
   SelectContent,
@@ -265,7 +266,7 @@ export function PosDialogs({
     const name = ((formData.get("name") as string) || "").trim();
     const price = parseFloat(formData.get("price") as string) || 0;
     const categoryId = (formData.get("category") as string) || "";
-    
+
     const rawDuration = parseFloat(formData.get("duration") as string) || 0;
     const durationUnit = (formData.get("durationUnit") as string) || "mins";
     let durationMins = rawDuration;
@@ -456,177 +457,178 @@ export function PosDialogs({
       </Dialog>
 
       <Dialog open={showAddProduct} onOpenChange={setShowAddProduct}>
-        <DialogContent className=" max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Plus className="size-5 text-primary" />
-              <span>Quick Add Product</span>
+              <span>Quick Add Item</span>
             </DialogTitle>
           </DialogHeader>
-          <form onSubmit={handleQuickAddProduct} className="space-y-4 pt-2">
-            <div className="space-y-2">
-              <Label>Product Image</Label>
-              <FileUpload
-                value={newProductImage}
-                onChange={setNewProductImage}
-                folder="products"
-                accept="image/*"
-                maxSizeMB={5}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Product Name *</Label>
-              <Input name="name" placeholder="e.g. Wireless Mouse" required autoFocus />
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Retail Price *</Label>
-                <Input name="price" type="number" step="0.01" min="0" placeholder="0.00" required />
-              </div>
-              <div className="space-y-2">
-                <Label>Cost Price *</Label>
-                <Input name="cost" type="number" step="0.01" min="0" placeholder="0.00" required />
-              </div>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Opening Stock</Label>
-                <Input name="stock" type="number" min="0" placeholder="0" defaultValue="0" />
-              </div>
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <Label>Barcode / SKU</Label>
-                  <button type="button" onClick={generateBarcode} className="text-[10px] font-medium text-primary hover:underline focus:outline-none">
-                    Generate
-                  </button>
-                </div>
-                <Input
-                  name="barcode"
-                  placeholder="Scan or enter code"
-                  value={newProductBarcode}
-                  onChange={(e) => setNewProductBarcode(e.target.value)}
-                />
-              </div>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Category</Label>
-                <input type="hidden" name="category" value={newProductCategory} />
-                <SearchableSelect
-                  value={newProductCategory}
-                  onChange={setNewProductCategory}
-                  options={categories.map((c: any) => ({ value: c.id, label: c.name }))}
-                  placeholder="Select Category"
-                  onCreate={async (name) => {
-                    const res = await createCategoryFn({ data: { category: { name } } });
-                    if (res?.success) {
-                      queryClient.invalidateQueries({ queryKey: ["categories"] });
-                      return res.data?.id;
-                    }
-                  }}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Brand</Label>
-                <input type="hidden" name="brand" value={newProductBrand} />
-                <SearchableSelect
-                  value={newProductBrand}
-                  onChange={setNewProductBrand}
-                  options={brands.map((b: any) => ({ value: b.id, label: b.name }))}
-                  placeholder="Select Brand"
-                  onCreate={async (name) => {
-                    const res = await createBrandFn({ data: { brand: { name } } });
-                    if (res?.success) {
-                      queryClient.invalidateQueries({ queryKey: ["brands"] });
-                      return res.data?.id;
-                    }
-                  }}
-                />
-              </div>
-            </div>
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setShowAddProduct(false)}>
-                Cancel
-              </Button>
-              <Button type="submit" disabled={isAddingProduct}>
-                {isAddingProduct && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Save Product
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
+          <Tabs defaultValue="product" className="w-full mt-2">
+            <TabsList className="grid w-full grid-cols-2 mb-4">
+              <TabsTrigger value="product">Product</TabsTrigger>
+              <TabsTrigger value="service">Service</TabsTrigger>
+            </TabsList>
 
-      <Dialog open={showAddService} onOpenChange={setShowAddService}>
-        <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Plus className="size-5 text-primary" />
-              <span>Quick Add Service</span>
-            </DialogTitle>
-          </DialogHeader>
-          <form onSubmit={handleQuickAddService} className="space-y-4 pt-2">
-            <div className="space-y-2">
-              <Label>Service Image</Label>
-              <FileUpload
-                value={newServiceImage}
-                onChange={setNewServiceImage}
-                folder="services"
-                accept="image/*"
-                maxSizeMB={5}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Service Name *</Label>
-              <Input name="name" placeholder="Enter service name" required autoFocus />
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Price *</Label>
-                <Input name="price" type="number" step="0.01" min="0" placeholder="0.00" required />
-              </div>
-              <div className="space-y-2">
-                <Label>Duration</Label>
-                <div className="flex gap-2">
-                  <Input name="duration" type="number" min="0" placeholder="e.g. 30" className="flex-1" />
-                  <Select name="durationUnit" defaultValue="mins">
-                    <SelectTrigger className="w-[120px]">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="mins">Minutes</SelectItem>
-                      <SelectItem value="hours">Hours</SelectItem>
-                      <SelectItem value="days">Days</SelectItem>
-                    </SelectContent>
-                  </Select>
+            <TabsContent value="product">
+              <form onSubmit={handleQuickAddProduct} className="space-y-4 pt-2">
+                <div className="space-y-2">
+                  {/* <Label>Product Image</Label> */}
+                  <FileUpload
+                    value={newProductImage}
+                    onChange={setNewProductImage}
+                    folder="products"
+                    accept="image/*"
+                    maxSizeMB={5}
+                  />
                 </div>
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label>Category</Label>
-              <input type="hidden" name="category" value={newServiceCategory} />
-              <SearchableSelect
-                value={newServiceCategory}
-                onChange={setNewServiceCategory}
-                options={categories.map((c: any) => ({ value: c.id, label: c.name }))}
-                placeholder="Select Category"
-                onCreate={async (name) => {
-                  const res = await createCategoryFn({ data: { category: { name } } });
-                  if (res?.success) {
-                    queryClient.invalidateQueries({ queryKey: ["categories"] });
-                    return res.data?.id;
-                  }
-                }}
-              />
-            </div>
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setShowAddService(false)}>
-                Cancel
-              </Button>
-              <Button type="submit" disabled={isAddingService}>
-                {isAddingService && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Save Service
-              </Button>
-            </DialogFooter>
-          </form>
+                <div className="space-y-2">
+                  <Label>Product Name *</Label>
+                  <Input name="name" placeholder="e.g. Wireless Mouse" required autoFocus />
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Retail Price *</Label>
+                    <Input name="price" type="number" step="0.01" min="0" placeholder="0.00" required />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Cost Price *</Label>
+                    <Input name="cost" type="number" step="0.01" min="0" placeholder="0.00" required />
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Opening Stock</Label>
+                    <Input name="stock" type="number" min="0" placeholder="0" defaultValue="0" />
+                  </div>
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <Label>Barcode / SKU</Label>
+                      <button type="button" onClick={generateBarcode} className="text-[10px] font-medium text-primary hover:underline focus:outline-none">
+                        Generate
+                      </button>
+                    </div>
+                    <Input
+                      name="barcode"
+                      placeholder="Scan or enter code"
+                      value={newProductBarcode}
+                      onChange={(e) => setNewProductBarcode(e.target.value)}
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Category</Label>
+                    <input type="hidden" name="category" value={newProductCategory} />
+                    <SearchableSelect
+                      value={newProductCategory}
+                      onChange={setNewProductCategory}
+                      options={categories.map((c: any) => ({ value: c.id, label: c.name }))}
+                      placeholder="Select Category"
+                      onCreate={async (name) => {
+                        const res = await createCategoryFn({ data: { category: { name } } });
+                        if (res?.success) {
+                          queryClient.invalidateQueries({ queryKey: ["categories"] });
+                          return res.data?.id;
+                        }
+                      }}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Brand</Label>
+                    <input type="hidden" name="brand" value={newProductBrand} />
+                    <SearchableSelect
+                      value={newProductBrand}
+                      onChange={setNewProductBrand}
+                      options={brands.map((b: any) => ({ value: b.id, label: b.name }))}
+                      placeholder="Select Brand"
+                      onCreate={async (name) => {
+                        const res = await createBrandFn({ data: { brand: { name } } });
+                        if (res?.success) {
+                          queryClient.invalidateQueries({ queryKey: ["brands"] });
+                          return res.data?.id;
+                        }
+                      }}
+                    />
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button type="button" variant="outline" onClick={() => setShowAddProduct(false)}>
+                    Cancel
+                  </Button>
+                  <Button type="submit" disabled={isAddingProduct}>
+                    {isAddingProduct && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Save Product
+                  </Button>
+                </DialogFooter>
+              </form>
+            </TabsContent>
+
+            <TabsContent value="service">
+              <form onSubmit={handleQuickAddService} className="space-y-4 pt-2">
+                <div className="space-y-2">
+                  {/* <Label>Service Image</Label> */}
+                  <FileUpload
+                    value={newServiceImage}
+                    onChange={setNewServiceImage}
+                    folder="services"
+                    accept="image/*"
+                    maxSizeMB={5}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Service Name *</Label>
+                  <Input name="name" placeholder="Enter service name" required autoFocus />
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Price *</Label>
+                    <Input name="price" type="number" step="0.01" min="0" placeholder="0.00" required />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Duration</Label>
+                    <div className="flex gap-2">
+                      <Input name="duration" type="number" min="0" placeholder="e.g. 30" className="flex-1" />
+                      <Select name="durationUnit" defaultValue="mins">
+                        <SelectTrigger className="w-[120px]">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="mins">Minutes</SelectItem>
+                          <SelectItem value="hours">Hours</SelectItem>
+                          <SelectItem value="days">Days</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label>Category</Label>
+                  <input type="hidden" name="category" value={newServiceCategory} />
+                  <SearchableSelect
+                    value={newServiceCategory}
+                    onChange={setNewServiceCategory}
+                    options={categories.map((c: any) => ({ value: c.id, label: c.name }))}
+                    placeholder="Select Category"
+                    onCreate={async (name) => {
+                      const res = await createCategoryFn({ data: { category: { name } } });
+                      if (res?.success) {
+                        queryClient.invalidateQueries({ queryKey: ["categories"] });
+                        return res.data?.id;
+                      }
+                    }}
+                  />
+                </div>
+                <DialogFooter>
+                  <Button type="button" variant="outline" onClick={() => setShowAddProduct(false)}>
+                    Cancel
+                  </Button>
+                  <Button type="submit" disabled={isAddingService}>
+                    {isAddingService && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Save Service
+                  </Button>
+                </DialogFooter>
+              </form>
+            </TabsContent>
+          </Tabs>
         </DialogContent>
       </Dialog>
 

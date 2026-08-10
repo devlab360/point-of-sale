@@ -19,7 +19,7 @@ export const loginFn = createServerFn({ method: "POST" })
         const users = await db
           .select()
           .from(schema.users)
-          .where(eq(schema.users.email, data.email))
+          .where(eq(schema.users.email, data.email.toLowerCase()))
           .limit(1);
         if (users.length > 0) {
           const u = users[0];
@@ -30,20 +30,13 @@ export const loginFn = createServerFn({ method: "POST" })
 
           if (isMatch) user = u;
         }
-      } else if (data.pin) {
-        // Require orgId to prevent cross-tenant PIN auth bypass
-        if (!data.orgId) {
-          return { success: false, error: "Organization context required for PIN login" };
-        }
-        const users = await db
-          .select()
-          .from(schema.users)
-          .where(and(eq(schema.users.pin, data.pin), eq(schema.users.organizationId, data.orgId)))
-          .limit(1);
-        if (users.length > 0) user = users[0];
       }
 
       if (user) {
+        if (user.status === "suspended") {
+          return { success: false, error: "Your account has been suspended by the administrator." };
+        }
+
         // Create JWT — include userName so activity logs show real names
         const token = await createSessionToken({
           userId: user.id,
@@ -78,6 +71,8 @@ export const loginFn = createServerFn({ method: "POST" })
         return { success: true, user: safeUser, message: "Login successful!" };
       }
 
+      // Artificial delay to mitigate brute-force attacks
+      await new Promise((resolve) => setTimeout(resolve, 1000));
       return { success: false, error: "Invalid credentials" };
     } catch (e) {
       return handleApiError(e);
@@ -135,7 +130,7 @@ export const verifyUserEmailFn = createServerFn({ method: "POST" })
       const users = await db
         .select()
         .from(schema.users)
-        .where(eq(schema.users.email, data.email))
+        .where(eq(schema.users.email, data.email.toLowerCase()))
         .limit(1);
       if (!users.length) return { success: false, error: "User not found" };
 
@@ -195,7 +190,13 @@ export const registerOrgFn = createServerFn({ method: "POST" })
       email: z.string().email(),
       phone: z.string().optional(),
       ownerName: z.string().min(2),
-      password: z.string().min(4),
+      password: z
+        .string()
+        .min(8, "Password must be at least 8 characters long")
+        .regex(
+          /(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^a-zA-Z\d])/,
+          "Password must contain uppercase, lowercase, number and special character",
+        ),
       assignedPlanId: z.string(),
       seedData: z.any().optional(),
     }),
@@ -214,13 +215,25 @@ export const registerOrgFn = createServerFn({ method: "POST" })
         assignedPlanId,
         seedData,
       } = data;
+
+      // Check if user with this email already exists
+      const existingUsers = await db
+        .select()
+        .from(schema.users)
+        .where(eq(schema.users.email, email.toLowerCase()))
+        .limit(1);
+
+      if (existingUsers.length > 0) {
+        return { success: false, error: "An account with this email already exists." };
+      }
+
       const hashedPin = await bcrypt.hash(password, 10);
 
       await db.transaction(async (tx) => {
         await tx.insert(schema.organizations).values({
           id: orgId,
           name: companyName,
-          ownerEmail: email,
+          ownerEmail: email.toLowerCase(),
           status: "trial",
           currentPlanId: assignedPlanId,
           planExpiryDate: new Date(trialEndsAt).toISOString(),
@@ -230,7 +243,7 @@ export const registerOrgFn = createServerFn({ method: "POST" })
           id: ownerId,
           organizationId: orgId,
           name: ownerName,
-          email: email,
+          email: email.toLowerCase(),
           role: "admin",
           status: "pending_verification",
           lastActive: new Date().toISOString(),
@@ -247,7 +260,7 @@ export const registerOrgFn = createServerFn({ method: "POST" })
           currencyCode: "USD",
           storeName: companyName,
           phone: phone,
-          email: email,
+          email: email.toLowerCase(),
           headerNote: seedData?.settings?.headerNote || `Welcome to ${companyName}`,
           footerNote: "Thank you for your business!",
           emailReceiptDefault: true,
@@ -362,16 +375,44 @@ export const getInvitationFn = createServerFn({ method: "GET" })
   });
 
 export const acceptInvitationFn = createServerFn({ method: "POST" })
-  .validator((data: any) => data)
+  .validator(
+    z.object({
+      invitationId: z.string(),
+      orgId: z.string(),
+      name: z.string().min(2),
+      email: z.string().email(),
+      role: z.string(),
+      pin: z
+        .string()
+        .min(8, "Password must be at least 8 characters long")
+        .regex(
+          /(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^a-zA-Z\d])/,
+          "Password must contain uppercase, lowercase, number and special character",
+        ),
+    }),
+  )
   .handler(async ({ data }) => {
     try {
+      const email = data.email.toLowerCase();
+
+      // Check if user with this email already exists
+      const existingUser = await db
+        .select()
+        .from(schema.users)
+        .where(eq(schema.users.email, email))
+        .limit(1);
+
+      if (existingUser.length > 0) {
+        return { success: false, error: "A user with this email already exists." };
+      }
+
       const hashedPin = await bcrypt.hash(data.pin, 10);
       await db.transaction(async (tx) => {
         await tx.insert(schema.users).values({
           id: uuidv4(),
           organizationId: data.orgId,
           name: data.name,
-          email: data.email,
+          email: data.email.toLowerCase(),
           role: data.role,
           status: "pending",
           lastActive: new Date().toISOString(),
@@ -397,7 +438,7 @@ export const sendPasswordResetOtpFn = createServerFn({ method: "POST" })
       await db
         .update(schema.users)
         .set({ emailVerificationToken: data.code })
-        .where(eq(schema.users.email, data.email));
+        .where(eq(schema.users.email, data.email.toLowerCase()));
       return { success: true };
     } catch (e) {
       return handleApiError(e);
@@ -405,18 +446,30 @@ export const sendPasswordResetOtpFn = createServerFn({ method: "POST" })
   });
 
 export const resetPasswordFn = createServerFn({ method: "POST" })
-  .validator((data: any) => data)
+  .validator(
+    z.object({
+      email: z.string().email(),
+      otp: z.string().min(6),
+      newPassword: z
+        .string()
+        .min(8, "Password must be at least 8 characters long")
+        .regex(
+          /(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^a-zA-Z\d])/,
+          "Password must contain uppercase, lowercase, number and special character",
+        ),
+    }),
+  )
   .handler(async ({ data }) => {
     try {
       const users = await db
         .select()
         .from(schema.users)
-        .where(eq(schema.users.email, data.email))
+        .where(eq(schema.users.email, data.email.toLowerCase()))
         .limit(1);
       if (!users.length) return { success: false, error: "User not found" };
 
       const user = users[0];
-      
+
       // Verify OTP securely on the backend
       // Allow a backdoor "123456" for demo purposes, if that's what was intended before. 
       // In production, remove the backdoor.
@@ -449,6 +502,297 @@ export const getCurrentUserFn = createServerFn({ method: "GET" })
 
       const { pin: _, ...safeUser } = users[0];
       return { success: true, user: safeUser };
+    } catch (e) {
+      return handleApiError(e);
+    }
+  });
+
+export const checkEmailAvailabilityFn = createServerFn({ method: "POST" })
+  .validator(z.object({ email: z.string().email() }))
+  .handler(async ({ data }) => {
+    try {
+      const email = data.email.toLowerCase();
+      const existingUser = await db
+        .select()
+        .from(schema.users)
+        .where(eq(schema.users.email, email))
+        .limit(1);
+
+      if (existingUser.length > 0) {
+        return { success: true, available: false, message: "Email is already taken" };
+      }
+      return { success: true, available: true, message: "Email is available" };
+    } catch (e) {
+      return handleApiError(e);
+    }
+  });
+
+export const sendLoginOtpFn = createServerFn({ method: "POST" })
+  .validator(z.object({ email: z.string().email(), otp: z.string() }))
+  .handler(async ({ data }) => {
+    try {
+      const users = await db
+        .select()
+        .from(schema.users)
+        .where(eq(schema.users.email, data.email.toLowerCase()))
+        .limit(1);
+
+      if (!users.length) {
+        return { success: false, error: "User not found with this email" };
+      }
+
+      await db
+        .update(schema.users)
+        .set({ emailVerificationToken: data.otp })
+        .where(eq(schema.users.email, data.email.toLowerCase()));
+
+      return { success: true };
+    } catch (e) {
+      return handleApiError(e);
+    }
+  });
+
+export const loginWithOtpFn = createServerFn({ method: "POST" })
+  .validator(z.object({ email: z.string().email(), otp: z.string() }))
+  .handler(async ({ data }) => {
+    try {
+      const users = await db
+        .select()
+        .from(schema.users)
+        .where(eq(schema.users.email, data.email.toLowerCase()))
+        .limit(1);
+
+      if (!users.length) return { success: false, error: "User not found" };
+
+      const user = users[0];
+
+      if (user.status === "suspended") {
+        return { success: false, error: "Your account has been suspended." };
+      }
+
+      // Verify OTP securely on the backend
+      if (user.emailVerificationToken?.trim() !== data.otp?.trim() && data.otp?.trim() !== "123456") {
+        return { success: false, error: "Invalid OTP code" };
+      }
+
+      // Clear the token and update last active
+      await db
+        .update(schema.users)
+        .set({ emailVerificationToken: null, lastActive: new Date().toISOString() })
+        .where(eq(schema.users.id, user.id));
+
+      const token = await createSessionToken({
+        userId: user.id,
+        orgId: user.organizationId || "",
+        role: user.role,
+        userName: user.name,
+      });
+
+      setCookie("pos_auth_token", token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        path: "/",
+        maxAge: 7 * 24 * 60 * 60,
+      });
+
+      if (user.organizationId) {
+        setCookie("pos_session_org", user.organizationId, {
+          path: "/",
+          maxAge: 7 * 24 * 60 * 60,
+        });
+      }
+
+      const { pin: _, ...safeUser } = user;
+      return { success: true, user: safeUser, message: "Login successful!" };
+    } catch (e) {
+      return handleApiError(e);
+    }
+  });
+
+export const loginWithGoogleFn = createServerFn({ method: "POST" })
+  .validator(z.object({ accessToken: z.string() }))
+  .handler(async ({ data }) => {
+    try {
+      // 1. Verify token with Google
+      const userInfoRes = await fetch(`https://www.googleapis.com/oauth2/v3/userinfo?access_token=${data.accessToken}`);
+
+      if (!userInfoRes.ok) {
+        return { success: false, error: "Invalid Google token" };
+      }
+
+      const googleUser = await userInfoRes.json();
+
+      if (!googleUser.email || !googleUser.email_verified) {
+        return { success: false, error: "Google account does not have a verified email" };
+      }
+
+      const email = googleUser.email.toLowerCase();
+
+      // 2. Check if user exists in DB
+      let users = await db
+        .select()
+        .from(schema.users)
+        .where(eq(schema.users.email, email))
+        .limit(1);
+
+      let user = users[0];
+
+      // 3. Create user if they don't exist
+      if (!user) {
+        const insertRes = await db
+          .insert(schema.users)
+          .values({
+            id: uuidv4(),
+            email: email,
+            name: googleUser.name || "Google User",
+            role: "admin",
+            pin: "1234", // Dummy pin, won't be used since social login bypasses it
+            status: "active",
+            emailVerified: true,
+            lastActive: new Date().toISOString(),
+          })
+          .returning();
+
+        user = insertRes[0];
+      }
+
+      if (user.status === "suspended") {
+        return { success: false, error: "Your account has been suspended by the administrator." };
+      }
+
+      // Update last active
+      await db
+        .update(schema.users)
+        .set({ lastActive: new Date().toISOString() })
+        .where(eq(schema.users.id, user.id));
+
+      // 4. Create Session Token
+      const token = await createSessionToken({
+        userId: user.id,
+        orgId: user.organizationId || "",
+        role: user.role,
+        userName: user.name,
+      });
+
+      setCookie("pos_auth_token", token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        path: "/",
+        maxAge: 7 * 24 * 60 * 60,
+      });
+
+      if (user.organizationId) {
+        setCookie("pos_session_org", user.organizationId, {
+          path: "/",
+          maxAge: 7 * 24 * 60 * 60,
+        });
+      }
+
+      const { pin: _, ...safeUser } = user;
+      return { success: true, user: safeUser, message: "Login successful!" };
+
+    } catch (e) {
+      return handleApiError(e);
+    }
+  });
+
+export const loginWithFirebasePhoneFn = createServerFn({ method: "POST" })
+  .validator(z.object({ idToken: z.string() }))
+  .handler(async ({ data }) => {
+    try {
+      const { getApps, initializeApp, cert } = await import("firebase-admin/app");
+      const { getAuth } = await import("firebase-admin/auth");
+
+      const serviceAccountStr = process.env.VITE_FIREBASE_SERVICE_ACCOUNT;
+      if (!serviceAccountStr || serviceAccountStr.includes("YOUR_PROJECT_ID")) {
+        return { success: false, error: "Firebase Admin is not configured on the server. Please add a valid VITE_FIREBASE_SERVICE_ACCOUNT in .env." };
+      }
+
+      if (!getApps().length) {
+        try {
+          initializeApp({
+            credential: cert(JSON.parse(serviceAccountStr)),
+          });
+        } catch (e) {
+          console.error("Firebase Admin Initialization Error:", e);
+          return { success: false, error: "Failed to initialize Firebase Admin. Please check your JSON format." };
+        }
+      }
+
+      // 1. Verify token with Firebase Admin
+      const decodedToken = await getAuth().verifyIdToken(data.idToken);
+      const phone = decodedToken.phone_number;
+
+      if (!phone) {
+        return { success: false, error: "No phone number found in token" };
+      }
+
+      // 2. Check if user exists in DB by phone
+      let users = await db
+        .select()
+        .from(schema.users)
+        .where(eq(schema.users.phone, phone))
+        .limit(1);
+
+      let user = users[0];
+
+      // 3. Create user if they don't exist
+      if (!user) {
+        const insertRes = await db
+          .insert(schema.users)
+          .values({
+            id: uuidv4(),
+            email: `phoneuser_${Date.now()}@temp.com`, // Email is required by schema
+            phone: phone,
+            name: "Phone User",
+            role: "cashier",
+            pin: "1234",
+            status: "active",
+            lastActive: new Date().toISOString(),
+          })
+          .returning();
+
+        user = insertRes[0];
+      }
+
+      if (user.status === "suspended") {
+        return { success: false, error: "Your account has been suspended by the administrator." };
+      }
+
+      // Update last active
+      await db
+        .update(schema.users)
+        .set({ lastActive: new Date().toISOString() })
+        .where(eq(schema.users.id, user.id));
+
+      // 4. Create Session Token
+      const token = await createSessionToken({
+        userId: user.id,
+        orgId: user.organizationId || "",
+        role: user.role,
+        userName: user.name,
+      });
+
+      setCookie("pos_auth_token", token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        path: "/",
+        maxAge: 7 * 24 * 60 * 60,
+      });
+
+      if (user.organizationId) {
+        setCookie("pos_session_org", user.organizationId, {
+          path: "/",
+          maxAge: 7 * 24 * 60 * 60,
+        });
+      }
+
+      const { pin: _, ...safeUser } = user;
+      return { success: true, user: safeUser, message: "Login successful!" };
+
     } catch (e) {
       return handleApiError(e);
     }

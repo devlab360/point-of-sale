@@ -86,7 +86,7 @@ export function validateStrongPassword(password: string): { valid: boolean; erro
     return {
       valid: false,
       error:
-        "Password must contain uppercase, lowercase, number and special character (e.g. Samim@123)",
+        "Password must contain uppercase, lowercase, number and special character",
     };
   }
   return { valid: true };

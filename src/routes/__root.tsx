@@ -204,14 +204,33 @@ function AppLayout() {
     saasOrg,
     settings,
     subscriptionStatus,
+    loginWithGoogleToken,
   } = useAuth();
   const [isTrialBannerDismissed, setIsTrialBannerDismissed] = useState(false);
+  const [isGoogleLoggingIn, setIsGoogleLoggingIn] = useState(false);
   const location = useRouterState({ select: (s) => s.location });
   const router = useRouter();
 
   const publicRoutes = ["/login", "/register", "/verify-email"];
   const isPublicRoute =
     publicRoutes.includes(location.pathname) || location.pathname.startsWith("/invite");
+
+  useEffect(() => {
+    const hash = window.location.hash;
+    if (hash && hash.includes("access_token=")) {
+      const params = new URLSearchParams(hash.substring(1));
+      const accessToken = params.get("access_token");
+      if (accessToken) {
+        setIsGoogleLoggingIn(true);
+        // Clear the hash from the URL
+        window.history.replaceState(null, "", window.location.pathname + window.location.search);
+        
+        loginWithGoogleToken(accessToken).finally(() => {
+          setIsGoogleLoggingIn(false);
+        });
+      }
+    }
+  }, [loginWithGoogleToken]);
 
   useEffect(() => {
     if (!isLoading) {
@@ -225,7 +244,7 @@ function AppLayout() {
     }
   }, [isLoading, isAuthenticated, isEmailVerified, isPublicRoute, location.pathname]);
 
-  if (isLoading) {
+  if (isLoading || isGoogleLoggingIn) {
     return (
       <div className="flex h-screen w-full overflow-hidden bg-background">
         <aside className="hidden w-64 flex-col border-r border-border bg-card p-4 md:flex space-y-4">
@@ -259,7 +278,19 @@ function AppLayout() {
 
   // Hide sidebar and header on public pages
   if (isPublicRoute) {
-    return <Outlet />;
+    return (
+      <>
+        <Outlet />
+        <Toaster
+          position="top-right"
+          toastOptions={{
+            classNames: {
+              toast: "bg-card text-card-foreground border-border shadow-elevated",
+            },
+          }}
+        />
+      </>
+    );
   }
 
   // Route Security Middleware (SaaS Feature Flags)

@@ -188,10 +188,13 @@ function ProfilePage() {
                   </span>
                   <input
                     value={profile.email}
-                    onChange={(e) => handleChange("email", e.target.value)}
-                    className={`w-full rounded-lg border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring/20 ${profileErrors.email ? "border-destructive focus:border-destructive" : "border-border focus:border-ring"}`}
+                    readOnly
+                    disabled
+                    className={`w-full rounded-lg border bg-muted text-muted-foreground cursor-not-allowed px-3 py-2 text-sm focus:outline-none ${profileErrors.email ? "border-destructive focus:border-destructive" : "border-border"}`}
                   />
-                  <FieldError message={profileErrors.email} />
+                  <p className="text-[10px] text-muted-foreground mt-1">
+                    Email cannot be changed as it is used for login.
+                  </p>
                 </label>
                 <label className="block">
                   <span className="mb-1.5 block text-xs font-semibold text-muted-foreground">

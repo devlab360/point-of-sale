@@ -8,6 +8,7 @@ import { getSalesFn } from "@/api/sales";
 import { getProductsFn } from "@/api/products";
 import { getCustomersFn } from "@/api/customers";
 import { getExpensesFn } from "@/api/expenses";
+import { askAiCopilotFn } from "@/api/ai";
 import { PersistStore } from "@/lib/session-store";
 import { useCurrency } from "@/lib/currency";
 import {
@@ -20,6 +21,7 @@ import {
   UserCheck,
   ShieldAlert,
   CheckCircle2,
+  Loader2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -141,6 +143,8 @@ export function AiCopilotDrawer() {
     },
   ]);
 
+  const [isTyping, setIsTyping] = useState(false);
+
   const [btnPos, setBtnPos] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const dragRef = useRef({ startX: 0, startY: 0, hasMoved: false });
@@ -177,8 +181,8 @@ export function AiCopilotDrawer() {
     setIsOpen(true);
   };
 
-  const processUserQuery = (queryText: string) => {
-    const q = queryText.toLowerCase().trim();
+  const processUserQuery = async (queryText: string) => {
+    const q = queryText.trim();
     if (!q) return;
 
     const userMsg: Message = {
@@ -188,118 +192,59 @@ export function AiCopilotDrawer() {
       timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
     };
 
-    let aiReplyText = "";
-    let dataCard: Message["dataCard"] = undefined;
-
-    if (
-      q.includes("health") ||
-      q.includes("স্কোর") ||
-      q.includes("কেমন চলছে") ||
-      q.includes("score")
-    ) {
-      aiReplyText = `📊 আপনার দোকানের **Business Health Score হলো ${healthAnalysis.score}/100 [Grade: ${healthAnalysis.grade}]**।`;
-      dataCard = {
-        title: `Business Health Score: ${healthAnalysis.score}/100`,
-        metrics: [
-          {
-            label: "Net Profit",
-            value: formatCurrency(healthAnalysis.netProfit),
-            color: "text-success",
-          },
-          {
-            label: "Total Overdue",
-            value: formatCurrency(healthAnalysis.totalDue),
-            color: "text-destructive",
-          },
-          {
-            label: "Dead Stock Value",
-            value: formatCurrency(healthAnalysis.deadStockValue),
-            color: "text-warning-foreground",
-          },
-        ],
-        alert:
-          healthAnalysis.score < 70
-            ? "⚠️ বকেয়া কালেকশন দ্রুত বাড়ান এবং অলস স্টক ডিসকাউন্টে বিক্রি করুন।"
-            : "✅ ব্যবসা চমৎকার গতিতে লাভজনকভাবে চলছে!",
-      };
-    } else if (
-      q.includes("dead") ||
-      q.includes("স্টক") ||
-      q.includes("বিক্রি হচ্ছে না") ||
-      q.includes("unsold")
-    ) {
-      aiReplyText = `📦 মোট **${healthAnalysis.deadStockItems.length}টি পণ্য (মূল্য: ${formatCurrency(healthAnalysis.deadStockValue)})** অলস পড়ে আছে যা গত ৩০ দিনে বিক্রি হয়নি।`;
-      dataCard = {
-        title: "Dead Stock Items (অলস স্টক তালিকা)",
-        list: healthAnalysis.deadStockItems.slice(0, 5).map((p) => ({
-          label: p.name,
-          subtext: `Stock: ${p.stock} ${p.unit}`,
-          badge: `${formatCurrency(p.stock * p.cost)} Value`,
-        })),
-        alert:
-          "💡 পরামর্শ: এই আইটেমগুলোর ওপর ১০%-২০% স্পেশাল প্রোমোশন অফার দিয়ে দ্রুত ক্যাশ কনভার্ট করুন।",
-      };
-    } else if (
-      q.includes("বকেয়া") ||
-      q.includes("due") ||
-      q.includes("বাকী") ||
-      q.includes("khata")
-    ) {
-      aiReplyText = `💰 কাস্টমারদের কাছে মোট **${formatCurrency(healthAnalysis.totalDue)}** টাকা বকেয়া রয়েছে।`;
-      dataCard = {
-        title: "Top Overdue Customers (সর্বোচ্চ বকেয়া কাস্টমার)",
-        list: healthAnalysis.topDueCustomers.map((c) => ({
-          label: c.name,
-          subtext: c.phone || "No phone",
-          badge: formatCurrency(c.credit || 0),
-        })),
-        alert: "📲 ১-ক্লিকে কাস্টমারদের হোয়াটসঅ্যাপে রিমাইন্ডার পাঠান।",
-      };
-    } else if (
-      q.includes("profit") ||
-      q.includes("লাভ") ||
-      q.includes("আয়") ||
-      q.includes("বিক্রি")
-    ) {
-      aiReplyText = `📈 আপনার মোট বিক্রি **${formatCurrency(healthAnalysis.totalSalesRev)}** এবং সমস্ত খরচ বাদ দিয়ে নিট প্রফিট **${formatCurrency(healthAnalysis.netProfit)}**।`;
-      dataCard = {
-        title: "Financial Summary (লাভ-ক্ষতি সারসংক্ষেপ)",
-        metrics: [
-          { label: "Total Sales", value: formatCurrency(healthAnalysis.totalSalesRev) },
-          {
-            label: "Expenses",
-            value: formatCurrency(healthAnalysis.totalExp),
-            color: "text-destructive",
-          },
-          {
-            label: "Net Profit",
-            value: formatCurrency(healthAnalysis.netProfit),
-            color: "text-success",
-          },
-        ],
-      };
-    } else {
-      aiReplyText = `🤖 বিশ্লেষণ সম্পন্ন: আপনার দোকানে বর্তমানে **${products.length}টি পণ্য**, **${customers.length}জন কাস্টমার** এবং মোট বিক্রি **${formatCurrency(healthAnalysis.totalSalesRev)}**।`;
-      dataCard = {
-        title: "Store Quick Insights",
-        metrics: [
-          { label: "Total Products", value: products.length.toString() },
-          { label: "Total Customers", value: customers.length.toString() },
-          { label: "Health Score", value: `${healthAnalysis.score}/100`, color: "text-primary" },
-        ],
-      };
-    }
-
-    const aiMsg: Message = {
-      id: (Date.now() + 1).toString(),
-      sender: "ai",
-      text: aiReplyText,
-      timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-      dataCard,
-    };
-
-    setMessages((prev) => [...prev, userMsg, aiMsg]);
+    setMessages((prev) => [...prev, userMsg]);
     setInputQuery("");
+    setIsTyping(true);
+
+    try {
+      const context = {
+        metrics: {
+          totalSales: healthAnalysis.totalSalesRev,
+          netProfit: healthAnalysis.netProfit,
+          totalExpenses: healthAnalysis.totalExp,
+          totalDue: healthAnalysis.totalDue,
+          deadStockValue: healthAnalysis.deadStockValue,
+          healthScore: healthAnalysis.score,
+        },
+        deadStock: healthAnalysis.deadStockItems.slice(0, 10).map((p) => ({
+          name: p.name,
+          stock: p.stock,
+          unit: p.unit,
+          value: p.stock * p.cost,
+        })),
+        overdueCustomers: healthAnalysis.topDueCustomers.map((c) => ({
+          name: c.name,
+          phone: c.phone,
+          due: c.credit,
+        })),
+      };
+
+      const res = await askAiCopilotFn({ data: { query: q, context } });
+
+      if (res?.success && res.data) {
+        const aiMsg: Message = {
+          id: (Date.now() + 1).toString(),
+          sender: "ai",
+          text: res.data.text || "দুঃখিত, আমি আপনার প্রশ্নটি বুঝতে পারিনি।",
+          timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+          dataCard: res.data.dataCard,
+        };
+        setMessages((prev) => [...prev, aiMsg]);
+      } else {
+        throw new Error("Failed to get AI response");
+      }
+    } catch (err) {
+      console.error(err);
+      const errorMsg: Message = {
+        id: (Date.now() + 1).toString(),
+        sender: "ai",
+        text: "দুঃখিত, আমি এই মুহূর্তে উত্তর দিতে পারছি না। దয়া করে কিছুক্ষণ পরে আবার চেষ্টা করুন।",
+        timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+      };
+      setMessages((prev) => [...prev, errorMsg]);
+    } finally {
+      setIsTyping(false);
+    }
   };
 
   return (
@@ -453,6 +398,16 @@ export function AiCopilotDrawer() {
                 <span className="text-[9px] text-muted-foreground mt-1 px-1">{m.timestamp}</span>
               </div>
             ))}
+            
+            {isTyping && (
+              <div className="flex flex-col items-start w-11/12 sm:w-5/6 mr-auto">
+                <div className="rounded-2xl rounded-tl-sm px-4 py-3 bg-muted/30 text-foreground border border-border/50 text-sm flex gap-1 items-center">
+                  <span className="size-2 bg-primary rounded-full animate-bounce [animation-delay:-0.3s]"></span>
+                  <span className="size-2 bg-primary rounded-full animate-bounce [animation-delay:-0.15s]"></span>
+                  <span className="size-2 bg-primary rounded-full animate-bounce"></span>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Input Box */}
@@ -469,8 +424,8 @@ export function AiCopilotDrawer() {
               placeholder="Ask AI Copilot (e.g. আজকের প্রফিট কত?)..."
               className="text-xs"
             />
-            <Button type="submit" size="icon" className="shrink-0 size-9">
-              <Send className="size-4" />
+            <Button type="submit" size="icon" className="shrink-0 size-9" disabled={isTyping}>
+              {isTyping ? <Loader2 className="size-4 animate-spin" /> : <Send className="size-4" />}
             </Button>
           </form>
         </SheetContent>

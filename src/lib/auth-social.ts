@@ -12,7 +12,7 @@ export function initiateGoogleOAuth() {
     return null;
   }
 
-  const redirectUri = `${window.location.origin}/login`;
+  const redirectUri = `${window.location.origin}`;
   const scope = "email profile";
   const responseType = "token";
 

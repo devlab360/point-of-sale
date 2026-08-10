@@ -6,7 +6,9 @@ import { Input, PasswordInput } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Store, UserCircle2, KeyRound, ArrowLeft, Loader2, Mail, ShieldCheck } from "lucide-react";
 import { generateVerificationOtp, sendPasswordResetEmail } from "@/lib/email-service";
-import { resetPasswordFn, sendPasswordResetOtpFn } from "@/api/auth";
+import { resetPasswordFn, sendPasswordResetOtpFn, sendLoginOtpFn } from "@/api/auth";
+import { auth } from "@/lib/firebase";
+import { RecaptchaVerifier, signInWithPhoneNumber, ConfirmationResult } from "firebase/auth";
 import { toast } from "sonner";
 import { validateEmail, validatePassword, sanitizeInput } from "@/lib/validation";
 import { checkRateLimit } from "@/lib/api-response";
@@ -19,12 +21,22 @@ export const Route = createFileRoute("/login")({
 });
 
 function LoginPage() {
-  const [mode, setMode] = useState<"pin" | "email" | "forgot">("email");
-  const [pin, setPin] = useState("");
+  const [mode, setMode] = useState<"otp" | "email" | "forgot">("email");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const { login, loginWithEmail, loginWithSocial } = useAuth();
+  const { loginWithEmail, loginWithOtp, loginWithSocial, loginWithFirebasePhone } = useAuth();
   const navigate = useNavigate();
+
+  // OTP Login states
+  const [otpLoginIdentifier, setOtpLoginIdentifier] = useState("");
+  const [otpLoginCode, setOtpLoginCode] = useState("");
+  const [otpLoginStep, setOtpLoginStep] = useState<"request" | "verify">("request");
+  const [isSendingLoginOtp, setIsSendingLoginOtp] = useState(false);
+  const [isOtpLoggingIn, setIsOtpLoggingIn] = useState(false);
+  const [confirmationResult, setConfirmationResult] = useState<ConfirmationResult | null>(null);
+
+  // Phone validation regex
+  const isPhone = (val: string) => /^\+?[1-9]\d{1,14}$/.test(val.replace(/\s+/g, ''));
 
   // Forgot password flow states
   const [forgotStep, setForgotStep] = useState<"request" | "verify">("request");
@@ -74,29 +86,104 @@ function LoginPage() {
     confirmPassword: { required: "Please confirm your password" },
   });
 
-  const handleKeyPress = (num: string) => {
-    if (pin.length < 4) {
-      setPin((prev) => prev + num);
+  const handleSendLoginOtp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const identifier = sanitizeInput(otpLoginIdentifier);
+
+    if (isPhone(identifier)) {
+      // Handle Firebase Phone Auth
+      if (!auth || Object.keys(auth).length === 0) {
+        toast.error("Firebase API Key is missing. Please check .env and refresh the page.");
+        return;
+      }
+
+      setIsSendingLoginOtp(true);
+      try {
+        if (!(window as any).recaptchaVerifier) {
+          (window as any).recaptchaVerifier = new RecaptchaVerifier(auth, "recaptcha-container", {
+            size: "invisible",
+          });
+        }
+
+        // Ensure phone has country code, default to India if not specified
+        const phone = identifier.startsWith("+") ? identifier : `+91${identifier}`;
+
+        const confirmation = await signInWithPhoneNumber(auth, phone, (window as any).recaptchaVerifier);
+        setConfirmationResult(confirmation);
+        setOtpLoginStep("verify");
+        toast.success(`SMS OTP sent to ${phone}`);
+      } catch (err: any) {
+        toast.error(err.message || "Failed to send SMS. Ensure Firebase config is set.");
+        // Reset recaptcha if failed
+        if ((window as any).recaptchaVerifier) {
+          (window as any).recaptchaVerifier.clear();
+          (window as any).recaptchaVerifier = null;
+        }
+      } finally {
+        setIsSendingLoginOtp(false);
+      }
+      return;
+    }
+
+    // Handle Email Auth
+    const emailVal = validateEmail(identifier);
+    if (!emailVal.valid) {
+      toast.error("Enter a valid email address or phone number (e.g. +91XXXXXXXXXX).");
+      return;
+    }
+
+    const rateCheck = checkRateLimit(`login_otp_${identifier}`, 3, 60000);
+    if (!rateCheck.allowed) {
+      toast.error(`OTP request limit reached. Please wait ${rateCheck.retryAfterSec} seconds.`);
+      return;
+    }
+
+    setIsSendingLoginOtp(true);
+    try {
+      const otp = generateVerificationOtp();
+      const res = await sendLoginOtpFn({ data: { email: identifier, otp } });
+      if (!res.success) {
+        throw new Error(res.error || "Failed to send OTP.");
+      }
+
+      await sendPasswordResetEmail(identifier, otp); // reusing email template
+      setConfirmationResult(null); // Ensure it's null for email flow
+      setOtpLoginStep("verify");
+      toast.success(`OTP sent to ${identifier}. Check your inbox.`);
+    } catch (err: any) {
+      toast.error(err.message || "Failed to send OTP code. Please try again.");
+    } finally {
+      setIsSendingLoginOtp(false);
     }
   };
 
-  const handleDelete = () => {
-    setPin((prev) => prev.slice(0, -1));
-  };
+  const handleVerifyLoginOtp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!otpLoginCode.trim() || otpLoginCode.length < 6) {
+      toast.error("Please enter the 6-digit OTP code.");
+      return;
+    }
 
-  const [isPinLoggingIn, setIsPinLoggingIn] = useState(false);
-
-  const handlePinLogin = async () => {
-    if (pin.length !== 4) return;
-    setIsPinLoggingIn(true);
-    await new Promise((resolve) => setTimeout(resolve, 500));
+    setIsOtpLoggingIn(true);
     try {
-      const success = await login(pin);
-      if (!success) {
-        setPin("");
+      if (confirmationResult) {
+        // Firebase Phone verification
+        const result = await confirmationResult.confirm(otpLoginCode);
+        const idToken = await result.user.getIdToken();
+
+        // Let AuthContext handle the backend session creation using the Firebase token
+        if (loginWithFirebasePhone) {
+          await loginWithFirebasePhone(idToken);
+        }
+
+      } else {
+        // Email verification
+        await loginWithOtp(otpLoginIdentifier, otpLoginCode);
       }
+    } catch (err: any) {
+      toast.error(err.message || "Invalid OTP code.");
     } finally {
-      setIsPinLoggingIn(false);
+      setIsOtpLoggingIn(false);
     }
   };
 
@@ -240,8 +327,8 @@ function LoginPage() {
           </div>
           <h1 className="text-2xl font-bold tracking-tight">NexisPOS SaaS</h1>
           <p className="text-sm text-muted-foreground">
-            {mode === "pin"
-              ? "Enter your PIN to access the register"
+            {mode === "otp"
+              ? "Sign in with OTP"
               : mode === "forgot"
                 ? "Reset your password via Email OTP"
                 : "Sign in to your store dashboard"}
@@ -298,7 +385,6 @@ function LoginPage() {
               {isLoggingIn && <Loader2 className="size-4 animate-spin mr-2" />}
               Sign In
             </Button>
-
             <div className="relative my-4">
               <div className="absolute inset-0 flex items-center">
                 <span className="w-full border-t" />
@@ -308,45 +394,32 @@ function LoginPage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                className="w-full text-xs font-semibold"
-                onClick={() => loginWithSocial("google")}
-              >
-                <svg className="mr-2 size-4" viewBox="0 0 24 24">
-                  <path
-                    fill="#4285F4"
-                    d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                  />
-                  <path
-                    fill="#34A853"
-                    d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                  />
-                  <path
-                    fill="#FBBC05"
-                    d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"
-                  />
-                  <path
-                    fill="#EA4335"
-                    d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
-                  />
-                </svg>
-                Google
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                className="w-full text-xs font-semibold text-[#1877F2]"
-                onClick={() => loginWithSocial("facebook")}
-              >
-                <svg className="mr-2 size-4 fill-current" viewBox="0 0 24 24">
-                  <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
-                </svg>
-                Facebook
-              </Button>
-            </div>
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full text-xs font-semibold"
+              onClick={() => loginWithSocial("google")}
+            >
+              <svg className="mr-2 size-4" viewBox="0 0 24 24">
+                <path
+                  fill="#4285F4"
+                  d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                />
+                <path
+                  fill="#34A853"
+                  d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                />
+                <path
+                  fill="#FBBC05"
+                  d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"
+                />
+                <path
+                  fill="#EA4335"
+                  d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
+                />
+              </svg>
+              Google
+            </Button>
 
             <div className="pt-4 text-center text-sm text-muted-foreground">
               Don't have an account?{" "}
@@ -478,68 +551,79 @@ function LoginPage() {
             </form>
           )
         ) : (
-          <>
-            <div className="mb-8 flex justify-center gap-3">
-              {[0, 1, 2, 3].map((i) => (
-                <div
-                  key={i}
-                  className={`size-4 rounded-full transition-colors ${
-                    i < pin.length ? "bg-primary" : "bg-muted"
-                  }`}
+          otpLoginStep === "request" ? (
+            <form noValidate onSubmit={handleSendLoginOtp} className="space-y-4">
+              <div className="space-y-1.5">
+                <Label>Terminal Sign In (Email or Phone)</Label>
+                <Input
+                  type="text"
+                  value={otpLoginIdentifier}
+                  onChange={(e) => setOtpLoginIdentifier(e.target.value)}
+                  placeholder="Email or Phone"
                 />
-              ))}
-            </div>
+                <p className="text-xs text-muted-foreground">
+                  We will send a 6-digit OTP to sign you in securely.
+                </p>
+              </div>
 
-            <div className="grid grid-cols-3 gap-3">
-              {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((num) => (
-                <Button
-                  key={num}
-                  variant="outline"
-                  className="h-16 text-2xl font-semibold"
-                  onClick={() => handleKeyPress(num.toString())}
+              <div id="recaptcha-container"></div>
+
+              <Button type="submit" disabled={isSendingLoginOtp} className="w-full">
+                {isSendingLoginOtp && <Loader2 className="size-4 animate-spin mr-2" />}
+                <Mail className="size-4 mr-2" /> Send OTP Code
+              </Button>
+            </form>
+          ) : (
+            <form noValidate onSubmit={handleVerifyLoginOtp} className="space-y-4">
+              <div className="p-3 bg-muted/40 border rounded-lg text-xs space-y-1">
+                <p className="font-semibold text-foreground">OTP Sent to:</p>
+                <p className="text-muted-foreground font-mono truncate">{otpLoginIdentifier}</p>
+              </div>
+
+              <div className="space-y-1.5">
+                <Label>6-Digit OTP Code</Label>
+                <Input
+                  type="text"
+                  maxLength={6}
+                  value={otpLoginCode}
+                  onChange={(e) => setOtpLoginCode(e.target.value.replace(/\D/g, ""))}
+                  placeholder="e.g. 123456"
+                  className="font-mono text-center text-lg tracking-widest"
+                />
+              </div>
+
+              <Button type="submit" disabled={isOtpLoggingIn} className="w-full">
+                {isOtpLoggingIn && <Loader2 className="size-4 animate-spin mr-2" />}
+                <ShieldCheck className="size-4 mr-2" /> Verify & Sign In
+              </Button>
+
+              <div className="flex justify-center pt-2 text-xs">
+                <button
+                  type="button"
+                  onClick={() => setOtpLoginStep("request")}
+                  className="text-muted-foreground hover:text-foreground font-medium inline-flex items-center"
                 >
-                  {num}
-                </Button>
-              ))}
-              <Button
-                variant="outline"
-                className="h-16 text-xl font-medium text-muted-foreground"
-                onClick={handleDelete}
-              >
-                Del
-              </Button>
-              <Button
-                variant="outline"
-                className="h-16 text-2xl font-semibold"
-                onClick={() => handleKeyPress("0")}
-              >
-                0
-              </Button>
-              <Button
-                className="h-16 text-xl font-medium"
-                onClick={handlePinLogin}
-                disabled={pin.length !== 4 || isPinLoggingIn}
-              >
-                {isPinLoggingIn ? <Loader2 className="size-6 animate-spin" /> : "Go"}
-              </Button>
-            </div>
-          </>
+                  <ArrowLeft className="size-3.5 mr-1" /> Resend / Change Email
+                </button>
+              </div>
+            </form>
+          )
         )}
 
         <div className="mt-8 flex justify-center">
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => setMode(mode === "pin" ? "email" : "pin")}
+            onClick={() => setMode(mode === "otp" ? "email" : "otp")}
             className="text-xs text-muted-foreground"
           >
-            {mode === "pin" ? (
+            {mode === "otp" ? (
               <>
                 <UserCircle2 className="size-4 mr-2" /> Owner Sign In (Email)
               </>
             ) : (
               <>
-                <KeyRound className="size-4 mr-2" /> Terminal Sign In (PIN)
+                <KeyRound className="size-4 mr-2" /> Terminal Sign In (OTP)
               </>
             )}
           </Button>

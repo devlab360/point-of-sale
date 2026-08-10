@@ -15,7 +15,15 @@ const UserInputSchema = z
     email: z.string().email("Valid email is required"),
     role: z.string().min(1, "Role is required"),
     status: z.string().optional().default("active"),
-    pin: z.string().optional(),
+    pin: z
+      .string()
+      .min(8, "Password must be at least 8 characters long")
+      .regex(
+        /(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^a-zA-Z\d])/,
+        "Password must contain uppercase, lowercase, number and special character",
+      )
+      .optional()
+      .or(z.literal("")),
     avatar: z.string().nullable().optional(),
     phone: z.string().nullable().optional(),
     location: z.string().nullable().optional(),
@@ -74,6 +82,19 @@ export const createUserFn = createServerFn({ method: "POST" })
     try {
       const session = await requireAdmin();
 
+      const email = data.user.email.toLowerCase();
+
+      // Enforce globally unique emails
+      const existingUser = await db
+        .select()
+        .from(schema.users)
+        .where(eq(schema.users.email, email))
+        .limit(1);
+
+      if (existingUser.length > 0) {
+        return { success: false, error: "A user with this email already exists." };
+      }
+
       let pin = data.user.pin;
       if (pin) pin = await bcrypt.hash(pin, 10);
 
@@ -82,6 +103,7 @@ export const createUserFn = createServerFn({ method: "POST" })
         .values({
           id: data.user.id || uuidv4(),
           ...data.user,
+          email,
           pin,
           organizationId: session.orgId,
         })
@@ -108,6 +130,20 @@ export const updateUserFn = createServerFn({ method: "POST" })
         return { success: false, error: "Forbidden" };
 
       let updateData = { ...data.updates };
+
+      if (updateData.email) {
+        updateData.email = updateData.email.toLowerCase();
+        const existingUser = await db
+          .select()
+          .from(schema.users)
+          .where(and(eq(schema.users.email, updateData.email)))
+          .limit(1);
+          
+        if (existingUser.length > 0 && existingUser[0].id !== data.id) {
+          return { success: false, error: "A user with this email already exists." };
+        }
+      }
+
       if (updateData.pin) {
         updateData.pin = await bcrypt.hash(updateData.pin, 10);
       }
