@@ -138,7 +138,7 @@ export function AiCopilotDrawer() {
     {
       id: "welcome",
       sender: "ai",
-      text: "👋 WellCome! আমি আপনার **NexisPOS AI Copilot**। আপনার দোকানের লাভ-ক্ষতি, বকেয়া হিসাব, স্টক প্রেডিকশন বা বিজনেস হেলথ স্কোর নিয়ে প্রশ্ন করতে পারেন।",
+      text: "Welcome! I am your **NexisPOS AI Copilot**. You can ask questions about your store's profit and loss, due accounts, stock prediction, or business health score.",
       timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
     },
   ]);
@@ -398,7 +398,7 @@ export function AiCopilotDrawer() {
                 <span className="text-[9px] text-muted-foreground mt-1 px-1">{m.timestamp}</span>
               </div>
             ))}
-            
+
             {isTyping && (
               <div className="flex flex-col items-start w-11/12 sm:w-5/6 mr-auto">
                 <div className="rounded-2xl rounded-tl-sm px-4 py-3 bg-muted/30 text-foreground border border-border/50 text-sm flex gap-1 items-center">

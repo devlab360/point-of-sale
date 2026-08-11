@@ -21,7 +21,7 @@ export const askAiCopilotFn = createServerFn({ method: "POST" })
       }
 
       const genAI = new GoogleGenerativeAI(apiKey);
-      const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+      const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
       const systemPrompt = `You are the NexisPOS AI Business Advisor, an expert retail and business consultant.
 You are assisting a store owner who is using the NexisPOS system.
