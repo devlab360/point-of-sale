@@ -11,7 +11,9 @@ export const sendAutomatedReport = async (
   salesData: { totalRevenue: number; totalOrders: number; topItems: string[] },
 ) => {
   if (!adminPhone) {
-    console.warn("Admin phone missing. Cannot send automated report.");
+    const msg = "Admin phone missing. Cannot send automated report.";
+    console.warn(msg);
+    toast.warning(msg);
     return;
   }
 

@@ -14,7 +14,9 @@ export const sendAutomatedReceipt = async (
   items: any[],
 ) => {
   if (!customerPhone) {
-    console.warn("Customer phone missing. Cannot send automated receipt.");
+    const msg = "Customer phone missing. Cannot send automated receipt.";
+    console.warn(msg);
+    toast.warning(msg);
     return;
   }
 

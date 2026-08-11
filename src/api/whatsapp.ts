@@ -1,0 +1,126 @@
+import { createServerFn } from "@tanstack/react-start";
+import { z } from "zod";
+import { handleApiError } from "@/lib/error-utils";
+import { requireAuth } from "@/lib/auth-utils";
+
+const getWaHeaders = () => {
+  // Use secure server-side env vars, without VITE_ prefix if available, fallback to VITE_
+  const token = process.env.WA_ACCESS_TOKEN || process.env.VITE_WA_ACCESS_TOKEN;
+  if (!token) throw new Error("Missing WA_ACCESS_TOKEN in .env");
+
+  return {
+    Authorization: `Bearer ${token}`,
+    "Content-Type": "application/json",
+  };
+};
+
+const getWaUrl = () => {
+  const phoneId = process.env.WA_PHONE_NUMBER_ID || process.env.VITE_WA_PHONE_NUMBER_ID;
+  if (!phoneId) throw new Error("Missing WA_PHONE_NUMBER_ID in .env");
+
+  return `https://graph.facebook.com/v17.0/${phoneId}/messages`;
+};
+
+const formatPhone = (phone: string) => {
+  return phone.replace(/[^0-9]/g, "");
+};
+
+export const sendWhatsAppTextFn = createServerFn({ method: "POST" })
+  .validator(
+    z.object({
+      phone: z.string(),
+      text: z.string(),
+    })
+  )
+  .handler(async ({ data }) => {
+    try {
+      // Secure the endpoint so only authenticated users can send messages
+      await requireAuth();
+
+      const url = getWaUrl();
+      const headers = getWaHeaders();
+      const formattedPhone = formatPhone(data.phone);
+
+      const payload = {
+        messaging_product: "whatsapp",
+        recipient_type: "individual",
+        to: formattedPhone,
+        type: "text",
+        text: {
+          preview_url: false,
+          body: data.text,
+        },
+      };
+
+      const res = await fetch(url, {
+        method: "POST",
+        headers,
+        body: JSON.stringify(payload),
+      });
+
+      const resData = await res.json();
+
+      if (!res.ok) {
+        console.error("[WA API Error]", resData);
+        // Specifically look for Facebook Graph API error structure
+        const errorMsg = resData.error?.message || "Failed to send WhatsApp message";
+        const errorDetails = resData.error?.error_user_msg || resData.error?.type || "";
+        throw new Error(`WhatsApp API Error: ${errorMsg} ${errorDetails}`);
+      }
+
+      return { success: true, data: resData };
+    } catch (error: any) {
+      console.error("[sendWhatsAppTextFn]", error);
+      return handleApiError(error);
+    }
+  });
+
+export const sendWhatsAppDocumentFn = createServerFn({ method: "POST" })
+  .validator(
+    z.object({
+      phone: z.string(),
+      documentUrl: z.string().url(),
+      filename: z.string(),
+      caption: z.string().optional(),
+    })
+  )
+  .handler(async ({ data }) => {
+    try {
+      await requireAuth();
+
+      const url = getWaUrl();
+      const headers = getWaHeaders();
+      const formattedPhone = formatPhone(data.phone);
+
+      const payload = {
+        messaging_product: "whatsapp",
+        recipient_type: "individual",
+        to: formattedPhone,
+        type: "document",
+        document: {
+          link: data.documentUrl,
+          filename: data.filename,
+          caption: data.caption || "",
+        },
+      };
+
+      const res = await fetch(url, {
+        method: "POST",
+        headers,
+        body: JSON.stringify(payload),
+      });
+
+      const resData = await res.json();
+
+      if (!res.ok) {
+        console.error("[WA API Error]", resData);
+        const errorMsg = resData.error?.message || "Failed to send WhatsApp document";
+        throw new Error(`WhatsApp API Error: ${errorMsg}`);
+      }
+
+      return { success: true, data: resData };
+    } catch (error: any) {
+      console.error("[sendWhatsAppDocumentFn]", error);
+      return handleApiError(error);
+    }
+  });

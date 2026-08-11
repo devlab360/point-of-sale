@@ -35,6 +35,7 @@ import { Route as InventoryRouteImport } from './routes/inventory'
 import { Route as HelpRouteImport } from './routes/help'
 import { Route as GiftCardsRouteImport } from './routes/gift-cards'
 import { Route as ExpensesRouteImport } from './routes/expenses'
+import { Route as ErrorRouteImport } from './routes/error'
 import { Route as DeliveryChallansRouteImport } from './routes/delivery-challans'
 import { Route as CustomersRouteImport } from './routes/customers'
 import { Route as CouponsRouteImport } from './routes/coupons'
@@ -184,6 +185,11 @@ const ExpensesRoute = ExpensesRouteImport.update({
   path: '/expenses',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ErrorRoute = ErrorRouteImport.update({
+  id: '/error',
+  path: '/error',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const DeliveryChallansRoute = DeliveryChallansRouteImport.update({
   id: '/delivery-challans',
   path: '/delivery-challans',
@@ -292,6 +298,7 @@ export interface FileRoutesByFullPath {
   '/coupons': typeof CouponsRoute
   '/customers': typeof CustomersRoute
   '/delivery-challans': typeof DeliveryChallansRoute
+  '/error': typeof ErrorRoute
   '/expenses': typeof ExpensesRoute
   '/gift-cards': typeof GiftCardsRoute
   '/help': typeof HelpRoute
@@ -338,6 +345,7 @@ export interface FileRoutesByTo {
   '/coupons': typeof CouponsRoute
   '/customers': typeof CustomersRoute
   '/delivery-challans': typeof DeliveryChallansRoute
+  '/error': typeof ErrorRoute
   '/expenses': typeof ExpensesRoute
   '/gift-cards': typeof GiftCardsRoute
   '/help': typeof HelpRoute
@@ -382,6 +390,7 @@ export interface FileRoutesById {
   '/coupons': typeof CouponsRoute
   '/customers': typeof CustomersRoute
   '/delivery-challans': typeof DeliveryChallansRoute
+  '/error': typeof ErrorRoute
   '/expenses': typeof ExpensesRoute
   '/gift-cards': typeof GiftCardsRoute
   '/help': typeof HelpRoute
@@ -430,6 +439,7 @@ export interface FileRouteTypes {
     | '/coupons'
     | '/customers'
     | '/delivery-challans'
+    | '/error'
     | '/expenses'
     | '/gift-cards'
     | '/help'
@@ -476,6 +486,7 @@ export interface FileRouteTypes {
     | '/coupons'
     | '/customers'
     | '/delivery-challans'
+    | '/error'
     | '/expenses'
     | '/gift-cards'
     | '/help'
@@ -519,6 +530,7 @@ export interface FileRouteTypes {
     | '/coupons'
     | '/customers'
     | '/delivery-challans'
+    | '/error'
     | '/expenses'
     | '/gift-cards'
     | '/help'
@@ -566,6 +578,7 @@ export interface RootRouteChildren {
   CouponsRoute: typeof CouponsRoute
   CustomersRoute: typeof CustomersRoute
   DeliveryChallansRoute: typeof DeliveryChallansRoute
+  ErrorRoute: typeof ErrorRoute
   ExpensesRoute: typeof ExpensesRoute
   GiftCardsRoute: typeof GiftCardsRoute
   HelpRoute: typeof HelpRoute
@@ -779,6 +792,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ExpensesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/error': {
+      id: '/error'
+      path: '/error'
+      fullPath: '/error'
+      preLoaderRoute: typeof ErrorRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/delivery-challans': {
       id: '/delivery-challans'
       path: '/delivery-challans'
@@ -963,6 +983,7 @@ const rootRouteChildren: RootRouteChildren = {
   CouponsRoute: CouponsRoute,
   CustomersRoute: CustomersRoute,
   DeliveryChallansRoute: DeliveryChallansRoute,
+  ErrorRoute: ErrorRoute,
   ExpensesRoute: ExpensesRoute,
   GiftCardsRoute: GiftCardsRoute,
   HelpRoute: HelpRoute,

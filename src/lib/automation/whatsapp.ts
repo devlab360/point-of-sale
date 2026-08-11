@@ -1,67 +1,20 @@
 /**
- * Meta WhatsApp Cloud API Service
- * Handles sending automated text messages and media (PDFs, CSVs) via WhatsApp.
+ * Meta WhatsApp Cloud API Service (Client Wrapper)
+ * Handles sending automated text messages and media (PDFs, CSVs) via WhatsApp using secure server functions.
  */
-
-const getWaHeaders = () => {
-  const token = import.meta.env.VITE_WA_ACCESS_TOKEN;
-  if (!token) throw new Error("Missing VITE_WA_ACCESS_TOKEN in .env");
-
-  return {
-    Authorization: `Bearer ${token}`,
-    "Content-Type": "application/json",
-  };
-};
-
-const getWaUrl = () => {
-  const phoneId = import.meta.env.VITE_WA_PHONE_NUMBER_ID;
-  if (!phoneId) throw new Error("Missing VITE_WA_PHONE_NUMBER_ID in .env");
-
-  // v17.0 is a stable Graph API version for WhatsApp Cloud
-  return `https://graph.facebook.com/v17.0/${phoneId}/messages`;
-};
-
-/**
- * Format phone number to international standard required by WhatsApp API (e.g. 88017...)
- */
-const formatPhone = (phone: string) => {
-  return phone.replace(/[^0-9]/g, "");
-};
+import { sendWhatsAppTextFn, sendWhatsAppDocumentFn } from "@/api/whatsapp";
 
 /**
  * Sends a plain text message to a WhatsApp number.
  */
 export const sendWhatsAppText = async (phone: string, text: string) => {
   try {
-    const url = getWaUrl();
-    const headers = getWaHeaders();
-    const formattedPhone = formatPhone(phone);
-
-    const payload = {
-      messaging_product: "whatsapp",
-      recipient_type: "individual",
-      to: formattedPhone,
-      type: "text",
-      text: {
-        preview_url: false,
-        body: text,
-      },
-    };
-
-    const res = await fetch(url, {
-      method: "POST",
-      headers,
-      body: JSON.stringify(payload),
-    });
-
-    const data = await res.json();
-
-    if (!res.ok) {
-      console.error("[WA API Error]", data);
-      throw new Error(data.error?.message || "Failed to send WhatsApp message");
+    const res = await sendWhatsAppTextFn({ data: { phone, text } });
+    if (!res || !res.success) {
+      console.error("[WA API Error]", res);
+      throw new Error(res?.error || "Failed to send WhatsApp message");
     }
-
-    return { success: true, data };
+    return res;
   } catch (error: any) {
     console.error("[sendWhatsAppText]", error);
     return { success: false, error: error.message };
@@ -71,7 +24,6 @@ export const sendWhatsAppText = async (phone: string, text: string) => {
 /**
  * Sends a document (PDF or CSV) to a WhatsApp number.
  * Note: The document must be publicly accessible via a URL, or uploaded via Media API first.
- * For frontend apps, passing a public link (e.g. from Vercel Blob or a generated signed URL) is standard.
  */
 export const sendWhatsAppDocument = async (
   phone: string,
@@ -80,36 +32,14 @@ export const sendWhatsAppDocument = async (
   caption?: string,
 ) => {
   try {
-    const url = getWaUrl();
-    const headers = getWaHeaders();
-    const formattedPhone = formatPhone(phone);
-
-    const payload = {
-      messaging_product: "whatsapp",
-      recipient_type: "individual",
-      to: formattedPhone,
-      type: "document",
-      document: {
-        link: documentUrl,
-        filename: filename,
-        caption: caption || "",
-      },
-    };
-
-    const res = await fetch(url, {
-      method: "POST",
-      headers,
-      body: JSON.stringify(payload),
+    const res = await sendWhatsAppDocumentFn({ 
+      data: { phone, documentUrl, filename, caption } 
     });
-
-    const data = await res.json();
-
-    if (!res.ok) {
-      console.error("[WA API Error]", data);
-      throw new Error(data.error?.message || "Failed to send WhatsApp document");
+    if (!res || !res.success) {
+      console.error("[WA API Error]", res);
+      throw new Error(res?.error || "Failed to send WhatsApp document");
     }
-
-    return { success: true, data };
+    return res;
   } catch (error: any) {
     console.error("[sendWhatsAppDocument]", error);
     return { success: false, error: error.message };
