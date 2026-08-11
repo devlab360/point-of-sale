@@ -34,7 +34,6 @@ export const sendWhatsAppTextFn = createServerFn({ method: "POST" })
   )
   .handler(async ({ data }) => {
     try {
-      // Secure the endpoint so only authenticated users can send messages
       await requireAuth();
 
       const url = getWaUrl();
@@ -62,15 +61,18 @@ export const sendWhatsAppTextFn = createServerFn({ method: "POST" })
 
       if (!res.ok) {
         console.error("[WA API Error]", resData);
-        // Specifically look for Facebook Graph API error structure
         const errorMsg = resData.error?.message || "Failed to send WhatsApp message";
         const errorDetails = resData.error?.error_user_msg || resData.error?.type || "";
-        throw new Error(`WhatsApp API Error: ${errorMsg} ${errorDetails}`);
+        return { success: false as const, code: res.status, error: `WhatsApp API Error: ${errorMsg} ${errorDetails}` };
       }
 
-      return { success: true, data: resData };
+      return { success: true as const, data: resData };
     } catch (error: any) {
       console.error("[sendWhatsAppTextFn]", error);
+      // If it's our own thrown error (like Missing token), return it directly so user can debug
+      if (error.message?.includes("Missing WA_")) {
+        return { success: false as const, code: 500, error: error.message };
+      }
       return handleApiError(error);
     }
   });
@@ -115,12 +117,15 @@ export const sendWhatsAppDocumentFn = createServerFn({ method: "POST" })
       if (!res.ok) {
         console.error("[WA API Error]", resData);
         const errorMsg = resData.error?.message || "Failed to send WhatsApp document";
-        throw new Error(`WhatsApp API Error: ${errorMsg}`);
+        return { success: false as const, code: res.status, error: `WhatsApp API Error: ${errorMsg}` };
       }
 
-      return { success: true, data: resData };
+      return { success: true as const, data: resData };
     } catch (error: any) {
       console.error("[sendWhatsAppDocumentFn]", error);
+      if (error.message?.includes("Missing WA_")) {
+        return { success: false as const, code: 500, error: error.message };
+      }
       return handleApiError(error);
     }
   });
