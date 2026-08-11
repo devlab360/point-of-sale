@@ -7,8 +7,9 @@ const connectionString = process.env.NEON_DB || process.env.DATABASE_URL || "";
 const clientOptions = {
   prepare: false,
   max: Number(process.env.DB_POOL_MAX || 10),
-  idle_timeout: 20,
-  connect_timeout: 15,
+  idle_timeout: 5,
+  connect_timeout: 3,
+  ssl: 'require' as const,
   max_lifetime: 60 * 30,
   backoff: (retries: number) => Math.min(100 * Math.pow(2, retries), 2000),
 };

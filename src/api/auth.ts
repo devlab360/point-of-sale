@@ -702,28 +702,24 @@ export const loginWithFirebasePhoneFn = createServerFn({ method: "POST" })
   .validator(z.object({ idToken: z.string() }))
   .handler(async ({ data }) => {
     try {
-      const { getApps, initializeApp, cert } = await import("firebase-admin/app");
-      const { getAuth } = await import("firebase-admin/auth");
-
-      const serviceAccountStr = process.env.VITE_FIREBASE_SERVICE_ACCOUNT;
-      if (!serviceAccountStr || serviceAccountStr.includes("YOUR_PROJECT_ID")) {
-        return { success: false, error: "Firebase Admin is not configured on the server. Please add a valid VITE_FIREBASE_SERVICE_ACCOUNT in .env." };
+      const apiKey = process.env.VITE_FIREBASE_API_KEY;
+      if (!apiKey) {
+        return { success: false, error: "Firebase API Key is missing on the server" };
       }
 
-      if (!getApps().length) {
-        try {
-          initializeApp({
-            credential: cert(JSON.parse(serviceAccountStr)),
-          });
-        } catch (e) {
-          console.error("Firebase Admin Initialization Error:", e);
-          return { success: false, error: "Failed to initialize Firebase Admin. Please check your JSON format." };
-        }
+      const res = await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=${apiKey}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ idToken: data.idToken })
+      });
+
+      if (!res.ok) {
+        return { success: false, error: "Invalid Firebase ID Token" };
       }
 
-      // 1. Verify token with Firebase Admin
-      const decodedToken = await getAuth().verifyIdToken(data.idToken);
-      const phone = decodedToken.phone_number;
+      const resData = await res.json();
+      const firebaseUser = resData.users?.[0];
+      const phone = firebaseUser?.phoneNumber;
 
       if (!phone) {
         return { success: false, error: "No phone number found in token" };

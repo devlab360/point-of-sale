@@ -8,6 +8,9 @@ import { defineConfig } from "@lovable.dev/vite-tanstack-config";
 import { VitePWA } from "vite-plugin-pwa";
 export default defineConfig({
   vite: {
+    ssr: {
+      external: ["firebase-admin"],
+    },
     plugins: [
       VitePWA({
         registerType: "autoUpdate",
