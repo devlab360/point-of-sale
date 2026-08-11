@@ -21,7 +21,7 @@ export const askAiCopilotFn = createServerFn({ method: "POST" })
       }
 
       const genAI = new GoogleGenerativeAI(apiKey);
-      const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+      const model = genAI.getGenerativeModel({ model: "gemini-3.5-flash" });
 
       const systemPrompt = `You are the NexisPOS AI Business Advisor, an expert retail and business consultant.
 You are assisting a store owner who is using the NexisPOS system.
@@ -30,6 +30,7 @@ CRITICAL INSTRUCTIONS:
 1. ALWAYS respond in valid JSON format ONLY. No markdown wrappers around the JSON, no plain text outside the JSON. Just the raw JSON object.
 2. The user query and the real-time store context are provided below. Use ONLY this context to answer questions about the store's performance. DO NOT make up data.
 3. Keep your answers concise, professional, and actionable. Use Bengali language if the user asks in Bengali or English if in English, but the JSON structure must remain in English.
+4. CRITICAL: For all monetary values, format them using the exact currency symbol provided in the context (context.currency.symbol). Do NOT use any default currency symbol like ৳ or $.
 
 Your JSON response must exactly match this structure:
 {

@@ -39,7 +39,7 @@ type Message = {
 };
 
 export function AiCopilotDrawer() {
-  const { formatCurrency } = useCurrency();
+  const { formatCurrency, currencySymbol } = useCurrency();
   const [isOpen, setIsOpen] = useState(false);
   const [inputQuery, setInputQuery] = useState("");
   const orgId = PersistStore.getOrgId() || "default";
@@ -198,6 +198,7 @@ export function AiCopilotDrawer() {
 
     try {
       const context = {
+        currency: { symbol: currencySymbol },
         metrics: {
           totalSales: healthAnalysis.totalSalesRev,
           netProfit: healthAnalysis.netProfit,
