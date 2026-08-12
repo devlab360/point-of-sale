@@ -189,7 +189,7 @@ export function PosPrintLayouts({ state, preview = false }: { state: any, previe
                   {fmt(printData.total)}
                 </span>
               </div>
-              {printData.cashTendered > 0 && (
+              {printData.payment === "cash" && printData.cashTendered != null && (
                 <div className="flex justify-between mt-2 pt-2 border-t border-gray-400 border-dotted">
                   <span className="font-semibold text-gray-600">Cash Tendered:</span>
                   <span className="font-bold">
@@ -198,7 +198,7 @@ export function PosPrintLayouts({ state, preview = false }: { state: any, previe
                   </span>
                 </div>
               )}
-              {printData.changeDue > 0 && (
+              {printData.payment === "cash" && printData.changeDue != null && (
                 <div className="flex justify-between">
                   <span className="font-semibold text-gray-600">Change Due:</span>
                   <span className="font-bold">
@@ -425,6 +425,18 @@ export function PosPrintLayouts({ state, preview = false }: { state: any, previe
                     <span className="font-black text-base">Grand Total</span>
                     <span className="font-black text-xl">{currencySymbol}{fmt(printData.total)}</span>
                   </div>
+                  {printData.payment === "cash" && printData.cashTendered != null && (
+                    <div className="flex justify-between gap-4 mt-1 pt-1 border-t border-dashed border-gray-300">
+                      <span className="text-gray-500">Cash Tendered</span>
+                      <span className="font-semibold">{currencySymbol}{fmt(printData.cashTendered)}</span>
+                    </div>
+                  )}
+                  {printData.payment === "cash" && printData.changeDue != null && (
+                    <div className="flex justify-between gap-4">
+                      <span className="text-gray-500">Change Due</span>
+                      <span className="font-semibold text-green-700">{currencySymbol}{fmt(printData.changeDue)}</span>
+                    </div>
+                  )}
                   {printData.amountInWords && (
                     <div className="text-right">
                       <div className="text-[10px] text-gray-400 uppercase tracking-wider mt-1">Amount in Words</div>

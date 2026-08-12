@@ -50,6 +50,7 @@ function PosScreen() {
     refetchShifts,
     payment,
     activeCustomer,
+    cashTendered,
     changeDue,
     splitCash,
     splitCard,
@@ -265,6 +266,8 @@ function PosScreen() {
             paymentMethod: payment,
             paid: total,
             status: "completed",
+            cashTendered: payment === "cash" ? (cashTendered ? parseFloat(cashTendered) : total) : null,
+            changeDue: payment === "cash" ? (changeDue > 0 ? changeDue : 0) : null,
           },
           items: saleItems,
           inventoryMovements: lines.map((l: any) => ({
@@ -340,8 +343,8 @@ function PosScreen() {
         igstAmt: state.totalIgst,
         total,
         payment,
-        changeDue: changeDue > 0 ? changeDue : 0,
-        cashTendered: state.cashTendered ? parseFloat(state.cashTendered) : null,
+        changeDue: payment === "cash" ? (changeDue > 0 ? changeDue : 0) : null,
+        cashTendered: payment === "cash" ? (state.cashTendered ? parseFloat(state.cashTendered) : total) : null,
       };
 
       setPrintData(printObj);

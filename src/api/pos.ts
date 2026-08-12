@@ -160,6 +160,8 @@ const PosSaleInput = z.object({
       paymentMethod: z.string(),
       paid: z.number().optional(),
       status: z.string().optional(),
+      cashTendered: z.number().optional().nullable(),
+      changeDue: z.number().optional().nullable(),
     })
     .passthrough(),
   items: z.array(SaleItemInput),
@@ -167,6 +169,7 @@ const PosSaleInput = z.object({
   ledgerEntries: z.array(z.any()).optional(),
   couponUpdates: z.array(z.any()).optional(),
 });
+
 
 export const completePosSaleFn = createServerFn({ method: "POST" })
   .validator(PosSaleInput)
@@ -316,6 +319,14 @@ export const completePosSaleFn = createServerFn({ method: "POST" })
           paymentMethod:
             typeof data.sale.paymentMethod === "string" ? data.sale.paymentMethod : "cash",
           payments: Array.isArray(data.sale.payments) ? data.sale.payments : null,
+          cashTendered:
+            data.sale.paymentMethod === "cash" && data.sale.cashTendered != null
+              ? data.sale.cashTendered.toFixed(2)
+              : null,
+          changeDue:
+            data.sale.paymentMethod === "cash" && data.sale.changeDue != null && data.sale.changeDue > 0
+              ? data.sale.changeDue.toFixed(2)
+              : null,
           salesmanId:
             typeof data.sale.salesmanId === "string" ? data.sale.salesmanId : session.userId,
           salesmanName:

@@ -290,6 +290,8 @@ export const sales = pgTable(
     igstAmt: numeric("igst_amt", { precision: 12, scale: 2 }),
     paymentMethod: text("payment_method").notNull(),
     payments: jsonb("payments").$type<Record<string, any>[]>(),
+    cashTendered: numeric("cash_tendered", { precision: 12, scale: 2 }),
+    changeDue: numeric("change_due", { precision: 12, scale: 2 }),
     salesmanId: text("salesman_id").references(() => users.id),
     salesmanName: text("salesman_name"),
     commissionAmt: numeric("commission_amt", { precision: 10, scale: 2 }),

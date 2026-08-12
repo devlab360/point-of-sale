@@ -44,6 +44,7 @@ import { PersistStore } from "@/lib/session-store";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage, LANGUAGES } from "@/contexts/LanguageContext";
+import { useCurrency } from "@/lib/currency";
 import { toast } from "sonner";
 import { v4 as uuidv4 } from "uuid";
 import { InstallAppButton } from "@/components/InstallAppButton";
@@ -65,6 +66,7 @@ export function AppHeader() {
   const [theme, setTheme] = useState<Theme>("light");
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const { formatCurrency } = useCurrency();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -624,7 +626,7 @@ export function AppHeader() {
                             )}
                           </div>
                           <div className="flex items-center gap-2 font-semibold text-primary">
-                            ${Number(p.price || 0).toFixed(2)}{" "}
+                            {formatCurrency(p.price || 0)}{" "}
                             <ArrowRight className="size-3.5 text-muted-foreground" />
                           </div>
                         </div>
@@ -676,8 +678,7 @@ export function AppHeader() {
                           <div className="font-medium">Order #{o.id}</div>
                           <div className="flex items-center gap-2 text-xs text-muted-foreground font-medium">
                             <span>
-                              {o.customerName || "Walk-in Customer"} · $
-                              {Number(o.total || 0).toFixed(2)}
+                              {o.customerName || "Walk-in Customer"} · {formatCurrency(o.total || 0)}
                             </span>{" "}
                             <ArrowRight className="size-3.5" />
                           </div>
@@ -731,7 +732,7 @@ export function AppHeader() {
                           <div className="font-medium">Purchase #{p.invoiceNo || p.id}</div>
                           <div className="flex items-center gap-2 text-xs text-muted-foreground font-medium">
                             <span>
-                              {p.supplier || "Vendor"} · ${Number(p.total || 0).toFixed(2)}
+                              {p.supplier || "Vendor"} · {formatCurrency(p.total || 0)}
                             </span>{" "}
                             <ArrowRight className="size-3.5" />
                           </div>
@@ -759,8 +760,7 @@ export function AppHeader() {
                           <div className="font-medium">{e.category || "Expense"}</div>
                           <div className="flex items-center gap-2 text-xs text-muted-foreground font-medium">
                             <span>
-                              {e.description || "No description"} · $
-                              {Number(e.amount || 0).toFixed(2)}
+                              {e.description || "No description"} · {formatCurrency(e.amount || 0)}
                             </span>{" "}
                             <ArrowRight className="size-3.5" />
                           </div>

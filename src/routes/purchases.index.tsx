@@ -90,7 +90,7 @@ function PurchasesPage() {
         }
         primaryAction={{
           label: t("newPurchase") || "New Purchase",
-          onClick: () => navigate({ to: "/purchases/new" }),
+          onClick: () => void navigate({ to: "/purchases/new" }),
           icon: Plus,
         }}
         searchPlaceholder={t("searchPurchases") || "Search by PO or supplier..."}
@@ -146,7 +146,7 @@ function PurchasesPage() {
                 : t("noPurchasesYet") || "No purchase orders have been created yet."
             }
             actionLabel="New Purchase"
-            onAction={() => navigate({ to: "/purchases/new" })}
+            onAction={() => void navigate({ to: "/purchases/new" })}
           />
         ) : (
           <div className="space-y-4">

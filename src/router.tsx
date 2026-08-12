@@ -12,7 +12,7 @@ export const getRouter = () => {
       console.error("Query Error:", error);
       return;
     }
-    
+
     // If it's our standard API payload indicating failure
     if (data && typeof data === "object" && data.success === false) {
       const code = data.code;
@@ -46,12 +46,13 @@ export const getRouter = () => {
     },
   });
 
-  router = createRouter({
+  const actualRouter = createRouter({
     routeTree,
     context: { queryClient },
     scrollRestoration: true,
     defaultPreloadStaleTime: 0,
   });
 
-  return router;
+  router = actualRouter;
+  return actualRouter;
 };

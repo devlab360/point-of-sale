@@ -157,7 +157,7 @@ function SalesPage() {
         description={t("manageSales") || "Every transaction across all your registers."}
         primaryAction={{
           label: t("newSale") || "New Sale",
-          onClick: () => navigate({ to: "/pos" }),
+          onClick: () => void navigate({ to: "/pos" }),
           icon: Plus,
         }}
         searchPlaceholder={t("searchSales") || "Search by Invoice No..."}
@@ -242,7 +242,7 @@ function SalesPage() {
                 : t("noSalesYet") || "No transactions have been recorded yet."
             }
             actionLabel="Open POS"
-            onAction={() => navigate({ to: "/pos" })}
+            onAction={() => void navigate({ to: "/pos" })}
           />
         ) : (
           <div className="space-y-4">
@@ -475,6 +475,18 @@ function SalesPage() {
                   <span>Total</span>
                   <span>{formatCurrency(viewSale.total)}</span>
                 </div>
+                {viewSale.paymentMethod === "cash" && viewSale.cashTendered && (
+                  <div className="flex justify-between text-muted-foreground mt-1 pt-1 border-t border-border">
+                    <span>Cash Tendered</span>
+                    <span>{formatCurrency(parseFloat(viewSale.cashTendered))}</span>
+                  </div>
+                )}
+                {viewSale.paymentMethod === "cash" && viewSale.changeDue != null && (
+                  <div className="flex justify-between font-semibold text-success">
+                    <span>Change Due</span>
+                    <span>{formatCurrency(parseFloat(viewSale.changeDue))}</span>
+                  </div>
+                )}
               </div>
               <Button
                 className="w-full"
@@ -527,6 +539,18 @@ function SalesPage() {
               <span>TOTAL:</span>
               <span>{formatCurrency(viewSale.total)}</span>
             </div>
+            {viewSale.paymentMethod === "cash" && viewSale.cashTendered && (
+              <div className="flex justify-between mt-1 pt-1 border-t border-black">
+                <span>Cash Tendered:</span>
+                <span>{formatCurrency(parseFloat(viewSale.cashTendered))}</span>
+              </div>
+            )}
+            {viewSale.paymentMethod === "cash" && viewSale.changeDue != null && (
+              <div className="flex justify-between font-bold">
+                <span>Change Due:</span>
+                <span>{formatCurrency(parseFloat(viewSale.changeDue))}</span>
+              </div>
+            )}
             <p className="mt-3 text-center text-[10px]">Thank you for your business!</p>
           </div>
         </div>

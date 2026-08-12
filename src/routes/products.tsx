@@ -345,6 +345,11 @@ function ProductsPage() {
       stock: computedStock,
       serials: serialsList,
       batches: batchesList,
+      expiryDate: formData.expiryDate ? formData.expiryDate : null,
+      wholesalePrice: String(formData.wholesalePrice) === "" ? null : formData.wholesalePrice,
+      dealerPrice: String(formData.dealerPrice) === "" ? null : formData.dealerPrice,
+      minWholesaleQty: String(formData.minWholesaleQty) === "" ? null : formData.minWholesaleQty,
+      gstRate: String(formData.gstRate) === "" ? null : formData.gstRate,
       synced: false,
     };
 
