@@ -328,6 +328,8 @@ function PosScreen() {
         receiptHeader: state.settings?.headerNote,
         receiptFooter: state.settings?.footerNote,
         receiptDeclaration: state.settings?.receiptDeclaration,
+        termsAndConditions: state.settings?.termsAndConditions,
+        privacyPolicy: state.settings?.privacyPolicy,
         bankDetails: state.settings?.bankDetails,
         upiId: state.settings?.upiId,
         customer: activeCustomer.name,

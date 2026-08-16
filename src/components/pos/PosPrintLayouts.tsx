@@ -114,7 +114,9 @@ export function PosPrintLayouts({ state, preview = false }: { state: any, previe
                         </div>
                       )}
                     </td>
-                    <td className="py-2 text-center font-semibold">{l.qty}</td>
+                    <td className="py-2 text-center font-semibold">
+                      {Number(l.qty).toString()} {state?.getUnitName ? state.getUnitName(l.product.unit) : (!/^[0-9a-f]{8}-/i.test(l.product.unit || "") ? l.product.unit : "")}
+                    </td>
                     <td className="py-2 text-right font-bold">
                       {currencySymbol}
                       {fmt(l.total)}
@@ -227,6 +229,7 @@ export function PosPrintLayouts({ state, preview = false }: { state: any, previe
                       />
                     </div>
                     <p className="text-[10px] font-medium mt-1">UPI: {printData.upiId}</p>
+                    <p className="text-[11px] font-bold mt-0.5">Amount: {currencySymbol}{fmt(printData.total)}</p>
                   </div>
                 )}
                 {printData.bankDetails && (
@@ -244,6 +247,18 @@ export function PosPrintLayouts({ state, preview = false }: { state: any, previe
                 <p className="mt-3 text-[9px] text-gray-700 whitespace-pre-wrap text-justify border-t border-dashed border-gray-400 pt-2 font-medium">
                   {printData.receiptDeclaration}
                 </p>
+              )}
+              {printData.termsAndConditions && (
+                <div className="mt-2 text-[9px] text-gray-700 text-justify font-medium">
+                  <span className="font-bold underline uppercase block mb-0.5 text-center">Terms & Conditions</span>
+                  <p className="whitespace-pre-wrap">{printData.termsAndConditions}</p>
+                </div>
+              )}
+              {printData.privacyPolicy && (
+                <div className="mt-2 text-[9px] text-gray-700 text-justify font-medium">
+                  <span className="font-bold underline uppercase block mb-0.5 text-center">Privacy Policy</span>
+                  <p className="whitespace-pre-wrap">{printData.privacyPolicy}</p>
+                </div>
               )}
               {printData.receiptFooter && (
                 <p className="mt-2 font-semibold text-gray-800">{printData.receiptFooter}</p>
@@ -334,7 +349,9 @@ export function PosPrintLayouts({ state, preview = false }: { state: any, previe
                   <tr key={i} className={`border-b border-gray-100 ${i % 2 === 1 ? "bg-gray-50/40" : ""}`}>
                     <td className="px-3 py-2 text-gray-400 text-xs">{i + 1}</td>
                     <td className="px-3 py-2 font-medium">{l.product.name}</td>
-                    <td className="px-3 py-2 text-center">{l.qty}</td>
+                    <td className="px-3 py-2 text-center">
+                      {Number(l.qty).toString()} {state?.getUnitName ? state.getUnitName(l.product.unit) : (!/^[0-9a-f]{8}-/i.test(l.product.unit || "") ? l.product.unit : "")}
+                    </td>
                     <td className="px-3 py-2 text-right text-gray-600">{fmt(l.unitPrice)}</td>
                     <td className="px-3 py-2 text-right font-semibold">{currencySymbol}{fmt(l.total)}</td>
                   </tr>
@@ -462,6 +479,18 @@ export function PosPrintLayouts({ state, preview = false }: { state: any, previe
               <div className="mt-6 pt-4 border-t border-gray-200">
                 <div className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-1">Declaration</div>
                 <p className="text-[10px] text-gray-600 leading-relaxed whitespace-pre-wrap">{printData.receiptDeclaration}</p>
+              </div>
+            )}
+            {printData.termsAndConditions && (
+              <div className="mt-4 pt-2">
+                <div className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-1">Terms & Conditions</div>
+                <p className="text-[10px] text-gray-600 leading-relaxed whitespace-pre-wrap">{printData.termsAndConditions}</p>
+              </div>
+            )}
+            {printData.privacyPolicy && (
+              <div className="mt-4 pt-2">
+                <div className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-1">Privacy Policy</div>
+                <p className="text-[10px] text-gray-600 leading-relaxed whitespace-pre-wrap">{printData.privacyPolicy}</p>
               </div>
             )}
 

@@ -199,9 +199,14 @@ export function CartPanel({ state }: { state: any }) {
                           >
                             −
                           </button>
-                          <span className="number w-7 text-center text-[11px] font-semibold">
-                            {l.qty}
-                          </span>
+                          <input
+                            type="number"
+                            step="any"
+                            value={l.qty}
+                            onChange={(e) => updateQty(l.id, e.target.value === "" ? 0 : (parseFloat(e.target.value) || 0))}
+                            onBlur={(e) => { if (!e.target.value || Number(e.target.value) <= 0) updateQty(l.id, 1); }}
+                            className="w-12 py-0.5 text-center text-[12px] font-bold bg-muted/40 border border-border/50 rounded-md outline-none focus:bg-background focus:border-primary focus:ring-1 focus:ring-primary hide-arrows transition-all"
+                          />
                           <button
                             onClick={() => updateQty(l.id, l.qty + 1)}
                             className="grid size-6 place-items-center text-sm hover:bg-muted transition-colors"

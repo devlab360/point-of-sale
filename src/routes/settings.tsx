@@ -97,6 +97,8 @@ const defaultSettings: any = {
   businessType: "",
   bankDetails: "",
   upiId: "",
+  termsAndConditions: "",
+  privacyPolicy: "",
 };
 
 function SettingsPage() {
@@ -221,6 +223,8 @@ function SettingsPage() {
               receiptDeclaration: settings.receiptDeclaration,
               bankDetails: settings.bankDetails,
               upiId: settings.upiId,
+              termsAndConditions: settings.termsAndConditions,
+              privacyPolicy: settings.privacyPolicy,
               emailReceiptDefault: settings.emailReceiptDefault,
               printStoreLogo: settings.printStoreLogo,
               signatureUrl: settings.signatureUrl,
@@ -1001,6 +1005,20 @@ function SettingsPage() {
                           onChange={(e) => handleChange("receiptDeclaration", e.target.value)}
                         />
                       </Field>
+                      <Field label="Terms & Conditions">
+                        <Textarea
+                          className="min-h-[80px]"
+                          value={settings.termsAndConditions || ""}
+                          onChange={(e) => handleChange("termsAndConditions", e.target.value)}
+                        />
+                      </Field>
+                      <Field label="Privacy Policy">
+                        <Textarea
+                          className="min-h-[80px]"
+                          value={settings.privacyPolicy || ""}
+                          onChange={(e) => handleChange("privacyPolicy", e.target.value)}
+                        />
+                      </Field>
                       <div className="sm:col-span-2 mt-2">
                         <FileUpload
                           label="Authentication Signature (For Receipt)"
@@ -1094,6 +1112,8 @@ function SettingsPage() {
                             receiptHeader: settings.headerNote,
                             receiptFooter: settings.footerNote,
                             receiptDeclaration: settings.receiptDeclaration,
+                            termsAndConditions: settings.termsAndConditions,
+                            privacyPolicy: settings.privacyPolicy,
                             bankDetails: settings.bankDetails,
                             upiId: settings.upiId,
                             amountInWords: numberToWords(47.5),
