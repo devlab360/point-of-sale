@@ -38,11 +38,16 @@ function HistoryPage() {
   const movements = filteredMovements.slice((page - 1) * pageSize, page * pageSize);
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <p className="text-sm text-muted-foreground">
-          Complete audit trail of all stock changes across the store.
-        </p>
+    <div className="space-y-6 p-4 md:p-6 lg:p-8">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-[26px]">
+            Stock History
+          </h1>
+          <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
+            Complete audit trail of all stock changes across the store.
+          </p>
+        </div>
       </div>
       {rawMovements.length > 0 && (
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center">

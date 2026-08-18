@@ -21,9 +21,10 @@ import {
   getShiftsFn,
   getHeldInvoicesFn,
   createHeldInvoiceFn,
-  deleteHeldInvoiceFn,
   getPosItemsFn,
 } from "@/api/pos";
+import { getTablesFn } from "@/api/restaurant";
+import { getRepairsFn } from "@/api/repairs";
 
 export type CartLine = { id: string; qty: number };
 export type PaymentMode = "cash" | "card" | "upi" | "split" | "credit" | "wallet";
@@ -77,6 +78,21 @@ export function usePosState() {
     queryFn: async () => ((await getHeldInvoicesFn({ data: {} })) as any)?.data || [],
   });
   const heldInvoices: any[] = heldInvoicesData || [];
+
+  const { data: tablesData } = useQuery({
+    queryKey: ["tables", orgId],
+    queryFn: async () => ((await getTablesFn({ data: {} })) as any)?.data || [],
+  });
+  const tables: any[] = tablesData || [];
+
+  const { data: repairsData, refetch: refetchRepairs } = useQuery({
+    queryKey: ["openRepairs", orgId],
+    queryFn: async () => {
+      const all = ((await getRepairsFn({ data: {} })) as any)?.data || [];
+      return all.filter((r: any) => r.status === "repaired" || r.status === "received" || r.status === "diagnosing");
+    },
+  });
+  const openRepairs: any[] = repairsData || [];
 
   const { data: settingsData } = useQuery({
     queryKey: ["settings", orgId],
@@ -163,9 +179,12 @@ export function usePosState() {
     refetchProducts();
     refetchCategories();
     refetchCustomers();
-  }, [refetchProducts, refetchCategories, refetchCustomers]);
+    refetchRepairs();
+  }, [refetchProducts, refetchCategories, refetchCustomers, refetchRepairs]);
 
   const [activeCustomerType, setActiveCustomerType] = useState("retail");
+  const [additionalProducts, setAdditionalProducts] = useState<any[]>([]);
+  const allProducts = useMemo(() => [...products, ...additionalProducts], [products, additionalProducts]);
   const [isAddingCustomer, setIsAddingCustomer] = useState(false);
   const [isAddingProduct, setIsAddingProduct] = useState(false);
   const [isAddingService, setIsAddingService] = useState(false);
@@ -177,6 +196,7 @@ export function usePosState() {
   const [discountInput, setDiscountInput] = useState("0");
   const [payment, setPayment] = useState<PaymentMode>("card");
   const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(null);
+  const [selectedTableId, setSelectedTableId] = useState<string>("");
   const [printData, setPrintData] = useState<any>(null);
   const [saleComplete, setSaleComplete] = useState<any>(null);
   const [printFormat, setPrintFormat] = useState<"thermal" | "a4">("thermal");
@@ -240,7 +260,7 @@ export function usePosState() {
 
   const filtered = useMemo(
     () =>
-      products.filter((p) => {
+      allProducts.filter((p) => {
         const catMatch = activeCat === "all" || p.category === activeCat;
         if (!catMatch) return false;
         if (!query.trim()) return true;
@@ -251,12 +271,12 @@ export function usePosState() {
           (p.barcode && String(p.barcode).toLowerCase().includes(q)),
         );
       }),
-    [activeCat, query, products],
+    [activeCat, query, allProducts],
   );
 
   const addToCart = useCallback(
     (id: string) => {
-      const product = products.find((p) => p.id === id);
+      const product = allProducts.find((p) => p.id === id);
       if (!product) return;
       setCart((c) => {
         const exists = c.find((l) => l.id === id);
@@ -275,7 +295,38 @@ export function usePosState() {
         return [...c, { id, qty: 1 }];
       });
     },
-    [products],
+    [allProducts],
+  );
+
+  const addRepairToCart = useCallback(
+    (repair: any) => {
+      const balance = Math.max(0, repair.estimatedCost - repair.advancePaid);
+      if (balance <= 0) {
+        toast.error("This repair ticket has no pending balance.");
+        return;
+      }
+      const pseudoId = `REPAIR_${repair.id}`;
+      setAdditionalProducts((prev) => {
+        if (prev.find((p) => p.id === pseudoId)) return prev;
+        return [
+          ...prev,
+          {
+            id: pseudoId,
+            name: `Repair Balance (Ticket: ${repair.ticketNo})`,
+            price: balance,
+            stock: 999,
+            referenceType: "REPAIR",
+            referenceId: repair.id,
+            category: "service",
+            isRepair: true,
+            taxInclusive: true, // Assuming repair estimates already include tax
+          }
+        ];
+      });
+      addToCart(pseudoId);
+      toast.success("Repair ticket added to cart");
+    },
+    [addToCart]
   );
 
   const updateQty = useCallback(
@@ -284,29 +335,39 @@ export function usePosState() {
         setCart((c) => c.filter((l) => l.id !== id));
         return;
       }
-      const product = products.find((p) => p.id === id);
+      const product = allProducts.find((p) => p.id === id);
       if (product && qty > product.stock) {
         toast.error(`Only ${product.stock} available`);
         return;
       }
       setCart((c) => c.map((l) => (l.id === id ? { ...l, qty } : l)));
     },
-    [products],
+    [allProducts],
   );
 
   const lines = cart
     .map((l) => {
-      const p = products.find((p) => p.id === l.id);
+      const p = allProducts.find((p) => p.id === l.id);
       if (!p) return null;
 
       let unitPrice = p.price;
       let priceTierLabel = "";
+      const minQty = p.minWholesaleQty || 1;
+
       if (activeCustomer.type === "wholesale" && p.wholesalePrice && p.wholesalePrice > 0) {
-        unitPrice = p.wholesalePrice;
-        priceTierLabel = "Wholesale";
+        if (l.qty >= minQty) {
+          unitPrice = p.wholesalePrice;
+          priceTierLabel = "Wholesale";
+        } else {
+          priceTierLabel = `Wholesale (Min ${minQty})`;
+        }
       } else if (activeCustomer.type === "dealer" && p.dealerPrice && p.dealerPrice > 0) {
-        unitPrice = p.dealerPrice;
-        priceTierLabel = "Dealer";
+        if (l.qty >= minQty) {
+          unitPrice = p.dealerPrice;
+          priceTierLabel = "Dealer";
+        } else {
+          priceTierLabel = `Dealer (Min ${minQty})`;
+        }
       }
 
       const selectedSerial = p.hasSerial && p.serials?.[0] ? p.serials[0] : undefined;
@@ -421,6 +482,8 @@ export function usePosState() {
     coupons,
     users,
     activeShift,
+    tables,
+    openRepairs,
     activeCustomerType,
     setActiveCustomerType,
     isAddingCustomer,
@@ -443,6 +506,8 @@ export function usePosState() {
     setPayment,
     selectedCustomerId,
     setSelectedCustomerId,
+    selectedTableId,
+    setSelectedTableId,
     printData,
     setPrintData,
     saleComplete,
@@ -508,6 +573,7 @@ export function usePosState() {
     changeDue,
     taxRate,
     addToCart,
+    addRepairToCart,
     updateQty,
     orgId,
     refetchHeld,

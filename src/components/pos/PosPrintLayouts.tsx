@@ -61,7 +61,7 @@ export function PosPrintLayouts({ state, preview = false }: { state: any, previe
             </div>
 
             <div className="bg-black text-white text-center font-bold text-[13px] py-1.5 mb-3 uppercase tracking-[0.2em] w-full">
-              {settings?.enableGST ? "Tax Invoice" : "Receipt"}
+              {printData.status === "quotation" ? "Quotation / Estimate" : (settings?.enableGST || printData.customerGstin || printData.customerType === "wholesale" || printData.customerType === "corporate" ? "Tax Invoice" : "Receipt")}
             </div>
 
             <div className="flex flex-col justify-start text-[11px] mb-3 pb-3 border-b-2 border-black border-dashed">
@@ -76,13 +76,14 @@ export function PosPrintLayouts({ state, preview = false }: { state: any, previe
               <div className="flex flex-col mb-1 border-t border-gray-200 pt-2 mt-1">
                 <span className="font-bold text-gray-600 text-[10px] uppercase">Bill To:</span>
                 <span className="font-black text-[12px] uppercase">{printData.customerObj?.name || printData.customer}</span>
-                {printData.customerObj?.phone && <span>Phone: {printData.customerObj.phone}</span>}
+                {printData.customerObj?.phone || printData.customerPhone ? <span>Phone: {printData.customerObj?.phone || printData.customerPhone}</span> : null}
                 {printData.customerObj?.email && <span>Email: {printData.customerObj.email}</span>}
-                {printData.customerObj?.address && (
+                {printData.customerGstin && <span className="font-bold">GSTIN: {printData.customerGstin}</span>}
+                {(printData.customerObj?.address || printData.customerAddress) && (
                   <span className="whitespace-pre-wrap">
-                    {printData.customerObj.address}
-                    {printData.customerObj.city ? `, ${printData.customerObj.city}` : ""}
-                    {printData.customerObj.zipCode ? ` - ${printData.customerObj.zipCode}` : ""}
+                    {printData.customerObj?.address || printData.customerAddress}
+                    {printData.customerObj?.city ? `, ${printData.customerObj.city}` : ""}
+                    {printData.customerObj?.zipCode ? ` - ${printData.customerObj.zipCode}` : ""}
                   </span>
                 )}
               </div>
@@ -283,7 +284,7 @@ export function PosPrintLayouts({ state, preview = false }: { state: any, previe
 
             {/* ── TOP HEADER BAND ── */}
             <div className="w-full bg-black text-white text-center py-2.5 mb-6 tracking-[0.35em] text-xs font-bold uppercase">
-              {settings?.enableGST ? "TAX INVOICE" : "INVOICE"}
+              {printData.status === "quotation" ? "Quotation / Estimate" : (settings?.enableGST || printData.customerGstin || printData.customerType === "wholesale" || printData.customerType === "corporate" ? "Tax Invoice" : "Invoice")}
             </div>
 
             {/* ── STORE INFO + INVOICE META ── */}
@@ -321,7 +322,8 @@ export function PosPrintLayouts({ state, preview = false }: { state: any, previe
             {/* ── BILL TO ── */}
             <div className="mb-5">
               <div className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-1">Bill To</div>
-              <div className="font-bold text-base">{printData.customerObj?.name || printData.customer}</div>
+              <div className="font-bold text-base text-black mb-1">{printData.customerObj?.name || printData.customer}</div>
+              {printData.customerGstin && <div className="font-bold text-gray-800 text-xs">GSTIN: {printData.customerGstin}</div>}
               {printData.customerObj?.phone && <div className="text-xs text-gray-600">Phone: {printData.customerObj.phone}</div>}
               {printData.customerObj?.email && <div className="text-xs text-gray-600">Email: {printData.customerObj.email}</div>}
               {printData.customerObj?.address && (

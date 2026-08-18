@@ -213,7 +213,7 @@ function SalesReturnsPage() {
         const product = products.find((p) => p.id === item.productId);
         if (product) {
           await updateProductFn({
-            data: { id: item.productId, updates: { stock: product.stock + item.quantity } },
+            data: { id: item.productId, updates: { stock: Number(product.stock) + Number(item.quantity) } },
           });
           await createInventoryMovementFn({
             data: {

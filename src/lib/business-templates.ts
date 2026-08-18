@@ -1,0 +1,177 @@
+export type BusinessCapability =
+  | "POS"
+  | "PRODUCTS"
+  | "SERVICES"
+  | "INVENTORY"
+  | "PURCHASES"
+  | "SUPPLIERS"
+  | "CUSTOMERS"
+  | "BARCODE"
+  | "VARIANTS"
+  | "TABLES"
+  | "KITCHEN"
+  | "KOT"
+  | "MENU"
+  | "APPOINTMENTS"
+  | "STAFF"
+  | "COMMISSIONS"
+  | "JOB_CARDS"
+  | "REPAIRS"
+  | "TECHNICIANS"
+  | "REPAIR_STATUS"
+  | "WARRANTY"
+  | "LOYALTY"
+  | "WHOLESALE"
+  | "CREDIT_SALES"
+  | "CUSTOMER_LEDGER"
+  | "DELIVERY_CHALLANS"
+  | "QUOTATIONS"
+  | "MEMBERSHIP"
+  | "PACKAGES"
+  | "SUBSCRIPTIONS"
+  | "RENTALS"
+  | "COUPONS"
+  | "GIFT_CARDS"
+  | "EXPENSES"
+  | "REPORTS"
+  | "SETTINGS"
+  | "ACCOUNTS" // Chart of Accounts, Vouchers
+  | "PROMOTIONS";
+
+export type BusinessType =
+  | "UNIVERSAL" // Fallback/Default: Has all basic modules enabled
+  | "RETAIL"
+  | "GROCERY"
+  | "RESTAURANT"
+  | "CAFE"
+  | "SALON"
+  | "BARBER"
+  | "REPAIR_CENTER"
+  | "MOBILE_REPAIR"
+  | "WHOLESALE";
+
+export interface BusinessTemplate {
+  type: BusinessType;
+  label: string;
+  description: string;
+  capabilities: BusinessCapability[];
+}
+
+export const BUSINESS_TEMPLATES: Record<BusinessType, BusinessTemplate> = {
+  UNIVERSAL: {
+    type: "UNIVERSAL",
+    label: "Universal",
+    description: "All features enabled. Best for testing or highly complex hybrid businesses.",
+    capabilities: [
+      "POS", "PRODUCTS", "SERVICES", "INVENTORY", "PURCHASES", "SUPPLIERS", "CUSTOMERS",
+      "BARCODE", "VARIANTS", "TABLES", "KITCHEN", "KOT", "MENU", "APPOINTMENTS", "STAFF",
+      "COMMISSIONS", "JOB_CARDS", "TECHNICIANS", "REPAIR_STATUS", "WARRANTY", "LOYALTY",
+      "WHOLESALE", "CREDIT_SALES", "CUSTOMER_LEDGER", "DELIVERY_CHALLANS", "QUOTATIONS",
+      "MEMBERSHIP", "PACKAGES", "SUBSCRIPTIONS", "RENTALS", "COUPONS", "GIFT_CARDS",
+      "EXPENSES", "REPORTS", "SETTINGS", "ACCOUNTS", "PROMOTIONS"
+    ],
+  },
+  RETAIL: {
+    type: "RETAIL",
+    label: "Retail",
+    description: "Standard retail features including products, inventory, and barcode scanning.",
+    capabilities: [
+      "POS", "CUSTOMERS", "EXPENSES", "REPORTS", "SETTINGS", "ACCOUNTS",
+      "PRODUCTS", "INVENTORY", "BARCODE", "PURCHASES", "SUPPLIERS", "VARIANTS",
+      "LOYALTY", "COUPONS", "GIFT_CARDS", "PROMOTIONS"
+    ],
+  },
+  GROCERY: {
+    type: "GROCERY",
+    label: "Grocery & Supermarket",
+    description: "Optimized for high-volume scanning, inventory, and wholesale credit.",
+    capabilities: [
+      "POS", "CUSTOMERS", "EXPENSES", "REPORTS", "SETTINGS", "ACCOUNTS",
+      "PRODUCTS", "INVENTORY", "BARCODE", "PURCHASES", "SUPPLIERS", 
+      "WHOLESALE", "CREDIT_SALES", "CUSTOMER_LEDGER",
+      "LOYALTY", "COUPONS", "GIFT_CARDS", "PROMOTIONS"
+    ],
+  },
+  RESTAURANT: {
+    type: "RESTAURANT",
+    label: "Restaurant",
+    description: "Features for dining, tables, and kitchen management.",
+    capabilities: [
+      "POS", "CUSTOMERS", "EXPENSES", "REPORTS", "SETTINGS", "ACCOUNTS",
+      "MENU", "TABLES", "KOT", "KITCHEN", "INVENTORY", "STAFF"
+    ],
+  },
+  CAFE: {
+    type: "CAFE",
+    label: "Café",
+    description: "Quick service cafe features.",
+    capabilities: [
+      "POS", "CUSTOMERS", "EXPENSES", "REPORTS", "SETTINGS", "ACCOUNTS",
+      "MENU", "TABLES", "KOT", "KITCHEN", "INVENTORY"
+    ],
+  },
+  SALON: {
+    type: "SALON",
+    label: "Salon & Spa",
+    description: "Service-based business with appointments and staff commissions.",
+    capabilities: [
+      "POS", "CUSTOMERS", "EXPENSES", "REPORTS", "SETTINGS", "ACCOUNTS",
+      "SERVICES", "STAFF", "APPOINTMENTS", "COMMISSIONS", "PACKAGES", "MEMBERSHIP",
+      "PRODUCTS" // For selling retail products
+    ],
+  },
+  BARBER: {
+    type: "BARBER",
+    label: "Barber Shop",
+    description: "Simple service business with staff and walk-in/appointments.",
+    capabilities: [
+      "POS", "CUSTOMERS", "EXPENSES", "REPORTS", "SETTINGS", "ACCOUNTS",
+      "SERVICES", "STAFF", "APPOINTMENTS", "COMMISSIONS", "PRODUCTS"
+    ],
+  },
+  REPAIR_CENTER: {
+    type: "REPAIR_CENTER",
+    label: "Repair Center",
+    description: "Manage job cards, technicians, parts, and repair statuses.",
+    capabilities: [
+      "POS", "CUSTOMERS", "EXPENSES", "REPORTS", "SETTINGS", "ACCOUNTS",
+      "JOB_CARDS", "TECHNICIANS", "REPAIR_STATUS", "WARRANTY", "SERVICES",
+      "PRODUCTS", "INVENTORY" // For spare parts
+    ],
+  },
+  MOBILE_REPAIR: {
+    type: "MOBILE_REPAIR",
+    label: "Mobile/Device Repair",
+    description: "Device repair tracking with IMEI/Serial numbers.",
+    capabilities: [
+      "POS", "CUSTOMERS", "EXPENSES", "REPORTS", "SETTINGS", "ACCOUNTS",
+      "JOB_CARDS", "TECHNICIANS", "REPAIR_STATUS", "WARRANTY", "SERVICES",
+      "PRODUCTS", "INVENTORY", "BARCODE"
+    ],
+  },
+  WHOLESALE: {
+    type: "WHOLESALE",
+    label: "Wholesale / Distribution",
+    description: "B2B features like ledgers, bulk pricing, and credit sales.",
+    capabilities: [
+      "POS", "CUSTOMERS", "EXPENSES", "REPORTS", "SETTINGS", "ACCOUNTS",
+      "WHOLESALE", "CREDIT_SALES", "CUSTOMER_LEDGER", "DELIVERY_CHALLANS", "QUOTATIONS",
+      "PRODUCTS", "INVENTORY", "PURCHASES", "SUPPLIERS", "BARCODE"
+    ],
+  }
+};
+
+/**
+ * Helper to check if a business type has a specific capability
+ */
+export function hasCapability(businessType: BusinessType | string | null | undefined, capability: BusinessCapability): boolean {
+  if (!businessType) return true; // Default to allow all if not set, maintaining backward compatibility
+  
+  const typeStr = businessType.toUpperCase() as BusinessType;
+  const template = BUSINESS_TEMPLATES[typeStr];
+  
+  // If the template is unknown, fallback to Universal (allow all) to avoid breaking existing users
+  if (!template) return true; 
+  
+  return template.capabilities.includes(capability);
+}

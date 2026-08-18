@@ -56,7 +56,24 @@ export const getProductsFn = createServerFn({ method: "GET" })
         .where(whereClause);
       const totalCount = Number(totalCountRes[0].count);
 
-      return { success: true, data: products, total: totalCount };
+      const summaryRes = await db
+        .select({
+          totalStock: sql`sum(${schema.products.stock})`,
+          totalValue: sql`sum(${schema.products.stock} * ${schema.products.cost})`,
+          totalRetailValue: sql`sum(${schema.products.stock} * ${schema.products.price})`,
+          lowStockCount: sql`count(CASE WHEN ${schema.products.stock} <= ${schema.products.reorderLevel} THEN 1 END)`
+        })
+        .from(schema.products)
+        .where(whereClause);
+
+      const summary = {
+        totalStock: Number(summaryRes[0]?.totalStock || 0),
+        totalValue: Number(summaryRes[0]?.totalValue || 0),
+        totalRetailValue: Number(summaryRes[0]?.totalRetailValue || 0),
+        lowStockCount: Number(summaryRes[0]?.lowStockCount || 0),
+      };
+
+      return { success: true, data: products, total: totalCount, summary };
     } catch (e) {
       return handleApiError(e);
     }

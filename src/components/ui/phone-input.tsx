@@ -29,7 +29,8 @@ export const PhoneInput = React.forwardRef<HTMLInputElement, PhoneInputProps>(
 
     const controlled = value !== undefined;
 
-    const stripCode = (v: string) => {
+    const stripCode = (v: string | null | undefined) => {
+      if (!v) return "";
       const has = v.startsWith(countryCode);
       return has ? v.slice(countryCode.length).trim() : v;
     };

@@ -44,6 +44,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { usePreferences } from "@/contexts/PreferencesContext";
+import { useAppFormatter } from "@/hooks/useAppFormatter";
 import { ReportSkeleton } from "@/components/skeletons/ReportSkeleton";
 import { ErrorState } from "@/components/ui/error-state";
 
@@ -69,6 +70,7 @@ type ReportType =
 
 function ReportsPage() {
   const { formatDate, formatTime, formatDateTime } = usePreferences();
+  const { formatAppDate } = useAppFormatter();
   const { currencySymbol, formatCurrency } = useCurrency();
   const orgId = PersistStore.getOrgId() || "default";
 
@@ -165,8 +167,9 @@ function ReportsPage() {
   const weekly = Array.from({ length: 7 }).map((_, i) => {
     const d = new Date();
     d.setDate(d.getDate() - (6 - i));
-    const day = d.toLocaleDateString("default", { weekday: "short" });
-    const daySales = sales.filter((s) => new Date(s.date).toDateString() === d.toDateString());
+    const day = formatAppDate(d, "date", "EEE");
+    const dayStr = formatAppDate(d, "date", "yyyy-MM-dd");
+    const daySales = sales.filter((s) => formatAppDate(s.date, "date", "yyyy-MM-dd") === dayStr);
     return {
       day,
       sales: daySales.reduce((sum, s) => sum + (Number(s.total) || 0), 0),
@@ -1008,8 +1011,8 @@ function ReportsPage() {
               <div className="space-y-3">
                 <h3 className="font-semibold">Today's Summary</h3>
                 {(() => {
-                  const today = new Date().toDateString();
-                  const todaySales = sales.filter((s) => new Date(s.date).toDateString() === today);
+                  const today = formatAppDate(new Date(), "date", "yyyy-MM-dd");
+                  const todaySales = sales.filter((s) => formatAppDate(s.date, "date", "yyyy-MM-dd") === today);
                   const todayRevenue = todaySales.reduce((s, sale) => s + sale.total, 0);
                   return (
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">

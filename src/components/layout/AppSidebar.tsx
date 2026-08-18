@@ -33,6 +33,7 @@ import {
   ChevronRight,
   LogOut,
   FileText,
+  MessageCircle,
   BookOpen,
   Wrench,
   Repeat,
@@ -95,7 +96,7 @@ export function AppSidebar({ onNavigate }: { onNavigate?: () => void }) {
   let filteredGroups = APP_GROUPS.map((group) => ({
     ...group,
     items: group.items.filter((item) => {
-      const result = hasPermissionForRoute(user, item.to, !!isSuperAdminUser, saasPlan);
+      const result = hasPermissionForRoute(user, item.to, !!isSuperAdminUser, saasPlan, settings?.businessType);
       return result.allowed;
     }),
   })).filter((group) => group.items.length > 0);

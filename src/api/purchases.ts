@@ -176,6 +176,64 @@ export const createPurchaseFn = createServerFn({ method: "POST" })
               .where(eq(schema.products.id, line.productId));
           }
         }
+
+        // Khatabook integration (Supplier Ledger)
+        if (data.purchase?.supplierId && total > 0) {
+          const supp = await tx.query.suppliers.findFirst({
+            where: (s, { eq, and }) => and(eq(s.id, data.purchase.supplierId), eq(s.organizationId, session.orgId))
+          });
+
+          if (supp) {
+            const currentBalance = Number(supp.balance || 0);
+            const paid = Number(data.purchase?.paid || total);
+            // Goods received: we owe them more (+total)
+            // We pay them: we owe them less (-paid)
+            const netChange = total - paid;
+            const newBalance = currentBalance + netChange;
+
+            await tx.update(schema.suppliers)
+              .set({ balance: newBalance.toString() })
+              .where(eq(schema.suppliers.id, supp.id));
+
+            await tx.insert(schema.supplierLedgers).values({
+              id: crypto.randomUUID(),
+              organizationId: session.orgId,
+              supplierId: supp.id,
+              date: new Date().toISOString(),
+              type: "Purchase",
+              amount: netChange.toString(),
+              balanceAfter: newBalance.toString(),
+              referenceNo: invoiceNo,
+              note: `Purchase ${invoiceNo} - Total: ${total.toFixed(2)}, Paid: ${paid.toFixed(2)}`
+            });
+
+            // If we paid money, log it to accounts
+            if (paid > 0) {
+              const account = await tx.query.accounts.findFirst({
+                where: (a, { eq, and }) => and(eq(a.type, data.purchase?.paymentMethod || "cash"), eq(a.organizationId, session.orgId))
+              });
+
+              if (account) {
+                // Deduct from our cash account
+                const accBalance = Number(account.balance || 0) - paid;
+                await tx.update(schema.accounts)
+                  .set({ balance: accBalance.toString() })
+                  .where(eq(schema.accounts.id, account.id));
+
+                await tx.insert(schema.vouchers).values({
+                  id: crypto.randomUUID(),
+                  organizationId: session.orgId,
+                  ref: `VOU-${Math.floor(Math.random() * 10000)}`,
+                  date: new Date().toISOString(),
+                  type: "Payment", // Paying supplier
+                  accountId: account.id,
+                  amount: paid.toString(),
+                  status: "completed"
+                });
+              }
+            }
+          }
+        }
       });
       return { success: true };
     } catch (e) {

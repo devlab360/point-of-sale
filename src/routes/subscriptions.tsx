@@ -10,6 +10,7 @@ import { useDebounce } from "@/hooks/useDebounce";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useAppFormatter } from "@/hooks/useAppFormatter";
 import { Label } from "@/components/ui/label";
 import {
   Dialog,
@@ -60,6 +61,7 @@ export const Route = createFileRoute("/subscriptions")({
 
 function SubscriptionsPage() {
   const { formatCurrency } = useCurrency();
+  const { formatAppDate } = useAppFormatter();
   const orgId = PersistStore.getOrgId() || "default";
   const queryClient = useQueryClient();
 
@@ -289,7 +291,7 @@ function SubscriptionsPage() {
                           </td>
                           <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">
                             {s.nextBillingDate
-                              ? format(new Date(s.nextBillingDate), "MMM dd, yyyy")
+                              ? formatAppDate(s.nextBillingDate)
                               : "-"}
                           </td>
                           <td className="px-4 py-3 whitespace-nowrap">

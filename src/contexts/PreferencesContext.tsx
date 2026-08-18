@@ -1,6 +1,10 @@
 // @refresh reset
 import React, { createContext, useContext, useMemo } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useQuery } from "@tanstack/react-query";
+import { getSettingsFn } from "@/api/settings";
+import { PersistStore } from "@/lib/session-store";
+import { formatInTimeZone } from "date-fns-tz";
 
 interface PreferencesContextType {
   dateFormat: string;
@@ -15,88 +19,49 @@ const PreferencesContext = createContext<PreferencesContextType | undefined>(und
 
 export function PreferencesProvider({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
+  const orgId = PersistStore.getOrgId() || "default";
 
-  const dateFormat = user?.dateFormat || "DD/MM/YYYY";
-  const timeZone = user?.timeZone || "Asia/Kolkata";
-  const countryCode = user?.countryCode || "+91";
+  const { data: settingsData } = useQuery({
+    queryKey: ["settings", orgId],
+    queryFn: async () => {
+      const res = await getSettingsFn({ data: {} });
+      if (res.success) return res.data;
+      return null;
+    },
+  });
+
+  const settings = settingsData || {};
+
+  const dateFormat = settings.dateFormat || "dd MMM yyyy";
+  const timeZone = settings.timeZone || "UTC";
+  const countryCode = settings.countryCode || "+91";
 
   const formatters = useMemo(() => {
-    // Utility to get date parts mapped to the given timezone
-    const getParts = (dateValue: Date) => {
+    const formatAppDate = (
+      dateInput: string | Date | number | undefined | null,
+      mode: "date" | "time" | "datetime" = "date",
+    ): string => {
+      if (!dateInput) return "";
       try {
-        const dtf = new Intl.DateTimeFormat("en-US", {
-          timeZone,
-          year: "numeric",
-          month: "2-digit",
-          day: "2-digit",
-          hour: "2-digit",
-          minute: "2-digit",
-          second: "2-digit",
-          hour12: true,
-        });
-        const parts = dtf.formatToParts(dateValue);
-        const map = parts.reduce(
-          (acc, part) => {
-            acc[part.type] = part.value;
-            return acc;
-          },
-          {} as Record<string, string>,
-        );
-        return map;
+        const d = new Date(dateInput);
+        if (isNaN(d.getTime())) return String(dateInput);
+
+        let formatStr = dateFormat;
+        if (mode === "time") formatStr = "hh:mm a";
+        else if (mode === "datetime") formatStr = `${dateFormat} hh:mm a`;
+
+        return formatInTimeZone(d, timeZone, formatStr);
       } catch (e) {
-        // Fallback if timezone is invalid
-        return null;
+        console.error("Format date error:", e);
+        return "-";
       }
     };
 
-    const formatDate = (dateInput: string | Date | number | undefined | null): string => {
-      if (!dateInput) return "";
-      const d = new Date(dateInput);
-      if (isNaN(d.getTime())) return String(dateInput);
-
-      const parts = getParts(d);
-      if (!parts) return d.toLocaleDateString();
-
-      const day = parts.day || String(d.getDate()).padStart(2, "0");
-      const monthNum = parts.month || String(d.getMonth() + 1).padStart(2, "0");
-      const year = parts.year || String(d.getFullYear());
-
-      // Get short month name
-      const monthShort = new Intl.DateTimeFormat("en-US", { month: "short", timeZone }).format(d);
-
-      if (dateFormat === "MM/DD/YYYY") {
-        return `${monthNum}/${day}/${year}`;
-      } else if (dateFormat === "YYYY-MM-DD") {
-        return `${year}-${monthNum}-${day}`;
-      } else if (dateFormat === "DD-MMM-YYYY") {
-        return `${day}-${monthShort}-${year}`;
-      }
-      return `${day}/${monthNum}/${year}`; // Default DD/MM/YYYY
+    return {
+      formatDate: (d: any) => formatAppDate(d, "date"),
+      formatTime: (d: any) => formatAppDate(d, "time"),
+      formatDateTime: (d: any) => formatAppDate(d, "datetime"),
     };
-
-    const formatTime = (dateInput: string | Date | number | undefined | null): string => {
-      if (!dateInput) return "";
-      const d = new Date(dateInput);
-      if (isNaN(d.getTime())) return String(dateInput);
-      try {
-        return new Intl.DateTimeFormat("en-US", {
-          timeZone,
-          hour: "numeric",
-          minute: "2-digit",
-          second: "2-digit",
-          hour12: true,
-        }).format(d);
-      } catch (e) {
-        return d.toLocaleTimeString();
-      }
-    };
-
-    const formatDateTime = (dateInput: string | Date | number | undefined | null): string => {
-      if (!dateInput) return "";
-      return `${formatDate(dateInput)} ${formatTime(dateInput)}`;
-    };
-
-    return { formatDate, formatTime, formatDateTime };
   }, [dateFormat, timeZone]);
 
   const value = useMemo(

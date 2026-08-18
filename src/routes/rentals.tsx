@@ -8,6 +8,7 @@ import { DatePicker } from "@/components/ui/date-picker";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { useDebounce } from "@/hooks/useDebounce";
 import { Badge } from "@/components/ui/badge";
+import { useAppFormatter } from "@/hooks/useAppFormatter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -41,6 +42,7 @@ export const Route = createFileRoute("/rentals")({
 
 function RentalsPage() {
   const { formatCurrency } = useCurrency();
+  const { formatAppDate } = useAppFormatter();
   const orgId = PersistStore.getOrgId() || "default";
   const queryClient = useQueryClient();
 
@@ -254,7 +256,7 @@ function RentalsPage() {
                           </td>
                           <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">
                             {r.expectedReturnDate
-                              ? format(new Date(r.expectedReturnDate), "MMM dd, yyyy")
+                              ? formatAppDate(r.expectedReturnDate)
                               : "-"}
                           </td>
                           <td className="px-4 py-3 whitespace-nowrap">

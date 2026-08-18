@@ -192,11 +192,11 @@ function PosScreen() {
     };
   }, [drawerWidth, setDrawerWidth]);
 
-  const handleCheckout = async () => {
+  const handleCheckout = async (isQuotation = false) => {
     if (lines.length === 0) return;
 
     let cashComponent = 0;
-    if (payment === "split") {
+    if (payment === "split" && !isQuotation) {
       const csh = parseFloat(splitCash) || 0;
       const crd = parseFloat(splitCard) || 0;
       const upi = parseFloat(splitUpi) || 0;
@@ -205,11 +205,20 @@ function PosScreen() {
         return;
       }
       cashComponent = csh;
-    } else if (payment === "cash") {
+    } else if (payment === "cash" && !isQuotation) {
       cashComponent = total;
-    } else if (payment === "credit" || payment === "wallet") {
+    } else if ((payment === "credit" || payment === "wallet") && !isQuotation) {
       if (activeCustomer.id === "walkin")
         return toast.error(`Credit/Wallet requires registered customer`);
+        
+      if (payment === "credit") {
+        const currentCredit = Number(activeCustomer.credit) || 0;
+        const limit = Number(activeCustomer.creditLimit) || 0;
+        if (currentCredit + total > limit) {
+          toast.error(`Credit Limit Exceeded! Customer limit is ${state.formatCurrency(limit)}, but balance would be ${state.formatCurrency(currentCredit + total)}`);
+          return;
+        }
+      }
     }
 
     state.setIsCompletingSale(true);
@@ -217,7 +226,7 @@ function PosScreen() {
     const invNum = saleId.substring(0, 8).toUpperCase();
 
     try {
-      if (activeShift && cashComponent > 0) {
+      if (activeShift && cashComponent > 0 && !isQuotation) {
         await updateShiftFn({
           data: {
             id: activeShift.id,
@@ -261,13 +270,20 @@ function PosScreen() {
         data: {
           sale: {
             id: saleId,
-            customerId: activeCustomer.id !== "walkin" ? activeCustomer.id : null,
+            customerId: activeCustomer.id === "walkin" ? null : activeCustomer.id,
             customerName: activeCustomer.name,
-            paymentMethod: payment,
-            paid: total,
-            status: "completed",
-            cashTendered: payment === "cash" ? (cashTendered ? parseFloat(cashTendered) : total) : null,
-            changeDue: payment === "cash" ? (changeDue > 0 ? changeDue : 0) : null,
+            paymentMethod: isQuotation ? "unpaid" : payment,
+            payments: isQuotation ? null : (payment === "split"
+              ? [
+                  { method: "cash", amount: parseFloat(splitCash) || 0 },
+                  { method: "card", amount: parseFloat(splitCard) || 0 },
+                  { method: "upi", amount: parseFloat(splitUpi) || 0 },
+                ].filter((p) => p.amount > 0)
+              : null),
+            discountAmt,
+            status: isQuotation ? "quotation" : "completed",
+            cashTendered: isQuotation ? null : (payment === "cash" && state.cashTendered ? parseFloat(state.cashTendered) : null),
+            changeDue: isQuotation ? null : (payment === "cash" ? changeDue : null),
           },
           items: saleItems,
           inventoryMovements: lines.map((l: any) => ({
@@ -334,6 +350,8 @@ function PosScreen() {
         upiId: state.settings?.upiId,
         customer: activeCustomer.name,
         customerObj: activeCustomer,
+        customerType: state.customers.find((c: any) => c.id === activeCustomer.id)?.type,
+        customerGstin: state.customers.find((c: any) => c.id === activeCustomer.id)?.gstin,
         amountInWords: numberToWords(total),
         date: state.formatDateTime(new Date()),
         lines,
@@ -344,9 +362,10 @@ function PosScreen() {
         sgstAmt: state.totalSgst,
         igstAmt: state.totalIgst,
         total,
-        payment,
-        changeDue: payment === "cash" ? (changeDue > 0 ? changeDue : 0) : null,
-        cashTendered: payment === "cash" ? (state.cashTendered ? parseFloat(state.cashTendered) : total) : null,
+        payment: isQuotation ? "unpaid" : payment,
+        status: isQuotation ? "quotation" : "completed",
+        changeDue: isQuotation ? null : (payment === "cash" ? (changeDue > 0 ? changeDue : 0) : null),
+        cashTendered: isQuotation ? null : (payment === "cash" ? (state.cashTendered ? parseFloat(state.cashTendered) : total) : null),
       };
 
       setPrintData(printObj);

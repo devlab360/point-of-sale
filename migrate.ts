@@ -1,24 +1,20 @@
-import { config } from "dotenv";
-config({ path: ".env" });
-const connectionString = process.env.NEON_DB!;
+import postgres from 'postgres';
+import dotenv from 'dotenv';
 
-import { drizzle } from "drizzle-orm/postgres-js";
-import { migrate } from "drizzle-orm/postgres-js/migrator";
-import postgres from "postgres";
+dotenv.config();
 
 async function main() {
-  const client = postgres(connectionString, { max: 1 });
-  const db = drizzle(client);
-
+  const sql = postgres(process.env.NEON_DB!);
   try {
-    console.log("Running migrations...");
-    await migrate(db, { migrationsFolder: "./src/db/migrations" });
-    console.log("Migrations successfully applied!");
-  } catch (e: any) {
-    console.error("====== DATABASE ERROR ======");
-    console.error(e.message);
+    await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS country_code text;`;
+    await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS time_zone text;`;
+    await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS date_format text;`;
+    await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS language text;`;
+    console.log("Migration successful!");
+  } catch(e) {
+    console.error("Migration failed:", e);
   } finally {
-    await client.end();
+    process.exit(0);
   }
 }
 

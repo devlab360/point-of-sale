@@ -33,6 +33,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { CheckoutModal } from "@/components/CheckoutModal";
 import { useAuth } from "@/contexts/AuthContext";
+import { PersistStore } from "@/lib/session-store";
 import { useRouter, useSearch } from "@tanstack/react-router";
 import { getTrialDaysLeft, DEFAULT_PAYMENT_CONFIG } from "@/lib/utils";
 import {
@@ -45,6 +46,7 @@ import {
 import { PosPrintLayouts } from "@/components/pos/PosPrintLayouts";
 import { numberToWords } from "@/lib/number-to-words";
 import { Input, PasswordInput } from "@/components/ui/input";
+import { Separator } from "@/components/ui/separator";
 import { Label } from "@/components/ui/label";
 import { CURRENCY_OPTIONS } from "@/lib/currency";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -62,6 +64,24 @@ import {
   ResizableHandle,
 } from "@/components/ui/resizable";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { BUSINESS_TEMPLATES } from "@/lib/business-templates";
+
+const DATE_FORMATS = [
+  { value: "dd MMM yyyy", label: "01 Jan 2024 (dd MMM yyyy)" },
+  { value: "dd-MM-yyyy", label: "01-01-2024 (dd-MM-yyyy)" },
+  { value: "MM/dd/yyyy", label: "01/01/2024 (MM/dd/yyyy)" },
+  { value: "yyyy-MM-dd", label: "2024-01-01 (yyyy-MM-dd)" },
+];
+
+const TIME_ZONES = [
+  { value: "UTC", label: "UTC (Coordinated Universal Time)" },
+  { value: "Asia/Kolkata", label: "Asia/Kolkata (IST)" },
+  { value: "Asia/Dhaka", label: "Asia/Dhaka (BST)" },
+  { value: "Asia/Dubai", label: "Asia/Dubai (GST)" },
+  { value: "America/New_York", label: "America/New_York (EST/EDT)" },
+  { value: "Europe/London", label: "Europe/London (GMT/BST)" },
+  { value: "Australia/Sydney", label: "Australia/Sydney (AEST/AEDT)" },
+];
 
 export const Route = createFileRoute("/settings")({
   head: () => ({ meta: [{ title: "Settings · NexisPOS" }] }),
@@ -204,7 +224,7 @@ function SettingsPage() {
     setIsSaving(true);
     await new Promise((resolve) => setTimeout(resolve, 500));
     try {
-      const orgId = user?.organizationId || dbSettings?.organizationId || settings.organizationId;
+      const orgId = user?.organizationId || dbSettings?.organizationId || settings.organizationId || PersistStore.getOrgId() || "default";
 
       if (orgId) {
         const res = await updateSettingsFn({
@@ -236,6 +256,8 @@ function SettingsPage() {
               gstin: settings.gstin,
               stateCode: settings.stateCode,
               businessType: settings.businessType,
+              timeZone: settings.timeZone,
+              dateFormat: settings.dateFormat,
             },
           },
         });
@@ -517,6 +539,37 @@ function SettingsPage() {
                   <p className="text-[10px] text-muted-foreground mt-1">
                     Email cannot be changed as it is used for login.
                   </p>
+                </Field>
+                <Field label="Business Type">
+                  <SearchableSelect
+                    value={settings.businessType || "UNIVERSAL"}
+                    onChange={(val) => handleChange("businessType", val)}
+                    options={Object.values(BUSINESS_TEMPLATES).map((tmpl) => ({
+                      value: tmpl.type,
+                      label: tmpl.label,
+                    }))}
+                  />
+                  <p className="text-[10px] text-muted-foreground mt-1">
+                    Changes which modules are visible on the sidebar.
+                  </p>
+                </Field>
+                <Field label="Time Zone">
+                  <SearchableSelect
+                    value={settings.timeZone || "UTC"}
+                    onChange={(val) => handleChange("timeZone", val)}
+                    options={TIME_ZONES}
+                    placeholder="Select Time Zone"
+                  />
+                  <p className="text-[10px] text-muted-foreground mt-1">
+                    Used for all reports and logs across the application.
+                  </p>
+                </Field>
+                <Field label="Date Format">
+                  <SearchableSelect
+                    value={settings.dateFormat || "dd MMM yyyy"}
+                    onChange={(val) => handleChange("dateFormat", val)}
+                    options={DATE_FORMATS}
+                  />
                 </Field>
                 <Field label={t("currency") || "Store Currency Preset"}>
                   <SearchableSelect

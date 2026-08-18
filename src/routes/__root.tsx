@@ -302,7 +302,7 @@ function AppLayout() {
   let unauthorizedMessage: string | null = null;
 
   if (isAuthenticated && !isSuperAdmin) {
-    const permResult = hasPermissionForRoute(user, location.pathname, !!isSuperAdmin, saasPlan);
+    const permResult = hasPermissionForRoute(user, location.pathname, !!isSuperAdmin, saasPlan, settings?.businessType);
     if (!permResult.allowed) {
       unauthorizedMessage =
         permResult.reason || "You do not have permission to access this module.";

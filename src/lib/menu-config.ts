@@ -35,7 +35,11 @@ import {
   Repeat,
   KeyRound,
   UserCheck,
+  Utensils,
+  ChefHat,
+  CalendarDays,
 } from "lucide-react";
+import { BusinessCapability, hasCapability } from "./business-templates";
 
 export type MenuItem = {
   to: string;
@@ -57,7 +61,6 @@ export const APP_GROUPS: MenuGroup[] = [
         label: "Dashboard",
         tkey: "dashboard",
         icon: LayoutDashboard,
-        roles: ["admin", "manager"],
       },
       { to: "/pos", label: "POS Terminal", tkey: "pos", icon: ScanBarcode, badge: "Live" },
     ],
@@ -228,6 +231,27 @@ export const APP_GROUPS: MenuGroup[] = [
         icon: KeyRound,
         roles: ["admin", "manager"],
       },
+      {
+        to: "/tables",
+        label: "Tables",
+        tkey: "tables",
+        icon: Utensils,
+        roles: ["admin", "manager", "cashier"],
+      },
+      {
+        to: "/kitchen",
+        label: "Kitchen (KOT)",
+        tkey: "kitchen",
+        icon: ChefHat,
+        roles: ["admin", "manager", "cashier"],
+      },
+      {
+        to: "/appointments",
+        label: "Appointments",
+        tkey: "appointments",
+        icon: CalendarDays,
+        roles: ["admin", "manager", "cashier"],
+      },
     ],
   },
   {
@@ -303,6 +327,9 @@ export const PERMISSION_ROUTE_MAP: Record<string, string[]> = {
     "/promotions",
     "/quotations",
     "/delivery-challans",
+    "/tables",
+    "/kitchen",
+    "/appointments",
   ],
   reports: [
     "/reports",
@@ -317,6 +344,7 @@ export const PERMISSION_ROUTE_MAP: Record<string, string[]> = {
   expenses: ["/expenses"],
   returns: ["/sales/returns", "/purchases/returns"],
   settings: ["/settings", "/users", "/locations", "/shifts", "/branches"],
+  notifications: ["/notifications"],
 };
 
 const DEFAULT_ROLE_PERMISSIONS_FALLBACK: Record<string, string[]> = {
@@ -329,9 +357,51 @@ const DEFAULT_ROLE_PERMISSIONS_FALLBACK: Record<string, string[]> = {
     "discounts",
     "returns",
     "settings",
+    "notifications",
   ],
-  manager: ["pos", "inventory", "reports", "customers", "expenses", "discounts", "returns"],
+  manager: ["pos", "inventory", "reports", "customers", "expenses", "discounts", "returns", "notifications"],
   cashier: ["pos", "customers", "discounts"],
+};
+
+export const ROUTE_CAPABILITY_MAP: Record<string, BusinessCapability[]> = {
+  "/pos": ["POS"],
+  "/products": ["PRODUCTS"],
+  "/services": ["SERVICES"],
+  "/categories": ["PRODUCTS", "SERVICES"], // Often shared
+  "/brands": ["PRODUCTS"],
+  "/units": ["PRODUCTS"],
+  "/inventory": ["INVENTORY"],
+  "/inventory/adjustments": ["INVENTORY"],
+  "/inventory/transfers": ["INVENTORY"],
+  "/inventory/history": ["INVENTORY"],
+  "/purchases": ["PURCHASES"],
+  "/purchases/returns": ["PURCHASES"],
+  "/sales": ["POS"], // Technically invoicing
+  "/quotations": ["QUOTATIONS"],
+  "/delivery-challans": ["DELIVERY_CHALLANS"],
+  "/sales/returns": ["POS"],
+  "/customers": ["CUSTOMERS"],
+  "/suppliers": ["SUPPLIERS"],
+  "/users": ["STAFF", "SETTINGS"], // Using SETTINGS as fallback for employees management if STAFF isn't there
+  "/accounts": ["ACCOUNTS"],
+  "/expenses": ["EXPENSES"],
+  "/reports": ["REPORTS"],
+  "/repairs": ["REPAIRS", "JOB_CARDS", "REPAIR_STATUS"],
+  "/subscriptions": ["SUBSCRIPTIONS"],
+  "/rentals": ["RENTALS"],
+  "/coupons": ["COUPONS"],
+  "/gift-cards": ["GIFT_CARDS"],
+  "/loyalty": ["LOYALTY"],
+  "/promotions": ["PROMOTIONS"],
+  "/settings": ["SETTINGS"],
+  "/notifications": [],
+  "/activity": ["REPORTS", "SETTINGS"],
+  "/profile": [],
+  "/help": [],
+  "/portal": ["CUSTOMERS"],
+  "/tables": ["TABLES"],
+  "/kitchen": ["KITCHEN"],
+  "/appointments": ["APPOINTMENTS"],
 };
 
 export function hasPermissionForRoute(
@@ -339,6 +409,7 @@ export function hasPermissionForRoute(
   routePath: string,
   isSuperAdminUser: boolean,
   saasPlan: any,
+  businessType?: string
 ): { allowed: boolean; reason?: string } {
   // 1. Super Admin Authorization
   if (isSuperAdminUser) return { allowed: true };
@@ -350,7 +421,7 @@ export function hasPermissionForRoute(
   }
 
   // 2. Core System Routes (Always Available)
-  if (routePath === "/" || routePath === "/settings" || routePath === "/profile" || routePath.startsWith("/profile/")) {
+  if (routePath === "/" || routePath === "/profile" || routePath.startsWith("/profile/")) {
     return { allowed: true };
   }
 
@@ -371,6 +442,20 @@ export function hasPermissionForRoute(
 
   const targetPath = matchedItem ? matchedItem.to : routePath;
   const label = matchedItem ? matchedItem.label : targetPath;
+
+  // 3.5. Business Type Capability Check (Phase 1)
+  const routeCapabilities = ROUTE_CAPABILITY_MAP[targetPath] || [];
+  if (routeCapabilities.length > 0) {
+    // If a route requires capabilities, the business type MUST have at least one of them
+    // (e.g. repairs route needs REPAIRS or JOB_CARDS capability)
+    const hasAnyRequiredCapability = routeCapabilities.some(cap => hasCapability(businessType, cap));
+    if (!hasAnyRequiredCapability) {
+      return {
+        allowed: false,
+        reason: `The "${label}" module is not applicable to your business type.`,
+      };
+    }
+  }
 
   // 4. SaaS Plan Authorization
   if (saasPlan && Array.isArray(saasPlan.features) && saasPlan.features.length > 0) {

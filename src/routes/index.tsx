@@ -59,6 +59,7 @@ import { DashboardSkeleton } from "@/components/skeletons/DashboardSkeleton";
 import { ErrorState } from "@/components/ui/error-state";
 import { sendAutomatedReport } from "@/lib/automation/report-bot";
 import { MessageCircle } from "lucide-react";
+import { useAppFormatter } from "@/hooks/useAppFormatter";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -75,6 +76,7 @@ export const Route = createFileRoute("/")({
 
 function Dashboard() {
   const { currencySymbol, formatCurrency } = useCurrency();
+  const { formatAppDate, timeZone } = useAppFormatter();
   const { user, saasPlan, saasOrg } = useAuth();
   const [isDailyReportOpen, setIsDailyReportOpen] = useState(false);
   const [chartView, setChartView] = useState<"revenue" | "profit">("revenue");
@@ -233,7 +235,7 @@ function Dashboard() {
       sale.saleItems.forEach((item) => {
         productSalesMap.set(
           item.productId,
-          (productSalesMap.get(item.productId) || 0) + item.quantity,
+          (productSalesMap.get(item.productId) || 0) + Number(item.quantity || 1),
         );
       });
     }
@@ -246,9 +248,9 @@ function Dashboard() {
 
   const recentSales = [...sales].reverse().slice(0, 5);
 
-  const todayDateStr = new Date().toDateString();
+  const todayDateStr = formatAppDate(new Date(), "date", "yyyy-MM-dd");
   const todaySales = sales.filter(
-    (s: any) => s.date && new Date(s.date).toDateString() === todayDateStr,
+    (s: any) => s.date && formatAppDate(s.date, "date", "yyyy-MM-dd") === todayDateStr,
   );
   const todayRevenue = todaySales.reduce((sum: number, s: any) => sum + (Number(s.total) || 0), 0);
   const todayOrders = todaySales.length;
@@ -275,10 +277,9 @@ function Dashboard() {
   // Day-over-Day (DoD) Calculations
   const yesterdayDate = new Date();
   yesterdayDate.setDate(yesterdayDate.getDate() - 1);
-  const yesterdayDateStr = yesterdayDate.toDateString();
-
+  const yesterdayDateStr = formatAppDate(yesterdayDate, "date", "yyyy-MM-dd");
   const yesterdaySales = sales.filter(
-    (s: any) => s.date && new Date(s.date).toDateString() === yesterdayDateStr,
+    (s: any) => s.date && formatAppDate(s.date, "date", "yyyy-MM-dd") === yesterdayDateStr,
   );
   const yesterdayRevenue = yesterdaySales.reduce(
     (sum: number, s: any) => sum + (Number(s.total) || 0),
@@ -313,9 +314,10 @@ function Dashboard() {
   const salesByDay = Array.from({ length: 7 }).map((_, i) => {
     const d = new Date();
     d.setDate(d.getDate() - (6 - i));
-    const day = d.toLocaleDateString("default", { weekday: "short" });
+    const day = formatAppDate(d, "date", "EEE");
+    const dayStr = formatAppDate(d, "date", "yyyy-MM-dd");
     const daySales = sales.filter(
-      (s: any) => s.date && new Date(s.date).toDateString() === d.toDateString(),
+      (s: any) => s.date && formatAppDate(s.date, "date", "yyyy-MM-dd") === dayStr,
     );
     return {
       day,
@@ -912,12 +914,7 @@ function Dashboard() {
           <DialogHeader>
             <div className="flex items-center gap-2 text-primary font-semibold text-xs uppercase tracking-wider mb-1">
               <Calendar className="size-4" />
-              {new Date().toLocaleDateString(undefined, {
-                weekday: "long",
-                year: "numeric",
-                month: "long",
-                day: "numeric",
-              })}
+              {formatAppDate(new Date(), "date", "EEEE, MMMM d, yyyy")}
             </div>
             <DialogTitle className="text-xl font-bold flex items-center gap-2">
               <Receipt className="size-5 text-primary" /> Today's Sales & Performance Summary

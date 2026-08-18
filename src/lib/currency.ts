@@ -41,6 +41,12 @@ export function useCurrency() {
   const formatCurrency = useCallback(
     (amount: number | string | undefined | null) => {
       const numeric = typeof amount === "number" ? amount : parseFloat(String(amount || 0)) || 0;
+      if (Math.abs(numeric) >= 1000) {
+        return `${currencySymbol}${Intl.NumberFormat("en-US", {
+          notation: "compact",
+          maximumFractionDigits: 2,
+        }).format(numeric)}`;
+      }
       return `${currencySymbol}${numeric.toFixed(2)}`;
     },
     [currencySymbol],
@@ -61,5 +67,11 @@ export function formatCurrencyStatic(
   symbol: string = "$",
 ) {
   const numeric = typeof amount === "number" ? amount : parseFloat(String(amount || 0)) || 0;
+  if (Math.abs(numeric) >= 1000) {
+    return `${symbol}${Intl.NumberFormat("en-US", {
+      notation: "compact",
+      maximumFractionDigits: 2,
+    }).format(numeric)}`;
+  }
   return `${symbol}${numeric.toFixed(2)}`;
 }

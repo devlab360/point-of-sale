@@ -483,6 +483,7 @@ export const settings = pgTable(
     timeZone: text("time_zone"),
     dateFormat: text("date_format"),
     language: text("language"),
+    loyaltyTiers: jsonb("loyalty_tiers").$type<Record<string, any>[]>(),
     enableGST: boolean("enable_gst").default(false),
     gstin: text("gstin"),
     stateCode: text("state_code"),
@@ -1036,4 +1037,42 @@ export const loyaltyMembers = pgTable("loyalty_members", {
   points: integer("points").notNull().default(0),
   tier: text("tier").notNull().default("Bronze"),
   joinedAt: timestamp("joined_at", { mode: "string" }).defaultNow().notNull(),
+});
+
+// Help Center & Support Data
+
+export const helpArticles = pgTable("help_articles", {
+  id: text("id").primaryKey(),
+  organizationId: text("organization_id").references(() => organizations.id), // null = super admin global
+  title: text("title").notNull(),
+  type: text("type").notNull(), // 'doc' | 'video'
+  content: text("content").notNull(),
+  createdAt: timestamp("created_at", { mode: "string" }).defaultNow().notNull(),
+});
+
+export const faqs = pgTable("faqs", {
+  id: text("id").primaryKey(),
+  organizationId: text("organization_id").references(() => organizations.id), // null = super admin global
+  question: text("question").notNull(),
+  answer: text("answer").notNull(),
+  createdAt: timestamp("created_at", { mode: "string" }).defaultNow().notNull(),
+});
+
+export const supportTickets = pgTable("support_tickets", {
+  id: text("id").primaryKey(),
+  organizationId: text("organization_id").references(() => organizations.id),
+  userId: text("user_id").references(() => users.id),
+  subject: text("subject"),
+  message: text("message").notNull(),
+  status: text("status").notNull().default("open"), // open, in-progress, closed
+  createdAt: timestamp("created_at", { mode: "string" }).defaultNow().notNull(),
+});
+
+export const reviews = pgTable("reviews", {
+  id: text("id").primaryKey(),
+  organizationId: text("organization_id").references(() => organizations.id),
+  userId: text("user_id").references(() => users.id),
+  rating: integer("rating").notNull(), // 1-5
+  comment: text("comment"),
+  createdAt: timestamp("created_at", { mode: "string" }).defaultNow().notNull(),
 });

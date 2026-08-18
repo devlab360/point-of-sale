@@ -1,4 +1,4 @@
-import { createLazyFileRoute } from "@tanstack/react-router";
+import { createLazyFileRoute, useRouter } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
@@ -26,13 +26,15 @@ export const Route = createLazyFileRoute("/inventory/")({
 });
 
 function StockList() {
+  const router = useRouter();
   const orgId = PersistStore.getOrgId() || "default";
 
-  const { data: productsData } = useQuery({
+  const { data: productsResponse } = useQuery({
     queryKey: ["products", orgId],
-    queryFn: async () => ((await getProductsFn({ data: {} })) as any)?.data || [],
+    queryFn: async () => ((await getProductsFn({ data: {} })) as any) || {},
   });
-  const products = productsData || [];
+  const products = productsResponse?.data || [];
+  const inventorySummary = productsResponse?.summary || null;
 
   const { data: salesData } = useQuery({
     queryKey: ["sales", orgId],
@@ -74,7 +76,7 @@ function StockList() {
     const salesMap: Record<string, number> = {};
     recentSales.forEach((sale) => {
       sale.saleItems?.forEach((item) => {
-        salesMap[item.productId] = (salesMap[item.productId] || 0) + item.quantity;
+        salesMap[item.productId] = (salesMap[item.productId] || 0) + Number(item.quantity || 1);
       });
     });
 
@@ -134,10 +136,9 @@ function StockList() {
   ).length;
 
   return (
-    <div className="p-2 md:p-4 lg:p-4">
+    <div className="space-y-6 p-4 md:p-6 lg:p-8">
       <DataPage
         title="Stock Inventory"
-        hideHeader={true}
         description="Monitor your current stock levels and AI forecasts."
         searchPlaceholder="Search inventory by name or SKU..."
         searchValue={search}
@@ -206,11 +207,39 @@ function StockList() {
           </div>
         }
       >
-        <div className="mb-4 text-sm text-muted-foreground flex gap-3 flex-wrap">
-          <span className="font-semibold text-foreground">{products.length} SKUs</span>{" "}
-          <span>· {lowCount} low</span>
-          <span className="text-destructive">· {outCount} out of stock</span>
-          {expiringCount > 0 && <span className="text-warning">· {expiringCount} expiring</span>}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+          <div className="rounded-xl border border-border bg-card p-4 shadow-sm flex flex-col justify-between">
+            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Total Stock Quantity</p>
+            <div className="mt-2 flex items-baseline gap-2">
+              <span className="text-2xl font-bold">{inventorySummary?.totalStock || 0}</span>
+              <span className="text-xs text-muted-foreground">units</span>
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">{products.length} unique SKUs</p>
+          </div>
+          <div className="rounded-xl border border-border bg-card p-4 shadow-sm flex flex-col justify-between">
+            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Inventory Value (Cost)</p>
+            <div className="mt-2 text-2xl font-bold">
+              {formatCurrency(inventorySummary?.totalValue)}
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">Total invested in stock</p>
+          </div>
+          <div className="rounded-xl border border-border bg-card p-4 shadow-sm flex flex-col justify-between">
+            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Retail Value (Price)</p>
+            <div className="mt-2 text-2xl font-bold text-primary">
+              {formatCurrency(inventorySummary?.totalRetailValue)}
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">Potential revenue</p>
+          </div>
+          <div className="rounded-xl border border-border bg-card p-4 shadow-sm flex flex-col justify-between">
+            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Stock Alerts</p>
+            <div className="mt-2 text-2xl font-bold text-destructive">
+              {inventorySummary?.lowStockCount || lowCount}
+            </div>
+            <p className="text-xs text-muted-foreground mt-1 flex gap-2">
+              <span>{outCount} out</span>
+              {expiringCount > 0 && <span>· {expiringCount} expiring</span>}
+            </p>
+          </div>
         </div>
         <div className="overflow-hidden rounded-xl border border-border bg-card shadow-soft">
           <div className="overflow-hidden rounded-xl border border-border bg-card shadow-soft">
@@ -220,7 +249,7 @@ function StockList() {
                   <tr>
                     <th className="px-4 py-3 whitespace-nowrap">Product</th>
                     <th className="px-4 py-3 whitespace-nowrap">SKU</th>
-                    <th className="px-4 py-3 text-right whitespace-nowrap">On hand</th>
+                    <th className="px-4 py-3 text-right whitespace-nowrap">Stocks</th>
                     <th className="px-4 py-3 text-right whitespace-nowrap">Reorder</th>
                     <th className="px-4 py-3 text-right whitespace-nowrap">Value</th>
                     <th className="px-4 py-3 whitespace-nowrap">Status</th>
@@ -231,7 +260,11 @@ function StockList() {
                     const low = p.stock <= p.reorderLevel;
                     const out = p.stock <= 0;
                     return (
-                      <tr key={p.id} className="hover:bg-muted/30">
+                      <tr
+                        key={p.id}
+                        className="hover:bg-muted/30 cursor-pointer"
+                        onClick={() => router.navigate({ to: "/products", search: { edit: p.id } })}
+                      >
                         <td className="px-4 py-3 whitespace-nowrap">
                           <div className="flex items-center gap-3">
                             <div className="grid size-9 shrink-0 place-items-center rounded-lg bg-muted overflow-hidden">

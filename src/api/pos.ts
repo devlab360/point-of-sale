@@ -29,8 +29,11 @@ export const getPosItemsFn = createServerFn({ method: "GET" })
         .from(schema.services)
         .where(eq(schema.services.organizationId, orgId));
 
+      const now = new Date();
       const unifiedItems = [
-        ...products.map((p) => ({ ...p, referenceType: "PRODUCT", referenceId: p.id })),
+        ...products
+          .filter((p) => !p.expiryDate || new Date(p.expiryDate) >= now)
+          .map((p) => ({ ...p, referenceType: "PRODUCT", referenceId: p.id })),
         ...services.map((s) => ({
           ...s,
           referenceType: "SERVICE",
@@ -149,6 +152,10 @@ const SaleItemInput = z
     price: z.number().nonnegative().optional(), // We will recalculate this on server
     taxAmt: z.number().optional(),
     discountAmt: z.number().optional(),
+    referenceType: z.string().optional(),
+    referenceId: z.string().optional(),
+    serialNumber: z.string().optional().nullable(),
+    batchNo: z.string().optional().nullable(),
   })
   .passthrough();
 
@@ -200,22 +207,37 @@ export const completePosSaleFn = createServerFn({ method: "POST" })
 
         const verifiedItems: any[] = [];
         const productIds = data.items.map((i: any) => i.productId);
+        const repairIds = data.items.filter((i: any) => i.referenceType === "REPAIR").map((i: any) => i.referenceId);
 
         if (productIds.length === 0) throw new Error("Sale must contain at least one item.");
 
         // BULK FETCH: Get all products and services in one query to eliminate N+1 latency
-        const [productsList, servicesList] = await Promise.all([
+        const [productsList, servicesList, repairsList] = await Promise.all([
           tx.select().from(schema.products).where(
             and(inArray(schema.products.id, productIds), eq(schema.products.organizationId, orgId)),
           ),
           tx.select().from(schema.services).where(
             and(inArray(schema.services.id, productIds), eq(schema.services.organizationId, orgId)),
-          )
+          ),
+          repairIds.length > 0 
+            ? tx.select().from(schema.repairs).where(
+                and(inArray(schema.repairs.id, repairIds), eq(schema.repairs.organizationId, orgId))
+              ) 
+            : Promise.resolve([])
         ]);
 
         const itemsMap = new Map();
         for (const p of productsList) itemsMap.set(p.id, { ...p, _type: 'product' });
         for (const s of servicesList) itemsMap.set(s.id, { ...s, _type: 'service' });
+        for (const r of repairsList) {
+          itemsMap.set(`REPAIR_${r.id}`, { 
+             id: `REPAIR_${r.id}`,
+             name: `Repair Balance (Ticket: ${r.ticketNo})`,
+             price: Number(r.estimatedCost) - Number(r.advancePaid),
+             _type: 'repair',
+             stock: 999
+          });
+        }
 
         const lowStockNotifications: any[] = [];
         const stockUpdates: { productId: string; newStock: number }[] = [];
@@ -251,7 +273,7 @@ export const completePosSaleFn = createServerFn({ method: "POST" })
           serverSubtotal += lineSubtotal;
           serverTotalTax += lineTax;
           serverTotalDiscount += lineDiscount;
-          itemsCount += item.quantity;
+          itemsCount += Number(item.quantity || 1);
 
           verifiedItems.push({
             organizationId: orgId,
@@ -262,6 +284,8 @@ export const completePosSaleFn = createServerFn({ method: "POST" })
             total: (lineSubtotal + lineTax - lineDiscount).toString(),
             serialNumber: item.serialNumber || null,
             batchNo: item.batchNo || null,
+            referenceType: item.referenceType || (p._type === 'product' ? 'PRODUCT' : p._type === 'service' ? 'SERVICE' : 'REPAIR'),
+            referenceId: item.referenceId || p.id,
           });
 
           if (p._type === 'product') {
@@ -344,25 +368,40 @@ export const completePosSaleFn = createServerFn({ method: "POST" })
           await tx.insert(schema.saleItems).values(itemsWithSaleId as any);
 
           // Deduct stock sequentially (fast because we already eliminated all SELECT queries)
-          for (const update of stockUpdates) {
-            await tx
-              .update(schema.products)
-              .set({ stock: update.newStock })
-              .where(
-                and(
-                  eq(schema.products.id, update.productId),
-                  eq(schema.products.organizationId, orgId),
-                ),
-              );
-          }
+          if (safeSale.status !== "quotation") {
+            for (const update of stockUpdates) {
+              await tx
+                .update(schema.products)
+                .set({ stock: update.newStock.toString() })
+                .where(
+                  and(
+                    eq(schema.products.id, update.productId),
+                    eq(schema.products.organizationId, orgId),
+                  ),
+                );
+            }
 
-          if (lowStockNotifications.length > 0) {
-            await tx.insert(schema.notifications).values(lowStockNotifications);
+            if (lowStockNotifications.length > 0) {
+              await tx.insert(schema.notifications).values(lowStockNotifications);
+            }
+            
+            // Auto-update repair tickets to 'delivered'
+            if (repairIds.length > 0) {
+              await tx
+                .update(schema.repairs)
+                .set({ status: 'delivered' })
+                .where(
+                  and(
+                    inArray(schema.repairs.id, repairIds),
+                    eq(schema.repairs.organizationId, orgId)
+                  )
+                );
+            }
           }
         }
 
         // Inventory movements
-        if (data.inventoryMovements && data.inventoryMovements.length > 0) {
+        if (safeSale.status !== "quotation" && data.inventoryMovements && data.inventoryMovements.length > 0) {
           const safeMovements = data.inventoryMovements.map((m: any) => ({
             organizationId: orgId,
             productName: m.productName,
@@ -379,7 +418,7 @@ export const completePosSaleFn = createServerFn({ method: "POST" })
           id: uuidv4(),
           organizationId: orgId,
           user: cashierName,
-          action: "POS Sale Completed",
+          action: safeSale.status === "quotation" ? "POS Quotation Created" : "POS Sale Completed",
           details: `Invoice #${saleId.slice(0, 8).toUpperCase()} for ${safeSale.customerName} - Amount: ₹${serverTotal.toFixed(2)} (${safeSale.paymentMethod.toUpperCase()})`,
           timestamp: new Date().toISOString(),
           type: "sale",
@@ -388,7 +427,7 @@ export const completePosSaleFn = createServerFn({ method: "POST" })
         await tx.insert(schema.notifications).values({
           id: uuidv4(),
           organizationId: orgId,
-          title: "POS Sale Completed",
+          title: safeSale.status === "quotation" ? "POS Quotation Created" : "POS Sale Completed",
           description: `Bill #${saleId.slice(0, 8).toUpperCase()} of ₹${serverTotal.toFixed(2)} completed by ${cashierName}`,
           type: "sale",
           timestamp: new Date().toISOString(),
@@ -396,53 +435,55 @@ export const completePosSaleFn = createServerFn({ method: "POST" })
         });
 
         // Customer Ledger & Updates
-        const customerId =
-          data.sale.customerId && data.sale.customerId !== "walkin" ? data.sale.customerId : null;
-        if (data.ledgerEntries && data.ledgerEntries.length > 0 && customerId) {
-          // Re-calculate ledger amount to match secure total
-          const custRes = await tx
-            .select()
-            .from(schema.customers)
-            .where(eq(schema.customers.id, customerId))
-            .limit(1);
-          const currentCredit = custRes.length > 0 ? Number(custRes[0].credit || 0) : 0;
-          const newCreditBalance =
-            data.sale.paymentMethod === "credit" ? currentCredit + serverTotal : currentCredit;
+        if (safeSale.status !== "quotation") {
+          const customerId =
+            data.sale.customerId && data.sale.customerId !== "walkin" ? data.sale.customerId : null;
+          if (data.ledgerEntries && data.ledgerEntries.length > 0 && customerId) {
+            // Re-calculate ledger amount to match secure total
+            const custRes = await tx
+              .select()
+              .from(schema.customers)
+              .where(eq(schema.customers.id, customerId))
+              .limit(1);
+            const currentCredit = custRes.length > 0 ? Number(custRes[0].credit || 0) : 0;
+            const newCreditBalance =
+              data.sale.paymentMethod === "credit" ? currentCredit + serverTotal : currentCredit;
 
-          const safeLedgers = data.ledgerEntries
-            .filter((l: any) => l.customerId && l.customerId !== "walkin")
-            .map((l: any) => ({
-              ...l,
-              organizationId: orgId,
-              amount: serverTotal.toString(),
-              balanceAfter: newCreditBalance.toFixed(2),
-            }));
-          if (safeLedgers.length > 0) {
-            await tx.insert(schema.customerLedgers).values(safeLedgers);
+            const safeLedgers = data.ledgerEntries
+              .filter((l: any) => l.customerId && l.customerId !== "walkin")
+              .map((l: any) => ({
+                ...l,
+                organizationId: orgId,
+                amount: serverTotal.toString(),
+                balanceAfter: newCreditBalance.toFixed(2),
+              }));
+            if (safeLedgers.length > 0) {
+              await tx.insert(schema.customerLedgers).values(safeLedgers);
+            }
+
+            if (custRes.length > 0) {
+              const c = custRes[0];
+              await tx
+                .update(schema.customers)
+                .set({
+                  totalSpent: String(Number(c.totalSpent || 0) + serverTotal),
+                  visits: (c.visits || 0) + 1,
+                  loyaltyPoints: (c.loyaltyPoints || 0) + Math.floor(serverTotal / 10),
+                  credit: data.sale.paymentMethod === "credit" ? String(newCreditBalance) : c.credit,
+                })
+                .where(eq(schema.customers.id, customerId));
+            }
           }
 
-          if (custRes.length > 0) {
-            const c = custRes[0];
-            await tx
-              .update(schema.customers)
-              .set({
-                totalSpent: String(Number(c.totalSpent || 0) + serverTotal),
-                visits: (c.visits || 0) + 1,
-                loyaltyPoints: (c.loyaltyPoints || 0) + Math.floor(serverTotal / 10),
-                credit: data.sale.paymentMethod === "credit" ? String(newCreditBalance) : c.credit,
-              })
-              .where(eq(schema.customers.id, customerId));
-          }
-        }
-
-        // Coupon updates
-        if (data.couponUpdates && data.couponUpdates.length > 0 && (schema as any).coupons) {
-          for (const coupon of data.couponUpdates) {
-            // M-5 fix: schema column is 'used', not 'usedCount'
-            await tx
-              .update((schema as any).coupons)
-              .set({ used: (coupon.used || 0) + 1 })
-              .where(eq((schema as any).coupons.id, coupon.id));
+          // Coupon updates
+          if (data.couponUpdates && data.couponUpdates.length > 0 && (schema as any).coupons) {
+            for (const coupon of data.couponUpdates) {
+              // M-5 fix: schema column is 'used', not 'usedCount'
+              await tx
+                .update((schema as any).coupons)
+                .set({ used: (coupon.used || 0) + 1 })
+                .where(eq((schema as any).coupons.id, coupon.id));
+            }
           }
         }
       });

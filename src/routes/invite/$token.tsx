@@ -7,6 +7,8 @@ import { toast } from "sonner";
 import { getInvitationFn, acceptInvitationFn } from "@/api/auth";
 import { v4 as uuidv4 } from "uuid";
 import { Store, CheckCircle2, Loader2 } from "lucide-react";
+import { useFormValidation } from "@/hooks/useFormValidation";
+import { FieldError } from "@/components/ui/field-error";
 
 export const Route = createFileRoute("/invite/$token")({
   head: () => ({ meta: [{ title: "Accept Invitation · NexisPOS SaaS" }] }),
@@ -26,6 +28,19 @@ function InvitePage() {
     name: "",
     email: "",
     password: "",
+  });
+
+  const { errors, validate, validateSingleField, clearError } = useFormValidation({
+    name: { required: "Name is required", minLength: { value: 2, message: "Name must be at least 2 characters" } },
+    email: { required: "Email is required", email: "Valid email is required" },
+    password: {
+      required: "Password is required",
+      minLength: { value: 8, message: "Password must be at least 8 characters long" },
+      pattern: {
+        value: /(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^a-zA-Z\d])/,
+        message: "Password must contain uppercase, lowercase, number and special character",
+      },
+    },
   });
 
   useEffect(() => {
@@ -53,15 +68,22 @@ function InvitePage() {
   }, [token]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    setFormData({ ...formData, [name]: value });
+    if (errors[name]) {
+      validateSingleField(name, value);
+    }
+  };
+
+  const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+    validateSingleField(e.target.name, e.target.value);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!invitation) return;
 
-    if (formData.password.length < 4) {
-      toast.error("Password must be at least 4 characters");
+    if (!validate(formData)) {
       return;
     }
 
@@ -73,6 +95,7 @@ function InvitePage() {
           invitationId: invitation.id,
           orgId: invitation.organizationId,
           role: invitation.role,
+          permissions: invitation.permissions || [],
           name: formData.name,
           email: formData.email,
           pin: formData.password,
@@ -145,9 +168,11 @@ function InvitePage() {
                   name="name"
                   value={formData.name}
                   onChange={handleChange}
-                  required
+                  onBlur={handleBlur}
                   placeholder="John Doe"
+                  className={errors.name ? "border-destructive focus-visible:ring-destructive" : ""}
                 />
+                <FieldError message={errors.name} />
               </div>
               <div className="space-y-2">
                 <Label>Email</Label>
@@ -156,9 +181,11 @@ function InvitePage() {
                   name="email"
                   value={formData.email}
                   onChange={handleChange}
-                  required
+                  onBlur={handleBlur}
                   placeholder="john@example.com"
+                  className={errors.email ? "border-destructive focus-visible:ring-destructive" : ""}
                 />
+                <FieldError message={errors.email} />
               </div>
               <div className="space-y-2">
                 <Label>Set your password</Label>
@@ -166,9 +193,11 @@ function InvitePage() {
                   name="password"
                   value={formData.password}
                   onChange={handleChange}
-                  required
+                  onBlur={handleBlur}
                   placeholder="••••••••"
+                  className={errors.password ? "border-destructive focus-visible:ring-destructive" : ""}
                 />
+                <FieldError message={errors.password} />
               </div>
 
               <Button type="submit" className="w-full mt-4" disabled={isSaving}>

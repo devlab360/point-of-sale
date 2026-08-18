@@ -80,7 +80,7 @@ export function ReportAutomation() {
               sale.saleItems.forEach((item: any) => {
                 productSalesMap.set(
                   item.productId,
-                  (productSalesMap.get(item.productId) || 0) + item.quantity
+                  (productSalesMap.get(item.productId) || 0) + Number(item.quantity || 1)
                 );
               });
             }

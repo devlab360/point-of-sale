@@ -24,6 +24,7 @@ import {
   Loader2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useAppFormatter } from "@/hooks/useAppFormatter";
 
 type Message = {
   id: string;
@@ -40,6 +41,7 @@ type Message = {
 
 export function AiCopilotDrawer() {
   const { formatCurrency, currencySymbol } = useCurrency();
+  const { formatAppDate } = useAppFormatter();
   const [isOpen, setIsOpen] = useState(false);
   const [inputQuery, setInputQuery] = useState("");
   const orgId = PersistStore.getOrgId() || "default";
@@ -139,7 +141,7 @@ export function AiCopilotDrawer() {
       id: "welcome",
       sender: "ai",
       text: "Welcome! I am your **NexisPOS AI Copilot**. You can ask questions about your store's profit and loss, due accounts, stock prediction, or business health score.",
-      timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+      timestamp: formatAppDate(new Date(), "time"),
     },
   ]);
 
@@ -189,7 +191,7 @@ export function AiCopilotDrawer() {
       id: Date.now().toString(),
       sender: "user",
       text: queryText,
-      timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+      timestamp: formatAppDate(new Date(), "time"),
     };
 
     setMessages((prev) => [...prev, userMsg]);
@@ -227,7 +229,7 @@ export function AiCopilotDrawer() {
           id: (Date.now() + 1).toString(),
           sender: "ai",
           text: res.data.text || "দুঃখিত, আমি আপনার প্রশ্নটি বুঝতে পারিনি।",
-          timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+          timestamp: formatAppDate(new Date(), "time"),
           dataCard: res.data.dataCard,
         };
         setMessages((prev) => [...prev, aiMsg]);
@@ -240,7 +242,7 @@ export function AiCopilotDrawer() {
         id: (Date.now() + 1).toString(),
         sender: "ai",
         text: "দুঃখিত, আমি এই মুহূর্তে উত্তর দিতে পারছি না। దয়া করে কিছুক্ষণ পরে আবার চেষ্টা করুন।",
-        timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+        timestamp: formatAppDate(new Date(), "time"),
       };
       setMessages((prev) => [...prev, errorMsg]);
     } finally {

@@ -93,7 +93,26 @@ export function useFormValidation<T extends Record<string, any>>(schema: Schema)
     });
   }, []);
 
+  const validateSingleField = useCallback(
+    (field: string, value: any): string => {
+      const rules = schema[field];
+      if (!rules) return "";
+      const error = validateField((value ?? "").toString(), rules);
+      setErrors((prev) => {
+        if (error) {
+          return { ...prev, [field]: error };
+        } else {
+          const next = { ...prev };
+          delete next[field];
+          return next;
+        }
+      });
+      return error;
+    },
+    [schema],
+  );
+
   const clearAll = useCallback(() => setErrors({}), []);
 
-  return { errors, validate, clearError, clearAll };
+  return { errors, validate, validateSingleField, clearError, clearAll };
 }

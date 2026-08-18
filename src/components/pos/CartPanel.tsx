@@ -2,7 +2,6 @@ import {
   User,
   Plus,
   Play,
-  Receipt,
   Trash2,
   Percent,
   Ticket,
@@ -12,13 +11,29 @@ import {
   Smartphone,
   Users,
   Printer,
+  Utensils,
+  ChefHat,
+  Wrench,
+  Receipt,
+  FileText,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { cn } from "@/lib/utils";
+import { hasCapability } from "@/lib/business-templates";
+import { createKOTFn } from "@/api/restaurant";
+import { toast } from "sonner";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
-export function CartPanel({ state }: { state: any }) {
+export function CartPanel({ state, onCheckout }: { state: any; onCheckout?: (isQuotation?: boolean) => void }) {
   const {
     mobileTab,
     drawerWidth,
@@ -62,7 +77,52 @@ export function CartPanel({ state }: { state: any }) {
     setSplitUpi,
     setPayment,
     setConfirmCheckout,
+    tables,
+    selectedTableId,
+    setSelectedTableId,
+    orgId,
+    openRepairs,
+    addRepairToCart,
   } = state;
+
+  const queryClient = useQueryClient();
+  const hasTables = hasCapability(settings?.businessType, "TABLES");
+  const hasKitchen = hasCapability(settings?.businessType, "KITCHEN");
+  const hasRepairs = hasCapability(settings?.businessType, "REPAIRS");
+
+  const [showRepairDialog, setShowRepairDialog] = useState(false);
+
+  const sendToKitchen = useMutation({
+    mutationFn: (data: any) => createKOTFn({ data }),
+    onSuccess: (res) => {
+      if (res.success) {
+        toast.success("Order sent to kitchen (KOT)");
+        state.setCart([]);
+        state.setDiscountPct(0);
+        state.setDiscountInput("0");
+        state.setAppliedCoupon(null);
+        setSelectedTableId("");
+      } else {
+        toast.error("Failed to send order to kitchen");
+      }
+    }
+  });
+
+  const handleSendToKitchen = () => {
+    if (lines.length === 0) return toast.error("Cart is empty");
+    
+    const kotItems = lines.map((l: any) => ({
+      productId: l.product.id,
+      name: l.product.name,
+      quantity: l.qty,
+    }));
+    
+    sendToKitchen.mutate({
+      tableId: selectedTableId || undefined,
+      items: kotItems,
+      note: ""
+    });
+  };
 
   return (
     <aside
@@ -122,6 +182,21 @@ export function CartPanel({ state }: { state: any }) {
             )}
           </Button>
         </div>
+        
+        {hasTables && (
+          <div className="flex w-full mt-2 shrink-0">
+            <div className="flex-1">
+              <SearchableSelect
+                value={selectedTableId}
+                onChange={(val) => setSelectedTableId(val)}
+                options={[
+                  { value: "", label: "No Table (Takeaway)" },
+                  ...tables.map((t: any) => ({ value: t.id, label: t.name })),
+                ]}
+              />
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Cart Items */}
@@ -257,15 +332,41 @@ export function CartPanel({ state }: { state: any }) {
             <Ticket className="size-3.5 mr-1.5" />
             {appliedCoupon ? "Applied!" : "Coupon"}
           </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={holdInvoice}
-            className="h-9 px-3"
-            title="Hold (F4)"
-          >
-            <Pause className="size-3.5 mr-1.5" /> Hold
-          </Button>
+          
+          {hasRepairs && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowRepairDialog(true)}
+              className="h-9 px-3"
+              title="Add Repair Ticket"
+            >
+              <Wrench className="size-3.5 mr-1.5" /> Repair
+            </Button>
+          )}
+          
+          {hasKitchen ? (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleSendToKitchen}
+              disabled={sendToKitchen.isPending || lines.length === 0}
+              className="h-9 px-3 border-orange-200 text-orange-600 hover:bg-orange-50"
+              title="Send to Kitchen (KOT)"
+            >
+              <ChefHat className="size-3.5 mr-1.5" /> KOT
+            </Button>
+          ) : (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={holdInvoice}
+              className="h-9 px-3"
+              title="Hold (F4)"
+            >
+              <Pause className="size-3.5 mr-1.5" /> Hold
+            </Button>
+          )}
         </div>
 
         <div className="space-y-0.5 md:space-y-1 rounded-lg bg-muted/40 p-1.5 md:p-2 text-xs md:text-sm border border-border/50">
@@ -435,7 +536,17 @@ export function CartPanel({ state }: { state: any }) {
           />
         </div>
 
-        <div className="mt-1.5 md:mt-2.5 grid grid-cols-[1fr_auto] gap-1.5 md:gap-2">
+        <div className="mt-1.5 md:mt-2.5 grid grid-cols-[auto_1fr_auto] gap-1.5 md:gap-2">
+          <Button
+            size="lg"
+            variant="secondary"
+            className="h-12 md:h-14 text-sm md:text-base font-bold shadow-sm hover:shadow-md transition-all px-3 md:px-4 flex items-center gap-2"
+            disabled={lines.length === 0}
+            onClick={() => onCheckout?.(true)}
+          >
+            <FileText className="size-4 md:size-5" />
+            <span className="hidden sm:inline">Quote</span>
+          </Button>
           <Button
             size="lg"
             className="h-12 md:h-14 text-sm md:text-base font-bold shadow-lg hover:shadow-xl transition-all relative overflow-hidden group w-full"
@@ -463,6 +574,47 @@ export function CartPanel({ state }: { state: any }) {
           </Button>
         </div>
       </div>
+
+      <Dialog open={showRepairDialog} onOpenChange={setShowRepairDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Select Repair Ticket</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4 max-h-[60vh] overflow-y-auto">
+            {openRepairs.length === 0 ? (
+              <div className="text-center p-4 text-muted-foreground text-sm border border-dashed rounded-lg">
+                No open repair tickets found.
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {openRepairs.map((r: any) => {
+                  const balance = Math.max(0, r.estimatedCost - r.advancePaid);
+                  return (
+                    <div 
+                      key={r.id}
+                      className="p-3 border rounded-lg cursor-pointer hover:border-primary hover:bg-muted/30 transition-colors flex justify-between items-center"
+                      onClick={() => {
+                        addRepairToCart(r);
+                        setShowRepairDialog(false);
+                      }}
+                    >
+                      <div>
+                        <div className="font-bold text-primary text-sm">{r.ticketNo}</div>
+                        <div className="text-xs font-semibold">{r.customerName}</div>
+                        <div className="text-[10px] text-muted-foreground">{r.deviceName}</div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-xs text-muted-foreground">Balance Due</div>
+                        <div className="font-bold text-sm text-destructive">{state.formatCurrency(balance)}</div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </aside>
   );
 }

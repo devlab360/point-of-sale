@@ -33,10 +33,12 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { AppSidebar } from "./AppSidebar";
 import { applyTheme, getInitialTheme, type Theme } from "@/lib/theme";
+import { hasPermissionForRoute } from "@/lib/menu-config";
 import { SyncStatus } from "@/components/SyncStatus";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { getProductsFn } from "@/api/products";
 import { getCustomersFn } from "@/api/customers";
+import { useAppFormatter } from "@/hooks/useAppFormatter";
 import { getSalesFn } from "@/api/sales";
 import { getExpensesFn } from "@/api/expenses";
 import { getNotificationsFn, markNotificationReadFn } from "@/api/notifications";
@@ -62,6 +64,7 @@ function pathToCrumbs(pathname: string) {
 }
 
 export function AppHeader() {
+  const { formatAppDate } = useAppFormatter();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [theme, setTheme] = useState<Theme>("light");
   const [searchOpen, setSearchOpen] = useState(false);
@@ -138,7 +141,7 @@ export function AppHeader() {
         title: "SaaS Admin & Subscription Plans",
         path: "/super-admin/plans",
         category: "SaaS",
-        icon: "👑",
+        icon: "💳",
       },
     ],
     [],
@@ -422,65 +425,64 @@ export function AppHeader() {
           <Moon className="hidden size-5 dark:block" />
         </Button>
 
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="relative" aria-label="Notifications">
-              <Bell className="size-5" />
-              {unread > 0 && (
-                <span className="absolute right-1.5 top-1.5 grid size-4 place-items-center rounded-full bg-destructive text-[9px] font-bold text-destructive-foreground">
-                  {unread}
-                </span>
-              )}
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-80">
-            <DropdownMenuLabel className="flex items-center justify-between">
-              <span>Notifications</span>
-              <span className="text-xs font-normal text-muted-foreground">{unread} unread</span>
-            </DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            {notifications.slice(0, 5).map((n) => (
-              <DropdownMenuItem
-                key={n.id}
-                onClick={async () => {
-                  if (!n.read) {
-                    await markNotificationReadFn({ data: { id: n.id } });
-                    queryClient.invalidateQueries({ queryKey: ["notifications"] });
-                  }
-                  if (n.link) navigate({ to: n.link as any });
-                  else navigate({ to: "/notifications" });
-                }}
-                className="flex-col items-start gap-1 py-2.5 cursor-pointer hover:bg-muted/50"
-              >
-                <div className="flex w-full items-center gap-2">
-                  <span
-                    className={cn(
-                      "size-1.5 rounded-full",
-                      !n.read && "ring-2 ring-primary animate-pulse",
-                      n.type === "warning" && "bg-warning",
-                      n.type === "info" && "bg-info",
-                      n.type === "success" && "bg-success",
-                    )}
-                  />
-                  <span className="flex-1 text-sm font-medium">{n.title}</span>
-                  <span className="text-xs text-muted-foreground">
-                    {new Date(n.timestamp).toLocaleTimeString([], {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}
+        {hasPermissionForRoute(user, "/notifications", !!user?.email?.toLowerCase().includes("superadmin"), saasPlan).allowed && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" className="relative" aria-label="Notifications">
+                <Bell className="size-5" />
+                {unread > 0 && (
+                  <span className="absolute right-1.5 top-1.5 grid size-4 place-items-center rounded-full bg-destructive text-[9px] font-bold text-destructive-foreground">
+                    {unread}
                   </span>
-                </div>
-                <span className="pl-3.5 text-xs text-muted-foreground">{n.description}</span>
+                )}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-80">
+              <DropdownMenuLabel className="flex items-center justify-between">
+                <span>Notifications</span>
+                <span className="text-xs font-normal text-muted-foreground">{unread} unread</span>
+              </DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              {notifications.slice(0, 5).map((n) => (
+                <DropdownMenuItem
+                  key={n.id}
+                  onClick={async () => {
+                    if (!n.read) {
+                      await markNotificationReadFn({ data: { id: n.id } });
+                      queryClient.invalidateQueries({ queryKey: ["notifications"] });
+                    }
+                    if (n.link) navigate({ to: n.link as any });
+                    else navigate({ to: "/notifications" });
+                  }}
+                  className="flex-col items-start gap-1 py-2.5 cursor-pointer hover:bg-muted/50"
+                >
+                  <div className="flex w-full items-center gap-2">
+                    <span
+                      className={cn(
+                        "size-1.5 rounded-full",
+                        !n.read && "ring-2 ring-primary animate-pulse",
+                        n.type === "warning" && "bg-warning",
+                        n.type === "info" && "bg-info",
+                        n.type === "success" && "bg-success",
+                      )}
+                    />
+                    <span className="flex-1 text-sm font-medium">{n.title}</span>
+                    <span className="text-xs text-muted-foreground">
+                      {formatAppDate(n.timestamp, "time")}
+                    </span>
+                  </div>
+                  <span className="pl-3.5 text-xs text-muted-foreground">{n.description}</span>
+                </DropdownMenuItem>
+              ))}
+              <DropdownMenuSeparator />
+              <DropdownMenuItem asChild>
+                <Link to="/notifications" className="justify-center text-sm font-medium">
+                  View all notifications
+                </Link>
               </DropdownMenuItem>
-            ))}
-            <DropdownMenuSeparator />
-            <DropdownMenuItem asChild>
-              <Link to="/notifications" className="justify-center text-sm font-medium">
-                View all notifications
-              </Link>
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
 
         <DropdownMenu>
           <DropdownMenuTrigger className="ml-1 flex size-9 items-center justify-center rounded-full bg-gradient-to-br from-primary to-info text-sm font-bold text-primary-foreground overflow-hidden">

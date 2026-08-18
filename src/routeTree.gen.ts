@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as VerifyEmailRouteImport } from './routes/verify-email'
 import { Route as UsersRouteImport } from './routes/users'
 import { Route as UnitsRouteImport } from './routes/units'
+import { Route as TablesRouteImport } from './routes/tables'
 import { Route as SuppliersRouteImport } from './routes/suppliers'
 import { Route as SubscriptionsRouteImport } from './routes/subscriptions'
 import { Route as SettingsRouteImport } from './routes/settings'
@@ -31,6 +32,7 @@ import { Route as PortalRouteImport } from './routes/portal'
 import { Route as NotificationsRouteImport } from './routes/notifications'
 import { Route as LoyaltyRouteImport } from './routes/loyalty'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as KitchenRouteImport } from './routes/kitchen'
 import { Route as InventoryRouteImport } from './routes/inventory'
 import { Route as HelpRouteImport } from './routes/help'
 import { Route as GiftCardsRouteImport } from './routes/gift-cards'
@@ -41,6 +43,7 @@ import { Route as CustomersRouteImport } from './routes/customers'
 import { Route as CouponsRouteImport } from './routes/coupons'
 import { Route as CategoriesRouteImport } from './routes/categories'
 import { Route as BrandsRouteImport } from './routes/brands'
+import { Route as AppointmentsRouteImport } from './routes/appointments'
 import { Route as ActivityRouteImport } from './routes/activity'
 import { Route as AccountsRouteImport } from './routes/accounts'
 import { Route as IndexRouteImport } from './routes/index'
@@ -68,6 +71,11 @@ const UsersRoute = UsersRouteImport.update({
 const UnitsRoute = UnitsRouteImport.update({
   id: '/units',
   path: '/units',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TablesRoute = TablesRouteImport.update({
+  id: '/tables',
+  path: '/tables',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SuppliersRoute = SuppliersRouteImport.update({
@@ -165,6 +173,11 @@ const LoginRoute = LoginRouteImport.update({
   path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
+const KitchenRoute = KitchenRouteImport.update({
+  id: '/kitchen',
+  path: '/kitchen',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const InventoryRoute = InventoryRouteImport.update({
   id: '/inventory',
   path: '/inventory',
@@ -213,6 +226,11 @@ const CategoriesRoute = CategoriesRouteImport.update({
 const BrandsRoute = BrandsRouteImport.update({
   id: '/brands',
   path: '/brands',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AppointmentsRoute = AppointmentsRouteImport.update({
+  id: '/appointments',
+  path: '/appointments',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ActivityRoute = ActivityRouteImport.update({
@@ -293,6 +311,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/accounts': typeof AccountsRoute
   '/activity': typeof ActivityRoute
+  '/appointments': typeof AppointmentsRoute
   '/brands': typeof BrandsRoute
   '/categories': typeof CategoriesRoute
   '/coupons': typeof CouponsRoute
@@ -303,6 +322,7 @@ export interface FileRoutesByFullPath {
   '/gift-cards': typeof GiftCardsRoute
   '/help': typeof HelpRoute
   '/inventory': typeof InventoryRouteWithChildren
+  '/kitchen': typeof KitchenRoute
   '/login': typeof LoginRoute
   '/loyalty': typeof LoyaltyRoute
   '/notifications': typeof NotificationsRoute
@@ -322,6 +342,7 @@ export interface FileRoutesByFullPath {
   '/settings': typeof SettingsRoute
   '/subscriptions': typeof SubscriptionsRoute
   '/suppliers': typeof SuppliersRoute
+  '/tables': typeof TablesRoute
   '/units': typeof UnitsRoute
   '/users': typeof UsersRoute
   '/verify-email': typeof VerifyEmailRoute
@@ -340,6 +361,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/accounts': typeof AccountsRoute
   '/activity': typeof ActivityRoute
+  '/appointments': typeof AppointmentsRoute
   '/brands': typeof BrandsRoute
   '/categories': typeof CategoriesRoute
   '/coupons': typeof CouponsRoute
@@ -349,6 +371,7 @@ export interface FileRoutesByTo {
   '/expenses': typeof ExpensesRoute
   '/gift-cards': typeof GiftCardsRoute
   '/help': typeof HelpRoute
+  '/kitchen': typeof KitchenRoute
   '/login': typeof LoginRoute
   '/loyalty': typeof LoyaltyRoute
   '/notifications': typeof NotificationsRoute
@@ -366,6 +389,7 @@ export interface FileRoutesByTo {
   '/settings': typeof SettingsRoute
   '/subscriptions': typeof SubscriptionsRoute
   '/suppliers': typeof SuppliersRoute
+  '/tables': typeof TablesRoute
   '/units': typeof UnitsRoute
   '/users': typeof UsersRoute
   '/verify-email': typeof VerifyEmailRoute
@@ -385,6 +409,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/accounts': typeof AccountsRoute
   '/activity': typeof ActivityRoute
+  '/appointments': typeof AppointmentsRoute
   '/brands': typeof BrandsRoute
   '/categories': typeof CategoriesRoute
   '/coupons': typeof CouponsRoute
@@ -395,6 +420,7 @@ export interface FileRoutesById {
   '/gift-cards': typeof GiftCardsRoute
   '/help': typeof HelpRoute
   '/inventory': typeof InventoryRouteWithChildren
+  '/kitchen': typeof KitchenRoute
   '/login': typeof LoginRoute
   '/loyalty': typeof LoyaltyRoute
   '/notifications': typeof NotificationsRoute
@@ -414,6 +440,7 @@ export interface FileRoutesById {
   '/settings': typeof SettingsRoute
   '/subscriptions': typeof SubscriptionsRoute
   '/suppliers': typeof SuppliersRoute
+  '/tables': typeof TablesRoute
   '/units': typeof UnitsRoute
   '/users': typeof UsersRoute
   '/verify-email': typeof VerifyEmailRoute
@@ -434,6 +461,7 @@ export interface FileRouteTypes {
     | '/'
     | '/accounts'
     | '/activity'
+    | '/appointments'
     | '/brands'
     | '/categories'
     | '/coupons'
@@ -444,6 +472,7 @@ export interface FileRouteTypes {
     | '/gift-cards'
     | '/help'
     | '/inventory'
+    | '/kitchen'
     | '/login'
     | '/loyalty'
     | '/notifications'
@@ -463,6 +492,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/subscriptions'
     | '/suppliers'
+    | '/tables'
     | '/units'
     | '/users'
     | '/verify-email'
@@ -481,6 +511,7 @@ export interface FileRouteTypes {
     | '/'
     | '/accounts'
     | '/activity'
+    | '/appointments'
     | '/brands'
     | '/categories'
     | '/coupons'
@@ -490,6 +521,7 @@ export interface FileRouteTypes {
     | '/expenses'
     | '/gift-cards'
     | '/help'
+    | '/kitchen'
     | '/login'
     | '/loyalty'
     | '/notifications'
@@ -507,6 +539,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/subscriptions'
     | '/suppliers'
+    | '/tables'
     | '/units'
     | '/users'
     | '/verify-email'
@@ -525,6 +558,7 @@ export interface FileRouteTypes {
     | '/'
     | '/accounts'
     | '/activity'
+    | '/appointments'
     | '/brands'
     | '/categories'
     | '/coupons'
@@ -535,6 +569,7 @@ export interface FileRouteTypes {
     | '/gift-cards'
     | '/help'
     | '/inventory'
+    | '/kitchen'
     | '/login'
     | '/loyalty'
     | '/notifications'
@@ -554,6 +589,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/subscriptions'
     | '/suppliers'
+    | '/tables'
     | '/units'
     | '/users'
     | '/verify-email'
@@ -573,6 +609,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AccountsRoute: typeof AccountsRoute
   ActivityRoute: typeof ActivityRoute
+  AppointmentsRoute: typeof AppointmentsRoute
   BrandsRoute: typeof BrandsRoute
   CategoriesRoute: typeof CategoriesRoute
   CouponsRoute: typeof CouponsRoute
@@ -583,6 +620,7 @@ export interface RootRouteChildren {
   GiftCardsRoute: typeof GiftCardsRoute
   HelpRoute: typeof HelpRoute
   InventoryRoute: typeof InventoryRouteWithChildren
+  KitchenRoute: typeof KitchenRoute
   LoginRoute: typeof LoginRoute
   LoyaltyRoute: typeof LoyaltyRoute
   NotificationsRoute: typeof NotificationsRoute
@@ -602,6 +640,7 @@ export interface RootRouteChildren {
   SettingsRoute: typeof SettingsRoute
   SubscriptionsRoute: typeof SubscriptionsRoute
   SuppliersRoute: typeof SuppliersRoute
+  TablesRoute: typeof TablesRoute
   UnitsRoute: typeof UnitsRoute
   UsersRoute: typeof UsersRoute
   VerifyEmailRoute: typeof VerifyEmailRoute
@@ -629,6 +668,13 @@ declare module '@tanstack/react-router' {
       path: '/units'
       fullPath: '/units'
       preLoaderRoute: typeof UnitsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/tables': {
+      id: '/tables'
+      path: '/tables'
+      fullPath: '/tables'
+      preLoaderRoute: typeof TablesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/suppliers': {
@@ -764,6 +810,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/kitchen': {
+      id: '/kitchen'
+      path: '/kitchen'
+      fullPath: '/kitchen'
+      preLoaderRoute: typeof KitchenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/inventory': {
       id: '/inventory'
       path: '/inventory'
@@ -832,6 +885,13 @@ declare module '@tanstack/react-router' {
       path: '/brands'
       fullPath: '/brands'
       preLoaderRoute: typeof BrandsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/appointments': {
+      id: '/appointments'
+      path: '/appointments'
+      fullPath: '/appointments'
+      preLoaderRoute: typeof AppointmentsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/activity': {
@@ -978,6 +1038,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AccountsRoute: AccountsRoute,
   ActivityRoute: ActivityRoute,
+  AppointmentsRoute: AppointmentsRoute,
   BrandsRoute: BrandsRoute,
   CategoriesRoute: CategoriesRoute,
   CouponsRoute: CouponsRoute,
@@ -988,6 +1049,7 @@ const rootRouteChildren: RootRouteChildren = {
   GiftCardsRoute: GiftCardsRoute,
   HelpRoute: HelpRoute,
   InventoryRoute: InventoryRouteWithChildren,
+  KitchenRoute: KitchenRoute,
   LoginRoute: LoginRoute,
   LoyaltyRoute: LoyaltyRoute,
   NotificationsRoute: NotificationsRoute,
@@ -1007,6 +1069,7 @@ const rootRouteChildren: RootRouteChildren = {
   SettingsRoute: SettingsRoute,
   SubscriptionsRoute: SubscriptionsRoute,
   SuppliersRoute: SuppliersRoute,
+  TablesRoute: TablesRoute,
   UnitsRoute: UnitsRoute,
   UsersRoute: UsersRoute,
   VerifyEmailRoute: VerifyEmailRoute,

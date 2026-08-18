@@ -33,8 +33,14 @@ export const loginFn = createServerFn({ method: "POST" })
       }
 
       if (user) {
+        if (user.status === "inactive") {
+          return { success: false, error: "Your account is inactive. Please contact the administrator." };
+        }
         if (user.status === "suspended") {
           return { success: false, error: "Your account has been suspended by the administrator." };
+        }
+        if (user.role !== "admin" && (!user.permissions || user.permissions.length === 0)) {
+          return { success: false, error: "You don't have permission to log in. Please contact the administrator." };
         }
 
         // Create JWT — include userName so activity logs show real names
@@ -382,6 +388,7 @@ export const acceptInvitationFn = createServerFn({ method: "POST" })
       name: z.string().min(2),
       email: z.string().email(),
       role: z.string(),
+      permissions: z.array(z.string()).optional(),
       pin: z
         .string()
         .min(8, "Password must be at least 8 characters long")
@@ -414,6 +421,7 @@ export const acceptInvitationFn = createServerFn({ method: "POST" })
           name: data.name,
           email: data.email.toLowerCase(),
           role: data.role,
+          permissions: data.permissions || [],
           status: "pending",
           lastActive: new Date().toISOString(),
           pin: hashedPin,
@@ -566,8 +574,14 @@ export const loginWithOtpFn = createServerFn({ method: "POST" })
 
       const user = users[0];
 
+      if (user.status === "inactive") {
+        return { success: false, error: "Your account is inactive. Please contact the administrator." };
+      }
       if (user.status === "suspended") {
         return { success: false, error: "Your account has been suspended." };
+      }
+      if (user.role !== "admin" && (!user.permissions || user.permissions.length === 0)) {
+        return { success: false, error: "You don't have permission to log in. Please contact the administrator." };
       }
 
       // Verify OTP securely on the backend
@@ -638,12 +652,30 @@ export const loginWithGoogleFn = createServerFn({ method: "POST" })
 
       let user = users[0];
 
-      // 3. Create user if they don't exist
+      // 3. Create user and org if they don't exist
       if (!user) {
-        const insertRes = await db
-          .insert(schema.users)
-          .values({
-            id: uuidv4(),
+        const orgId = uuidv4();
+        const userId = uuidv4();
+        const trialEndsAt = Date.now() + 14 * 24 * 60 * 60 * 1000;
+        const storeName = (googleUser.name || "Google User") + "'s Store";
+
+        const insertRes = await db.transaction(async (tx) => {
+          // Find starter plan
+          const plans = await tx.select().from(schema.saasPlans).where(eq(schema.saasPlans.isTrialDefault, true)).limit(1);
+          let assignedPlanId = plans.length > 0 ? plans[0].id : "starter";
+
+          await tx.insert(schema.organizations).values({
+            id: orgId,
+            name: storeName,
+            ownerEmail: email,
+            status: "trial",
+            currentPlanId: assignedPlanId,
+            planExpiryDate: new Date(trialEndsAt).toISOString(),
+          });
+
+          const [u] = await tx.insert(schema.users).values({
+            id: userId,
+            organizationId: orgId,
             email: email,
             name: googleUser.name || "Google User",
             role: "admin",
@@ -651,14 +683,37 @@ export const loginWithGoogleFn = createServerFn({ method: "POST" })
             status: "active",
             emailVerified: true,
             lastActive: new Date().toISOString(),
-          })
-          .returning();
+          }).returning();
 
-        user = insertRes[0];
+          await tx.insert(schema.settings).values({
+            id: uuidv4(),
+            organizationId: orgId,
+            trialEndsAt: new Date(trialEndsAt).toISOString(),
+            subscriptionStatus: "trial",
+            currencySymbol: "₹",
+            currencyCode: "INR",
+            storeName: storeName,
+            email: email,
+            headerNote: `Welcome to ${storeName}`,
+            footerNote: "Thank you for your business!",
+            emailReceiptDefault: true,
+            printStoreLogo: true,
+          });
+
+          return u;
+        });
+
+        user = insertRes;
       }
 
+      if (user.status === "inactive") {
+        return { success: false, error: "Your account is inactive. Please contact the administrator." };
+      }
       if (user.status === "suspended") {
         return { success: false, error: "Your account has been suspended by the administrator." };
+      }
+      if (user.role !== "admin" && (!user.permissions || user.permissions.length === 0)) {
+        return { success: false, error: "You don't have permission to log in. Please contact the administrator." };
       }
 
       // Update last active
@@ -734,27 +789,67 @@ export const loginWithFirebasePhoneFn = createServerFn({ method: "POST" })
 
       let user = users[0];
 
-      // 3. Create user if they don't exist
+      // 3. Create user and org if they don't exist
       if (!user) {
-        const insertRes = await db
-          .insert(schema.users)
-          .values({
-            id: uuidv4(),
+        const orgId = uuidv4();
+        const userId = uuidv4();
+        const trialEndsAt = Date.now() + 14 * 24 * 60 * 60 * 1000;
+        const storeName = "Phone User's Store";
+
+        const insertRes = await db.transaction(async (tx) => {
+          const plans = await tx.select().from(schema.saasPlans).where(eq(schema.saasPlans.isTrialDefault, true)).limit(1);
+          let assignedPlanId = plans.length > 0 ? plans[0].id : "starter";
+
+          await tx.insert(schema.organizations).values({
+            id: orgId,
+            name: storeName,
+            ownerEmail: `phoneuser_${Date.now()}@temp.com`,
+            status: "trial",
+            currentPlanId: assignedPlanId,
+            planExpiryDate: new Date(trialEndsAt).toISOString(),
+          });
+
+          const [u] = await tx.insert(schema.users).values({
+            id: userId,
+            organizationId: orgId,
             email: `phoneuser_${Date.now()}@temp.com`, // Email is required by schema
             phone: phone,
             name: "Phone User",
-            role: "cashier",
+            role: "admin",
             pin: "1234",
             status: "active",
             lastActive: new Date().toISOString(),
-          })
-          .returning();
+          }).returning();
 
-        user = insertRes[0];
+          await tx.insert(schema.settings).values({
+            id: uuidv4(),
+            organizationId: orgId,
+            trialEndsAt: new Date(trialEndsAt).toISOString(),
+            subscriptionStatus: "trial",
+            currencySymbol: "₹",
+            currencyCode: "INR",
+            storeName: storeName,
+            email: `phoneuser_${Date.now()}@temp.com`,
+            headerNote: `Welcome to ${storeName}`,
+            footerNote: "Thank you for your business!",
+            emailReceiptDefault: true,
+            printStoreLogo: true,
+          });
+
+          return u;
+        });
+
+        user = insertRes;
       }
 
+      if (user.status === "inactive") {
+        return { success: false, error: "Your account is inactive. Please contact the administrator." };
+      }
       if (user.status === "suspended") {
         return { success: false, error: "Your account has been suspended by the administrator." };
+      }
+      if (user.role !== "admin" && (!user.permissions || user.permissions.length === 0)) {
+        return { success: false, error: "You don't have permission to log in. Please contact the administrator." };
       }
 
       // Update last active

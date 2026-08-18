@@ -1,4 +1,6 @@
 import { createLazyFileRoute } from "@tanstack/react-router";
+import { SearchableSelect } from "@/components/ui/searchable-select";
+import { useAppFormatter } from "@/hooks/useAppFormatter";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -39,6 +41,7 @@ export const Route = createLazyFileRoute("/inventory/adjustments")({
 function AdjustmentsPage() {
   const orgId = PersistStore.getOrgId() || "default";
   const queryClient = useQueryClient();
+  const { formatAppDate } = useAppFormatter();
 
   const { data: adjustmentsData } = useQuery({
     queryKey: ["inventoryAdjustments", orgId],
@@ -99,7 +102,7 @@ function AdjustmentsPage() {
             id: adjId,
             ref,
             date: new Date().toISOString(),
-            reason: formData.reason,
+            reason: formData.reason ? `${prod.name} - ${formData.reason}` : prod.name,
             items: Math.abs(formData.net),
             net: Number(formData.net),
             status: "approved",
@@ -128,11 +131,16 @@ function AdjustmentsPage() {
   };
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <p className="text-sm text-muted-foreground">
-          Manual stock changes from audits, damage, or shrinkage.
-        </p>
+    <div className="space-y-6 p-4 md:p-6 lg:p-8">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-[26px]">
+            Stock Adjustments
+          </h1>
+          <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
+            Manual stock changes from audits, damage, or shrinkage.
+          </p>
+        </div>
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
             <Button size="sm">New Adjustment</Button>
@@ -144,21 +152,15 @@ function AdjustmentsPage() {
             <div className="grid gap-4 py-4">
               <div className="space-y-2">
                 <Label>Product</Label>
-                <Select
+                <SearchableSelect
+                  options={products.map((p) => ({
+                    value: p.id,
+                    label: `${p.name} (${p.stock} in stock)`,
+                  }))}
                   value={formData.product}
-                  onValueChange={(v) => setFormData({ ...formData, product: v })}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select product" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {products.map((p) => (
-                      <SelectItem key={p.id} value={p.id}>
-                        {p.name} ({p.stock} in stock)
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  onChange={(v) => setFormData({ ...formData, product: v })}
+                  placeholder="Select product"
+                />
               </div>
               <div className="space-y-2">
                 <Label>Reason</Label>
@@ -234,7 +236,7 @@ function AdjustmentsPage() {
                       <tr key={r.ref} className="hover:bg-muted/30">
                         <td className="px-4 py-3 font-mono text-xs whitespace-nowrap">{r.ref}</td>
                         <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">
-                          {new Date(r.date).toLocaleDateString()}
+                          {formatAppDate(r.date)}
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap">{r.reason}</td>
                         <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">

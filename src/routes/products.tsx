@@ -405,6 +405,19 @@ function ProductsPage() {
     }
   };
 
+  useEffect(() => {
+    const searchParams = new URLSearchParams(window.location.search);
+    const editId = searchParams.get("edit");
+    if (editId && products.length > 0) {
+      const p = products.find((prod: any) => prod.id === editId);
+      if (p && !modalOpen) {
+        openEdit(p);
+        const newUrl = window.location.pathname;
+        window.history.replaceState({}, "", newUrl);
+      }
+    }
+  }, [products, modalOpen]);
+
   const handlePrint = () => {
     if (!printProduct || printCount < 1) return;
     setIsPrinting(true);

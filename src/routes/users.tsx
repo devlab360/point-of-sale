@@ -69,6 +69,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "@tanstack/react-router";
 import { useFormValidation } from "@/hooks/useFormValidation";
 import { FieldError } from "@/components/ui/field-error";
+import { useAppFormatter } from "@/hooks/useAppFormatter";
 
 const PERMISSION_GROUPS = [
   {
@@ -96,6 +97,7 @@ const PERMISSION_GROUPS = [
         desc: "View sales, profit & business reports",
       },
       { id: "settings", label: "System Settings", desc: "Store configuration & store settings" },
+      { id: "notifications", label: "Notifications", desc: "View and manage system notifications" },
     ],
   },
 ];
@@ -104,7 +106,7 @@ const AVAILABLE_PERMISSIONS = PERMISSION_GROUPS.flatMap((g) => g.permissions);
 
 const DEFAULT_ROLE_PERMISSIONS: Record<string, string[]> = {
   admin: AVAILABLE_PERMISSIONS.map((p) => p.id),
-  manager: ["pos", "inventory", "reports", "customers", "expenses", "discounts", "returns"],
+  manager: ["pos", "inventory", "reports", "customers", "expenses", "discounts", "returns", "notifications"],
   cashier: ["pos", "customers", "discounts"],
 };
 
@@ -117,6 +119,7 @@ function UsersPage() {
   const { user } = useAuth();
   const orgId = user?.orgId || "default";
   const queryClient = useQueryClient();
+  const { formatAppDate } = useAppFormatter();
 
   const {
     data: rawUsersData,
@@ -126,6 +129,7 @@ function UsersPage() {
   } = useQuery({
     queryKey: ["users", orgId],
     queryFn: async () => (await getUsersFn({ data: {} })).data || [],
+    staleTime: 0, // Always refetch to show newly invited/registered employees instantly
   });
   const rawUsers = rawUsersData || [];
   const uniqueRoles = useMemo(
@@ -139,6 +143,7 @@ function UsersPage() {
   const [invitePermissions, setInvitePermissions] = useState<string[]>(
     DEFAULT_ROLE_PERMISSIONS.cashier,
   );
+  const [approvingId, setApprovingId] = useState<string | null>(null);
 
   const [editItem, setEditItem] = useState<any | null>(null);
   const [editPermissions, setEditPermissions] = useState<string[]>([]);
@@ -278,10 +283,10 @@ function UsersPage() {
       let count = 0;
       for (const row of data) {
         if (row['Name'] && row['Email']) {
-          await createUserFn({ 
-            data: { 
-              user: { 
-                id: uuidv4(), 
+          await createUserFn({
+            data: {
+              user: {
+                id: uuidv4(),
                 name: row['Name'],
                 email: row['Email'],
                 role: (row['Role'] as any) || 'cashier',
@@ -289,13 +294,13 @@ function UsersPage() {
                 storeId: PersistStore.getOrgId() || "default",
                 lastLogin: '',
                 permissions: []
-              } 
-            } 
+              }
+            }
           });
           count++;
         }
       }
-      
+
       queryClient.invalidateQueries({ queryKey: ["users"] });
       toast.success(`Successfully imported ${count} users`);
     } catch (error) {
@@ -312,6 +317,7 @@ function UsersPage() {
 
   const handleApprove = async (id: string) => {
     try {
+      setApprovingId(id);
       const res = await updateUserFn({ data: { id, updates: { status: "active" } } });
       if (res.success) {
         toast.success("Employee approved successfully");
@@ -319,6 +325,8 @@ function UsersPage() {
       } else throw new Error(res.error);
     } catch (error: any) {
       toast.error(error.message || "Failed to approve employee");
+    } finally {
+      setApprovingId(null);
     }
   };
 
@@ -562,7 +570,7 @@ function UsersPage() {
                             </div>
                           </td>
                           <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">
-                            {e.lastActive ? new Date(e.lastActive).toLocaleString() : "Never"}
+                            {e.lastActive ? formatAppDate(e.lastActive, "datetime") : "Never"}
                           </td>
                           <td className="px-4 py-3 whitespace-nowrap">
                             <Badge
@@ -584,8 +592,14 @@ function UsersPage() {
                                   size="sm"
                                   onClick={() => handleApprove(e.id)}
                                   className="h-8"
+                                  disabled={approvingId === e.id}
                                 >
-                                  <CheckCircle2 className="size-4 mr-1" /> Approve
+                                  {approvingId === e.id ? (
+                                    <Loader2 className="size-4 mr-1 animate-spin" />
+                                  ) : (
+                                    <CheckCircle2 className="size-4 mr-1" />
+                                  )}
+                                  Approve
                                 </Button>
                               )}
                               <DropdownMenu>
@@ -634,7 +648,7 @@ function UsersPage() {
           }
         }}
       >
-        <DialogContent>
+        <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>Invite Employee</DialogTitle>
           </DialogHeader>
@@ -661,7 +675,7 @@ function UsersPage() {
                 <Label className="flex items-center gap-1.5">
                   <KeyRound className="size-3.5 text-primary" /> Module Permissions
                 </Label>
-                <div className="space-y-4 border border-border rounded-lg p-4 bg-muted/20 max-h-[250px] overflow-y-auto">
+                <div className="space-y-4 border border-border rounded-lg p-4 bg-muted/20 max-h-[380px] overflow-y-auto">
                   {PERMISSION_GROUPS.map((group) => (
                     <div key={group.group} className="space-y-2">
                       <h4 className="text-xs font-semibold text-foreground/80 uppercase tracking-wider">

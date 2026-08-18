@@ -97,20 +97,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           const sessionId = crypto.randomUUID();
           SessionStore.setSession(sessionId);
 
-          // Redirect based on role
-          if (
-            res.user.role === "admin" ||
-            res.user.role === "manager" ||
-            res.user.role === "store_admin"
-          ) {
-            router.navigate({ to: "/" });
-          } else if (res.user.role === "cashier") {
-            router.navigate({ to: "/pos" });
-          } else if (res.user.role === "inventory_manager") {
-            router.navigate({ to: "/inventory" });
-          } else {
-            router.navigate({ to: "/" });
-          }
+          router.navigate({ to: "/" });
 
           toast.success(res.message || "Login successful");
           return true;
@@ -147,20 +134,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         toast.success(res.message || `Welcome back, ${res.user.name}`);
 
-        // Redirect based on role
-        if (
-          res.user.role === "admin" ||
-          res.user.role === "manager" ||
-          res.user.role === "store_admin"
-        ) {
-          router.navigate({ to: "/" });
-        } else if (res.user.role === "cashier") {
-          router.navigate({ to: "/pos" });
-        } else if (res.user.role === "inventory_manager") {
-          router.navigate({ to: "/inventory" });
-        } else {
-          router.navigate({ to: "/" });
-        }
+        router.navigate({ to: "/" });
 
         return true;
       } catch (error) {

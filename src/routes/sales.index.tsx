@@ -116,7 +116,7 @@ function SalesPage() {
       upi = 0,
       credit = 0;
     sales.forEach((s) => {
-      if (s.status === "refunded") return; // Ignore refunded sales in total collected
+      if (s.status === "refunded" || s.status === "quotation") return; // Ignore refunded/quotes in total collected
       if (s.payments && s.payments.length > 0) {
         s.payments.forEach((p: any) => {
           if (p.method === "cash") cash += p.amount;
@@ -177,6 +177,7 @@ function SalesPage() {
                     { value: "", label: "All Statuses" },
                     { value: "completed", label: "Completed" },
                     { value: "pending", label: "Pending" },
+                    { value: "quotation", label: "Quotation / Estimate" },
                     { value: "refunded", label: "Refunded" },
                   ]}
                   value={draftFilters.status}

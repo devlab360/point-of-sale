@@ -59,6 +59,11 @@ export async function requireAuth(): Promise<SessionPayload> {
     throw new Error("Unauthorized: Account suspended or deleted");
   }
 
+  // Auto-heal missing organization ID (for backward compatibility / bug fixes)
+  if (!payload.orgId && users[0].organizationId) {
+    payload.orgId = users[0].organizationId;
+  }
+
   return payload;
 }
 
