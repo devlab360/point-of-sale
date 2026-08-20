@@ -266,8 +266,13 @@ export function PosPrintLayouts({ state, preview = false }: { state: any, previe
               )}
             </div>
 
-            <div className="mt-6 mb-4 pt-6 flex flex-col items-end border-t border-dashed border-gray-400">
-              <span className="font-bold text-[10px] uppercase text-gray-800 border-t border-black px-2 pt-1">
+            <div className="mt-6 pt-6 flex flex-col items-center">
+              {settings?.signatureUrl ? (
+                <img src={settings.signatureUrl} alt="Signature" className="h-10 mb-1 object-contain grayscale" />
+              ) : (
+                <div className="h-8" />
+              )}
+              <span className="font-bold text-[10px] uppercase text-gray-800 border-t border-black px-2 pt-1  border-t border-dashed border-gray-400">
                 Authorized Signatory
               </span>
             </div>

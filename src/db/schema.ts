@@ -1076,3 +1076,47 @@ export const reviews = pgTable("reviews", {
   comment: text("comment"),
   createdAt: timestamp("created_at", { mode: "string" }).defaultNow().notNull(),
 });
+
+// Services & Verticals
+
+export const appointments = pgTable("appointments", {
+  id: text("id").primaryKey(),
+  organizationId: text("organization_id").notNull(),
+  customerId: text("customer_id"),
+  customerName: text("customer_name").notNull(),
+  customerPhone: text("customer_phone"),
+  serviceId: text("service_id"),
+  serviceName: text("service_name").notNull(),
+  staffId: text("staff_id"),
+  staffName: text("staff_name"),
+  dateTime: text("date_time").notNull(),
+  endTime: text("end_time").notNull(),
+  status: text("status").notNull().default("scheduled"), // scheduled, in-progress, completed, cancelled
+  notes: text("notes"),
+  createdAt: timestamp("created_at", { mode: "string" }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { mode: "string" }).defaultNow().notNull(),
+});
+
+export const restaurantTables = pgTable("restaurant_tables", {
+  id: text("id").primaryKey(),
+  organizationId: text("organization_id").notNull(),
+  name: text("name").notNull(),
+  capacity: integer("capacity").notNull().default(4),
+  status: text("status").notNull().default("available"), // available, occupied, reserved
+  currentOrderId: text("current_order_id"),
+  createdAt: timestamp("created_at", { mode: "string" }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { mode: "string" }).defaultNow().notNull(),
+});
+
+export const kitchenOrderTickets = pgTable("kitchen_order_tickets", {
+  id: text("id").primaryKey(),
+  organizationId: text("organization_id").notNull(),
+  tableId: text("table_id"),
+  waiterId: text("waiter_id"),
+  items: jsonb("items").$type<any[]>().notNull(),
+  status: text("status").notNull().default("pending"), // pending, preparing, ready, served
+  note: text("note"),
+  timestamp: timestamp("timestamp", { mode: "string" }).defaultNow().notNull(),
+  createdAt: timestamp("created_at", { mode: "string" }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { mode: "string" }).defaultNow().notNull(),
+});

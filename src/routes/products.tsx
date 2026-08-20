@@ -1295,6 +1295,11 @@ function TableView({
                       In stock
                     </Badge>
                   )}
+                  {p.expiryDate && (
+                    <span className="rounded bg-muted px-1.5 py-0.5 text-[9px] font-bold text-muted-foreground">
+                      Exp: {p.expiryDate}
+                    </span>
+                  )}
                   {p.hasSerial && (
                     <span className="rounded bg-primary/10 px-1.5 py-0.5 text-[9px] font-bold text-primary">
                       IMEI: {p.serials?.length || 0} Avail
@@ -1406,6 +1411,11 @@ function GridView({
                     {p.stock} {unitName || "in stock"}
                   </span>
                 </div>
+                {p.expiryDate && (
+                  <div className="text-[10px] text-muted-foreground font-medium mt-0.5">
+                    Exp: {p.expiryDate}
+                  </div>
+                )}
 
                 {(p.wholesalePrice > 0 || p.dealerPrice > 0) && (
                   <div className="flex items-center justify-between text-[10px] border-t border-border/50 pt-1 mt-0.5">

@@ -1,6 +1,4 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { AppSidebar } from "@/components/layout/AppSidebar";
-import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { ChefHat, Clock, Loader2, ArrowRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -23,7 +21,7 @@ function KitchenPage() {
   });
 
   const updateStatus = useMutation({
-    mutationFn: (data: { id: string; status: "pending" | "preparing" | "ready" | "served" }) => 
+    mutationFn: (data: { id: string; status: "pending" | "preparing" | "ready" | "served" }) =>
       updateKOTStatusFn({ data }),
     onSuccess: (res) => {
       if (res.success) {
@@ -45,7 +43,7 @@ function KitchenPage() {
     if (kot.status === 'pending') nextStatus = 'preparing';
     else if (kot.status === 'preparing') nextStatus = 'ready';
     else if (kot.status === 'ready') nextStatus = 'served';
-    
+
     updateStatus.mutate({ id: kot.id, status: nextStatus });
   };
 
@@ -57,7 +55,7 @@ function KitchenPage() {
             {kot.tableId ? `Table ${kot.tableId.substring(0, 4)}` : 'Takeaway / No Table'}
           </span>
           <span className="flex items-center text-xs text-muted-foreground">
-            <Clock className="w-3 h-3 mr-1" /> 
+            <Clock className="w-3 h-3 mr-1" />
             {formatDistanceToNow(new Date(kot.timestamp), { addSuffix: true })}
           </span>
         </CardTitle>
@@ -77,15 +75,15 @@ function KitchenPage() {
         )}
       </CardContent>
       <CardFooter className="pt-0">
-        <Button 
-          size="sm" 
-          className="w-full text-xs h-8" 
+        <Button
+          size="sm"
+          className="w-full text-xs h-8"
           variant={kot.status === 'pending' ? 'default' : kot.status === 'preparing' ? 'secondary' : 'outline'}
           onClick={() => advanceStatus(kot)}
           disabled={updateStatus.isPending}
         >
-          {kot.status === 'pending' ? 'Start Preparing' : 
-           kot.status === 'preparing' ? 'Mark Ready' : 'Serve'}
+          {kot.status === 'pending' ? 'Start Preparing' :
+            kot.status === 'preparing' ? 'Mark Ready' : 'Serve'}
           <ArrowRight className="w-3 h-3 ml-2" />
         </Button>
       </CardFooter>
@@ -93,67 +91,64 @@ function KitchenPage() {
   );
 
   return (
-    <SidebarProvider>
-      <AppSidebar />
-      <SidebarInset>
-        <div className="p-6 h-full flex flex-col">
-          <div className="flex items-center gap-2 mb-6">
-            <ChefHat className="h-6 w-6 text-primary" />
-            <h1 className="text-2xl font-bold tracking-tight">Kitchen Display (KOT)</h1>
-            {isLoading && <Loader2 className="w-4 h-4 ml-4 animate-spin text-muted-foreground" />}
-          </div>
-          
-          <div className="grid gap-6 md:grid-cols-3 flex-1">
-            {/* Pending Column */}
-            <div className="flex flex-col gap-4 border-r pr-6">
-              <h2 className="font-semibold flex items-center gap-2 sticky top-0 bg-background py-2">
-                Pending <Badge variant="secondary">{pendingKots.length}</Badge>
-              </h2>
-              <div className="space-y-4 overflow-y-auto">
-                {pendingKots.length === 0 ? (
-                  <div className="text-sm text-muted-foreground italic p-4 text-center border rounded-lg border-dashed">
-                    No pending orders
-                  </div>
-                ) : (
-                  pendingKots.map((k: any) => renderKotCard(k, 'red', 'bg-red-50/30'))
-                )}
-              </div>
-            </div>
-            
-            {/* Preparing Column */}
-            <div className="flex flex-col gap-4 border-r pr-6">
-              <h2 className="font-semibold flex items-center gap-2 sticky top-0 bg-background py-2">
-                Preparing <Badge variant="secondary">{preparingKots.length}</Badge>
-              </h2>
-              <div className="space-y-4 overflow-y-auto">
-                {preparingKots.length === 0 ? (
-                  <div className="text-sm text-muted-foreground italic p-4 text-center border rounded-lg border-dashed">
-                    No preparing orders
-                  </div>
-                ) : (
-                  preparingKots.map((k: any) => renderKotCard(k, 'orange', 'bg-orange-50/30'))
-                )}
-              </div>
-            </div>
+    <>
+      <div className="p-6 h-full flex flex-col">
+        <div className="flex items-center gap-2 mb-6">
+          <ChefHat className="h-6 w-6 text-primary" />
+          <h1 className="text-2xl font-bold tracking-tight">Kitchen Display (KOT)</h1>
+          {isLoading && <Loader2 className="w-4 h-4 ml-4 animate-spin text-muted-foreground" />}
+        </div>
 
-            {/* Ready Column */}
-            <div className="flex flex-col gap-4 pr-2">
-              <h2 className="font-semibold flex items-center gap-2 sticky top-0 bg-background py-2">
-                Ready to Serve <Badge variant="secondary">{readyKots.length}</Badge>
-              </h2>
-              <div className="space-y-4 overflow-y-auto">
-                {readyKots.length === 0 ? (
-                  <div className="text-sm text-muted-foreground italic p-4 text-center border rounded-lg border-dashed">
-                    No orders ready
-                  </div>
-                ) : (
-                  readyKots.map((k: any) => renderKotCard(k, 'green', 'bg-green-50/30'))
-                )}
-              </div>
+        <div className="grid gap-6 md:grid-cols-3 flex-1">
+          {/* Pending Column */}
+          <div className="flex flex-col gap-4 border-r pr-6">
+            <h2 className="font-semibold flex items-center gap-2 sticky top-0 bg-background py-2">
+              Pending <Badge variant="secondary">{pendingKots.length}</Badge>
+            </h2>
+            <div className="space-y-4 overflow-y-auto">
+              {pendingKots.length === 0 ? (
+                <div className="text-sm text-muted-foreground italic p-4 text-center border rounded-lg border-dashed">
+                  No pending orders
+                </div>
+              ) : (
+                pendingKots.map((k: any) => renderKotCard(k, 'red', 'bg-red-50/30'))
+              )}
+            </div>
+          </div>
+
+          {/* Preparing Column */}
+          <div className="flex flex-col gap-4 border-r pr-6">
+            <h2 className="font-semibold flex items-center gap-2 sticky top-0 bg-background py-2">
+              Preparing <Badge variant="secondary">{preparingKots.length}</Badge>
+            </h2>
+            <div className="space-y-4 overflow-y-auto">
+              {preparingKots.length === 0 ? (
+                <div className="text-sm text-muted-foreground italic p-4 text-center border rounded-lg border-dashed">
+                  No preparing orders
+                </div>
+              ) : (
+                preparingKots.map((k: any) => renderKotCard(k, 'orange', 'bg-orange-50/30'))
+              )}
+            </div>
+          </div>
+
+          {/* Ready Column */}
+          <div className="flex flex-col gap-4 pr-2">
+            <h2 className="font-semibold flex items-center gap-2 sticky top-0 bg-background py-2">
+              Ready to Serve <Badge variant="secondary">{readyKots.length}</Badge>
+            </h2>
+            <div className="space-y-4 overflow-y-auto">
+              {readyKots.length === 0 ? (
+                <div className="text-sm text-muted-foreground italic p-4 text-center border rounded-lg border-dashed">
+                  No orders ready
+                </div>
+              ) : (
+                readyKots.map((k: any) => renderKotCard(k, 'green', 'bg-green-50/30'))
+              )}
             </div>
           </div>
         </div>
-      </SidebarInset>
-    </SidebarProvider>
+      </div>
+    </>
   );
 }

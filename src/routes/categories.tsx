@@ -182,7 +182,7 @@ function CategoriesPage() {
     try {
       if (editingCat) {
         const res = await updateCategoryFn({
-          data: { id: editingCat.id, category: { name, icon, color } },
+          data: { id: editingCat.id, updates: { name, icon, color } },
         } as any);
         if (res?.success) {
           toast.success("Category updated");

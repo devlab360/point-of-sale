@@ -1,6 +1,4 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { AppSidebar } from "@/components/layout/AppSidebar";
-import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { Card, CardContent } from "@/components/ui/card";
 import { CalendarDays, Clock, User, Plus, Loader2, Calendar as CalendarIcon, Phone } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -110,10 +108,8 @@ function AppointmentsPage() {
   const appointments = data?.success ? data.data : [];
 
   return (
-    <SidebarProvider>
-      <AppSidebar />
-      <SidebarInset>
-        <div className="p-6">
+    <>
+      <div className="p-6">
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-2">
               <CalendarDays className="h-6 w-6 text-primary" />
@@ -293,7 +289,6 @@ function AppointmentsPage() {
             )}
           </div>
         </div>
-      </SidebarInset>
-    </SidebarProvider>
+    </>
   );
 }

@@ -153,7 +153,7 @@ function UnitsPage() {
     await new Promise((resolve) => setTimeout(resolve, 500));
     try {
       if (editingUnit) {
-        const res = await updateUnitFn({ data: { id: editingUnit.id, unit: { name, short } } });
+        const res = await updateUnitFn({ data: { id: editingUnit.id, updates: { name, short } } });
         if (res?.success) toast.success("Unit updated");
         else throw new Error(res?.error);
       } else {

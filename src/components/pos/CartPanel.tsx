@@ -133,8 +133,9 @@ export function CartPanel({ state, onCheckout }: { state: any; onCheckout?: (isQ
       style={{ "--drawer-width": `${drawerWidth}px` } as React.CSSProperties}
     >
       {/* Customer Bar */}
-      <div className="flex items-center justify-between border-b border-border p-2.5 gap-2 bg-muted/10 shrink-0">
-        <div className="flex items-center gap-1.5 flex-1 min-w-0">
+      <div className="border-b border-border p-2.5 bg-muted/10 shrink-0">
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-1.5 flex-1 min-w-0">
           <button
             onClick={() => setShowCustomerSearch(true)}
             className="flex items-center gap-1.5 text-sm font-semibold min-w-0 bg-background border border-border rounded-lg px-2 h-9 hover:border-primary/50 transition-colors"
@@ -181,6 +182,7 @@ export function CartPanel({ state, onCheckout }: { state: any; onCheckout?: (isQ
               </span>
             )}
           </Button>
+        </div>
         </div>
         
         {hasTables && (
@@ -301,8 +303,8 @@ export function CartPanel({ state, onCheckout }: { state: any; onCheckout?: (isQ
 
       {/* Order Summary & Actions */}
       <div className="border-t border-border p-2 md:p-3 bg-background shrink-0">
-        <div className="mb-1.5 md:mb-2 grid grid-cols-[1fr_auto_auto] gap-1.5 md:gap-2">
-          <div className="relative">
+        <div className="mb-1.5 md:mb-2 flex flex-wrap items-center gap-1.5 md:gap-2">
+          <div className="relative flex-[1_1_100px] min-w-0">
             <div className="flex items-center gap-1.5 rounded-lg border border-border bg-muted/20 px-2.5 h-9 transition-colors focus-within:border-primary focus-within:ring-1 focus-within:ring-primary">
               <Percent className="size-3.5 text-muted-foreground shrink-0" />
               <input

@@ -166,13 +166,8 @@ export const createInventoryTransferFn = createServerFn({ method: "POST" })
           date: new Date(
             data.transfer.date || Date.now(),
           ).toISOString(),
-          supplierId: data.transfer.supplierId,
           destination: data.transfer.destination,
           items: data.transfer.items,
-          totalAmount: data.transfer.totalAmount?.toString() || "0",
-          paidAmount: data.transfer.paidAmount?.toString() || "0",
-          paymentStatus: data.transfer.paymentStatus || "unpaid",
-          paymentMethod: data.transfer.paymentMethod || "cash",
           status: data.transfer.status,
         });
 
@@ -217,17 +212,6 @@ export const createInventoryTransferFn = createServerFn({ method: "POST" })
                 await tx.update(schema.accounts)
                   .set({ balance: accBalance.toString() })
                   .where(eq(schema.accounts.id, account.id));
-
-                await tx.insert(schema.vouchers).values({
-                  id: crypto.randomUUID(),
-                  organizationId: orgId,
-                  ref: `VOU-${Math.floor(Math.random() * 10000)}`,
-                  date: new Date().toISOString(),
-                  type: "Receipt", // Receiving money from supplier
-                  accountId: account.id,
-                  amount: data.transfer.paidAmount.toString(),
-                  status: "completed"
-                });
               }
             }
           }

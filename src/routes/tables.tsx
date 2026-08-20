@@ -1,6 +1,4 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { AppSidebar } from "@/components/layout/AppSidebar";
-import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Utensils, Plus, Loader2 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -75,10 +73,8 @@ function TablesPage() {
   };
 
   return (
-    <SidebarProvider>
-      <AppSidebar />
-      <SidebarInset>
-        <div className="p-6">
+    <>
+      <div className="p-6">
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-2">
               <Utensils className="h-6 w-6 text-primary" />
@@ -183,7 +179,6 @@ function TablesPage() {
             </div>
           )}
         </div>
-      </SidebarInset>
-    </SidebarProvider>
+    </>
   );
 }

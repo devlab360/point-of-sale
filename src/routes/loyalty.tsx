@@ -12,6 +12,13 @@ import { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   Dialog,
   DialogContent,
   DialogHeader,
@@ -274,20 +281,24 @@ function LoyaltyPage() {
                   </div>
                   <div className="space-y-1.5">
                     <Label className="text-xs">Color Theme</Label>
-                    <select 
-                      className="flex h-9 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-ring"
+                    <Select
                       value={tier.color}
-                      onChange={(e) => updateEditTier(i, "color", e.target.value)}
+                      onValueChange={(val) => updateEditTier(i, "color", val)}
                     >
-                      <option value="bg-amber-700">Bronze</option>
-                      <option value="bg-slate-400">Silver</option>
-                      <option value="bg-warning">Gold</option>
-                      <option value="bg-info">Platinum / Blue</option>
-                      <option value="bg-primary">Primary</option>
-                      <option value="bg-success">Emerald / Green</option>
-                      <option value="bg-destructive">Ruby / Red</option>
-                      <option value="bg-purple-500">Amethyst / Purple</option>
-                    </select>
+                      <SelectTrigger className="h-9">
+                        <SelectValue placeholder="Select color" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="bg-amber-700">Bronze</SelectItem>
+                        <SelectItem value="bg-slate-400">Silver</SelectItem>
+                        <SelectItem value="bg-warning">Gold</SelectItem>
+                        <SelectItem value="bg-info">Platinum / Blue</SelectItem>
+                        <SelectItem value="bg-primary">Primary</SelectItem>
+                        <SelectItem value="bg-success">Emerald / Green</SelectItem>
+                        <SelectItem value="bg-destructive">Ruby / Red</SelectItem>
+                        <SelectItem value="bg-purple-500">Amethyst / Purple</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
                 </div>
 

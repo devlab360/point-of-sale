@@ -8,7 +8,7 @@ import { getProductsFn } from "@/api/products";
 import { getSalesFn } from "@/api/sales";
 import { getUnitsFn } from "@/api/units";
 import { cn } from "@/lib/utils";
-import { Download, Filter, Brain } from "lucide-react";
+import { Download, Filter, Brain, PackageSearch } from "lucide-react";
 import { toast } from "sonner";
 import { useState, useMemo, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -17,6 +17,7 @@ import { exportToCSV } from "@/lib/csv";
 import { useDebounce } from "@/hooks/useDebounce";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { PaginationControls } from "@/components/ui/pagination-controls";
+import { EmptyState } from "@/components/ui/empty-state";
 import { Label } from "@/components/ui/label";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useCurrency } from "@/lib/currency";
@@ -30,8 +31,8 @@ function StockList() {
   const orgId = PersistStore.getOrgId() || "default";
 
   const { data: productsResponse } = useQuery({
-    queryKey: ["products", orgId],
-    queryFn: async () => ((await getProductsFn({ data: {} })) as any) || {},
+    queryKey: ["products", orgId, "inventory"],
+    queryFn: async () => ((await getProductsFn({ data: { page: 1, pageSize: 10 } })) as any) || {},
   });
   const products = productsResponse?.data || [];
   const inventorySummary = productsResponse?.summary || null;
@@ -242,92 +243,111 @@ function StockList() {
           </div>
         </div>
         <div className="overflow-hidden rounded-xl border border-border bg-card shadow-soft">
-          <div className="overflow-hidden rounded-xl border border-border bg-card shadow-soft">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm">
-                <thead className="bg-muted/50 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                  <tr>
-                    <th className="px-4 py-3 whitespace-nowrap">Product</th>
-                    <th className="px-4 py-3 whitespace-nowrap">SKU</th>
-                    <th className="px-4 py-3 text-right whitespace-nowrap">Stocks</th>
-                    <th className="px-4 py-3 text-right whitespace-nowrap">Reorder</th>
-                    <th className="px-4 py-3 text-right whitespace-nowrap">Value</th>
-                    <th className="px-4 py-3 whitespace-nowrap">Status</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border">
-                  {paginatedProducts.map((p) => {
-                    const low = Number(p.stock) <= Number(p.reorderLevel);
-                    const out = p.stock <= 0;
-                    return (
-                      <tr
-                        key={p.id}
-                        className="hover:bg-muted/30 cursor-pointer"
-                        onClick={() => router.navigate({ to: "/products", search: { edit: p.id } })}
-                      >
-                        <td className="px-4 py-3 whitespace-nowrap">
-                          <div className="flex items-center gap-3">
-                            <div className="grid size-9 shrink-0 place-items-center rounded-lg bg-muted overflow-hidden">
-                              <img src={p.image} alt="" className="size-full object-cover" />
-                            </div>
-                            <span className="font-semibold">{p.name}</span>
-                          </div>
-                        </td>
-                        <td className="px-4 py-3 font-mono text-xs text-muted-foreground whitespace-nowrap">
-                          {p.sku}
-                        </td>
-                        <td
-                          className={cn(
-                            "number px-4 py-3 text-right font-semibold whitespace-nowrap",
-                            low && "text-destructive",
-                          )}
-                        >
-                          {p.stock} {units.find((u) => u.id === p.unit)?.name || p.unit || ""}
-                        </td>
-                        <td className="px-4 py-3 text-right text-muted-foreground whitespace-nowrap">
-                          {p.reorderLevel}
-                        </td>
-                        <td className="number px-4 py-3 text-right whitespace-nowrap">
-                          {formatCurrency(p.stock * p.cost)}
-                        </td>
-                        <td className="px-4 py-3 whitespace-nowrap">
-                          <div className="flex gap-1 flex-wrap">
-                            {isExpired(p.expiryDate) && (
-                              <Badge variant="destructive">Expired</Badge>
-                            )}
-                            {isExpiringSoon(p.expiryDate) && (
-                              <Badge className="bg-warning/15 text-warning-foreground hover:bg-warning/20">
-                                Expiring
-                              </Badge>
-                            )}
-                            {out ? (
-                              <Badge variant="destructive">Out</Badge>
-                            ) : low ? (
-                              <Badge className="bg-warning/15 text-warning-foreground hover:bg-warning/20">
-                                Low
-                              </Badge>
-                            ) : (
-                              <Badge className="bg-success/10 text-success hover:bg-success/15">
-                                In stock
-                              </Badge>
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-            <PaginationControls
-              currentPage={page}
-              totalPages={totalPages}
-              pageSize={pageSize}
-              onPageChange={setPage}
-              onPageSizeChange={setPageSize}
-              totalItems={filteredProducts.length}
+          {filteredProducts.length === 0 ? (
+            <EmptyState
+              icon={PackageSearch}
+              title="No inventory records"
+              description={
+                search || filters.status
+                  ? "Try adjusting your search or filters."
+                  : "You don't have any products in your inventory yet."
+              }
+              actionLabel="Add Product"
+              onAction={() => router.navigate({ to: "/products" })}
             />
-          </div>
+          ) : (
+            <div className="overflow-hidden rounded-xl border border-border bg-card shadow-soft">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-sm">
+                  <thead className="bg-muted/50 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                    <tr>
+                      <th className="px-4 py-3 whitespace-nowrap">Product</th>
+                      <th className="px-4 py-3 whitespace-nowrap">SKU</th>
+                      <th className="px-4 py-3 text-right whitespace-nowrap">Stocks</th>
+                      <th className="px-4 py-3 text-right whitespace-nowrap">Reorder</th>
+                      <th className="px-4 py-3 text-right whitespace-nowrap">Value</th>
+                      <th className="px-4 py-3 whitespace-nowrap">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border">
+                    {paginatedProducts.map((p) => {
+                      const low = Number(p.stock) <= Number(p.reorderLevel);
+                      const out = p.stock <= 0;
+                      return (
+                        <tr
+                          key={p.id}
+                          className="hover:bg-muted/30 cursor-pointer"
+                          onClick={() => router.navigate({ to: "/products", search: { edit: p.id } })}
+                        >
+                          <td className="px-4 py-3 whitespace-nowrap">
+                            <div className="flex items-center gap-3">
+                              <div className="grid size-9 shrink-0 place-items-center rounded-lg bg-muted overflow-hidden">
+                                <img src={p.image} alt="" className="size-full object-cover" />
+                              </div>
+                              <span className="font-semibold">{p.name}</span>
+                            </div>
+                          </td>
+                          <td className="px-4 py-3 font-mono text-xs text-muted-foreground whitespace-nowrap">
+                            {p.sku}
+                          </td>
+                          <td
+                            className={cn(
+                              "number px-4 py-3 text-right font-semibold whitespace-nowrap",
+                              low && "text-destructive",
+                            )}
+                          >
+                            {p.stock} {units.find((u) => u.id === p.unit)?.name || p.unit || ""}
+                          </td>
+                          <td className="px-4 py-3 text-right text-muted-foreground whitespace-nowrap">
+                            {p.reorderLevel}
+                          </td>
+                          <td className="number px-4 py-3 text-right whitespace-nowrap">
+                            {formatCurrency(p.stock * p.cost)}
+                          </td>
+                          <td className="px-4 py-3 whitespace-nowrap">
+                            <div className="flex gap-1 flex-wrap">
+                              {isExpired(p.expiryDate) && (
+                                <Badge variant="destructive">Expired</Badge>
+                              )}
+                              {isExpiringSoon(p.expiryDate) && (
+                                <Badge className="bg-warning/15 text-warning-foreground hover:bg-warning/20">
+                                  Expiring
+                                </Badge>
+                              )}
+                              {out ? (
+                                <Badge variant="destructive">Out</Badge>
+                              ) : low ? (
+                                <Badge className="bg-warning/15 text-warning-foreground hover:bg-warning/20">
+                                  Low
+                                </Badge>
+                              ) : (
+                                <Badge className="bg-success/10 text-success hover:bg-success/15">
+                                  In stock
+                                </Badge>
+                              )}
+                              {p.expiryDate && (
+                                <span className="rounded bg-muted px-1.5 py-0.5 text-[9px] font-bold text-muted-foreground">
+                                  Exp: {p.expiryDate}
+                                </span>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+              <PaginationControls
+                currentPage={page}
+                totalPages={totalPages}
+                pageSize={pageSize}
+                onPageChange={setPage}
+                onPageSizeChange={setPageSize}
+                totalItems={filteredProducts.length}
+              />
+            </div>
+          )}
         </div>
       </DataPage>
 

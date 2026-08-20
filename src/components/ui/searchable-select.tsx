@@ -93,9 +93,9 @@ export function SearchableSelect({
             className,
           )}
         >
-          <div className="flex items-center gap-2 truncate">
+          <div className="flex items-center gap-2 flex-1 min-w-0">
             {selectedOption?.icon}
-            <span className="truncate">{selectedOption ? selectedOption.label : placeholder}</span>
+            <span className="truncate block">{selectedOption ? selectedOption.label : placeholder}</span>
           </div>
 
           <div className="flex items-center gap-1 ml-auto shrink-0 opacity-70">

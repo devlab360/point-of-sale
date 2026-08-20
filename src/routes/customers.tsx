@@ -770,7 +770,7 @@ function CustomersPage() {
           <form onSubmit={handleSettle} className="space-y-4">
             <div className="text-sm text-muted-foreground">
               Outstanding Balance for <strong>{settleItem?.name}</strong> is{" "}
-              <strong className="text-destructive">${settleItem?.credit}</strong>.
+              <strong className="text-destructive">{formatCurrency(settleItem?.credit)}</strong>.
             </div>
             <div className="space-y-2">
               <Label>Payment Amount</Label>

@@ -254,17 +254,17 @@ export const createSaleFn = createServerFn({ method: "POST" })
         // Khatabook integration (Customer Ledger)
         if (data.sale.customerId) {
           const cust = await tx.query.customers.findFirst({
-            where: (c, { eq, and }) => and(eq(c.id, data.sale.customerId), eq(c.organizationId, session.orgId))
+            where: (c, { eq, and }) => and(eq(c.id, data.sale.customerId!), eq(c.organizationId, session.orgId))
           });
 
           if (cust) {
             const currentCredit = Number(cust.credit || 0); // What they owe us
-            const total = Number(data.sale.total || 0);
+            const invoiceTotal = Number(total || 0);
             const paid = Number(data.sale.paid || 0);
 
-            // Goods sold: they owe us more (+total)
+            // Goods sold: they owe us more (+invoiceTotal)
             // They pay us: they owe us less (-paid)
-            const netChange = total - paid;
+            const netChange = invoiceTotal - paid;
             const newCredit = currentCredit + netChange;
 
             await tx.update(schema.customers)
@@ -279,13 +279,13 @@ export const createSaleFn = createServerFn({ method: "POST" })
               type: "Sale",
               amount: netChange.toString(), // The change to their balance
               balanceAfter: newCredit.toString(),
-              referenceNo: invoiceNo,
-              note: `Sale ${invoiceNo} - Total: ${total.toFixed(2)}, Paid: ${paid.toFixed(2)}`
+              referenceNo: saleId,
+              note: `Sale ${saleId} - Total: ${invoiceTotal.toFixed(2)}, Paid: ${paid.toFixed(2)}`
             });
 
             // If we received money, log it to accounts
             if (paid > 0) {
-              const paymentMethod = data.payments?.[0]?.method || data.sale.paymentMethod || "cash";
+              const paymentMethod = data.sale.payments?.[0]?.method || data.sale.paymentMethod || "cash";
               const account = await tx.query.accounts.findFirst({
                 where: (a, { eq, and }) => and(eq(a.type, paymentMethod), eq(a.organizationId, session.orgId))
               });
@@ -296,17 +296,6 @@ export const createSaleFn = createServerFn({ method: "POST" })
                 await tx.update(schema.accounts)
                   .set({ balance: accBalance.toString() })
                   .where(eq(schema.accounts.id, account.id));
-
-                await tx.insert(schema.vouchers).values({
-                  id: crypto.randomUUID(),
-                  organizationId: session.orgId,
-                  ref: `VOU-${Math.floor(Math.random() * 10000)}`,
-                  date: new Date().toISOString(),
-                  type: "Receipt", // Receiving money from customer
-                  accountId: account.id,
-                  amount: paid.toString(),
-                  status: "completed"
-                });
               }
             }
           }

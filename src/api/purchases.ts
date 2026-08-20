@@ -219,17 +219,6 @@ export const createPurchaseFn = createServerFn({ method: "POST" })
                 await tx.update(schema.accounts)
                   .set({ balance: accBalance.toString() })
                   .where(eq(schema.accounts.id, account.id));
-
-                await tx.insert(schema.vouchers).values({
-                  id: crypto.randomUUID(),
-                  organizationId: session.orgId,
-                  ref: `VOU-${Math.floor(Math.random() * 10000)}`,
-                  date: new Date().toISOString(),
-                  type: "Payment", // Paying supplier
-                  accountId: account.id,
-                  amount: paid.toString(),
-                  status: "completed"
-                });
               }
             }
           }

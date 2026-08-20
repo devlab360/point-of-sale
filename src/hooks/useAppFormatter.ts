@@ -47,7 +47,7 @@ export function useAppFormatter() {
       }
       
       // Use date-fns-tz to convert and format
-      return formatInTimeZone(dateObj, timeZone, formatStr);
+      return formatInTimeZone(dateObj, timeZone, formatStr || "yyyy-MM-dd");
     } catch (e) {
       console.error("Error formatting date:", e);
       return "-";
