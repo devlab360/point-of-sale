@@ -656,7 +656,10 @@ export const loginWithGoogleFn = createServerFn({ method: "POST" })
       if (!user) {
         const orgId = uuidv4();
         const userId = uuidv4();
-        const trialEndsAt = Date.now() + 14 * 24 * 60 * 60 * 1000;
+        const envDays = process.env.VITE_TRIAL_DAYS;
+        const parsedDays = parseInt(envDays || "0", 10);
+        const trialDays = isNaN(parsedDays) || parsedDays === 0 ? 7 : parsedDays;
+        const trialEndsAt = Date.now() + trialDays * 24 * 60 * 60 * 1000;
         const storeName = (googleUser.name || "Google User") + "'s Store";
 
         const insertRes = await db.transaction(async (tx) => {
@@ -793,7 +796,10 @@ export const loginWithFirebasePhoneFn = createServerFn({ method: "POST" })
       if (!user) {
         const orgId = uuidv4();
         const userId = uuidv4();
-        const trialEndsAt = Date.now() + 14 * 24 * 60 * 60 * 1000;
+        const envDays = process.env.VITE_TRIAL_DAYS;
+        const parsedDays = parseInt(envDays || "0", 10);
+        const trialDays = isNaN(parsedDays) || parsedDays === 0 ? 7 : parsedDays;
+        const trialEndsAt = Date.now() + trialDays * 24 * 60 * 60 * 1000;
         const storeName = "Phone User's Store";
 
         const insertRes = await db.transaction(async (tx) => {

@@ -227,7 +227,7 @@ function Dashboard() {
     return { score, grade, badgeClass };
   }, [sales, products, customers, expenses]);
 
-  const lowStock = products.filter((p) => p.stock <= p.reorderLevel).slice(0, 5);
+  const lowStock = products.filter((p) => Number(p.stock) <= Number(p.reorderLevel)).slice(0, 5);
 
   const productSalesMap = new Map<string, number>();
   sales.forEach((sale) => {
@@ -814,7 +814,7 @@ function Dashboard() {
                   <div
                     className={cn(
                       "number text-sm font-bold",
-                      p.stock <= p.reorderLevel / 2
+                      Number(p.stock) <= Number(p.reorderLevel) / 2
                         ? "text-destructive"
                         : "text-warning-foreground",
                     )}

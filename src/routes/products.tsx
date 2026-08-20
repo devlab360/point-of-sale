@@ -1277,7 +1277,7 @@ function TableView({
                 <span
                   className={cn(
                     "number font-semibold",
-                    p.stock <= p.reorderLevel && "text-destructive",
+                    Number(p.stock) <= Number(p.reorderLevel) && "text-destructive",
                   )}
                 >
                   {p.stock}
@@ -1288,7 +1288,7 @@ function TableView({
               </td>
               <td className="px-4 py-3 whitespace-nowrap">
                 <div className="flex flex-col gap-1 items-start">
-                  {p.stock <= p.reorderLevel ? (
+                  {Number(p.stock) <= Number(p.reorderLevel) ? (
                     <Badge variant="destructive">Low stock</Badge>
                   ) : (
                     <Badge className="bg-success/10 text-success hover:bg-success/15">
@@ -1400,7 +1400,7 @@ function GridView({
                   <span
                     className={cn(
                       "text-xs font-medium",
-                      p.stock <= p.reorderLevel ? "text-destructive" : "text-muted-foreground",
+                      Number(p.stock) <= Number(p.reorderLevel) ? "text-destructive" : "text-muted-foreground",
                     )}
                   >
                     {p.stock} {unitName || "in stock"}

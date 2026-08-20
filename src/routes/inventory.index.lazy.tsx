@@ -47,7 +47,7 @@ function StockList() {
     queryFn: async () => ((await getUnitsFn({ data: {} })) as any)?.data || [],
   });
   const units = unitsData || [];
-  const lowCount = products.filter((p) => p.stock <= p.reorderLevel).length;
+  const lowCount = products.filter((p) => Number(p.stock) <= Number(p.reorderLevel)).length;
   const outCount = products.filter((p) => p.stock <= 0).length;
 
   const { t } = useLanguage();
@@ -109,9 +109,9 @@ function StockList() {
     }
 
     if (filters.status === "in-stock") {
-      list = list.filter((p) => p.stock > p.reorderLevel);
+      list = list.filter((p) => Number(p.stock) > Number(p.reorderLevel));
     } else if (filters.status === "low") {
-      list = list.filter((p) => p.stock > 0 && p.stock <= p.reorderLevel);
+      list = list.filter((p) => Number(p.stock) > 0 && Number(p.stock) <= Number(p.reorderLevel));
     } else if (filters.status === "out") {
       list = list.filter((p) => p.stock <= 0);
     } else if (filters.status === "expiring") {
@@ -257,7 +257,7 @@ function StockList() {
                 </thead>
                 <tbody className="divide-y divide-border">
                   {paginatedProducts.map((p) => {
-                    const low = p.stock <= p.reorderLevel;
+                    const low = Number(p.stock) <= Number(p.reorderLevel);
                     const out = p.stock <= 0;
                     return (
                       <tr

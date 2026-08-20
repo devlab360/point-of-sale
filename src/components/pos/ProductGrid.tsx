@@ -105,7 +105,7 @@ export function ProductGrid({ state }: { state: any }) {
         ) : (
           <div className="grid grid-cols-2 gap-3.5 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
             {filtered.map((p: any) => {
-              const low = p.stock > 0 && p.stock <= p.reorderLevel;
+              const low = Number(p.stock) > 0 && Number(p.stock) <= Number(p.reorderLevel);
               const out = p.stock <= 0;
               const catName = getCategoryName ? getCategoryName(p.category) : p.category || "";
               const unitName = getUnitName ? getUnitName(p.unit) : p.unit || "";
