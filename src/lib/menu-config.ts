@@ -327,10 +327,10 @@ export const PERMISSION_ROUTE_MAP: Record<string, string[]> = {
     "/promotions",
     "/quotations",
     "/delivery-challans",
-    "/tables",
-    "/kitchen",
-    "/appointments",
   ],
+  tables: ["/tables"],
+  kitchen: ["/kitchen"],
+  appointments: ["/appointments"],
   reports: [
     "/reports",
     "/customer-ledger",
@@ -358,9 +358,12 @@ const DEFAULT_ROLE_PERMISSIONS_FALLBACK: Record<string, string[]> = {
     "returns",
     "settings",
     "notifications",
+    "tables",
+    "kitchen",
+    "appointments",
   ],
-  manager: ["pos", "inventory", "reports", "customers", "expenses", "discounts", "returns", "notifications"],
-  cashier: ["pos", "customers", "discounts"],
+  manager: ["pos", "inventory", "reports", "customers", "expenses", "discounts", "returns", "notifications", "tables", "kitchen", "appointments"],
+  cashier: ["pos", "customers", "discounts", "tables", "kitchen", "appointments"],
 };
 
 export const ROUTE_CAPABILITY_MAP: Record<string, BusinessCapability[]> = {

@@ -100,14 +100,22 @@ const PERMISSION_GROUPS = [
       { id: "notifications", label: "Notifications", desc: "View and manage system notifications" },
     ],
   },
+  {
+    group: "Services & Verticals",
+    permissions: [
+      { id: "tables", label: "Table Management", desc: "Manage restaurant tables and dine-in" },
+      { id: "kitchen", label: "Kitchen (KOT)", desc: "Manage kitchen order tickets" },
+      { id: "appointments", label: "Appointments", desc: "Manage service appointments" },
+    ],
+  },
 ];
 
 const AVAILABLE_PERMISSIONS = PERMISSION_GROUPS.flatMap((g) => g.permissions);
 
 const DEFAULT_ROLE_PERMISSIONS: Record<string, string[]> = {
   admin: AVAILABLE_PERMISSIONS.map((p) => p.id),
-  manager: ["pos", "inventory", "reports", "customers", "expenses", "discounts", "returns", "notifications"],
-  cashier: ["pos", "customers", "discounts"],
+  manager: ["pos", "inventory", "reports", "customers", "expenses", "discounts", "returns", "notifications", "tables", "kitchen", "appointments"],
+  cashier: ["pos", "customers", "discounts", "tables", "kitchen", "appointments"],
 };
 
 export const Route = createFileRoute("/users")({
