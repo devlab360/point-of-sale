@@ -75,8 +75,27 @@ function HelpPage() {
 
   const [searchQuery, setSearchQuery] = useState("");
 
+  const getEmbedVideoInfo = (url: string) => {
+    if (!url) return { isEmbed: false, type: "none", src: "" };
+    
+    // YouTube (standard watch, shorts, share links, embed)
+    const ytMatch = url.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|shorts\/|watch\?.+&v=))([\w-]{11})/i);
+    if (ytMatch && ytMatch[1]) {
+      return { isEmbed: true, type: "youtube", src: `https://www.youtube-nocookie.com/embed/${ytMatch[1]}?rel=0` };
+    }
+
+    // Vimeo
+    const vimeoMatch = url.match(/vimeo\.com\/(?:video\/)?([0-9]+)/i);
+    if (vimeoMatch && vimeoMatch[1]) {
+      return { isEmbed: true, type: "vimeo", src: `https://player.vimeo.com/video/${vimeoMatch[1]}` };
+    }
+
+    // Direct MP4 / WebM / Blob video
+    return { isEmbed: false, type: "direct", src: url };
+  };
+
   const filteredDocs = articles
-    .filter((a: any) => a.type === 'doc')
+    .filter((a: any) => a.type !== 'video')
     .filter((a: any) => a.title?.toLowerCase().includes(searchQuery.toLowerCase()) || a.content?.toLowerCase().includes(searchQuery.toLowerCase()));
     
   const filteredVideos = articles
@@ -200,22 +219,29 @@ function HelpPage() {
               </p>
             ) : (
               filteredVideos.map((vid: any) => {
-                const isDirectVideo = vid.content?.startsWith("http") && !vid.content.includes("youtube.com") && !vid.content.includes("youtu.be");
+                const videoInfo = getEmbedVideoInfo(vid.content);
                 return (
-                  <div key={vid.id} className="p-4 border rounded-xl bg-card space-y-3 shadow-xs">
+                  <div key={vid.id} className="p-4 border border-border/80 rounded-xl bg-card space-y-3 shadow-xs">
                     <h4 className="font-bold text-sm text-foreground flex items-center gap-2">
                       <Video className="size-4 text-primary shrink-0" />
                       {vid.title}
                     </h4>
-                    {isDirectVideo ? (
-                      <div className="aspect-video w-full rounded-lg overflow-hidden bg-black shadow-inner">
-                        <video src={vid.content} controls preload="metadata" className="w-full h-full object-contain" />
+                    {videoInfo.isEmbed ? (
+                      <div className="aspect-video w-full rounded-lg overflow-hidden bg-black shadow-inner border border-border">
+                        <iframe
+                          src={videoInfo.src}
+                          title={vid.title}
+                          className="w-full h-full border-0"
+                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                          allowFullScreen
+                        />
+                      </div>
+                    ) : videoInfo.src && videoInfo.src.startsWith("http") ? (
+                      <div className="aspect-video w-full rounded-lg overflow-hidden bg-black shadow-inner border border-border">
+                        <video src={videoInfo.src} controls preload="metadata" className="w-full h-full object-contain" />
                       </div>
                     ) : (
-                      <a href={vid.content} target="_blank" rel="noreferrer" className="text-xs text-primary hover:underline break-all inline-flex items-center gap-1.5 bg-primary/5 p-2.5 rounded-lg border border-primary/20 w-full">
-                        <Video className="size-4 shrink-0" />
-                        <span>Open Video Stream: {vid.content}</span>
-                      </a>
+                      <p className="text-xs text-muted-foreground">{vid.content}</p>
                     )}
                   </div>
                 );
