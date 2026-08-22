@@ -191,23 +191,35 @@ function HelpPage() {
             <Video className="w-5 h-5 text-primary" />
             <h2 className="font-semibold text-lg">Video Tutorials</h2>
           </div>
-          <div className="space-y-3">
+          <div className="space-y-4">
             {loadingArticles ? (
                <div className="p-4 text-center text-muted-foreground animate-pulse">Loading videos...</div>
             ) : filteredVideos.length === 0 ? (
               <p className="text-sm text-muted-foreground py-4 border border-dashed rounded-lg text-center">
-                {searchQuery ? "No matching videos found." : "No videos available yet."}
+                {searchQuery ? "No matching videos found." : "No video tutorials available yet."}
               </p>
             ) : (
-              filteredVideos.map((vid: any) => (
-                <div key={vid.id} className="p-4 border rounded-lg bg-muted/20">
-                  <h4 className="font-semibold mb-2">{vid.title}</h4>
-                  <a href={vid.content} target="_blank" rel="noreferrer" className="text-sm text-blue-500 hover:underline break-all inline-flex items-center">
-                    <Video className="w-3.5 h-3.5 mr-1.5 shrink-0" />
-                    {vid.content}
-                  </a>
-                </div>
-              ))
+              filteredVideos.map((vid: any) => {
+                const isDirectVideo = vid.content?.startsWith("http") && !vid.content.includes("youtube.com") && !vid.content.includes("youtu.be");
+                return (
+                  <div key={vid.id} className="p-4 border rounded-xl bg-card space-y-3 shadow-xs">
+                    <h4 className="font-bold text-sm text-foreground flex items-center gap-2">
+                      <Video className="size-4 text-primary shrink-0" />
+                      {vid.title}
+                    </h4>
+                    {isDirectVideo ? (
+                      <div className="aspect-video w-full rounded-lg overflow-hidden bg-black shadow-inner">
+                        <video src={vid.content} controls preload="metadata" className="w-full h-full object-contain" />
+                      </div>
+                    ) : (
+                      <a href={vid.content} target="_blank" rel="noreferrer" className="text-xs text-primary hover:underline break-all inline-flex items-center gap-1.5 bg-primary/5 p-2.5 rounded-lg border border-primary/20 w-full">
+                        <Video className="size-4 shrink-0" />
+                        <span>Open Video Stream: {vid.content}</span>
+                      </a>
+                    )}
+                  </div>
+                );
+              })
             )}
           </div>
         </div>

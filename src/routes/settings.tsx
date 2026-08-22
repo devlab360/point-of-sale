@@ -93,7 +93,7 @@ const TIME_ZONES = [
 ];
 
 export const Route = createFileRoute("/settings")({
-  head: () => ({ meta: [{ title: "Settings Â· NexisPOS" }] }),
+  head: () => ({ meta: [{ title: "Settings · NexisPOS" }] }),
   validateSearch: (search: Record<string, unknown>): { tab?: string } => {
     return {
       tab: typeof search.tab === "string" ? search.tab : undefined,
@@ -504,12 +504,6 @@ function SettingsPage() {
             Receipts
           </TabsTrigger>
           <TabsTrigger
-            value="data"
-            className="shrink-0 justify-start rounded-lg px-4 py-2.5 text-sm font-medium data-[state=active]:bg-muted data-[state=active]:text-foreground text-muted-foreground hover:bg-muted/50"
-          >
-            Data Management
-          </TabsTrigger>
-          <TabsTrigger
             value="locations"
             className="shrink-0 justify-start rounded-lg px-4 py-2.5 text-sm font-medium data-[state=active]:bg-muted data-[state=active]:text-foreground text-muted-foreground hover:bg-muted/50"
           >
@@ -623,7 +617,7 @@ function SettingsPage() {
                     className="inp font-bold"
                     value={settings.currencySymbol || "$"}
                     onChange={(e) => handleChange("currencySymbol", e.target.value)}
-                    placeholder="e.g. $, à§³, â‚¹, â‚¬, Â£, AED"
+                    placeholder="e.g. $, ৳, ₹, €, £, AED"
                   />
                 </Field>
               </div>
@@ -701,14 +695,14 @@ function SettingsPage() {
                       passForm.confirmPassword &&
                       passForm.newPassword !== passForm.confirmPassword && (
                         <p className="text-[11px] text-destructive font-medium flex items-center gap-1">
-                          <span>âœ•</span> Passwords do not match
+                          <span>✕</span> Passwords do not match
                         </p>
                       )}
                     {passForm.newPassword &&
                       passForm.confirmPassword &&
                       passForm.newPassword === passForm.confirmPassword && (
                         <p className="text-[11px] text-success font-medium flex items-center gap-1">
-                          <span>âœ“</span> Passwords match
+                          <span>✓</span> Passwords match
                         </p>
                       )}
                   </div>
@@ -805,7 +799,7 @@ function SettingsPage() {
                     </div>
                     <div className="text-left sm:text-right">
                       <div className="text-2xl font-bold">
-                        â‚¹{saasPlan?.price || 0}
+                        ₹{saasPlan?.price || 0}
                         <span className="text-sm font-normal text-muted-foreground">/mo</span>
                       </div>
                       <p className="text-xs text-muted-foreground mt-1">
@@ -870,7 +864,7 @@ function SettingsPage() {
                           <div>
                             <h4 className="font-bold text-base text-foreground">{plan.name}</h4>
                             <div className="text-2xl font-extrabold mt-1 text-primary">
-                              â‚¹{plan.price}{" "}
+                              ₹{plan.price}{" "}
                               <span className="text-xs font-normal text-muted-foreground">
                                 / month
                               </span>
@@ -1296,7 +1290,7 @@ function SettingsPage() {
             </DialogTitle>
             <p className="text-xs text-muted-foreground">
               You are upgrading/recharging to <strong>{selectedPlanForUpgrade?.name}</strong> at{" "}
-              <strong>â‚¹{paymentForm.billingCycle === "yearly" ? (selectedPlanForUpgrade?.yearlyPrice || selectedPlanForUpgrade?.price * 12) : (selectedPlanForUpgrade?.monthlyPrice || selectedPlanForUpgrade?.price)}/{paymentForm.billingCycle === "yearly" ? "year" : "month"}</strong>. Please make the payment using
+              <strong>₹{paymentForm.billingCycle === "yearly" ? (selectedPlanForUpgrade?.yearlyPrice || selectedPlanForUpgrade?.price * 12) : (selectedPlanForUpgrade?.monthlyPrice || selectedPlanForUpgrade?.price)}/{paymentForm.billingCycle === "yearly" ? "year" : "month"}</strong>. Please make the payment using
               the QR code or Bank Account below.
             </p>
           </DialogHeader>
@@ -1305,8 +1299,8 @@ function SettingsPage() {
             <div className="flex gap-4 items-center mb-2">
               <span className="text-sm font-semibold">Select Billing Cycle:</span>
               <div className="flex gap-2">
-                <Button size="sm" variant={paymentForm.billingCycle === "monthly" ? "default" : "outline"} onClick={() => setPaymentForm({...paymentForm, billingCycle: "monthly"})}>Monthly</Button>
-                <Button size="sm" variant={paymentForm.billingCycle === "yearly" ? "default" : "outline"} onClick={() => setPaymentForm({...paymentForm, billingCycle: "yearly"})}>Yearly (Save 20%)</Button>
+                <Button size="sm" variant={paymentForm.billingCycle === "monthly" ? "default" : "outline"} onClick={() => setPaymentForm({ ...paymentForm, billingCycle: "monthly" })}>Monthly</Button>
+                <Button size="sm" variant={paymentForm.billingCycle === "yearly" ? "default" : "outline"} onClick={() => setPaymentForm({ ...paymentForm, billingCycle: "yearly" })}>Yearly (Save 20%)</Button>
               </div>
             </div>
             {/* QR Code and Bank Details Grid */}
@@ -1427,7 +1421,7 @@ function SettingsPage() {
                 <div>
                   <Label className="text-xs">Amount Paid</Label>
                   <Input
-                    value={`â‚¹${paymentForm.billingCycle === "yearly" ? (selectedPlanForUpgrade?.yearlyPrice || selectedPlanForUpgrade?.price * 12) : (selectedPlanForUpgrade?.monthlyPrice || selectedPlanForUpgrade?.price)}`}
+                    value={`₹${paymentForm.billingCycle === "yearly" ? (selectedPlanForUpgrade?.yearlyPrice || selectedPlanForUpgrade?.price * 12) : (selectedPlanForUpgrade?.monthlyPrice || selectedPlanForUpgrade?.price)}`}
                     disabled
                     className="mt-1 font-mono font-bold bg-muted text-primary"
                   />
