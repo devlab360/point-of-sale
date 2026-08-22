@@ -4,6 +4,7 @@ import { v4 as uuidv4 } from "uuid";
 import { db } from "@/db";
 import * as schema from "@/db/schema";
 import { eq, and, desc, sql, ilike, or, inArray } from "drizzle-orm";
+import { assertProductLimit } from "@/lib/plan-limits";
 import { z } from "zod";
 import { requireAuth, requireAdmin } from "@/lib/auth-utils";
 
@@ -131,6 +132,12 @@ export const createProductFn = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     try {
       const session = await requireAuth();
+      const orgId = session.orgId;
+      if (!orgId) return { success: false, error: "Unauthorized" };
+
+      // Validate SaaS plan limit for products
+      await assertProductLimit(orgId);
+
       const product = data.product;
       const now = Date.now();
       const productId = product.id || uuidv4();

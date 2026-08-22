@@ -80,13 +80,8 @@ function Dashboard() {
   const { user, saasPlan, saasOrg } = useAuth();
   const [isDailyReportOpen, setIsDailyReportOpen] = useState(false);
   const [chartView, setChartView] = useState<"revenue" | "profit">("revenue");
-  const isSuperAdminUser = user?.email?.toLowerCase().includes("superadmin");
-  const canAccessPos =
-    !isSuperAdminUser &&
-    (!saasPlan || !Array.isArray(saasPlan.features) || saasPlan.features.includes("/pos"));
-  const canAccessReports =
-    !isSuperAdminUser &&
-    (!saasPlan || !Array.isArray(saasPlan.features) || saasPlan.features.includes("/reports"));
+  const canAccessPos = !saasPlan || !Array.isArray(saasPlan.features) || saasPlan.features.includes("/pos");
+  const canAccessReports = !saasPlan || !Array.isArray(saasPlan.features) || saasPlan.features.includes("/reports");
   const fmt = (n: number | string) =>
     `${currencySymbol}${(Number(n) || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 

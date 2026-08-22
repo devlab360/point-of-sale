@@ -51,6 +51,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 
 import { APP_GROUPS, hasPermissionForRoute } from "@/lib/menu-config";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 export function AppSidebar({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
@@ -91,62 +92,27 @@ export function AppSidebar({ onNavigate }: { onNavigate?: () => void }) {
     .substring(0, 2)
     .toUpperCase();
 
-  const isSuperAdminUser = user?.email?.toLowerCase().includes("superadmin");
+  const isMobile = useIsMobile();
 
+  const { effectiveMenus } = useAuth();
   let filteredGroups = APP_GROUPS.map((group) => ({
     ...group,
     items: group.items.filter((item) => {
-      const result = hasPermissionForRoute(user, item.to, !!isSuperAdminUser, saasPlan, settings?.businessType);
+      // Core system routes always accessible
+      if (item.to === "/" || item.to === "/profile" || item.to === "/help") return true;
+      // Allow access if 'all' is granted (super admin)
+      if (effectiveMenus.includes("all")) return true;
+      // Allow if the item's menuKey or route is in effectiveMenus
+      const cleanRoute = item.to.replace(/^\//, "");
+      if (item.menuKey && effectiveMenus.includes(item.menuKey)) return true;
+      if (effectiveMenus.includes(item.to) || effectiveMenus.includes(cleanRoute)) return true;
+      // If plan has configured menus and this item is not in it, strictly deny
+      if (effectiveMenus.length > 0) return false;
+      // Fallback only if no plan menus are defined
+      const result = hasPermissionForRoute(user, item.to, false, saasPlan, settings?.businessType);
       return result.allowed;
     }),
   })).filter((group) => group.items.length > 0);
-
-  // If Super Admin, override everything and ONLY show the super admin view
-  if (isSuperAdminUser) {
-    filteredGroups = [
-      {
-        label: "SaaS Management",
-        tkey: "saas",
-        items: [
-          {
-            to: "/super-admin",
-            label: "Dashboard",
-            tkey: "superAdmin",
-            icon: LayoutDashboard,
-            roles: ["admin"],
-          },
-          {
-            to: "/super-admin/users",
-            label: "User Management",
-            tkey: "saasUsers",
-            icon: Users,
-            roles: ["admin"],
-          },
-          {
-            to: "/super-admin/plans",
-            label: "Plan Configuration",
-            tkey: "saasPlans",
-            icon: CreditCard,
-            roles: ["admin"],
-          },
-        ],
-      },
-      {
-        label: "System",
-        tkey: "system",
-        items: [
-          {
-            to: "/settings",
-            label: "Global Settings",
-            tkey: "settings",
-            icon: Settings,
-            roles: ["admin"],
-          },
-          { to: "/profile", label: "Profile", tkey: "profile", icon: CircleUser },
-        ],
-      },
-    ];
-  }
 
   const allMenuPaths = filteredGroups.flatMap((g) => g.items.map((i) => i.to));
 

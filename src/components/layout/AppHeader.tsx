@@ -266,7 +266,7 @@ export function AppHeader() {
   const unread = useMemo(() => notifications.filter((n: any) => !n.read).length, [notifications]);
 
   const { user, logout, saasPlan } = useAuth();
-  const isSuperAdminUser = user?.email?.toLowerCase().includes("superadmin");
+  const isSuperAdminUser = user?.role === "super_admin";
   const canAccessPos =
     !isSuperAdminUser &&
     (!saasPlan || !Array.isArray(saasPlan.features) || saasPlan.features.includes("/pos"));
@@ -425,7 +425,7 @@ export function AppHeader() {
           <Moon className="hidden size-5 dark:block" />
         </Button>
 
-        {hasPermissionForRoute(user, "/notifications", !!user?.email?.toLowerCase().includes("superadmin"), saasPlan).allowed && (
+        {hasPermissionForRoute(user, "/notifications", user?.role === "super_admin", saasPlan).allowed && (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon" className="relative" aria-label="Notifications">

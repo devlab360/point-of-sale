@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { useRouter } from "@tanstack/react-router";
 import { SessionStore, PersistStore } from "@/lib/session-store";
 import { loginFn, getOrgDataFn, verifyUserEmailFn, getCurrentUserFn } from "@/api/auth";
+import { getEffectiveMenusFn } from "@/api/subscriptions";
 import { useQuery, useMutation } from "@tanstack/react-query";
 
 interface AuthContextType {
@@ -18,6 +19,7 @@ interface AuthContextType {
   saasOrg: any;
   saasPlan: any;
   settings: any;
+  effectiveMenus: string[];
   loginWithEmail: (email: string, password: string) => Promise<boolean>;
   loginWithOtp: (email: string, otp: string) => Promise<boolean>;
   loginWithSocial: (provider: "google") => Promise<boolean>;
@@ -53,6 +55,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const saasOrg = orgData?.org;
   const saasPlan = orgData?.plan;
   const settings = orgData?.settings;
+
+  const { data: menusData, refetch: refetchMenus } = useQuery({
+    queryKey: ["effectiveMenus", orgId, user?.id],
+    queryFn: async () => {
+      const res = await getEffectiveMenusFn({ data: {} });
+      if (res.success) return res.menus || [];
+      return [];
+    },
+    enabled: !!user,
+  });
+
+  const effectiveMenus = menusData || [];
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -279,18 +293,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [router]);
 
   const isTrialExpired = useMemo(() => {
-    if (user?.email?.toLowerCase().includes("superadmin")) return false;
     const subStatus = saasOrg?.status || settings?.subscriptionStatus || "trial";
     if (subStatus === "active") return false;
     const expiryDateStr = saasOrg?.planExpiryDate || settings?.trialEndsAt;
     if (!expiryDateStr) return false;
     return new Date() > new Date(expiryDateStr);
-  }, [saasOrg, settings, user]);
+  }, [saasOrg, settings]);
 
   const isEmailVerified = useMemo(() => {
-    return user
-      ? user.emailVerified !== false || user.email?.toLowerCase().includes("superadmin")
-      : true;
+    return user ? user.emailVerified !== false : true;
   }, [user]);
 
   const subscriptionStatus = useMemo(() => {
@@ -311,6 +322,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
+
   const value = useMemo(
     () => ({
       user,
@@ -328,6 +340,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       saasOrg,
       saasPlan,
       settings,
+      effectiveMenus,
       refreshUser,
     }),
     [
@@ -345,6 +358,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       saasOrg,
       saasPlan,
       settings,
+      effectiveMenus,
       refreshUser,
     ],
   );

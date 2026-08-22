@@ -26,11 +26,94 @@ export const organizations = pgTable("organizations", {
 export const saasPlans = pgTable("saas_plans", {
   id: text("id").primaryKey(),
   name: text("name").notNull(),
-  price: numeric("price", { precision: 10, scale: 2 }).notNull(),
-  features: jsonb("features").$type<string[]>(),
-  limits: jsonb("limits").$type<Record<string, any>>(),
+  description: text("description"),
+  type: text("type").notNull().default("standard"), // 'standard' | 'custom'
+  status: text("status").notNull().default("active"), // 'active' | 'inactive' | 'archived'
+  currency: text("currency").notNull().default("INR"),
+  // Legacy single price field kept for backward compat
+  price: numeric("price", { precision: 10, scale: 2 }).notNull().default("0"),
+  // New billing cycle prices
+  monthlyPrice: numeric("monthly_price", { precision: 10, scale: 2 }),
+  yearlyPrice: numeric("yearly_price", { precision: 10, scale: 2 }),
+  customPrice: numeric("custom_price", { precision: 10, scale: 2 }),
+  features: jsonb("features").$type<string[]>(),   // semantic keys e.g. ['pos','products']
+  menus: jsonb("menus").$type<string[]>(),         // sidebar menu keys allowed by plan
+  limits: jsonb("limits").$type<{
+    maxUsers: number;
+    maxProducts: number;
+    maxBranches: number;
+    maxInvoicesPerMonth: number;
+    maxCustomers?: number;
+  }>(),
+  trialDays: integer("trial_days").default(7),
   isTrialDefault: boolean("is_trial_default").notNull().default(false),
+  targetOrgId: text("target_org_id"), // null = all orgs; set = custom plan for specific org
+  createdAt: timestamp("created_at", { mode: "string" }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { mode: "string" }).defaultNow().notNull(),
 });
+
+// SaaS subscription for each tenant org (source of truth for billing)
+export const orgSubscriptions = pgTable(
+  "org_subscriptions",
+  {
+    id: text("id").primaryKey(),
+    organizationId: text("organization_id")
+      .notNull()
+      .references(() => organizations.id, { onDelete: "cascade" }),
+    planId: text("plan_id").notNull().references(() => saasPlans.id),
+    billingCycle: text("billing_cycle").notNull().default("trial"), // 'monthly' | 'yearly' | 'custom' | 'trial'
+    lockedPrice: numeric("locked_price", { precision: 10, scale: 2 }), // price frozen at subscription time
+    currency: text("currency").notNull().default("INR"),
+    status: text("status").notNull().default("trial"), // 'trial' | 'active' | 'suspended' | 'expired' | 'cancelled'
+    startDate: timestamp("start_date", { mode: "string" }).notNull(),
+    renewalDate: timestamp("renewal_date", { mode: "string" }),
+    expiryDate: timestamp("expiry_date", { mode: "string" }),
+    activatedBy: text("activated_by"), // super_admin user id
+    notes: text("notes"),
+    createdAt: timestamp("created_at", { mode: "string" }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { mode: "string" }).defaultNow().notNull(),
+  },
+  (t) => ({
+    orgIdx: index("org_subs_org_idx").on(t.organizationId),
+    statusIdx: index("org_subs_status_idx").on(t.status),
+  }),
+);
+
+// Super Admin per-org menu grants (overrides / extends plan menus)
+export const adminMenuGrants = pgTable(
+  "admin_menu_grants",
+  {
+    id: text("id").primaryKey(),
+    organizationId: text("organization_id")
+      .notNull()
+      .references(() => organizations.id, { onDelete: "cascade" }),
+    menuKey: text("menu_key").notNull(), // e.g. 'pos', 'products', 'reports'
+    grantedBy: text("granted_by").notNull(), // super_admin user id
+    grantedAt: timestamp("granted_at", { mode: "string" }).defaultNow().notNull(),
+  },
+  (t) => ({
+    orgMenuUniqueIdx: unique("admin_menu_grants_org_menu_idx").on(t.organizationId, t.menuKey),
+    orgIdx: index("admin_menu_grants_org_idx").on(t.organizationId),
+  }),
+);
+
+// Super Admin server-side sessions (replaces Dexie/localStorage in pos-super-admin)
+export const superAdminSessions = pgTable(
+  "super_admin_sessions",
+  {
+    id: text("id").primaryKey(),
+    userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    ipAddress: text("ip_address"),
+    userAgent: text("user_agent"),
+    expiresAt: timestamp("expires_at", { mode: "string" }).notNull(),
+    revokedAt: timestamp("revoked_at", { mode: "string" }),
+    createdAt: timestamp("created_at", { mode: "string" }).defaultNow().notNull(),
+  },
+  (t) => ({
+    userIdx: index("sa_sessions_user_idx").on(t.userId),
+    expiryIdx: index("sa_sessions_expiry_idx").on(t.expiresAt),
+  }),
+);
 
 export const saasSessions = pgTable(
   "saas_sessions",
@@ -1340,3 +1423,26 @@ export const productModifierOptions = pgTable(
   })
 );
 
+
+export const subscriptionPayments = pgTable(
+  "subscription_payments",
+  {
+    id: text("id").primaryKey(),
+    organizationId: text("organization_id").notNull().references(() => organizations.id, { onDelete: "cascade" }),
+    planId: text("plan_id").notNull().references(() => saasPlans.id),
+    utrNumber: text("utr_number").notNull(),
+    paymentMethod: text("payment_method").notNull(),
+    note: text("note"),
+    status: text("status").notNull().default("pending"), // pending, approved, rejected
+    amount: numeric("amount", { precision: 12, scale: 2 }),
+    billingCycle: text("billing_cycle").notNull().default("monthly"),
+    createdAt: timestamp("created_at", { mode: "string" }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { mode: "string" }).defaultNow().notNull(),
+    reviewedBy: text("reviewed_by"),
+    reviewedAt: timestamp("reviewed_at", { mode: "string" }),
+  },
+  (t) => ({
+    orgIdx: index("sub_payments_org_idx").on(t.organizationId),
+    statusIdx: index("sub_payments_status_idx").on(t.status),
+  }),
+);

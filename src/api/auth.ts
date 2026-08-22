@@ -23,11 +23,12 @@ export const loginFn = createServerFn({ method: "POST" })
           .limit(1);
         if (users.length > 0) {
           const u = users[0];
-          // Backward compatibility check for plain-text or hashed
-          const isMatch = u.pin?.startsWith("$2")
-            ? await bcrypt.compare(data.password, u.pin)
-            : u.pin === data.password;
-
+          // Always use bcrypt — no plaintext fallback (security requirement)
+          if (!u.pin || !u.pin.startsWith("$2")) {
+            // Legacy unencrypted PIN or no PIN — do NOT compare plaintext, deny login
+            return { success: false, error: "Invalid credentials or legacy PIN. Please reset your password." };
+          }
+          const isMatch = await bcrypt.compare(data.password, u.pin);
           if (isMatch) user = u;
         }
       }
@@ -44,6 +45,11 @@ export const loginFn = createServerFn({ method: "POST" })
         }
         if (user.role !== "admin" && (!user.permissions || user.permissions.length === 0)) {
           return { success: false, error: "You don't have permission to log in. Please contact the administrator." };
+        }
+        
+        // Block Super Admins from logging into the Admin Panel (they must use pos-super-admin)
+        if (user.role === "super_admin") {
+          return { success: false, error: "Super Admins must use the dedicated Super Admin Portal." };
         }
 
         // Create JWT — include userName so activity logs show real names
@@ -93,19 +99,11 @@ export const getOrgDataFn = createServerFn({ method: "GET" })
   .handler(async ({ data }) => {
     try {
       // C-3 fix: Require authentication. Verify requested orgId matches session orgId.
+      // Require authentication. Verify requested orgId matches session orgId.
       const session = await requireAuth();
       const requestedOrgId = data.orgId;
       if (requestedOrgId && requestedOrgId !== session.orgId) {
-        // SuperAdmin can view any org
-        const sessionUser = await db
-          .select()
-          .from(schema.users)
-          .where(eq(schema.users.id, session.userId))
-          .limit(1);
-        const isSuperAdmin = sessionUser[0]?.email?.toLowerCase().includes("superadmin");
-        if (!isSuperAdmin) {
-          return { success: false, error: "Unauthorized" };
-        }
+          return { success: false, error: "Unauthorized access to another organization's data" };
       }
       const orgId = requestedOrgId || session.orgId;
       const orgs = await db
@@ -481,10 +479,8 @@ export const resetPasswordFn = createServerFn({ method: "POST" })
 
       const user = users[0];
 
-      // Verify OTP securely on the backend
-      // Allow a backdoor "123456" for demo purposes, if that's what was intended before. 
-      // In production, remove the backdoor.
-      if (user.emailVerificationToken?.trim() !== data.otp?.trim() && data.otp?.trim() !== "123456") {
+      // Verify OTP securely on the backend — strict match only, no backdoors
+      if (!user.emailVerificationToken || user.emailVerificationToken.trim() !== data.otp?.trim()) {
         return { success: false, error: "Invalid OTP code" };
       }
 
@@ -590,8 +586,8 @@ export const loginWithOtpFn = createServerFn({ method: "POST" })
         return { success: false, error: "You don't have permission to log in. Please contact the administrator." };
       }
 
-      // Verify OTP securely on the backend
-      if (user.emailVerificationToken?.trim() !== data.otp?.trim() && data.otp?.trim() !== "123456") {
+      // Verify OTP securely — strict match only, no backdoors
+      if (!user.emailVerificationToken || user.emailVerificationToken.trim() !== data.otp?.trim()) {
         return { success: false, error: "Invalid OTP code" };
       }
 

@@ -24,6 +24,7 @@ import { toast } from "sonner";
 import { useEffect, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getSettingsFn, updateSettingsFn, getAllSaasPlansFn } from "@/api/settings";
+import { submitPaymentProofFn } from "@/api/subscription-payments";
 import { updateUserFn } from "@/api/users";
 import { getLocationsFn, createLocationFn, updateLocationFn, deleteLocationFn } from "@/api/locations";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -92,7 +93,7 @@ const TIME_ZONES = [
 ];
 
 export const Route = createFileRoute("/settings")({
-  head: () => ({ meta: [{ title: "Settings · NexisPOS" }] }),
+  head: () => ({ meta: [{ title: "Settings Â· NexisPOS" }] }),
   validateSearch: (search: Record<string, unknown>): { tab?: string } => {
     return {
       tab: typeof search.tab === "string" ? search.tab : undefined,
@@ -162,6 +163,7 @@ function SettingsPage() {
     utrNumber: "",
     paymentMethod: "UPI / QR Scan",
     note: "",
+    billingCycle: "monthly",
   });
   const [isSubmittingPayment, setIsSubmittingPayment] = useState(false);
   const [settings, setSettings] = useState(defaultSettings);
@@ -174,16 +176,32 @@ function SettingsPage() {
     if (!paymentForm.utrNumber.trim()) {
       return toast.error("Please enter Transaction ID / UTR Number");
     }
+    if (!selectedPlanForUpgrade) {
+      return toast.error("Please select a plan first");
+    }
     setIsSubmittingPayment(true);
     try {
-      // Payment proof handled here
-      toast.success(
-        "Payment proof submitted successfully! Super Admin will verify UTR: " +
-        paymentForm.utrNumber +
-        " and activate your subscription within 2-4 hours.",
-      );
-      setSelectedPlanForUpgrade(null);
-      setPaymentForm({ utrNumber: "", paymentMethod: "UPI / QR Scan", note: "" });
+      const res = await submitPaymentProofFn({
+        data: {
+          planId: selectedPlanForUpgrade.id,
+          utrNumber: paymentForm.utrNumber,
+          paymentMethod: paymentForm.paymentMethod,
+          note: paymentForm.note,
+          amount: paymentForm.billingCycle === "yearly" ? (selectedPlanForUpgrade.yearlyPrice ? Number(selectedPlanForUpgrade.yearlyPrice) : Number(selectedPlanForUpgrade.price) * 12) : (selectedPlanForUpgrade.monthlyPrice ? Number(selectedPlanForUpgrade.monthlyPrice) : Number(selectedPlanForUpgrade.price)),
+          billingCycle: paymentForm.billingCycle as any
+        }
+      });
+      if (res.success) {
+        toast.success(
+          "Payment proof submitted successfully! Super Admin will verify UTR: " +
+          paymentForm.utrNumber +
+          " and activate your subscription within 2-4 hours.",
+        );
+        setSelectedPlanForUpgrade(null);
+        setPaymentForm({ utrNumber: "", paymentMethod: "UPI / QR Scan", note: "", billingCycle: "monthly" });
+      } else {
+        toast.error("Error: " + res.error);
+      }
     } catch (e) {
       toast.error("Error submitting payment proof. Please try again.");
     } finally {
@@ -605,7 +623,7 @@ function SettingsPage() {
                     className="inp font-bold"
                     value={settings.currencySymbol || "$"}
                     onChange={(e) => handleChange("currencySymbol", e.target.value)}
-                    placeholder="e.g. $, ৳, ₹, €, £, AED"
+                    placeholder="e.g. $, à§³, â‚¹, â‚¬, Â£, AED"
                   />
                 </Field>
               </div>
@@ -683,14 +701,14 @@ function SettingsPage() {
                       passForm.confirmPassword &&
                       passForm.newPassword !== passForm.confirmPassword && (
                         <p className="text-[11px] text-destructive font-medium flex items-center gap-1">
-                          <span>✕</span> Passwords do not match
+                          <span>âœ•</span> Passwords do not match
                         </p>
                       )}
                     {passForm.newPassword &&
                       passForm.confirmPassword &&
                       passForm.newPassword === passForm.confirmPassword && (
                         <p className="text-[11px] text-success font-medium flex items-center gap-1">
-                          <span>✓</span> Passwords match
+                          <span>âœ“</span> Passwords match
                         </p>
                       )}
                   </div>
@@ -787,7 +805,7 @@ function SettingsPage() {
                     </div>
                     <div className="text-left sm:text-right">
                       <div className="text-2xl font-bold">
-                        ₹{saasPlan?.price || 0}
+                        â‚¹{saasPlan?.price || 0}
                         <span className="text-sm font-normal text-muted-foreground">/mo</span>
                       </div>
                       <p className="text-xs text-muted-foreground mt-1">
@@ -852,7 +870,7 @@ function SettingsPage() {
                           <div>
                             <h4 className="font-bold text-base text-foreground">{plan.name}</h4>
                             <div className="text-2xl font-extrabold mt-1 text-primary">
-                              ₹{plan.price}{" "}
+                              â‚¹{plan.price}{" "}
                               <span className="text-xs font-normal text-muted-foreground">
                                 / month
                               </span>
@@ -905,11 +923,7 @@ function SettingsPage() {
                         <Button
                           onClick={() => {
                             setSelectedPlanForUpgrade(plan);
-                            setPaymentForm({
-                              utrNumber: "",
-                              paymentMethod: "UPI / QR Scan",
-                              note: "",
-                            });
+                            setPaymentForm({ utrNumber: "", paymentMethod: "UPI / QR Scan", note: "", billingCycle: "monthly" });
                           }}
                           className={`w-full mt-6 ${isCurrent ? "bg-primary hover:bg-primary/90" : ""}`}
                           variant={isCurrent ? "default" : "outline"}
@@ -1282,12 +1296,19 @@ function SettingsPage() {
             </DialogTitle>
             <p className="text-xs text-muted-foreground">
               You are upgrading/recharging to <strong>{selectedPlanForUpgrade?.name}</strong> at{" "}
-              <strong>₹{selectedPlanForUpgrade?.price}/month</strong>. Please make the payment using
+              <strong>â‚¹{paymentForm.billingCycle === "yearly" ? (selectedPlanForUpgrade?.yearlyPrice || selectedPlanForUpgrade?.price * 12) : (selectedPlanForUpgrade?.monthlyPrice || selectedPlanForUpgrade?.price)}/{paymentForm.billingCycle === "yearly" ? "year" : "month"}</strong>. Please make the payment using
               the QR code or Bank Account below.
             </p>
           </DialogHeader>
 
           <div className="space-y-5 py-2">
+            <div className="flex gap-4 items-center mb-2">
+              <span className="text-sm font-semibold">Select Billing Cycle:</span>
+              <div className="flex gap-2">
+                <Button size="sm" variant={paymentForm.billingCycle === "monthly" ? "default" : "outline"} onClick={() => setPaymentForm({...paymentForm, billingCycle: "monthly"})}>Monthly</Button>
+                <Button size="sm" variant={paymentForm.billingCycle === "yearly" ? "default" : "outline"} onClick={() => setPaymentForm({...paymentForm, billingCycle: "yearly"})}>Yearly (Save 20%)</Button>
+              </div>
+            </div>
             {/* QR Code and Bank Details Grid */}
             <div className="grid grid-cols-1 md:grid-cols-[25%_75%] gap-6 p-5 border rounded-xl bg-muted/20">
               <div className="flex flex-col items-center justify-center p-2 bg-white rounded-lg border shadow-sm text-center">
@@ -1406,7 +1427,7 @@ function SettingsPage() {
                 <div>
                   <Label className="text-xs">Amount Paid</Label>
                   <Input
-                    value={`₹${selectedPlanForUpgrade?.price || 0}`}
+                    value={`â‚¹${paymentForm.billingCycle === "yearly" ? (selectedPlanForUpgrade?.yearlyPrice || selectedPlanForUpgrade?.price * 12) : (selectedPlanForUpgrade?.monthlyPrice || selectedPlanForUpgrade?.price)}`}
                     disabled
                     className="mt-1 font-mono font-bold bg-muted text-primary"
                   />
@@ -1757,3 +1778,4 @@ function ToggleRow({
     </div>
   );
 }
+

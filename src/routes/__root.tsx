@@ -294,15 +294,17 @@ function AppLayout() {
   }
 
   // Route Security Middleware (SaaS Feature Flags)
-  const isSuperAdmin = user?.email?.toLowerCase().includes("superadmin");
-  const isSuspended = saasOrg?.status === "suspended" && !isSuperAdmin;
-  const canAccessAiCopilot =
-    !isSuperAdmin &&
-    (!saasPlan || !Array.isArray(saasPlan.features) || saasPlan.features.includes("ai_copilot"));
+  const isSuspended = saasOrg?.status === "suspended";
+  const canAccessAiCopilot = !saasPlan || !Array.isArray(saasPlan.features) || saasPlan.features.includes("ai_copilot");
+
+  const isBillingTabOrTrialWarning =
+    location.pathname === "/settings" ||
+    location.pathname === "/profile";
+
   let unauthorizedMessage: string | null = null;
 
-  if (isAuthenticated && !isSuperAdmin) {
-    const permResult = hasPermissionForRoute(user, location.pathname, !!isSuperAdmin, saasPlan, settings?.businessType);
+  if (isAuthenticated) {
+    const permResult = hasPermissionForRoute(user, location.pathname, false, saasPlan, settings?.businessType);
     if (!permResult.allowed) {
       unauthorizedMessage =
         permResult.reason || "You do not have permission to access this module.";

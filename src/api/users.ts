@@ -7,6 +7,8 @@ import { z } from "zod";
 import { requireAuth, requireAdmin } from "@/lib/auth-utils";
 import bcrypt from "bcryptjs";
 import { v4 as uuidv4 } from "uuid";
+import { assertUserLimit } from "@/lib/plan-limits";
+import { getEffectiveMenusFn } from "@/api/subscriptions";
 
 const UserInputSchema = z
   .object({
@@ -82,6 +84,9 @@ export const createUserFn = createServerFn({ method: "POST" })
     try {
       const session = await requireAdmin();
 
+      if (!session.orgId) return { success: false, error: "Unauthorized" };
+      await assertUserLimit(session.orgId);
+
       const email = data.user.email.toLowerCase();
 
       // Enforce globally unique emails
@@ -98,6 +103,18 @@ export const createUserFn = createServerFn({ method: "POST" })
       let pin = data.user.pin;
       if (pin) pin = await bcrypt.hash(pin, 10);
 
+      let filteredPermissions = data.user.permissions as string[] | undefined;
+      if (filteredPermissions && filteredPermissions.length > 0) {
+        const menusRes = await getEffectiveMenusFn({ data: {} });
+        if (menusRes.success && !menusRes.menus.includes("all")) {
+          // Keep only permissions that match allowed menus (e.g. products.view -> products)
+          filteredPermissions = filteredPermissions.filter(p => {
+            const baseModule = p.split(".")[0];
+            return menusRes.menus.includes(baseModule);
+          });
+        }
+      }
+
       const inserted = await db
         .insert(schema.users)
         .values({
@@ -105,6 +122,7 @@ export const createUserFn = createServerFn({ method: "POST" })
           ...data.user,
           email,
           pin,
+          permissions: filteredPermissions,
           organizationId: session.orgId,
         })
         .returning();
@@ -138,9 +156,19 @@ export const updateUserFn = createServerFn({ method: "POST" })
           .from(schema.users)
           .where(and(eq(schema.users.email, updateData.email)))
           .limit(1);
-          
+
         if (existingUser.length > 0 && existingUser[0].id !== data.id) {
           return { success: false, error: "A user with this email already exists." };
+        }
+      }
+
+      if (updateData.permissions && Array.isArray(updateData.permissions)) {
+        const menusRes = await getEffectiveMenusFn({ data: {} });
+        if (menusRes.success && !menusRes.menus.includes("all")) {
+          updateData.permissions = updateData.permissions.filter((p: string) => {
+            const baseModule = p.split(".")[0];
+            return menusRes.menus.includes(baseModule);
+          });
         }
       }
 
