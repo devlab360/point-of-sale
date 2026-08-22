@@ -100,17 +100,31 @@ export function AppSidebar({ onNavigate }: { onNavigate?: () => void }) {
     items: group.items.filter((item) => {
       // Core system routes always accessible
       if (item.to === "/" || item.to === "/profile" || item.to === "/help") return true;
-      // Allow access if 'all' is granted (super admin)
+
+      // 1. Employee / Role permission check
+      const permResult = hasPermissionForRoute(
+        user,
+        item.to,
+        user?.role === "super_admin",
+        saasPlan,
+        settings?.businessType
+      );
+      if (!permResult.allowed) return false;
+
+      // 2. Allow access if 'all' is granted (super admin)
       if (effectiveMenus.includes("all")) return true;
-      // Allow if the item's menuKey or route is in effectiveMenus
+
+      // 3. Plan / Tenant active menu checks
       const cleanRoute = item.to.replace(/^\//, "");
-      if (item.menuKey && effectiveMenus.includes(item.menuKey)) return true;
-      if (effectiveMenus.includes(item.to) || effectiveMenus.includes(cleanRoute)) return true;
-      // If plan has configured menus and this item is not in it, strictly deny
-      if (effectiveMenus.length > 0) return false;
-      // Fallback only if no plan menus are defined
-      const result = hasPermissionForRoute(user, item.to, false, saasPlan, settings?.businessType);
-      return result.allowed;
+      if (effectiveMenus.length > 0) {
+        return (
+          (item.menuKey && effectiveMenus.includes(item.menuKey)) ||
+          effectiveMenus.includes(item.to) ||
+          effectiveMenus.includes(cleanRoute)
+        );
+      }
+
+      return true;
     }),
   })).filter((group) => group.items.length > 0);
 

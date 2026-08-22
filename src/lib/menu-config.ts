@@ -507,13 +507,23 @@ export function hasPermissionForRoute(
   if (user?.role?.toLowerCase() !== "admin") {
     const userPerms: string[] = Array.isArray(user?.permissions)
       ? user.permissions
-      : DEFAULT_ROLE_PERMISSIONS_FALLBACK[user?.role?.toLowerCase()] || ["pos"];
+      : DEFAULT_ROLE_PERMISSIONS_FALLBACK[user?.role?.toLowerCase()] || ["/pos", "pos"];
 
+    // Direct route match (e.g., "/suppliers" or "suppliers" or sub-paths)
+    const hasDirectMatch = userPerms.some(
+      (p) =>
+        p === targetPath ||
+        p === targetPath.replace(/^\//, "") ||
+        (p.startsWith("/") && (targetPath === p || targetPath.startsWith(p + "/")))
+    );
+
+    // Legacy group mapping fallback (e.g., "inventory", "reports", "pos")
     const requiredPermEntry = Object.entries(PERMISSION_ROUTE_MAP).find(([_, paths]) =>
       paths.some((p) => targetPath === p || targetPath.startsWith(p + "/")),
     );
+    const hasLegacyMatch = requiredPermEntry && userPerms.includes(requiredPermEntry[0]);
 
-    if (requiredPermEntry && !userPerms.includes(requiredPermEntry[0])) {
+    if (!hasDirectMatch && !hasLegacyMatch) {
       return {
         allowed: false,
         reason: `You do not have permission to access "${label}". Contact your store administrator.`,

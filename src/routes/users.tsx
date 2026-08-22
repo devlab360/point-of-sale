@@ -60,6 +60,8 @@ import {
   Percent,
   KeyRound,
   Check,
+  X,
+  Sparkles,
 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getUsersFn, updateUserFn, deleteUserFn, createInvitationFn, createUserFn } from "@/api/users";
@@ -70,56 +72,23 @@ import { useRouter } from "@tanstack/react-router";
 import { useFormValidation } from "@/hooks/useFormValidation";
 import { FieldError } from "@/components/ui/field-error";
 import { useAppFormatter } from "@/hooks/useAppFormatter";
+import { APP_GROUPS } from "@/lib/menu-config";
 
-const PERMISSION_GROUPS = [
-  {
-    group: "Sales & Checkout",
-    permissions: [
-      { id: "pos", label: "POS Terminal", desc: "Access sales register & checkout" },
-      { id: "discounts", label: "Apply Discounts", desc: "Give manual cart discounts at POS" },
-      { id: "returns", label: "Sales Returns", desc: "Process refunds & product returns" },
-    ],
-  },
-  {
-    group: "Store Operations",
-    permissions: [
-      { id: "inventory", label: "Inventory & Stock", desc: "Manage products, categories & stock" },
-      { id: "customers", label: "Customer Mgmt", desc: "Manage customer profiles & loyalty" },
-      { id: "expenses", label: "Store Expenses", desc: "Record & view store expenditure" },
-    ],
-  },
-  {
-    group: "Management",
-    permissions: [
-      {
-        id: "reports",
-        label: "Reports & Analytics",
-        desc: "View sales, profit & business reports",
-      },
-      { id: "settings", label: "System Settings", desc: "Store configuration & store settings" },
-      { id: "notifications", label: "Notifications", desc: "View and manage system notifications" },
-    ],
-  },
-  {
-    group: "Services & Verticals",
-    permissions: [
-      { id: "tables", label: "Table Management", desc: "Manage restaurant tables and dine-in" },
-      { id: "kitchen", label: "Kitchen (KOT)", desc: "Manage kitchen order tickets" },
-      { id: "appointments", label: "Appointments", desc: "Manage service appointments" },
-    ],
-  },
+const allSelectableUserRoutes = [
+  ...APP_GROUPS.flatMap((g) => g.items.map((i) => i.to)).filter(
+    (to) => !["/", "/super-admin", "/profile"].includes(to)
+  ),
+  "ai_copilot",
 ];
 
-const AVAILABLE_PERMISSIONS = PERMISSION_GROUPS.flatMap((g) => g.permissions);
-
 const DEFAULT_ROLE_PERMISSIONS: Record<string, string[]> = {
-  admin: AVAILABLE_PERMISSIONS.map((p) => p.id),
-  manager: ["pos", "inventory", "reports", "customers", "expenses", "discounts", "returns", "notifications", "tables", "kitchen", "appointments"],
-  cashier: ["pos", "customers", "discounts", "tables", "kitchen", "appointments"],
+  admin: allSelectableUserRoutes,
+  manager: allSelectableUserRoutes.filter((r) => !["/users", "/settings"].includes(r)),
+  cashier: ["/pos", "/customers", "/sales", "/tables", "/kitchen", "/appointments"],
 };
 
 export const Route = createFileRoute("/users")({
-  head: () => ({ meta: [{ title: "Employees Â· NexisPOS" }] }),
+  head: () => ({ meta: [{ title: "Employees · NexisPOS" }] }),
   component: UsersPage,
 });
 
@@ -216,7 +185,7 @@ function UsersPage() {
 
   const handleRoleChangeForInvite = (role: string) => {
     setInviteRole(role);
-    setInvitePermissions(DEFAULT_ROLE_PERMISSIONS[role] || []);
+    setInvitePermissions(DEFAULT_ROLE_PERMISSIONS[role.toLowerCase()] || []);
   };
 
   const toggleInvitePermission = (permId: string) => {
@@ -225,10 +194,46 @@ function UsersPage() {
     );
   };
 
+  const selectAllInvitePermissions = () => {
+    setInvitePermissions([...allSelectableUserRoutes]);
+  };
+
+  const deselectAllInvitePermissions = () => {
+    setInvitePermissions([]);
+  };
+
+  const selectGroupInvitePermissions = (items: { to: string }[]) => {
+    const itemRoutes = items.map((i) => i.to);
+    setInvitePermissions((prev) => Array.from(new Set([...prev, ...itemRoutes])));
+  };
+
+  const deselectGroupInvitePermissions = (items: { to: string }[]) => {
+    const itemRoutes = items.map((i) => i.to);
+    setInvitePermissions((prev) => prev.filter((p) => !itemRoutes.includes(p)));
+  };
+
   const toggleEditPermission = (permId: string) => {
     setEditPermissions((prev) =>
       prev.includes(permId) ? prev.filter((p) => p !== permId) : [...prev, permId],
     );
+  };
+
+  const selectAllEditPermissions = () => {
+    setEditPermissions([...allSelectableUserRoutes]);
+  };
+
+  const deselectAllEditPermissions = () => {
+    setEditPermissions([]);
+  };
+
+  const selectGroupEditPermissions = (items: { to: string }[]) => {
+    const itemRoutes = items.map((i) => i.to);
+    setEditPermissions((prev) => Array.from(new Set([...prev, ...itemRoutes])));
+  };
+
+  const deselectGroupEditPermissions = (items: { to: string }[]) => {
+    const itemRoutes = items.map((i) => i.to);
+    setEditPermissions((prev) => prev.filter((p) => !itemRoutes.includes(p)));
   };
 
   const openEditModal = (userItem: any) => {
@@ -236,7 +241,7 @@ function UsersPage() {
     setEditRole(userItem.role || "cashier");
     setEditPermissions(
       userItem.permissions ||
-      DEFAULT_ROLE_PERMISSIONS[userItem.role] ||
+      DEFAULT_ROLE_PERMISSIONS[userItem.role?.toLowerCase()] ||
       DEFAULT_ROLE_PERMISSIONS.cashier,
     );
   };
@@ -542,9 +547,9 @@ function UsersPage() {
                             </Badge>
                           </td>
                           <td className="px-4 py-3 whitespace-nowrap">
-                            <div className="flex flex-wrap gap-1 max-w-[200px]">
-                              {(e.permissions || DEFAULT_ROLE_PERMISSIONS[e.role] || []).length ===
-                                AVAILABLE_PERMISSIONS.length ? (
+                            <div className="flex flex-wrap gap-1 max-w-[220px]">
+                              {(e.permissions || DEFAULT_ROLE_PERMISSIONS[e.role?.toLowerCase()] || []).length >=
+                              allSelectableUserRoutes.length ? (
                                 <Badge
                                   variant="outline"
                                   className="bg-primary/10 text-primary border-primary/20 text-[10px]"
@@ -552,25 +557,25 @@ function UsersPage() {
                                   Full Access
                                 </Badge>
                               ) : (
-                                (e.permissions || DEFAULT_ROLE_PERMISSIONS[e.role] || [])
+                                (e.permissions || DEFAULT_ROLE_PERMISSIONS[e.role?.toLowerCase()] || [])
                                   .slice(0, 3)
-                                  .map((p) => (
+                                  .map((p: string) => (
                                     <Badge
                                       key={p}
                                       variant="outline"
                                       className="text-[10px] uppercase font-mono"
                                     >
-                                      {p}
+                                      {p.replace(/^\//, "").replace(/-/g, " ")}
                                     </Badge>
                                   ))
                               )}
-                              {(e.permissions || DEFAULT_ROLE_PERMISSIONS[e.role] || []).length >
+                              {(e.permissions || DEFAULT_ROLE_PERMISSIONS[e.role?.toLowerCase()] || []).length >
                                 3 &&
-                                (e.permissions || DEFAULT_ROLE_PERMISSIONS[e.role] || []).length !==
-                                AVAILABLE_PERMISSIONS.length && (
+                                (e.permissions || DEFAULT_ROLE_PERMISSIONS[e.role?.toLowerCase()] || []).length <
+                                  allSelectableUserRoutes.length && (
                                   <span className="text-[10px] text-muted-foreground self-center">
                                     +
-                                    {(e.permissions || DEFAULT_ROLE_PERMISSIONS[e.role] || [])
+                                    {(e.permissions || DEFAULT_ROLE_PERMISSIONS[e.role?.toLowerCase()] || [])
                                       .length - 3}{" "}
                                     more
                                   </span>
@@ -656,15 +661,15 @@ function UsersPage() {
           }
         }}
       >
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Invite Employee</DialogTitle>
           </DialogHeader>
 
           {!generatedLink ? (
-            <form onSubmit={handleGenerateInvite} className="space-y-4">
+            <form onSubmit={handleGenerateInvite} className="space-y-5">
               <div className="space-y-2">
-                <Label htmlFor="role">Assign Primary Role (e.g. Manager, Chef, Mechanic)</Label>
+                <Label htmlFor="role">Assign Primary Role (e.g. Manager, Cashier, Chef, Accountant)</Label>
                 <Input
                   id="role"
                   placeholder="Enter custom role name..."
@@ -679,46 +684,106 @@ function UsersPage() {
                 />
               </div>
 
-              <div className="space-y-2">
-                <Label className="flex items-center gap-1.5">
-                  <KeyRound className="size-3.5 text-primary" /> Module Permissions
-                </Label>
-                <div className="space-y-4 border border-border rounded-lg p-4 bg-muted/20 max-h-[380px] overflow-y-auto">
-                  {PERMISSION_GROUPS.map((group) => (
-                    <div key={group.group} className="space-y-2">
-                      <h4 className="text-xs font-semibold text-foreground/80 uppercase tracking-wider">
-                        {group.group}
-                      </h4>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                        {group.permissions.map((p) => {
-                          const checked = invitePermissions.includes(p.id);
-                          return (
-                            <div
-                              key={p.id}
-                              onClick={() => toggleInvitePermission(p.id)}
-                              className={`flex items-start gap-2.5 p-2 rounded-md border cursor-pointer transition-all ${checked
-                                ? "bg-primary/5 border-primary/40 text-foreground"
-                                : "bg-card border-border/60 text-muted-foreground hover:border-border"
+              {/* Module Permissions Matrix Grouped by APP_GROUPS */}
+              <div className="space-y-3">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 border-b pb-2">
+                  <div>
+                    <Label className="text-sm font-bold text-foreground flex items-center gap-1.5">
+                      <KeyRound className="size-4 text-primary" /> Module Permissions
+                    </Label>
+                    <p className="text-xs text-muted-foreground">
+                      Select which store menus and modules this employee is permitted to access.
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      onClick={selectAllInvitePermissions}
+                      className="h-7 text-xs"
+                    >
+                      <Check className="size-3 mr-1 text-primary" /> Select All
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      onClick={deselectAllInvitePermissions}
+                      className="h-7 text-xs"
+                    >
+                      <X className="size-3 mr-1 text-destructive" /> Deselect All
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5 max-h-[380px] overflow-y-auto pr-1">
+                  {APP_GROUPS.map((group, groupIdx) => {
+                    const selectableItems = group.items.filter(
+                      (item) => !["/", "/super-admin", "/profile"].includes(item.to)
+                    );
+                    if (selectableItems.length === 0) return null;
+
+                    const allGroupSelected = selectableItems.every((item) =>
+                      invitePermissions.includes(item.to) || invitePermissions.includes(item.menuKey || "")
+                    );
+
+                    return (
+                      <div
+                        key={groupIdx}
+                        className="bg-card p-3 rounded-xl border border-border/80 shadow-sm space-y-2.5"
+                      >
+                        <div className="flex items-center justify-between border-b pb-1.5">
+                          <h4 className="font-bold text-[11px] uppercase tracking-wider text-primary">
+                            {group.label}
+                          </h4>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              allGroupSelected
+                                ? deselectGroupInvitePermissions(selectableItems)
+                                : selectGroupInvitePermissions(selectableItems)
+                            }
+                            className="text-[11px] text-muted-foreground hover:text-primary transition-colors font-medium cursor-pointer"
+                          >
+                            {allGroupSelected ? "Deselect Group" : "Select Group"}
+                          </button>
+                        </div>
+                        <div className="grid grid-cols-1 gap-1.5 pt-0.5">
+                          {selectableItems.map((item, itemIdx) => {
+                            const isChecked =
+                              invitePermissions.includes(item.to) ||
+                              invitePermissions.includes(item.menuKey || "") ||
+                              (item.to === "/pos" && invitePermissions.includes("pos"));
+                            return (
+                              <div
+                                key={itemIdx}
+                                onClick={() => toggleInvitePermission(item.to)}
+                                className={`flex items-center justify-between p-2 rounded-lg border text-xs font-medium cursor-pointer transition-all ${
+                                  isChecked
+                                    ? "bg-primary/5 border-primary/40 text-foreground"
+                                    : "bg-card border-border/60 text-muted-foreground hover:border-border hover:bg-muted/30"
                                 }`}
-                            >
-                              <input
-                                type="checkbox"
-                                checked={checked}
-                                onChange={() => { }}
-                                className="mt-0.5 size-4 rounded border-input text-primary accent-primary"
-                              />
-                              <div className="space-y-0.5 leading-none">
-                                <p className="text-sm font-medium">{p.label}</p>
-                                <p className="text-[11px] text-muted-foreground leading-snug">
-                                  {p.desc}
-                                </p>
+                              >
+                                <div className="flex items-center space-x-2.5">
+                                  <input
+                                    type="checkbox"
+                                    checked={isChecked}
+                                    onChange={() => {}}
+                                    className="size-4 rounded border-input text-primary accent-primary pointer-events-none"
+                                  />
+                                  <span>{item.label}</span>
+                                </div>
+                                <span className="font-mono text-[10px] text-muted-foreground/80 lowercase">
+                                  {item.to}
+                                </span>
                               </div>
-                            </div>
-                          );
-                        })}
+                            );
+                          })}
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
 
@@ -766,11 +831,11 @@ function UsersPage() {
           }
         }}
       >
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Edit Employee & Permissions</DialogTitle>
           </DialogHeader>
-          <form noValidate onSubmit={handleSaveEdit} className="space-y-4">
+          <form noValidate onSubmit={handleSaveEdit} className="space-y-5">
             <div className="space-y-1.5">
               <Label htmlFor="name">
                 Full Name <span className="text-destructive">*</span>
@@ -789,7 +854,7 @@ function UsersPage() {
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="role">Role (e.g. Manager, Chef, Mechanic)</Label>
+                <Label htmlFor="role">Role (e.g. Manager, Cashier, Chef, Accountant)</Label>
                 <Input
                   id="role"
                   placeholder="Enter custom role name..."
@@ -863,46 +928,106 @@ function UsersPage() {
               </div>
             </div>
 
-            <div className="space-y-2">
-              <Label className="flex items-center gap-1.5">
-                <KeyRound className="size-3.5 text-primary" /> Permissions
-              </Label>
-              <div className="space-y-4 border border-border rounded-lg p-4 bg-muted/20 max-h-[250px] overflow-y-auto">
-                {PERMISSION_GROUPS.map((group) => (
-                  <div key={group.group} className="space-y-2">
-                    <h4 className="text-xs font-semibold text-foreground/80 uppercase tracking-wider">
-                      {group.group}
-                    </h4>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                      {group.permissions.map((p) => {
-                        const checked = editPermissions.includes(p.id);
-                        return (
-                          <div
-                            key={p.id}
-                            onClick={() => toggleEditPermission(p.id)}
-                            className={`flex items-start gap-2.5 p-2 rounded-md border cursor-pointer transition-all ${checked
-                              ? "bg-primary/5 border-primary/40 text-foreground"
-                              : "bg-card border-border/60 text-muted-foreground hover:border-border"
+            {/* Module Permissions Matrix Grouped by APP_GROUPS */}
+            <div className="space-y-3">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 border-b pb-2">
+                <div>
+                  <Label className="text-sm font-bold text-foreground flex items-center gap-1.5">
+                    <KeyRound className="size-4 text-primary" /> Module Permissions
+                  </Label>
+                  <p className="text-xs text-muted-foreground">
+                    Customize the specific menu modules this employee can access.
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={selectAllEditPermissions}
+                    className="h-7 text-xs"
+                  >
+                    <Check className="size-3 mr-1 text-primary" /> Select All
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={deselectAllEditPermissions}
+                    className="h-7 text-xs"
+                  >
+                    <X className="size-3 mr-1 text-destructive" /> Deselect All
+                  </Button>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5 max-h-[350px] overflow-y-auto pr-1">
+                {APP_GROUPS.map((group, groupIdx) => {
+                  const selectableItems = group.items.filter(
+                    (item) => !["/", "/super-admin", "/profile"].includes(item.to)
+                  );
+                  if (selectableItems.length === 0) return null;
+
+                  const allGroupSelected = selectableItems.every((item) =>
+                    editPermissions.includes(item.to) || editPermissions.includes(item.menuKey || "")
+                  );
+
+                  return (
+                    <div
+                      key={groupIdx}
+                      className="bg-card p-3 rounded-xl border border-border/80 shadow-sm space-y-2.5"
+                    >
+                      <div className="flex items-center justify-between border-b pb-1.5">
+                        <h4 className="font-bold text-[11px] uppercase tracking-wider text-primary">
+                          {group.label}
+                        </h4>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            allGroupSelected
+                              ? deselectGroupEditPermissions(selectableItems)
+                              : selectGroupEditPermissions(selectableItems)
+                          }
+                          className="text-[11px] text-muted-foreground hover:text-primary transition-colors font-medium cursor-pointer"
+                        >
+                          {allGroupSelected ? "Deselect Group" : "Select Group"}
+                        </button>
+                      </div>
+                      <div className="grid grid-cols-1 gap-1.5 pt-0.5">
+                        {selectableItems.map((item, itemIdx) => {
+                          const isChecked =
+                            editPermissions.includes(item.to) ||
+                            editPermissions.includes(item.menuKey || "") ||
+                            (item.to === "/pos" && editPermissions.includes("pos"));
+                          return (
+                            <div
+                              key={itemIdx}
+                              onClick={() => toggleEditPermission(item.to)}
+                              className={`flex items-center justify-between p-2 rounded-lg border text-xs font-medium cursor-pointer transition-all ${
+                                isChecked
+                                  ? "bg-primary/5 border-primary/40 text-foreground"
+                                  : "bg-card border-border/60 text-muted-foreground hover:border-border hover:bg-muted/30"
                               }`}
-                          >
-                            <input
-                              type="checkbox"
-                              checked={checked}
-                              onChange={() => { }}
-                              className="mt-0.5 size-4 rounded border-input text-primary accent-primary"
-                            />
-                            <div className="space-y-0.5 leading-none">
-                              <p className="text-sm font-medium">{p.label}</p>
-                              <p className="text-[11px] text-muted-foreground leading-snug">
-                                {p.desc}
-                              </p>
+                            >
+                              <div className="flex items-center space-x-2.5">
+                                <input
+                                  type="checkbox"
+                                  checked={isChecked}
+                                  onChange={() => {}}
+                                  className="size-4 rounded border-input text-primary accent-primary pointer-events-none"
+                                />
+                                <span>{item.label}</span>
+                              </div>
+                              <span className="font-mono text-[10px] text-muted-foreground/80 lowercase">
+                                {item.to}
+                              </span>
                             </div>
-                          </div>
-                        );
-                      })}
+                          );
+                        })}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
 
