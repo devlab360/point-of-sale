@@ -1440,10 +1440,10 @@ function SettingsPage() {
                     onChange={(e) => setPaymentForm({ ...paymentForm, utrNumber: e.target.value })}
                     placeholder={
                       paymentForm.paymentMethod === "UPI / QR Scan"
-                        ? "e.g. 123456789012 (12-digit UPI Ref)"
+                        ? "123456789012 (12-digit UPI Ref)"
                         : paymentForm.paymentMethod === "NEFT / IMPS / RTGS"
-                          ? "e.g. HDFC12345678 (Bank UTR)"
-                          : "e.g. CHQ00123 (Cheque/Deposit No.)"
+                          ? "HDFC12345678 (Bank UTR)"
+                          : "CHQ00123 (Cheque/Deposit No.)"
                     }
                     className="mt-1 font-mono"
                     required

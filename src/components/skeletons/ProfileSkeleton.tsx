@@ -2,7 +2,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 export function ProfileSkeleton() {
   return (
-    <div className="space-y-6 max-w-3xl animate-in fade-in-50 duration-300">
+    <div className="space-y-6 container mx-auto animate-in fade-in-50 duration-300">
       <div className="space-y-2">
         <Skeleton className="h-8 w-40" />
         <Skeleton className="h-4 w-64" />
