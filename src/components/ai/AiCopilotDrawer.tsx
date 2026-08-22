@@ -265,7 +265,7 @@ export function AiCopilotDrawer() {
         }}
         className="fixed bottom-6 right-6 z-50 flex items-center gap-2 rounded-full bg-primary hover:bg-primary/90 px-3 py-3 text-sm font-bold text-primary-foreground shadow-md border border-primary/20 transition-colors"
       >
-        <Sparkles className="size-5 animate-pulse" />
+        <Sparkles className="size-3 animate-pulse" />
         <span className="hidden sm:inline">
           AI Copilot
           <Badge

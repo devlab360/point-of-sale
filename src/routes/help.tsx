@@ -19,11 +19,11 @@ export const Route = createFileRoute("/help")({
 function HelpPage() {
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [isReviewOpen, setIsReviewOpen] = useState(false);
-  
+
   // Chat form
   const [chatSubject, setChatSubject] = useState("");
   const [chatMessage, setChatMessage] = useState("");
-  
+
   // Review form
   const [reviewRating, setReviewRating] = useState(5);
   const [reviewComment, setReviewComment] = useState("");
@@ -77,7 +77,7 @@ function HelpPage() {
 
   const getEmbedVideoInfo = (url: string) => {
     if (!url) return { isEmbed: false, type: "none", src: "" };
-    
+
     // YouTube (standard watch, shorts, share links, embed)
     const ytMatch = url.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|shorts\/|watch\?.+&v=))([\w-]{11})/i);
     if (ytMatch && ytMatch[1]) {
@@ -97,7 +97,7 @@ function HelpPage() {
   const filteredDocs = articles
     .filter((a: any) => a.type !== 'video')
     .filter((a: any) => a.title?.toLowerCase().includes(searchQuery.toLowerCase()) || a.content?.toLowerCase().includes(searchQuery.toLowerCase()));
-    
+
   const filteredVideos = articles
     .filter((a: any) => a.type === 'video')
     .filter((a: any) => a.title?.toLowerCase().includes(searchQuery.toLowerCase()) || a.content?.toLowerCase().includes(searchQuery.toLowerCase()));
@@ -121,15 +121,15 @@ function HelpPage() {
   };
 
   return (
-    <div className="space-y-6 p-4 md:p-6 lg:p-8 max-w-7xl mx-auto">
+    <div className="space-y-6 p-4 md:p-6 lg:p-8 container mx-auto">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <PageHeader
           title="Help Center"
           description="Guides, FAQs, and ways to reach our support team."
         />
         <div className="flex flex-col sm:flex-row items-center gap-3">
-          <Input 
-            placeholder="Search docs, videos, faqs..." 
+          <Input
+            placeholder="Search docs, videos, faqs..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full sm:w-64"
@@ -188,7 +188,7 @@ function HelpPage() {
           </div>
           <div className="space-y-3">
             {loadingArticles ? (
-               <div className="p-4 text-center text-muted-foreground animate-pulse">Loading docs...</div>
+              <div className="p-4 text-center text-muted-foreground animate-pulse">Loading docs...</div>
             ) : filteredDocs.length === 0 ? (
               <p className="text-sm text-muted-foreground py-4 border border-dashed rounded-lg text-center">
                 {searchQuery ? "No matching docs found." : "No documentation available yet."}
@@ -212,7 +212,7 @@ function HelpPage() {
           </div>
           <div className="space-y-4">
             {loadingArticles ? (
-               <div className="p-4 text-center text-muted-foreground animate-pulse">Loading videos...</div>
+              <div className="p-4 text-center text-muted-foreground animate-pulse">Loading videos...</div>
             ) : filteredVideos.length === 0 ? (
               <p className="text-sm text-muted-foreground py-4 border border-dashed rounded-lg text-center">
                 {searchQuery ? "No matching videos found." : "No video tutorials available yet."}
@@ -256,7 +256,7 @@ function HelpPage() {
         <h2 className="mb-4 font-semibold text-lg">Frequently asked</h2>
         <div className="divide-y divide-border">
           {loadingFaqs ? (
-             <div className="p-4 text-center text-muted-foreground animate-pulse">Loading FAQs...</div>
+            <div className="p-4 text-center text-muted-foreground animate-pulse">Loading FAQs...</div>
           ) : filteredFaqs.length === 0 ? (
             <p className="text-sm text-muted-foreground py-4 text-center">
               {searchQuery ? "No matching FAQs found." : "No FAQs available yet."}
@@ -293,11 +293,11 @@ function HelpPage() {
             </div>
             <div className="space-y-2">
               <Label>Message</Label>
-              <Textarea 
-                placeholder="Describe your issue..." 
-                rows={5} 
-                value={chatMessage} 
-                onChange={(e) => setChatMessage(e.target.value)} 
+              <Textarea
+                placeholder="Describe your issue..."
+                rows={5}
+                value={chatMessage}
+                onChange={(e) => setChatMessage(e.target.value)}
                 required
               />
             </div>
@@ -323,8 +323,8 @@ function HelpPage() {
               <Label className="text-lg">Rate your experience</Label>
               <div className="flex gap-2">
                 {[1, 2, 3, 4, 5].map((star) => (
-                  <button 
-                    key={star} 
+                  <button
+                    key={star}
                     type="button"
                     onClick={() => setReviewRating(star)}
                     className="focus:outline-none transition-transform hover:scale-110"
@@ -336,11 +336,11 @@ function HelpPage() {
             </div>
             <div className="space-y-2">
               <Label>Feedback / Suggestions (Optional)</Label>
-              <Textarea 
-                placeholder="Tell us what you love or what could be better..." 
-                rows={4} 
-                value={reviewComment} 
-                onChange={(e) => setReviewComment(e.target.value)} 
+              <Textarea
+                placeholder="Tell us what you love or what could be better..."
+                rows={4}
+                value={reviewComment}
+                onChange={(e) => setReviewComment(e.target.value)}
               />
             </div>
             <DialogFooter>

@@ -9,6 +9,7 @@ import { getSettingsFn, updateSettingsFn } from "@/api/settings";
 import { PersistStore } from "@/lib/session-store";
 import { toast } from "sonner";
 import { useState, useEffect } from "react";
+import { useAppFormatter } from "@/hooks/useAppFormatter";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -31,29 +32,29 @@ export const Route = createFileRoute("/loyalty")({
   component: LoyaltyPage,
 });
 
-const DEFAULT_TIERS = [
+const getDefaultTiers = (currencySymbol: string) => [
   {
     tier: "Bronze",
     min: 0,
-    perks: ["1 pt per $1", "Birthday treat"],
+    perks: [`1 pt per ${currencySymbol}1`, "Birthday treat"],
     color: "bg-amber-700",
   },
   {
     tier: "Silver",
     min: 500,
-    perks: ["1.5 pts per $1", "Free delivery"],
+    perks: [`1.5 pts per ${currencySymbol}1`, "Free delivery"],
     color: "bg-slate-400",
   },
   {
     tier: "Gold",
     min: 1500,
-    perks: ["2 pts per $1", "Exclusive offers", "Early access"],
+    perks: [`2 pts per ${currencySymbol}1`, "Exclusive offers", "Early access"],
     color: "bg-warning",
   },
   {
     tier: "Platinum",
     min: 5000,
-    perks: ["3 pts per $1", "Personal concierge", "Free shipping"],
+    perks: [`3 pts per ${currencySymbol}1`, "Personal concierge", "Free shipping"],
     color: "bg-info",
   },
 ];
@@ -61,6 +62,7 @@ const DEFAULT_TIERS = [
 function LoyaltyPage() {
   const orgId = PersistStore.getOrgId() || "default";
   const queryClient = useQueryClient();
+  const { formatAppCurrency } = useAppFormatter();
   const [isConfigOpen, setIsConfigOpen] = useState(false);
 
   const { data: customersData } = useQuery({
@@ -81,9 +83,11 @@ function LoyaltyPage() {
     visits: c.visits || 0,
   }));
 
+  const currencySymbol = settingsData?.currencySymbol || "₹";
+
   const activeTiers = settingsData?.loyaltyTiers && Array.isArray(settingsData.loyaltyTiers) && settingsData.loyaltyTiers.length > 0 
     ? settingsData.loyaltyTiers 
-    : DEFAULT_TIERS;
+    : getDefaultTiers(currencySymbol);
 
   const totalMembers = customers.length;
   const totalPoints = customers.reduce((acc, c) => acc + c.loyaltyPoints, 0);
@@ -187,7 +191,7 @@ function LoyaltyPage() {
         />
         <StatCard
           label="Avg LTV"
-          value={`$${avgLtv.toFixed(0)}`}
+          value={formatAppCurrency(avgLtv)}
           icon={TrendingUp}
           accent="success"
         />
@@ -310,7 +314,7 @@ function LoyaltyPage() {
                         <Input 
                           value={perk} 
                           onChange={(e) => updatePerk(i, pIndex, e.target.value)} 
-                          placeholder="e.g. 1 point per $1 spent"
+                          placeholder={`e.g. 1 point per ${currencySymbol}1 spent`}
                           className="h-8 text-sm"
                         />
                         <Button 

@@ -77,12 +77,9 @@ export function ServiceForm({ initialData, onSubmit, isSaving }: { initialData?:
   };
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6 pb-20 mt-4 px-4">
+    <div className="container mx-auto space-y-6 pb-20 mt-4 px-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" onClick={() => navigate({ to: "/services" })}>
-            <ArrowLeft className="size-5" />
-          </Button>
           <h1 className="text-2xl font-bold tracking-tight">
             {initialData ? "Edit Service" : "Add Service"}
           </h1>
@@ -102,7 +99,7 @@ export function ServiceForm({ initialData, onSubmit, isSaving }: { initialData?:
         <div className="md:col-span-2 space-y-6">
           <div className="rounded-xl border bg-card text-card-foreground shadow-sm p-6 space-y-6">
             <h2 className="text-lg font-semibold border-b pb-2">Service Information</h2>
-            
+
             <div className="grid gap-4">
               <div className="grid gap-1.5">
                 <Label>Service Name <span className="text-destructive">*</span></Label>
@@ -134,7 +131,7 @@ export function ServiceForm({ initialData, onSubmit, isSaving }: { initialData?:
 
           <div className="rounded-xl border bg-card text-card-foreground shadow-sm p-6 space-y-6">
             <h2 className="text-lg font-semibold border-b pb-2">Pricing & Duration</h2>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="grid gap-1.5">
                 <Label>Retail Price <span className="text-destructive">*</span></Label>
@@ -184,25 +181,25 @@ export function ServiceForm({ initialData, onSubmit, isSaving }: { initialData?:
 
           <div className="rounded-xl border bg-card text-card-foreground shadow-sm p-6 space-y-6">
             <h2 className="text-lg font-semibold border-b pb-2">Variants</h2>
-            
+
             <div className="flex items-center space-x-2">
-              <input 
-                type="checkbox" 
-                id="hasVariants" 
+              <input
+                type="checkbox"
+                id="hasVariants"
                 checked={formData.hasVariants}
-                onChange={(e) => setFormData({...formData, hasVariants: e.target.checked})}
+                onChange={(e) => setFormData({ ...formData, hasVariants: e.target.checked })}
                 className="rounded border-gray-300 text-primary focus:ring-primary w-4 h-4"
               />
               <Label htmlFor="hasVariants" className="font-medium cursor-pointer text-base">
                 This service has variants (e.g. 30 Min vs 60 Min)
               </Label>
             </div>
-            
+
             {formData.hasVariants && (
-              <VariantManager 
+              <VariantManager
                 mode="service"
-                variants={formData.variants} 
-                onChange={(variants) => setFormData({...formData, variants})} 
+                variants={formData.variants}
+                onChange={(variants) => setFormData({ ...formData, variants })}
               />
             )}
           </div>

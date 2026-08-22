@@ -119,10 +119,10 @@ export function ProductForm({ initialData, onSubmit, isSaving }: { initialData?:
     e.preventDefault();
     // Compute aggregate stock from location stocks if available
     const computedStock = locations.length > 0 ? totalLocationStock : formData.stock;
-    const submitData = { 
-      ...formData, 
+    const submitData = {
+      ...formData,
       stock: computedStock,
-      locationStocks: locations.length > 0 
+      locationStocks: locations.length > 0
         ? locations.map(loc => ({ locationId: loc.id, stock: locationStock[loc.id] || 0 }))
         : undefined
     };
@@ -134,12 +134,9 @@ export function ProductForm({ initialData, onSubmit, isSaving }: { initialData?:
   };
 
   return (
-    <div className="max-w-5xl mx-auto space-y-6 pb-20 mt-4 px-4">
+    <div className="container mx-auto space-y-6 pb-20 mt-4 px-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" onClick={() => navigate({ to: "/products" })}>
-            <ArrowLeft className="size-5" />
-          </Button>
           <h1 className="text-2xl font-bold tracking-tight">
             {initialData ? "Edit Product" : "Add Product"}
           </h1>
@@ -159,7 +156,7 @@ export function ProductForm({ initialData, onSubmit, isSaving }: { initialData?:
         <div className="md:col-span-2 space-y-6">
           <div className="rounded-xl border bg-card text-card-foreground shadow-sm p-6 space-y-6">
             <h2 className="text-lg font-semibold border-b pb-2">General Information</h2>
-            
+
             <div className="grid gap-4">
               <div className="grid gap-1.5">
                 <Label>Product Name <span className="text-destructive">*</span></Label>
@@ -174,7 +171,7 @@ export function ProductForm({ initialData, onSubmit, isSaving }: { initialData?:
                 />
                 <FieldError message={prodErrors.name} />
               </div>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="grid gap-1.5">
                   <Label>SKU <span className="text-destructive">*</span></Label>
@@ -264,7 +261,7 @@ export function ProductForm({ initialData, onSubmit, isSaving }: { initialData?:
 
           <div className="rounded-xl border bg-card text-card-foreground shadow-sm p-6 space-y-6">
             <h2 className="text-lg font-semibold border-b pb-2">Pricing & Inventory</h2>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="grid gap-1.5">
                 <Label>Retail Price <span className="text-destructive">*</span></Label>
@@ -388,7 +385,7 @@ export function ProductForm({ initialData, onSubmit, isSaving }: { initialData?:
                 </div>
               </div>
             )}
-            
+
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 border p-3 rounded-lg bg-muted/20">
               <div>
                 <Label className="text-xs">Rack No.</Label>
@@ -422,55 +419,55 @@ export function ProductForm({ initialData, onSubmit, isSaving }: { initialData?:
 
           <div className="rounded-xl border bg-card text-card-foreground shadow-sm p-6 space-y-6">
             <h2 className="text-lg font-semibold border-b pb-2">Variants</h2>
-            
+
             <div className="flex items-center space-x-2">
-              <input 
-                type="checkbox" 
-                id="hasVariants" 
+              <input
+                type="checkbox"
+                id="hasVariants"
                 checked={formData.hasVariants}
-                onChange={(e) => setFormData({...formData, hasVariants: e.target.checked, isBundle: e.target.checked ? false : formData.isBundle})}
+                onChange={(e) => setFormData({ ...formData, hasVariants: e.target.checked, isBundle: e.target.checked ? false : formData.isBundle })}
                 className="rounded border-gray-300 text-primary focus:ring-primary w-4 h-4"
               />
               <Label htmlFor="hasVariants" className="font-medium cursor-pointer text-base">
                 This product has variants (like sizes or colors)
               </Label>
             </div>
-            
+
             {formData.hasVariants && (
-              <VariantManager 
-                variants={formData.variants} 
-                onChange={(variants) => setFormData({...formData, variants})} 
+              <VariantManager
+                variants={formData.variants}
+                onChange={(variants) => setFormData({ ...formData, variants })}
               />
             )}
 
             <div className="flex items-center space-x-2 mt-4">
-              <input 
-                type="checkbox" 
-                id="isBundle" 
+              <input
+                type="checkbox"
+                id="isBundle"
                 checked={formData.isBundle}
-                onChange={(e) => setFormData({...formData, isBundle: e.target.checked, hasVariants: e.target.checked ? false : formData.hasVariants})}
+                onChange={(e) => setFormData({ ...formData, isBundle: e.target.checked, hasVariants: e.target.checked ? false : formData.hasVariants })}
                 className="rounded border-gray-300 text-primary focus:ring-primary w-4 h-4"
               />
               <Label htmlFor="isBundle" className="font-medium cursor-pointer text-base">
                 This is a Bundle Product (Bill of Materials)
               </Label>
             </div>
-            
+
             {formData.isBundle && (
-              <BundleManager 
-                components={formData.bundleComponents} 
-                onChange={(components) => setFormData({...formData, bundleComponents: components})} 
+              <BundleManager
+                components={formData.bundleComponents}
+                onChange={(components) => setFormData({ ...formData, bundleComponents: components })}
                 basePrice={Number(formData.price) || 0}
-                onAutoSumPrice={(newPrice) => setFormData({...formData, price: newPrice})}
+                onAutoSumPrice={(newPrice) => setFormData({ ...formData, price: newPrice })}
               />
             )}
 
             <div className="flex items-center space-x-2 mt-4 pt-4 border-t">
-              <input 
-                type="checkbox" 
-                id="trackFifo" 
+              <input
+                type="checkbox"
+                id="trackFifo"
                 checked={formData.trackFifo}
-                onChange={(e) => setFormData({...formData, trackFifo: e.target.checked})}
+                onChange={(e) => setFormData({ ...formData, trackFifo: e.target.checked })}
                 className="rounded border-gray-300 text-primary focus:ring-primary w-4 h-4"
               />
               <Label htmlFor="trackFifo" className="font-medium cursor-pointer text-base text-blue-600">
@@ -479,11 +476,11 @@ export function ProductForm({ initialData, onSubmit, isSaving }: { initialData?:
             </div>
 
             <div className="flex items-center space-x-2 mt-4 pt-4 border-t">
-              <input 
-                type="checkbox" 
-                id="hasModifiers" 
+              <input
+                type="checkbox"
+                id="hasModifiers"
                 checked={formData.hasModifiers}
-                onChange={(e) => setFormData({...formData, hasModifiers: e.target.checked})}
+                onChange={(e) => setFormData({ ...formData, hasModifiers: e.target.checked })}
                 className="rounded border-gray-300 text-primary focus:ring-primary w-4 h-4"
               />
               <Label htmlFor="hasModifiers" className="font-medium cursor-pointer text-base">
@@ -546,9 +543,9 @@ export function ProductForm({ initialData, onSubmit, isSaving }: { initialData?:
           </div>
 
           <div className="rounded-xl border bg-card text-card-foreground shadow-sm p-6 space-y-4">
-             <h2 className="text-lg font-semibold border-b pb-2">Tax & Compliance (GST)</h2>
-             
-             <div className="grid gap-4">
+            <h2 className="text-lg font-semibold border-b pb-2">Tax & Compliance (GST)</h2>
+
+            <div className="grid gap-4">
               <div>
                 <Label className="text-sm">HSN / SAC Code</Label>
                 <Input
@@ -589,10 +586,10 @@ export function ProductForm({ initialData, onSubmit, isSaving }: { initialData?:
               </div>
             </div>
           </div>
-          
+
           <div className="rounded-xl border bg-card text-card-foreground shadow-sm p-6 space-y-4">
             <h2 className="text-lg font-semibold border-b pb-2">Tracking</h2>
-            
+
             <div className="flex items-start gap-3 p-3 rounded-lg border border-primary/20 bg-primary/5">
               <input
                 type="checkbox" id="hasSerial"
@@ -660,7 +657,7 @@ export function ProductForm({ initialData, onSubmit, isSaving }: { initialData?:
                 )}
               </div>
             </div>
-            
+
             <div className="grid gap-2">
               <Label>Master Expiry Date (Optional)</Label>
               <DatePicker
