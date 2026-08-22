@@ -63,7 +63,7 @@ ${data.query}`;
 
       const result = await model.generateContent(systemPrompt);
       const responseText = result.response.text();
-      
+
       let parsedResponse;
       try {
         // Attempt to strip any markdown code blocks if the model accidentally included them
@@ -77,5 +77,125 @@ ${data.query}`;
       return { success: true, data: parsedResponse };
     } catch (error) {
       return handleApiError(error, "Failed to get AI response");
+    }
+  });
+
+export const generateAITextFn = createServerFn({ method: "POST" })
+  .validator(
+    z.object({
+      systemPrompt: z.string(),
+      userMessage: z.string(),
+    })
+  )
+  .handler(async ({ data }) => {
+    try {
+      await requireAuth();
+
+      const apiKey = process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY;
+      if (!apiKey) {
+        throw new Error("Gemini API Key is not configured.");
+      }
+
+      const genAI = new GoogleGenerativeAI(apiKey);
+      const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
+
+      const fullPrompt = `System Instruction: ${data.systemPrompt}\n\nUser Input: ${data.userMessage}`;
+
+      const result = await model.generateContent({
+        contents: [{ role: "user", parts: [{ text: fullPrompt }] }],
+        generationConfig: {
+          temperature: 0.7,
+          maxOutputTokens: 500,
+        },
+      });
+
+      const responseText = result.response.text();
+
+      if (!responseText) {
+        throw new Error("Invalid response format from Gemini API");
+      }
+
+      return {
+        success: true as const,
+        text: responseText.trim(),
+      };
+    } catch (error) {
+      return handleApiError(error, "Failed to generate AI response");
+    }
+  });
+
+export const parseInvoiceFn = createServerFn({ method: "POST" })
+  .validator(
+    z.object({
+      fileBase64: z.string(),
+      mimeType: z.string(),
+    })
+  )
+  .handler(async ({ data }) => {
+    try {
+      await requireAuth();
+
+      const apiKey = process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY;
+      if (!apiKey) {
+        throw new Error("Gemini API Key is not configured.");
+      }
+
+      const genAI = new GoogleGenerativeAI(apiKey);
+      const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+
+      const prompt = `Extract the following details from this invoice and return STRICTLY as a valid JSON object. 
+Do not wrap it in markdown block quotes (no \`\`\`json). Use exactly these English keys:
+{
+  "supplierName": "String or null if not found",
+  "invoiceNumber": "String or null",
+  "date": "String (ISO format YYYY-MM-DD) or null",
+  "items": [
+    {
+      "productName": "String",
+      "quantity": Number (default 1),
+      "cost": Number (unit price, default 0),
+      "total": Number (total for line, default 0)
+    }
+  ],
+  "subtotal": Number,
+  "taxAmt": Number,
+  "total": Number
+}`;
+
+      const result = await model.generateContent([
+        {
+          inlineData: {
+            data: data.fileBase64,
+            mimeType: data.mimeType,
+          },
+        },
+        { text: prompt },
+      ]);
+
+      const text = result.response.text();
+      // Try to parse the JSON
+      let parsedData;
+      try {
+        let cleanText = text.trim();
+        if (cleanText.startsWith("\`\`\`json")) {
+          cleanText = cleanText.substring(7);
+        }
+        if (cleanText.startsWith("\`\`\`")) {
+          cleanText = cleanText.substring(3);
+        }
+        if (cleanText.endsWith("\`\`\`")) {
+          cleanText = cleanText.substring(0, cleanText.length - 3);
+        }
+        parsedData = JSON.parse(cleanText.trim());
+      } catch (err) {
+        throw new Error("Failed to parse AI response into JSON. Raw output: " + text.substring(0, 100));
+      }
+
+      return {
+        success: true as const,
+        data: parsedData,
+      };
+    } catch (error: any) {
+      return handleApiError(error, "Failed to parse invoice with AI: " + (error.message || "Unknown error"));
     }
   });

@@ -139,6 +139,56 @@ export const deleteHeldInvoiceFn = createServerFn({ method: "POST" })
           ),
         );
       return { success: true };
+      } catch (e) {
+        return handleApiError(e);
+      }
+    });
+
+export const splitHeldInvoiceFn = createServerFn({ method: "POST" })
+  .validator(
+    z.object({
+      originalInvoiceId: z.string(),
+      newInvoices: z.array(
+        z.object({
+          customerId: z.string().nullable().optional(),
+          customerName: z.string().nullable().optional(),
+          cart: z.array(z.any()),
+          discount: z.number().default(0),
+        })
+      )
+    })
+  )
+  .handler(async ({ data }) => {
+    try {
+      const session = await requireAuth();
+      return await db.transaction(async (tx) => {
+        // Delete the original held invoice
+        await tx.delete(schema.heldInvoices).where(
+          and(
+            eq(schema.heldInvoices.id, data.originalInvoiceId),
+            eq(schema.heldInvoices.organizationId, session.orgId)
+          )
+        );
+
+        // Insert the new split invoices
+        for (let i = 0; i < data.newInvoices.length; i++) {
+          const inv = data.newInvoices[i];
+          const ref = `Split ${i + 1}/${data.newInvoices.length}`;
+          
+          await tx.insert(schema.heldInvoices).values({
+            id: uuidv4(),
+            organizationId: session.orgId,
+            customerId: inv.customerId || null,
+            customerName: inv.customerName || null,
+            cart: inv.cart,
+            discount: inv.discount.toString(),
+            payment: "cash", // default
+            note: `Split from invoice ${data.originalInvoiceId.slice(0, 8)} - Check ${i + 1}`,
+            savedAt: new Date().toISOString(),
+          });
+        }
+        return { success: true };
+      });
     } catch (e) {
       return handleApiError(e);
     }
@@ -156,6 +206,7 @@ const SaleItemInput = z
     referenceId: z.string().optional(),
     serialNumber: z.string().optional().nullable(),
     batchNo: z.string().optional().nullable(),
+    modifiers: z.array(z.any()).optional().nullable(),
   })
   .passthrough();
 
@@ -164,6 +215,7 @@ const PosSaleInput = z.object({
     .object({
       id: z.string().optional(),
       customerId: z.string().optional().nullable(),
+      locationId: z.string().optional().nullable(),
       paymentMethod: z.string(),
       paid: z.number().optional(),
       status: z.string().optional(),
@@ -211,8 +263,9 @@ export const completePosSaleFn = createServerFn({ method: "POST" })
 
         if (productIds.length === 0) throw new Error("Sale must contain at least one item.");
 
-        // BULK FETCH: Get all products and services in one query to eliminate N+1 latency
-        const [productsList, servicesList, repairsList] = await Promise.all([
+        // Fetch Inventory levels for the selected location (fallback to 'Main Store' if not provided)
+        const locationId = data.sale.locationId;
+        const [productsList, servicesList, repairsList, inventoryList, bundlesList, batchesList] = await Promise.all([
           tx.select().from(schema.products).where(
             and(inArray(schema.products.id, productIds), eq(schema.products.organizationId, orgId)),
           ),
@@ -223,11 +276,47 @@ export const completePosSaleFn = createServerFn({ method: "POST" })
             ? tx.select().from(schema.repairs).where(
                 and(inArray(schema.repairs.id, repairIds), eq(schema.repairs.organizationId, orgId))
               ) 
-            : Promise.resolve([])
+            : Promise.resolve([]),
+          locationId 
+            ? tx.select().from(schema.productInventory).where(
+                and(inArray(schema.productInventory.productId, productIds), eq(schema.productInventory.locationId, locationId), eq(schema.productInventory.organizationId, orgId))
+              )
+            : Promise.resolve([]),
+          tx.select().from(schema.productBundles).where(
+            and(inArray(schema.productBundles.bundleProductId, productIds), eq(schema.productBundles.organizationId, orgId))
+          ),
+          tx.select().from(schema.inventoryBatches).where(
+            and(inArray(schema.inventoryBatches.productId, productIds), eq(schema.inventoryBatches.organizationId, orgId))
+          ).orderBy(schema.inventoryBatches.receivedAt)
         ]);
 
+        // If there are bundle components, we need to fetch their inventory and batches too
+        let componentInventoryList: any[] = [];
+        let componentBatchesList: any[] = [];
+        const componentProductIds = bundlesList.map(b => b.componentProductId);
+        if (componentProductIds.length > 0) {
+          const [compInv, compBatches] = await Promise.all([
+            locationId 
+              ? tx.select().from(schema.productInventory).where(
+                  and(inArray(schema.productInventory.productId, componentProductIds), eq(schema.productInventory.locationId, locationId), eq(schema.productInventory.organizationId, orgId))
+                )
+              : Promise.resolve([]),
+            tx.select().from(schema.inventoryBatches).where(
+              and(inArray(schema.inventoryBatches.productId, componentProductIds), eq(schema.inventoryBatches.organizationId, orgId))
+            ).orderBy(schema.inventoryBatches.receivedAt)
+          ]);
+          componentInventoryList = compInv;
+          componentBatchesList = compBatches;
+        }
+
+        const allInventory = [...inventoryList, ...componentInventoryList];
+        const allBatches = [...batchesList, ...componentBatchesList];
+
         const itemsMap = new Map();
-        for (const p of productsList) itemsMap.set(p.id, { ...p, _type: 'product' });
+        for (const p of productsList) {
+          const inv = allInventory.find(i => i.productId === p.id);
+          itemsMap.set(p.id, { ...p, _type: 'product', stock: inv ? Number(inv.stock) : Number(p.stock || 0) });
+        }
         for (const s of servicesList) itemsMap.set(s.id, { ...s, _type: 'service' });
         for (const r of repairsList) {
           itemsMap.set(`REPAIR_${r.id}`, { 
@@ -241,6 +330,9 @@ export const completePosSaleFn = createServerFn({ method: "POST" })
 
         const lowStockNotifications: any[] = [];
         const stockUpdates: { productId: string; newStock: number }[] = [];
+        const batchConsumptionsToInsert: any[] = [];
+        const batchUpdates: any[] = [];
+        const saleId = data.sale.id || uuidv4();
 
         for (const item of data.items) {
           const p = itemsMap.get(item.productId);
@@ -268,7 +360,10 @@ export const completePosSaleFn = createServerFn({ method: "POST" })
 
           const lineSubtotal = unitPrice * item.quantity;
           const lineTax = (lineSubtotal * taxPct) / 100;
-          const lineDiscount = Number(item.discountAmt) || 0; // We trust item discounts from client for now
+          let lineDiscount = Number(item.discountAmt) || 0;
+          if (lineDiscount > 0 && session.role !== "admin" && session.role !== "manager") {
+             throw new Error("Unauthorized: Only Admins or Managers can apply manual item discounts.");
+          }
 
           serverSubtotal += lineSubtotal;
           serverTotalTax += lineTax;
@@ -284,40 +379,91 @@ export const completePosSaleFn = createServerFn({ method: "POST" })
             total: (lineSubtotal + lineTax - lineDiscount).toString(),
             serialNumber: item.serialNumber || null,
             batchNo: item.batchNo || null,
+            modifiers: item.modifiers && item.modifiers.length > 0 ? item.modifiers : null,
             referenceType: item.referenceType || (p._type === 'product' ? 'PRODUCT' : p._type === 'service' ? 'SERVICE' : 'REPAIR'),
             referenceId: item.referenceId || p.id,
           });
 
           if (p._type === 'product') {
-            // PREPARE STOCK UPDATE (In-memory calculation)
-            const currentStock = p.stock || 0;
-            const newStock = Math.max(0, currentStock - item.quantity);
-            stockUpdates.push({
-              productId: item.productId,
-              newStock,
-            });
-
-            if (newStock <= Number(p.reorderLevel || 5)) {
-              lowStockNotifications.push({
-                id: uuidv4(),
-                organizationId: orgId,
-                title: newStock <= 0 ? "Out of Stock Alert" : "Low Stock Alert",
-                description: `Product "${p.name}" is ${newStock <= 0 ? "out of stock" : `down to ${newStock} units`}`,
-                type: "inventory",
-                timestamp: new Date().toISOString(),
-                read: false,
+            if (p.isBundle) {
+              const components = bundlesList.filter(b => b.bundleProductId === p.id);
+              for (const comp of components) {
+                const compInv = allInventory.find(i => i.productId === comp.componentProductId);
+                const compStock = compInv ? Number(compInv.stock) : 0;
+                const totalDeduction = Number(comp.quantity) * item.quantity;
+                const newStock = Math.max(0, compStock - totalDeduction);
+                stockUpdates.push({
+                  productId: comp.componentProductId,
+                  newStock,
+                });
+                
+                if (newStock <= 5) {
+                  lowStockNotifications.push({
+                    id: uuidv4(),
+                    organizationId: orgId,
+                    title: newStock <= 0 ? "Out of Stock Alert" : "Low Stock Alert",
+                    description: `Component product "${comp.componentProductId}" is ${newStock <= 0 ? "out of stock" : `down to ${newStock} units`}`,
+                    type: "inventory",
+                    timestamp: new Date().toISOString(),
+                    read: false,
+                  });
+                }
+              }
+            } else {
+              // PREPARE STOCK UPDATE (In-memory calculation)
+              const currentStock = p.stock || 0;
+              const newStock = Math.max(0, currentStock - item.quantity);
+              stockUpdates.push({
+                productId: item.productId,
+                newStock,
               });
+
+              if (newStock <= Number(p.reorderLevel || 5)) {
+                lowStockNotifications.push({
+                  id: uuidv4(),
+                  organizationId: orgId,
+                  title: newStock <= 0 ? "Out of Stock Alert" : "Low Stock Alert",
+                  description: `Product "${p.name}" is ${newStock <= 0 ? "out of stock" : `down to ${newStock} units`}`,
+                  type: "inventory",
+                  timestamp: new Date().toISOString(),
+                  read: false,
+                });
+              }
+
+              if (p.trackFifo) {
+                // FIFO logic
+                const productBatches = allBatches.filter(b => b.productId === p.id && Number(b.quantityRemaining) > 0);
+                let remainingToDeduct = item.quantity;
+                for (const batch of productBatches) {
+                  if (remainingToDeduct <= 0) break;
+                  const available = Number(batch.quantityRemaining);
+                  const consume = Math.min(available, remainingToDeduct);
+                  batchConsumptionsToInsert.push({
+                    id: uuidv4(),
+                    batchId: batch.id,
+                    saleId: saleId,
+                    quantityConsumed: consume.toString(),
+                  });
+                  batchUpdates.push({
+                    id: batch.id,
+                    quantityRemaining: (available - consume).toString(),
+                  });
+                  remainingToDeduct -= consume;
+                }
+              }
             }
           }
         }
 
         // Apply global discount if provided
         const globalDiscount = Number(data.sale.discountAmt) || 0;
+        if (globalDiscount > 0 && session.role !== "admin" && session.role !== "manager") {
+           throw new Error("Unauthorized: Only Admins or Managers can apply manual global discounts.");
+        }
         const serverTotal = Math.max(
           0,
           serverSubtotal + serverTotalTax - serverTotalDiscount - globalDiscount,
         );
-        const saleId = data.sale.id || uuidv4();
 
         const safeSale = {
           id: saleId,
@@ -369,7 +515,42 @@ export const completePosSaleFn = createServerFn({ method: "POST" })
 
           // Deduct stock sequentially (fast because we already eliminated all SELECT queries)
           if (safeSale.status !== "quotation") {
+            const locationId = data.sale.locationId;
             for (const update of stockUpdates) {
+              if (locationId) {
+                // Check if product inventory exists for this location
+                const existingInv = await tx.select().from(schema.productInventory).where(
+                  and(
+                    eq(schema.productInventory.productId, update.productId),
+                    eq(schema.productInventory.locationId, locationId),
+                    eq(schema.productInventory.organizationId, orgId)
+                  )
+                ).limit(1);
+
+                if (existingInv.length > 0) {
+                  await tx
+                    .update(schema.productInventory)
+                    .set({ stock: update.newStock.toString() })
+                    .where(
+                      and(
+                        eq(schema.productInventory.productId, update.productId),
+                        eq(schema.productInventory.locationId, locationId),
+                        eq(schema.productInventory.organizationId, orgId),
+                      ),
+                    );
+                } else {
+                  await tx.insert(schema.productInventory).values({
+                    id: uuidv4(),
+                    organizationId: orgId,
+                    productId: update.productId,
+                    locationId: locationId,
+                    stock: update.newStock.toString(),
+                    reorderLevel: "10"
+                  });
+                }
+              }
+
+              // Also update legacy product stock for backward compatibility
               await tx
                 .update(schema.products)
                 .set({ stock: update.newStock.toString() })
@@ -379,6 +560,18 @@ export const completePosSaleFn = createServerFn({ method: "POST" })
                     eq(schema.products.organizationId, orgId),
                   ),
                 );
+            }
+            
+            if (batchConsumptionsToInsert.length > 0) {
+              await tx.insert(schema.inventoryBatchConsumptions).values(batchConsumptionsToInsert);
+            }
+
+            if (batchUpdates.length > 0) {
+              for (const bu of batchUpdates) {
+                await tx.update(schema.inventoryBatches)
+                  .set({ quantityRemaining: bu.quantityRemaining })
+                  .where(eq(schema.inventoryBatches.id, bu.id));
+              }
             }
 
             if (lowStockNotifications.length > 0) {

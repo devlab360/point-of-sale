@@ -133,49 +133,42 @@ export async function uploadToVercelBlob(
   const folder = options.folder ? sanitizeInput(options.folder) : "uploads";
   const filename = `${folder}/${Date.now()}_${sanitizedOriginalName}`;
 
-  const token = import.meta.env.VITE_BLOB_READ_WRITE_TOKEN;
+  // Attempt Vercel Blob upload with a 10-second timeout via our safe Server Function
+  try {
+    options.onProgress?.(10);
 
-  if (token) {
-    // Attempt Vercel Blob upload with a 10-second timeout via our safe Server Function
-    try {
-      options.onProgress?.(10);
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("filename", filename);
 
-      const formData = new FormData();
-      formData.append("file", file);
-      formData.append("filename", filename);
+    const blobUpload = uploadFileServerFn({ data: formData }).then((res) => {
+      const result = res as any;
+      if (!result || result.error)
+        throw new Error(result?.error || "Unknown server error");
+      return result;
+    });
 
-      const blobUpload = uploadFileServerFn({ data: formData }).then((res) => {
-        const result = res as any;
-        if (!result || !result.success || result.error)
-          throw new Error(result?.error || "Unknown server error");
-        return result;
-      });
+    const timeout = new Promise<never>((_, reject) =>
+      setTimeout(
+        () =>
+          reject(new Error("Vercel Blob upload timed out (10s). Falling back to local storage.")),
+        10000,
+      ),
+    );
 
-      const timeout = new Promise<never>((_, reject) =>
-        setTimeout(
-          () =>
-            reject(new Error("Vercel Blob upload timed out (10s). Falling back to local storage.")),
-          10000,
-        ),
-      );
+    const blob: any = await Promise.race([blobUpload, timeout]);
+    options.onProgress?.(100);
 
-      const blob: any = await Promise.race([blobUpload, timeout]);
-      options.onProgress?.(100);
-
-      return {
-        url: blob.url || blob.data?.url || "",
-        pathname: blob.pathname || blob.data?.pathname || filename,
-        contentType: file.type,
-        size: file.size,
-        name: file.name,
-      };
-    } catch (err: any) {
-      console.warn("[Vercel Blob] Failed, falling back to base64:", err?.message || err);
-      // Fall back to local base64 so the upload never hangs
-      return readFileAsDataURL(file, options, filename);
-    }
-  } else {
-    // No token — use local base64 fallback directly
+    return {
+      url: blob.url || blob.data?.url || "",
+      pathname: blob.pathname || blob.data?.pathname || filename,
+      contentType: file.type,
+      size: file.size,
+      name: file.name,
+    };
+  } catch (err: any) {
+    console.warn("[Vercel Blob] Failed, falling back to base64:", err?.message || err);
+    // Fall back to local base64 so the upload never hangs
     return readFileAsDataURL(file, options, filename);
   }
 }

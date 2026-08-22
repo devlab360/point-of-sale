@@ -191,6 +191,13 @@ export const APP_GROUPS: MenuGroup[] = [
         roles: ["admin", "manager"],
       },
       {
+        to: "/accounting-reports",
+        label: "Accounting Reports",
+        tkey: "accounting_reports",
+        icon: FileText,
+        roles: ["admin", "manager"],
+      },
+      {
         to: "/expenses",
         label: "Expenses",
         tkey: "expenses",

@@ -56,8 +56,9 @@ import { v4 as uuidv4 } from "uuid";
 import { createCustomerFn } from "@/api/customers";
 import { createProductFn } from "@/api/products";
 import { createServiceItemFn } from "@/api/services";
-import { deleteHeldInvoiceFn } from "@/api/pos";
+import { deleteHeldInvoiceFn, splitHeldInvoiceFn } from "@/api/pos";
 import { toast } from "sonner";
+import { SplitCheckModal } from "./SplitCheckModal";
 
 export function PosDialogs({
   state,
@@ -68,6 +69,9 @@ export function PosDialogs({
   onCheckout: () => void;
   onResumeInvoice: (h: any) => void;
 }) {
+  const [splittingInvoice, setSplittingInvoice] = useState<any>(null);
+  const [isSplitting, setIsSplitting] = useState(false);
+
   const {
     showCustomerSearch,
     setShowCustomerSearch,
@@ -677,6 +681,16 @@ export function PosDialogs({
                   <Button size="sm" onClick={() => onResumeInvoice(h)}>
                     Resume
                   </Button>
+                  <Button 
+                    size="sm" 
+                    variant="secondary"
+                    onClick={() => {
+                      setShowHeld(false);
+                      setSplittingInvoice(h);
+                    }}
+                  >
+                    Split
+                  </Button>
                   <Button
                     size="sm"
                     variant="ghost"
@@ -736,7 +750,7 @@ export function PosDialogs({
           <AlertDialogFooter>
             <AlertDialogCancel disabled={isCompletingSale}>Cancel</AlertDialogCancel>
             <Button
-              onClick={onCheckout}
+              onClick={() => onCheckout()}
               disabled={isCompletingSale}
               className="bg-emerald-600 hover:bg-emerald-700 text-white font-medium"
             >
@@ -838,6 +852,33 @@ export function PosDialogs({
                     : ""
         }
         onChange={handleKeyboardChange}
+      />
+      {/* Split Check Modal */}
+      <SplitCheckModal 
+        open={!!splittingInvoice}
+        onOpenChange={(open) => !open && setSplittingInvoice(null)}
+        invoice={splittingInvoice}
+        isSplitting={isSplitting}
+        onConfirm={async (splits) => {
+          if (!splittingInvoice) return;
+          setIsSplitting(true);
+          try {
+            await splitHeldInvoiceFn({
+              data: {
+                originalInvoiceId: splittingInvoice.id,
+                newInvoices: splits,
+              }
+            });
+            toast.success("Check split successfully");
+            setSplittingInvoice(null);
+            refetchHeld();
+            setShowHeld(true);
+          } catch (e: any) {
+            toast.error(e.message || "Failed to split check");
+          } finally {
+            setIsSplitting(false);
+          }
+        }}
       />
     </>
   );

@@ -47,48 +47,88 @@ function KitchenPage() {
     updateStatus.mutate({ id: kot.id, status: nextStatus });
   };
 
-  const renderKotCard = (kot: any, colorClass: string, bgClass: string) => (
-    <Card key={kot.id} className={`border-${colorClass}-200 bg-${colorClass}-50/30`}>
-      <CardHeader className="pb-2">
-        <CardTitle className="text-sm flex justify-between items-center">
-          <span className="font-bold">
-            {kot.tableId ? `Table ${kot.tableId.substring(0, 4)}` : 'Takeaway / No Table'}
-          </span>
-          <span className="flex items-center text-xs text-muted-foreground">
-            <Clock className="w-3 h-3 mr-1" />
-            {formatDistanceToNow(new Date(kot.timestamp), { addSuffix: true })}
-          </span>
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="pb-2">
-        <ul className="text-sm space-y-1 mb-2">
-          {kot.items.map((item: any, idx: number) => (
-            <li key={idx} className="flex justify-between border-b border-dashed pb-1 last:border-0 last:pb-0">
-              <span>{item.quantity}x {item.name}</span>
-            </li>
-          ))}
-        </ul>
-        {kot.note && (
-          <div className="text-xs bg-yellow-100 p-2 rounded-md italic mt-2 border border-yellow-200 text-yellow-800">
-            Note: {kot.note}
+  const renderKotCard = (kot: any, colorClass: string, bgClass: string) => {
+    // Group items by course
+    const groupedItems: Record<string, any[]> = {};
+    kot.items.forEach((item: any) => {
+      const course = item.course || "Main Course";
+      if (!groupedItems[course]) groupedItems[course] = [];
+      groupedItems[course].push(item);
+    });
+
+    const courseOrder = ["Starters", "Main Course", "Desserts", "Drinks", "Uncategorized"];
+    const sortedCourses = Object.keys(groupedItems).sort((a, b) => {
+      let idxA = courseOrder.indexOf(a);
+      let idxB = courseOrder.indexOf(b);
+      if (idxA === -1) idxA = 99;
+      if (idxB === -1) idxB = 99;
+      return idxA - idxB;
+    });
+
+    return (
+      <Card key={kot.id} className={`border-${colorClass}-200 bg-${colorClass}-50/30`}>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm flex justify-between items-center">
+            <span className="font-bold">
+              {kot.tableId ? `Table ${kot.tableId.substring(0, 4)}` : 'Takeaway / No Table'}
+            </span>
+            <span className="flex items-center text-xs text-muted-foreground">
+              <Clock className="w-3 h-3 mr-1" />
+              {formatDistanceToNow(new Date(kot.timestamp), { addSuffix: true })}
+            </span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="pb-2">
+          <div className="space-y-4 mb-2">
+            {sortedCourses.map(course => (
+              <div key={course}>
+                <h4 className="text-xs font-bold text-muted-foreground uppercase border-b pb-1 mb-1.5">{course}</h4>
+                <ul className="text-sm space-y-2">
+                  {groupedItems[course].map((item: any, idx: number) => (
+                    <li key={idx} className="flex flex-col pb-1.5 last:pb-0">
+                      <div className="flex justify-between font-medium">
+                        <span>{item.quantity}x {item.name}</span>
+                      </div>
+                      {(item.variantName || (item.modifiers && item.modifiers.length > 0)) && (
+                        <div className="text-[11px] text-muted-foreground mt-0.5 ml-4">
+                          {item.variantName && <div>Variant: {item.variantName}</div>}
+                          {item.modifiers && item.modifiers.length > 0 && (
+                            <div className="flex flex-col gap-0.5">
+                              {item.modifiers.map((m: any, i: number) => (
+                                <span key={i}>+ {m.optionName}</span>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
           </div>
-        )}
-      </CardContent>
-      <CardFooter className="pt-0">
-        <Button
-          size="sm"
-          className="w-full text-xs h-8"
-          variant={kot.status === 'pending' ? 'default' : kot.status === 'preparing' ? 'secondary' : 'outline'}
-          onClick={() => advanceStatus(kot)}
-          disabled={updateStatus.isPending}
-        >
-          {kot.status === 'pending' ? 'Start Preparing' :
-            kot.status === 'preparing' ? 'Mark Ready' : 'Serve'}
-          <ArrowRight className="w-3 h-3 ml-2" />
-        </Button>
-      </CardFooter>
-    </Card>
-  );
+          {kot.note && (
+            <div className="text-xs bg-yellow-100 p-2 rounded-md italic mt-2 border border-yellow-200 text-yellow-800">
+              Note: {kot.note}
+            </div>
+          )}
+        </CardContent>
+        <CardFooter className="pt-0">
+          <Button
+            size="sm"
+            className="w-full text-xs h-8"
+            variant={kot.status === 'pending' ? 'default' : kot.status === 'preparing' ? 'secondary' : 'outline'}
+            onClick={() => advanceStatus(kot)}
+            disabled={updateStatus.isPending}
+          >
+            {kot.status === 'pending' ? 'Start Preparing' :
+              kot.status === 'preparing' ? 'Mark Ready' : 'Serve'}
+            <ArrowRight className="w-3 h-3 ml-2" />
+          </Button>
+        </CardFooter>
+      </Card>
+    );
+  };
 
   return (
     <>

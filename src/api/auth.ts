@@ -39,6 +39,9 @@ export const loginFn = createServerFn({ method: "POST" })
         if (user.status === "suspended") {
           return { success: false, error: "Your account has been suspended by the administrator." };
         }
+        if (user.status === "pending") {
+          return { success: false, error: "Your account is pending approval by the administrator." };
+        }
         if (user.role !== "admin" && (!user.permissions || user.permissions.length === 0)) {
           return { success: false, error: "You don't have permission to log in. Please contact the administrator." };
         }
@@ -580,6 +583,9 @@ export const loginWithOtpFn = createServerFn({ method: "POST" })
       if (user.status === "suspended") {
         return { success: false, error: "Your account has been suspended." };
       }
+      if (user.status === "pending") {
+        return { success: false, error: "Your account is pending approval by the administrator." };
+      }
       if (user.role !== "admin" && (!user.permissions || user.permissions.length === 0)) {
         return { success: false, error: "You don't have permission to log in. Please contact the administrator." };
       }
@@ -714,6 +720,9 @@ export const loginWithGoogleFn = createServerFn({ method: "POST" })
       }
       if (user.status === "suspended") {
         return { success: false, error: "Your account has been suspended by the administrator." };
+      }
+      if (user.status === "pending") {
+        return { success: false, error: "Your account is pending approval by the administrator." };
       }
       if (user.role !== "admin" && (!user.permissions || user.permissions.length === 0)) {
         return { success: false, error: "You don't have permission to log in. Please contact the administrator." };
@@ -853,6 +862,9 @@ export const loginWithFirebasePhoneFn = createServerFn({ method: "POST" })
       }
       if (user.status === "suspended") {
         return { success: false, error: "Your account has been suspended by the administrator." };
+      }
+      if (user.status === "pending") {
+        return { success: false, error: "Your account is pending approval by the administrator." };
       }
       if (user.role !== "admin" && (!user.permissions || user.permissions.length === 0)) {
         return { success: false, error: "You don't have permission to log in. Please contact the administrator." };

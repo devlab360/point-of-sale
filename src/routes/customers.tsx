@@ -260,7 +260,6 @@ function CustomersPage() {
           id: settleItem.id,
           updates: {
             credit: newBalance,
-            totalSpent: settleItem.totalSpent - amount,
           },
         },
       });

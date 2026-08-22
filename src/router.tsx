@@ -1,6 +1,7 @@
 import { QueryClient, QueryCache, MutationCache } from "@tanstack/react-query";
 import { createRouter } from "@tanstack/react-router";
 import { routeTree } from "./routeTree.gen";
+import { SessionStore } from "@/lib/session-store";
 
 export const getRouter = () => {
   let router: any;
@@ -19,6 +20,11 @@ export const getRouter = () => {
       // We only want to hard-redirect for critical status codes
       if (code === 403 || code === 401 || code === 404 || code >= 500) {
         if (router) {
+          if (code === 401) {
+            SessionStore.removeAuthUser();
+            window.location.href = "/login";
+            return;
+          }
           router.navigate({
             to: "/error",
             search: { code, message: data.error || data.message },

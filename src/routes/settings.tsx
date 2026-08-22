@@ -13,12 +13,19 @@ import {
   Lock,
   Key,
   ShieldCheck,
+  MapPin,
+  Plus,
+  Pencil,
+  X,
+  Store,
+  Warehouse,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useEffect, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getSettingsFn, updateSettingsFn, getAllSaasPlansFn } from "@/api/settings";
 import { updateUserFn } from "@/api/users";
+import { getLocationsFn, createLocationFn, updateLocationFn, deleteLocationFn } from "@/api/locations";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -53,6 +60,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { SettingsSkeleton } from "@/components/skeletons/SettingsSkeleton";
 import { ErrorState } from "@/components/ui/error-state";
 import { SearchableSelect } from "@/components/ui/searchable-select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { getTrialDaysFromEnv } from "@/lib/email-service";
 import { FileUpload } from "@/components/ui/file-upload";
 import { useFormValidation } from "@/hooks/useFormValidation";
@@ -482,6 +490,13 @@ function SettingsPage() {
             className="shrink-0 justify-start rounded-lg px-4 py-2.5 text-sm font-medium data-[state=active]:bg-muted data-[state=active]:text-foreground text-muted-foreground hover:bg-muted/50"
           >
             Data Management
+          </TabsTrigger>
+          <TabsTrigger
+            value="locations"
+            className="shrink-0 justify-start rounded-lg px-4 py-2.5 text-sm font-medium data-[state=active]:bg-muted data-[state=active]:text-foreground text-muted-foreground hover:bg-muted/50"
+          >
+            <MapPin className="size-3.5 mr-1.5" />
+            Locations
           </TabsTrigger>
         </TabsList>
 
@@ -1200,6 +1215,10 @@ function SettingsPage() {
             </Card>
           </TabsContent>
 
+          <TabsContent value="locations" className="mt-0 outline-none">
+            <LocationsTab />
+          </TabsContent>
+
           <div className="flex justify-end pt-4">
             <Button
               variant="outline"
@@ -1465,7 +1484,215 @@ function SettingsPage() {
   );
 }
 
+
+function LocationsTab() {
+  const queryClient = useQueryClient();
+  const [showForm, setShowForm] = useState(false);
+  const [editingLocation, setEditingLocation] = useState<any>(null);
+  const [formData, setFormData] = useState({ name: "", type: "store" });
+  const [isSaving, setIsSaving] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  const { data: locationsRes, isLoading } = useQuery({
+    queryKey: ["locations"],
+    queryFn: () => getLocationsFn(),
+  });
+  const locations: any[] = locationsRes?.data || [];
+
+  const openAdd = () => {
+    setEditingLocation(null);
+    setFormData({ name: "", type: "store" });
+    setShowForm(true);
+  };
+
+  const openEdit = (loc: any) => {
+    setEditingLocation(loc);
+    setFormData({ name: loc.name, type: loc.type || "store" });
+    setShowForm(true);
+  };
+
+  const handleSave = async () => {
+    if (!formData.name.trim()) return toast.error("Location name is required.");
+    setIsSaving(true);
+    try {
+      if (editingLocation) {
+        const res = await updateLocationFn({ data: { id: editingLocation.id, updates: formData } });
+        if (!res.success) throw new Error((res as any).error);
+        toast.success("Location updated!");
+      } else {
+        const res = await createLocationFn({ data: { location: formData } });
+        if (!res.success) throw new Error((res as any).error);
+        toast.success("Location created!");
+      }
+      queryClient.invalidateQueries({ queryKey: ["locations"] });
+      setShowForm(false);
+    } catch (e: any) {
+      toast.error(e.message || "Failed to save location.");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    setDeletingId(id);
+    try {
+      const res = await deleteLocationFn({ data: { id } });
+      if (!res.success) throw new Error((res as any).error);
+      toast.success("Location deleted.");
+      queryClient.invalidateQueries({ queryKey: ["locations"] });
+    } catch (e: any) {
+      toast.error(e.message || "Failed to delete location.");
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
+  const typeIcon = (type: string) =>
+    type === "warehouse" ? <Warehouse className="size-4 text-muted-foreground" /> : <Store className="size-4 text-muted-foreground" />;
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-lg font-semibold">Store Locations</h2>
+          <p className="text-sm text-muted-foreground">Manage your branches, warehouses, and store locations. Inventory is tracked per location.</p>
+        </div>
+        <Button onClick={openAdd} className="gap-2">
+          <Plus className="size-4" />
+          Add Location
+        </Button>
+      </div>
+
+      {showForm && (
+        <div className="rounded-xl border border-border bg-card p-5 shadow-sm space-y-4 animate-in fade-in slide-in-from-top-2 duration-200">
+          <div className="flex items-center justify-between">
+            <h3 className="font-semibold">{editingLocation ? "Edit Location" : "New Location"}</h3>
+            <button onClick={() => setShowForm(false)} className="text-muted-foreground hover:text-foreground transition-colors">
+              <X className="size-4" />
+            </button>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <Label htmlFor="loc-name">Location Name <span className="text-destructive">*</span></Label>
+              <Input
+                id="loc-name"
+                placeholder="e.g. Main Store, Warehouse A"
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Type</Label>
+              <Select value={formData.type} onValueChange={(val) => setFormData({ ...formData, type: val })}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select type..." />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="store">
+                    <div className="flex items-center gap-2">
+                      <Store className="size-3.5 text-muted-foreground" />
+                      Store
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="warehouse">
+                    <div className="flex items-center gap-2">
+                      <Warehouse className="size-3.5 text-muted-foreground" />
+                      Warehouse
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="outlet">
+                    <div className="flex items-center gap-2">
+                      <MapPin className="size-3.5 text-muted-foreground" />
+                      Outlet
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="kiosk">
+                    <div className="flex items-center gap-2">
+                      <MapPin className="size-3.5 text-muted-foreground" />
+                      Kiosk
+                    </div>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+          </div>
+          <div className="flex justify-end gap-2 pt-2 border-t">
+            <Button variant="outline" onClick={() => setShowForm(false)} disabled={isSaving}>Cancel</Button>
+            <Button onClick={handleSave} disabled={isSaving}>
+              {isSaving && <Loader2 className="size-4 animate-spin mr-2" />}
+              {editingLocation ? "Update" : "Create"} Location
+            </Button>
+          </div>
+        </div>
+      )}
+
+      <div className="rounded-xl border border-border overflow-hidden">
+        {isLoading ? (
+          <div className="flex items-center justify-center py-12 text-muted-foreground text-sm">Loading locations...</div>
+        ) : locations.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-16 gap-3">
+            <MapPin className="size-10 text-muted-foreground/40" />
+            <p className="text-muted-foreground font-medium">No locations yet</p>
+            <p className="text-sm text-muted-foreground">Add your first store or warehouse to start tracking per-location inventory.</p>
+            <Button onClick={openAdd} variant="outline" className="mt-2 gap-2">
+              <Plus className="size-4" /> Add Location
+            </Button>
+          </div>
+        ) : (
+          <table className="w-full text-sm">
+            <thead className="bg-muted/50 border-b border-border">
+              <tr>
+                <th className="text-left px-4 py-3 font-medium text-muted-foreground">Name</th>
+                <th className="text-left px-4 py-3 font-medium text-muted-foreground">Type</th>
+                <th className="text-left px-4 py-3 font-medium text-muted-foreground">Status</th>
+                <th className="text-right px-4 py-3 font-medium text-muted-foreground">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border">
+              {locations.map((loc) => (
+                <tr key={loc.id} className="hover:bg-muted/30 transition-colors group">
+                  <td className="px-4 py-3">
+                    <div className="flex items-center gap-2.5">
+                      {typeIcon(loc.type)}
+                      <span className="font-medium">{loc.name}</span>
+                    </div>
+                  </td>
+                  <td className="px-4 py-3 capitalize text-muted-foreground">{loc.type || "store"}</td>
+                  <td className="px-4 py-3">
+                    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${loc.status === "active" ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400" : "bg-muted text-muted-foreground"}`}>
+                      <span className={`size-1.5 rounded-full ${loc.status === "active" ? "bg-green-500" : "bg-muted-foreground"}`} />
+                      {loc.status || "active"}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => openEdit(loc)}>
+                        <Pencil className="size-3.5" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-7 w-7 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+                        onClick={() => handleDelete(loc.id)}
+                        disabled={deletingId === loc.id}
+                      >
+                        {deletingId === loc.id ? <Loader2 className="size-3.5 animate-spin" /> : <X className="size-3.5" />}
+                      </Button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function Card({
+
   title,
   desc,
   headerRight,

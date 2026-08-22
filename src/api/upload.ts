@@ -15,9 +15,9 @@ export const uploadFileServerFn = createServerFn({ method: "POST" })
       throw new Error("Missing file or filename in the upload request");
     }
 
-    const token = process.env.VITE_BLOB_READ_WRITE_TOKEN;
+    const token = process.env.BLOB_READ_WRITE_TOKEN || process.env.VITE_BLOB_READ_WRITE_TOKEN;
     if (!token) {
-      throw new Error("VITE_BLOB_READ_WRITE_TOKEN is not configured on the server.");
+      throw new Error("BLOB_READ_WRITE_TOKEN is not configured on the server.");
     }
 
     // Server-side direct put to Vercel Blob

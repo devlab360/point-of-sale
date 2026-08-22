@@ -40,6 +40,7 @@ import {
   updateSupplierFn,
   deleteSupplierFn,
   getSupplierLedgersFn,
+  createSupplierLedgerFn,
 } from "@/api/suppliers";
 import {
   Truck,
@@ -93,6 +94,54 @@ function SuppliersPage() {
   const [editItem, setEditItem] = useState<any | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [settleItem, setSettleItem] = useState<any | null>(null);
+  const [settleAmount, setSettleAmount] = useState("");
+  const [isSettling, setIsSettling] = useState(false);
+
+  const handleSettle = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!settleItem) return;
+    const amount = parseFloat(settleAmount);
+    if (isNaN(amount) || amount <= 0 || amount > settleItem.balance) {
+      toast.error("Please enter a valid amount up to the outstanding balance.");
+      return;
+    }
+    setIsSettling(true);
+    await new Promise((resolve) => setTimeout(resolve, 500));
+    try {
+      const newBalance = Math.max(0, settleItem.balance - amount);
+      const res1 = await updateSupplierFn({
+        data: {
+          id: settleItem.id,
+          updates: { balance: newBalance.toString() },
+        },
+      });
+      if (!res1.success) throw new Error(res1.error);
+
+      const res2 = await createSupplierLedgerFn({
+        data: {
+          ledger: {
+            supplierId: settleItem.id,
+            date: new Date().toISOString(),
+            type: "payment",
+            amount: amount.toString(),
+            balanceAfter: newBalance.toString(),
+            referenceNo: `PAY-${Date.now().toString().slice(-6)}`,
+            note: "Supplier due settlement payment",
+          },
+        },
+      });
+      if (!res2.success) throw new Error(res2.error);
+
+      toast.success(`Successfully settled ${formatCurrency(amount)}`);
+      setSettleItem(null);
+      queryClient.invalidateQueries({ queryKey: ["suppliers"] });
+    } catch (error: any) {
+      toast.error(error.message || "Failed to settle balance");
+    } finally {
+      setIsSettling(false);
+    }
+  };
   const [ledgerSupplier, setLedgerSupplier] = useState<any | null>(null);
 
   const { data: supplierLedgerEntriesData } = useQuery({
@@ -248,22 +297,22 @@ function SuppliersPage() {
       let count = 0;
       for (const row of data) {
         if (row['Name']) {
-          await createSupplierFn({ 
-            data: { 
-              supplier: { 
-                id: uuidv4(), 
+          await createSupplierFn({
+            data: {
+              supplier: {
+                id: uuidv4(),
                 name: row['Name'],
                 contactPerson: row['Contact Person'] || '',
                 email: row['Email'] || '',
                 phone: row['Phone'] || '',
                 address: row['Address'] || ''
-              } 
-            } 
+              }
+            }
           });
           count++;
         }
       }
-      
+
       queryClient.invalidateQueries({ queryKey: ["suppliers"] });
       toast.success(`Successfully imported ${count} suppliers`);
     } catch (error) {
@@ -540,11 +589,47 @@ function SuppliersPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      <Dialog open={!!settleItem} onOpenChange={(open) => !open && setSettleItem(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Settle Balance</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleSettle} className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Outstanding Balance for <strong>{settleItem?.name}</strong> is{" "}
+              <strong className="text-destructive">{formatCurrency(settleItem?.balance)}</strong>.
+            </p>
+            <div className="space-y-2">
+              <Label htmlFor="settleAmount">Settlement Amount</Label>
+              <Input
+                id="settleAmount"
+                type="number"
+                step="0.01"
+                min="0.01"
+                max={settleItem?.balance}
+                value={settleAmount}
+                onChange={(e) => setSettleAmount(e.target.value)}
+                required
+              />
+            </div>
+            <DialogFooter className="pt-4">
+              <Button type="button" variant="outline" onClick={() => setSettleItem(null)}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={isSettling}>
+                {isSettling && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Confirm Settlement
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
       {/* Supplier Khata Ledger Statement Side Drawer */}
       <Sheet open={!!ledgerSupplier} onOpenChange={(open) => !open && setLedgerSupplier(null)}>
         <SheetContent
           side="right"
-          className="w-full sm:max-w-2xl overflow-y-auto p-6 bg-background border-l border-border shadow-elevated"
+          className="w-full sm:max-w-4xl overflow-y-auto p-6 bg-background border-l border-border shadow-elevated"
         >
           <SheetHeader className="flex flex-col sm:flex-row items-start justify-between gap-3 border-b pb-4 pr-6 sm:pr-8 text-left">
             <div className="w-full sm:w-auto text-left">
@@ -615,11 +700,13 @@ function SuppliersPage() {
                             {l.referenceNo || "-"}
                           </td>
                           <td className="px-3 py-2.5 text-right font-semibold text-warning-foreground whitespace-nowrap">
-                            {l.type === "purchase" ? formatCurrency(l.amount) : "-"}
+                            {l.type?.toLowerCase() === "purchase" ? formatCurrency(Math.abs(Number(l.amount || 0))) : "-"}
                           </td>
                           <td className="px-3 py-2.5 text-right font-semibold text-success whitespace-nowrap">
-                            {l.type === "payment" || l.type === "return"
-                              ? formatCurrency(l.amount)
+                            {l.type?.toLowerCase() === "payment" || 
+                             l.type?.toLowerCase() === "return" || 
+                             l.type?.toLowerCase() === "transfer out"
+                              ? formatCurrency(Math.abs(Number(l.amount || 0)))
                               : "-"}
                           </td>
                           <td className="px-3 py-2.5 text-right font-bold whitespace-nowrap">

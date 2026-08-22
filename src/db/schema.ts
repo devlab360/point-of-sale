@@ -186,15 +186,17 @@ export const products = pgTable(
     unit: text("unit").notNull(),
     price: numeric("price", { precision: 10, scale: 2 }).notNull(),
     cost: numeric("cost", { precision: 10, scale: 2 }).notNull(),
-    stock: numeric("stock", { precision: 10, scale: 3 }).notNull().default("0"),
-    reorderLevel: numeric("reorder_level", { precision: 10, scale: 3 }).notNull().default("10"),
     image: text("image"),
     status: text("status").notNull().default("active"),
     expiryDate: timestamp("expiry_date", { mode: "string" }),
     wholesalePrice: numeric("wholesale_price", { precision: 10, scale: 2 }),
     dealerPrice: numeric("dealer_price", { precision: 10, scale: 2 }),
     minWholesaleQty: integer("min_wholesale_qty"),
+    stock: numeric("stock", { precision: 10, scale: 3 }).notNull().default("0"),
+    reorderLevel: numeric("reorder_level", { precision: 10, scale: 3 }).notNull().default("10"),
+    hasVariants: boolean("has_variants").default(false),
     hasSerial: boolean("has_serial").default(false),
+    course: text("course").default("Main Course"),
     serials: jsonb("serials").$type<string[]>(),
     hasBatch: boolean("has_batch").default(false),
     batches: jsonb("batches").$type<Record<string, any>[]>(),
@@ -204,6 +206,9 @@ export const products = pgTable(
     hsnCode: text("hsn_code"),
     gstRate: numeric("gst_rate", { precision: 5, scale: 2 }),
     taxInclusive: boolean("tax_inclusive").default(false),
+    isBundle: boolean("is_bundle").default(false),
+    trackFifo: boolean("track_fifo").default(false),
+    hasModifiers: boolean("has_modifiers").default(false),
     createdAt: timestamp("created_at", { mode: "string" }).defaultNow().notNull(),
     updatedAt: timestamp("updated_at", { mode: "string" }).defaultNow().notNull(),
   },
@@ -228,6 +233,7 @@ export const services = pgTable(
     price: numeric("price", { precision: 10, scale: 2 }).notNull(),
     cost: numeric("cost", { precision: 10, scale: 2 }).notNull().default("0"),
     duration: integer("duration"), // in minutes
+    hasVariants: boolean("has_variants").default(false),
     status: text("status").notNull().default("active"),
     createdAt: timestamp("created_at", { mode: "string" }).defaultNow().notNull(),
     updatedAt: timestamp("updated_at", { mode: "string" }).defaultNow().notNull(),
@@ -236,6 +242,42 @@ export const services = pgTable(
     orgIdx: index("services_org_idx").on(t.organizationId),
     categoryIdx: index("services_category_idx").on(t.category),
     statusIdx: index("services_status_idx").on(t.organizationId, t.status),
+  }),
+);
+
+export const serviceVariants = pgTable(
+  "service_variants",
+  {
+    id: text("id").primaryKey(),
+    organizationId: text("organization_id")
+      .notNull()
+      .references(() => organizations.id),
+    serviceId: text("service_id")
+      .notNull()
+      .references(() => services.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    price: numeric("price", { precision: 10, scale: 2 }).notNull(),
+    cost: numeric("cost", { precision: 10, scale: 2 }).notNull(),
+    duration: integer("duration"), // in minutes
+  },
+  (t) => ({
+    orgIdx: index("svc_variant_org_idx").on(t.organizationId),
+    serviceIdx: index("svc_variant_svc_idx").on(t.serviceId),
+  }),
+);
+
+export const serviceVariantAttributes = pgTable(
+  "service_variant_attributes",
+  {
+    id: text("id").primaryKey(),
+    variantId: text("variant_id")
+      .notNull()
+      .references(() => serviceVariants.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    value: text("value").notNull(),
+  },
+  (t) => ({
+    variantIdx: index("svc_variant_attr_idx").on(t.variantId),
   }),
 );
 
@@ -318,12 +360,15 @@ export const saleItems = pgTable(
     referenceType: text("reference_type").notNull().default("PRODUCT"),
     referenceId: text("reference_id").notNull().default("UNKNOWN"),
     productId: text("product_id"),
+    variantId: text("variant_id"),
+    locationId: text("location_id"),
     productName: text("product_name").notNull(),
     quantity: numeric("quantity", { precision: 10, scale: 3 }).notNull(),
     price: numeric("price", { precision: 10, scale: 2 }).notNull(),
     total: numeric("total", { precision: 10, scale: 2 }).notNull(),
     serialNumber: text("serial_number"),
     batchNo: text("batch_no"),
+    modifiers: jsonb("modifiers"), // stores selected modifiers array
   },
   (t) => ({
     orgIdx: index("sale_items_org_idx").on(t.organizationId),
@@ -415,6 +460,8 @@ export const purchaseItems = pgTable(
     productId: text("product_id")
       .notNull()
       .references(() => products.id),
+    variantId: text("variant_id"),
+    locationId: text("location_id"),
     productName: text("product_name").notNull(),
     quantity: numeric("quantity", { precision: 10, scale: 3 }).notNull(),
     cost: numeric("cost", { precision: 10, scale: 2 }).notNull(),
@@ -436,6 +483,9 @@ export const inventoryMovements = pgTable(
     organizationId: text("organization_id")
       .notNull()
       .references(() => organizations.id),
+    productId: text("product_id"),
+    variantId: text("variant_id"),
+    locationId: text("location_id"),
     productName: text("product_name").notNull(),
     action: text("action").notNull(),
     quantity: numeric("quantity", { precision: 10, scale: 3 }).notNull(),
@@ -1120,3 +1170,173 @@ export const kitchenOrderTickets = pgTable("kitchen_order_tickets", {
   createdAt: timestamp("created_at", { mode: "string" }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { mode: "string" }).defaultNow().notNull(),
 });
+
+export const productInventory = pgTable(
+  "product_inventory",
+  {
+    id: text("id").primaryKey(),
+    organizationId: text("organization_id")
+      .notNull()
+      .references(() => organizations.id),
+    productId: text("product_id")
+      .notNull()
+      .references(() => products.id, { onDelete: "cascade" }),
+    locationId: text("location_id")
+      .notNull()
+      .references(() => locations.id),
+    stock: numeric("stock", { precision: 10, scale: 3 }).notNull().default("0"),
+    reorderLevel: numeric("reorder_level", { precision: 10, scale: 3 }).notNull().default("10"),
+  },
+  (t) => ({
+    orgIdx: index("prod_inv_org_idx").on(t.organizationId),
+    prodLocIdx: unique("prod_inv_prod_loc_idx").on(t.productId, t.locationId),
+  })
+);
+
+export const productVariants = pgTable(
+  "product_variants",
+  {
+    id: text("id").primaryKey(),
+    organizationId: text("organization_id")
+      .notNull()
+      .references(() => organizations.id),
+    productId: text("product_id")
+      .notNull()
+      .references(() => products.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    sku: text("sku").notNull(),
+    barcode: text("barcode").notNull(),
+    price: numeric("price", { precision: 10, scale: 2 }).notNull(),
+    cost: numeric("cost", { precision: 10, scale: 2 }).notNull(),
+    image: text("image"),
+  },
+  (t) => ({
+    skuIdx: unique("variant_sku_idx").on(t.sku, t.organizationId),
+    barcodeIdx: unique("variant_barcode_idx").on(t.barcode, t.organizationId),
+    prodIdx: index("variant_prod_idx").on(t.productId),
+  })
+);
+
+export const productVariantAttributes = pgTable(
+  "product_variant_attributes",
+  {
+    id: text("id").primaryKey(),
+    variantId: text("variant_id")
+      .notNull()
+      .references(() => productVariants.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    value: text("value").notNull(),
+  },
+  (t) => ({
+    variantIdx: index("variant_attr_idx").on(t.variantId),
+  })
+);
+
+export const productBundles = pgTable(
+  "product_bundles",
+  {
+    id: text("id").primaryKey(),
+    organizationId: text("organization_id")
+      .notNull()
+      .references(() => organizations.id),
+    bundleProductId: text("bundle_product_id")
+      .notNull()
+      .references(() => products.id, { onDelete: "cascade" }),
+    componentProductId: text("component_product_id")
+      .notNull()
+      .references(() => products.id),
+    componentVariantId: text("component_variant_id")
+      .references(() => productVariants.id),
+    quantity: numeric("quantity", { precision: 10, scale: 3 }).notNull().default("1"),
+  },
+  (t) => ({
+    bundleIdx: index("bundle_product_idx").on(t.bundleProductId),
+    componentIdx: index("bundle_component_idx").on(t.componentProductId),
+    orgIdx: index("bundle_org_idx").on(t.organizationId),
+  })
+);
+
+export const inventoryBatches = pgTable(
+  "inventory_batches",
+  {
+    id: text("id").primaryKey(),
+    organizationId: text("organization_id")
+      .notNull()
+      .references(() => organizations.id),
+    productId: text("product_id")
+      .notNull()
+      .references(() => products.id, { onDelete: "cascade" }),
+    locationId: text("location_id")
+      .references(() => locations.id),
+    purchaseCost: numeric("purchase_cost", { precision: 10, scale: 2 }).notNull(),
+    quantityReceived: numeric("quantity_received", { precision: 10, scale: 3 }).notNull(),
+    quantityRemaining: numeric("quantity_remaining", { precision: 10, scale: 3 }).notNull(),
+    receivedAt: timestamp("received_at", { mode: "string" }).defaultNow().notNull(),
+    purchaseOrderId: text("purchase_order_id"),
+    batchNote: text("batch_note"),
+  },
+  (t) => ({
+    productIdx: index("inv_batch_product_idx").on(t.productId),
+    orgIdx: index("inv_batch_org_idx").on(t.organizationId),
+  })
+);
+
+export const inventoryBatchConsumptions = pgTable(
+  "inventory_batch_consumptions",
+  {
+    id: text("id").primaryKey(),
+    batchId: text("batch_id")
+      .notNull()
+      .references(() => inventoryBatches.id, { onDelete: "cascade" }),
+    saleId: text("sale_id")
+      .references(() => sales.id),
+    quantityConsumed: numeric("quantity_consumed", { precision: 10, scale: 3 }).notNull(),
+    consumedAt: timestamp("consumed_at", { mode: "string" }).defaultNow().notNull(),
+  },
+  (t) => ({
+    batchIdx: index("inv_batch_cons_batch_idx").on(t.batchId),
+    saleIdx: index("inv_batch_cons_sale_idx").on(t.saleId),
+  })
+);
+
+export const productModifiers = pgTable(
+  "product_modifiers",
+  {
+    id: text("id").primaryKey(),
+    organizationId: text("organization_id")
+      .notNull()
+      .references(() => organizations.id, { onDelete: "cascade" }),
+    productId: text("product_id")
+      .notNull()
+      .references(() => products.id, { onDelete: "cascade" }),
+    name: text("name").notNull(), // e.g. "Add-ons", "Size", "Crust Type"
+    selectionType: text("selection_type").notNull().default("multiple"), // 'single' or 'multiple'
+    isRequired: boolean("is_required").notNull().default(false),
+    sortOrder: integer("sort_order").notNull().default(0),
+  },
+  (t) => ({
+    orgIdx: index("product_modifiers_org_idx").on(t.organizationId),
+    productIdx: index("product_modifiers_product_idx").on(t.productId),
+  })
+);
+
+export const productModifierOptions = pgTable(
+  "product_modifier_options",
+  {
+    id: text("id").primaryKey(),
+    organizationId: text("organization_id")
+      .notNull()
+      .references(() => organizations.id, { onDelete: "cascade" }),
+    modifierId: text("modifier_id")
+      .notNull()
+      .references(() => productModifiers.id, { onDelete: "cascade" }),
+    name: text("name").notNull(), // e.g. "Extra Cheese", "Large"
+    price: numeric("price", { precision: 10, scale: 2 }).notNull().default("0"),
+    sortOrder: integer("sort_order").notNull().default(0),
+  },
+  (t) => ({
+    orgIdx: index("modifier_options_org_idx").on(t.organizationId),
+    modifierIdx: index("modifier_options_modifier_idx").on(t.modifierId),
+  })
+);
+

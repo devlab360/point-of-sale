@@ -26,7 +26,14 @@ import {
 import { getTablesFn } from "@/api/restaurant";
 import { getRepairsFn } from "@/api/repairs";
 
-export type CartLine = { id: string; qty: number };
+export type CartLine = { 
+  id: string; 
+  qty: number; 
+  variantId?: string; 
+  variantName?: string; 
+  variantPrice?: number; 
+  modifiers?: { id: string; name: string; optionId: string; optionName: string; price: number }[];
+};
 export type PaymentMode = "cash" | "card" | "upi" | "split" | "credit" | "wallet";
 
 export function usePosState() {
@@ -192,6 +199,7 @@ export function usePosState() {
   const [activeCat, setActiveCat] = useState<string>("all");
   const [query, setQuery] = useState("");
   const [cart, setCart] = useState<CartLine[]>([]);
+  const [selectedLocationId, setSelectedLocationId] = useState<string | null>(null);
   const [discountPct, setDiscountPct] = useState(0);
   const [discountInput, setDiscountInput] = useState("0");
   const [payment, setPayment] = useState<PaymentMode>("card");
@@ -275,24 +283,27 @@ export function usePosState() {
   );
 
   const addToCart = useCallback(
-    (id: string) => {
+    (id: string, variantId?: string, variantName?: string, variantPrice?: number, modifiers?: CartLine['modifiers']) => {
       const product = allProducts.find((p) => p.id === id);
       if (!product) return;
       setCart((c) => {
-        const exists = c.find((l) => l.id === id);
+        const modifiersStr = JSON.stringify(modifiers || []);
+        const exists = c.find((l) => l.id === id && l.variantId === variantId && JSON.stringify(l.modifiers || []) === modifiersStr);
+        const isService = product.referenceType === "SERVICE";
+        
         if (exists) {
           const newQty = exists.qty + 1;
-          if (newQty > product.stock) {
+          if (!isService && newQty > product.stock) {
             toast.error(`Only ${product.stock} in stock`);
             return c;
           }
-          return c.map((l) => (l.id === id ? { ...l, qty: newQty } : l));
+          return c.map((l) => (l.id === id && l.variantId === variantId && JSON.stringify(l.modifiers || []) === modifiersStr ? { ...l, qty: newQty } : l));
         }
-        if (product.stock <= 0) {
+        if (!isService && product.stock <= 0) {
           toast.error(`${product.name} is out of stock`);
           return c;
         }
-        return [...c, { id, qty: 1 }];
+        return [...c, { id, qty: 1, variantId, variantName, variantPrice, modifiers }];
       });
     },
     [allProducts],
@@ -330,17 +341,19 @@ export function usePosState() {
   );
 
   const updateQty = useCallback(
-    (id: string, qty: number) => {
+    (id: string, qty: number, variantId?: string, modifiers?: CartLine['modifiers']) => {
+      const modifiersStr = JSON.stringify(modifiers || []);
       if (qty <= 0) {
-        setCart((c) => c.filter((l) => l.id !== id));
+        setCart((c) => c.filter((l) => !(l.id === id && l.variantId === variantId && JSON.stringify(l.modifiers || []) === modifiersStr)));
         return;
       }
       const product = allProducts.find((p) => p.id === id);
-      if (product && qty > product.stock) {
+      const isService = product?.referenceType === "SERVICE";
+      if (product && !isService && qty > product.stock) {
         toast.error(`Only ${product.stock} available`);
         return;
       }
-      setCart((c) => c.map((l) => (l.id === id ? { ...l, qty } : l)));
+      setCart((c) => c.map((l) => (l.id === id && l.variantId === variantId && JSON.stringify(l.modifiers || []) === modifiersStr ? { ...l, qty } : l)));
     },
     [allProducts],
   );
@@ -350,23 +363,31 @@ export function usePosState() {
       const p = allProducts.find((p) => p.id === l.id);
       if (!p) return null;
 
-      let unitPrice = p.price;
-      let priceTierLabel = "";
+      let unitPrice = l.variantPrice !== undefined ? l.variantPrice : p.price;
+      
+      if (l.modifiers) {
+        const modifiersTotal = l.modifiers.reduce((sum, m) => sum + m.price, 0);
+        unitPrice += modifiersTotal;
+      }
+
+      let priceTierLabel = l.variantName ? l.variantName : "";
       const minQty = p.minWholesaleQty || 1;
 
-      if (activeCustomer.type === "wholesale" && p.wholesalePrice && p.wholesalePrice > 0) {
-        if (l.qty >= minQty) {
-          unitPrice = p.wholesalePrice;
-          priceTierLabel = "Wholesale";
-        } else {
-          priceTierLabel = `Wholesale (Min ${minQty})`;
-        }
-      } else if (activeCustomer.type === "dealer" && p.dealerPrice && p.dealerPrice > 0) {
-        if (l.qty >= minQty) {
-          unitPrice = p.dealerPrice;
-          priceTierLabel = "Dealer";
-        } else {
-          priceTierLabel = `Dealer (Min ${minQty})`;
+      if (!l.variantId) {
+        if (activeCustomer.type === "wholesale" && p.wholesalePrice && p.wholesalePrice > 0) {
+          if (l.qty >= minQty) {
+            unitPrice = p.wholesalePrice;
+            priceTierLabel = "Wholesale";
+          } else {
+            priceTierLabel = `Wholesale (Min ${minQty})`;
+          }
+        } else if (activeCustomer.type === "dealer" && p.dealerPrice && p.dealerPrice > 0) {
+          if (l.qty >= minQty) {
+            unitPrice = p.dealerPrice;
+            priceTierLabel = "Dealer";
+          } else {
+            priceTierLabel = `Dealer (Min ${minQty})`;
+          }
         }
       }
 
@@ -506,6 +527,8 @@ export function usePosState() {
     setPayment,
     selectedCustomerId,
     setSelectedCustomerId,
+    selectedLocationId,
+    setSelectedLocationId,
     selectedTableId,
     setSelectedTableId,
     printData,

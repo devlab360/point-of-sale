@@ -1,6 +1,12 @@
-import { Search, Keyboard, ScanBarcode, Plus, Image as ImageIcon } from "lucide-react";
+import { Search, Keyboard, ScanBarcode, Plus, Image as ImageIcon, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { getLocationsFn } from "@/api/locations";
+import { VariantSelectorModal } from "./VariantSelectorModal";
+import { ModifierSelectionModal } from "./ModifierSelectionModal";
 
 export function ProductGrid({ state }: { state: any }) {
   const {
@@ -20,6 +26,15 @@ export function ProductGrid({ state }: { state: any }) {
     getUnitName,
     getBrandName,
   } = state;
+
+  const { data: locationsRes } = useQuery({
+    queryKey: ["locations"],
+    queryFn: () => getLocationsFn(),
+  });
+  const locations = locationsRes?.data || [];
+  
+  const [selectedVariantProduct, setSelectedVariantProduct] = useState<any>(null);
+  const [selectedModifierProduct, setSelectedModifierProduct] = useState<{product: any, variant?: any} | null>(null);
 
   return (
     <div
@@ -66,7 +81,22 @@ export function ProductGrid({ state }: { state: any }) {
             />
           </div>
         </div>
-        <div className="flex items-center gap-2 w-full md:w-auto">
+        <div className="flex items-center gap-2 w-full md:w-auto shrink-0">
+          <Select 
+            value={state.selectedLocationId || "default"} 
+            onValueChange={(val) => state.setSelectedLocationId(val === "default" ? null : val)}
+          >
+            <SelectTrigger className="w-[180px] h-9 bg-card">
+              <MapPin className="w-4 h-4 mr-2 text-muted-foreground" />
+              <SelectValue placeholder="Main Store" />
+            </SelectTrigger>
+            <SelectContent>
+              {locations.length === 0 && <SelectItem value="default">Main Store</SelectItem>}
+              {locations.map((loc: any) => (
+                <SelectItem key={loc.id} value={loc.id}>{loc.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
           <Button
             onClick={() => state.setShowAddProduct(true)}
             className="flex-1 md:flex-none h-9 shrink-0 rounded-lg px-4 gap-2"
@@ -105,18 +135,27 @@ export function ProductGrid({ state }: { state: any }) {
         ) : (
           <div className="grid grid-cols-2 gap-3.5 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
             {filtered.map((p: any) => {
-              const low = Number(p.stock) > 0 && Number(p.stock) <= Number(p.reorderLevel);
-              const out = p.stock <= 0;
+              const isService = p.referenceType === "SERVICE";
+              const low = !isService && Number(p.stock) > 0 && Number(p.stock) <= Number(p.reorderLevel);
+              const out = !isService && p.stock <= 0;
               const catName = getCategoryName ? getCategoryName(p.category) : p.category || "";
               const unitName = getUnitName ? getUnitName(p.unit) : p.unit || "";
               const brandName = getBrandName ? getBrandName(p.brand) : p.brand || "";
               const subText = [catName, brandName].filter(Boolean).join(" · ") || unitName;
 
               return (
-                <button
-                  key={p.id}
-                  onClick={() => addToCart(p.id)}
-                  disabled={out}
+                  <button
+                    key={p.id}
+                    onClick={() => {
+                      if (p.hasVariants) {
+                        setSelectedVariantProduct(p);
+                      } else if (p.hasModifiers) {
+                        setSelectedModifierProduct({ product: p });
+                      } else {
+                        addToCart(p.id);
+                      }
+                    }}
+                    disabled={out}
                   className={cn(
                     "group relative w-full min-w-0 flex flex-col overflow-hidden rounded-xl border border-border bg-card text-left cursor-pointer shadow-soft transition-all duration-300 hover:border-primary/50 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-primary/20",
                     out && "opacity-50 cursor-not-allowed",
@@ -177,6 +216,37 @@ export function ProductGrid({ state }: { state: any }) {
           </div>
         )}
       </div>
+
+      {selectedVariantProduct && (
+        <VariantSelectorModal 
+          product={selectedVariantProduct} 
+          onClose={() => setSelectedVariantProduct(null)} 
+          onSelect={(variant) => {
+            if (selectedVariantProduct.hasModifiers) {
+              setSelectedModifierProduct({ product: selectedVariantProduct, variant });
+              setSelectedVariantProduct(null);
+            } else {
+              addToCart(selectedVariantProduct.id, variant.id, variant.name, variant.price);
+              setSelectedVariantProduct(null);
+              toast.success(`Added ${variant.name} to cart`);
+            }
+          }} 
+        />
+      )}
+
+      {selectedModifierProduct && (
+        <ModifierSelectionModal
+          product={selectedModifierProduct.product}
+          isOpen={true}
+          onClose={() => setSelectedModifierProduct(null)}
+          onConfirm={(selectedModifiers) => {
+            const { product, variant } = selectedModifierProduct;
+            addToCart(product.id, variant?.id, variant?.name, variant?.price, selectedModifiers);
+            setSelectedModifierProduct(null);
+            toast.success(`Added ${product.name} to cart`);
+          }}
+        />
+      )}
     </div>
   );
 }

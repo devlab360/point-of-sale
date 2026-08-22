@@ -7,6 +7,10 @@ import { PersistStore } from "@/lib/session-store";
 import { useAuth } from "@/contexts/AuthContext";
 
 const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
+const ONE_DAY_MS = 24 * 60 * 60 * 1000;
+
+// Module-level flag: survives Strict Mode double-mount within the same session
+let _sessionRan = false;
 
 export function ReportAutomation() {
   const hasRun = useRef(false);
@@ -14,12 +18,14 @@ export function ReportAutomation() {
 
   useEffect(() => {
     if (!isAuthenticated) {
-      hasRun.current = false; // Reset if logged out
+      hasRun.current = false;
       return;
     }
 
-    if (hasRun.current) return;
+    // Double-guard: ref (per-instance) + module-level (per-session)
+    if (hasRun.current || _sessionRan) return;
     hasRun.current = true;
+    _sessionRan = true;
 
     const runAutomation = async () => {
       try {
@@ -34,14 +40,15 @@ export function ReportAutomation() {
 
         const now = new Date();
 
-        const lastWeeklyStr = localStorage.getItem("last_weekly_report_date");
-        const lastMonthlyStr = localStorage.getItem("last_monthly_report_date");
+        const lastWeeklyStr = localStorage.getItem(`last_weekly_report_date_${orgId}`);
+        const lastMonthlyStr = localStorage.getItem(`last_monthly_report_date_${orgId}`);
 
         let needsWeekly = false;
         let needsMonthly = false;
 
         if (!lastWeeklyStr) {
-          needsWeekly = true;
+          // First time ever — set the date now without sending, to avoid spamming on first login
+          localStorage.setItem(`last_weekly_report_date_${orgId}`, now.toISOString());
         } else {
           const lastWeekly = new Date(lastWeeklyStr);
           if (now.getTime() - lastWeekly.getTime() >= SEVEN_DAYS_MS) {
@@ -50,10 +57,12 @@ export function ReportAutomation() {
         }
 
         if (!lastMonthlyStr) {
-          needsMonthly = true;
+          // First time ever — set the date now without sending
+          localStorage.setItem(`last_monthly_report_date_${orgId}`, now.toISOString());
         } else {
           const lastMonthly = new Date(lastMonthlyStr);
-          if (now.getMonth() !== lastMonthly.getMonth()) {
+          const differentMonth = now.getMonth() !== lastMonthly.getMonth() || now.getFullYear() !== lastMonthly.getFullYear();
+          if (differentMonth) {
             needsMonthly = true;
           }
         }
@@ -102,11 +111,11 @@ export function ReportAutomation() {
 
           const success = await sendAutomatedReport(adminPhone, "Monthly" as any, data);
           if (success) {
-            localStorage.setItem("last_monthly_report_date", now.toISOString());
+            localStorage.setItem(`last_monthly_report_date_${orgId}`, now.toISOString());
           }
         }
 
-        // Send Weekly Report (Wait a bit if monthly was just sent to avoid overlapping spam)
+        // Send Weekly Report (wait a bit if monthly was just sent)
         if (needsWeekly) {
           if (needsMonthly) {
             await new Promise(resolve => setTimeout(resolve, 5000));
@@ -117,7 +126,7 @@ export function ReportAutomation() {
 
           const success = await sendAutomatedReport(adminPhone, "Weekly", data);
           if (success) {
-            localStorage.setItem("last_weekly_report_date", now.toISOString());
+            localStorage.setItem(`last_weekly_report_date_${orgId}`, now.toISOString());
           }
         }
 

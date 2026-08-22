@@ -46,13 +46,20 @@ import { Route as BrandsRouteImport } from './routes/brands'
 import { Route as AppointmentsRouteImport } from './routes/appointments'
 import { Route as ActivityRouteImport } from './routes/activity'
 import { Route as AccountsRouteImport } from './routes/accounts'
+import { Route as AccountingReportsRouteImport } from './routes/accounting-reports'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ServicesIndexRouteImport } from './routes/services.index'
 import { Route as SalesIndexRouteImport } from './routes/sales.index'
 import { Route as PurchasesIndexRouteImport } from './routes/purchases.index'
+import { Route as ProductsIndexRouteImport } from './routes/products.index'
 import { Route as InventoryIndexRouteImport } from './routes/inventory.index'
+import { Route as ServicesNewRouteImport } from './routes/services.new'
+import { Route as ServicesServiceIdRouteImport } from './routes/services.$serviceId'
 import { Route as SalesReturnsRouteImport } from './routes/sales.returns'
 import { Route as PurchasesReturnsRouteImport } from './routes/purchases.returns'
 import { Route as PurchasesNewRouteImport } from './routes/purchases.new'
+import { Route as ProductsNewRouteImport } from './routes/products.new'
+import { Route as ProductsProductIdRouteImport } from './routes/products.$productId'
 import { Route as InviteTokenRouteImport } from './routes/invite/$token'
 import { Route as InventoryTransfersRouteImport } from './routes/inventory.transfers'
 import { Route as InventoryHistoryRouteImport } from './routes/inventory.history'
@@ -243,10 +250,20 @@ const AccountsRoute = AccountsRouteImport.update({
   path: '/accounts',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AccountingReportsRoute = AccountingReportsRouteImport.update({
+  id: '/accounting-reports',
+  path: '/accounting-reports',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
+} as any)
+const ServicesIndexRoute = ServicesIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => ServicesRoute,
 } as any)
 const SalesIndexRoute = SalesIndexRouteImport.update({
   id: '/',
@@ -258,6 +275,11 @@ const PurchasesIndexRoute = PurchasesIndexRouteImport.update({
   path: '/',
   getParentRoute: () => PurchasesRoute,
 } as any)
+const ProductsIndexRoute = ProductsIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => ProductsRoute,
+} as any)
 const InventoryIndexRoute = InventoryIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -265,6 +287,16 @@ const InventoryIndexRoute = InventoryIndexRouteImport.update({
 } as any).lazy(() =>
   import('./routes/inventory.index.lazy').then((d) => d.Route),
 )
+const ServicesNewRoute = ServicesNewRouteImport.update({
+  id: '/new',
+  path: '/new',
+  getParentRoute: () => ServicesRoute,
+} as any)
+const ServicesServiceIdRoute = ServicesServiceIdRouteImport.update({
+  id: '/$serviceId',
+  path: '/$serviceId',
+  getParentRoute: () => ServicesRoute,
+} as any)
 const SalesReturnsRoute = SalesReturnsRouteImport.update({
   id: '/returns',
   path: '/returns',
@@ -279,6 +311,16 @@ const PurchasesNewRoute = PurchasesNewRouteImport.update({
   id: '/new',
   path: '/new',
   getParentRoute: () => PurchasesRoute,
+} as any)
+const ProductsNewRoute = ProductsNewRouteImport.update({
+  id: '/new',
+  path: '/new',
+  getParentRoute: () => ProductsRoute,
+} as any)
+const ProductsProductIdRoute = ProductsProductIdRouteImport.update({
+  id: '/$productId',
+  path: '/$productId',
+  getParentRoute: () => ProductsRoute,
 } as any)
 const InviteTokenRoute = InviteTokenRouteImport.update({
   id: '/invite/$token',
@@ -309,6 +351,7 @@ const InventoryAdjustmentsRoute = InventoryAdjustmentsRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/accounting-reports': typeof AccountingReportsRoute
   '/accounts': typeof AccountsRoute
   '/activity': typeof ActivityRoute
   '/appointments': typeof AppointmentsRoute
@@ -328,7 +371,7 @@ export interface FileRoutesByFullPath {
   '/notifications': typeof NotificationsRoute
   '/portal': typeof PortalRoute
   '/pos': typeof PosRoute
-  '/products': typeof ProductsRoute
+  '/products': typeof ProductsRouteWithChildren
   '/profile': typeof ProfileRoute
   '/promotions': typeof PromotionsRoute
   '/purchases': typeof PurchasesRouteWithChildren
@@ -338,7 +381,7 @@ export interface FileRoutesByFullPath {
   '/repairs': typeof RepairsRoute
   '/reports': typeof ReportsRoute
   '/sales': typeof SalesRouteWithChildren
-  '/services': typeof ServicesRoute
+  '/services': typeof ServicesRouteWithChildren
   '/settings': typeof SettingsRoute
   '/subscriptions': typeof SubscriptionsRoute
   '/suppliers': typeof SuppliersRoute
@@ -350,15 +393,22 @@ export interface FileRoutesByFullPath {
   '/inventory/history': typeof InventoryHistoryRoute
   '/inventory/transfers': typeof InventoryTransfersRoute
   '/invite/$token': typeof InviteTokenRoute
+  '/products/$productId': typeof ProductsProductIdRoute
+  '/products/new': typeof ProductsNewRoute
   '/purchases/new': typeof PurchasesNewRoute
   '/purchases/returns': typeof PurchasesReturnsRoute
   '/sales/returns': typeof SalesReturnsRoute
+  '/services/$serviceId': typeof ServicesServiceIdRoute
+  '/services/new': typeof ServicesNewRoute
   '/inventory/': typeof InventoryIndexRoute
+  '/products/': typeof ProductsIndexRoute
   '/purchases/': typeof PurchasesIndexRoute
   '/sales/': typeof SalesIndexRoute
+  '/services/': typeof ServicesIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/accounting-reports': typeof AccountingReportsRoute
   '/accounts': typeof AccountsRoute
   '/activity': typeof ActivityRoute
   '/appointments': typeof AppointmentsRoute
@@ -377,7 +427,6 @@ export interface FileRoutesByTo {
   '/notifications': typeof NotificationsRoute
   '/portal': typeof PortalRoute
   '/pos': typeof PosRoute
-  '/products': typeof ProductsRoute
   '/profile': typeof ProfileRoute
   '/promotions': typeof PromotionsRoute
   '/quotations': typeof QuotationsRoute
@@ -385,7 +434,6 @@ export interface FileRoutesByTo {
   '/rentals': typeof RentalsRoute
   '/repairs': typeof RepairsRoute
   '/reports': typeof ReportsRoute
-  '/services': typeof ServicesRoute
   '/settings': typeof SettingsRoute
   '/subscriptions': typeof SubscriptionsRoute
   '/suppliers': typeof SuppliersRoute
@@ -397,16 +445,23 @@ export interface FileRoutesByTo {
   '/inventory/history': typeof InventoryHistoryRoute
   '/inventory/transfers': typeof InventoryTransfersRoute
   '/invite/$token': typeof InviteTokenRoute
+  '/products/$productId': typeof ProductsProductIdRoute
+  '/products/new': typeof ProductsNewRoute
   '/purchases/new': typeof PurchasesNewRoute
   '/purchases/returns': typeof PurchasesReturnsRoute
   '/sales/returns': typeof SalesReturnsRoute
+  '/services/$serviceId': typeof ServicesServiceIdRoute
+  '/services/new': typeof ServicesNewRoute
   '/inventory': typeof InventoryIndexRoute
+  '/products': typeof ProductsIndexRoute
   '/purchases': typeof PurchasesIndexRoute
   '/sales': typeof SalesIndexRoute
+  '/services': typeof ServicesIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/accounting-reports': typeof AccountingReportsRoute
   '/accounts': typeof AccountsRoute
   '/activity': typeof ActivityRoute
   '/appointments': typeof AppointmentsRoute
@@ -426,7 +481,7 @@ export interface FileRoutesById {
   '/notifications': typeof NotificationsRoute
   '/portal': typeof PortalRoute
   '/pos': typeof PosRoute
-  '/products': typeof ProductsRoute
+  '/products': typeof ProductsRouteWithChildren
   '/profile': typeof ProfileRoute
   '/promotions': typeof PromotionsRoute
   '/purchases': typeof PurchasesRouteWithChildren
@@ -436,7 +491,7 @@ export interface FileRoutesById {
   '/repairs': typeof RepairsRoute
   '/reports': typeof ReportsRoute
   '/sales': typeof SalesRouteWithChildren
-  '/services': typeof ServicesRoute
+  '/services': typeof ServicesRouteWithChildren
   '/settings': typeof SettingsRoute
   '/subscriptions': typeof SubscriptionsRoute
   '/suppliers': typeof SuppliersRoute
@@ -448,17 +503,24 @@ export interface FileRoutesById {
   '/inventory/history': typeof InventoryHistoryRoute
   '/inventory/transfers': typeof InventoryTransfersRoute
   '/invite/$token': typeof InviteTokenRoute
+  '/products/$productId': typeof ProductsProductIdRoute
+  '/products/new': typeof ProductsNewRoute
   '/purchases/new': typeof PurchasesNewRoute
   '/purchases/returns': typeof PurchasesReturnsRoute
   '/sales/returns': typeof SalesReturnsRoute
+  '/services/$serviceId': typeof ServicesServiceIdRoute
+  '/services/new': typeof ServicesNewRoute
   '/inventory/': typeof InventoryIndexRoute
+  '/products/': typeof ProductsIndexRoute
   '/purchases/': typeof PurchasesIndexRoute
   '/sales/': typeof SalesIndexRoute
+  '/services/': typeof ServicesIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/accounting-reports'
     | '/accounts'
     | '/activity'
     | '/appointments'
@@ -500,15 +562,22 @@ export interface FileRouteTypes {
     | '/inventory/history'
     | '/inventory/transfers'
     | '/invite/$token'
+    | '/products/$productId'
+    | '/products/new'
     | '/purchases/new'
     | '/purchases/returns'
     | '/sales/returns'
+    | '/services/$serviceId'
+    | '/services/new'
     | '/inventory/'
+    | '/products/'
     | '/purchases/'
     | '/sales/'
+    | '/services/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/accounting-reports'
     | '/accounts'
     | '/activity'
     | '/appointments'
@@ -527,7 +596,6 @@ export interface FileRouteTypes {
     | '/notifications'
     | '/portal'
     | '/pos'
-    | '/products'
     | '/profile'
     | '/promotions'
     | '/quotations'
@@ -535,7 +603,6 @@ export interface FileRouteTypes {
     | '/rentals'
     | '/repairs'
     | '/reports'
-    | '/services'
     | '/settings'
     | '/subscriptions'
     | '/suppliers'
@@ -547,15 +614,22 @@ export interface FileRouteTypes {
     | '/inventory/history'
     | '/inventory/transfers'
     | '/invite/$token'
+    | '/products/$productId'
+    | '/products/new'
     | '/purchases/new'
     | '/purchases/returns'
     | '/sales/returns'
+    | '/services/$serviceId'
+    | '/services/new'
     | '/inventory'
+    | '/products'
     | '/purchases'
     | '/sales'
+    | '/services'
   id:
     | '__root__'
     | '/'
+    | '/accounting-reports'
     | '/accounts'
     | '/activity'
     | '/appointments'
@@ -597,16 +671,23 @@ export interface FileRouteTypes {
     | '/inventory/history'
     | '/inventory/transfers'
     | '/invite/$token'
+    | '/products/$productId'
+    | '/products/new'
     | '/purchases/new'
     | '/purchases/returns'
     | '/sales/returns'
+    | '/services/$serviceId'
+    | '/services/new'
     | '/inventory/'
+    | '/products/'
     | '/purchases/'
     | '/sales/'
+    | '/services/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AccountingReportsRoute: typeof AccountingReportsRoute
   AccountsRoute: typeof AccountsRoute
   ActivityRoute: typeof ActivityRoute
   AppointmentsRoute: typeof AppointmentsRoute
@@ -626,7 +707,7 @@ export interface RootRouteChildren {
   NotificationsRoute: typeof NotificationsRoute
   PortalRoute: typeof PortalRoute
   PosRoute: typeof PosRoute
-  ProductsRoute: typeof ProductsRoute
+  ProductsRoute: typeof ProductsRouteWithChildren
   ProfileRoute: typeof ProfileRoute
   PromotionsRoute: typeof PromotionsRoute
   PurchasesRoute: typeof PurchasesRouteWithChildren
@@ -636,7 +717,7 @@ export interface RootRouteChildren {
   RepairsRoute: typeof RepairsRoute
   ReportsRoute: typeof ReportsRoute
   SalesRoute: typeof SalesRouteWithChildren
-  ServicesRoute: typeof ServicesRoute
+  ServicesRoute: typeof ServicesRouteWithChildren
   SettingsRoute: typeof SettingsRoute
   SubscriptionsRoute: typeof SubscriptionsRoute
   SuppliersRoute: typeof SuppliersRoute
@@ -908,12 +989,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AccountsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/accounting-reports': {
+      id: '/accounting-reports'
+      path: '/accounting-reports'
+      fullPath: '/accounting-reports'
+      preLoaderRoute: typeof AccountingReportsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/services/': {
+      id: '/services/'
+      path: '/'
+      fullPath: '/services/'
+      preLoaderRoute: typeof ServicesIndexRouteImport
+      parentRoute: typeof ServicesRoute
     }
     '/sales/': {
       id: '/sales/'
@@ -929,12 +1024,33 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PurchasesIndexRouteImport
       parentRoute: typeof PurchasesRoute
     }
+    '/products/': {
+      id: '/products/'
+      path: '/'
+      fullPath: '/products/'
+      preLoaderRoute: typeof ProductsIndexRouteImport
+      parentRoute: typeof ProductsRoute
+    }
     '/inventory/': {
       id: '/inventory/'
       path: '/'
       fullPath: '/inventory/'
       preLoaderRoute: typeof InventoryIndexRouteImport
       parentRoute: typeof InventoryRoute
+    }
+    '/services/new': {
+      id: '/services/new'
+      path: '/new'
+      fullPath: '/services/new'
+      preLoaderRoute: typeof ServicesNewRouteImport
+      parentRoute: typeof ServicesRoute
+    }
+    '/services/$serviceId': {
+      id: '/services/$serviceId'
+      path: '/$serviceId'
+      fullPath: '/services/$serviceId'
+      preLoaderRoute: typeof ServicesServiceIdRouteImport
+      parentRoute: typeof ServicesRoute
     }
     '/sales/returns': {
       id: '/sales/returns'
@@ -956,6 +1072,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/purchases/new'
       preLoaderRoute: typeof PurchasesNewRouteImport
       parentRoute: typeof PurchasesRoute
+    }
+    '/products/new': {
+      id: '/products/new'
+      path: '/new'
+      fullPath: '/products/new'
+      preLoaderRoute: typeof ProductsNewRouteImport
+      parentRoute: typeof ProductsRoute
+    }
+    '/products/$productId': {
+      id: '/products/$productId'
+      path: '/$productId'
+      fullPath: '/products/$productId'
+      preLoaderRoute: typeof ProductsProductIdRouteImport
+      parentRoute: typeof ProductsRoute
     }
     '/invite/$token': {
       id: '/invite/$token'
@@ -1006,6 +1136,22 @@ const InventoryRouteWithChildren = InventoryRoute._addFileChildren(
   InventoryRouteChildren,
 )
 
+interface ProductsRouteChildren {
+  ProductsProductIdRoute: typeof ProductsProductIdRoute
+  ProductsNewRoute: typeof ProductsNewRoute
+  ProductsIndexRoute: typeof ProductsIndexRoute
+}
+
+const ProductsRouteChildren: ProductsRouteChildren = {
+  ProductsProductIdRoute: ProductsProductIdRoute,
+  ProductsNewRoute: ProductsNewRoute,
+  ProductsIndexRoute: ProductsIndexRoute,
+}
+
+const ProductsRouteWithChildren = ProductsRoute._addFileChildren(
+  ProductsRouteChildren,
+)
+
 interface PurchasesRouteChildren {
   PurchasesNewRoute: typeof PurchasesNewRoute
   PurchasesReturnsRoute: typeof PurchasesReturnsRoute
@@ -1034,8 +1180,25 @@ const SalesRouteChildren: SalesRouteChildren = {
 
 const SalesRouteWithChildren = SalesRoute._addFileChildren(SalesRouteChildren)
 
+interface ServicesRouteChildren {
+  ServicesServiceIdRoute: typeof ServicesServiceIdRoute
+  ServicesNewRoute: typeof ServicesNewRoute
+  ServicesIndexRoute: typeof ServicesIndexRoute
+}
+
+const ServicesRouteChildren: ServicesRouteChildren = {
+  ServicesServiceIdRoute: ServicesServiceIdRoute,
+  ServicesNewRoute: ServicesNewRoute,
+  ServicesIndexRoute: ServicesIndexRoute,
+}
+
+const ServicesRouteWithChildren = ServicesRoute._addFileChildren(
+  ServicesRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AccountingReportsRoute: AccountingReportsRoute,
   AccountsRoute: AccountsRoute,
   ActivityRoute: ActivityRoute,
   AppointmentsRoute: AppointmentsRoute,
@@ -1055,7 +1218,7 @@ const rootRouteChildren: RootRouteChildren = {
   NotificationsRoute: NotificationsRoute,
   PortalRoute: PortalRoute,
   PosRoute: PosRoute,
-  ProductsRoute: ProductsRoute,
+  ProductsRoute: ProductsRouteWithChildren,
   ProfileRoute: ProfileRoute,
   PromotionsRoute: PromotionsRoute,
   PurchasesRoute: PurchasesRouteWithChildren,
@@ -1065,7 +1228,7 @@ const rootRouteChildren: RootRouteChildren = {
   RepairsRoute: RepairsRoute,
   ReportsRoute: ReportsRoute,
   SalesRoute: SalesRouteWithChildren,
-  ServicesRoute: ServicesRoute,
+  ServicesRoute: ServicesRouteWithChildren,
   SettingsRoute: SettingsRoute,
   SubscriptionsRoute: SubscriptionsRoute,
   SuppliersRoute: SuppliersRoute,

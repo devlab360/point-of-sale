@@ -89,7 +89,11 @@ export function PosPrintLayouts({ state, preview = false }: { state: any, previe
               </div>
               <div className="flex justify-between items-start mt-2">
                 <span className="font-bold text-gray-600">Payment Mode:</span>
-                <span className="font-black uppercase">{printData.payment}</span>
+                <span className="font-black uppercase">
+                  {printData.payment === "split" && printData.splitPayments?.length 
+                    ? printData.splitPayments.map((p: any) => p.method).join(" + ") 
+                    : printData.payment}
+                </span>
               </div>
             </div>
 
@@ -210,6 +214,35 @@ export function PosPrintLayouts({ state, preview = false }: { state: any, previe
                   </span>
                 </div>
               )}
+              {printData.payment === "credit" && printData.advancePaid != null && (
+                <>
+                  <div className="flex justify-between">
+                    <span className="font-semibold text-gray-600">Advance Paid:</span>
+                    <span className="font-bold">
+                      {currencySymbol}
+                      {fmt(printData.advancePaid)}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="font-semibold text-gray-600">Due Amount:</span>
+                    <span className="font-bold">
+                      {currencySymbol}
+                      {fmt(printData.dueAmount)}
+                    </span>
+                  </div>
+                </>
+              )}
+              {printData.payment === "split" && printData.splitPayments && printData.splitPayments.length > 0 && (
+                <div className="mt-2 pt-2 border-t border-gray-400 border-dotted text-[11px]">
+                  <div className="font-semibold text-gray-600 mb-1">Split Payment Details:</div>
+                  {printData.splitPayments.map((p: any, i: number) => (
+                    <div key={i} className="flex justify-between">
+                      <span className="uppercase">{p.method}</span>
+                      <span className="font-bold">{currencySymbol}{fmt(p.amount)}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             <div className="mt-3 text-left">
@@ -317,7 +350,11 @@ export function PosPrintLayouts({ state, preview = false }: { state: any, previe
                   {printData.payment && (
                     <>
                       <span className="text-gray-500 text-right">Payment:</span>
-                      <span className="font-bold text-black text-right uppercase">{printData.payment}</span>
+                      <span className="font-bold text-black text-right uppercase">
+                        {printData.payment === "split" && printData.splitPayments?.length 
+                          ? printData.splitPayments.map((p: any) => p.method).join(" + ") 
+                          : printData.payment}
+                      </span>
                     </>
                   )}
                 </div>
@@ -459,6 +496,29 @@ export function PosPrintLayouts({ state, preview = false }: { state: any, previe
                     <div className="flex justify-between gap-4">
                       <span className="text-gray-500">Change Due</span>
                       <span className="font-semibold text-green-700">{currencySymbol}{fmt(printData.changeDue)}</span>
+                    </div>
+                  )}
+                  {printData.payment === "credit" && printData.advancePaid != null && (
+                    <>
+                      <div className="flex justify-between gap-4">
+                        <span className="text-gray-500">Advance Paid</span>
+                        <span className="font-semibold">{currencySymbol}{fmt(printData.advancePaid)}</span>
+                      </div>
+                      <div className="flex justify-between gap-4">
+                        <span className="text-gray-500">Due Amount</span>
+                        <span className="font-semibold text-red-600">{currencySymbol}{fmt(printData.dueAmount)}</span>
+                      </div>
+                    </>
+                  )}
+                  {printData.payment === "split" && printData.splitPayments && printData.splitPayments.length > 0 && (
+                    <div className="flex flex-col gap-1 mt-1 pt-1 border-t border-dashed border-gray-300">
+                      <div className="text-gray-500 text-[11px] font-semibold mb-1">Split Payment Details</div>
+                      {printData.splitPayments.map((p: any, i: number) => (
+                        <div key={i} className="flex justify-between gap-4">
+                          <span className="text-gray-500 uppercase">{p.method}</span>
+                          <span className="font-semibold">{currencySymbol}{fmt(p.amount)}</span>
+                        </div>
+                      ))}
                     </div>
                   )}
                   {printData.amountInWords && (

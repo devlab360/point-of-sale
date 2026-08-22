@@ -179,7 +179,15 @@ function TransfersPage() {
                     label: `${p.name} (${p.stock} in stock)`,
                   }))}
                   value={formData.product}
-                  onChange={(v) => setFormData({ ...formData, product: v })}
+                  onChange={(v) => {
+                    const prod = products.find(p => p.id === v);
+                    const cost = prod ? (Number(prod.cost) || Number(prod.price) || 0) : 0;
+                    setFormData(prev => ({ 
+                      ...prev, 
+                      product: v, 
+                      totalAmount: cost * prev.items 
+                    }));
+                  }}
                   placeholder="Select product"
                 />
               </div>
@@ -201,7 +209,16 @@ function TransfersPage() {
                   type="number"
                   min="1"
                   value={formData.items || ""}
-                  onChange={(e) => setFormData({ ...formData, items: parseInt(e.target.value) || 0 })}
+                  onChange={(e) => {
+                    const newItems = parseInt(e.target.value) || 0;
+                    const prod = products.find(p => p.id === formData.product);
+                    const cost = prod ? (Number(prod.cost) || Number(prod.price) || 0) : 0;
+                    setFormData(prev => ({ 
+                      ...prev, 
+                      items: newItems, 
+                      totalAmount: cost * newItems 
+                    }));
+                  }}
                 />
               </div>
               <div className="space-y-2">

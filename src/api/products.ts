@@ -3,7 +3,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { v4 as uuidv4 } from "uuid";
 import { db } from "@/db";
 import * as schema from "@/db/schema";
-import { eq, and, desc, sql, ilike, or } from "drizzle-orm";
+import { eq, and, desc, sql, ilike, or, inArray } from "drizzle-orm";
 import { z } from "zod";
 import { requireAuth, requireAdmin } from "@/lib/auth-utils";
 
@@ -56,14 +56,16 @@ export const getProductsFn = createServerFn({ method: "GET" })
         .where(whereClause);
       const totalCount = Number(totalCountRes[0].count);
 
+      // Aggregate stock from product_inventory
       const summaryRes = await db
         .select({
-          totalStock: sql`sum(${schema.products.stock})`,
-          totalValue: sql`sum(${schema.products.stock} * ${schema.products.cost})`,
-          totalRetailValue: sql`sum(${schema.products.stock} * ${schema.products.price})`,
-          lowStockCount: sql`count(CASE WHEN ${schema.products.stock} <= ${schema.products.reorderLevel} THEN 1 END)`
+          totalStock: sql`sum(COALESCE(${schema.productInventory.stock}, 0))`,
+          totalValue: sql`sum(COALESCE(${schema.productInventory.stock}, 0) * COALESCE(${schema.products.cost}, 0))`,
+          totalRetailValue: sql`sum(COALESCE(${schema.productInventory.stock}, 0) * COALESCE(${schema.products.price}, 0))`,
+          lowStockCount: sql`count(CASE WHEN COALESCE(${schema.productInventory.stock}, 0) <= COALESCE(${schema.productInventory.reorderLevel}, 0) THEN 1 END)`
         })
         .from(schema.products)
+        .leftJoin(schema.productInventory, eq(schema.products.id, schema.productInventory.productId))
         .where(whereClause);
 
       const summary = {
@@ -78,6 +80,20 @@ export const getProductsFn = createServerFn({ method: "GET" })
       return handleApiError(e);
     }
   });
+
+const VariantInputSchema = z.object({
+  id: z.string().optional(),
+  name: z.string().min(1, "Variant name is required"),
+  sku: z.string().optional(),
+  barcode: z.string().optional(),
+  price: z.union([z.string(), z.number()]),
+  cost: z.union([z.string(), z.number()]),
+  image: z.string().nullable().optional(),
+  attributes: z.array(z.object({
+    name: z.string(),
+    value: z.string()
+  })).optional()
+}).passthrough();
 
 const ProductInputSchema = z
   .object({
@@ -94,6 +110,12 @@ const ProductInputSchema = z
     taxPct: z.string().nullable().optional(),
     type: z.string().nullable().optional(),
     hasVariants: z.boolean().nullable().optional(),
+    isBundle: z.boolean().nullable().optional(),
+    trackFifo: z.boolean().nullable().optional(),
+    hasModifiers: z.boolean().nullable().optional(),
+    course: z.string().nullable().optional(),
+    variants: z.array(VariantInputSchema).optional(),
+    locationStocks: z.array(z.object({ locationId: z.string(), stock: z.number() })).optional(),
     description: z.string().nullable().optional(),
     status: z.string().nullable().optional(),
     images: z.array(z.string()).nullable().optional(),
@@ -111,9 +133,11 @@ export const createProductFn = createServerFn({ method: "POST" })
       const session = await requireAuth();
       const product = data.product;
       const now = Date.now();
+      const productId = product.id || uuidv4();
+      
       const productData = {
         ...product,
-        id: product.id || uuidv4(),
+        id: productId,
         organizationId: session.orgId,
         name: product.name,
         sku: product.sku || `SKU-${now}`,
@@ -123,11 +147,80 @@ export const createProductFn = createServerFn({ method: "POST" })
         unit: (product as any).unit || product.unitId || "Pcs",
         cost: product.cost.toString(),
         price: product.price.toString(),
+        hasVariants: Boolean(product.hasVariants),
+        isBundle: Boolean(product.isBundle),
+        trackFifo: Boolean(product.trackFifo),
+        hasModifiers: Boolean(product.hasModifiers),
       };
+      
+      const { variants, ...restProductData } = productData;
+      
       const inserted = await db
         .insert(schema.products)
-        .values(productData as any)
+        .values(restProductData as any)
         .returning();
+
+      if (product.hasVariants && variants && variants.length > 0) {
+         for (const variant of variants) {
+            const variantId = variant.id || uuidv4();
+            await db.insert(schema.productVariants).values({
+               id: variantId,
+               organizationId: session.orgId,
+               productId: productId,
+               name: variant.name,
+               sku: variant.sku || `${restProductData.sku}-${variant.name}`,
+               barcode: variant.barcode || `${now}-${variant.name}`,
+               price: variant.price.toString(),
+               cost: variant.cost.toString(),
+               image: variant.image || null,
+            });
+
+            if (variant.attributes && variant.attributes.length > 0) {
+               for (const attr of variant.attributes) {
+                  await db.insert(schema.productVariantAttributes).values({
+                     id: uuidv4(),
+                     variantId: variantId,
+                     name: attr.name,
+                     value: attr.value
+                  });
+               }
+            }
+         }
+      }
+
+      // Handle per-location stock seeding
+      if (!product.hasVariants) {
+        const locationStocksInput = (product as any).locationStocks as { locationId: string; stock: number }[] | undefined;
+        if (locationStocksInput && locationStocksInput.length > 0) {
+          // New UI: explicit per-location stock array
+          for (const ls of locationStocksInput) {
+            if (ls.stock > 0) {
+              await db.insert(schema.productInventory).values({
+                id: uuidv4(),
+                organizationId: session.orgId,
+                productId,
+                locationId: ls.locationId,
+                stock: ls.stock.toString(),
+                reorderLevel: product.minStock ? product.minStock.toString() : "10",
+              });
+            }
+          }
+        } else if (product.stock !== undefined && product.stock > 0) {
+          // Fallback: single stock, seed to Main Store
+          const orgLocations = await db.select().from(schema.locations).where(eq(schema.locations.organizationId, session.orgId));
+          if (orgLocations.length > 0) {
+            const mainLocation = orgLocations.find(l => l.name === "Main Store") || orgLocations[0];
+            await db.insert(schema.productInventory).values({
+              id: uuidv4(),
+              organizationId: session.orgId,
+              productId,
+              locationId: mainLocation.id,
+              stock: product.stock.toString(),
+              reorderLevel: product.minStock ? product.minStock.toString() : "10",
+            });
+          }
+        }
+      }
 
       const userName = session.userName || session.userId || "Admin";
       await db.insert(schema.activityLog).values({
@@ -168,12 +261,18 @@ export const updateProductFn = createServerFn({ method: "POST" })
       const session = await requireAuth();
 
       const updatesObj = data.updates;
+      const { variants, ...restUpdates } = updatesObj;
+
       const updateData: Record<string, unknown> = {
-        ...updatesObj,
+        ...restUpdates,
         updatedAt: new Date().toISOString(),
       };
       if (updatesObj.cost !== undefined) updateData.cost = updatesObj.cost.toString();
       if (updatesObj.price !== undefined) updateData.price = updatesObj.price.toString();
+      if (updatesObj.hasVariants !== undefined) updateData.hasVariants = Boolean(updatesObj.hasVariants);
+      if (updatesObj.isBundle !== undefined) updateData.isBundle = Boolean(updatesObj.isBundle);
+      if (updatesObj.trackFifo !== undefined) updateData.trackFifo = Boolean(updatesObj.trackFifo);
+      if (updatesObj.hasModifiers !== undefined) updateData.hasModifiers = Boolean(updatesObj.hasModifiers);
 
       await db
         .update(schema.products)
@@ -181,6 +280,67 @@ export const updateProductFn = createServerFn({ method: "POST" })
         .where(
           and(eq(schema.products.id, data.id), eq(schema.products.organizationId, session.orgId)),
         );
+        
+      if (updatesObj.hasVariants && variants) {
+         // This is a naive implementation: delete all existing variants and recreate them
+         await db.delete(schema.productVariants).where(eq(schema.productVariants.productId, data.id));
+         const now = Date.now();
+         for (const variant of variants) {
+            const variantId = variant.id || uuidv4();
+            await db.insert(schema.productVariants).values({
+               id: variantId,
+               organizationId: session.orgId,
+               productId: data.id,
+               name: variant.name,
+               sku: variant.sku || `VAR-${now}-${variant.name}`,
+               barcode: variant.barcode || `${now}-${variant.name}`,
+               price: variant.price.toString(),
+               cost: variant.cost.toString(),
+               image: variant.image || null,
+            });
+
+            if (variant.attributes && variant.attributes.length > 0) {
+               for (const attr of variant.attributes) {
+                  await db.insert(schema.productVariantAttributes).values({
+                     id: uuidv4(),
+                     variantId: variantId,
+                     name: attr.name,
+                     value: attr.value
+                  });
+               }
+            }
+         }
+      }
+
+      // Handle legacy single stock update
+      if (updatesObj.stock !== undefined && !updatesObj.hasVariants) {
+        const locations = await db.select().from(schema.locations).where(eq(schema.locations.organizationId, session.orgId));
+        if (locations.length > 0) {
+          const mainLocation = locations.find(l => l.name === "Main Store") || locations[0];
+          
+          const existingInv = await db.select().from(schema.productInventory).where(
+            and(eq(schema.productInventory.productId, data.id), eq(schema.productInventory.locationId, mainLocation.id))
+          );
+          
+          if (existingInv.length > 0) {
+            await db.update(schema.productInventory).set({
+              stock: updatesObj.stock.toString(),
+              reorderLevel: updatesObj.minStock ? updatesObj.minStock.toString() : existingInv[0].reorderLevel,
+            }).where(
+              and(eq(schema.productInventory.productId, data.id), eq(schema.productInventory.locationId, mainLocation.id))
+            );
+          } else {
+             await db.insert(schema.productInventory).values({
+                id: uuidv4(),
+                organizationId: session.orgId,
+                productId: data.id,
+                locationId: mainLocation.id,
+                stock: updatesObj.stock.toString(),
+                reorderLevel: updatesObj.minStock ? updatesObj.minStock.toString() : "10",
+             });
+          }
+        }
+      }
 
       const userName = session.userName || session.userId || "Admin";
       await db.insert(schema.activityLog).values({
@@ -226,6 +386,62 @@ export const deleteProductFn = createServerFn({ method: "POST" })
       });
 
       return { success: true, message: "Product deleted successfully" };
+    } catch (e) {
+      return handleApiError(e);
+    }
+  });
+
+export const getProductVariantsFn = createServerFn({ method: "GET" })
+  .validator((data: unknown) => z.object({ productId: z.string() }).parse(data))
+  .handler(async ({ data }) => {
+    try {
+      const session = await requireAuth();
+      const variants = await db
+        .select()
+        .from(schema.productVariants)
+        .where(
+          and(
+            eq(schema.productVariants.productId, data.productId),
+            eq(schema.productVariants.organizationId, session.orgId)
+          )
+        );
+      
+      const variantsWithAttributes = await Promise.all(
+          variants.map(async (v) => {
+            const attributes = await db
+              .select()
+              .from(schema.productVariantAttributes)
+              .where(eq(schema.productVariantAttributes.variantId, v.id));
+            return { ...v, attributes };
+          })
+        );
+        
+        return { success: true, data: variantsWithAttributes };
+    } catch (e) {
+      return handleApiError(e);
+    }
+  });
+
+export const getAllProductVariantsFn = createServerFn({ method: "GET" })
+  .validator((data: any) => data || {})
+  .handler(async () => {
+    try {
+      const session = await requireAuth();
+      const variants = await db
+        .select()
+        .from(schema.productVariants)
+        .where(eq(schema.productVariants.organizationId, session.orgId));
+        
+      const attributes = await db
+        .select()
+        .from(schema.productVariantAttributes);
+
+      const variantsWithAttributes = variants.map((v) => {
+        const vAttrs = attributes.filter(a => a.variantId === v.id);
+        return { ...v, attributes: vAttrs };
+      });
+      
+      return { success: true, data: variantsWithAttributes };
     } catch (e) {
       return handleApiError(e);
     }

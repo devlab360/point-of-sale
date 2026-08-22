@@ -17,6 +17,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { getSuppliersFn } from "@/api/suppliers";
 import { getProductsFn } from "@/api/products";
 import { createPurchaseFn } from "@/api/purchases";
+import { parseInvoiceFn } from "@/api/ai";
 import { useCurrency } from "@/lib/currency";
 import { toast } from "sonner";
 import {
@@ -59,6 +60,7 @@ function NewPurchase() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [amountPaid, setAmountPaid] = useState<number | "">("");
 
   const subtotal = lines.reduce((sum, l) => sum + (Number(l.qty) || 0) * (Number(l.cost) || 0), 0);
   const tax = 0; // Tax is configured per-product in settings, not applied globally here
@@ -117,8 +119,8 @@ function NewPurchase() {
             subtotal: subtotal,
             taxAmt: tax,
             total: total,
-            paid: total,
-            due: 0,
+            paid: amountPaid === "" ? total : Number(amountPaid),
+            due: amountPaid === "" ? 0 : total - Number(amountPaid),
           },
           items: formattedItems,
         },
@@ -146,36 +148,76 @@ function NewPurchase() {
     setIsAnalyzing(true);
     toast.loading("Analyzing invoice with AI OCR...", { id: "ocr" });
 
-    setTimeout(() => {
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      try {
+        const base64Str = (event.target?.result as string).split(',')[1];
+        const res = await parseInvoiceFn({
+          data: {
+            fileBase64: base64Str,
+            mimeType: file.type,
+          }
+        });
+
+        if (!res.success) throw new Error(res.error || "Failed to parse invoice");
+
+        const data = res.data;
+        
+        // 1. Fuzzy match supplier
+        if (data.supplierName) {
+          const supplierStr = data.supplierName.toLowerCase();
+          const matchedSupplier = suppliers.find(s => 
+            s.name.toLowerCase().includes(supplierStr) || 
+            supplierStr.includes(s.name.toLowerCase())
+          );
+          if (matchedSupplier) {
+            setSupplierId(matchedSupplier.id);
+          } else {
+            toast.warning(`Supplier "${data.supplierName}" not found in system.`);
+          }
+        }
+
+        // 2. Fuzzy match products and populate lines
+        if (data.items && data.items.length > 0) {
+          const newLines: { productId: string; qty: number; cost: number }[] = [];
+          for (const item of data.items) {
+             const prodStr = item.productName.toLowerCase();
+             const matchedProduct = products.find(p => 
+               p.name.toLowerCase().includes(prodStr) || 
+               prodStr.includes(p.name.toLowerCase())
+             );
+             if (matchedProduct) {
+               newLines.push({
+                 productId: matchedProduct.id,
+                 qty: item.quantity || 1,
+                 cost: item.cost || matchedProduct.cost || 0
+               });
+             } else {
+               toast.warning(`Product "${item.productName}" not found in inventory.`);
+             }
+          }
+          if (newLines.length > 0) {
+            setLines(newLines);
+          }
+        }
+        
+        toast.success("Invoice data extracted successfully!", { id: "ocr" });
+      } catch (err: any) {
+        toast.error(err.message || "Failed to extract invoice data", { id: "ocr" });
+      } finally {
+        setIsAnalyzing(false);
+        if (fileInputRef.current) fileInputRef.current.value = "";
+      }
+    };
+    reader.onerror = () => {
+      toast.error("Failed to read file", { id: "ocr" });
       setIsAnalyzing(false);
-      toast.success("Invoice data extracted successfully!", { id: "ocr" });
-
-      if (suppliers.length > 0) {
-        setSupplierId(suppliers[Math.floor(Math.random() * suppliers.length)].id);
-      }
-
-      if (products.length > 0) {
-        const p1 = products[Math.floor(Math.random() * products.length)];
-        const p2 = products[Math.floor(Math.random() * products.length)];
-        setLines([
-          {
-            productId: p1.id,
-            qty: Math.floor(Math.random() * 50) + 10,
-            cost: Number(p1.cost) || 5,
-          },
-          {
-            productId: p2.id,
-            qty: Math.floor(Math.random() * 50) + 10,
-            cost: Number(p2.cost) || 10,
-          },
-        ]);
-      }
-      if (fileInputRef.current) fileInputRef.current.value = "";
-    }, 2000);
+    };
+    reader.readAsDataURL(file);
   };
 
   return (
-    <div className="space-y-6 p-4 md:p-6 lg:p-8 max-w-7xl mx-auto">
+    <div className="space-y-6 p-4 md:p-6 lg:p-8 container mx-auto">
       {/* Back button & Breadcrumb header */}
       <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
         <Button
@@ -214,7 +256,7 @@ function NewPurchase() {
               )}
               Auto-Fill with AI
             </Button>
-            <Button
+            {/* <Button
               size="sm"
               onClick={handleSubmit}
               disabled={isAnalyzing || isSubmitting}
@@ -231,7 +273,7 @@ function NewPurchase() {
                   Submit Order
                 </>
               )}
-            </Button>
+            </Button> */}
           </div>
         }
       />
@@ -292,7 +334,7 @@ function NewPurchase() {
                     className="bg-emerald-500/10 text-emerald-600 border-emerald-500/30 gap-1.5"
                   >
                     <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                    Received (Stock Auto-Increments)
+                    Received
                   </Badge>
                 </div>
               </div>

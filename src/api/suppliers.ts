@@ -139,3 +139,43 @@ export const getSupplierLedgersFn = createServerFn({ method: "GET" })
       return handleApiError(e);
     }
   });
+
+export const createSupplierLedgerFn = createServerFn({ method: "POST" })
+  .validator(
+    z.object({
+      ledger: z
+        .object({
+          id: z.string().optional(),
+          supplierId: z.string(),
+          date: z.string(),
+          type: z.string(),
+          amount: z.string(),
+          balanceAfter: z.string(),
+          referenceNo: z
+            .union([z.string(), z.number()])
+            .optional()
+            .transform((v) => (v !== undefined ? String(v) : v)),
+          note: z
+            .union([z.string(), z.number()])
+            .optional()
+            .transform((v) => (v !== undefined ? String(v) : v)),
+        })
+        .passthrough(),
+    }),
+  )
+  .handler(async ({ data }) => {
+    try {
+      const session = await requireAuth();
+      const inserted = await db
+        .insert(schema.supplierLedgers)
+        .values({
+          id: data.ledger.id || uuidv4(),
+          ...(data.ledger as any),
+          organizationId: session.orgId,
+        })
+        .returning();
+      return { success: true, data: inserted[0], message: "Ledger entry recorded successfully" };
+    } catch (e) {
+      return handleApiError(e);
+    }
+  });

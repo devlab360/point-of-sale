@@ -5,7 +5,7 @@ import * as schema from "@/db/schema";
 import { eq } from "drizzle-orm";
 
 if (process.env.NODE_ENV === "production" && !process.env.JWT_SECRET) {
-  console.error("FATAL ERROR: JWT_SECRET environment variable is missing in production. Authentication will fail or behave unpredictably.");
+  throw new Error("FATAL ERROR: JWT_SECRET environment variable is missing in production. Authentication is disabled to prevent security vulnerabilities.");
 }
 
 const JWT_SECRET = new TextEncoder().encode(
@@ -55,7 +55,12 @@ export async function requireAuth(): Promise<SessionPayload> {
     .where(eq(schema.users.id, payload.userId))
     .limit(1);
 
-  if (users.length === 0 || users[0].status === "suspended") {
+  if (
+    users.length === 0 ||
+    users[0].status === "suspended" ||
+    users[0].status === "inactive" ||
+    users[0].status === "pending"
+  ) {
     throw new Error("Unauthorized: Account suspended or deleted");
   }
 

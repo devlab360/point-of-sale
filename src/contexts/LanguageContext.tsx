@@ -156,6 +156,7 @@ export const TRANSLATIONS: Record<LanguageCode, Record<string, string>> = {
     employees: "Employees",
     finance: "Finance & Accounts",
     accounts: "Chart of Accounts",
+    accounting_reports: "Accounting Reports",
     reports: "Financial Reports",
     services: "Services & Verticals",
     repairs: "Repair Job Sheets",

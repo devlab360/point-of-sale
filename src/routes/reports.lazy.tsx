@@ -6,6 +6,7 @@ import { DatePicker } from "@/components/ui/date-picker";
 import { PersistStore } from "@/lib/session-store";
 import { useQuery } from "@tanstack/react-query";
 import { getSalesFn } from "@/api/sales";
+import { getProfitabilityReportFn } from "@/api/reports";
 import { getProductsFn } from "@/api/products";
 import { getExpensesFn } from "@/api/expenses";
 import { getPurchasesFn } from "@/api/purchases";
@@ -120,19 +121,18 @@ function ReportsPage() {
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
 
-  const mtdRevenue = sales.reduce((sum, s) => sum + (Number(s.total) || 0), 0);
-
-  let mtdCost = 0;
-  sales.forEach((sale) => {
-    sale.saleItems?.forEach((item) => {
-      const prod = products.find((p) => p.id === item.productId);
-      if (prod) mtdCost += prod.cost * item.quantity;
-    });
+  const { data: profitReportData, isLoading: isProfitLoading } = useQuery({
+    queryKey: ["profitability", orgId, dateFrom, dateTo],
+    queryFn: async () => ((await getProfitabilityReportFn({ data: { startDate: dateFrom, endDate: dateTo } })) as any)?.data || null,
   });
-  const mtdProfit = mtdRevenue - mtdCost;
+
+  const mtdRevenue = profitReportData?.netRevenue || 0;
+  const mtdCost = profitReportData?.totalCogs || 0;
+  const mtdProfit = profitReportData?.grossProfit || 0;
+  const marginPct = profitReportData?.marginPct || 0;
 
   const mtdOrders = sales.length;
-  const taxPayable = mtdRevenue * 0.08;
+  const taxPayable = sales.reduce((sum, s) => sum + (Number(s.taxAmt) || 0), 0);
   const totalExpenses = expenses.reduce((s, e) => s + (Number(e.amount) || 0), 0);
   const stockValue = products.reduce(
     (s, p) => s + (Number(p.stock) || 0) * (Number(p.cost) || 0),
@@ -430,42 +430,34 @@ function ReportsPage() {
 
       {/* Key Metrics */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {!Number.isNaN(mtdRevenue) && (
-          <StatCard
-            label="MTD Revenue"
-            value={formatCurrency(mtdRevenue)}
-            icon={DollarSign}
-            accent="success"
-            delta={0}
-          />
-        )}
-        {!Number.isNaN(mtdProfit) && (
-          <StatCard
-            label="MTD Profit"
-            value={formatCurrency(mtdProfit)}
-            icon={TrendingUp}
-            accent="primary"
-            delta={0}
-          />
-        )}
-        {!Number.isNaN(mtdOrders) && (
-          <StatCard
-            label="MTD Orders"
-            value={mtdOrders.toString()}
-            icon={ShoppingCart}
-            accent="info"
-            delta={0}
-          />
-        )}
-        {!Number.isNaN(taxPayable) && (
-          <StatCard
-            label="Tax Payable"
-            value={formatCurrency(taxPayable)}
-            icon={Percent}
-            accent="warning"
-            delta={0}
-          />
-        )}
+        <StatCard
+          label="Net Sales"
+          value={formatCurrency(mtdRevenue)}
+          icon={DollarSign}
+          accent="success"
+          delta={0}
+        />
+        <StatCard
+          label="Cost of Goods (COGS)"
+          value={formatCurrency(mtdCost)}
+          icon={Package}
+          accent="warning"
+          delta={0}
+        />
+        <StatCard
+          label="Gross Profit"
+          value={formatCurrency(mtdProfit)}
+          icon={TrendingUp}
+          accent="primary"
+          delta={0}
+        />
+        <StatCard
+          label="Gross Margin %"
+          value={`${marginPct.toFixed(1)}%`}
+          icon={Percent}
+          accent="info"
+          delta={0}
+        />
       </div>
 
       {/* Charts */}
@@ -565,9 +557,37 @@ function ReportsPage() {
         </div>
       </div>
 
-      {/* Weekly */}
-      <div className="rounded-xl border border-border bg-card p-5 shadow-soft">
-        <h2 className="mb-3 text-base font-semibold">Sales This Week</h2>
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-2 mt-6">
+        {/* Top Products */}
+        <div className="rounded-xl border border-border bg-card p-5 shadow-soft">
+          <h2 className="mb-4 text-base font-semibold">Top Products (by Profit)</h2>
+          <div className="space-y-4">
+            {profitReportData?.topProducts?.slice(0, 5).map((p: any) => (
+              <div key={p.productId} className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="grid size-8 place-items-center rounded-lg bg-primary/10 text-primary">
+                    <Package className="size-4" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium">{p.name}</p>
+                    <p className="text-xs text-muted-foreground">{p.quantitySold} sold • Margin: {p.margin.toFixed(0)}%</p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <p className="text-sm font-bold text-success">{formatCurrency(p.profit)}</p>
+                  <p className="text-xs text-muted-foreground">COGS: {formatCurrency(p.cogs)}</p>
+                </div>
+              </div>
+            ))}
+            {(!profitReportData?.topProducts || profitReportData.topProducts.length === 0) && (
+              <p className="text-sm text-muted-foreground text-center py-4">No sales data available for this period.</p>
+            )}
+          </div>
+        </div>
+
+        {/* Weekly */}
+        <div className="rounded-xl border border-border bg-card p-5 shadow-soft">
+          <h2 className="mb-3 text-base font-semibold">Sales This Week</h2>
         <div className="h-48">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={weekly} margin={{ top: 8, right: 8, left: -16, bottom: 0 }}>
@@ -602,6 +622,7 @@ function ReportsPage() {
               />
             </BarChart>
           </ResponsiveContainer>
+        </div>
         </div>
       </div>
 

@@ -196,6 +196,7 @@ function PosScreen() {
     if (lines.length === 0) return;
 
     let cashComponent = 0;
+    let advancePaid = 0;
     if (payment === "split" && !isQuotation) {
       const csh = parseFloat(splitCash) || 0;
       const crd = parseFloat(splitCard) || 0;
@@ -212,10 +213,13 @@ function PosScreen() {
         return toast.error(`Credit/Wallet requires registered customer`);
         
       if (payment === "credit") {
+        advancePaid = parseFloat(cashTendered) || 0;
+        cashComponent = advancePaid; // Advance paid in cash
+        const dueAmount = Math.max(0, total - advancePaid);
         const currentCredit = Number(activeCustomer.credit) || 0;
         const limit = Number(activeCustomer.creditLimit) || 0;
-        if (currentCredit + total > limit) {
-          toast.error(`Credit Limit Exceeded! Customer limit is ${state.formatCurrency(limit)}, but balance would be ${state.formatCurrency(currentCredit + total)}`);
+        if (currentCredit + dueAmount > limit) {
+          toast.error(`Credit Limit Exceeded! Customer limit is ${state.formatCurrency(limit)}, but balance would be ${state.formatCurrency(currentCredit + dueAmount)}`);
           return;
         }
       }
@@ -245,18 +249,21 @@ function PosScreen() {
         price: Number(l.unitPrice) || 0,
         discountAmt: subtotal > 0 ? (l.total / subtotal) * discountAmt : 0,
         serialNumber: l.selectedSerial,
+        modifiers: l.modifiers || null,
       }));
 
       const ledgerEntries: any[] = [];
       if (activeCustomer.id !== "walkin" && payment === "credit") {
+        const advPaid = parseFloat(cashTendered) || 0;
+        const dueAmt = Math.max(0, total - advPaid);
         ledgerEntries.push({
           id: uuidv4(),
           organizationId: orgId,
           customerId: activeCustomer.id,
           date: new Date().toISOString(),
           type: "invoice",
-          amount: String(total),
-          balanceAfter: String(total),
+          amount: String(dueAmt),
+          balanceAfter: String(dueAmt),
           referenceNo: invNum,
           note: `POS Credit Sale Invoice #${invNum}`,
         });
@@ -272,6 +279,7 @@ function PosScreen() {
             id: saleId,
             customerId: activeCustomer.id === "walkin" ? null : activeCustomer.id,
             customerName: activeCustomer.name,
+            locationId: state.selectedLocationId,
             paymentMethod: isQuotation ? "unpaid" : payment,
             payments: isQuotation ? null : (payment === "split"
               ? [
@@ -362,10 +370,19 @@ function PosScreen() {
         sgstAmt: state.totalSgst,
         igstAmt: state.totalIgst,
         total,
-        payment: isQuotation ? "unpaid" : payment,
+        payment: isQuotation ? "unpaid" : ((payment as string) === "unpaid" ? "cash" : payment),
         status: isQuotation ? "quotation" : "completed",
         changeDue: isQuotation ? null : (payment === "cash" ? (changeDue > 0 ? changeDue : 0) : null),
         cashTendered: isQuotation ? null : (payment === "cash" ? (state.cashTendered ? parseFloat(state.cashTendered) : total) : null),
+        advancePaid: isQuotation ? null : (payment === "credit" ? parseFloat(state.cashTendered) || 0 : null),
+        dueAmount: isQuotation ? null : (payment === "credit" ? Math.max(0, total - (parseFloat(state.cashTendered) || 0)) : null),
+        splitPayments: isQuotation ? null : (payment === "split"
+          ? [
+              { method: "cash", amount: parseFloat(state.splitCash) || 0 },
+              { method: "card", amount: parseFloat(state.splitCard) || 0 },
+              { method: "upi", amount: parseFloat(state.splitUpi) || 0 },
+            ].filter((p) => p.amount > 0)
+          : null),
       };
 
       setPrintData(printObj);
@@ -394,7 +411,8 @@ function PosScreen() {
     setCart(cartData);
     setDiscountPct(held.discount || 0);
     setDiscountInput(String(held.discount || 0));
-    setPayment(held.payment || "cash");
+    const validPayments = ["cash", "card", "upi", "split", "credit", "wallet"];
+    setPayment(validPayments.includes(held.payment) ? held.payment : "cash");
     if (held.customerId) setSelectedCustomerId(held.customerId);
     state.setShowHeld(false);
     toast.success("Invoice resumed");
