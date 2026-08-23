@@ -4,6 +4,7 @@ export const Route = createLazyFileRoute("/inventory")({
   component: InventoryLayout,
 });
 
+
 function InventoryLayout() {
   return <Outlet />;
 }
