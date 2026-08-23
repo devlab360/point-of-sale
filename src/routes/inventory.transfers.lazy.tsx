@@ -152,7 +152,7 @@ function TransfersPage() {
   };
 
   return (
-    <div className="space-y-6 p-4 md:p-6 lg:p-8">
+    <div className="page-container space-y-5">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-[26px]">
@@ -293,55 +293,87 @@ function TransfersPage() {
         />
       ) : (
         <div className="space-y-4">
-          <div className="overflow-hidden rounded-xl border border-border bg-card shadow-soft">
-            <div className="overflow-hidden rounded-xl border border-border bg-card shadow-soft">
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-sm">
-                  <thead className="bg-muted/50 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                    <tr>
-                      <th className="px-4 py-3 whitespace-nowrap">Ref</th>
-                      <th className="px-4 py-3 whitespace-nowrap">Date</th>
-                      <th className="px-4 py-3 whitespace-nowrap">From / To</th>
-                      <th className="px-4 py-3 whitespace-nowrap">Items transferred</th>
-                      <th className="px-4 py-3 whitespace-nowrap">Status</th>
+          <div className="overflow-hidden rounded-2xl border border-border/80 bg-card shadow-card">
+            {/* Desktop Table */}
+            <div className="table-desktop overflow-x-auto">
+              <table className="w-full text-left text-sm min-w-[700px]">
+                <thead className="border-b border-border/80 bg-muted/40 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                  <tr>
+                    <th className="px-5 py-3 whitespace-nowrap">Transfer Ref</th>
+                    <th className="px-5 py-3 whitespace-nowrap">Date</th>
+                    <th className="px-5 py-3 whitespace-nowrap">Routing Path</th>
+                    <th className="px-5 py-3 whitespace-nowrap">Items Dispatched</th>
+                    <th className="px-5 py-3 whitespace-nowrap text-right">Transfer Status</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border/60">
+                  {paginatedTransfers.map((r) => (
+                    <tr key={r.ref} className="hover:bg-muted/30 transition-colors">
+                      <td className="px-5 py-3 font-mono text-xs font-bold text-foreground whitespace-nowrap">{r.ref}</td>
+                      <td className="px-5 py-3 text-muted-foreground whitespace-nowrap text-xs">
+                        {formatAppDate(r.date)}
+                      </td>
+                      <td className="px-5 py-3 whitespace-nowrap">
+                        <div className="flex items-center gap-2 text-xs">
+                          <span className="text-muted-foreground font-medium">Main Hub</span>
+                          <ArrowRightLeft className="size-3 text-primary" />
+                          <span className="font-bold text-foreground">{r.destination}</span>
+                        </div>
+                      </td>
+                      <td className="px-5 py-3 text-muted-foreground whitespace-nowrap text-xs font-semibold">
+                        {r.items}
+                      </td>
+                      <td className="px-5 py-3 whitespace-nowrap text-right">
+                        <Badge className="bg-success/12 text-success hover:bg-success/20 border-success/20 text-[10px] font-bold">
+                          {r.status || "Completed"}
+                        </Badge>
+                      </td>
                     </tr>
-                  </thead>
-                  <tbody className="divide-y divide-border">
-                    {paginatedTransfers.map((r) => (
-                      <tr key={r.ref} className="hover:bg-muted/30">
-                        <td className="px-4 py-3 font-mono text-xs whitespace-nowrap">{r.ref}</td>
-                        <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">
-                          {formatAppDate(r.date)}
-                        </td>
-                        <td className="px-4 py-3 whitespace-nowrap">
-                          <div className="flex items-center gap-2">
-                            <span className="text-muted-foreground">Main Store</span>
-                            <ArrowRightLeft className="size-3 text-muted-foreground" />
-                            <span className="font-medium">{r.destination}</span>
-                          </div>
-                        </td>
-                        <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">
-                          {r.items}
-                        </td>
-                        <td className="px-4 py-3 whitespace-nowrap">
-                          <Badge className="bg-success/10 text-success hover:bg-success/15">
-                            {r.status}
-                          </Badge>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-              <PaginationControls
-                currentPage={page}
-                totalPages={totalPages}
-                pageSize={pageSize}
-                onPageChange={setPage}
-                onPageSizeChange={setPageSize}
-                totalItems={filteredTransfers.length}
-              />
+                  ))}
+                </tbody>
+              </table>
             </div>
+
+            {/* Mobile Card Feed (< 768px) */}
+            <div className="table-mobile-cards p-3 space-y-2.5">
+              {paginatedTransfers.map((r) => (
+                <div
+                  key={r.ref}
+                  className="flex items-center justify-between rounded-xl border border-border/80 bg-card p-3 shadow-sm card-interactive"
+                >
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono text-xs font-bold text-foreground">{r.ref}</span>
+                      <span className="text-[10px] text-muted-foreground">{formatAppDate(r.date)}</span>
+                    </div>
+                    <div className="flex items-center gap-1.5 text-xs mt-1">
+                      <span className="text-muted-foreground">Hub</span>
+                      <ArrowRightLeft className="size-3 text-primary" />
+                      <span className="font-bold text-foreground">{r.destination}</span>
+                    </div>
+                    <p className="text-[11px] text-muted-foreground mt-0.5">{r.items}</p>
+                  </div>
+                  <div className="text-right shrink-0 pl-2">
+                    <Badge className="bg-success/12 text-success hover:bg-success/20 border-success/20 text-[10px] font-bold">
+                      {r.status || "Completed"}
+                    </Badge>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {filteredTransfers.length > 0 && (
+              <div className="border-t border-border/60 p-2 sm:p-3">
+                <PaginationControls
+                  currentPage={page}
+                  totalPages={totalPages}
+                  pageSize={pageSize}
+                  onPageChange={setPage}
+                  onPageSizeChange={setPageSize}
+                  totalItems={filteredTransfers.length}
+                />
+              </div>
+            )}
           </div>
         </div>
       )}

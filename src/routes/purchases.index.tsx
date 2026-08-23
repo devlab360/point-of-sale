@@ -150,55 +150,52 @@ function PurchasesPage() {
           />
         ) : (
           <div className="space-y-4">
-            <div className="overflow-hidden rounded-xl border border-border bg-card shadow-soft">
-              <div className="overflow-x-auto">
+            <div className="overflow-hidden rounded-2xl border border-border/80 bg-card shadow-card">
+              {/* Desktop Table View */}
+              <div className="table-desktop overflow-x-auto">
                 <table className="w-full text-left text-sm min-w-[700px]">
-                  <thead className="bg-muted/50 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                  <thead className="border-b border-border/80 bg-muted/40 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
                     <tr>
-                      <th className="px-4 py-3 whitespace-nowrap">{t("po") || "PO"}</th>
-                      <th className="px-4 py-3 whitespace-nowrap">{t("supplier") || "Supplier"}</th>
-                      <th className="px-4 py-3 whitespace-nowrap">{t("date") || "Date"}</th>
-                      <th className="px-4 py-3 text-right whitespace-nowrap">
-                        {t("items") || "Items"}
-                      </th>
-                      <th className="px-4 py-3 whitespace-nowrap">{t("status") || "Status"}</th>
-                      <th className="px-4 py-3 text-right whitespace-nowrap">
-                        {t("total") || "Total"}
-                      </th>
-                      <th className="px-4 py-3 whitespace-nowrap"></th>
+                      <th className="px-5 py-3 whitespace-nowrap">{t("po") || "PO Number"}</th>
+                      <th className="px-5 py-3 whitespace-nowrap">{t("supplier") || "Supplier Name"}</th>
+                      <th className="px-5 py-3 whitespace-nowrap">{t("date") || "Order Date"}</th>
+                      <th className="px-5 py-3 text-right whitespace-nowrap">{t("items") || "Items"}</th>
+                      <th className="px-5 py-3 whitespace-nowrap">{t("status") || "Status"}</th>
+                      <th className="px-5 py-3 text-right whitespace-nowrap">{t("total") || "Total Cost"}</th>
+                      <th className="px-5 py-3 text-right whitespace-nowrap">Actions</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-border">
+                  <tbody className="divide-y divide-border/60">
                     {purchases.map((p) => (
-                      <tr key={p.id} className="hover:bg-muted/30">
-                        <td className="px-4 py-3 font-mono text-xs font-semibold whitespace-nowrap">
-                          {p.id.slice(0, 8).toUpperCase()}
+                      <tr key={p.id} className="hover:bg-muted/30 transition-colors">
+                        <td className="px-5 py-3 font-mono text-xs font-bold text-primary whitespace-nowrap cursor-pointer hover:underline" onClick={() => setViewPurchase(p)}>
+                          #{p.id.slice(0, 8).toUpperCase()}
                         </td>
-                        <td className="px-4 py-3 font-semibold whitespace-nowrap">{p.supplier}</td>
-                        <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">
+                        <td className="px-5 py-3 font-bold text-foreground whitespace-nowrap">{p.supplier}</td>
+                        <td className="px-5 py-3 text-muted-foreground whitespace-nowrap text-xs">
                           {formatDate(p.date)}
                         </td>
-                        <td className="px-4 py-3 text-right whitespace-nowrap">{p.items}</td>
-                        <td className="px-4 py-3 whitespace-nowrap">
+                        <td className="px-5 py-3 text-right text-xs font-semibold text-muted-foreground whitespace-nowrap">{p.items}</td>
+                        <td className="px-5 py-3 whitespace-nowrap">
                           <Badge
                             className={cn(
-                              p.status === "received" &&
-                                "bg-success/10 text-success hover:bg-success/15",
-                              p.status === "partial" && "bg-info/10 text-info hover:bg-info/15",
-                              p.status === "pending" &&
-                                "bg-warning/15 text-warning-foreground hover:bg-warning/20",
+                              "text-[10px] font-bold",
+                              p.status === "received" && "bg-success/12 text-success hover:bg-success/20 border-success/20",
+                              p.status === "partial" && "bg-info/12 text-info hover:bg-info/20 border-info/20",
+                              p.status === "pending" && "bg-warning/15 text-warning-foreground hover:bg-warning/20 border-warning/20",
                             )}
                           >
                             {p.status}
                           </Badge>
                         </td>
-                        <td className="number px-4 py-3 text-right font-semibold whitespace-nowrap">
+                        <td className="number px-5 py-3 text-right font-black text-foreground whitespace-nowrap text-sm">
                           {formatCurrency(p.total)}
                         </td>
-                        <td className="px-4 py-3 whitespace-nowrap">
+                        <td className="px-5 py-3 whitespace-nowrap text-right">
                           <Button
                             variant="ghost"
                             size="icon"
+                            className="size-8 rounded-lg"
                             title="View details"
                             onClick={() => setViewPurchase(p)}
                           >
@@ -210,14 +207,62 @@ function PurchasesPage() {
                   </tbody>
                 </table>
               </div>
-              <PaginationControls
-                currentPage={page}
-                totalPages={totalPages}
-                pageSize={pageSize}
-                totalItems={purchases.length}
-                onPageChange={setPage}
-                onPageSizeChange={setPageSize}
-              />
+
+              {/* Mobile Card Feed (< 768px) */}
+              <div className="table-mobile-cards p-3 space-y-2.5">
+                {purchases.map((p) => (
+                  <div
+                    key={p.id}
+                    className="flex items-center justify-between rounded-xl border border-border/80 bg-card p-3 shadow-sm card-interactive"
+                    onClick={() => setViewPurchase(p)}
+                  >
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono text-xs font-bold text-primary">#{p.id.slice(0, 8).toUpperCase()}</span>
+                        <span className="text-[10px] text-muted-foreground">{formatDate(p.date)}</span>
+                      </div>
+                      <div className="font-bold text-xs sm:text-sm text-foreground mt-0.5 truncate">{p.supplier}</div>
+                      <div className="flex items-center gap-1.5 mt-1">
+                        <Badge
+                          className={cn(
+                            "text-[9px] font-bold py-0",
+                            p.status === "received" ? "bg-success/12 text-success" : "bg-warning/15 text-warning-foreground",
+                          )}
+                        >
+                          {p.status}
+                        </Badge>
+                        <span className="text-[11px] text-muted-foreground">{p.items} items</span>
+                      </div>
+                    </div>
+
+                    <div className="text-right shrink-0 pl-2">
+                      <div className="number text-sm font-black text-foreground">{formatCurrency(p.total)}</div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 px-2 text-[11px] font-semibold text-muted-foreground mt-1"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setViewPurchase(p);
+                        }}
+                      >
+                        <Eye className="size-3 mr-1" /> View
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="border-t border-border/60 p-2 sm:p-3">
+                <PaginationControls
+                  currentPage={page}
+                  totalPages={totalPages}
+                  pageSize={pageSize}
+                  totalItems={purchases.length}
+                  onPageChange={setPage}
+                  onPageSizeChange={setPageSize}
+                />
+              </div>
             </div>
           </div>
         )}

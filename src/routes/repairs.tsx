@@ -242,99 +242,132 @@ function RepairsPage() {
           />
         ) : (
           <div className="space-y-4">
-            <div className="overflow-hidden rounded-xl border border-border bg-card shadow-soft">
-              <div className="overflow-hidden rounded-xl border border-border bg-card shadow-soft">
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left text-sm min-w-[900px]">
-                    <thead className="bg-muted/50 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                      <tr>
-                        <th className="px-4 py-3 whitespace-nowrap">Ticket #</th>
-                        <th className="px-4 py-3 whitespace-nowrap">Customer</th>
-                        <th className="px-4 py-3 whitespace-nowrap">Device / Model</th>
-                        <th className="px-4 py-3 whitespace-nowrap">Serial / IMEI</th>
-                        <th className="px-4 py-3 text-right whitespace-nowrap">Est. Cost</th>
-                        <th className="px-4 py-3 text-right whitespace-nowrap">Advance Paid</th>
-                        <th className="px-4 py-3 whitespace-nowrap">Status</th>
-                        <th className="px-4 py-3 text-right whitespace-nowrap">Actions</th>
+            <div className="overflow-hidden rounded-2xl border border-border/80 bg-card shadow-card">
+              {/* Desktop Table */}
+              <div className="table-desktop overflow-x-auto">
+                <table className="w-full text-left text-sm min-w-[900px]">
+                  <thead className="border-b border-border/80 bg-muted/40 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                    <tr>
+                      <th className="px-5 py-3 whitespace-nowrap">Ticket #</th>
+                      <th className="px-5 py-3 whitespace-nowrap">Customer</th>
+                      <th className="px-5 py-3 whitespace-nowrap">Device / Model</th>
+                      <th className="px-5 py-3 whitespace-nowrap">Serial / IMEI</th>
+                      <th className="px-5 py-3 text-right whitespace-nowrap">Est. Cost</th>
+                      <th className="px-5 py-3 text-right whitespace-nowrap">Advance</th>
+                      <th className="px-5 py-3 whitespace-nowrap">Status</th>
+                      <th className="px-5 py-3 text-right whitespace-nowrap">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border/60">
+                    {paginated.map((r) => (
+                      <tr key={r.id} className="hover:bg-muted/30 transition-colors">
+                        <td className="px-5 py-3 font-mono font-bold text-primary whitespace-nowrap cursor-pointer hover:underline" onClick={() => setViewItem(r)}>
+                          {r.ticketNo}
+                        </td>
+                        <td className="px-5 py-3 whitespace-nowrap">
+                          <div className="font-bold text-foreground text-xs sm:text-sm">{r.customerName}</div>
+                          <div className="text-[11px] text-muted-foreground">{r.customerPhone}</div>
+                        </td>
+                        <td className="px-5 py-3 font-bold text-foreground whitespace-nowrap text-xs">
+                          {r.deviceName}
+                        </td>
+                        <td className="px-5 py-3 font-mono text-xs text-muted-foreground whitespace-nowrap">
+                          {r.serialOrImei || "-"}
+                        </td>
+                        <td className="number px-5 py-3 text-right font-black text-foreground whitespace-nowrap text-sm">
+                          {formatCurrency(r.estimatedCost)}
+                        </td>
+                        <td className="number px-5 py-3 text-right font-black text-success whitespace-nowrap text-xs">
+                          {formatCurrency(r.advancePaid)}
+                        </td>
+                        <td className="px-5 py-3 whitespace-nowrap">
+                          {r.status === "delivered" ? (
+                            <Badge className="bg-success/12 text-success border-success/25 text-[10px] font-bold">
+                              Delivered
+                            </Badge>
+                          ) : r.status === "repaired" ? (
+                            <Badge className="bg-info/12 text-info border-info/25 text-[10px] font-bold">
+                              Repaired & Ready
+                            </Badge>
+                          ) : r.status === "diagnosing" ? (
+                            <Badge className="bg-warning/15 text-warning-foreground border-warning/25 text-[10px] font-bold">
+                              In Diagnosis
+                            </Badge>
+                          ) : (
+                            <Badge variant="outline" className="text-[10px] font-bold">Received</Badge>
+                          )}
+                        </td>
+                        <td className="px-5 py-3 text-right whitespace-nowrap">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon" className="size-8 rounded-lg">
+                                <MoreVertical className="size-4 text-muted-foreground" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="rounded-xl">
+                              <DropdownMenuItem onClick={() => setViewItem(r)} className="text-xs font-semibold">
+                                <Printer className="mr-2 size-3.5 text-primary" /> View / Print Ticket
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => updateStatus(r.id, "diagnosing")} className="text-xs font-semibold text-warning-foreground">
+                                <Wrench className="mr-2 size-3.5" /> Mark In Diagnosis
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => updateStatus(r.id, "repaired")} className="text-xs font-semibold text-info">
+                                <CheckCircle2 className="mr-2 size-3.5" /> Mark Repaired
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => updateStatus(r.id, "delivered")} className="text-xs font-bold text-success">
+                                <ShieldCheck className="mr-2 size-3.5" /> Mark Delivered
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                className="text-destructive text-xs font-semibold"
+                                onClick={() => deleteRepair(r.id)}
+                              >
+                                <Trash2 className="mr-2 size-3.5" /> Delete Ticket
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </td>
                       </tr>
-                    </thead>
-                    <tbody className="divide-y divide-border">
-                      {paginated.map((r) => (
-                        <tr key={r.id} className="hover:bg-muted/30">
-                          <td className="px-4 py-3 font-mono font-bold text-primary whitespace-nowrap">
-                            {r.ticketNo}
-                          </td>
-                          <td className="px-4 py-3 whitespace-nowrap">
-                            <div className="font-semibold">{r.customerName}</div>
-                            <div className="text-xs text-muted-foreground">{r.customerPhone}</div>
-                          </td>
-                          <td className="px-4 py-3 font-medium whitespace-nowrap">
-                            {r.deviceName}
-                          </td>
-                          <td className="px-4 py-3 font-mono text-xs text-muted-foreground whitespace-nowrap">
-                            {r.serialOrImei || "-"}
-                          </td>
-                          <td className="px-4 py-3 text-right font-semibold whitespace-nowrap">
-                            {formatCurrency(r.estimatedCost)}
-                          </td>
-                          <td className="px-4 py-3 text-right font-semibold text-success whitespace-nowrap">
-                            {formatCurrency(r.advancePaid)}
-                          </td>
-                          <td className="px-4 py-3 whitespace-nowrap">
-                            {r.status === "delivered" ? (
-                              <Badge className="bg-success/15 text-success border-success/30">
-                                Delivered
-                              </Badge>
-                            ) : r.status === "repaired" ? (
-                              <Badge className="bg-info/15 text-info border-info/30">
-                                Repaired & Ready
-                              </Badge>
-                            ) : r.status === "diagnosing" ? (
-                              <Badge className="bg-warning/15 text-warning-foreground border-warning/30">
-                                In Diagnosis
-                              </Badge>
-                            ) : (
-                              <Badge variant="outline">Received</Badge>
-                            )}
-                          </td>
-                          <td className="px-4 py-3 text-right whitespace-nowrap">
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="icon" className="size-8">
-                                  <MoreVertical className="size-4" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                <DropdownMenuItem onClick={() => setViewItem(r)}>
-                                  <Printer className="mr-2 size-4 text-primary" /> View / Print
-                                  Repair Ticket
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => updateStatus(r.id, "diagnosing")}>
-                                  <Wrench className="mr-2 size-4 text-warning-foreground" /> Mark In
-                                  Diagnosis
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => updateStatus(r.id, "repaired")}>
-                                  <CheckCircle2 className="mr-2 size-4 text-info" /> Mark Repaired &
-                                  Ready
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => updateStatus(r.id, "delivered")}>
-                                  <ShieldCheck className="mr-2 size-4 text-success" /> Mark
-                                  Delivered
-                                </DropdownMenuItem>
-                                <DropdownMenuItem
-                                  className="text-destructive"
-                                  onClick={() => deleteRepair(r.id)}
-                                >
-                                  <Trash2 className="mr-2 size-4" /> Delete Ticket
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Mobile Card Feed (< 768px) */}
+              <div className="table-mobile-cards p-3 space-y-2.5">
+                {paginated.map((r) => (
+                  <div
+                    key={r.id}
+                    className="flex items-center justify-between rounded-xl border border-border/80 bg-card p-3 shadow-sm card-interactive"
+                    onClick={() => setViewItem(r)}
+                  >
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono text-xs font-bold text-primary">{r.ticketNo}</span>
+                        <Badge
+                          className={`text-[9px] font-bold py-0 ${
+                            r.status === "delivered" ? "bg-success/12 text-success" :
+                            r.status === "repaired" ? "bg-info/12 text-info" :
+                            r.status === "diagnosing" ? "bg-warning/15 text-warning-foreground" : "bg-muted text-muted-foreground"
+                          }`}
+                        >
+                          {r.status}
+                        </Badge>
+                      </div>
+                      <div className="font-bold text-xs sm:text-sm text-foreground mt-0.5 truncate">{r.customerName}</div>
+                      <p className="text-[11px] text-muted-foreground truncate">{r.deviceName} · {r.serialOrImei || "No IMEI"}</p>
+                    </div>
+
+                    <div className="text-right shrink-0 pl-2">
+                      <div className="number text-sm font-black text-foreground">{formatCurrency(r.estimatedCost)}</div>
+                      {Number(r.advancePaid) > 0 && (
+                        <span className="text-[10px] text-success font-bold mt-0.5 block">Adv: {formatCurrency(r.advancePaid)}</span>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="border-t border-border/60 p-2 sm:p-3">
                 <PaginationControls
                   currentPage={page}
                   totalPages={totalPages}

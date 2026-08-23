@@ -321,7 +321,7 @@ function SuppliersPage() {
   };
 
   return (
-    <div className="p-4 md:p-6 lg:p-8">
+    <div>
       <DataPage
         title={t("suppliers") || "Suppliers"}
         description={
@@ -362,7 +362,7 @@ function SuppliersPage() {
             </div>
             <div className="pt-4 mt-auto">
               <Button
-                className="w-full"
+                className="w-full font-bold shadow-soft"
                 onClick={() => {
                   setFilters(draftFilters);
                   close();
@@ -384,7 +384,7 @@ function SuppliersPage() {
             title={t("noSuppliersFound") || "No suppliers found"}
             description={
               search
-                ? t("adjustSearch") || "Try adjusting your search."
+                ? t("adjustSearch") || "Try adjusting your search query."
                 : t("noSuppliersYet") || "You haven't added any suppliers yet."
             }
             actionLabel="Add Supplier"
@@ -399,54 +399,63 @@ function SuppliersPage() {
               {paginatedSuppliers.map((s) => (
                 <div
                   key={s.id}
-                  className="relative rounded-xl border border-border bg-card p-4 sm:p-5 shadow-soft"
+                  className="relative rounded-2xl border border-border/80 bg-card p-4 sm:p-5 shadow-card card-interactive cursor-pointer flex flex-col justify-between"
+                  onClick={() => setLedgerSupplier(s)}
                 >
-                  <div className="absolute right-4 top-4 flex items-center gap-2">
-                    {s.balance > 0 ? (
-                      <span className="rounded-md bg-warning/15 px-2 py-0.5 text-xs font-semibold text-warning-foreground">
-                        {formatCurrency(s.balance)} {t("due") || "due"}
-                      </span>
-                    ) : (
-                      <span className="rounded-md bg-success/10 px-2 py-0.5 text-xs font-semibold text-success">
-                        {t("settled") || "Settled"}
-                      </span>
+                  <div>
+                    <div className="flex items-center justify-between">
+                      <div className="grid size-11 place-items-center rounded-xl bg-primary/10 font-black text-sm text-primary border border-primary/20">
+                        {s.name.slice(0, 2).toUpperCase()}
+                      </div>
+                      <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
+                        {s.balance > 0 ? (
+                          <span className="rounded-md bg-warning/15 px-2 py-0.5 text-xs font-black text-warning-foreground border border-warning/25">
+                            {formatCurrency(s.balance)} {t("due") || "due"}
+                          </span>
+                        ) : (
+                          <span className="rounded-md bg-success/12 px-2 py-0.5 text-xs font-bold text-success border border-success/20">
+                            {t("settled") || "Settled"}
+                          </span>
+                        )}
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="size-8 rounded-lg">
+                              <MoreVertical className="size-4 text-muted-foreground" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="rounded-xl">
+                            <DropdownMenuItem onClick={() => setEditItem(s)} className="text-xs font-semibold">
+                              <Edit2 className="mr-2 size-3.5" /> Edit Details
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => setLedgerSupplier(s)} className="text-xs font-bold text-primary">
+                              <Truck className="mr-2 size-3.5" /> View Khata / Ledger
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              className="text-destructive text-xs font-semibold"
+                              onClick={() => setDeleteId(s.id)}
+                            >
+                              <Trash2 className="mr-2 size-3.5" /> Delete
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                    </div>
+
+                    <h3 className="mt-3 font-bold text-base text-foreground truncate">{s.name}</h3>
+                    <p className="text-xs text-muted-foreground mt-0.5 truncate">
+                      {s.contact} {s.email && `· ${s.email}`}
+                    </p>
+                    {s.phone && (
+                      <p className="text-xs font-mono text-muted-foreground mt-0.5">
+                        {s.phone}
+                      </p>
                     )}
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="size-8">
-                          <MoreVertical className="size-4 text-muted-foreground" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => setEditItem(s)}>
-                          <Edit2 className="mr-2 size-4" /> Edit
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => setLedgerSupplier(s)}>
-                          <Truck className="mr-2 size-4 text-primary" /> View Khata / Ledger
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          className="text-destructive focus:bg-destructive/10 focus:text-destructive"
-                          onClick={() => setDeleteId(s.id)}
-                        >
-                          <Trash2 className="mr-2 size-4" /> Delete
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
                   </div>
 
-                  <div className="flex items-center justify-between">
-                    <div className="grid size-11 place-items-center rounded-xl bg-primary/10 font-bold text-primary">
-                      {s.name.slice(0, 2)}
-                    </div>
-                  </div>
-                  <h3 className="mt-3 font-semibold">{s.name}</h3>
-                  <p className="text-xs text-muted-foreground">
-                    {s.contact} {s.email && `· ${s.email}`}
-                  </p>
-                  <div className="mt-4 grid grid-cols-2 gap-2 border-t border-border pt-3 text-xs text-muted-foreground">
+                  <div className="mt-4 grid grid-cols-2 gap-2 border-t border-border/60 pt-3 text-xs text-muted-foreground">
                     <div>
-                      <div className="number font-bold text-foreground">{s.items}</div>
-                      <div>{t("itemsSupplied") || "Items supplied"}</div>
+                      <div className="number font-black text-foreground text-sm">{s.items}</div>
+                      <div className="text-[11px]">{t("itemsSupplied") || "Items supplied"}</div>
                     </div>
                     <div>
                       <div className="font-semibold text-foreground">{s.phone}</div>

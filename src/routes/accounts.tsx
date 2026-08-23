@@ -324,7 +324,7 @@ function AccountsPage() {
   };
 
   return (
-    <div className="p-4 md:p-6 lg:p-8 space-y-6">
+    <div className="space-y-6">
       <DataPage
         title="Double-Entry Financial Accounting"
         description="Manage Chart of Accounts, Journal Vouchers, and Ledger balances."
@@ -364,7 +364,7 @@ function AccountsPage() {
                   </div>
                   <div className="pt-4 mt-auto">
                     <Button
-                      className="w-full"
+                      className="w-full font-bold shadow-soft"
                       onClick={() => {
                         setFilters(draftFilters);
                         close();
@@ -379,12 +379,12 @@ function AccountsPage() {
         }
       >
         {/* Navigation Tabs */}
-        <div className="flex gap-2 border-b pb-3">
+        <div className="flex gap-2 border-b border-border/80 pb-3">
           <Button
             variant={activeTab === "accounts" ? "default" : "outline"}
             size="sm"
             onClick={() => setActiveTab("accounts")}
-            className="gap-1.5"
+            className="gap-1.5 font-bold shadow-soft rounded-xl"
           >
             <Layers className="size-4" /> Chart of Accounts
           </Button>
@@ -392,7 +392,7 @@ function AccountsPage() {
             variant={activeTab === "vouchers" ? "default" : "outline"}
             size="sm"
             onClick={() => setActiveTab("vouchers")}
-            className="gap-1.5"
+            className="gap-1.5 font-bold shadow-soft rounded-xl"
           >
             <BookOpen className="size-4" /> Journal & Payment Vouchers ({rawVouchers.length})
           </Button>
@@ -402,41 +402,41 @@ function AccountsPage() {
           <div className="space-y-6">
             {/* KPI Summary Cards */}
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-              <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 text-center">
-                <div className="text-xs font-semibold uppercase text-muted-foreground">
+              <div className="rounded-2xl border border-primary/20 bg-primary/5 p-4 text-center card-interactive shadow-card">
+                <div className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
                   Total Assets
                 </div>
-                <div className="text-2xl font-bold text-primary mt-1">
+                <div className="text-2xl font-black text-primary mt-1">
                   {formatCurrency(totalAssets)}
                 </div>
               </div>
-              <div className="rounded-xl border border-destructive/20 bg-destructive/5 p-4 text-center">
-                <div className="text-xs font-semibold uppercase text-muted-foreground">
+              <div className="rounded-2xl border border-destructive/20 bg-destructive/5 p-4 text-center card-interactive shadow-card">
+                <div className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
                   Total Liabilities
                 </div>
-                <div className="text-2xl font-bold text-destructive mt-1">
+                <div className="text-2xl font-black text-destructive mt-1">
                   {formatCurrency(totalLiabilities)}
                 </div>
               </div>
-              <div className="rounded-xl border border-success/20 bg-success/5 p-4 text-center">
-                <div className="text-xs font-semibold uppercase text-muted-foreground">
+              <div className="rounded-2xl border border-success/20 bg-success/5 p-4 text-center card-interactive shadow-card">
+                <div className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
                   Owner's Net Equity
                 </div>
-                <div className="text-2xl font-bold text-success mt-1">
+                <div className="text-2xl font-black text-success mt-1">
                   {formatCurrency(totalEquity)}
                 </div>
               </div>
             </div>
 
             {/* Categorized Accounts List */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
               {(["asset", "liability", "equity", "income", "expense"] as const).map((cat) => (
-                <div key={cat} className="rounded-xl border border-border bg-card p-4 shadow-soft">
-                  <div className="flex items-center justify-between border-b pb-2 mb-3">
-                    <h3 className="font-bold text-sm uppercase tracking-wider text-primary flex items-center gap-1.5">
+                <div key={cat} className="rounded-2xl border border-border/80 bg-card p-4 shadow-card">
+                  <div className="flex items-center justify-between border-b border-border/60 pb-2.5 mb-3">
+                    <h3 className="font-bold text-xs uppercase tracking-wider text-primary flex items-center gap-1.5">
                       <Wallet className="size-4" /> {cat} Accounts
                     </h3>
-                    <Badge variant="outline" className="text-[10px] capitalize">
+                    <Badge variant="outline" className="text-[10px] font-bold capitalize">
                       {accountsByType[cat].length} Accounts
                     </Badge>
                   </div>
@@ -444,15 +444,15 @@ function AccountsPage() {
                     {accountsByType[cat].map((acc) => (
                       <div
                         key={acc.id}
-                        className="flex items-center justify-between rounded-lg border border-border/60 bg-muted/20 p-2.5 text-xs"
+                        className="flex items-center justify-between rounded-xl border border-border/60 bg-muted/20 p-2.5 text-xs hover:bg-muted/40 transition-colors"
                       >
                         <div>
-                          <span className="font-mono text-muted-foreground mr-2 font-semibold">
+                          <span className="font-mono text-muted-foreground mr-2 font-semibold text-[11px]">
                             [{acc.code}]
                           </span>
-                          <span className="font-semibold text-foreground">{acc.name}</span>
+                          <span className="font-bold text-foreground">{acc.name}</span>
                         </div>
-                        <span className="font-mono font-bold text-sm">
+                        <span className="font-mono font-black text-sm text-foreground">
                           {formatCurrency(acc.balance)}
                         </span>
                       </div>
@@ -464,70 +464,111 @@ function AccountsPage() {
           </div>
         ) : (
           <div className="space-y-4">
-            <div className="overflow-hidden rounded-xl border border-border bg-card shadow-soft">
-              <table className="w-full text-left text-sm">
-                <thead className="bg-muted/50 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                  <tr>
-                    <th className="px-4 py-3">Voucher #</th>
-                    <th className="px-4 py-3">Date</th>
-                    <th className="px-4 py-3">Type</th>
-                    <th className="px-4 py-3">Debit Account</th>
-                    <th className="px-4 py-3">Credit Account</th>
-                    <th className="px-4 py-3 text-right">Amount</th>
-                    <th className="px-4 py-3">Narration</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border">
-                  {filteredVouchers.length === 0 ? (
+            <div className="overflow-hidden rounded-2xl border border-border/80 bg-card shadow-card">
+              {/* Desktop Table */}
+              <div className="table-desktop overflow-x-auto">
+                <table className="w-full text-left text-sm min-w-[750px]">
+                  <thead className="border-b border-border/80 bg-muted/40 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
                     <tr>
-                      <td colSpan={7} className="py-8 text-center text-xs text-muted-foreground">
-                        {search || filters.type
-                          ? "No vouchers match your search."
-                          : 'No vouchers posted yet. Click "Post New Voucher" to create journal entries.'}
-                      </td>
+                      <th className="px-5 py-3 whitespace-nowrap">Voucher #</th>
+                      <th className="px-5 py-3 whitespace-nowrap">Date</th>
+                      <th className="px-5 py-3 whitespace-nowrap">Type</th>
+                      <th className="px-5 py-3 whitespace-nowrap">Debit Account</th>
+                      <th className="px-5 py-3 whitespace-nowrap">Credit Account</th>
+                      <th className="px-5 py-3 text-right whitespace-nowrap">Amount</th>
+                      <th className="px-5 py-3 whitespace-nowrap">Narration</th>
                     </tr>
-                  ) : (
-                    paginatedVouchers.map((v) => (
-                      <tr key={v.id} className="hover:bg-muted/30">
-                        <td className="px-4 py-3 font-mono font-bold text-primary">
-                          {v.voucherNo}
-                        </td>
-                        <td className="px-4 py-3 text-xs text-muted-foreground">
-                          {formatDateTime(v.date)}
-                        </td>
-                        <td className="px-4 py-3 font-medium uppercase text-xs">
-                          <Badge variant="outline" className="capitalize">
-                            {v.type}
-                          </Badge>
-                        </td>
-                        <td className="px-4 py-3 font-semibold text-destructive">
-                          {v.debitAccountName}
-                        </td>
-                        <td className="px-4 py-3 font-semibold text-success">
-                          {v.creditAccountName}
-                        </td>
-                        <td className="px-4 py-3 text-right font-bold">
-                          {formatCurrency(v.amount)}
-                        </td>
-                        <td className="px-4 py-3 text-xs text-muted-foreground truncate max-w-[150px]">
-                          {v.narration || "-"}
+                  </thead>
+                  <tbody className="divide-y divide-border/60">
+                    {filteredVouchers.length === 0 ? (
+                      <tr>
+                        <td colSpan={7} className="py-8 text-center text-xs text-muted-foreground">
+                          {search || filters.type
+                            ? "No vouchers match your search query."
+                            : 'No vouchers posted yet. Click "Post New Voucher" to create journal entries.'}
                         </td>
                       </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
+                    ) : (
+                      paginatedVouchers.map((v) => (
+                        <tr key={v.id} className="hover:bg-muted/30 transition-colors">
+                          <td className="px-5 py-3 font-mono font-bold text-primary whitespace-nowrap">
+                            {v.voucherNo}
+                          </td>
+                          <td className="px-5 py-3 text-xs text-muted-foreground whitespace-nowrap">
+                            {formatDateTime(v.date)}
+                          </td>
+                          <td className="px-5 py-3 font-medium uppercase text-xs whitespace-nowrap">
+                            <Badge variant="outline" className="capitalize text-[10px] font-bold">
+                              {v.type}
+                            </Badge>
+                          </td>
+                          <td className="px-5 py-3 font-bold text-destructive whitespace-nowrap text-xs">
+                            {v.debitAccountName}
+                          </td>
+                          <td className="px-5 py-3 font-bold text-success whitespace-nowrap text-xs">
+                            {v.creditAccountName}
+                          </td>
+                          <td className="number px-5 py-3 text-right font-black text-foreground whitespace-nowrap text-sm">
+                            {formatCurrency(v.amount)}
+                          </td>
+                          <td className="px-5 py-3 text-xs text-muted-foreground truncate max-w-[180px] whitespace-nowrap">
+                            {v.narration || "-"}
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Mobile Card Feed (< 768px) */}
+              <div className="table-mobile-cards p-3 space-y-2.5">
+                {filteredVouchers.length === 0 ? (
+                  <p className="text-center py-6 text-xs text-muted-foreground">No vouchers found</p>
+                ) : (
+                  paginatedVouchers.map((v) => (
+                    <div
+                      key={v.id}
+                      className="rounded-xl border border-border/80 bg-card p-3 shadow-sm card-interactive space-y-2"
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="font-mono text-xs font-bold text-primary">{v.voucherNo}</span>
+                        <Badge variant="outline" className="text-[9px] font-bold capitalize py-0">
+                          {v.type}
+                        </Badge>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2 text-[11px] pt-1 border-t border-border/50">
+                        <div>
+                          <span className="text-muted-foreground block text-[10px]">Debit:</span>
+                          <span className="font-bold text-destructive">{v.debitAccountName}</span>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground block text-[10px]">Credit:</span>
+                          <span className="font-bold text-success">{v.creditAccountName}</span>
+                        </div>
+                      </div>
+                      <div className="flex items-center justify-between pt-1 border-t border-border/50">
+                        <span className="text-[10px] text-muted-foreground">{formatDateTime(v.date)}</span>
+                        <span className="number text-sm font-black text-foreground">{formatCurrency(v.amount)}</span>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+
+              {rawVouchers.length > 0 && (
+                <div className="border-t border-border/60 p-2 sm:p-3">
+                  <PaginationControls
+                    currentPage={page}
+                    totalPages={totalPages}
+                    pageSize={pageSize}
+                    onPageChange={setPage}
+                    onPageSizeChange={setPageSize}
+                    totalItems={filteredVouchers.length}
+                  />
+                </div>
+              )}
             </div>
-            {rawVouchers.length > 0 && (
-              <PaginationControls
-                currentPage={page}
-                totalPages={totalPages}
-                pageSize={pageSize}
-                onPageChange={setPage}
-                onPageSizeChange={setPageSize}
-                totalItems={filteredVouchers.length}
-              />
-            )}
           </div>
         )}
       </DataPage>

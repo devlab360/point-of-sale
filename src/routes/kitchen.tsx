@@ -131,64 +131,92 @@ function KitchenPage() {
   };
 
   return (
-    <>
-      <div className="p-6 h-full flex flex-col">
-        <div className="flex items-center gap-2 mb-6">
-          <ChefHat className="h-6 w-6 text-primary" />
-          <h1 className="text-2xl font-bold tracking-tight">Kitchen Display (KOT)</h1>
-          {isLoading && <Loader2 className="w-4 h-4 ml-4 animate-spin text-muted-foreground" />}
+    <div className="page-container space-y-5">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div>
+          <h1 className="text-xl sm:text-2xl font-black tracking-tight text-foreground flex items-center gap-2">
+            <ChefHat className="size-6 text-primary" />
+            Kitchen Display System (KDS)
+          </h1>
+          <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
+            Live order preparation pipeline, course sequencing, and ticket fulfillment.
+          </p>
+        </div>
+        {isLoading && (
+          <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground">
+            <Loader2 className="size-4 animate-spin text-primary" />
+            Auto-refreshing...
+          </div>
+        )}
+      </div>
+
+      <div className="grid gap-5 grid-cols-1 md:grid-cols-3">
+        {/* Pending Lane */}
+        <div className="flex flex-col rounded-2xl border border-border/80 bg-muted/20 p-4 shadow-sm">
+          <div className="flex items-center justify-between pb-3 mb-3 border-b border-border/60">
+            <div className="flex items-center gap-2">
+              <span className="size-2.5 rounded-full bg-rose-500 animate-pulse" />
+              <h2 className="font-bold text-sm text-foreground">New Orders (Pending)</h2>
+            </div>
+            <Badge className="bg-rose-500/15 text-rose-500 border-rose-500/30 text-xs font-black px-2.5">
+              {pendingKots.length}
+            </Badge>
+          </div>
+          <div className="space-y-3 overflow-y-auto max-h-[calc(100vh-260px)]">
+            {pendingKots.length === 0 ? (
+              <div className="text-xs text-muted-foreground p-8 text-center border rounded-xl border-dashed border-border/80 bg-card/40">
+                No new incoming tickets
+              </div>
+            ) : (
+              pendingKots.map((k: any) => renderKotCard(k, "rose", "bg-rose-50/20"))
+            )}
+          </div>
         </div>
 
-        <div className="grid gap-6 md:grid-cols-3 flex-1">
-          {/* Pending Column */}
-          <div className="flex flex-col gap-4 border-r pr-6">
-            <h2 className="font-semibold flex items-center gap-2 sticky top-0 bg-background py-2">
-              Pending <Badge variant="secondary">{pendingKots.length}</Badge>
-            </h2>
-            <div className="space-y-4 overflow-y-auto">
-              {pendingKots.length === 0 ? (
-                <div className="text-sm text-muted-foreground italic p-4 text-center border rounded-lg border-dashed">
-                  No pending orders
-                </div>
-              ) : (
-                pendingKots.map((k: any) => renderKotCard(k, 'red', 'bg-red-50/30'))
-              )}
+        {/* Preparing Lane */}
+        <div className="flex flex-col rounded-2xl border border-border/80 bg-muted/20 p-4 shadow-sm">
+          <div className="flex items-center justify-between pb-3 mb-3 border-b border-border/60">
+            <div className="flex items-center gap-2">
+              <span className="size-2.5 rounded-full bg-amber-500 animate-pulse" />
+              <h2 className="font-bold text-sm text-foreground">In Preparation</h2>
             </div>
+            <Badge className="bg-amber-500/15 text-amber-500 border-amber-500/30 text-xs font-black px-2.5">
+              {preparingKots.length}
+            </Badge>
           </div>
-
-          {/* Preparing Column */}
-          <div className="flex flex-col gap-4 border-r pr-6">
-            <h2 className="font-semibold flex items-center gap-2 sticky top-0 bg-background py-2">
-              Preparing <Badge variant="secondary">{preparingKots.length}</Badge>
-            </h2>
-            <div className="space-y-4 overflow-y-auto">
-              {preparingKots.length === 0 ? (
-                <div className="text-sm text-muted-foreground italic p-4 text-center border rounded-lg border-dashed">
-                  No preparing orders
-                </div>
-              ) : (
-                preparingKots.map((k: any) => renderKotCard(k, 'orange', 'bg-orange-50/30'))
-              )}
-            </div>
+          <div className="space-y-3 overflow-y-auto max-h-[calc(100vh-260px)]">
+            {preparingKots.length === 0 ? (
+              <div className="text-xs text-muted-foreground p-8 text-center border rounded-xl border-dashed border-border/80 bg-card/40">
+                No tickets currently in prep
+              </div>
+            ) : (
+              preparingKots.map((k: any) => renderKotCard(k, "amber", "bg-amber-50/20"))
+            )}
           </div>
+        </div>
 
-          {/* Ready Column */}
-          <div className="flex flex-col gap-4 pr-2">
-            <h2 className="font-semibold flex items-center gap-2 sticky top-0 bg-background py-2">
-              Ready to Serve <Badge variant="secondary">{readyKots.length}</Badge>
-            </h2>
-            <div className="space-y-4 overflow-y-auto">
-              {readyKots.length === 0 ? (
-                <div className="text-sm text-muted-foreground italic p-4 text-center border rounded-lg border-dashed">
-                  No orders ready
-                </div>
-              ) : (
-                readyKots.map((k: any) => renderKotCard(k, 'green', 'bg-green-50/30'))
-              )}
+        {/* Ready Lane */}
+        <div className="flex flex-col rounded-2xl border border-border/80 bg-muted/20 p-4 shadow-sm">
+          <div className="flex items-center justify-between pb-3 mb-3 border-b border-border/60">
+            <div className="flex items-center gap-2">
+              <span className="size-2.5 rounded-full bg-emerald-500" />
+              <h2 className="font-bold text-sm text-foreground">Ready for Service</h2>
             </div>
+            <Badge className="bg-emerald-500/15 text-emerald-500 border-emerald-500/30 text-xs font-black px-2.5">
+              {readyKots.length}
+            </Badge>
+          </div>
+          <div className="space-y-3 overflow-y-auto max-h-[calc(100vh-260px)]">
+            {readyKots.length === 0 ? (
+              <div className="text-xs text-muted-foreground p-8 text-center border rounded-xl border-dashed border-border/80 bg-card/40">
+                No tickets waiting to be served
+              </div>
+            ) : (
+              readyKots.map((k: any) => renderKotCard(k, "emerald", "bg-emerald-50/20"))
+            )}
           </div>
         </div>
       </div>
-    </>
+    </div>
   );
 }

@@ -121,7 +121,7 @@ function HelpPage() {
   };
 
   return (
-    <div className="space-y-6 p-4 md:p-6 lg:p-8 container mx-auto">
+    <div className="page-container space-y-5 container mx-auto">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <PageHeader
           title="Help Center"
@@ -142,40 +142,40 @@ function HelpPage() {
 
       {/* Quick Action Cards */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <div className="rounded-xl border border-border bg-card p-5 shadow-soft hover:border-primary/50 transition-colors cursor-pointer" onClick={() => {
+        <div className="rounded-2xl border border-border/80 bg-card p-5 shadow-card hover:border-primary/50 transition-all cursor-pointer card-interactive" onClick={() => {
           document.getElementById('docs-section')?.scrollIntoView({ behavior: 'smooth' });
         }}>
-          <div className="grid size-10 place-items-center rounded-lg bg-primary/10 text-primary">
+          <div className="grid size-11 place-items-center rounded-xl bg-gradient-to-br from-primary/20 to-accent/20 text-primary border border-primary/20">
             <Book className="size-5" />
           </div>
-          <h3 className="mt-4 font-semibold">Documentation</h3>
-          <p className="mt-1 text-sm text-muted-foreground">Read step-by-step guides for every feature.</p>
+          <h3 className="mt-4 font-bold text-foreground">Documentation</h3>
+          <p className="mt-1 text-xs text-muted-foreground leading-relaxed">Read step-by-step guides for every feature.</p>
         </div>
 
-        <div className="rounded-xl border border-border bg-card p-5 shadow-soft hover:border-primary/50 transition-colors cursor-pointer" onClick={() => {
+        <div className="rounded-2xl border border-border/80 bg-card p-5 shadow-card hover:border-primary/50 transition-all cursor-pointer card-interactive" onClick={() => {
           document.getElementById('videos-section')?.scrollIntoView({ behavior: 'smooth' });
         }}>
-          <div className="grid size-10 place-items-center rounded-lg bg-primary/10 text-primary">
+          <div className="grid size-11 place-items-center rounded-xl bg-gradient-to-br from-primary/20 to-accent/20 text-primary border border-primary/20">
             <Video className="size-5" />
           </div>
-          <h3 className="mt-4 font-semibold">Video Tutorials</h3>
-          <p className="mt-1 text-sm text-muted-foreground">Watch short walk-throughs of the POS workflow.</p>
+          <h3 className="mt-4 font-bold text-foreground">Video Tutorials</h3>
+          <p className="mt-1 text-xs text-muted-foreground leading-relaxed">Watch short walk-throughs of the POS workflow.</p>
         </div>
 
-        <div className="rounded-xl border border-border bg-card p-5 shadow-soft hover:border-primary/50 transition-colors cursor-pointer" onClick={() => setIsChatOpen(true)}>
-          <div className="grid size-10 place-items-center rounded-lg bg-primary/10 text-primary">
+        <div className="rounded-2xl border border-border/80 bg-card p-5 shadow-card hover:border-primary/50 transition-all cursor-pointer card-interactive" onClick={() => setIsChatOpen(true)}>
+          <div className="grid size-11 place-items-center rounded-xl bg-gradient-to-br from-primary/20 to-accent/20 text-primary border border-primary/20">
             <MessageCircle className="size-5" />
           </div>
-          <h3 className="mt-4 font-semibold">Chat with us</h3>
-          <p className="mt-1 text-sm text-muted-foreground">Send a message to our support team.</p>
+          <h3 className="mt-4 font-bold text-foreground">Chat with us</h3>
+          <p className="mt-1 text-xs text-muted-foreground leading-relaxed">Send a message to our support team.</p>
         </div>
 
-        <div className="rounded-xl border border-border bg-card p-5 shadow-soft cursor-default">
-          <div className="grid size-10 place-items-center rounded-lg bg-primary/10 text-primary">
+        <div className="rounded-2xl border border-border/80 bg-card p-5 shadow-card cursor-default">
+          <div className="grid size-11 place-items-center rounded-xl bg-gradient-to-br from-primary/20 to-accent/20 text-primary border border-primary/20">
             <Phone className="size-5" />
           </div>
-          <h3 className="mt-4 font-semibold">Call support</h3>
-          <p className="mt-1 text-sm text-muted-foreground">Mon–Sun, 7am – 11pm local time.</p>
+          <h3 className="mt-4 font-bold text-foreground">Call support</h3>
+          <p className="mt-1 text-xs text-muted-foreground leading-relaxed">Mon–Sun, 7am – 11pm local time.</p>
         </div>
       </div>
 

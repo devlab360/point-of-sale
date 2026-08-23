@@ -137,7 +137,7 @@ function StockList() {
   ).length;
 
   return (
-    <div className="space-y-6 p-4 md:p-6 lg:p-8">
+    <div className="page-container space-y-5">
       <DataPage
         title="Stock Inventory"
         description="Monitor your current stock levels and AI forecasts."
@@ -208,136 +208,193 @@ function StockList() {
           </div>
         }
       >
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-          <div className="rounded-xl border border-border bg-card p-4 shadow-sm flex flex-col justify-between">
-            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Total Stock Quantity</p>
-            <div className="mt-2 flex items-baseline gap-2">
-              <span className="text-2xl font-bold">{inventorySummary?.totalStock || 0}</span>
-              <span className="text-xs text-muted-foreground">units</span>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5 mb-6">
+          <div className="rounded-2xl border border-border/80 bg-card p-4 shadow-card flex flex-col justify-between card-interactive">
+            <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Total Stock Count</p>
+            <div className="mt-2 flex items-baseline gap-1.5">
+              <span className="text-2xl sm:text-3xl font-black text-foreground">{inventorySummary?.totalStock || 0}</span>
+              <span className="text-xs font-semibold text-muted-foreground">units</span>
             </div>
-            <p className="text-xs text-muted-foreground mt-1">{products.length} unique SKUs</p>
+            <p className="text-xs text-muted-foreground mt-1 font-medium">{products.length} catalog SKUs</p>
           </div>
-          <div className="rounded-xl border border-border bg-card p-4 shadow-sm flex flex-col justify-between">
-            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Inventory Value (Cost)</p>
-            <div className="mt-2 text-2xl font-bold">
-              {formatCurrency(inventorySummary?.totalValue)}
+
+          <div className="rounded-2xl border border-border/80 bg-card p-4 shadow-card flex flex-col justify-between card-interactive">
+            <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Inventory Value (Cost)</p>
+            <div className="mt-2 text-2xl sm:text-3xl font-black text-foreground">
+              {formatCurrency(inventorySummary?.totalValue || 0)}
             </div>
-            <p className="text-xs text-muted-foreground mt-1">Total invested in stock</p>
+            <p className="text-xs text-muted-foreground mt-1 font-medium">Cost valuation invested</p>
           </div>
-          <div className="rounded-xl border border-border bg-card p-4 shadow-sm flex flex-col justify-between">
-            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Retail Value (Price)</p>
-            <div className="mt-2 text-2xl font-bold text-primary">
-              {formatCurrency(inventorySummary?.totalRetailValue)}
+
+          <div className="rounded-2xl border border-border/80 bg-card p-4 shadow-card flex flex-col justify-between card-interactive">
+            <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Retail Valuation</p>
+            <div className="mt-2 text-2xl sm:text-3xl font-black text-primary">
+              {formatCurrency(inventorySummary?.totalRetailValue || 0)}
             </div>
-            <p className="text-xs text-muted-foreground mt-1">Potential revenue</p>
+            <p className="text-xs text-muted-foreground mt-1 font-medium">Expected sales revenue</p>
           </div>
-          <div className="rounded-xl border border-border bg-card p-4 shadow-sm flex flex-col justify-between">
-            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Stock Alerts</p>
-            <div className="mt-2 text-2xl font-bold text-destructive">
+
+          <div className="rounded-2xl border border-border/80 bg-card p-4 shadow-card flex flex-col justify-between card-interactive">
+            <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Stock Alerts</p>
+            <div className="mt-2 text-2xl sm:text-3xl font-black text-destructive">
               {inventorySummary?.lowStockCount || lowCount}
             </div>
-            <p className="text-xs text-muted-foreground mt-1 flex gap-2">
+            <p className="text-xs text-muted-foreground mt-1 flex gap-2 font-medium">
               <span>{outCount} out</span>
               {expiringCount > 0 && <span>· {expiringCount} expiring</span>}
             </p>
           </div>
         </div>
-        <div className="overflow-hidden rounded-xl border border-border bg-card shadow-soft">
-          {filteredProducts.length === 0 ? (
-            <EmptyState
-              icon={PackageSearch}
-              title="No inventory records"
-              description={
-                search || filters.status
-                  ? "Try adjusting your search or filters."
-                  : "You don't have any products in your inventory yet."
-              }
-              actionLabel="Add Product"
-              onAction={() => router.navigate({ to: "/products" })}
-            />
-          ) : (
-            <div className="overflow-hidden rounded-xl border border-border bg-card shadow-soft">
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-sm">
-                  <thead className="bg-muted/50 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                    <tr>
-                      <th className="px-4 py-3 whitespace-nowrap">Product</th>
-                      <th className="px-4 py-3 whitespace-nowrap">SKU</th>
-                      <th className="px-4 py-3 text-right whitespace-nowrap">Stocks</th>
-                      <th className="px-4 py-3 text-right whitespace-nowrap">Reorder</th>
-                      <th className="px-4 py-3 text-right whitespace-nowrap">Value</th>
-                      <th className="px-4 py-3 whitespace-nowrap">Status</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-border">
-                    {paginatedProducts.map((p) => {
-                      const low = Number(p.stock) <= Number(p.reorderLevel);
-                      const out = p.stock <= 0;
-                      return (
-                        <tr
-                          key={p.id}
-                          className="hover:bg-muted/30 cursor-pointer"
-                          onClick={() => router.navigate({ to: "/products", search: { edit: p.id } })}
-                        >
-                          <td className="px-4 py-3 whitespace-nowrap">
-                            <div className="flex items-center gap-3">
-                              <div className="grid size-9 shrink-0 place-items-center rounded-lg bg-muted overflow-hidden">
+
+        {filteredProducts.length === 0 ? (
+          <EmptyState
+            icon={PackageSearch}
+            title="No inventory records"
+            description={
+              search || filters.status
+                ? "Try adjusting your search or active filters."
+                : "You don't have any products in your inventory yet."
+            }
+            actionLabel="Add Product"
+            onAction={() => router.navigate({ to: "/products" })}
+          />
+        ) : (
+          <div className="overflow-hidden rounded-2xl border border-border/80 bg-card shadow-card">
+            {/* Desktop Table (>= 768px) */}
+            <div className="table-desktop overflow-x-auto">
+              <table className="w-full text-left text-sm min-w-[800px]">
+                <thead className="border-b border-border/80 bg-muted/40 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                  <tr>
+                    <th className="px-5 py-3 whitespace-nowrap">Product</th>
+                    <th className="px-5 py-3 whitespace-nowrap">SKU</th>
+                    <th className="px-5 py-3 text-right whitespace-nowrap">Stock on Hand</th>
+                    <th className="px-5 py-3 text-right whitespace-nowrap">Reorder Point</th>
+                    <th className="px-5 py-3 text-right whitespace-nowrap">Stock Value</th>
+                    <th className="px-5 py-3 whitespace-nowrap">Health Status</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border/60">
+                  {paginatedProducts.map((p) => {
+                    const low = Number(p.stock) <= Number(p.reorderLevel);
+                    const out = p.stock <= 0;
+                    return (
+                      <tr
+                        key={p.id}
+                        className="hover:bg-muted/30 cursor-pointer transition-colors"
+                        onClick={() => router.navigate({ to: "/products", search: { edit: p.id } })}
+                      >
+                        <td className="px-5 py-3 whitespace-nowrap">
+                          <div className="flex items-center gap-3">
+                            <div className="grid size-10 shrink-0 place-items-center rounded-xl bg-muted/60 overflow-hidden border border-border/50">
+                              {p.image ? (
                                 <img src={p.image} alt="" className="size-full object-cover" />
-                              </div>
-                              <span className="font-semibold">{p.name}</span>
-                            </div>
-                          </td>
-                          <td className="px-4 py-3 font-mono text-xs text-muted-foreground whitespace-nowrap">
-                            {p.sku}
-                          </td>
-                          <td
-                            className={cn(
-                              "number px-4 py-3 text-right font-semibold whitespace-nowrap",
-                              low && "text-destructive",
-                            )}
-                          >
-                            {p.stock} {units.find((u) => u.id === p.unit)?.name || p.unit || ""}
-                          </td>
-                          <td className="px-4 py-3 text-right text-muted-foreground whitespace-nowrap">
-                            {p.reorderLevel}
-                          </td>
-                          <td className="number px-4 py-3 text-right whitespace-nowrap">
-                            {formatCurrency(p.stock * p.cost)}
-                          </td>
-                          <td className="px-4 py-3 whitespace-nowrap">
-                            <div className="flex gap-1 flex-wrap">
-                              {isExpired(p.expiryDate) && (
-                                <Badge variant="destructive">Expired</Badge>
-                              )}
-                              {isExpiringSoon(p.expiryDate) && (
-                                <Badge className="bg-warning/15 text-warning-foreground hover:bg-warning/20">
-                                  Expiring
-                                </Badge>
-                              )}
-                              {out ? (
-                                <Badge variant="destructive">Out</Badge>
-                              ) : low ? (
-                                <Badge className="bg-warning/15 text-warning-foreground hover:bg-warning/20">
-                                  Low
-                                </Badge>
                               ) : (
-                                <Badge className="bg-success/10 text-success hover:bg-success/15">
-                                  In stock
-                                </Badge>
-                              )}
-                              {p.expiryDate && (
-                                <span className="rounded bg-muted px-1.5 py-0.5 text-[9px] font-bold text-muted-foreground">
-                                  Exp: {p.expiryDate}
-                                </span>
+                                <PackageSearch className="size-5 text-muted-foreground/50" />
                               )}
                             </div>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
+                            <span className="font-bold text-foreground hover:text-primary transition-colors">{p.name}</span>
+                          </div>
+                        </td>
+                        <td className="px-5 py-3 font-mono text-xs text-muted-foreground whitespace-nowrap font-medium">
+                          {p.sku}
+                        </td>
+                        <td
+                          className={cn(
+                            "number px-5 py-3 text-right font-bold whitespace-nowrap text-sm",
+                            low ? "text-destructive" : "text-foreground",
+                          )}
+                        >
+                          {p.stock} <span className="text-xs font-normal text-muted-foreground">{units.find((u) => u.id === p.unit)?.name || p.unit || "units"}</span>
+                        </td>
+                        <td className="px-5 py-3 text-right text-muted-foreground whitespace-nowrap font-medium text-xs">
+                          {p.reorderLevel}
+                        </td>
+                        <td className="number px-5 py-3 text-right whitespace-nowrap font-bold text-foreground">
+                          {formatCurrency(p.stock * p.cost)}
+                        </td>
+                        <td className="px-5 py-3 whitespace-nowrap">
+                          <div className="flex gap-1.5 flex-wrap items-center">
+                            {isExpired(p.expiryDate) && (
+                              <Badge variant="destructive" className="text-[10px] font-bold">Expired</Badge>
+                            )}
+                            {isExpiringSoon(p.expiryDate) && (
+                              <Badge className="bg-warning/15 text-warning-foreground hover:bg-warning/20 text-[10px] font-bold">
+                                Expiring
+                              </Badge>
+                            )}
+                            {out ? (
+                              <Badge variant="destructive" className="text-[10px] font-bold">Out of stock</Badge>
+                            ) : low ? (
+                              <Badge className="bg-warning/15 text-warning-foreground hover:bg-warning/20 text-[10px] font-bold">
+                                Low stock
+                              </Badge>
+                            ) : (
+                              <Badge className="bg-success/12 text-success hover:bg-success/20 border-success/20 text-[10px] font-bold">
+                                Healthy
+                              </Badge>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Mobile Card Feed (< 768px) */}
+            <div className="table-mobile-cards p-3 space-y-2.5">
+              {paginatedProducts.map((p) => {
+                const low = Number(p.stock) <= Number(p.reorderLevel);
+                const out = p.stock <= 0;
+                return (
+                  <div
+                    key={p.id}
+                    className="flex items-center justify-between rounded-xl border border-border/80 bg-card p-3 shadow-sm card-interactive"
+                    onClick={() => router.navigate({ to: "/products", search: { edit: p.id } })}
+                  >
+                    <div className="flex items-center gap-3 min-w-0 flex-1">
+                      <div className="grid size-11 shrink-0 place-items-center rounded-xl bg-muted/60 overflow-hidden border border-border/50">
+                        {p.image ? (
+                          <img src={p.image} alt="" className="size-full object-cover" />
+                        ) : (
+                          <PackageSearch className="size-5 text-muted-foreground/50" />
+                        )}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="font-bold text-xs sm:text-sm text-foreground truncate">{p.name}</div>
+                        <p className="text-[11px] text-muted-foreground font-mono">{p.sku}</p>
+                        <div className="flex items-center gap-2 mt-1">
+                          {out ? (
+                            <span className="text-[9px] font-black text-destructive bg-destructive/10 px-1.5 py-0.2 rounded-md">
+                              Out of stock
+                            </span>
+                          ) : low ? (
+                            <span className="text-[9px] font-extrabold text-destructive bg-destructive/10 px-1.5 py-0.2 rounded-md">
+                              {p.stock} left (Reorder: {p.reorderLevel})
+                            </span>
+                          ) : (
+                            <span className="text-[9px] font-bold text-success bg-success/10 px-1.5 py-0.2 rounded-md">
+                              {p.stock} in stock
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="text-right shrink-0 pl-2">
+                      <div className="number text-xs font-bold text-foreground">
+                        {formatCurrency(p.stock * p.cost)}
+                      </div>
+                      <div className="text-[10px] text-muted-foreground mt-0.5">
+                        Valuation
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            <div className="border-t border-border/60 p-2 sm:p-3">
               <PaginationControls
                 currentPage={page}
                 totalPages={totalPages}
@@ -347,56 +404,52 @@ function StockList() {
                 totalItems={filteredProducts.length}
               />
             </div>
-          )}
-        </div>
+          </div>
+        )}
       </DataPage>
 
       <Dialog open={showForecast} onOpenChange={setShowForecast}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="max-w-2xl rounded-2xl">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Brain className="size-5 text-primary" /> AI Demand Forecast
+            <DialogTitle className="flex items-center gap-2 font-bold">
+              <Brain className="size-5 text-primary" /> AI Inventory Run-out Forecast
             </DialogTitle>
           </DialogHeader>
-          <div className="py-2 space-y-4 text-sm">
-            <p className="text-muted-foreground">
-              Based on sales velocity over the last 30 days, these items are predicted to run out of
-              stock soon.
+          <div className="space-y-3 py-3">
+            <p className="text-xs text-muted-foreground">
+              Based on historical sales velocity over the last 30 days, these items are projected to run out soon.
             </p>
             {forecasts.length === 0 ? (
-              <div className="rounded-lg bg-muted p-4 text-center text-muted-foreground">
-                No items are at risk of running out in the next 14 days.
+              <div className="rounded-xl border border-dashed border-border p-6 text-center text-xs text-muted-foreground">
+                No immediate stockout risks detected within the next 14 days!
               </div>
             ) : (
-              <div className="space-y-2 max-h-[300px] overflow-y-auto">
+              <div className="divide-y divide-border/60 rounded-xl border border-border/80 bg-muted/20 overflow-hidden">
                 {forecasts.map((f) => (
-                  <div
-                    key={f.id}
-                    className="flex items-center justify-between p-3 rounded-lg border border-border bg-card"
-                  >
+                  <div key={f.id} className="flex items-center justify-between p-3">
                     <div>
-                      <div className="font-semibold">{f.name}</div>
-                      <div className="text-xs text-muted-foreground">
-                        {f.stock} left · sells {f.dailyVelocity.toFixed(1)}/day
+                      <div className="font-bold text-xs sm:text-sm text-foreground">{f.name}</div>
+                      <div className="text-[11px] text-muted-foreground">
+                        Velocity: {f.dailyVelocity.toFixed(1)} units/day · Stock: {f.stock}
                       </div>
                     </div>
-                    <div className="text-right">
-                      <div
+                    <div className="text-right flex flex-col items-end gap-1">
+                      <Badge
+                        variant={f.daysRemaining <= 3 ? "destructive" : "outline"}
                         className={cn(
-                          "font-bold text-sm",
                           f.daysRemaining <= 3 ? "text-destructive" : "text-warning",
                         )}
                       >
                         {f.daysRemaining === 0
                           ? "Runs out today"
                           : `Runs out in ${f.daysRemaining} days`}
-                      </div>
+                      </Badge>
                       <Button
                         size="sm"
                         variant="link"
                         className="h-auto p-0 text-xs"
                         onClick={() => {
-                          setShowForecast(false); /* Add routing if needed */
+                          setShowForecast(false);
                         }}
                       >
                         Restock

@@ -1,4 +1,4 @@
-import { Search, Keyboard, ScanBarcode, Plus, Image as ImageIcon, MapPin } from "lucide-react";
+import { Search, ScanBarcode, Plus, Image as ImageIcon, MapPin, X, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
@@ -13,7 +13,6 @@ export function ProductGrid({ state }: { state: any }) {
     mobileTab,
     query,
     setQuery,
-    setShowShortcutsHelp,
     activeCat,
     setActiveCat,
     categories,
@@ -39,28 +38,40 @@ export function ProductGrid({ state }: { state: any }) {
   return (
     <div
       className={cn(
-        "flex min-h-0 min-w-0 flex-1 flex-col bg-muted/30",
+        "flex min-h-0 min-w-0 flex-1 flex-col bg-muted/20",
         mobileTab === "cart" ? "hidden md:flex" : "flex",
       )}
     >
-      <div className="flex flex-col md:flex-row gap-3 border-b border-border bg-background p-2 md:items-center">
-        <div className="flex gap-2 w-full">
+      {/* Top Controls: Search, Barcode, Store Location, Add Product */}
+      <div className="flex flex-col gap-2.5 border-b border-border/80 bg-background/95 p-3 backdrop-blur-md md:flex-row md:items-center">
+        <div className="flex flex-1 items-center gap-2">
+          {/* Product Search */}
           <div className="relative flex-1">
             <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search products by name, SKU or barcode..."
-              className="h-9 w-full rounded-lg border border-border bg-card pl-10 pr-3 text-sm focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/20"
+              placeholder="Search catalog by title, SKU, barcode..."
+              className="h-10 w-full rounded-xl border border-border/80 bg-card pl-9 pr-8 text-xs sm:text-sm font-medium transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
             />
+            {query && (
+              <button
+                onClick={() => setQuery("")}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-0.5 rounded-full"
+              >
+                <X className="size-3.5" />
+              </button>
+            )}
           </div>
-          <div className="relative flex-1 lg:max-w-[320px]">
+
+          {/* Barcode Scanner Input */}
+          <div className="relative flex-1 lg:max-w-[280px]">
             <ScanBarcode className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-primary" />
             <input
-              placeholder="Scan barcode..."
+              placeholder="Scan Barcode..."
               onKeyDown={(e) => {
                 if (e.key === "Enter") {
-                  const b = e.currentTarget.value;
+                  const b = e.currentTarget.value.trim();
                   if (b.length > 2) {
                     const product = products.find((p: any) => p.barcode === b || p.sku === b);
                     if (product) {
@@ -71,69 +82,83 @@ export function ProductGrid({ state }: { state: any }) {
                         toast.success(`Scanned: ${product.name}`);
                       }
                     } else {
-                      toast.error(`Unknown barcode: ${b}`);
+                      toast.error(`Barcode not found: ${b}`);
                     }
                   }
                   e.currentTarget.value = "";
                 }
               }}
-              className="h-9 w-full rounded-lg border border-primary/30 bg-primary/5 pl-10 pr-3 font-mono text-sm placeholder:text-primary/60 focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/20"
+              className="h-10 w-full rounded-xl border border-primary/30 bg-primary/8 pl-9 pr-3 font-mono text-xs sm:text-sm text-foreground placeholder:text-primary/70 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 font-semibold"
             />
           </div>
         </div>
-        <div className="flex items-center gap-2 w-full md:w-auto shrink-0">
+
+        <div className="flex items-center gap-2 shrink-0">
           <Select 
             value={state.selectedLocationId || "default"} 
             onValueChange={(val) => state.setSelectedLocationId(val === "default" ? null : val)}
           >
-            <SelectTrigger className="w-[180px] h-9 bg-card">
-              <MapPin className="w-4 h-4 mr-2 text-muted-foreground" />
-              <SelectValue placeholder="Main Store" />
+            <SelectTrigger className="w-[160px] h-10 rounded-xl bg-card border-border/80 text-xs font-semibold">
+              <MapPin className="size-3.5 mr-1.5 text-primary" />
+              <SelectValue placeholder="Main Outlet" />
             </SelectTrigger>
             <SelectContent>
-              {locations.length === 0 && <SelectItem value="default">Main Store</SelectItem>}
+              {locations.length === 0 && <SelectItem value="default">Main Outlet</SelectItem>}
               {locations.map((loc: any) => (
-                <SelectItem key={loc.id} value={loc.id}>{loc.name}</SelectItem>
+                <SelectItem key={loc.id} value={loc.id} className="text-xs">{loc.name}</SelectItem>
               ))}
             </SelectContent>
           </Select>
+
           <Button
             onClick={() => state.setShowAddProduct(true)}
-            className="flex-1 md:flex-none h-9 shrink-0 rounded-lg px-4 gap-2"
+            size="sm"
+            className="h-10 rounded-xl px-3.5 font-bold gap-1.5 shadow-sm"
           >
             <Plus className="size-4" />
-            Add
+            <span className="hidden sm:inline">Add Product</span>
           </Button>
         </div>
       </div>
 
-      <div className="flex gap-2 overflow-x-auto border-b border-border bg-background px-4 py-2">
+      {/* Horizontal Category Filter Pills */}
+      <div className="flex gap-2 overflow-x-auto border-b border-border/70 bg-card/60 px-3 py-2 scrollbar-none">
         <CatChip
           active={activeCat === "all"}
           onClick={() => setActiveCat("all")}
-          icon=""
+          icon="✨"
           label="All Products"
+          count={products.length}
         />
         {Array.from(
           new Map(categories.map((c: any) => [c.name.trim().toLowerCase(), c])).values(),
-        ).map((c: any) => (
-          <CatChip
-            key={c.id}
-            active={activeCat === c.name}
-            onClick={() => setActiveCat(c.name)}
-            icon={c.icon}
-            label={c.name}
-          />
-        ))}
+        ).map((c: any) => {
+          const count = products.filter((p: any) => p.category === c.name || p.category === c.id).length;
+          return (
+            <CatChip
+              key={c.id}
+              active={activeCat === c.name}
+              onClick={() => setActiveCat(c.name)}
+              icon={c.icon || "🏷️"}
+              label={c.name}
+              count={count}
+            />
+          );
+        })}
       </div>
 
-      <div className="flex-1 overflow-y-auto p-4">
+      {/* Products Grid Feed */}
+      <div className="flex-1 overflow-y-auto p-3 sm:p-4">
         {filtered.length === 0 ? (
-          <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
-            No products match your search.
+          <div className="flex h-64 flex-col items-center justify-center text-center text-xs text-muted-foreground">
+            <div className="grid size-12 place-items-center rounded-2xl bg-muted/50 mb-2">
+              <Search className="size-6 text-muted-foreground/60" />
+            </div>
+            <p className="font-semibold text-foreground">No products match search criteria</p>
+            <p className="mt-0.5">Try searching by another title, SKU or category filter.</p>
           </div>
         ) : (
-          <div className="grid grid-cols-2 gap-3.5 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
             {filtered.map((p: any) => {
               const isService = p.referenceType === "SERVICE";
               const low = !isService && Number(p.stock) > 0 && Number(p.stock) <= Number(p.reorderLevel);
@@ -144,70 +169,84 @@ export function ProductGrid({ state }: { state: any }) {
               const subText = [catName, brandName].filter(Boolean).join(" · ") || unitName;
 
               return (
-                  <button
-                    key={p.id}
-                    onClick={() => {
-                      if (p.hasVariants) {
-                        setSelectedVariantProduct(p);
-                      } else if (p.hasModifiers) {
-                        setSelectedModifierProduct({ product: p });
-                      } else {
-                        addToCart(p.id);
-                      }
-                    }}
-                    disabled={out}
+                <button
+                  key={p.id}
+                  type="button"
+                  onClick={() => {
+                    if (p.hasVariants) {
+                      setSelectedVariantProduct(p);
+                    } else if (p.hasModifiers) {
+                      setSelectedModifierProduct({ product: p });
+                    } else {
+                      addToCart(p.id);
+                    }
+                  }}
+                  disabled={out}
                   className={cn(
-                    "group relative w-full min-w-0 flex flex-col overflow-hidden rounded-xl border border-border bg-card text-left cursor-pointer shadow-soft transition-all duration-300 hover:border-primary/50 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-primary/20",
-                    out && "opacity-50 cursor-not-allowed",
+                    "group relative flex flex-col overflow-hidden rounded-2xl border border-border/80 bg-card text-left transition-all duration-200 hover:border-primary/50 hover:shadow-card-hover card-interactive focus:outline-none focus:ring-2 focus:ring-primary/20",
+                    out && "opacity-60 cursor-not-allowed",
                   )}
                 >
-                  <div className="relative w-full aspect-[4/3] overflow-hidden bg-muted flex items-center justify-center shrink-0 border-b border-border/50">
+                  {/* Thumbnail & Badges */}
+                  <div className="relative aspect-[4/3] w-full overflow-hidden bg-muted/40 flex items-center justify-center border-b border-border/50">
                     {p.image && !p.image.includes("1542838132") && !p.image.includes("unsplash") ? (
                       <img
                         src={p.image}
                         alt={p.name}
                         loading="lazy"
-                        className="w-full h-full object-cover"
+                        className="size-full object-cover transition-transform duration-300 group-hover:scale-105"
                       />
                     ) : (
                       <div className="flex flex-col items-center justify-center text-muted-foreground/30">
-                        <ImageIcon className="size-10" strokeWidth={1.5} />
+                        <ImageIcon className="size-9" strokeWidth={1.5} />
                       </div>
                     )}
-                    {low && !out && p.referenceType !== "SERVICE" && (
-                      <span className="absolute left-2 top-2 rounded bg-warning/90 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-warning-foreground shadow-sm backdrop-blur-sm">
-                        Low Stock
+
+                    {/* Stock Status Pills */}
+                    {low && !out && (
+                      <span className="absolute left-2 top-2 rounded-full bg-warning/90 px-2 py-0.5 text-[9px] font-extrabold uppercase tracking-wider text-warning-foreground shadow-sm backdrop-blur-sm">
+                        {p.stock} left
                       </span>
                     )}
-                    {out && p.referenceType !== "SERVICE" && (
-                      <span className="absolute left-2 top-2 rounded bg-destructive/90 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-white shadow-sm backdrop-blur-sm">
+                    {out && (
+                      <span className="absolute left-2 top-2 rounded-full bg-destructive/90 px-2 py-0.5 text-[9px] font-extrabold uppercase tracking-wider text-white shadow-sm backdrop-blur-sm">
                         Out of Stock
                       </span>
                     )}
-                    {p.referenceType === "SERVICE" && (
-                      <span className="absolute left-2 top-2 rounded bg-primary/90 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-primary-foreground shadow-sm backdrop-blur-sm">
+                    {isService && (
+                      <span className="absolute left-2 top-2 rounded-full bg-primary/90 px-2 py-0.5 text-[9px] font-extrabold uppercase tracking-wider text-primary-foreground shadow-sm backdrop-blur-sm">
                         Service
                       </span>
                     )}
-                    <div className="absolute inset-x-0 bottom-0 translate-y-full bg-primary/90 py-1.5 text-center text-[11px] font-bold text-primary-foreground backdrop-blur-sm transition-transform duration-300 group-hover:translate-y-0 flex items-center justify-center gap-1 shadow-inner">
-                      <Plus className="size-3.5" /> Add to Order
+
+                    {/* Quick Add Overlay on Hover */}
+                    <div className="absolute inset-x-0 bottom-0 translate-y-full bg-gradient-to-t from-primary to-primary/90 py-1.5 text-center text-[11px] font-bold text-primary-foreground backdrop-blur-sm transition-transform duration-200 group-hover:translate-y-0 flex items-center justify-center gap-1">
+                      <Plus className="size-3.5 stroke-[2.5]" /> Quick Add
                     </div>
                   </div>
-                  <div className="flex w-full flex-col flex-1 p-3">
-                    <div className="flex-1 min-w-0">
-                      <div className="line-clamp-2 text-sm font-bold leading-tight text-foreground">
+
+                  {/* Product Details */}
+                  <div className="flex flex-1 flex-col justify-between p-3">
+                    <div>
+                      <h4 className="line-clamp-2 text-xs sm:text-sm font-bold text-foreground leading-tight">
                         {p.name}
-                      </div>
+                      </h4>
                       {subText && (
-                        <div className="mt-1 truncate text-[11px] font-medium text-muted-foreground">
+                        <p className="mt-0.5 truncate text-[10px] sm:text-[11px] font-medium text-muted-foreground">
                           {subText}
-                        </div>
+                        </p>
                       )}
                     </div>
-                    <div className="mt-2 flex items-center justify-between">
-                      <span className="number text-lg font-black tracking-tight text-primary">
+
+                    <div className="mt-2.5 flex items-center justify-between border-t border-border/40 pt-2">
+                      <span className="number text-sm sm:text-base font-black text-primary">
                         {formatCurrency(p.price)}
                       </span>
+                      {p.hasVariants && (
+                        <span className="text-[9px] font-bold rounded-md bg-secondary/80 px-1.5 py-0.5 text-secondary-foreground uppercase tracking-wider">
+                          Variants
+                        </span>
+                      )}
                     </div>
                   </div>
                 </button>
@@ -256,24 +295,38 @@ function CatChip({
   onClick,
   icon,
   label,
+  count,
 }: {
   active: boolean;
   onClick: () => void;
   icon: string;
   label: string;
+  count?: number;
 }) {
   return (
     <button
+      type="button"
       onClick={onClick}
       className={cn(
-        "inline-flex shrink-0 items-center gap-2 rounded-full border px-3.5 py-1.5 text-xs font-semibold transition-colors",
+        "inline-flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold transition-all duration-150 active:scale-95",
         active
-          ? "border-primary bg-primary text-primary-foreground"
-          : "border-border bg-muted/40 text-muted-foreground hover:border-primary/30 hover:text-foreground",
+          ? "border-primary bg-primary text-primary-foreground shadow-sm font-bold"
+          : "border-border/80 bg-background text-muted-foreground hover:border-primary/40 hover:text-foreground",
       )}
     >
-      <span>{icon}</span>
-      {label}
+      <span className="text-xs">{icon}</span>
+      <span>{label}</span>
+      {typeof count === "number" && (
+        <span
+          className={cn(
+            "rounded-full px-1.5 py-0.2 text-[9px] font-bold",
+            active ? "bg-primary-foreground/20 text-primary-foreground" : "bg-muted text-muted-foreground",
+          )}
+        >
+          {count}
+        </span>
+      )}
     </button>
   );
 }
+

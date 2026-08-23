@@ -70,186 +70,221 @@ function AccountingReportsPage() {
   }
 
   return (
-    <div className="p-4 md:p-6 lg:p-8 space-y-6 h-full flex flex-col">
+    <div className="space-y-6 h-full flex flex-col">
       <DataPage title="Financial Reports" description="Generate Trial Balance and Balance Sheet" hideToolbar>
-      {isLoading ? (
-        <div className="flex h-40 items-center justify-center">
-          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-        </div>
-      ) : (
-        <Tabs defaultValue="trial-balance" className="w-full mt-4">
-          <TabsList className="mb-4">
-            <TabsTrigger value="trial-balance">Trial Balance</TabsTrigger>
-            <TabsTrigger value="balance-sheet">Balance Sheet</TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="trial-balance">
-            <Card>
-              <CardHeader>
-                <CardTitle>Trial Balance</CardTitle>
-                <CardDescription>A statement of all debits and credits in a double-entry account book.</CardDescription>
-              </CardHeader>
-              <CardContent>
-                {Math.abs(totalDebit - totalCredit) > 0.01 && (
-                  <Alert variant="destructive" className="mb-4 bg-red-50 text-red-900 border-red-200">
-                    <AlertCircle className="h-4 w-4" />
-                    <AlertDescription className="ml-2 font-medium">
-                      Warning: Trial Balance does not match. Difference: {formatCurrency(Math.abs(totalDebit - totalCredit))}
-                    </AlertDescription>
-                  </Alert>
-                )}
-                
-                <div className="rounded-md border">
-                  <table className="w-full text-sm text-left">
-                    <thead className="bg-muted text-muted-foreground font-medium">
-                      <tr>
-                        <th className="p-3 border-b border-r">Account Code</th>
-                        <th className="p-3 border-b border-r">Account Name</th>
-                        <th className="p-3 border-b border-r">Type</th>
-                        <th className="p-3 border-b border-r text-right w-40">Debit</th>
-                        <th className="p-3 border-b text-right w-40">Credit</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y">
-                      {trialBalanceData.map((acc: any) => (
-                        <tr key={acc.id} className="hover:bg-muted/50">
-                          <td className="p-3 border-r font-mono text-xs">{acc.code}</td>
-                          <td className="p-3 border-r">{acc.name}</td>
-                          <td className="p-3 border-r">{acc.type}</td>
-                          <td className="p-3 border-r text-right font-medium">
-                            {acc.debit > 0 ? formatCurrency(acc.debit) : "-"}
-                          </td>
-                          <td className="p-3 text-right font-medium">
-                            {acc.credit > 0 ? formatCurrency(acc.credit) : "-"}
-                          </td>
-                        </tr>
-                      ))}
-                      {trialBalanceData.length === 0 && (
-                        <tr>
-                          <td colSpan={5} className="p-8 text-center text-muted-foreground">
-                            No accounts found
-                          </td>
-                        </tr>
-                      )}
-                    </tbody>
-                    <tfoot className="bg-muted/50 font-bold border-t-2">
-                      <tr>
-                        <td colSpan={3} className="p-3 border-r text-right uppercase tracking-wider">Grand Total</td>
-                        <td className="p-3 border-r text-right text-primary">{formatCurrency(totalDebit)}</td>
-                        <td className="p-3 text-right text-primary">{formatCurrency(totalCredit)}</td>
-                      </tr>
-                    </tfoot>
-                  </table>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-          
-          <TabsContent value="balance-sheet">
-            <Card>
-              <CardHeader>
-                <CardTitle>Balance Sheet</CardTitle>
-                <CardDescription>Statement of financial position at a specific moment in time.</CardDescription>
-              </CardHeader>
-              <CardContent>
-                {!isBalanced && (
-                  <Alert variant="destructive" className="mb-4 bg-red-50 text-red-900 border-red-200">
-                    <AlertCircle className="h-4 w-4" />
-                    <AlertDescription className="ml-2 font-medium">
-                      Warning: Balance Sheet does not balance! Difference: {formatCurrency(Math.abs(totalAssets - totalLiabilitiesAndEquity))}
-                    </AlertDescription>
-                  </Alert>
-                )}
+        {isLoading ? (
+          <div className="flex h-40 items-center justify-center">
+            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+          </div>
+        ) : (
+          <Tabs defaultValue="trial-balance" className="w-full mt-2">
+            <TabsList className="mb-4 bg-muted/60 p-1 rounded-xl">
+              <TabsTrigger value="trial-balance" className="font-bold text-xs rounded-lg data-[state=active]:shadow-soft">
+                Trial Balance
+              </TabsTrigger>
+              <TabsTrigger value="balance-sheet" className="font-bold text-xs rounded-lg data-[state=active]:shadow-soft">
+                Balance Sheet
+              </TabsTrigger>
+            </TabsList>
 
-                <div className="grid md:grid-cols-2 gap-8 items-start">
-                  {/* Assets Side */}
-                  <div className="space-y-6">
-                    <div className="rounded-lg border bg-card text-card-foreground shadow-sm overflow-hidden">
-                      <div className="bg-blue-50/50 p-4 border-b font-semibold uppercase tracking-wider flex justify-between text-blue-900">
-                        <span>Assets</span>
-                        <span>{formatCurrency(totalAssets)}</span>
+            <TabsContent value="trial-balance">
+              <Card className="rounded-2xl border-border/80 shadow-card">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base font-bold">Trial Balance</CardTitle>
+                  <CardDescription className="text-xs">
+                    Double-entry ledger statement verifying total debits equal total credits.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {Math.abs(totalDebit - totalCredit) > 0.01 && (
+                    <Alert variant="destructive" className="mb-4 rounded-xl border-destructive/30">
+                      <AlertCircle className="h-4 w-4" />
+                      <AlertDescription className="ml-2 font-medium text-xs">
+                        Warning: Trial Balance has an unadjusted discrepancy of {formatCurrency(Math.abs(totalDebit - totalCredit))}
+                      </AlertDescription>
+                    </Alert>
+                  )}
+
+                  <div className="rounded-xl border border-border/80 overflow-x-auto bg-card">
+                    <table className="w-full text-sm text-left min-w-[650px]">
+                      <thead className="bg-muted/40 text-muted-foreground font-bold text-[11px] uppercase tracking-wider border-b border-border/80">
+                        <tr>
+                          <th className="p-3 border-r border-border/60">Code</th>
+                          <th className="p-3 border-r border-border/60">Account Name</th>
+                          <th className="p-3 border-r border-border/60">Type</th>
+                          <th className="p-3 border-r border-border/60 text-right w-40">Debit</th>
+                          <th className="p-3 text-right w-40">Credit</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-border/60">
+                        {trialBalanceData.map((acc: any) => (
+                          <tr key={acc.id} className="hover:bg-muted/30 transition-colors">
+                            <td className="p-3 border-r border-border/60 font-mono text-xs font-semibold text-muted-foreground">
+                              {acc.code}
+                            </td>
+                            <td className="p-3 border-r border-border/60 font-bold text-foreground">{acc.name}</td>
+                            <td className="p-3 border-r border-border/60">
+                              <span className="capitalize text-xs text-muted-foreground">{acc.type}</span>
+                            </td>
+                            <td className="number p-3 border-r border-border/60 text-right font-black text-xs">
+                              {acc.debit > 0 ? formatCurrency(acc.debit) : "-"}
+                            </td>
+                            <td className="number p-3 text-right font-black text-xs">
+                              {acc.credit > 0 ? formatCurrency(acc.credit) : "-"}
+                            </td>
+                          </tr>
+                        ))}
+                        {trialBalanceData.length === 0 && (
+                          <tr>
+                            <td colSpan={5} className="p-8 text-center text-muted-foreground text-xs">
+                              No ledger accounts recorded.
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                      <tfoot className="bg-muted/30 font-black border-t-2 border-border/80 text-sm">
+                        <tr>
+                          <td colSpan={3} className="p-3 border-r border-border/60 text-right uppercase tracking-wider text-xs">
+                            Grand Total
+                          </td>
+                          <td className="number p-3 border-r border-border/60 text-right text-primary">
+                            {formatCurrency(totalDebit)}
+                          </td>
+                          <td className="number p-3 text-right text-primary">
+                            {formatCurrency(totalCredit)}
+                          </td>
+                        </tr>
+                      </tfoot>
+                    </table>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="balance-sheet">
+              <Card className="rounded-2xl border-border/80 shadow-card">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base font-bold">Balance Sheet Statement</CardTitle>
+                  <CardDescription className="text-xs">
+                    Summary of enterprise financial health: Assets = Liabilities + Owner Equity.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {!isBalanced && (
+                    <Alert variant="destructive" className="mb-4 rounded-xl border-destructive/30">
+                      <AlertCircle className="h-4 w-4" />
+                      <AlertDescription className="ml-2 font-medium text-xs">
+                        Warning: Balance Sheet discrepancy detected: {formatCurrency(Math.abs(totalAssets - totalLiabilitiesAndEquity))}
+                      </AlertDescription>
+                    </Alert>
+                  )}
+
+                  <div className="grid md:grid-cols-2 gap-6 items-start">
+                    {/* Assets Side */}
+                    <div className="space-y-4">
+                      <div className="rounded-2xl border border-border/80 bg-card overflow-hidden shadow-sm">
+                        <div className="bg-primary/10 p-3.5 border-b border-border/60 font-bold uppercase tracking-wider flex justify-between text-xs text-primary">
+                          <span>Total Assets</span>
+                          <span className="font-mono font-black">{formatCurrency(totalAssets)}</span>
+                        </div>
+                        <div className="p-0">
+                          <table className="w-full text-xs">
+                            <tbody className="divide-y divide-border/60">
+                              {assets.map((acc: any) => (
+                                <tr key={acc.id} className="hover:bg-muted/30">
+                                  <td className="p-3 pl-4 font-semibold text-foreground">{acc.name}</td>
+                                  <td className="number p-3 pr-4 text-right font-black">
+                                    {formatCurrency(Number(acc.balance) || 0)}
+                                  </td>
+                                </tr>
+                              ))}
+                              {assets.length === 0 && (
+                                <tr>
+                                  <td colSpan={2} className="p-4 text-center text-muted-foreground text-xs">
+                                    No asset accounts found
+                                  </td>
+                                </tr>
+                              )}
+                            </tbody>
+                          </table>
+                        </div>
                       </div>
-                      <div className="p-0">
-                        <table className="w-full text-sm">
-                          <tbody className="divide-y">
-                            {assets.map((acc: any) => (
-                              <tr key={acc.id} className="hover:bg-muted/30">
-                                <td className="p-3 pl-4">{acc.name}</td>
-                                <td className="p-3 pr-4 text-right">{formatCurrency(Number(acc.balance) || 0)}</td>
-                              </tr>
-                            ))}
-                            {assets.length === 0 && (
-                              <tr>
-                                <td colSpan={2} className="p-4 text-center text-muted-foreground">No assets found</td>
-                              </tr>
-                            )}
-                          </tbody>
-                        </table>
+                    </div>
+
+                    {/* Liabilities and Equity Side */}
+                    <div className="space-y-4">
+                      {/* Liabilities */}
+                      <div className="rounded-2xl border border-border/80 bg-card overflow-hidden shadow-sm">
+                        <div className="bg-destructive/10 p-3.5 border-b border-border/60 font-bold uppercase tracking-wider flex justify-between text-xs text-destructive">
+                          <span>Liabilities</span>
+                          <span className="font-mono font-black">{formatCurrency(totalLiabilities)}</span>
+                        </div>
+                        <div className="p-0">
+                          <table className="w-full text-xs">
+                            <tbody className="divide-y divide-border/60">
+                              {liabilities.map((acc: any) => (
+                                <tr key={acc.id} className="hover:bg-muted/30">
+                                  <td className="p-3 pl-4 font-semibold text-foreground">{acc.name}</td>
+                                  <td className="number p-3 pr-4 text-right font-black">
+                                    {formatCurrency(Number(acc.balance) || 0)}
+                                  </td>
+                                </tr>
+                              ))}
+                              {liabilities.length === 0 && (
+                                <tr>
+                                  <td colSpan={2} className="p-4 text-center text-muted-foreground text-xs">
+                                    No liability accounts found
+                                  </td>
+                                </tr>
+                              )}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+
+                      {/* Equity */}
+                      <div className="rounded-2xl border border-border/80 bg-card overflow-hidden shadow-sm">
+                        <div className="bg-success/10 p-3.5 border-b border-border/60 font-bold uppercase tracking-wider flex justify-between text-xs text-success">
+                          <span>Equity & Capital</span>
+                          <span className="font-mono font-black">{formatCurrency(totalEquity)}</span>
+                        </div>
+                        <div className="p-0">
+                          <table className="w-full text-xs">
+                            <tbody className="divide-y divide-border/60">
+                              {equity.map((acc: any) => (
+                                <tr key={acc.id} className="hover:bg-muted/30">
+                                  <td className="p-3 pl-4 font-semibold text-foreground">{acc.name}</td>
+                                  <td className="number p-3 pr-4 text-right font-black">
+                                    {formatCurrency(Number(acc.balance) || 0)}
+                                  </td>
+                                </tr>
+                              ))}
+                              {equity.length === 0 && (
+                                <tr>
+                                  <td colSpan={2} className="p-4 text-center text-muted-foreground text-xs">
+                                    No equity accounts found
+                                  </td>
+                                </tr>
+                              )}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+
+                      {/* Total Liabilities & Equity Summary */}
+                      <div className="rounded-2xl border border-primary/30 bg-primary/5 p-3.5 flex justify-between items-center text-xs font-bold text-foreground">
+                        <span>Total Liabilities & Equity:</span>
+                        <span className="font-mono font-black text-sm text-primary">
+                          {formatCurrency(totalLiabilitiesAndEquity)}
+                        </span>
                       </div>
                     </div>
                   </div>
-                  
-                  {/* Liabilities & Equity Side */}
-                  <div className="space-y-6">
-                    <div className="rounded-lg border bg-card text-card-foreground shadow-sm overflow-hidden">
-                      <div className="bg-amber-50/50 p-4 border-b font-semibold uppercase tracking-wider flex justify-between text-amber-900">
-                        <span>Liabilities</span>
-                        <span>{formatCurrency(totalLiabilities)}</span>
-                      </div>
-                      <div className="p-0">
-                        <table className="w-full text-sm">
-                          <tbody className="divide-y">
-                            {liabilities.map((acc: any) => (
-                              <tr key={acc.id} className="hover:bg-muted/30">
-                                <td className="p-3 pl-4">{acc.name}</td>
-                                <td className="p-3 pr-4 text-right">{formatCurrency(Number(acc.balance) || 0)}</td>
-                              </tr>
-                            ))}
-                            {liabilities.length === 0 && (
-                              <tr>
-                                <td colSpan={2} className="p-4 text-center text-muted-foreground">No liabilities found</td>
-                              </tr>
-                            )}
-                          </tbody>
-                        </table>
-                      </div>
-                    </div>
-                    
-                    <div className="rounded-lg border bg-card text-card-foreground shadow-sm overflow-hidden">
-                      <div className="bg-emerald-50/50 p-4 border-b font-semibold uppercase tracking-wider flex justify-between text-emerald-900">
-                        <span>Equity</span>
-                        <span>{formatCurrency(totalEquity)}</span>
-                      </div>
-                      <div className="p-0">
-                        <table className="w-full text-sm">
-                          <tbody className="divide-y">
-                            {equity.map((acc: any) => (
-                              <tr key={acc.id} className="hover:bg-muted/30">
-                                <td className="p-3 pl-4">{acc.name}</td>
-                                <td className="p-3 pr-4 text-right">{formatCurrency(Number(acc.balance) || 0)}</td>
-                              </tr>
-                            ))}
-                            {equity.length === 0 && (
-                              <tr>
-                                <td colSpan={2} className="p-4 text-center text-muted-foreground">No equity found</td>
-                              </tr>
-                            )}
-                          </tbody>
-                        </table>
-                      </div>
-                    </div>
-                    
-                    <div className={`rounded-lg border-2 p-4 flex justify-between font-bold uppercase tracking-wider shadow-sm transition-colors ${isBalanced ? 'border-primary bg-primary/5 text-primary' : 'border-destructive bg-destructive/5 text-destructive'}`}>
-                      <span>Total Liabilities & Equity</span>
-                      <span>{formatCurrency(totalLiabilitiesAndEquity)}</span>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
-      )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </Tabs>
+        )}
       </DataPage>
     </div>
   );

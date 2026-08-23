@@ -267,7 +267,7 @@ function GiftCardsPage() {
   };
 
   return (
-    <div className="p-4 md:p-6 lg:p-8">
+    <div>
       <DataPage
         title="Gift Cards"
         description="Issued cards, balances, and expirations."
@@ -300,7 +300,7 @@ function GiftCardsPage() {
             </div>
             <div className="pt-4 mt-auto">
               <Button
-                className="w-full"
+                className="w-full font-bold shadow-soft"
                 onClick={() => {
                   setFilters(draftFilters);
                   close();
@@ -320,7 +320,7 @@ function GiftCardsPage() {
           <EmptyState
             icon={Gift}
             title="No gift cards found"
-            description={search ? "Try adjusting your search." : "No gift cards issued yet."}
+            description={search ? "Try adjusting your search query." : "No gift cards issued yet."}
             actionLabel="Issue Gift Card"
             onAction={() => {
               setEditItem(null);
@@ -334,50 +334,66 @@ function GiftCardsPage() {
               {paginatedCards.map((g) => (
                 <div
                   key={g.id}
-                  className="relative overflow-hidden rounded-xl border border-border bg-gradient-to-br from-primary/15 via-card to-info/10 p-5 shadow-soft"
+                  className="relative overflow-hidden rounded-2xl border border-border/80 bg-gradient-to-br from-primary/10 via-card to-accent/20 p-5 shadow-card card-interactive flex flex-col justify-between"
                 >
                   <div className="absolute right-4 top-4 z-10 flex items-center gap-2">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="size-8">
+                        <Button variant="ghost" size="icon" className="size-8 rounded-lg">
                           <MoreVertical className="size-4 text-muted-foreground" />
                         </Button>
                       </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => setEditItem(g)}>
-                          <Edit2 className="mr-2 size-4" /> Edit
+                      <DropdownMenuContent align="end" className="rounded-xl">
+                        <DropdownMenuItem onClick={() => setEditItem(g)} className="text-xs font-semibold">
+                          <Edit2 className="mr-2 size-3.5" /> Edit Card
                         </DropdownMenuItem>
                         <DropdownMenuItem
-                          className="text-destructive focus:bg-destructive/10 focus:text-destructive"
+                          className="text-destructive text-xs font-semibold"
                           onClick={() => setDeleteId(g.id)}
                         >
-                          <Trash2 className="mr-2 size-4" /> Delete
+                          <Trash2 className="mr-2 size-3.5" /> Delete
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </div>
 
-                  <div className="flex items-start justify-between pr-10">
-                    <Gift className="size-7 text-primary" />
-                    <span
-                      className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${g.status === "active" ? "bg-success/15 text-success" : "bg-muted text-muted-foreground"}`}
-                    >
-                      {g.status}
+                  <div>
+                    <div className="flex items-start justify-between pr-10">
+                      <div className="grid size-10 place-items-center rounded-xl bg-primary/10 text-primary border border-primary/20">
+                        <Gift className="size-5" />
+                      </div>
+                      <span
+                        className={`rounded-full px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider border ${
+                          g.status === "active"
+                            ? "bg-success/15 text-success border-success/25"
+                            : "bg-muted text-muted-foreground border-border/60"
+                        }`}
+                      >
+                        {g.status}
+                      </span>
+                    </div>
+
+                    <div className="mt-5 font-mono text-sm font-black tracking-wider text-foreground">
+                      {g.code}
+                    </div>
+                    <div className="mt-1 text-xs text-muted-foreground">
+                      Recipient:{" "}
+                      <span className="font-bold text-foreground">{g.customer || "Walk-in Customer"}</span>
+                    </div>
+                  </div>
+
+                  <div className="mt-5 pt-3 border-t border-border/60 flex items-baseline justify-between">
+                    <div>
+                      <span className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground block">
+                        Remaining Balance
+                      </span>
+                      <span className="number text-2xl font-black text-foreground">
+                        {formatCurrency(g.balance)}
+                      </span>
+                    </div>
+                    <span className="text-[11px] text-muted-foreground font-medium">
+                      Expires {formatDate(g.expires)}
                     </span>
-                  </div>
-                  <div className="mt-6 font-mono text-xs text-muted-foreground">{g.code}</div>
-                  <div className="mt-1 text-xs text-muted-foreground">
-                    To:{" "}
-                    <span className="font-semibold text-foreground">{g.customer || "Walk-in"}</span>
-                  </div>
-                  <div className="mt-4 flex items-baseline justify-between">
-                    <span className="text-xs uppercase tracking-wider text-muted-foreground">
-                      Balance
-                    </span>
-                    <span className="number text-2xl font-bold">{formatCurrency(g.balance)}</span>
-                  </div>
-                  <div className="mt-1 text-xs text-muted-foreground">
-                    expires {formatDate(g.expires)}
                   </div>
                 </div>
               ))}

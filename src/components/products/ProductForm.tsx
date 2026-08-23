@@ -136,41 +136,53 @@ export function ProductForm({ initialData, onSubmit, isSaving }: { initialData?:
   };
 
   return (
-    <div className="container mx-auto pb-24 mt-4 px-4 sm:px-6 relative">
+    <div className="page-container pb-24 relative space-y-6">
       {/* Sticky Action Bar */}
-      <div className="sticky top-0 z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 pb-4 pt-2 border-b mb-6 shadow-sm -mx-4 px-4 sm:mx-0 sm:px-0">
-        <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" onClick={() => navigate({ to: "/products" })} className="rounded-full hover:bg-muted">
-            <ArrowLeft className="size-5" />
+      <div className="sticky top-0 z-20 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-background/90 backdrop-blur-xl pb-3 pt-2 border-b border-border/80 shadow-sm -mx-4 px-4 sm:-mx-6 sm:px-6">
+        <div className="flex items-center gap-3">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => navigate({ to: "/products" })}
+            className="size-9 rounded-xl hover:bg-muted"
+          >
+            <ArrowLeft className="size-4" />
           </Button>
           <div>
-            <h1 className="text-2xl font-bold tracking-tight">
-              {initialData ? "Edit Product" : "Add Product"}
+            <h1 className="text-xl sm:text-2xl font-black tracking-tight text-foreground">
+              {initialData ? "Edit Product SKU" : "Create New Product"}
             </h1>
-            <p className="text-sm text-muted-foreground hidden sm:block">
-              {initialData ? "Update the details of this product." : "Fill in the details to create a new product."}
+            <p className="text-xs text-muted-foreground hidden sm:block">
+              {initialData ? "Update catalog metadata, pricing tiers, and stock allocations." : "Configure attributes, pricing, and multi-location inventory."}
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-3 w-full sm:w-auto">
-          <Button variant="outline" onClick={() => navigate({ to: "/products" })} className="flex-1 sm:flex-none">
-            Cancel
+        <div className="flex items-center gap-2.5 w-full sm:w-auto">
+          <Button
+            variant="outline"
+            onClick={() => navigate({ to: "/products" })}
+            className="flex-1 sm:flex-none h-10 rounded-xl text-xs font-semibold"
+          >
+            Discard
           </Button>
-          <Button onClick={handleSubmit} disabled={isSaving} className="flex-1 sm:flex-none min-w-[140px] shadow-sm">
-            {isSaving && <Loader2 className="size-4 animate-spin mr-2" />}
-            Save Product
+          <Button
+            onClick={handleSubmit}
+            disabled={isSaving}
+            className="flex-1 sm:flex-none min-w-[140px] h-10 rounded-xl font-bold text-xs shadow-soft"
+          >
+            {isSaving && <Loader2 className="size-4 animate-spin mr-1.5" />}
+            Save SKU Changes
           </Button>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left Column - Main Details */}
-        <div className="lg:col-span-2 space-y-8">
-          
-          <Card className="shadow-sm border-border/60 overflow-hidden">
-            <CardHeader className="border-b bg-muted/20 pb-4">
-              <CardTitle className="text-lg flex items-center gap-2">
-                <Package className="size-5 text-primary" /> General Information
+        <div className="lg:col-span-2 space-y-6">
+          <Card className="shadow-card border-border/80 rounded-2xl overflow-hidden">
+            <CardHeader className="border-b border-border/60 bg-muted/20 pb-3.5">
+              <CardTitle className="text-base font-bold flex items-center gap-2">
+                <Package className="size-4 text-primary" /> General Information
               </CardTitle>
             </CardHeader>
             <CardContent className="pt-6">

@@ -264,7 +264,7 @@ function CategoriesPage() {
   };
 
   return (
-    <div className="p-4 md:p-6 lg:p-8">
+    <div>
       <DataPage
         title="Categories"
         description="Group products into shoppable sections used across POS, reports, and promotions."

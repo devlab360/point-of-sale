@@ -412,7 +412,7 @@ function ReportsPage() {
   }
 
   return (
-    <div className="space-y-6 p-4 md:p-6 lg:p-8">
+    <div className="page-container space-y-5">
       <PageHeader
         title="Reports"
         description="Insights across sales, inventory, tax and operations."
@@ -431,7 +431,7 @@ function ReportsPage() {
       {/* Key Metrics */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
-          label="Net Sales"
+          label="Net Sales (MTD)"
           value={formatCurrency(mtdRevenue)}
           icon={DollarSign}
           accent="success"
@@ -462,13 +462,25 @@ function ReportsPage() {
 
       {/* Charts */}
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
-        <div className="rounded-xl border border-border bg-card p-5 shadow-soft xl:col-span-2">
-          <h2 className="mb-1 text-base font-semibold">Revenue vs Profit (12 months)</h2>
-          <p className="mb-3 text-xs text-muted-foreground">Based on local sales data</p>
+        <div className="rounded-2xl border border-border/80 bg-card p-5 shadow-card xl:col-span-2">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h2 className="text-base font-bold text-foreground">Revenue vs Profit (12 Months)</h2>
+              <p className="text-xs text-muted-foreground mt-0.5">Historical trajectory and profitability trends</p>
+            </div>
+            <div className="flex items-center gap-3 text-xs font-semibold">
+              <span className="flex items-center gap-1.5 text-primary">
+                <span className="size-2.5 rounded-full bg-primary" /> Revenue
+              </span>
+              <span className="flex items-center gap-1.5 text-emerald-500">
+                <span className="size-2.5 rounded-full bg-emerald-500" /> Profit
+              </span>
+            </div>
+          </div>
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={monthly} margin={{ top: 8, right: 8, left: -16, bottom: 0 }}>
-                <CartesianGrid stroke="var(--color-border)" vertical={false} />
+                <CartesianGrid stroke="var(--color-border)" strokeDasharray="3 3" vertical={false} opacity={0.5} />
                 <XAxis
                   dataKey="m"
                   axisLine={false}
@@ -485,8 +497,10 @@ function ReportsPage() {
                   contentStyle={{
                     background: "var(--color-popover)",
                     border: "1px solid var(--color-border)",
-                    borderRadius: 12,
+                    borderRadius: 14,
+                    boxShadow: "var(--shadow-card)",
                     fontSize: 12,
+                    fontWeight: "bold",
                   }}
                   formatter={(v: number) => formatCurrency(v)}
                 />
@@ -494,7 +508,7 @@ function ReportsPage() {
                   type="monotone"
                   dataKey="revenue"
                   stroke="var(--color-primary)"
-                  strokeWidth={2.5}
+                  strokeWidth={3}
                   dot={false}
                   name="Revenue"
                 />
@@ -502,7 +516,7 @@ function ReportsPage() {
                   type="monotone"
                   dataKey="profit"
                   stroke="var(--color-success)"
-                  strokeWidth={2.5}
+                  strokeWidth={3}
                   dot={false}
                   name="Profit"
                 />
@@ -511,19 +525,21 @@ function ReportsPage() {
           </div>
         </div>
 
-        <div className="rounded-xl border border-border bg-card p-5 shadow-soft">
-          <h2 className="mb-1 text-base font-semibold">Sales by Category</h2>
-          <p className="mb-3 text-xs text-muted-foreground">
-            {catData.length > 0 ? "From actual sales" : "No sales data yet"}
-          </p>
-          <div className="h-48">
+        <div className="rounded-2xl border border-border/80 bg-card p-5 shadow-card flex flex-col justify-between">
+          <div>
+            <h2 className="text-base font-bold text-foreground">Sales by Category</h2>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              {catData.length > 0 ? "Actual category volume share" : "No sales data yet"}
+            </p>
+          </div>
+          <div className="h-48 my-2">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
                   data={pieData}
                   innerRadius={45}
                   outerRadius={75}
-                  paddingAngle={2}
+                  paddingAngle={3}
                   dataKey="value"
                   stroke="var(--color-card)"
                   strokeWidth={3}
@@ -537,18 +553,19 @@ function ReportsPage() {
                     background: "var(--color-popover)",
                     border: "1px solid var(--color-border)",
                     borderRadius: 12,
+                    boxShadow: "var(--shadow-card)",
                     fontSize: 12,
                   }}
                 />
               </PieChart>
             </ResponsiveContainer>
           </div>
-          <ul className="mt-2 space-y-1.5">
+          <ul className="space-y-1.5 border-t border-border/60 pt-3">
             {pieData.slice(0, 4).map((c) => (
               <li key={c.name} className="flex items-center gap-2 text-xs">
                 <span className="size-2.5 rounded-full shrink-0" style={{ background: c.color }} />
-                <span className="flex-1 truncate text-muted-foreground">{c.name}</span>
-                <span className="number font-semibold">
+                <span className="flex-1 truncate text-muted-foreground font-medium">{c.name}</span>
+                <span className="number font-black text-foreground">
                   {catData.length > 0 ? formatCurrency(c.value) : `${c.value}%`}
                 </span>
               </li>
@@ -559,74 +576,75 @@ function ReportsPage() {
 
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-2 mt-6">
         {/* Top Products */}
-        <div className="rounded-xl border border-border bg-card p-5 shadow-soft">
-          <h2 className="mb-4 text-base font-semibold">Top Products (by Profit)</h2>
-          <div className="space-y-4">
+        <div className="rounded-2xl border border-border/80 bg-card p-5 shadow-card">
+          <h2 className="mb-4 text-base font-bold text-foreground">Top Products by Profit Margin</h2>
+          <div className="space-y-3">
             {profitReportData?.topProducts?.slice(0, 5).map((p: any) => (
-              <div key={p.productId} className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="grid size-8 place-items-center rounded-lg bg-primary/10 text-primary">
+              <div key={p.productId} className="flex items-center justify-between p-2 rounded-xl bg-muted/20 hover:bg-muted/40 transition-colors">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="grid size-9 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary border border-primary/20">
                     <Package className="size-4" />
                   </div>
-                  <div>
-                    <p className="text-sm font-medium">{p.name}</p>
-                    <p className="text-xs text-muted-foreground">{p.quantitySold} sold • Margin: {p.margin.toFixed(0)}%</p>
+                  <div className="min-w-0 truncate">
+                    <p className="text-xs font-bold text-foreground truncate">{p.name}</p>
+                    <p className="text-[11px] text-muted-foreground">{p.quantitySold} sold • Margin: {p.margin.toFixed(0)}%</p>
                   </div>
                 </div>
-                <div className="text-right">
-                  <p className="text-sm font-bold text-success">{formatCurrency(p.profit)}</p>
-                  <p className="text-xs text-muted-foreground">COGS: {formatCurrency(p.cogs)}</p>
+                <div className="text-right shrink-0 pl-2">
+                  <p className="text-xs font-black text-success">{formatCurrency(p.profit)}</p>
+                  <p className="text-[10px] text-muted-foreground">COGS: {formatCurrency(p.cogs)}</p>
                 </div>
               </div>
             ))}
             {(!profitReportData?.topProducts || profitReportData.topProducts.length === 0) && (
-              <p className="text-sm text-muted-foreground text-center py-4">No sales data available for this period.</p>
+              <p className="text-xs text-muted-foreground text-center py-6">No product profitability data for this period.</p>
             )}
           </div>
         </div>
 
         {/* Weekly */}
-        <div className="rounded-xl border border-border bg-card p-5 shadow-soft">
-          <h2 className="mb-3 text-base font-semibold">Sales This Week</h2>
-        <div className="h-48">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={weekly} margin={{ top: 8, right: 8, left: -16, bottom: 0 }}>
-              <CartesianGrid stroke="var(--color-border)" vertical={false} />
-              <XAxis
-                dataKey="day"
-                axisLine={false}
-                tickLine={false}
-                tick={{ fill: "var(--color-muted-foreground)", fontSize: 11 }}
-              />
-              <YAxis
-                axisLine={false}
-                tickLine={false}
-                tick={{ fill: "var(--color-muted-foreground)", fontSize: 11 }}
-                tickFormatter={(v) => `${currencySymbol}${v}`}
-              />
-              <Tooltip
-                cursor={{ fill: "var(--color-muted)" }}
-                contentStyle={{
-                  background: "var(--color-popover)",
-                  border: "1px solid var(--color-border)",
-                  borderRadius: 12,
-                  fontSize: 12,
-                }}
-                formatter={(v: number) => formatCurrency(v)}
-              />
-              <Bar
-                dataKey="sales"
-                fill="var(--color-primary)"
-                radius={[6, 6, 0, 0]}
-                name="Revenue"
-              />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
+        <div className="rounded-2xl border border-border/80 bg-card p-5 shadow-card">
+          <h2 className="mb-3 text-base font-bold text-foreground">Sales Velocity This Week</h2>
+          <div className="h-48">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={weekly} margin={{ top: 8, right: 8, left: -16, bottom: 0 }}>
+                <CartesianGrid stroke="var(--color-border)" strokeDasharray="3 3" vertical={false} opacity={0.5} />
+                <XAxis
+                  dataKey="day"
+                  axisLine={false}
+                  tickLine={false}
+                  tick={{ fill: "var(--color-muted-foreground)", fontSize: 11 }}
+                />
+                <YAxis
+                  axisLine={false}
+                  tickLine={false}
+                  tick={{ fill: "var(--color-muted-foreground)", fontSize: 11 }}
+                  tickFormatter={(v) => `${currencySymbol}${v}`}
+                />
+                <Tooltip
+                  cursor={{ fill: "var(--color-muted)", opacity: 0.3 }}
+                  contentStyle={{
+                    background: "var(--color-popover)",
+                    border: "1px solid var(--color-border)",
+                    borderRadius: 12,
+                    boxShadow: "var(--shadow-card)",
+                    fontSize: 12,
+                  }}
+                  formatter={(v: number) => formatCurrency(v)}
+                />
+                <Bar
+                  dataKey="sales"
+                  fill="var(--color-primary)"
+                  radius={[8, 8, 0, 0]}
+                  name="Revenue"
+                />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
         </div>
       </div>
 
-      {/* Report Cards */}
+      {/* Report Cards Grid */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {reportCards.map((r) => {
           const Icon = r.icon;
@@ -634,17 +652,17 @@ function ReportsPage() {
             <button
               key={r.name}
               onClick={() => setActiveReport(r.type)}
-              className="group flex items-start gap-3 rounded-xl border border-border bg-card p-4 text-left shadow-soft transition-all hover:border-primary/30 hover:shadow-elevated"
+              className="group flex items-start gap-3.5 rounded-2xl border border-border/80 bg-card p-4 text-left shadow-card card-interactive transition-all cursor-pointer"
             >
-              <div className="grid size-10 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary">
+              <div className="grid size-11 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary border border-primary/20 group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
                 <Icon className="size-5" />
               </div>
               <div className="min-w-0 flex-1">
-                <h3 className="font-semibold text-sm">{r.name}</h3>
-                <p className="mt-0.5 text-xs text-muted-foreground">{r.desc}</p>
+                <h3 className="font-bold text-xs sm:text-sm text-foreground group-hover:text-primary transition-colors">{r.name}</h3>
+                <p className="mt-0.5 text-[11px] text-muted-foreground leading-snug">{r.desc}</p>
               </div>
-              <div className="flex items-center self-stretch justify-center">
-                <ChevronRight className="size-5 text-muted-foreground/50 group-hover:text-primary transition-colors" />
+              <div className="flex items-center self-center justify-center">
+                <ChevronRight className="size-4 text-muted-foreground/40 group-hover:text-primary group-hover:translate-x-0.5 transition-all" />
               </div>
             </button>
           );

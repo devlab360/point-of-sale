@@ -61,76 +61,63 @@ function NotificationsPage() {
   };
 
   return (
-    <div className="space-y-6 p-4 md:p-6 lg:p-8">
-      <DataPage
-        title="Notifications"
-        description="Alerts about stock, sales, payments and team activity."
-        toolbar={
-          <Button variant="outline" size="sm" onClick={markAllRead}>
-            Mark all as read
-          </Button>
-        }
-        hideToolbar={notifications.length === 0}
-      >
-        {notifications.length === 0 ? (
-          <EmptyState
-            icon={Bell}
-            title="No notifications"
-            description="You're all caught up! Alerts will appear here."
-          />
-        ) : (
-          <div className="overflow-hidden rounded-xl border border-border bg-card shadow-soft">
-            <ul className="divide-y divide-border">
-              {notifications.map((n) => (
-                <li
-                  key={n.id}
-                  onClick={() => handleNotificationClick(n)}
+    <DataPage
+      title="Notifications & Alerts"
+      description="Real-time alerts for stock levels, payment updates, and team transactions."
+      toolbar={
+        <Button variant="outline" size="sm" onClick={markAllRead} className="font-bold text-xs">
+          Mark all as read
+        </Button>
+      }
+      hideToolbar={notifications.length === 0}
+    >
+      {notifications.length === 0 ? (
+        <EmptyState
+          icon={Bell}
+          title="No notifications"
+          description="You're all caught up! System alerts and stock thresholds will appear here."
+        />
+      ) : (
+        <div className="overflow-hidden rounded-2xl border border-border/80 bg-card shadow-card">
+          <ul className="divide-y divide-border/60">
+            {notifications.map((n) => (
+              <li
+                key={n.id}
+                onClick={() => handleNotificationClick(n)}
+                className={cn(
+                  "flex items-start gap-4 px-5 py-4 transition-colors cursor-pointer card-interactive",
+                  !n.read ? "bg-primary/[0.04] hover:bg-primary/[0.08]" : "hover:bg-muted/30",
+                )}
+              >
+                <span
                   className={cn(
-                    "flex items-start gap-4 px-5 py-4 transition-colors cursor-pointer",
-                    !n.read ? "bg-primary/[0.04] hover:bg-primary/[0.08]" : "hover:bg-muted/30",
+                    "mt-1.5 size-2.5 shrink-0 rounded-full",
+                    !n.read && "ring-2 ring-primary/40 animate-pulse",
+                    n.type === "warning" && "bg-warning",
+                    n.type === "info" && "bg-info",
+                    n.type === "success" && "bg-success",
+                    !n.type && "bg-primary",
                   )}
-                >
-                  <span
-                    className={cn(
-                      "mt-2 size-2.5 shrink-0 rounded-full",
-                      !n.read && "ring-2 ring-primary/40 animate-pulse",
-                      n.type === "warning" && "bg-warning",
-                      n.type === "info" && "bg-info",
-                      n.type === "success" && "bg-success",
-                    )}
-                  />
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center justify-between gap-2">
-                      <h3
-                        className={cn(
-                          "text-sm",
-                          !n.read
-                            ? "font-bold text-foreground"
-                            : "font-semibold text-foreground/80",
-                        )}
-                      >
-                        {n.title}
-                      </h3>
-                      <span className="shrink-0 text-xs text-muted-foreground">
-                        {formatDateTime(n.timestamp)}
-                      </span>
-                    </div>
-                    <p className="mt-0.5 text-sm text-muted-foreground">{n.description}</p>
+                />
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center justify-between gap-2">
+                    <h3 className={cn("text-xs sm:text-sm font-bold truncate", !n.read ? "text-foreground" : "text-muted-foreground")}>
+                      {n.title}
+                    </h3>
+                    <span className="text-[10px] text-muted-foreground shrink-0 font-medium">
+                      {formatDateTime(n.timestamp)}
+                    </span>
                   </div>
-                  <div className="flex items-center gap-2 shrink-0">
-                    {!n.read && (
-                      <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-primary">
-                        New
-                      </span>
-                    )}
-                    {n.link && <ExternalLink className="size-4 text-muted-foreground opacity-70" />}
-                  </div>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-      </DataPage>
-    </div>
+                  <p className="mt-0.5 text-xs text-muted-foreground leading-relaxed">{n.message}</p>
+                </div>
+                {n.link && (
+                  <ExternalLink className="size-4 shrink-0 text-muted-foreground/50 self-center" />
+                )}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </DataPage>
   );
 }

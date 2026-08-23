@@ -52,6 +52,7 @@ import { getExpensesFn, createExpenseFn, updateExpenseFn, deleteExpenseFn } from
 import { useFormValidation } from "@/hooks/useFormValidation";
 import { FieldError } from "@/components/ui/field-error";
 import { usePreferences } from "@/contexts/PreferencesContext";
+import { cn } from "@/lib/utils";
 import { TableSkeleton } from "@/components/skeletons/TableSkeleton";
 import { ErrorState } from "@/components/ui/error-state";
 
@@ -236,7 +237,7 @@ function ExpensesPage() {
   };
 
   return (
-    <div className="space-y-6 p-4 md:p-6 lg:p-8">
+    <div className="page-container space-y-5">
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <StatCard
           label={t("totalExpenses") || "Total Expenses"}
@@ -336,67 +337,72 @@ function ExpensesPage() {
           />
         ) : (
           <div className="space-y-4">
-            <div className="overflow-hidden rounded-xl border border-border bg-card shadow-soft">
-              <div className="overflow-x-auto">
+            <div className="overflow-hidden rounded-2xl border border-border/80 bg-card shadow-card">
+              {/* Desktop Table View */}
+              <div className="table-desktop overflow-x-auto">
                 <table className="w-full text-left text-sm min-w-[700px]">
-                  <thead className="bg-muted/50 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                  <thead className="border-b border-border/80 bg-muted/40 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
                     <tr>
-                      <th className="px-4 py-3 whitespace-nowrap">{t("date") || "Date"}</th>
-                      <th className="px-4 py-3 whitespace-nowrap">{t("category") || "Category"}</th>
-                      <th className="px-4 py-3 whitespace-nowrap">
-                        {t("description") || "Description"}
-                      </th>
-                      <th className="px-4 py-3 whitespace-nowrap">{t("status") || "Status"}</th>
-                      <th className="px-4 py-3 text-right whitespace-nowrap">
-                        {t("amount") || "Amount"}
-                      </th>
-                      <th className="px-4 py-3 text-right whitespace-nowrap">
-                        {t("actions") || "Actions"}
-                      </th>
+                      <th className="px-5 py-3 whitespace-nowrap">{t("date") || "Date"}</th>
+                      <th className="px-5 py-3 whitespace-nowrap">{t("category") || "Category"}</th>
+                      <th className="px-5 py-3 whitespace-nowrap">{t("description") || "Expense Description"}</th>
+                      <th className="px-5 py-3 whitespace-nowrap">{t("status") || "Status"}</th>
+                      <th className="px-5 py-3 text-right whitespace-nowrap">{t("amount") || "Amount"}</th>
+                      <th className="px-5 py-3 text-right whitespace-nowrap">{t("actions") || "Actions"}</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-border">
+                  <tbody className="divide-y divide-border/60">
                     {paginatedExpenses.map((e) => (
-                      <tr key={e.id} className="hover:bg-muted/30">
-                        <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">
+                      <tr key={e.id} className="hover:bg-muted/30 transition-colors">
+                        <td className="px-5 py-3 text-muted-foreground whitespace-nowrap text-xs font-medium">
                           {formatDate(e.date)}
                         </td>
-                        <td className="px-4 py-3 whitespace-nowrap">
-                          <Badge variant="secondary">{e.category}</Badge>
+                        <td className="px-5 py-3 whitespace-nowrap">
+                          <Badge variant="outline" className="text-[10px] font-bold bg-muted/40 border-border/80">
+                            {e.category}
+                          </Badge>
                         </td>
-                        <td className="px-4 py-3 font-semibold whitespace-nowrap">
+                        <td className="px-5 py-3 font-bold text-foreground whitespace-nowrap">
                           {e.description}
                         </td>
-                        <td className="px-4 py-3 whitespace-nowrap">
+                        <td className="px-5 py-3 whitespace-nowrap">
                           <Badge
-                            className={
+                            className={cn(
+                              "text-[10px] font-bold",
                               e.status === "paid"
-                                ? "bg-success/10 text-success hover:bg-success/15"
-                                : "bg-warning/15 text-warning-foreground hover:bg-warning/20"
-                            }
+                                ? "bg-success/12 text-success hover:bg-success/20 border-success/20"
+                                : "bg-warning/15 text-warning-foreground hover:bg-warning/20 border-warning/20",
+                            )}
                           >
                             {e.status}
                           </Badge>
                         </td>
-                        <td className="number px-4 py-3 text-right font-semibold whitespace-nowrap">
+                        <td className="number px-5 py-3 text-right font-black text-foreground whitespace-nowrap text-sm">
                           {formatCurrency(e.amount)}
                         </td>
-                        <td className="px-4 py-3 text-right whitespace-nowrap">
+                        <td className="px-5 py-3 text-right whitespace-nowrap">
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="icon" className="size-8">
+                              <Button variant="ghost" size="icon" className="size-8 rounded-lg">
                                 <MoreVertical className="size-4 text-muted-foreground" />
                               </Button>
                             </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem onClick={() => setEditItem(e)}>
-                                <Edit2 className="mr-2 size-4" /> Edit
+                            <DropdownMenuContent align="end" className="rounded-xl">
+                              <DropdownMenuItem
+                                onClick={() => {
+                                  setEditItem(e);
+                                  setExpenseDate(e.date);
+                                  setIsAddOpen(true);
+                                }}
+                                className="text-xs font-semibold"
+                              >
+                                <Edit2 className="mr-2 size-3.5" /> Edit Expense
                               </DropdownMenuItem>
                               <DropdownMenuItem
-                                className="text-destructive focus:bg-destructive/10 focus:text-destructive"
+                                className="text-destructive text-xs font-semibold"
                                 onClick={() => setDeleteId(e.id)}
                               >
-                                <Trash2 className="mr-2 size-4" /> Delete
+                                <Trash2 className="mr-2 size-3.5" /> Delete
                               </DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
@@ -406,14 +412,73 @@ function ExpensesPage() {
                   </tbody>
                 </table>
               </div>
-              <PaginationControls
-                currentPage={page}
-                totalPages={totalPages}
-                pageSize={pageSize}
-                onPageChange={setPage}
-                onPageSizeChange={setPageSize}
-                totalItems={expenses.length}
-              />
+
+              {/* Mobile Card Feed (< 768px) */}
+              <div className="table-mobile-cards p-3 space-y-2.5">
+                {paginatedExpenses.map((e) => (
+                  <div
+                    key={e.id}
+                    className="flex items-center justify-between rounded-xl border border-border/80 bg-card p-3 shadow-sm card-interactive"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        <Badge variant="outline" className="text-[9px] font-bold py-0">
+                          {e.category}
+                        </Badge>
+                        <span className="text-[10px] text-muted-foreground">{formatDate(e.date)}</span>
+                      </div>
+                      <div className="font-bold text-xs sm:text-sm text-foreground mt-0.5 truncate">{e.description}</div>
+                      <div className="mt-1">
+                        <Badge
+                          className={cn(
+                            "text-[9px] font-bold py-0",
+                            e.status === "paid" ? "bg-success/12 text-success" : "bg-warning/15 text-warning-foreground",
+                          )}
+                        >
+                          {e.status}
+                        </Badge>
+                      </div>
+                    </div>
+
+                    <div className="text-right shrink-0 pl-2">
+                      <div className="number text-sm font-black text-foreground">{formatCurrency(e.amount)}</div>
+                      <div className="flex justify-end gap-1 mt-1">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="size-7 rounded-lg"
+                          onClick={() => {
+                            setEditItem(e);
+                            setExpenseDate(e.date);
+                            setIsAddOpen(true);
+                          }}
+                        >
+                          <Edit2 className="size-3 text-muted-foreground" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="size-7 rounded-lg text-destructive"
+                          onClick={() => setDeleteId(e.id)}
+                        >
+                          <Trash2 className="size-3" />
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="border-t border-border/60 p-2 sm:p-3">
+                <PaginationControls
+                  currentPage={page}
+                  totalPages={totalPages}
+                  pageSize={pageSize}
+                  totalItems={expenses.length}
+                  onPageChange={setPage}
+                  onPageSizeChange={setPageSize}
+                />
+              </div>
             </div>
           </div>
         )}

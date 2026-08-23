@@ -151,7 +151,7 @@ function SalesPage() {
   };
 
   return (
-    <div className="space-y-6 p-4 md:p-6 lg:p-8">
+    <div className="page-container space-y-5">
       <DataPage
         title={t("salesHistory") || "Sales History"}
         description={t("manageSales") || "Every transaction across all your registers."}
@@ -239,7 +239,7 @@ function SalesPage() {
             title={t("noSalesFound") || "No sales found"}
             description={
               debouncedQuery
-                ? t("adjustSearch") || "Try adjusting your search."
+                ? t("adjustSearch") || "Try adjusting your search query."
                 : t("noSalesYet") || "No transactions have been recorded yet."
             }
             actionLabel="Open POS"
@@ -248,67 +248,68 @@ function SalesPage() {
         ) : (
           <div className="space-y-4">
             {/* Payment Summary Cards */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-              <div className="rounded-xl border border-border bg-card p-4 shadow-sm flex flex-col gap-1">
-                <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
-                  Total Cash
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
+              <div className="rounded-2xl border border-border/80 bg-card p-4 shadow-card flex flex-col gap-1 card-interactive">
+                <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
+                  Cash Revenue
                 </span>
-                <span className="text-xl font-black text-emerald-600">
+                <span className="text-xl sm:text-2xl font-black text-emerald-600 dark:text-emerald-400">
                   {formatCurrency(summaries.cash)}
                 </span>
               </div>
-              <div className="rounded-xl border border-border bg-card p-4 shadow-sm flex flex-col gap-1">
-                <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
-                  Total Card
+              <div className="rounded-2xl border border-border/80 bg-card p-4 shadow-card flex flex-col gap-1 card-interactive">
+                <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
+                  Card Revenue
                 </span>
-                <span className="text-xl font-black text-blue-600">
+                <span className="text-xl sm:text-2xl font-black text-blue-600 dark:text-blue-400">
                   {formatCurrency(summaries.card)}
                 </span>
               </div>
-              <div className="rounded-xl border border-border bg-card p-4 shadow-sm flex flex-col gap-1">
-                <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
-                  UPI / Online
+              <div className="rounded-2xl border border-border/80 bg-card p-4 shadow-card flex flex-col gap-1 card-interactive">
+                <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
+                  UPI / Digital
                 </span>
-                <span className="text-xl font-black text-indigo-600">
+                <span className="text-xl sm:text-2xl font-black text-indigo-600 dark:text-indigo-400">
                   {formatCurrency(summaries.upi)}
                 </span>
               </div>
-              <div className="rounded-xl border border-border bg-card p-4 shadow-sm flex flex-col gap-1">
-                <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
+              <div className="rounded-2xl border border-border/80 bg-card p-4 shadow-card flex flex-col gap-1 card-interactive">
+                <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
                   Credit (Due)
                 </span>
-                <span className="text-xl font-black text-amber-600">
+                <span className="text-xl sm:text-2xl font-black text-amber-600 dark:text-amber-400">
                   {formatCurrency(summaries.credit)}
                 </span>
               </div>
             </div>
 
-            <div className="overflow-hidden rounded-xl border border-border bg-card shadow-soft">
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-sm min-w-[800px]">
-                  <thead className="bg-muted/50 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+            <div className="overflow-hidden rounded-2xl border border-border/80 bg-card shadow-card">
+              {/* Desktop Table View */}
+              <div className="table-desktop overflow-x-auto">
+                <table className="w-full text-left text-sm min-w-[850px]">
+                  <thead className="border-b border-border/80 bg-muted/40 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
                     <tr>
-                      <th className="px-4 py-3 whitespace-nowrap">{t("invoice") || "Invoice"}</th>
-                      <th className="px-4 py-3 whitespace-nowrap">{t("customer") || "Customer"}</th>
-                      <th className="px-4 py-3 whitespace-nowrap">{t("date") || "Date"}</th>
-                      <th className="px-4 py-3 text-right whitespace-nowrap">{t("items") || "Items"}</th>
-                      <th className="px-4 py-3 whitespace-nowrap">{t("payment") || "Payment"}</th>
-                      <th className="px-4 py-3 whitespace-nowrap">{t("sync") || "Sync"}</th>
-                      <th className="px-4 py-3 whitespace-nowrap">{t("status") || "Status"}</th>
-                      <th className="px-4 py-3 text-right whitespace-nowrap">{t("total") || "Total"}</th>
-                      <th className="px-4 py-3 whitespace-nowrap"></th>
+                      <th className="px-5 py-3 whitespace-nowrap">{t("invoice") || "Invoice"}</th>
+                      <th className="px-5 py-3 whitespace-nowrap">{t("customer") || "Customer"}</th>
+                      <th className="px-5 py-3 whitespace-nowrap">{t("date") || "Timestamp"}</th>
+                      <th className="px-5 py-3 text-right whitespace-nowrap">{t("items") || "Items"}</th>
+                      <th className="px-5 py-3 whitespace-nowrap">{t("payment") || "Payment"}</th>
+                      <th className="px-5 py-3 whitespace-nowrap">{t("sync") || "Sync"}</th>
+                      <th className="px-5 py-3 whitespace-nowrap">{t("status") || "Status"}</th>
+                      <th className="px-5 py-3 text-right whitespace-nowrap">{t("total") || "Total"}</th>
+                      <th className="px-5 py-3 text-right whitespace-nowrap">Actions</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-border">
+                  <tbody className="divide-y divide-border/60">
                     {sales.map((s) => (
-                      <tr key={s.id} className="hover:bg-muted/30">
-                        <td className="px-4 py-3 font-mono text-xs font-semibold whitespace-nowrap">
-                          {s.id.slice(0, 8).toUpperCase()}
+                      <tr key={s.id} className="hover:bg-muted/30 transition-colors">
+                        <td className="px-5 py-3 font-mono text-xs font-bold text-primary whitespace-nowrap cursor-pointer hover:underline" onClick={() => setViewSale(s)}>
+                          #{s.id.slice(0, 8).toUpperCase()}
                         </td>
-                        <td className="px-4 py-3 font-semibold whitespace-nowrap">{s.customerName || "Walk-in"}</td>
-                        <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">{formatDateTime(s.date)}</td>
-                        <td className="px-4 py-3 text-right whitespace-nowrap">{s.items}</td>
-                        <td className="px-4 py-3 text-muted-foreground capitalize whitespace-nowrap">
+                        <td className="px-5 py-3 font-bold text-foreground whitespace-nowrap">{s.customerName || "Walk-in Customer"}</td>
+                        <td className="px-5 py-3 text-muted-foreground whitespace-nowrap text-xs">{formatDateTime(s.date)}</td>
+                        <td className="px-5 py-3 text-right whitespace-nowrap text-xs font-semibold text-muted-foreground">{s.items}</td>
+                        <td className="px-5 py-3 text-muted-foreground capitalize whitespace-nowrap">
                           {s.paymentMethod === "split" && s.payments && s.payments.length > 0 ? (
                             <div className="flex flex-col gap-0.5 text-[10px]">
                               <span className="font-bold text-primary">SPLIT</span>
@@ -319,45 +320,45 @@ function SalesPage() {
                               ))}
                             </div>
                           ) : (
-                            <span className="font-medium text-foreground">
+                            <Badge variant="outline" className="font-bold text-[10px] uppercase bg-muted/40">
                               {s.paymentMethod || "cash"}
-                            </span>
+                            </Badge>
                           )}
                         </td>
-                        <td className="px-4 py-3 whitespace-nowrap">
+                        <td className="px-5 py-3 whitespace-nowrap">
                           <Badge
                             variant="outline"
                             className={cn(
+                              "text-[10px] font-bold",
                               s.synced
-                                ? "bg-success/10 text-success border-success/20 hover:bg-success/20"
-                                : "bg-warning/10 text-warning border-warning/20 hover:bg-warning/20",
+                                ? "bg-success/10 text-success border-success/25"
+                                : "bg-warning/10 text-warning border-warning/25",
                             )}
                           >
                             {s.synced ? "Synced" : "Pending"}
                           </Badge>
                         </td>
-                        <td className="px-4 py-3 whitespace-nowrap">
+                        <td className="px-5 py-3 whitespace-nowrap">
                           <Badge
                             className={cn(
-                              s.status === "completed" &&
-                              "bg-success/10 text-success hover:bg-success/15",
-                              s.status === "pending" &&
-                              "bg-warning/15 text-warning-foreground hover:bg-warning/20",
-                              s.status === "refunded" &&
-                              "bg-muted text-muted-foreground hover:bg-muted",
+                              "text-[10px] font-bold",
+                              s.status === "completed" && "bg-success/12 text-success hover:bg-success/20 border-success/20",
+                              s.status === "pending" && "bg-warning/15 text-warning-foreground hover:bg-warning/20 border-warning/20",
+                              s.status === "refunded" && "bg-muted text-muted-foreground",
                             )}
                           >
                             {s.status}
                           </Badge>
                         </td>
-                        <td className="number px-4 py-3 text-right font-semibold whitespace-nowrap">
+                        <td className="number px-5 py-3 text-right font-black whitespace-nowrap text-foreground text-sm">
                           {formatCurrency(s.total)}
                         </td>
-                        <td className="px-4 py-3 whitespace-nowrap">
-                          <div className="flex gap-1">
+                        <td className="px-5 py-3 whitespace-nowrap text-right">
+                          <div className="flex justify-end gap-1">
                             <Button
                               variant="ghost"
                               size="icon"
+                              className="size-8 rounded-lg"
                               title="View details"
                               onClick={() => setViewSale(s)}
                             >
@@ -366,6 +367,7 @@ function SalesPage() {
                             <Button
                               variant="ghost"
                               size="icon"
+                              className="size-8 rounded-lg"
                               title="Reprint receipt"
                               onClick={() => printReceipt(s)}
                             >
@@ -378,14 +380,66 @@ function SalesPage() {
                   </tbody>
                 </table>
               </div>
-              <PaginationControls
-                currentPage={page}
-                totalPages={totalPages}
-                pageSize={pageSize}
-                totalItems={sales.length}
-                onPageChange={setPage}
-                onPageSizeChange={setPageSize}
-              />
+
+              {/* Mobile Card Feed (< 768px) */}
+              <div className="table-mobile-cards p-3 space-y-2.5">
+                {sales.map((s) => (
+                  <div
+                    key={s.id}
+                    className="flex items-center justify-between rounded-xl border border-border/80 bg-card p-3 shadow-sm card-interactive"
+                    onClick={() => setViewSale(s)}
+                  >
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono text-xs font-bold text-primary">#{s.id.slice(0, 8).toUpperCase()}</span>
+                        <span className="text-[10px] text-muted-foreground">{formatDateTime(s.date)}</span>
+                      </div>
+                      <div className="font-bold text-xs sm:text-sm text-foreground mt-0.5 truncate">
+                        {s.customerName || "Walk-in Customer"}
+                      </div>
+                      <div className="flex items-center gap-1.5 mt-1">
+                        <Badge variant="outline" className="text-[9px] font-bold uppercase py-0">
+                          {s.paymentMethod || "cash"}
+                        </Badge>
+                        <Badge
+                          className={cn(
+                            "text-[9px] font-bold py-0",
+                            s.status === "completed" ? "bg-success/12 text-success" : "bg-warning/15 text-warning-foreground",
+                          )}
+                        >
+                          {s.status}
+                        </Badge>
+                      </div>
+                    </div>
+
+                    <div className="text-right shrink-0 pl-2">
+                      <div className="number text-sm font-black text-foreground">{formatCurrency(s.total)}</div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 px-2 text-[11px] font-semibold text-muted-foreground mt-1"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          printReceipt(s);
+                        }}
+                      >
+                        <Printer className="size-3 mr-1" /> Print
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="border-t border-border/60 p-2 sm:p-3">
+                <PaginationControls
+                  currentPage={page}
+                  totalPages={totalPages}
+                  pageSize={pageSize}
+                  totalItems={sales.length}
+                  onPageChange={setPage}
+                  onPageSizeChange={setPageSize}
+                />
+              </div>
             </div>
           </div>
         )}

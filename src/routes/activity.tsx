@@ -53,35 +53,35 @@ function ActivityPage() {
   };
 
   return (
-    <div className="space-y-6 p-4 md:p-6 lg:p-8">
-      <DataPage title="Activity Log" description="A timeline of every action across the store.">
-        {activityLog.length === 0 ? (
-          <EmptyState
-            icon={Activity}
-            title="No activity yet"
-            description="Actions taken across the store will appear here."
-          />
-        ) : (
-          <div className="rounded-xl border border-border bg-card p-5 shadow-soft">
-            <ol className="relative space-y-4 border-l border-border pl-6">
-              {activityLog.map((a) => (
-                <li key={a.id} className="relative">
-                  <span className="absolute -left-[31px] top-1.5 grid size-5 place-items-center rounded-full border-4 border-card bg-primary text-[10px] font-bold text-primary-foreground">
-                    {a.user
-                      .split(" ")
-                      .map((n) => n[0])
-                      .join("")}
-                  </span>
-                  <div className="text-sm">
-                    <span className="font-semibold">{a.user}</span> {renderLogMessage(a)}
-                  </div>
-                  <div className="text-xs text-muted-foreground">{formatDateTime(a.timestamp)}</div>
-                </li>
-              ))}
-            </ol>
-          </div>
-        )}
-      </DataPage>
-    </div>
+    <DataPage title="Store Activity & Audit Log" description="A complete forensic timeline of every transaction, edit, and deletion across your business.">
+      {activityLog.length === 0 ? (
+        <EmptyState
+          icon={Activity}
+          title="No activity recorded yet"
+          description="Actions taken across the store terminal, catalog, and inventory will appear here."
+        />
+      ) : (
+        <div className="rounded-2xl border border-border/80 bg-card p-6 shadow-card">
+          <ol className="relative space-y-5 border-l-2 border-border/70 pl-6 ml-2">
+            {activityLog.map((a) => (
+              <li key={a.id} className="relative card-interactive group">
+                <span className="absolute -left-[33px] top-1 grid size-6 place-items-center rounded-full border-2 border-card bg-gradient-to-br from-primary to-accent text-[9px] font-black text-primary-foreground shadow-sm">
+                  {a.user
+                    .split(" ")
+                    .map((n: string) => n[0])
+                    .join("")
+                    .slice(0, 2)
+                    .toUpperCase()}
+                </span>
+                <div className="text-xs sm:text-sm">
+                  <span className="font-bold text-foreground">{a.user}</span> {renderLogMessage(a)}
+                </div>
+                <div className="text-[11px] text-muted-foreground font-medium mt-0.5">{formatDateTime(a.timestamp)}</div>
+              </li>
+            ))}
+          </ol>
+        </div>
+      )}
+    </DataPage>
   );
 }

@@ -111,72 +111,75 @@ function VerifyEmailPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-muted/20 p-4">
-      <Card className="w-full max-w-md shadow-elevated border-primary/20">
-        <CardHeader className="text-center pb-2">
-          <div className="mx-auto mb-3 grid size-12 place-items-center rounded-2xl bg-primary/10 text-primary">
-            <Mail className="size-6" />
+    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-background via-card/30 to-primary/5 px-4 py-12">
+      <div className="w-full max-w-md overflow-hidden rounded-3xl border border-border/80 bg-card p-6 sm:p-10 shadow-card card-interactive">
+        <div className="text-center pb-2">
+          <div className="mx-auto mb-4 grid size-14 place-items-center rounded-2xl bg-gradient-to-br from-primary/20 via-primary/10 to-accent/20 text-primary border border-primary/20 shadow-soft">
+            <Mail className="size-7" />
           </div>
-          <CardTitle className="text-2xl font-bold">Verify Your Email</CardTitle>
-          <CardDescription className="text-xs mt-1">
-            Complete email verification to activate your{" "}
-            <strong className="text-primary">{trialDays}-Day Free Trial</strong>.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4 pt-2">
-          <div className="rounded-xl border p-3 bg-muted/30 text-center space-y-1">
-            <div className="text-xs text-muted-foreground font-medium">
+          <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-foreground">Verify Your Email</h1>
+          <p className="text-xs sm:text-sm text-muted-foreground mt-1.5 font-medium">
+            Activate your account and start your{" "}
+            <strong className="text-primary font-black">{trialDays}-Day Full Enterprise Trial</strong>.
+          </p>
+        </div>
+
+        <div className="space-y-5 pt-4">
+          <div className="rounded-2xl border border-border/80 p-3.5 bg-muted/20 text-center space-y-1">
+            <div className="text-[11px] text-muted-foreground font-semibold uppercase tracking-wider">
               Verification Code Sent To
             </div>
-            <div className="font-semibold text-sm text-foreground">
+            <div className="font-bold text-sm text-foreground truncate">
               {user?.email || settings?.email}
             </div>
           </div>
 
           <form noValidate onSubmit={handleVerify} className="space-y-4">
-            <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-muted-foreground flex justify-between">
-                <span>Enter 6-Digit OTP Code</span>
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-foreground block text-center">
+                Enter 6-Digit Verification Code
               </label>
               <Input
                 type="text"
-                placeholder="Enter OTP"
+                placeholder="• • • • • •"
                 value={otp}
                 onChange={(e) => {
                   setOtp(e.target.value);
                   clearOtpError("otp");
                 }}
                 maxLength={6}
-                className={`text-center font-mono text-lg tracking-widest h-12 ${otpErrors.otp ? "border-destructive focus-visible:ring-destructive" : ""}`}
+                className={`text-center font-mono text-xl tracking-[0.5em] h-13 rounded-2xl ${
+                  otpErrors.otp ? "border-destructive focus-visible:ring-destructive" : "border-primary/40 focus-visible:ring-primary"
+                }`}
               />
               <FieldError message={otpErrors.otp} />
             </div>
 
             <Button
               type="submit"
-              className="w-full h-11 text-sm font-semibold gap-2"
+              className="w-full h-12 text-sm font-bold gap-2 rounded-2xl shadow-soft"
               disabled={isVerifying}
             >
-              {isVerifying && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}{" "}
-              {isVerifying ? "Verifying..." : "Verify & Start Trial"}
+              {isVerifying && <Loader2 className="mr-2 size-4 animate-spin" />}
+              {isVerifying ? "Verifying Code..." : "Verify & Activate Store"}
               <ArrowRight className="size-4" />
             </Button>
           </form>
 
-          <div className="flex items-center justify-between text-xs text-muted-foreground pt-2 border-t">
+          <div className="flex items-center justify-between text-xs text-muted-foreground pt-3 border-t border-border/60">
             <span>Didn't receive code?</span>
             <Button
               variant="ghost"
               size="sm"
               onClick={() => handleSendOtp(true)}
               disabled={isSending}
-              className="h-7 text-xs text-primary"
+              className="h-8 text-xs font-bold text-primary rounded-xl hover:bg-primary/10"
             >
-              <RefreshCw className={`mr-1 size-3 ${isSending ? "animate-spin" : ""}`} /> Resend Code
+              <RefreshCw className={`mr-1.5 size-3.5 ${isSending ? "animate-spin" : ""}`} /> Resend Code
             </Button>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   );
 }

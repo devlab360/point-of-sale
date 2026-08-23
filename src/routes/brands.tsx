@@ -212,7 +212,7 @@ function BrandsPage() {
   };
 
   return (
-    <div className="p-4 md:p-6 lg:p-8">
+    <div>
       <DataPage
         title="Brands"
         description="Track suppliers' brands and surface them in product search and filters."
@@ -276,69 +276,111 @@ function BrandsPage() {
           />
         ) : (
           <div className="space-y-4">
-            <div className="overflow-hidden rounded-xl border border-border bg-card shadow-soft">
-              <div className="overflow-hidden rounded-xl border border-border bg-card shadow-soft">
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left text-sm">
-                    <thead className="bg-muted/50 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                      <tr>
-                        <th className="px-4 py-3 whitespace-nowrap">Brand</th>
-                        <th className="px-4 py-3 whitespace-nowrap">Products</th>
-                        <th className="px-4 py-3 whitespace-nowrap">Status</th>
-                        <th className="px-4 py-3 text-right whitespace-nowrap">Actions</th>
+            <div className="overflow-hidden rounded-2xl border border-border/80 bg-card shadow-card">
+              {/* Desktop Table View */}
+              <div className="table-desktop overflow-x-auto">
+                <table className="w-full text-left text-sm min-w-[600px]">
+                  <thead className="border-b border-border/80 bg-muted/40 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                    <tr>
+                      <th className="px-5 py-3 whitespace-nowrap">Brand</th>
+                      <th className="px-5 py-3 whitespace-nowrap">Associated Products</th>
+                      <th className="px-5 py-3 whitespace-nowrap">Status</th>
+                      <th className="px-5 py-3 text-right whitespace-nowrap">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border/60">
+                    {paginatedBrands.map((b) => (
+                      <tr key={b.id} className="hover:bg-muted/30 transition-colors">
+                        <td className="px-5 py-3 whitespace-nowrap">
+                          <div className="flex items-center gap-3">
+                            <div className="grid size-10 place-items-center rounded-xl bg-primary/10 text-xs font-black text-primary border border-primary/20">
+                              {b.name.slice(0, 2).toUpperCase()}
+                            </div>
+                            <span className="font-bold text-foreground">{b.name}</span>
+                          </div>
+                        </td>
+                        <td className="px-5 py-3 text-muted-foreground whitespace-nowrap text-xs font-semibold">
+                          {b.products || 0} SKUs
+                        </td>
+                        <td className="px-5 py-3 whitespace-nowrap">
+                          <Badge className="bg-success/12 text-success hover:bg-success/20 border-success/20 text-[10px] font-bold">
+                            Active
+                          </Badge>
+                        </td>
+                        <td className="px-5 py-3 text-right whitespace-nowrap">
+                          <div className="flex justify-end gap-1">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="size-8 rounded-lg"
+                              onClick={() => openEdit(b)}
+                            >
+                              <Pencil className="size-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="size-8 rounded-lg text-destructive hover:bg-destructive/10"
+                              onClick={() => setDeleteId(b.id)}
+                            >
+                              <Trash2 className="size-4" />
+                            </Button>
+                          </div>
+                        </td>
                       </tr>
-                    </thead>
-                    <tbody className="divide-y divide-border">
-                      {paginatedBrands.map((b) => (
-                        <tr key={b.id} className="hover:bg-muted/30 group">
-                          <td className="px-4 py-3 whitespace-nowrap">
-                            <div className="flex items-center gap-3">
-                              <div className="grid size-9 place-items-center rounded-lg bg-primary/10 text-sm font-bold text-primary">
-                                {b.name.slice(0, 2).toUpperCase()}
-                              </div>
-                              <span className="font-semibold">{b.name}</span>
-                            </div>
-                          </td>
-                          <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">
-                            {b.products || 0}
-                          </td>
-                          <td className="px-4 py-3 whitespace-nowrap">
-                            <Badge className="bg-success/10 text-success hover:bg-success/15">
-                              Active
-                            </Badge>
-                          </td>
-                          <td className="px-4 py-3 text-right whitespace-nowrap">
-                            <div className="flex justify-end gap-1">
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="size-8"
-                                onClick={() => openEdit(b)}
-                              >
-                                <Pencil className="size-4" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="size-8 text-destructive"
-                                onClick={() => setDeleteId(b.id)}
-                              >
-                                <Trash2 className="size-4" />
-                              </Button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-                <PaginationControls
-                  currentPage={page}
-                  totalPages={totalPages}
-                  onPageChange={setPage}
-                  totalItems={brands.length}
-                />
+                    ))}
+                  </tbody>
+                </table>
               </div>
+
+              {/* Mobile Cards View (< 768px) */}
+              <div className="table-mobile-cards p-3 space-y-2.5">
+                {paginatedBrands.map((b) => (
+                  <div
+                    key={b.id}
+                    className="flex items-center justify-between rounded-xl border border-border/80 bg-card p-3 shadow-sm card-interactive"
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="grid size-10 shrink-0 place-items-center rounded-xl bg-primary/10 text-xs font-black text-primary border border-primary/20">
+                        {b.name.slice(0, 2).toUpperCase()}
+                      </div>
+                      <div className="min-w-0">
+                        <div className="font-bold text-xs sm:text-sm text-foreground truncate">{b.name}</div>
+                        <p className="text-[11px] text-muted-foreground">{b.products || 0} active products</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1 shrink-0">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="size-8 rounded-lg"
+                        onClick={() => openEdit(b)}
+                      >
+                        <Pencil className="size-3.5" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="size-8 rounded-lg text-destructive hover:bg-destructive/10"
+                        onClick={() => setDeleteId(b.id)}
+                      >
+                        <Trash2 className="size-3.5" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {brands.length > 0 && (
+                <div className="border-t border-border/60 p-2 sm:p-3">
+                  <PaginationControls
+                    currentPage={page}
+                    totalPages={totalPages}
+                    onPageChange={setPage}
+                    totalItems={brands.length}
+                  />
+                </div>
+              )}
             </div>
           </div>
         )}

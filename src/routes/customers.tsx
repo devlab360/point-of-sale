@@ -338,7 +338,7 @@ function CustomersPage() {
   };
 
   return (
-    <div className="p-4 md:p-6 lg:p-8">
+    <div>
       <DataPage
         title={t("customers") || "Customers"}
         description={t("manageCustomers") || "Manage customer relationships, loyalty, and ledgers."}
@@ -391,7 +391,7 @@ function CustomersPage() {
             </div>
             <div className="pt-4 mt-auto">
               <Button
-                className="w-full"
+                className="w-full font-bold shadow-soft"
                 onClick={() => {
                   setFilters(draftFilters);
                   close();
@@ -413,7 +413,7 @@ function CustomersPage() {
             title={t("noCustomersFound") || "No customers found"}
             description={
               search
-                ? t("adjustSearch") || "Try adjusting your search."
+                ? t("adjustSearch") || "Try adjusting your search query."
                 : t("noCustomersYet") || "You haven't added any customers yet."
             }
             actionLabel="Add Customer"
@@ -424,113 +424,107 @@ function CustomersPage() {
           />
         ) : (
           <div className="space-y-4">
-            <div className="overflow-hidden rounded-xl border border-border bg-card shadow-soft">
-              <div className="overflow-x-auto">
+            <div className="overflow-hidden rounded-2xl border border-border/80 bg-card shadow-card">
+              {/* Desktop Table View */}
+              <div className="table-desktop overflow-x-auto">
                 <table className="w-full text-left text-sm min-w-[1000px]">
-                  <thead className="bg-muted/50 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                  <thead className="border-b border-border/80 bg-muted/40 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
                     <tr>
-                      <th className="px-4 py-3 whitespace-nowrap">{t("customer") || "Customer"}</th>
-                      <th className="px-4 py-3 whitespace-nowrap">{t("contact") || "Contact"}</th>
-                      <th className="px-4 py-3 text-right whitespace-nowrap">
-                        {t("visits") || "Visits"}
-                      </th>
-                      <th className="px-4 py-3 text-right whitespace-nowrap">
-                        {t("lifetime") || "Lifetime"}
-                      </th>
-                      <th className="px-4 py-3 text-right whitespace-nowrap">
-                        {t("points") || "Points"}
-                      </th>
-                      <th className="px-4 py-3 text-right whitespace-nowrap">
-                        {t("credit") || "Credit"}
-                      </th>
-                      <th className="px-4 py-3 text-right whitespace-nowrap">
-                        {t("wallet") || "Wallet"}
-                      </th>
-                      <th className="px-4 py-3 whitespace-nowrap">{t("tier") || "Tier"}</th>
-                      <th className="px-4 py-3 text-right whitespace-nowrap">
-                        {t("actions") || "Actions"}
-                      </th>
+                      <th className="px-5 py-3 whitespace-nowrap">{t("customer") || "Customer"}</th>
+                      <th className="px-5 py-3 whitespace-nowrap">{t("contact") || "Contact"}</th>
+                      <th className="px-5 py-3 text-right whitespace-nowrap">{t("visits") || "Visits"}</th>
+                      <th className="px-5 py-3 text-right whitespace-nowrap">{t("lifetime") || "Lifetime Spent"}</th>
+                      <th className="px-5 py-3 text-right whitespace-nowrap">{t("points") || "Points"}</th>
+                      <th className="px-5 py-3 text-right whitespace-nowrap">{t("credit") || "Due Credit"}</th>
+                      <th className="px-5 py-3 text-right whitespace-nowrap">{t("wallet") || "Wallet"}</th>
+                      <th className="px-5 py-3 whitespace-nowrap">{t("tier") || "Tier"}</th>
+                      <th className="px-5 py-3 text-right whitespace-nowrap">{t("actions") || "Actions"}</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-border">
+                  <tbody className="divide-y divide-border/60">
                     {customers.map((c: any) => (
-                      <tr key={c.id} className="hover:bg-muted/30">
-                        <td className="px-4 py-3 whitespace-nowrap">
+                      <tr key={c.id} className="hover:bg-muted/30 transition-colors">
+                        <td className="px-5 py-3 whitespace-nowrap">
                           <div className="flex items-center gap-3">
-                            <div className="grid size-9 place-items-center rounded-full bg-gradient-to-br from-primary to-info text-xs font-bold text-primary-foreground">
+                            <div className="grid size-10 place-items-center rounded-xl bg-gradient-to-br from-primary/20 to-primary/5 text-xs font-black text-primary border border-primary/20">
                               {c.name
                                 .split(" ")
-                                .map((n) => n[0])
+                                .map((n: string) => n[0])
                                 .join("")
-                                .slice(0, 2)}
+                                .slice(0, 2)
+                                .toUpperCase()}
                             </div>
-                            <span className="font-semibold">{c.name}</span>
-                          </div>
-                        </td>
-                        <td className="px-4 py-3 whitespace-nowrap">
-                          <div className="flex flex-col gap-0.5 text-xs text-muted-foreground">
-                            <span className="flex items-center gap-1.5">
-                              <Mail className="size-3" /> {c.email}
-                            </span>
-                            <span className="flex items-center gap-1.5">
-                              <Phone className="size-3" /> {c.phone}
+                            <span className="font-bold text-foreground hover:text-primary transition-colors cursor-pointer" onClick={() => setLedgerCustomer(c)}>
+                              {c.name}
                             </span>
                           </div>
                         </td>
-                        <td className="number px-4 py-3 text-right whitespace-nowrap">
+                        <td className="px-5 py-3 whitespace-nowrap">
+                          <div className="flex flex-col gap-0.5 text-xs text-muted-foreground font-medium">
+                            {c.email && (
+                              <span className="flex items-center gap-1.5">
+                                <Mail className="size-3 text-muted-foreground/60" /> {c.email}
+                              </span>
+                            )}
+                            <span className="flex items-center gap-1.5">
+                              <Phone className="size-3 text-muted-foreground/60" /> {c.phone}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="number px-5 py-3 text-right whitespace-nowrap font-medium text-xs">
                           {c.visits}
                         </td>
-                        <td className="number px-4 py-3 text-right font-semibold whitespace-nowrap">
+                        <td className="number px-5 py-3 text-right font-black whitespace-nowrap text-foreground">
                           {formatCurrency(c.totalSpent)}
                         </td>
-                        <td className="number px-4 py-3 text-right whitespace-nowrap">
+                        <td className="number px-5 py-3 text-right whitespace-nowrap font-bold text-xs text-muted-foreground">
                           {c.loyaltyPoints.toLocaleString()}
                         </td>
                         <td
-                          className={`number px-4 py-3 text-right whitespace-nowrap ${c.credit > 0 ? "text-destructive font-bold" : "text-muted-foreground"}`}
+                          className={`number px-5 py-3 text-right whitespace-nowrap font-black ${c.credit > 0 ? "text-destructive" : "text-muted-foreground"}`}
                         >
                           {formatCurrency(c.credit)}
                         </td>
-                        <td className="number px-4 py-3 text-right font-semibold text-success whitespace-nowrap">
+                        <td className="number px-5 py-3 text-right font-black text-success whitespace-nowrap">
                           {formatCurrency(c.walletBalance || 0)}
                         </td>
-                        <td className="px-4 py-3 whitespace-nowrap">
+                        <td className="px-5 py-3 whitespace-nowrap">
                           <div className="flex flex-col gap-1 items-start">
                             {c.type === "wholesale" ? (
-                              <Badge className="bg-primary/15 text-primary border-primary/20">
+                              <Badge className="bg-primary/15 text-primary border-primary/25 text-[10px] font-bold">
                                 Wholesale
                               </Badge>
                             ) : c.type === "dealer" ? (
-                              <Badge className="bg-warning/15 text-warning-foreground border-warning/20">
+                              <Badge className="bg-warning/15 text-warning-foreground border-warning/25 text-[10px] font-bold">
                                 Dealer
                               </Badge>
                             ) : c.type === "corporate" ? (
-                              <Badge className="bg-info/15 text-info border-info/20">
+                              <Badge className="bg-info/15 text-info border-info/25 text-[10px] font-bold">
                                 Corporate
                               </Badge>
                             ) : (
-                              <Badge variant="outline" className="text-muted-foreground">
+                              <Badge variant="outline" className="text-muted-foreground text-[10px] font-semibold">
                                 Retail
                               </Badge>
                             )}
                             {c.status === "vip" ? (
-                              <span className="text-[10px] font-semibold text-warning">★ VIP</span>
+                              <span className="text-[10px] font-extrabold text-warning">★ VIP</span>
                             ) : null}
                           </div>
                         </td>
-                        <td className="px-4 py-3 text-right whitespace-nowrap">
+                        <td className="px-5 py-3 text-right whitespace-nowrap">
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="icon" className="size-8">
+                              <Button variant="ghost" size="icon" className="size-8 rounded-lg">
                                 <MoreVertical className="size-4 text-muted-foreground" />
                               </Button>
                             </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem onClick={() => setEditItem(c)}>
-                                <Edit2 className="mr-2 size-4" /> Edit
+                            <DropdownMenuContent align="end" className="rounded-xl">
+                              <DropdownMenuItem onClick={() => setEditItem(c)} className="text-xs font-semibold">
+                                <Edit2 className="mr-2 size-3.5" /> Edit Details
                               </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => setLedgerCustomer(c)}>
-                                <Users className="mr-2 size-4 text-primary" /> View Khata / Ledger
+                              <DropdownMenuItem onClick={() => setLedgerCustomer(c)} className="text-xs font-bold text-primary">
+                                <Users className="mr-2 size-3.5" /> Customer Ledger (Khata)
                               </DropdownMenuItem>
                               {c.credit > 0 && (
                                 <DropdownMenuItem
@@ -538,15 +532,16 @@ function CustomersPage() {
                                     setSettleItem(c);
                                     setSettleAmount(c.credit.toString());
                                   }}
+                                  className="text-xs font-bold text-success"
                                 >
-                                  <Star className="mr-2 size-4" /> Settle Balance
+                                  <Star className="mr-2 size-3.5" /> Settle Due Balance
                                 </DropdownMenuItem>
                               )}
                               <DropdownMenuItem
-                                className="text-destructive focus:bg-destructive/10 focus:text-destructive"
+                                className="text-destructive text-xs font-semibold"
                                 onClick={() => setDeleteId(c.id)}
                               >
-                                <Trash2 className="mr-2 size-4" /> Delete
+                                <Trash2 className="mr-2 size-3.5" /> Delete
                               </DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
@@ -556,14 +551,65 @@ function CustomersPage() {
                   </tbody>
                 </table>
               </div>
-              <PaginationControls
-                currentPage={page}
-                totalPages={totalPages}
-                pageSize={pageSize}
-                totalItems={customers.length}
-                onPageChange={setPage}
-                onPageSizeChange={setPageSize}
-              />
+
+              {/* Mobile Card Feed (< 768px) */}
+              <div className="table-mobile-cards p-3 space-y-2.5">
+                {customers.map((c: any) => (
+                  <div
+                    key={c.id}
+                    className="flex items-center justify-between rounded-xl border border-border/80 bg-card p-3 shadow-sm card-interactive"
+                    onClick={() => setLedgerCustomer(c)}
+                  >
+                    <div className="flex items-center gap-3 min-w-0 flex-1">
+                      <div className="grid size-11 shrink-0 place-items-center rounded-xl bg-primary/10 text-xs font-black text-primary border border-primary/20">
+                        {c.name
+                          .split(" ")
+                          .map((n: string) => n[0])
+                          .join("")
+                          .slice(0, 2)
+                          .toUpperCase()}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-1.5">
+                          <span className="font-bold text-xs sm:text-sm text-foreground truncate">{c.name}</span>
+                          {c.status === "vip" && <span className="text-[10px] text-warning font-black">★</span>}
+                        </div>
+                        <p className="text-[11px] text-muted-foreground">{c.phone}</p>
+                        <div className="flex items-center gap-1.5 mt-1">
+                          <Badge variant="outline" className="text-[9px] font-bold py-0 capitalize">
+                            {c.type || "Retail"}
+                          </Badge>
+                          {c.credit > 0 && (
+                            <span className="text-[9px] font-black text-destructive bg-destructive/10 px-1.5 py-0.2 rounded-md">
+                              Due: {formatCurrency(c.credit)}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="text-right shrink-0 pl-2">
+                      <div className="number text-xs font-black text-foreground">
+                        {formatCurrency(c.totalSpent)}
+                      </div>
+                      <div className="text-[10px] text-muted-foreground mt-0.5">
+                        {c.visits} visits
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="border-t border-border/60 p-2 sm:p-3">
+                <PaginationControls
+                  currentPage={page}
+                  totalPages={totalPages}
+                  pageSize={pageSize}
+                  totalItems={customers.length}
+                  onPageChange={setPage}
+                  onPageSizeChange={setPageSize}
+                />
+              </div>
             </div>
           </div>
         )}

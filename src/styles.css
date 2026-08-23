@@ -4,11 +4,14 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
-  --radius-2xl: calc(var(--radius) + 8px);
+  --radius-xs: 0.25rem;
+  --radius-sm: 0.375rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.5rem;
+  --radius-xl: 0.625rem;
+  --radius-2xl: 0.75rem;
+  --radius-3xl: 0.875rem;
+  --radius: 0.5rem;
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -51,12 +54,23 @@
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
   --shadow-soft: 0 1px 2px 0 oklch(0 0 0 / 0.04), 0 1px 3px 0 oklch(0 0 0 / 0.06);
   --shadow-elevated: 0 10px 30px -10px oklch(0 0 0 / 0.12), 0 4px 8px -4px oklch(0 0 0 / 0.06);
+  --shadow-card: 0 1px 3px 0 oklch(0 0 0 / 0.04), 0 1px 2px -1px oklch(0 0 0 / 0.04);
+  --shadow-card-hover: 0 4px 12px -2px oklch(0 0 0 / 0.08), 0 2px 4px -2px oklch(0 0 0 / 0.04);
+  --shadow-modal: 0 20px 60px -12px oklch(0 0 0 / 0.25), 0 8px 16px -8px oklch(0 0 0 / 0.1);
+  --shadow-bottom-nav: 0 -1px 3px 0 oklch(0 0 0 / 0.06), 0 -4px 16px -4px oklch(0 0 0 / 0.08);
   --gradient-primary: linear-gradient(135deg, oklch(0.72 0.16 162) 0%, oklch(0.62 0.18 158) 100%);
   --gradient-surface: linear-gradient(180deg, var(--background) 0%, var(--muted) 100%);
+  /* Animation tokens */
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out-expo: cubic-bezier(0.87, 0, 0.13, 1);
+  --duration-fast: 150ms;
+  --duration-normal: 200ms;
+  --duration-slow: 300ms;
+  --duration-slower: 500ms;
 }
 
 :root {
-  --radius: 0.75rem;
+  --radius: 0.5rem;
   --background: oklch(0.99 0.003 240);
   --foreground: oklch(0.18 0.02 256);
 
@@ -186,6 +200,192 @@
   font-feature-settings: "tnum";
 }
 
+/* ─── Phase 01: Design System Utilities ─── */
+
+/* Page container: consistent padding with bottom-nav safe area on mobile */
+@utility page-container {
+  padding: 1rem;
+  padding-bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
+  @media (min-width: 640px) {
+    padding: 1.25rem;
+  }
+  @media (min-width: 768px) {
+    padding: 1.5rem;
+    padding-bottom: 1.5rem;
+  }
+}
+
+/* Bottom nav safe area spacer */
+@utility bottom-nav-spacer {
+  padding-bottom: calc(4.5rem + env(safe-area-inset-bottom, 0px));
+  @media (min-width: 768px) {
+    padding-bottom: 0;
+  }
+}
+
+/* Card with premium hover elevation */
+@utility card-interactive {
+  transition: box-shadow var(--duration-normal) var(--ease-out-expo),
+              border-color var(--duration-normal) var(--ease-out-expo),
+              transform var(--duration-normal) var(--ease-out-expo);
+  &:hover {
+    box-shadow: var(--shadow-card-hover);
+    border-color: var(--color-border);
+  }
+  &:active {
+    transform: scale(0.995);
+  }
+}
+
+/* Focus-visible ring for accessibility */
+@utility focus-ring {
+  &:focus-visible {
+    outline: 2px solid var(--color-ring);
+    outline-offset: 2px;
+    border-radius: var(--radius-md);
+  }
+}
+
+/* Touch-friendly minimum tap target */
+@utility touch-target {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+/* Mobile Safe Area Helpers */
+@utility safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+@utility safe-top {
+  padding-top: env(safe-area-inset-top, 0px);
+}
+
+/* Remove grey mobile tap highlight */
+@utility no-tap-highlight {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Responsive table wrapper — hides on mobile, shows as cards */
+@utility table-desktop {
+  display: none;
+  @media (min-width: 768px) {
+    display: block;
+  }
+}
+
+/* Responsive card wrapper — shows on mobile, hides on desktop */
+@utility table-mobile-cards {
+  display: block;
+  @media (min-width: 768px) {
+    display: none;
+  }
+}
+
+/* Page transition animation */
+@utility page-enter {
+  animation: pageEnter var(--duration-slow) var(--ease-out-expo) both;
+}
+
+@keyframes pageEnter {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Slide up animation for bottom sheets/modals */
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Fade in animation */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* Status dot pulse (used for live indicators) */
+@utility status-dot {
+  position: relative;
+  &::after {
+    content: "";
+    position: absolute;
+    inset: -2px;
+    border-radius: 9999px;
+    animation: statusPulse 2s var(--ease-out-expo) infinite;
+    background: inherit;
+    opacity: 0.4;
+  }
+}
+
+@keyframes statusPulse {
+  0%, 100% { transform: scale(1); opacity: 0.4; }
+  50% { transform: scale(1.8); opacity: 0; }
+}
+
+/* ─── Typography Utilities ─── */
+
+@utility text-display {
+  font-size: 2rem;
+  line-height: 1.15;
+  font-weight: 800;
+  letter-spacing: -0.025em;
+  @media (min-width: 640px) {
+    font-size: 2.5rem;
+  }
+}
+
+@utility text-headline {
+  font-size: 1.5rem;
+  line-height: 1.25;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+@utility text-title {
+  font-size: 1.125rem;
+  line-height: 1.35;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+@utility text-body-strong {
+  font-size: 0.875rem;
+  line-height: 1.5;
+  font-weight: 600;
+}
+
+@utility text-caption {
+  font-size: 0.6875rem;
+  line-height: 1.45;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+@utility text-kpi {
+  font-size: 1.75rem;
+  line-height: 1.1;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+  @media (min-width: 640px) {
+    font-size: 2rem;
+  }
+}
+
 /* Custom Calendar & Date Picker Theme Support */
 input[type="date"] {
   color-scheme: light;
@@ -248,3 +448,4 @@ input[type="number"]::-webkit-inner-spin-button {
 input[type="number"] {
   -moz-appearance: textfield;
 }
+

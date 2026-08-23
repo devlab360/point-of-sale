@@ -352,7 +352,7 @@ function ProductsPage() {
   };
 
   return (
-    <div className="p-4 md:p-6 lg:p-8">
+    <div>
       <DataPage
         title={t("products") || "Products"}
         description={
@@ -366,22 +366,24 @@ function ProductsPage() {
         onExport={handleExport}
         onImport={handleImport}
         toolbar={
-          <div className="inline-flex rounded-lg border border-border bg-muted/30 p-0.5">
+          <div className="inline-flex rounded-xl border border-border/80 bg-muted/30 p-0.5 shadow-sm">
             <button
+              type="button"
               onClick={() => setView("list")}
               className={cn(
-                "grid size-7 place-items-center rounded-md",
-                view === "list" ? "bg-card text-foreground shadow-soft" : "text-muted-foreground",
+                "grid size-8 place-items-center rounded-lg transition-all",
+                view === "list" ? "bg-card text-foreground shadow-sm font-bold" : "text-muted-foreground hover:text-foreground",
               )}
               aria-label="List view"
             >
               <List className="size-4" />
             </button>
             <button
+              type="button"
               onClick={() => setView("grid")}
               className={cn(
-                "grid size-7 place-items-center rounded-md",
-                view === "grid" ? "bg-card text-foreground shadow-soft" : "text-muted-foreground",
+                "grid size-8 place-items-center rounded-lg transition-all",
+                view === "grid" ? "bg-card text-foreground shadow-sm font-bold" : "text-muted-foreground hover:text-foreground",
               )}
               aria-label="Grid view"
             >
@@ -435,7 +437,7 @@ function ProductsPage() {
             </div>
             <div className="pt-4 mt-auto">
               <Button
-                className="w-full"
+                className="w-full font-bold shadow-soft"
                 onClick={() => {
                   setFilters(draftFilters);
                   close();
@@ -461,8 +463,8 @@ function ProductsPage() {
             title={t("noProductsFound") || "No products found"}
             description={
               search
-                ? t("adjustSearch") || "Try adjusting your search."
-                : t("noProductsYet") || "You haven't added any products yet."
+                ? t("adjustSearch") || "Try adjusting your search query or reset filters."
+                : t("noProductsYet") || "You haven't added any products to your catalog yet."
             }
             actionLabel="Add Product"
             onAction={openNew}
@@ -470,7 +472,7 @@ function ProductsPage() {
         ) : (
           <div className="space-y-4">
             {view === "list" ? (
-              <div className="overflow-hidden rounded-xl border border-border bg-card shadow-soft">
+              <div className="overflow-hidden rounded-2xl border border-border/80 bg-card shadow-card">
                 <TableView
                   products={products}
                   categories={categories}
@@ -484,14 +486,16 @@ function ProductsPage() {
                   }}
                 />
                 {products.length > 0 && (
-                  <PaginationControls
-                    currentPage={page}
-                    totalPages={totalPages}
-                    pageSize={pageSize}
-                    onPageChange={setPage}
-                    onPageSizeChange={setPageSize}
-                    totalItems={products.length}
-                  />
+                  <div className="border-t border-border/60 p-2 sm:p-3">
+                    <PaginationControls
+                      currentPage={page}
+                      totalPages={totalPages}
+                      pageSize={pageSize}
+                      onPageChange={setPage}
+                      onPageSizeChange={setPageSize}
+                      totalItems={products.length}
+                    />
+                  </div>
                 )}
               </div>
             ) : (
@@ -508,15 +512,16 @@ function ProductsPage() {
                   }}
                 />
                 {products.length > 0 && (
-                  <PaginationControls
-                    currentPage={page}
-                    totalPages={totalPages}
-                    pageSize={pageSize}
-                    onPageChange={setPage}
-                    onPageSizeChange={setPageSize}
-                    totalItems={products.length}
-                    className="rounded-xl border"
-                  />
+                  <div className="rounded-2xl border border-border/80 bg-card p-3 shadow-card">
+                    <PaginationControls
+                      currentPage={page}
+                      totalPages={totalPages}
+                      pageSize={pageSize}
+                      onPageChange={setPage}
+                      onPageSizeChange={setPageSize}
+                      totalItems={products.length}
+                    />
+                  </div>
                 )}
               </>
             )}
@@ -525,20 +530,20 @@ function ProductsPage() {
       </DataPage>
 
       <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
-        <AlertDialogContent>
+        <AlertDialogContent className="rounded-2xl">
           <AlertDialogHeader>
-            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete the product.
+            <AlertDialogTitle className="font-bold">Delete Product?</AlertDialogTitle>
+            <AlertDialogDescription className="text-xs">
+              This action cannot be undone. This SKU and its history will be removed from your catalog.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel className="rounded-xl text-xs font-semibold">Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={confirmDelete}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90 rounded-xl text-xs font-bold"
             >
-              Delete
+              Delete Product
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -549,33 +554,35 @@ function ProductsPage() {
         open={!!printProduct && !isPrinting}
         onOpenChange={(open) => !open && setPrintProduct(null)}
       >
-        <DialogContent className="sm:max-w-sm">
+        <DialogContent className="sm:max-w-sm rounded-2xl">
           <DialogHeader>
-            <DialogTitle>Print Barcode Labels</DialogTitle>
+            <DialogTitle className="font-bold flex items-center gap-2">
+              <Printer className="size-4 text-primary" /> Print Barcode Labels
+            </DialogTitle>
           </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="text-sm">
-              Product: <strong>{printProduct?.name}</strong>
-              <br />
-              Barcode: <strong>{printProduct?.barcode}</strong>
+          <div className="space-y-3.5 py-3">
+            <div className="text-xs rounded-xl bg-muted/40 p-3 border border-border/60 space-y-1">
+              <div>Product: <strong className="text-foreground">{printProduct?.name}</strong></div>
+              <div>Barcode: <strong className="font-mono text-foreground">{printProduct?.barcode || printProduct?.sku}</strong></div>
             </div>
-            <div className="space-y-2">
-              <Label>Number of Labels</Label>
+            <div className="space-y-1.5">
+              <Label className="text-xs font-semibold">Number of Labels</Label>
               <Input
                 type="number"
                 min={1}
                 max={100}
                 value={printCount}
                 onChange={(e) => setPrintCount(parseInt(e.target.value) || 1)}
+                className="h-10 rounded-xl"
               />
             </div>
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setPrintProduct(null)}>
+          <DialogFooter className="gap-2 sm:justify-between">
+            <Button variant="outline" onClick={() => setPrintProduct(null)} className="rounded-xl text-xs">
               Cancel
             </Button>
-            <Button onClick={handlePrint}>
-              <Printer className="size-4 mr-2" /> Print
+            <Button onClick={handlePrint} className="rounded-xl text-xs font-bold gap-1.5 shadow-sm">
+              <Printer className="size-4" /> Print Labels
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -628,134 +635,194 @@ function TableView({
 }) {
   const { formatCurrency } = useCurrency();
   const { t } = useLanguage();
+
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full text-left text-sm min-w-[1000px]">
-        <thead className="sticky top-0 bg-muted/50 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-          <tr>
-            <th className="px-4 py-3 whitespace-nowrap">
-              <input type="checkbox" className="rounded border-border" />
-            </th>
-            <th className="px-4 py-3 whitespace-nowrap">{t("product") || "Product"}</th>
-            <th className="px-4 py-3 whitespace-nowrap">{t("sku") || "SKU"}</th>
-            <th className="px-4 py-3 whitespace-nowrap">{t("category") || "Category"}</th>
-            <th className="px-4 py-3 text-right whitespace-nowrap">{t("price") || "Price"}</th>
-            <th className="px-4 py-3 text-right whitespace-nowrap">{t("stock") || "Stock"}</th>
-            <th className="px-4 py-3 whitespace-nowrap">{t("status") || "Status"}</th>
-            <th className="px-4 py-3 whitespace-nowrap"></th>
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-border">
-          {products.map((p) => (
-            <tr key={p.id} className="group hover:bg-muted/30">
-              <td className="px-4 py-3 whitespace-nowrap">
-                <input type="checkbox" className="rounded border-border" />
-              </td>
-              <td className="px-4 py-3 whitespace-nowrap">
-                <div className="flex items-center gap-3">
-                  <div className="grid size-10 shrink-0 place-items-center rounded-lg bg-muted overflow-hidden">
-                    <img src={p.image} alt="" className="size-full object-cover" />
-                  </div>
-                  <div>
-                    <div className="font-semibold">{p.name}</div>
-                    <div className="text-xs text-muted-foreground">
-                      {brands.find((b) => b.id === p.brand)?.name || p.brand || ""}
-                    </div>
-                  </div>
-                </div>
-              </td>
-              <td className="px-4 py-3 font-mono text-xs text-muted-foreground whitespace-nowrap">
-                {p.sku}
-              </td>
-              <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">
-                {categories.find((c) => c.id === p.category)?.name || p.category || "-"}
-              </td>
-              <td className="number px-4 py-3 text-right whitespace-nowrap">
-                <div className="font-semibold">{formatCurrency(p.price)}</div>
-                {(p.wholesalePrice > 0 || p.dealerPrice > 0) && (
-                  <div className="flex flex-col items-end gap-0.5 text-[10px] text-muted-foreground mt-0.5">
-                    {p.wholesalePrice > 0 && (
-                      <span className="text-info font-medium">
-                        WS: {formatCurrency(p.wholesalePrice)}
-                      </span>
-                    )}
-                    {p.dealerPrice > 0 && (
-                      <span className="text-warning font-medium">
-                        Dealer: {formatCurrency(p.dealerPrice)}
-                      </span>
-                    )}
-                  </div>
-                )}
-              </td>
-              <td className="px-4 py-3 text-right whitespace-nowrap">
-                <span
-                  className={cn(
-                    "number font-semibold",
-                    Number(p.stock) <= Number(p.reorderLevel) && "text-destructive",
-                  )}
-                >
-                  {p.stock}
-                </span>
-                <span className="ml-1 text-xs text-muted-foreground">
-                  {units.find((u) => u.id === p.unit)?.name || p.unit || ""}
-                </span>
-              </td>
-              <td className="px-4 py-3 whitespace-nowrap">
-                <div className="flex flex-col gap-1 items-start">
-                  {Number(p.stock) <= Number(p.reorderLevel) ? (
-                    <Badge variant="destructive">Low stock</Badge>
-                  ) : (
-                    <Badge className="bg-success/10 text-success hover:bg-success/15">
-                      In stock
-                    </Badge>
-                  )}
-                  {p.expiryDate && (
-                    <span className="rounded bg-muted px-1.5 py-0.5 text-[9px] font-bold text-muted-foreground">
-                      Exp: {p.expiryDate}
-                    </span>
-                  )}
-                  {p.hasSerial && (
-                    <span className="rounded bg-primary/10 px-1.5 py-0.5 text-[9px] font-bold text-primary">
-                      IMEI: {p.serials?.length || 0} Avail
-                    </span>
-                  )}
-                  {p.hasBatch && p.batches?.[0] && (
-                    <span className="rounded bg-info/10 px-1.5 py-0.5 text-[9px] font-bold text-info">
-                      Batch: {p.batches[0].batchNo} ({p.batches[0].expiryDate})
-                    </span>
-                  )}
-                  {p.locationRack && (
-                    <span className="rounded bg-muted border px-1.5 py-0.5 text-[9px] font-mono text-muted-foreground font-bold">
-                      Rack: {p.locationRack} {p.locationShelf ? `· ${p.locationShelf}` : ""}
-                    </span>
-                  )}
-                </div>
-              </td>
-              <td className="px-4 py-3 text-right whitespace-nowrap">
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon" className="size-8">
-                      <MoreHorizontal className="size-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={() => onEdit(p)}>
-                      <Pencil className="size-4" /> Edit
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => onPrint(p)}>
-                      <Printer className="size-4" /> Print Label
-                    </DropdownMenuItem>
-                    <DropdownMenuItem className="text-destructive" onClick={() => onDelete(p.id)}>
-                      <Trash2 className="size-4" /> Delete
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </td>
+    <>
+      {/* Desktop Table View (>= 768px) */}
+      <div className="table-desktop overflow-x-auto">
+        <table className="w-full text-left text-sm min-w-[900px]">
+          <thead className="border-b border-border/80 bg-muted/40 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+            <tr>
+              <th className="px-4 py-3 whitespace-nowrap">{t("product") || "Product"}</th>
+              <th className="px-4 py-3 whitespace-nowrap">{t("sku") || "SKU"}</th>
+              <th className="px-4 py-3 whitespace-nowrap">{t("category") || "Category"}</th>
+              <th className="px-4 py-3 text-right whitespace-nowrap">{t("price") || "Price"}</th>
+              <th className="px-4 py-3 text-right whitespace-nowrap">{t("stock") || "Stock"}</th>
+              <th className="px-4 py-3 whitespace-nowrap">{t("status") || "Status"}</th>
+              <th className="px-4 py-3 whitespace-nowrap text-right">Actions</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+          </thead>
+          <tbody className="divide-y divide-border/60">
+            {products.map((p) => {
+              const brandObj = brands.find((b) => b.id === p.brand);
+              const catObj = categories.find((c) => c.id === p.category);
+              const unitObj = units.find((u) => u.id === p.unit);
+              const isLow = Number(p.stock) <= Number(p.reorderLevel);
+
+              return (
+                <tr key={p.id} className="hover:bg-muted/30 transition-colors">
+                  <td className="px-4 py-3 whitespace-nowrap">
+                    <div className="flex items-center gap-3">
+                      <div className="grid size-11 shrink-0 place-items-center rounded-xl bg-muted/60 overflow-hidden border border-border/50">
+                        {p.image ? (
+                          <img src={p.image} alt="" className="size-full object-cover" />
+                        ) : (
+                          <PackageSearch className="size-5 text-muted-foreground/50" />
+                        )}
+                      </div>
+                      <div className="min-w-0">
+                        <div className="font-bold text-foreground hover:text-primary transition-colors cursor-pointer" onClick={() => onEdit(p)}>
+                          {p.name}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          {brandObj?.name || p.brand || "Standard SKU"}
+                        </div>
+                      </div>
+                    </div>
+                  </td>
+                  <td className="px-4 py-3 font-mono text-xs text-muted-foreground whitespace-nowrap font-medium">
+                    {p.sku || "-"}
+                  </td>
+                  <td className="px-4 py-3 text-muted-foreground whitespace-nowrap text-xs font-medium">
+                    {catObj?.name || p.category || "-"}
+                  </td>
+                  <td className="number px-4 py-3 text-right whitespace-nowrap">
+                    <div className="font-extrabold text-foreground">{formatCurrency(p.price)}</div>
+                    {(p.wholesalePrice > 0 || p.dealerPrice > 0) && (
+                      <div className="flex flex-col items-end gap-0.5 text-[10px] text-muted-foreground mt-0.5">
+                        {p.wholesalePrice > 0 && (
+                          <span className="text-info font-medium">
+                            WS: {formatCurrency(p.wholesalePrice)}
+                          </span>
+                        )}
+                        {p.dealerPrice > 0 && (
+                          <span className="text-warning font-medium">
+                            DLR: {formatCurrency(p.dealerPrice)}
+                          </span>
+                        )}
+                      </div>
+                    )}
+                  </td>
+                  <td className="px-4 py-3 text-right whitespace-nowrap">
+                    <span
+                      className={cn(
+                        "number font-bold text-sm",
+                        isLow ? "text-destructive" : "text-foreground",
+                      )}
+                    >
+                      {p.stock}
+                    </span>
+                    <span className="ml-1 text-xs text-muted-foreground">
+                      {unitObj?.name || p.unit || "units"}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3 whitespace-nowrap">
+                    <div className="flex flex-wrap gap-1 items-center">
+                      {isLow ? (
+                        <Badge variant="destructive" className="text-[10px] font-bold">Low stock</Badge>
+                      ) : (
+                        <Badge className="bg-success/12 text-success hover:bg-success/20 border-success/25 text-[10px] font-bold">
+                          In stock
+                        </Badge>
+                      )}
+                      {p.expiryDate && (
+                        <span className="rounded-md bg-muted px-1.5 py-0.5 text-[9px] font-bold text-muted-foreground">
+                          Exp: {p.expiryDate}
+                        </span>
+                      )}
+                      {p.hasSerial && (
+                        <span className="rounded-md bg-primary/10 px-1.5 py-0.5 text-[9px] font-bold text-primary">
+                          IMEI: {p.serials?.length || 0}
+                        </span>
+                      )}
+                    </div>
+                  </td>
+                  <td className="px-4 py-3 text-right whitespace-nowrap">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon" className="size-8 rounded-lg">
+                          <MoreHorizontal className="size-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="rounded-xl">
+                        <DropdownMenuItem onClick={() => onEdit(p)} className="text-xs font-semibold">
+                          <Pencil className="size-3.5 mr-2" /> Edit Product
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => onPrint(p)} className="text-xs font-semibold">
+                          <Printer className="size-3.5 mr-2" /> Print Barcode
+                        </DropdownMenuItem>
+                        <DropdownMenuItem className="text-destructive text-xs font-semibold" onClick={() => onDelete(p.id)}>
+                          <Trash2 className="size-3.5 mr-2" /> Delete
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Mobile Card Feed (< 768px) */}
+      <div className="table-mobile-cards p-3 space-y-2.5">
+        {products.map((p) => {
+          const brandObj = brands.find((b) => b.id === p.brand);
+          const catObj = categories.find((c) => c.id === p.category);
+          const isLow = Number(p.stock) <= Number(p.reorderLevel);
+
+          return (
+            <div
+              key={p.id}
+              className="flex items-center justify-between rounded-2xl border border-border/80 bg-card p-3 shadow-card card-interactive"
+              onClick={() => onEdit(p)}
+            >
+              <div className="flex items-center gap-3 min-w-0 flex-1">
+                <div className="grid size-12 shrink-0 place-items-center rounded-xl bg-muted/60 overflow-hidden border border-border/50">
+                  {p.image ? (
+                    <img src={p.image} alt="" className="size-full object-cover" />
+                  ) : (
+                    <PackageSearch className="size-5 text-muted-foreground/50" />
+                  )}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="font-bold text-xs sm:text-sm text-foreground truncate">{p.name}</div>
+                  <p className="text-[11px] text-muted-foreground truncate">
+                    {p.sku} · {catObj?.name || p.category || "General"}
+                  </p>
+                  <div className="flex items-center gap-2 mt-1">
+                    {isLow ? (
+                      <span className="text-[9px] font-extrabold text-destructive bg-destructive/10 px-1.5 py-0.2 rounded-md">
+                        {p.stock} left
+                      </span>
+                    ) : (
+                      <span className="text-[9px] font-bold text-success bg-success/10 px-1.5 py-0.2 rounded-md">
+                        {p.stock} in stock
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <div className="text-right shrink-0 pl-2">
+                <div className="number text-sm font-black text-primary">{formatCurrency(p.price)}</div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 px-2 text-[11px] font-semibold text-muted-foreground mt-1"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onPrint(p);
+                  }}
+                >
+                  <Printer className="size-3 mr-1" /> Label
+                </Button>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </>
   );
 }
 
@@ -775,27 +842,44 @@ function GridView({
   onPrint: (p: any) => void;
 }) {
   const { formatCurrency } = useCurrency();
+
   return (
-    <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+    <div className="grid grid-cols-2 gap-3.5 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
       {products.map((p) => {
         const categoryName = categories.find((c) => c.id === p.category)?.name || p.category || "-";
         const unitName = units.find((u) => u.id === p.unit)?.name || p.unit || "";
+        const isLow = Number(p.stock) <= Number(p.reorderLevel);
+
         return (
           <div
             key={p.id}
-            className="group relative flex flex-col overflow-hidden rounded-xl border border-border bg-card transition-all hover:border-primary/50 hover:shadow-md"
+            className="group relative flex flex-col overflow-hidden rounded-2xl border border-border/80 bg-card transition-all duration-200 hover:border-primary/50 hover:shadow-card-hover card-interactive"
           >
             <div
-              className="aspect-square bg-muted cursor-pointer overflow-hidden"
+              className="aspect-square bg-muted/40 cursor-pointer overflow-hidden relative"
               onClick={() => onEdit(p)}
             >
-              <img src={p.image} alt="" className="size-full object-cover" />
+              {p.image ? (
+                <img src={p.image} alt="" className="size-full object-cover transition-transform duration-300 group-hover:scale-105" />
+              ) : (
+                <div className="flex size-full items-center justify-center text-muted-foreground/30">
+                  <PackageSearch className="size-12" />
+                </div>
+              )}
+
+              {/* Status pill overlay */}
+              {isLow && (
+                <span className="absolute left-2 top-2 rounded-full bg-destructive/90 px-2 py-0.5 text-[9px] font-extrabold uppercase tracking-wider text-white shadow-sm backdrop-blur-sm">
+                  {p.stock} left
+                </span>
+              )}
             </div>
+
             <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
               <Button
                 variant="secondary"
                 size="icon"
-                className="size-7 shadow-soft"
+                className="size-8 rounded-xl shadow-soft bg-background/90 backdrop-blur-sm"
                 onClick={(e) => {
                   e.stopPropagation();
                   onPrint(p);
@@ -804,43 +888,30 @@ function GridView({
                 <Printer className="size-3.5" />
               </Button>
             </div>
-            <div className="p-3.5 cursor-pointer" onClick={() => onEdit(p)}>
-              <div className="text-sm font-semibold truncate" title={p.name}>
-                {p.name}
-              </div>
-              <div className="mt-0.5 flex items-center justify-between text-xs text-muted-foreground">
-                <span>{p.sku}</span>
-                <span className="truncate max-w-[50%] text-right">{categoryName}</span>
-              </div>
 
-              <div className="mt-2.5 flex flex-col gap-1">
-                <div className="flex items-center justify-between">
-                  <span className="number text-base font-bold">{formatCurrency(p.price)}</span>
-                  <span
-                    className={cn(
-                      "text-xs font-medium",
-                      Number(p.stock) <= Number(p.reorderLevel) ? "text-destructive" : "text-muted-foreground",
-                    )}
-                  >
-                    {p.stock} {unitName || "in stock"}
-                  </span>
+            <div className="p-3.5 cursor-pointer flex flex-col justify-between flex-1" onClick={() => onEdit(p)}>
+              <div>
+                <div className="text-xs sm:text-sm font-bold text-foreground truncate" title={p.name}>
+                  {p.name}
                 </div>
-                {p.expiryDate && (
-                  <div className="text-[10px] text-muted-foreground font-medium mt-0.5">
-                    Exp: {p.expiryDate}
-                  </div>
-                )}
+                <div className="mt-0.5 flex items-center justify-between text-[11px] text-muted-foreground">
+                  <span className="font-mono">{p.sku}</span>
+                  <span className="truncate max-w-[50%] text-right font-medium">{categoryName}</span>
+                </div>
+              </div>
 
-                {(p.wholesalePrice > 0 || p.dealerPrice > 0) && (
-                  <div className="flex items-center justify-between text-[10px] border-t border-border/50 pt-1 mt-0.5">
-                    <span className="text-info font-medium">
-                      {p.wholesalePrice > 0 ? `WS: ${formatCurrency(p.wholesalePrice)}` : ""}
-                    </span>
-                    <span className="text-warning font-medium">
-                      {p.dealerPrice > 0 ? `DLR: ${formatCurrency(p.dealerPrice)}` : ""}
-                    </span>
-                  </div>
-                )}
+              <div className="mt-3 flex items-baseline justify-between border-t border-border/50 pt-2">
+                <span className="number text-sm sm:text-base font-black text-primary">
+                  {formatCurrency(p.price)}
+                </span>
+                <span
+                  className={cn(
+                    "text-[11px] font-bold",
+                    isLow ? "text-destructive" : "text-muted-foreground",
+                  )}
+                >
+                  {p.stock} {unitName || "stock"}
+                </span>
               </div>
             </div>
           </div>
@@ -850,6 +921,5 @@ function GridView({
   );
 }
 
-// Removed fake Pagination component
-// avoid unused
 void Link;
+

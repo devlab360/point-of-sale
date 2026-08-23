@@ -265,14 +265,14 @@ function CouponsPage() {
         toast.success("Coupon deleted successfully");
       } catch (error) {
         toast.error("Failed to delete coupon");
-      } finally {
+  } finally {
         setDeleteId(null);
       }
     }
   };
 
   return (
-    <div className="p-4 md:p-6 lg:p-8">
+    <div>
       <DataPage
         title="Coupons"
         description="Discount codes redeemable at POS and online."
@@ -319,7 +319,7 @@ function CouponsPage() {
             </div>
             <div className="pt-4 mt-auto">
               <Button
-                className="w-full"
+                className="w-full font-bold shadow-soft"
                 onClick={() => {
                   setFilters(draftFilters);
                   close();
@@ -339,7 +339,7 @@ function CouponsPage() {
           <EmptyState
             icon={Ticket}
             title="No coupons found"
-            description={search ? "Try adjusting your search." : "No coupons created yet."}
+            description={search ? "Try adjusting your search query." : "No coupons created yet."}
             actionLabel="Add Coupon"
             onAction={() => {
               setEditItem(null);
@@ -349,86 +349,147 @@ function CouponsPage() {
           />
         ) : (
           <div className="space-y-4">
-            <div className="overflow-hidden rounded-xl border border-border bg-card shadow-soft">
-              <div className="overflow-hidden rounded-xl border border-border bg-card shadow-soft">
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left text-sm min-w-[800px]">
-                    <thead className="bg-muted/50 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                      <tr>
-                        <th className="px-4 py-3 whitespace-nowrap">Code</th>
-                        <th className="px-4 py-3 whitespace-nowrap">Type</th>
-                        <th className="px-4 py-3 whitespace-nowrap">Discount</th>
-                        <th className="px-4 py-3 whitespace-nowrap">Uses</th>
-                        <th className="px-4 py-3 whitespace-nowrap">Expires</th>
-                        <th className="px-4 py-3 whitespace-nowrap">Status</th>
-                        <th className="px-4 py-3 text-right whitespace-nowrap">Actions</th>
+            <div className="overflow-hidden rounded-2xl border border-border/80 bg-card shadow-card">
+              {/* Desktop Table */}
+              <div className="table-desktop overflow-x-auto">
+                <table className="w-full text-left text-sm min-w-[800px]">
+                  <thead className="border-b border-border/80 bg-muted/40 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                    <tr>
+                      <th className="px-5 py-3 whitespace-nowrap">Coupon Code</th>
+                      <th className="px-5 py-3 whitespace-nowrap">Discount Type</th>
+                      <th className="px-5 py-3 whitespace-nowrap">Value</th>
+                      <th className="px-5 py-3 whitespace-nowrap">Usage Limit</th>
+                      <th className="px-5 py-3 whitespace-nowrap">Expires On</th>
+                      <th className="px-5 py-3 whitespace-nowrap">Status</th>
+                      <th className="px-5 py-3 text-right whitespace-nowrap">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border/60">
+                    {paginatedCoupons.map((c) => (
+                      <tr key={c.id} className="hover:bg-muted/30 transition-colors">
+                        <td className="px-5 py-3 whitespace-nowrap">
+                          <code className="rounded-lg bg-primary/10 border border-primary/20 px-2.5 py-1 text-xs font-mono font-black text-primary">
+                            {c.code}
+                          </code>
+                        </td>
+                        <td className="px-5 py-3 text-muted-foreground whitespace-nowrap capitalize text-xs font-medium">
+                          {c.type}
+                        </td>
+                        <td className="number px-5 py-3 font-black text-foreground whitespace-nowrap text-sm">
+                          {c.type === "percent" ? `${c.value}%` : formatCurrency(c.value)}
+                        </td>
+                        <td className="px-5 py-3 text-xs text-muted-foreground whitespace-nowrap font-medium">
+                          {c.usedCount} / {c.usageLimit || "∞"}
+                        </td>
+                        <td className="px-5 py-3 text-xs text-muted-foreground whitespace-nowrap font-medium">
+                          {c.validUntil
+                            ? formatDate(new Date(c.validUntil).toISOString())
+                            : "No expiry"}
+                        </td>
+                        <td className="px-5 py-3 whitespace-nowrap">
+                          <Badge
+                            className={
+                              c.status === "active"
+                                ? "bg-success/12 text-success hover:bg-success/20 border-success/20 text-[10px] font-bold"
+                                : c.status === "expiring"
+                                  ? "bg-warning/15 text-warning-foreground hover:bg-warning/20 border-warning/20 text-[10px] font-bold"
+                                  : "bg-muted text-muted-foreground hover:bg-muted text-[10px] font-medium"
+                            }
+                          >
+                            {c.status}
+                          </Badge>
+                        </td>
+                        <td className="px-5 py-3 text-right whitespace-nowrap">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon" className="size-8 rounded-lg">
+                                <MoreVertical className="size-4 text-muted-foreground" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="rounded-xl">
+                              <DropdownMenuItem onClick={() => setEditItem(c)} className="text-xs font-semibold">
+                                <Edit2 className="mr-2 size-3.5" /> Edit Coupon
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                className="text-destructive text-xs font-semibold"
+                                onClick={() => setDeleteId(c.id)}
+                              >
+                                <Trash2 className="mr-2 size-3.5" /> Delete
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </td>
                       </tr>
-                    </thead>
-                    <tbody className="divide-y divide-border">
-                      {paginatedCoupons.map((c) => (
-                        <tr key={c.id} className="hover:bg-muted/30">
-                          <td className="px-4 py-3 whitespace-nowrap">
-                            <code className="rounded bg-muted px-2 py-1 text-xs font-bold">
-                              {c.code}
-                            </code>
-                          </td>
-                          <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">
-                            {c.type}
-                          </td>
-                          <td className="px-4 py-3 font-semibold whitespace-nowrap">
-                            {c.type === "percent" ? `${c.value}%` : formatCurrency(c.value)}
-                          </td>
-                          <td className="px-4 py-3 text-sm text-muted-foreground whitespace-nowrap">
-                            {c.usedCount} / {c.usageLimit || "∞"}
-                          </td>
-                          <td className="px-4 py-3 text-sm text-muted-foreground whitespace-nowrap">
-                            {c.validUntil
-                              ? formatDate(new Date(c.validUntil).toISOString())
-                              : "Never"}
-                          </td>
-                          <td className="px-4 py-3 whitespace-nowrap">
-                            <Badge
-                              className={
-                                c.status === "active"
-                                  ? "bg-success/10 text-success hover:bg-success/15"
-                                  : c.status === "expiring"
-                                    ? "bg-warning/15 text-warning-foreground hover:bg-warning/20"
-                                    : "bg-muted text-muted-foreground hover:bg-muted"
-                              }
-                            >
-                              {c.status}
-                            </Badge>
-                          </td>
-                          <td className="px-4 py-3 text-right whitespace-nowrap">
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="icon" className="size-8">
-                                  <MoreVertical className="size-4 text-muted-foreground" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                <DropdownMenuItem onClick={() => setEditItem(c)}>
-                                  <Edit2 className="mr-2 size-4" /> Edit
-                                </DropdownMenuItem>
-                                <DropdownMenuItem
-                                  className="text-destructive focus:bg-destructive/10 focus:text-destructive"
-                                  onClick={() => setDeleteId(c.id)}
-                                >
-                                  <Trash2 className="mr-2 size-4" /> Delete
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Mobile Card Feed (< 768px) */}
+              <div className="table-mobile-cards p-3 space-y-2.5">
+                {paginatedCoupons.map((c) => (
+                  <div
+                    key={c.id}
+                    className="flex items-center justify-between rounded-xl border border-border/80 bg-card p-3 shadow-sm card-interactive"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        <code className="rounded-md bg-primary/10 border border-primary/20 px-2 py-0.5 text-xs font-mono font-black text-primary">
+                          {c.code}
+                        </code>
+                        <Badge
+                          className={
+                            c.status === "active"
+                              ? "bg-success/12 text-success text-[9px] font-bold py-0"
+                              : "bg-muted text-muted-foreground text-[9px] py-0"
+                          }
+                        >
+                          {c.status}
+                        </Badge>
+                      </div>
+                      <div className="text-xs text-muted-foreground mt-1">
+                        Expires: {c.validUntil ? formatDate(new Date(c.validUntil).toISOString()) : "Never"}
+                      </div>
+                      <div className="text-[11px] text-muted-foreground mt-0.5">
+                        Used: {c.usedCount} / {c.usageLimit || "∞"}
+                      </div>
+                    </div>
+
+                    <div className="text-right shrink-0 pl-2">
+                      <div className="number text-sm font-black text-foreground">
+                        {c.type === "percent" ? `${c.value}% OFF` : `${formatCurrency(c.value)} OFF`}
+                      </div>
+                      <div className="flex justify-end gap-1 mt-1">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="size-7 rounded-lg"
+                          onClick={() => setEditItem(c)}
+                        >
+                          <Edit2 className="size-3 text-muted-foreground" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="size-7 rounded-lg text-destructive"
+                          onClick={() => setDeleteId(c.id)}
+                        >
+                          <Trash2 className="size-3" />
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="border-t border-border/60 p-2 sm:p-3">
                 <PaginationControls
                   currentPage={page}
                   totalPages={totalPages}
-                  onPageChange={setPage}
+                  pageSize={itemsPerPage}
                   totalItems={filteredCoupons.length}
+                  onPageChange={setPage}
+                  onPageSizeChange={() => {}}
                 />
               </div>
             </div>

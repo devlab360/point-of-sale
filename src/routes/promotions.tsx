@@ -227,12 +227,12 @@ function PromotionsPage() {
   };
 
   return (
-    <div className="p-4 md:p-6 lg:p-8">
+    <div>
       <DataPage
-        title="Promotions"
-        description="Run automated discounts and store-wide sales."
-        primaryAction={{ label: "New Promotion", onClick: () => setIsAddOpen(true) }}
-        searchPlaceholder="Search promotions by title..."
+        title="Promotions & Campaigns"
+        description="Automated discount rules, seasonal campaigns, and bundle offers."
+        primaryAction={{ label: "New Campaign", onClick: () => setIsAddOpen(true) }}
+        searchPlaceholder="Search promotions..."
         searchValue={search}
         onSearchChange={setSearch}
         hideToolbar={promotions.length === 0}
@@ -242,26 +242,13 @@ function PromotionsPage() {
           <div className="space-y-4 flex flex-col h-full min-h-[50vh]">
             <div className="flex-1 space-y-4">
               <div className="space-y-2">
-                <Label>Type</Label>
-                <SearchableSelect
-                  options={[
-                    { value: "", label: "All Types" },
-                    { value: "storewide", label: "Storewide" },
-                    { value: "category", label: "Specific Category" },
-                    { value: "product", label: "Specific Product" },
-                  ]}
-                  value={draftFilters.type}
-                  onChange={(val) => setDraftFilters((prev) => ({ ...prev, type: val }))}
-                  placeholder="Filter by Type"
-                />
-              </div>
-              <div className="space-y-2">
                 <Label>Status</Label>
                 <SearchableSelect
                   options={[
                     { value: "", label: "All Statuses" },
                     { value: "active", label: "Active" },
-                    { value: "draft", label: "Draft" },
+                    { value: "scheduled", label: "Scheduled" },
+                    { value: "ended", label: "Ended" },
                   ]}
                   value={draftFilters.status}
                   onChange={(val) => setDraftFilters((prev) => ({ ...prev, status: val }))}
@@ -271,7 +258,7 @@ function PromotionsPage() {
             </div>
             <div className="pt-4 mt-auto">
               <Button
-                className="w-full"
+                className="w-full font-bold shadow-soft"
                 onClick={() => {
                   setFilters(draftFilters);
                   close();
@@ -291,8 +278,8 @@ function PromotionsPage() {
           <EmptyState
             icon={Megaphone}
             title="No promotions found"
-            description={search ? "Try adjusting your search." : "No promotions active."}
-            actionLabel="New Promotion"
+            description={search ? "Try adjusting your search query." : "No promotional campaigns created yet."}
+            actionLabel="New Campaign"
             onAction={() => {
               setEditItem(null);
               setStartDate("");
@@ -306,50 +293,62 @@ function PromotionsPage() {
               {paginatedPromotions.map((p) => (
                 <div
                   key={p.id}
-                  className="relative rounded-xl border border-border bg-card p-5 shadow-soft"
+                  className="relative rounded-2xl border border-border/80 bg-card p-5 shadow-card card-interactive flex flex-col justify-between"
                 >
-                  <div className="absolute right-4 top-4 flex items-center gap-2">
-                    <Badge
-                      className={
-                        p.status === "active"
-                          ? "bg-success/10 text-success hover:bg-success/15"
-                          : "bg-info/10 text-info hover:bg-info/15"
-                      }
-                    >
-                      {p.status}
-                    </Badge>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="size-8">
-                          <MoreVertical className="size-4 text-muted-foreground" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => setEditItem(p)}>
-                          <Edit2 className="mr-2 size-4" /> Edit
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          className="text-destructive focus:bg-destructive/10 focus:text-destructive"
-                          onClick={() => setDeleteId(p.id)}
-                        >
-                          <Trash2 className="mr-2 size-4" /> Delete
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
+                  <div>
+                    <div className="flex items-start justify-between pr-10">
+                      <div className="flex items-center gap-3">
+                        <div className="grid size-10 place-items-center rounded-xl bg-primary/10 text-primary border border-primary/20">
+                          <Sparkles className="size-5" />
+                        </div>
+                        <div>
+                          <h3 className="font-bold text-sm sm:text-base text-foreground">{p.title}</h3>
+                          <p className="text-[11px] text-muted-foreground capitalize font-medium">Type: {p.type}</p>
+                        </div>
+                      </div>
+                    </div>
 
-                  <div className="flex items-start justify-between pr-24">
-                    <div>
-                      <h3 className="font-semibold">{p.title}</h3>
-                      <p className="mt-0.5 text-xs text-muted-foreground">Scope: {p.type}</p>
+                    <div className="absolute right-4 top-4 flex items-center gap-2">
+                      <Badge
+                        className={
+                          p.status === "active"
+                            ? "bg-success/12 text-success hover:bg-success/20 border-success/20 text-[10px] font-bold"
+                            : "bg-info/12 text-info hover:bg-info/20 border-info/20 text-[10px] font-bold"
+                        }
+                      >
+                        {p.status}
+                      </Badge>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" className="size-8 rounded-lg">
+                            <MoreVertical className="size-4 text-muted-foreground" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="rounded-xl">
+                          <DropdownMenuItem onClick={() => setEditItem(p)} className="text-xs font-semibold">
+                            <Edit2 className="mr-2 size-3.5" /> Edit Campaign
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            className="text-destructive text-xs font-semibold"
+                            onClick={() => setDeleteId(p.id)}
+                          >
+                            <Trash2 className="mr-2 size-3.5" /> Delete
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+
+                    <div className="mt-4 rounded-xl bg-primary/10 border border-primary/20 px-3.5 py-2.5 text-xs font-bold text-primary flex items-center justify-between">
+                      <span>{p.type === "percentage" ? `${p.value}% OFF` : `${formatCurrency(p.value)} OFF`}</span>
+                      <span className="text-[11px] text-foreground font-semibold truncate max-w-[200px]">{p.conditions}</span>
                     </div>
                   </div>
-                  <div className="mt-4 rounded-lg bg-primary/5 px-3 py-2 text-sm font-semibold text-primary">
-                    {p.type === "percentage" ? `${p.value}%` : formatCurrency(p.value)} OFF -{" "}
-                    {p.conditions}
-                  </div>
-                  <div className="mt-3 text-xs text-muted-foreground">
-                    Runs {formatDate(p.startDate)} → {formatDate(p.endDate)}
+
+                  <div className="mt-4 pt-3 border-t border-border/60 text-[11px] text-muted-foreground flex items-center justify-between">
+                    <span className="flex items-center gap-1.5">
+                      <Calendar className="size-3.5 text-muted-foreground/60" />
+                      {formatDate(p.startDate)} → {formatDate(p.endDate)}
+                    </span>
                   </div>
                 </div>
               ))}

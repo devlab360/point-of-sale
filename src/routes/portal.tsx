@@ -83,69 +83,61 @@ function CustomerPortalPage() {
       </div>
 
       {/* Search Input Box */}
-      <Card className="border-primary/20 shadow-soft max-w-4xl mx-auto">
-        <CardContent className="pt-6">
-          <form
-            onSubmit={async (e) => {
-              e.preventDefault();
-              setIsSearching(true);
-              await new Promise((resolve) => setTimeout(resolve, 500));
-              setActiveLookup(searchPhone.trim());
-              setIsSearching(false);
-            }}
-            className="flex gap-2"
-          >
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                placeholder="Enter customer phone number (e.g. +880 1711...)"
-                value={searchPhone}
-                onChange={(e) => setSearchPhone(e.target.value)}
-                className="pl-9 h-11 text-sm"
-              />
-            </div>
-            <Button type="submit" disabled={isSearching} className="h-11 px-6 font-bold">
-              {isSearching && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Check Statement
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
+      <div className="max-w-3xl mx-auto">
+        <form
+          onSubmit={async (e) => {
+            e.preventDefault();
+            setIsSearching(true);
+            await new Promise((resolve) => setTimeout(resolve, 500));
+            setActiveLookup(searchPhone.trim());
+            setIsSearching(false);
+          }}
+          className="flex flex-col sm:flex-row gap-2.5"
+        >
+          <div className="relative flex-1">
+            <Search className="absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              placeholder="Enter customer phone number (e.g. +880 1711...)"
+              value={searchPhone}
+              onChange={(e) => setSearchPhone(e.target.value)}
+              className="pl-10 h-12 text-sm rounded-xl"
+            />
+          </div>
+          <Button type="submit" disabled={isSearching} className="h-12 px-6 font-bold rounded-xl shadow-soft">
+            {isSearching && <Loader2 className="mr-2 size-4 animate-spin" />}
+            Check Statement
+          </Button>
+        </form>
+      </div>
 
       {/* Statement Results */}
       {foundCustomer ? (
-        <div className="space-y-6">
+        <div className="space-y-6 max-w-5xl mx-auto">
           {/* Customer KPI Summary */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <Card className="bg-card">
-              <CardContent className="p-4 text-center">
-                <div className="text-xs text-muted-foreground font-medium">Customer Name</div>
-                <div className="text-lg font-bold mt-1 text-primary">{foundCustomer.name}</div>
-                <div className="text-xs text-muted-foreground">{foundCustomer.phone}</div>
-              </CardContent>
-            </Card>
-            <Card className="bg-destructive/5 border-destructive/20">
-              <CardContent className="p-4 text-center">
-                <div className="text-xs text-muted-foreground font-medium">
-                  Outstanding Khata Due
-                </div>
-                <div className="text-2xl font-extrabold text-destructive mt-1">
-                  {formatCurrency(foundCustomer.credit || 0)}
-                </div>
-              </CardContent>
-            </Card>
-            <Card className="bg-success/5 border-success/20">
-              <CardContent className="p-4 text-center">
-                <div className="text-xs text-muted-foreground font-medium">
-                  Available Credit Limit
-                </div>
-                <div className="text-2xl font-extrabold text-success mt-1">
-                  {formatCurrency(
-                    Math.max(0, (foundCustomer.creditLimit || 5000) - (foundCustomer.credit || 0)),
-                  )}
-                </div>
-              </CardContent>
-            </Card>
+            <div className="rounded-2xl border border-border/80 bg-card p-5 text-center shadow-card card-interactive">
+              <div className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">Customer Name</div>
+              <div className="text-lg font-bold mt-1 text-primary">{foundCustomer.name}</div>
+              <div className="text-xs text-muted-foreground mt-0.5">{foundCustomer.phone}</div>
+            </div>
+            <div className="rounded-2xl border border-destructive/20 bg-destructive/5 p-5 text-center shadow-card card-interactive">
+              <div className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">
+                Outstanding Khata Due
+              </div>
+              <div className="text-2xl font-black text-destructive mt-1">
+                {formatCurrency(foundCustomer.credit || 0)}
+              </div>
+            </div>
+            <div className="rounded-2xl border border-success/20 bg-success/5 p-5 text-center shadow-card card-interactive">
+              <div className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">
+                Available Credit Limit
+              </div>
+              <div className="text-2xl font-extrabold text-success mt-1">
+                {formatCurrency(
+                  Math.max(0, (foundCustomer.creditLimit || 5000) - (foundCustomer.credit || 0)),
+                )}
+              </div>
+            </div>
           </div>
 
           {/* Active Warranty IMEI List */}

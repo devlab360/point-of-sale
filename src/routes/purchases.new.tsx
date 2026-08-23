@@ -217,7 +217,7 @@ function NewPurchase() {
   };
 
   return (
-    <div className="space-y-6 p-4 md:p-6 lg:p-8 container mx-auto">
+    <div className="page-container space-y-5 container mx-auto">
       {/* Back button & Breadcrumb header */}
       <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
         <Button

@@ -12,6 +12,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { AppSidebar } from "@/components/layout/AppSidebar";
+import { BottomNav } from "@/components/layout/BottomNav";
 import { APP_GROUPS, hasPermissionForRoute } from "@/lib/menu-config";
 import { AppHeader } from "@/components/layout/AppHeader";
 
@@ -467,12 +468,13 @@ function AppLayout() {
         )}
 
       <div className="flex h-screen w-full overflow-hidden bg-background text-foreground">
+        {/* Desktop sidebar (hidden on mobile+tablet, shown on lg+) */}
         <aside className="hidden w-auto shrink-0 border-r border-sidebar-border lg:flex transition-all duration-300 z-40">
           <AppSidebar />
         </aside>
         <div className="flex min-w-0 flex-1 flex-col relative">
           <AppHeader />
-          <main className="flex-1 overflow-y-auto bg-muted/20 relative">
+          <main className="flex-1 overflow-y-auto bg-muted/20 relative bottom-nav-spacer">
             {isAuthenticated &&
               (isSuspended || (isTrialExpired && location.pathname !== "/settings")) ? (
               <div className="flex h-full w-full items-center justify-center opacity-10 select-none pointer-events-none">
@@ -491,11 +493,15 @@ function AppLayout() {
                 </svg>
               </div>
             ) : (
-              <Outlet />
+              <div className="page-enter">
+                <Outlet />
+              </div>
             )}
           </main>
         </div>
       </div>
+      {/* Mobile bottom navigation (hidden on md+) */}
+      <BottomNav />
       {canAccessAiCopilot && <AiCopilotDrawer />}
       <Toaster
         position="top-right"

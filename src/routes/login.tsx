@@ -319,19 +319,19 @@ function LoginPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4">
-      <div className="w-full max-w-sm overflow-hidden rounded-2xl border border-border bg-card p-8 shadow-elevated">
+    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-background via-card/30 to-primary/5 px-4 py-12">
+      <div className="w-full max-w-md overflow-hidden rounded-3xl border border-border/80 bg-card p-6 sm:p-10 shadow-card card-interactive">
         <div className="mb-8 flex flex-col items-center text-center">
-          <div className="mb-4 grid size-12 place-items-center rounded-xl bg-primary/10 text-primary">
-            <Store className="size-6" />
+          <div className="mb-4 grid size-14 place-items-center rounded-2xl bg-gradient-to-br from-primary/20 via-primary/10 to-accent/20 text-primary border border-primary/20 shadow-soft">
+            <Store className="size-7" />
           </div>
-          <h1 className="text-2xl font-bold tracking-tight">NexisPOS SaaS</h1>
-          <p className="text-sm text-muted-foreground">
+          <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-foreground">NexisPOS SaaS</h1>
+          <p className="text-xs sm:text-sm text-muted-foreground mt-1 font-medium">
             {mode === "otp"
-              ? "Sign in with OTP"
+              ? "Sign in with OTP / Mobile"
               : mode === "forgot"
                 ? "Reset your password via Email OTP"
-                : "Sign in to your store dashboard"}
+                : "Sign in to your enterprise POS store"}
           </p>
         </div>
 

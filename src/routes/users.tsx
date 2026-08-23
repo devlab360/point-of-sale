@@ -426,10 +426,10 @@ function UsersPage() {
   };
 
   return (
-    <div className="p-4 md:p-6 lg:p-8">
+    <div>
       <DataPage
-        title="Employees"
-        description="Manage your team and approve new members."
+        title="Employees & Access Control"
+        description="Manage team staff, assign granular role permissions, and approve new member signups."
         primaryAction={{
           label: "Invite Employee",
           onClick: () => {
@@ -480,7 +480,7 @@ function UsersPage() {
             </div>
             <div className="pt-4 mt-auto">
               <Button
-                className="w-full"
+                className="w-full font-bold shadow-soft"
                 onClick={() => {
                   setFilters(draftFilters);
                   close();
@@ -501,150 +501,202 @@ function UsersPage() {
             icon={Shield}
             title="No employees found"
             description={
-              search ? "Try adjusting your search." : "You haven't added any employees yet."
+              search ? "Try adjusting your search query." : "You haven't added any team members yet."
             }
             actionLabel="Invite Employee"
             onAction={() => setIsInviteOpen(true)}
           />
         ) : (
           <div className="space-y-4">
-            <div className="overflow-hidden rounded-xl border border-border bg-card shadow-soft">
-              <div className="overflow-hidden rounded-xl border border-border bg-card shadow-soft">
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left text-sm min-w-[800px]">
-                    <thead className="bg-muted/50 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                      <tr>
-                        <th className="px-4 py-3 whitespace-nowrap">Employee</th>
-                        <th className="px-4 py-3 whitespace-nowrap">Role</th>
-                        <th className="px-4 py-3 whitespace-nowrap">Permissions</th>
-                        <th className="px-4 py-3 whitespace-nowrap">Last Active</th>
-                        <th className="px-4 py-3 whitespace-nowrap">Status</th>
-                        <th className="px-4 py-3 text-right whitespace-nowrap">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-border">
-                      {paginatedUsers.map((e) => (
-                        <tr key={e.id} className="hover:bg-muted/30">
-                          <td className="px-4 py-3 whitespace-nowrap">
-                            <div className="flex items-center gap-3">
-                              <div className="grid size-9 place-items-center rounded-full bg-gradient-to-br from-primary to-info text-xs font-bold text-primary-foreground">
-                                {e.name
-                                  .split(" ")
-                                  .map((n) => n[0])
-                                  .join("")
-                                  .slice(0, 2)}
-                              </div>
-                              <div>
-                                <div className="font-semibold">{e.name}</div>
-                                <div className="text-xs text-muted-foreground">{e.email}</div>
-                              </div>
+            <div className="overflow-hidden rounded-2xl border border-border/80 bg-card shadow-card">
+              {/* Desktop Table */}
+              <div className="table-desktop overflow-x-auto">
+                <table className="w-full text-left text-sm min-w-[800px]">
+                  <thead className="border-b border-border/80 bg-muted/40 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                    <tr>
+                      <th className="px-5 py-3 whitespace-nowrap">Employee</th>
+                      <th className="px-5 py-3 whitespace-nowrap">Role</th>
+                      <th className="px-5 py-3 whitespace-nowrap">Access Permissions</th>
+                      <th className="px-5 py-3 whitespace-nowrap">Last Active</th>
+                      <th className="px-5 py-3 whitespace-nowrap">Status</th>
+                      <th className="px-5 py-3 text-right whitespace-nowrap">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border/60">
+                    {paginatedUsers.map((e) => (
+                      <tr key={e.id} className="hover:bg-muted/30 transition-colors">
+                        <td className="px-5 py-3 whitespace-nowrap">
+                          <div className="flex items-center gap-3">
+                            <div className="grid size-10 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-primary/20 via-primary/10 to-accent/20 text-xs font-black text-primary border border-primary/20">
+                              {e.name
+                                .split(" ")
+                                .map((n: string) => n[0])
+                                .join("")
+                                .slice(0, 2)
+                                .toUpperCase()}
                             </div>
-                          </td>
-                          <td className="px-4 py-3 whitespace-nowrap">
-                            <Badge variant="secondary" className="capitalize">
-                              <Shield className="mr-1 size-3" />
-                              {e.role}
-                            </Badge>
-                          </td>
-                          <td className="px-4 py-3 whitespace-nowrap">
-                            <div className="flex flex-wrap gap-1 max-w-[220px]">
-                              {(e.permissions || DEFAULT_ROLE_PERMISSIONS[e.role?.toLowerCase()] || []).length >=
-                              allSelectableUserRoutes.length ? (
-                                <Badge
-                                  variant="outline"
-                                  className="bg-primary/10 text-primary border-primary/20 text-[10px]"
-                                >
-                                  Full Access
-                                </Badge>
-                              ) : (
-                                (e.permissions || DEFAULT_ROLE_PERMISSIONS[e.role?.toLowerCase()] || [])
-                                  .slice(0, 3)
-                                  .map((p: string) => (
-                                    <Badge
-                                      key={p}
-                                      variant="outline"
-                                      className="text-[10px] uppercase font-mono"
-                                    >
-                                      {p.replace(/^\//, "").replace(/-/g, " ")}
-                                    </Badge>
-                                  ))
-                              )}
-                              {(e.permissions || DEFAULT_ROLE_PERMISSIONS[e.role?.toLowerCase()] || []).length >
-                                3 &&
-                                (e.permissions || DEFAULT_ROLE_PERMISSIONS[e.role?.toLowerCase()] || []).length <
-                                  allSelectableUserRoutes.length && (
-                                  <span className="text-[10px] text-muted-foreground self-center">
-                                    +
-                                    {(e.permissions || DEFAULT_ROLE_PERMISSIONS[e.role?.toLowerCase()] || [])
-                                      .length - 3}{" "}
-                                    more
-                                  </span>
-                                )}
+                            <div>
+                              <div className="font-bold text-foreground text-xs sm:text-sm">{e.name}</div>
+                              <div className="text-[11px] text-muted-foreground font-medium">{e.email}</div>
                             </div>
-                          </td>
-                          <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">
-                            {e.lastActive ? formatAppDate(e.lastActive, "datetime") : "Never"}
-                          </td>
-                          <td className="px-4 py-3 whitespace-nowrap">
-                            <Badge
-                              className={
-                                e.status === "active"
-                                  ? "bg-success/10 text-success hover:bg-success/15"
-                                  : e.status === "pending"
-                                    ? "bg-warning/15 text-warning-foreground hover:bg-warning/20"
-                                    : "bg-destructive/15 text-destructive hover:bg-destructive/20"
-                              }
-                            >
-                              {e.status}
-                            </Badge>
-                          </td>
-                          <td className="px-4 py-3 text-right whitespace-nowrap">
-                            <div className="flex justify-end items-center gap-2">
-                              {e.status === "pending" && (
-                                <Button
-                                  size="sm"
-                                  onClick={() => handleApprove(e.id)}
-                                  className="h-8"
-                                  disabled={approvingId === e.id}
-                                >
-                                  {approvingId === e.id ? (
-                                    <Loader2 className="size-4 mr-1 animate-spin" />
-                                  ) : (
-                                    <CheckCircle2 className="size-4 mr-1" />
-                                  )}
-                                  Approve
-                                </Button>
-                              )}
-                              <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                  <Button variant="ghost" size="icon" className="size-8">
-                                    <MoreVertical className="size-4 text-muted-foreground" />
-                                  </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end">
-                                  <DropdownMenuItem onClick={() => openEditModal(e)}>
-                                    <Edit2 className="mr-2 size-4" /> Edit & Permissions
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem
-                                    className="text-destructive focus:bg-destructive/10 focus:text-destructive"
-                                    onClick={() => setDeleteId(e.id)}
+                          </div>
+                        </td>
+                        <td className="px-5 py-3 whitespace-nowrap">
+                          <Badge variant="secondary" className="capitalize text-xs font-bold py-0.5">
+                            <Shield className="mr-1 size-3 text-primary" />
+                            {e.role}
+                          </Badge>
+                        </td>
+                        <td className="px-5 py-3 whitespace-nowrap">
+                          <div className="flex flex-wrap gap-1 max-w-[220px]">
+                            {(e.permissions || DEFAULT_ROLE_PERMISSIONS[e.role?.toLowerCase()] || []).length >=
+                            allSelectableUserRoutes.length ? (
+                              <Badge
+                                variant="outline"
+                                className="bg-primary/10 text-primary border-primary/20 text-[10px] font-bold"
+                              >
+                                Full Access
+                              </Badge>
+                            ) : (
+                              (e.permissions || DEFAULT_ROLE_PERMISSIONS[e.role?.toLowerCase()] || [])
+                                .slice(0, 3)
+                                .map((p: string) => (
+                                  <Badge
+                                    key={p}
+                                    variant="outline"
+                                    className="text-[10px] uppercase font-mono bg-muted/30"
                                   >
-                                    <Trash2 className="mr-2 size-4" /> Delete
-                                  </DropdownMenuItem>
-                                </DropdownMenuContent>
-                              </DropdownMenu>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                                    {p.replace(/^\//, "").replace(/-/g, " ")}
+                                  </Badge>
+                                ))
+                            )}
+                            {(e.permissions || DEFAULT_ROLE_PERMISSIONS[e.role?.toLowerCase()] || []).length >
+                              3 &&
+                              (e.permissions || DEFAULT_ROLE_PERMISSIONS[e.role?.toLowerCase()] || []).length <
+                                allSelectableUserRoutes.length && (
+                                <span className="text-[10px] text-muted-foreground font-semibold self-center">
+                                  +
+                                  {(e.permissions || DEFAULT_ROLE_PERMISSIONS[e.role?.toLowerCase()] || [])
+                                    .length - 3}{" "}
+                                  more
+                                </span>
+                              )}
+                          </div>
+                        </td>
+                        <td className="px-5 py-3 text-xs text-muted-foreground whitespace-nowrap font-medium">
+                          {e.lastActive ? formatAppDate(e.lastActive, "datetime") : "Never"}
+                        </td>
+                        <td className="px-5 py-3 whitespace-nowrap">
+                          <Badge
+                            className={
+                              e.status === "active"
+                                ? "bg-success/12 text-success hover:bg-success/20 border-success/20 text-[10px] font-bold"
+                                : e.status === "pending"
+                                  ? "bg-warning/15 text-warning-foreground hover:bg-warning/20 border-warning/20 text-[10px] font-bold"
+                                  : "bg-destructive/12 text-destructive hover:bg-destructive/20 border-destructive/20 text-[10px] font-bold"
+                            }
+                          >
+                            {e.status}
+                          </Badge>
+                        </td>
+                        <td className="px-5 py-3 text-right whitespace-nowrap">
+                          <div className="flex justify-end items-center gap-1.5">
+                            {e.status === "pending" && (
+                              <Button
+                                size="sm"
+                                onClick={() => handleApprove(e.id)}
+                                className="h-8 font-bold text-xs"
+                                disabled={approvingId === e.id}
+                              >
+                                {approvingId === e.id ? (
+                                  <Loader2 className="size-3.5 mr-1 animate-spin" />
+                                ) : (
+                                  <CheckCircle2 className="size-3.5 mr-1" />
+                                )}
+                                Approve
+                              </Button>
+                            )}
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon" className="size-8 rounded-lg">
+                                  <MoreVertical className="size-4 text-muted-foreground" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end" className="rounded-xl">
+                                <DropdownMenuItem onClick={() => openEditModal(e)} className="text-xs font-semibold">
+                                  <Edit2 className="mr-2 size-3.5" /> Edit & Permissions
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  className="text-destructive text-xs font-semibold"
+                                  onClick={() => setDeleteId(e.id)}
+                                >
+                                  <Trash2 className="mr-2 size-3.5" /> Delete Employee
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Mobile Card Feed (< 768px) */}
+              <div className="table-mobile-cards p-3 space-y-2.5">
+                {paginatedUsers.map((e) => (
+                  <div
+                    key={e.id}
+                    className="flex items-center justify-between rounded-xl border border-border/80 bg-card p-3 shadow-sm card-interactive"
+                  >
+                    <div className="flex items-center gap-3 min-w-0 flex-1">
+                      <div className="grid size-10 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-primary/20 to-accent/20 text-xs font-black text-primary border border-primary/20">
+                        {e.name
+                          .split(" ")
+                          .map((n: string) => n[0])
+                          .join("")
+                          .slice(0, 2)
+                          .toUpperCase()}
+                      </div>
+                      <div className="min-w-0 truncate">
+                        <div className="flex items-center gap-2">
+                          <p className="text-xs sm:text-sm font-bold text-foreground truncate">{e.name}</p>
+                          <Badge
+                            className={`text-[9px] font-bold py-0 ${
+                              e.status === "active" ? "bg-success/12 text-success" :
+                              e.status === "pending" ? "bg-warning/15 text-warning-foreground" : "bg-destructive/12 text-destructive"
+                            }`}
+                          >
+                            {e.status}
+                          </Badge>
+                        </div>
+                        <p className="text-[11px] text-muted-foreground truncate">{e.email}</p>
+                        <p className="text-[10px] text-primary capitalize font-bold mt-0.5">Role: {e.role}</p>
+                      </div>
+                    </div>
+
+                    <div className="shrink-0 pl-2">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="size-8 rounded-lg"
+                        onClick={() => openEditModal(e)}
+                      >
+                        <Edit2 className="size-3.5 text-muted-foreground" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="border-t border-border/60 p-2 sm:p-3">
                 <PaginationControls
                   currentPage={page}
                   totalPages={totalPages}
-                  onPageChange={setPage}
+                  pageSize={itemsPerPage}
                   totalItems={users.length}
+                  onPageChange={setPage}
+                  onPageSizeChange={() => {}}
                 />
               </div>
             </div>

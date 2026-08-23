@@ -78,7 +78,7 @@ export function DataPage({
   );
 
   return (
-    <div className="space-y-6">
+    <div className="page-container space-y-5">
       {!hideHeader && title && (
         <PageHeader title={title} description={description} actions={actionsContent} />
       )}

@@ -131,7 +131,7 @@ function AdjustmentsPage() {
   };
 
   return (
-    <div className="space-y-6 p-4 md:p-6 lg:p-8">
+    <div className="page-container space-y-5">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-[26px]">
@@ -217,59 +217,92 @@ function AdjustmentsPage() {
         />
       ) : (
         <div className="space-y-4">
-          <div className="overflow-hidden rounded-xl border border-border bg-card shadow-soft">
-            <div className="overflow-hidden rounded-xl border border-border bg-card shadow-soft">
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-sm">
-                  <thead className="bg-muted/50 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                    <tr>
-                      <th className="px-4 py-3 whitespace-nowrap">Ref</th>
-                      <th className="px-4 py-3 whitespace-nowrap">Date</th>
-                      <th className="px-4 py-3 whitespace-nowrap">Reason</th>
-                      <th className="px-4 py-3 whitespace-nowrap">Items</th>
-                      <th className="px-4 py-3 text-right whitespace-nowrap">Net change</th>
-                      <th className="px-4 py-3 whitespace-nowrap">Status</th>
+          <div className="overflow-hidden rounded-2xl border border-border/80 bg-card shadow-card">
+            {/* Desktop Table */}
+            <div className="table-desktop overflow-x-auto">
+              <table className="w-full text-left text-sm min-w-[700px]">
+                <thead className="border-b border-border/80 bg-muted/40 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                  <tr>
+                    <th className="px-5 py-3 whitespace-nowrap">Ref Number</th>
+                    <th className="px-5 py-3 whitespace-nowrap">Audit Date</th>
+                    <th className="px-5 py-3 whitespace-nowrap">Adjustment Reason</th>
+                    <th className="px-5 py-3 whitespace-nowrap">SKU Affected</th>
+                    <th className="px-5 py-3 text-right whitespace-nowrap">Net Quantity Delta</th>
+                    <th className="px-5 py-3 whitespace-nowrap">Status</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border/60">
+                  {paginatedAdjustments.map((r) => (
+                    <tr key={r.ref} className="hover:bg-muted/30 transition-colors">
+                      <td className="px-5 py-3 font-mono text-xs font-bold text-foreground whitespace-nowrap">{r.ref}</td>
+                      <td className="px-5 py-3 text-muted-foreground whitespace-nowrap text-xs">
+                        {formatAppDate(r.date)}
+                      </td>
+                      <td className="px-5 py-3 font-semibold text-foreground whitespace-nowrap">{r.reason}</td>
+                      <td className="px-5 py-3 text-muted-foreground whitespace-nowrap text-xs font-medium">
+                        {r.items}
+                      </td>
+                      <td
+                        className={cn(
+                          "number px-5 py-3 text-right font-black whitespace-nowrap text-sm",
+                          r.net < 0 ? "text-destructive" : "text-success",
+                        )}
+                      >
+                        {r.net > 0 ? `+${r.net}` : r.net}
+                      </td>
+                      <td className="px-5 py-3 whitespace-nowrap">
+                        <Badge className="bg-success/12 text-success hover:bg-success/20 border-success/20 text-[10px] font-bold">
+                          {r.status || "Completed"}
+                        </Badge>
+                      </td>
                     </tr>
-                  </thead>
-                  <tbody className="divide-y divide-border">
-                    {paginatedAdjustments.map((r) => (
-                      <tr key={r.ref} className="hover:bg-muted/30">
-                        <td className="px-4 py-3 font-mono text-xs whitespace-nowrap">{r.ref}</td>
-                        <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">
-                          {formatAppDate(r.date)}
-                        </td>
-                        <td className="px-4 py-3 whitespace-nowrap">{r.reason}</td>
-                        <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">
-                          {r.items}
-                        </td>
-                        <td
-                          className={cn(
-                            "number px-4 py-3 text-right font-semibold whitespace-nowrap",
-                            r.net < 0 ? "text-destructive" : "text-success",
-                          )}
-                        >
-                          {r.net > 0 ? "+" : ""}
-                          {r.net}
-                        </td>
-                        <td className="px-4 py-3 whitespace-nowrap">
-                          <Badge className="bg-success/10 text-success hover:bg-success/15">
-                            {r.status}
-                          </Badge>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-              <PaginationControls
-                currentPage={page}
-                totalPages={totalPages}
-                pageSize={pageSize}
-                onPageChange={setPage}
-                onPageSizeChange={setPageSize}
-                totalItems={filteredAdjustments.length}
-              />
+                  ))}
+                </tbody>
+              </table>
             </div>
+
+            {/* Mobile Card Feed (< 768px) */}
+            <div className="table-mobile-cards p-3 space-y-2.5">
+              {paginatedAdjustments.map((r) => (
+                <div
+                  key={r.ref}
+                  className="flex items-center justify-between rounded-xl border border-border/80 bg-card p-3 shadow-sm card-interactive"
+                >
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono text-xs font-bold text-foreground">{r.ref}</span>
+                      <span className="text-[10px] text-muted-foreground">{formatAppDate(r.date)}</span>
+                    </div>
+                    <p className="text-xs font-bold text-foreground mt-0.5">{r.reason}</p>
+                    <p className="text-[11px] text-muted-foreground mt-0.5">{r.items}</p>
+                  </div>
+                  <div className="text-right shrink-0 pl-2">
+                    <div
+                      className={cn(
+                        "number text-sm font-black",
+                        r.net < 0 ? "text-destructive" : "text-success",
+                      )}
+                    >
+                      {r.net > 0 ? `+${r.net}` : r.net}
+                    </div>
+                    <span className="text-[9px] font-bold text-muted-foreground uppercase">units</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {filteredAdjustments.length > 0 && (
+              <div className="border-t border-border/60 p-2 sm:p-3">
+                <PaginationControls
+                  currentPage={page}
+                  totalPages={totalPages}
+                  pageSize={pageSize}
+                  onPageChange={setPage}
+                  onPageSizeChange={setPageSize}
+                  totalItems={filteredAdjustments.length}
+                />
+              </div>
+            )}
           </div>
         </div>
       )}

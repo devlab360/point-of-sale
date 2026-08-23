@@ -322,12 +322,13 @@ export function AppHeader() {
   };
 
   return (
-    <header className="sticky top-0 z-30 flex h-16 shrink-0 items-center gap-3 border-b border-border bg-background/80 px-4 backdrop-blur-md md:px-6">
+    <header className="sticky top-0 z-30 flex h-14 md:h-16 shrink-0 items-center gap-2 md:gap-3 border-b border-border bg-background/80 px-3 md:px-4 backdrop-blur-xl lg:px-6">
+      {/* Hamburger: hidden on mobile (bottom nav), shown on tablet (md-lg), hidden on desktop (sidebar) */}
       <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
         <Button
           variant="ghost"
           size="icon"
-          className="lg:hidden"
+          className="hidden md:flex lg:hidden"
           onClick={() => setMobileOpen(true)}
           aria-label="Open menu"
         >
@@ -338,6 +339,10 @@ export function AppHeader() {
           <AppSidebar onNavigate={() => setMobileOpen(false)} />
         </SheetContent>
       </Sheet>
+      {/* Mobile page title — shown on small screens where breadcrumbs are hidden */}
+      <span className="flex-1 truncate text-sm font-semibold text-foreground md:hidden">
+        {crumbs[crumbs.length - 1]?.label || "Dashboard"}
+      </span>
 
       <nav aria-label="Breadcrumb" className="hidden min-w-0 flex-1 items-center md:flex">
         <ol className="flex items-center gap-1.5 text-sm">
@@ -347,7 +352,7 @@ export function AppHeader() {
               {i === crumbs.length - 1 ? (
                 <span className="font-medium text-foreground">{c.label}</span>
               ) : (
-                <Link to={c.to} className="text-muted-foreground hover:text-foreground">
+                <Link to={c.to} className="text-muted-foreground hover:text-foreground transition-colors">
                   {c.label}
                 </Link>
               )}

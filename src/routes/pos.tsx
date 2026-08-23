@@ -432,40 +432,82 @@ function PosScreen() {
     );
   }
 
+  const cartItemCount = state.cart.reduce((s: any, i: any) => s + (Number(i.qty) || 1), 0);
+
   return (
     <>
-      <div className="md:hidden flex bg-card border-b border-border sticky top-0 z-10">
+      {/* Mobile Top Navigation Tabs */}
+      <div className="md:hidden flex bg-card/95 border-b border-border/80 sticky top-0 z-20 backdrop-blur-md px-3 py-1.5 gap-2">
         <button
+          type="button"
           onClick={() => setMobileTab("products")}
           className={cn(
-            "flex-1 py-3 text-sm font-bold text-center border-b-2 transition-colors",
+            "flex-1 py-2 text-xs font-extrabold text-center rounded-xl transition-all",
             mobileTab === "products"
-              ? "border-primary text-primary"
-              : "border-transparent text-muted-foreground",
+              ? "bg-primary text-primary-foreground shadow-sm"
+              : "bg-muted/40 text-muted-foreground hover:bg-muted hover:text-foreground",
           )}
         >
-          Products
+          Catalog Feed
         </button>
         <button
+          type="button"
           onClick={() => setMobileTab("cart")}
           className={cn(
-            "flex-1 py-3 text-sm font-bold text-center border-b-2 transition-colors",
+            "flex-1 py-2 text-xs font-extrabold text-center rounded-xl transition-all flex items-center justify-center gap-1.5",
             mobileTab === "cart"
-              ? "border-primary text-primary"
-              : "border-transparent text-muted-foreground",
+              ? "bg-primary text-primary-foreground shadow-sm"
+              : "bg-muted/40 text-muted-foreground hover:bg-muted hover:text-foreground",
           )}
         >
-          Cart ({state.cart.reduce((s: any, i: any) => s + i.qty, 0)})
+          <span>Order Cart</span>
+          {cartItemCount > 0 && (
+            <span
+              className={cn(
+                "rounded-full px-1.5 py-0.2 text-[10px] font-black",
+                mobileTab === "cart"
+                  ? "bg-primary-foreground/20 text-primary-foreground"
+                  : "bg-primary text-primary-foreground",
+              )}
+            >
+              {cartItemCount}
+            </span>
+          )}
         </button>
       </div>
 
-      <div className="print:hidden flex h-[calc(100vh-7rem)] md:h-[calc(100vh-4rem)] flex-col md:flex-row overflow-hidden">
+      {/* Main Responsive Split Layout */}
+      <div className="print:hidden flex h-[calc(100vh-6.5rem)] md:h-[calc(100vh-4rem)] flex-col md:flex-row overflow-hidden relative">
         <ProductGrid state={state} />
+
+        {/* Resizable Divider Handle for Desktop */}
         <div
-          className="hidden md:block w-1.5 cursor-col-resize hover:bg-primary/50 active:bg-primary z-10 transition-colors bg-border/50"
+          className="hidden md:block w-1.5 cursor-col-resize hover:bg-primary/50 active:bg-primary z-10 transition-colors bg-border/60 hover:w-2"
           onMouseDown={handleStartResizing}
+          title="Drag to resize cart panel"
         />
-        <CartPanel state={state} />
+
+        <CartPanel state={state} onCheckout={handleCheckout} />
+
+        {/* Floating Mobile Cart Summary Pill (Shown when looking at Catalog on mobile with items in cart) */}
+        {mobileTab === "products" && cartItemCount > 0 && (
+          <div className="fixed bottom-16 inset-x-3 z-30 md:hidden animate-in fade-in slide-in-from-bottom-4 duration-200">
+            <button
+              onClick={() => setMobileTab("cart")}
+              className="w-full flex items-center justify-between bg-primary text-primary-foreground rounded-2xl p-3.5 shadow-elevated font-bold text-xs"
+            >
+              <div className="flex items-center gap-2">
+                <span className="grid size-6 place-items-center rounded-full bg-primary-foreground/20 text-[11px] font-black">
+                  {cartItemCount}
+                </span>
+                <span>View Order & Checkout</span>
+              </div>
+              <div className="number text-sm font-black tracking-tight">
+                {state.formatCurrency(state.total)} →
+              </div>
+            </button>
+          </div>
+        )}
       </div>
 
       <PosDialogs state={state} onCheckout={handleCheckout} onResumeInvoice={resumeInvoice} />

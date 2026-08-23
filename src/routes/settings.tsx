@@ -419,7 +419,7 @@ function SettingsPage() {
 
   if (isSettingsLoading) {
     return (
-      <div className="p-4 md:p-6 lg:p-8">
+      <div className="page-container">
         <SettingsSkeleton />
       </div>
     );
@@ -427,7 +427,7 @@ function SettingsPage() {
 
   if (isSettingsError && !dbSettings) {
     return (
-      <div className="p-4 md:p-6 lg:p-8">
+      <div className="page-container">
         <ErrorState
           onRetry={refetchSettings}
           title="Failed to load settings"
@@ -467,48 +467,48 @@ function SettingsPage() {
         value={activeTab}
         onValueChange={setActiveTab}
         orientation="horizontal"
-        className="flex flex-col gap-6 w-full"
+        className="flex flex-col gap-6 w-full border-none"
       >
-        <TabsList className="flex flex-row overflow-x-auto h-auto w-full bg-transparent space-x-2 space-y-0 p-0 justify-start items-center border-b border-border pb-3 scrollbar-hide">
+        <TabsList className="flex flex-row overflow-x-auto h-auto w-full bg-muted/40 p-1 rounded-lg gap-1 justify-start items-center border-0 scrollbar-hide">
           <TabsTrigger
             value="store"
-            className="shrink-0 justify-start rounded-lg px-4 py-2.5 text-sm font-medium data-[state=active]:bg-muted data-[state=active]:text-foreground text-muted-foreground hover:bg-muted/50"
+            className="shrink-0 justify-start rounded-md px-3.5 py-2 text-xs sm:text-sm font-semibold data-[state=active]:bg-primary/15 data-[state=active]:text-primary data-[state=active]:font-bold data-[state=active]:shadow-xs text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all border-0"
           >
-            Store Information
+            Store Info
           </TabsTrigger>
           <TabsTrigger
             value="security"
-            className="shrink-0 justify-start rounded-lg px-4 py-2.5 text-sm font-medium data-[state=active]:bg-muted data-[state=active]:text-foreground text-muted-foreground hover:bg-muted/50"
+            className="shrink-0 justify-start rounded-md px-3.5 py-2 text-xs sm:text-sm font-semibold data-[state=active]:bg-primary/15 data-[state=active]:text-primary data-[state=active]:font-bold data-[state=active]:shadow-xs text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all border-0"
           >
-            Security & Password
+            Security & PIN
           </TabsTrigger>
           <TabsTrigger
             value="billing"
-            className="shrink-0 justify-start rounded-lg px-4 py-2.5 text-sm font-medium data-[state=active]:bg-muted data-[state=active]:text-foreground text-muted-foreground hover:bg-muted/50 relative"
+            className="shrink-0 justify-start rounded-md px-3.5 py-2 text-xs sm:text-sm font-semibold data-[state=active]:bg-primary/15 data-[state=active]:text-primary data-[state=active]:font-bold data-[state=active]:shadow-xs text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all relative border-0"
           >
-            Billing
+            Billing & Plan
             {isTrialExpired && subscriptionStatus !== "active" && (
-              <span className="absolute top-1 right-1 size-2 rounded-full bg-destructive animate-pulse" />
+              <span className="absolute top-1.5 right-1.5 size-2 rounded-full bg-destructive animate-pulse" />
             )}
           </TabsTrigger>
           <TabsTrigger
             value="tax"
-            className="shrink-0 justify-start rounded-lg px-4 py-2.5 text-sm font-medium data-[state=active]:bg-muted data-[state=active]:text-foreground text-muted-foreground hover:bg-muted/50"
+            className="shrink-0 justify-start rounded-md px-3.5 py-2 text-xs sm:text-sm font-semibold data-[state=active]:bg-primary/15 data-[state=active]:text-primary data-[state=active]:font-bold data-[state=active]:shadow-xs text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all border-0"
           >
-            Taxes
+            Taxes & GST
           </TabsTrigger>
           <TabsTrigger
             value="receipt"
-            className="shrink-0 justify-start rounded-lg px-4 py-2.5 text-sm font-medium data-[state=active]:bg-muted data-[state=active]:text-foreground text-muted-foreground hover:bg-muted/50"
+            className="shrink-0 justify-start rounded-md px-3.5 py-2 text-xs sm:text-sm font-semibold data-[state=active]:bg-primary/15 data-[state=active]:text-primary data-[state=active]:font-bold data-[state=active]:shadow-xs text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all border-0"
           >
-            Receipts
+            Receipt Designer
           </TabsTrigger>
           <TabsTrigger
             value="locations"
-            className="shrink-0 justify-start rounded-lg px-4 py-2.5 text-sm font-medium data-[state=active]:bg-muted data-[state=active]:text-foreground text-muted-foreground hover:bg-muted/50"
+            className="shrink-0 justify-start rounded-md px-3.5 py-2 text-xs sm:text-sm font-semibold data-[state=active]:bg-primary/15 data-[state=active]:text-primary data-[state=active]:font-bold data-[state=active]:shadow-xs text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all border-0"
           >
             <MapPin className="size-3.5 mr-1.5" />
-            Locations
+            Multi-Location
           </TabsTrigger>
         </TabsList>
 
@@ -1707,7 +1707,6 @@ function LocationsTab() {
 }
 
 function Card({
-
   title,
   desc,
   headerRight,
@@ -1719,11 +1718,11 @@ function Card({
   children: React.ReactNode;
 }) {
   return (
-    <section className="rounded-xl border border-border bg-card p-5 shadow-soft flex flex-col h-full">
-      <header className="mb-4 border-b border-border pb-3 flex justify-between items-start gap-4">
+    <section className="rounded-2xl border border-border/80 bg-card p-5 sm:p-6 shadow-card flex flex-col h-full">
+      <header className="mb-5 border-b border-border/60 pb-3.5 flex justify-between items-start gap-4">
         <div>
-          <h2 className="text-base font-semibold">{title}</h2>
-          <p className="text-xs text-muted-foreground">{desc}</p>
+          <h2 className="text-base font-bold text-foreground">{title}</h2>
+          <p className="text-xs text-muted-foreground mt-0.5">{desc}</p>
         </div>
         {headerRight && <div>{headerRight}</div>}
       </header>
@@ -1731,6 +1730,7 @@ function Card({
     </section>
   );
 }
+
 function Field({
   label,
   full,
@@ -1742,11 +1742,12 @@ function Field({
 }) {
   return (
     <label className={`block ${full ? "sm:col-span-2" : ""}`}>
-      <span className="mb-1.5 block text-xs font-semibold text-muted-foreground">{label}</span>
+      <span className="mb-1.5 block text-xs font-bold text-foreground">{label}</span>
       {children}
     </label>
   );
 }
+
 function ToggleRow({
   label,
   on,
@@ -1758,15 +1759,15 @@ function ToggleRow({
 }) {
   return (
     <div
-      className="flex items-center justify-between rounded-lg bg-muted/40 px-3 py-2.5 sm:col-span-2 cursor-pointer"
+      className="flex items-center justify-between rounded-xl border border-border/60 bg-muted/20 hover:bg-muted/40 transition-colors px-4 py-3 sm:col-span-2 cursor-pointer card-interactive"
       onClick={onChange}
     >
-      <span className="text-sm font-medium">{label}</span>
+      <span className="text-xs sm:text-sm font-bold text-foreground">{label}</span>
       <span
-        className={`relative h-5 w-9 rounded-full ${on ? "bg-primary" : "bg-muted-foreground/30"}`}
+        className={`relative h-5 w-9 rounded-full transition-colors ${on ? "bg-primary" : "bg-muted-foreground/30"}`}
       >
         <span
-          className={`absolute top-0.5 size-4 rounded-full bg-white transition-all ${on ? "left-4" : "left-0.5"}`}
+          className={`absolute top-0.5 size-4 rounded-full bg-white shadow-sm transition-all ${on ? "left-4" : "left-0.5"}`}
         />
       </span>
     </div>

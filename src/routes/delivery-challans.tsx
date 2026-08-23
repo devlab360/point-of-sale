@@ -403,80 +403,121 @@ function DeliveryChallansPage() {
           />
         ) : (
           <div className="space-y-4">
-            <div className="overflow-hidden rounded-xl border border-border bg-card shadow-soft">
-              <div className="overflow-hidden rounded-xl border border-border bg-card shadow-soft">
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left text-sm min-w-[700px]">
-                    <thead className="bg-muted/50 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                      <tr>
-                        <th className="px-4 py-3 whitespace-nowrap">Challan #</th>
-                        <th className="px-4 py-3 whitespace-nowrap">Customer</th>
-                        <th className="px-4 py-3 whitespace-nowrap">Date</th>
-                        <th className="px-4 py-3 whitespace-nowrap">Transport / Vehicle</th>
-                        <th className="px-4 py-3 whitespace-nowrap">Status</th>
-                        <th className="px-4 py-3 text-right whitespace-nowrap">Actions</th>
+            <div className="overflow-hidden rounded-2xl border border-border/80 bg-card shadow-card">
+              {/* Desktop Table View */}
+              <div className="table-desktop overflow-x-auto">
+                <table className="w-full text-left text-sm min-w-[700px]">
+                  <thead className="border-b border-border/80 bg-muted/40 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                    <tr>
+                      <th className="px-5 py-3 whitespace-nowrap">Challan #</th>
+                      <th className="px-5 py-3 whitespace-nowrap">Customer Name</th>
+                      <th className="px-5 py-3 whitespace-nowrap">Dispatch Date</th>
+                      <th className="px-5 py-3 whitespace-nowrap">Transport / Vehicle</th>
+                      <th className="px-5 py-3 whitespace-nowrap">Status</th>
+                      <th className="px-5 py-3 text-right whitespace-nowrap">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border/60">
+                    {paginated.map((c) => (
+                      <tr key={c.id} className="hover:bg-muted/30 transition-colors">
+                        <td className="px-5 py-3 font-mono font-bold text-primary whitespace-nowrap cursor-pointer hover:underline" onClick={() => setViewItem(c)}>
+                          {c.challanNo}
+                        </td>
+                        <td className="px-5 py-3 font-bold text-foreground whitespace-nowrap">
+                          {c.customerName}
+                        </td>
+                        <td className="px-5 py-3 text-xs text-muted-foreground whitespace-nowrap">
+                          {formatDate(c.date)}
+                        </td>
+                        <td className="px-5 py-3 text-xs whitespace-nowrap font-medium text-muted-foreground">
+                          {c.transportName
+                            ? `${c.transportName} (${c.vehicleNo || "N/A"})`
+                            : "Self / Local Dispatch"}
+                        </td>
+                        <td className="px-5 py-3 whitespace-nowrap">
+                          {c.status === "invoiced" ? (
+                            <Badge className="bg-success/12 text-success border-success/25 text-[10px] font-bold">
+                              Invoiced
+                            </Badge>
+                          ) : (
+                            <Badge className="bg-warning/15 text-warning-foreground border-warning/25 text-[10px] font-bold">
+                              Dispatched / Out
+                            </Badge>
+                          )}
+                        </td>
+                        <td className="px-5 py-3 text-right">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon" className="size-8 rounded-lg">
+                                <MoreVertical className="size-4 text-muted-foreground" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="rounded-xl">
+                              <DropdownMenuItem onClick={() => setViewItem(c)} className="text-xs font-semibold">
+                                <Truck className="mr-2 size-3.5 text-primary" /> View / Print Slip
+                              </DropdownMenuItem>
+                              {c.status !== "invoiced" && (
+                                <DropdownMenuItem onClick={() => convertChallanToInvoice(c)} className="text-xs font-bold text-success">
+                                  <ArrowRightLeft className="mr-2 size-3.5" /> Convert to Invoice
+                                </DropdownMenuItem>
+                              )}
+                              <DropdownMenuItem
+                                className="text-destructive text-xs font-semibold"
+                                onClick={() => deleteChallan(c.id)}
+                              >
+                                <Trash2 className="mr-2 size-3.5" /> Delete
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </td>
                       </tr>
-                    </thead>
-                    <tbody className="divide-y divide-border">
-                      {paginated.map((c) => (
-                        <tr key={c.id} className="hover:bg-muted/30">
-                          <td className="px-4 py-3 font-mono font-bold text-primary whitespace-nowrap">
-                            {c.challanNo}
-                          </td>
-                          <td className="px-4 py-3 font-semibold whitespace-nowrap">
-                            {c.customerName}
-                          </td>
-                          <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">
-                            {formatDate(c.date)}
-                          </td>
-                          <td className="px-4 py-3 text-xs whitespace-nowrap">
-                            {c.transportName
-                              ? `${c.transportName} (${c.vehicleNo || "N/A"})`
-                              : "Self / Local"}
-                          </td>
-                          <td className="px-4 py-3 whitespace-nowrap">
-                            {c.status === "invoiced" ? (
-                              <Badge className="bg-success/15 text-success border-success/30">
-                                Invoiced
-                              </Badge>
-                            ) : (
-                              <Badge className="bg-warning/15 text-warning-foreground border-warning/30">
-                                Delivered
-                              </Badge>
-                            )}
-                          </td>
-                          <td className="px-4 py-3 text-right">
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="icon" className="size-8">
-                                  <MoreVertical className="size-4" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                <DropdownMenuItem onClick={() => setViewItem(c)}>
-                                  <Truck className="mr-2 size-4 text-primary" /> View / Print
-                                  Challan Slip
-                                </DropdownMenuItem>
-                                {c.status !== "invoiced" && (
-                                  <DropdownMenuItem onClick={() => convertChallanToInvoice(c)}>
-                                    <ArrowRightLeft className="mr-2 size-4 text-success" /> Convert
-                                    to Invoice
-                                  </DropdownMenuItem>
-                                )}
-                                <DropdownMenuItem
-                                  className="text-destructive"
-                                  onClick={() => deleteChallan(c.id)}
-                                >
-                                  <Trash2 className="mr-2 size-4" /> Delete
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Mobile Card Feed (< 768px) */}
+              <div className="table-mobile-cards p-3 space-y-2.5">
+                {paginated.map((c) => (
+                  <div
+                    key={c.id}
+                    className="flex items-center justify-between rounded-xl border border-border/80 bg-card p-3 shadow-sm card-interactive"
+                    onClick={() => setViewItem(c)}
+                  >
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono text-xs font-bold text-primary">{c.challanNo}</span>
+                        <span className="text-[10px] text-muted-foreground">{formatDate(c.date)}</span>
+                      </div>
+                      <div className="font-bold text-xs sm:text-sm text-foreground mt-0.5 truncate">{c.customerName}</div>
+                      <p className="text-[11px] text-muted-foreground mt-0.5 truncate">
+                        {c.transportName ? `${c.transportName} · ${c.vehicleNo || "N/A"}` : "Local Dispatch"}
+                      </p>
+                    </div>
+
+                    <div className="text-right shrink-0 pl-2">
+                      {c.status === "invoiced" ? (
+                        <Badge className="bg-success/12 text-success text-[10px] font-bold">
+                          Invoiced
+                        </Badge>
+                      ) : (
+                        <Button
+                          size="sm"
+                          className="h-7 px-2 text-[11px] font-bold shadow-soft"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            convertChallanToInvoice(c);
+                          }}
+                        >
+                          Invoice →
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="border-t border-border/60 p-2 sm:p-3">
                 <PaginationControls
                   currentPage={page}
                   totalPages={totalPages}

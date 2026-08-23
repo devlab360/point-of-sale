@@ -232,7 +232,7 @@ function UnitsPage() {
   };
 
   return (
-    <div className="p-4 md:p-6 lg:p-8">
+    <div>
       <DataPage
         title="Units of Measure"
         description="Define how products are sold — piece, kilogram, litre, pack and more."
@@ -297,56 +297,97 @@ function UnitsPage() {
           />
         ) : (
           <div className="space-y-4">
-            <div className="overflow-hidden rounded-xl border border-border bg-card shadow-soft">
-              <div className="overflow-hidden rounded-xl border border-border bg-card shadow-soft">
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left text-sm">
-                    <thead className="bg-muted/50 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                      <tr>
-                        <th className="px-4 py-3 whitespace-nowrap">Unit</th>
-                        <th className="px-4 py-3 whitespace-nowrap">Short code</th>
-                        <th className="px-4 py-3 text-right whitespace-nowrap">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-border">
-                      {paginatedUnits.map((u) => (
-                        <tr key={u.id} className="hover:bg-muted/30 group">
-                          <td className="px-4 py-3 font-semibold whitespace-nowrap">{u.name}</td>
-                          <td className="px-4 py-3 font-mono text-muted-foreground whitespace-nowrap">
+            <div className="overflow-hidden rounded-2xl border border-border/80 bg-card shadow-card">
+              {/* Desktop Table View */}
+              <div className="table-desktop overflow-x-auto">
+                <table className="w-full text-left text-sm min-w-[500px]">
+                  <thead className="border-b border-border/80 bg-muted/40 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                    <tr>
+                      <th className="px-5 py-3 whitespace-nowrap">Unit Name</th>
+                      <th className="px-5 py-3 whitespace-nowrap">Short Code</th>
+                      <th className="px-5 py-3 text-right whitespace-nowrap">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border/60">
+                    {paginatedUnits.map((u) => (
+                      <tr key={u.id} className="hover:bg-muted/30 transition-colors">
+                        <td className="px-5 py-3 font-bold text-foreground whitespace-nowrap">{u.name}</td>
+                        <td className="px-5 py-3 font-mono text-xs text-muted-foreground whitespace-nowrap font-bold">
+                          <span className="rounded-md bg-muted px-2 py-0.5 border border-border/50">
                             {u.short}
-                          </td>
-                          <td className="px-4 py-3 text-right whitespace-nowrap">
-                            <div className="flex justify-end gap-1">
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="size-8"
-                                onClick={() => openEdit(u)}
-                              >
-                                <Pencil className="size-4" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="size-8 text-destructive"
-                                onClick={() => setDeleteId(u.id)}
-                              >
-                                <Trash2 className="size-4" />
-                              </Button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-                <PaginationControls
-                  currentPage={page}
-                  totalPages={totalPages}
-                  onPageChange={setPage}
-                  totalItems={units.length}
-                />
+                          </span>
+                        </td>
+                        <td className="px-5 py-3 text-right whitespace-nowrap">
+                          <div className="flex justify-end gap-1">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="size-8 rounded-lg"
+                              onClick={() => openEdit(u)}
+                            >
+                              <Pencil className="size-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="size-8 rounded-lg text-destructive hover:bg-destructive/10"
+                              onClick={() => setDeleteId(u.id)}
+                            >
+                              <Trash2 className="size-4" />
+                            </Button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
+
+              {/* Mobile Cards View (< 768px) */}
+              <div className="table-mobile-cards p-3 space-y-2.5">
+                {paginatedUnits.map((u) => (
+                  <div
+                    key={u.id}
+                    className="flex items-center justify-between rounded-xl border border-border/80 bg-card p-3 shadow-sm card-interactive"
+                  >
+                    <div>
+                      <div className="font-bold text-xs sm:text-sm text-foreground">{u.name}</div>
+                      <span className="inline-block mt-1 font-mono text-[11px] font-bold text-muted-foreground bg-muted px-2 py-0.5 rounded-md border border-border/50">
+                        {u.short}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-1 shrink-0">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="size-8 rounded-lg"
+                        onClick={() => openEdit(u)}
+                      >
+                        <Pencil className="size-3.5" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="size-8 rounded-lg text-destructive hover:bg-destructive/10"
+                        onClick={() => setDeleteId(u.id)}
+                      >
+                        <Trash2 className="size-3.5" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {units.length > 0 && (
+                <div className="border-t border-border/60 p-2 sm:p-3">
+                  <PaginationControls
+                    currentPage={page}
+                    totalPages={totalPages}
+                    onPageChange={setPage}
+                    totalItems={units.length}
+                  />
+                </div>
+              )}
             </div>
           </div>
         )}
