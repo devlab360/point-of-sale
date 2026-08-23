@@ -137,7 +137,7 @@ function StockList() {
   ).length;
 
   return (
-    <div className="page-container space-y-5">
+    <div>
       <DataPage
         title="Stock Inventory"
         description="Monitor your current stock levels and AI forecasts."

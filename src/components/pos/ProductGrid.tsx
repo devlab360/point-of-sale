@@ -1,6 +1,7 @@
 import { Search, ScanBarcode, Plus, Image as ImageIcon, MapPin, X, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -43,82 +44,151 @@ export function ProductGrid({ state }: { state: any }) {
       )}
     >
       {/* Top Controls: Search, Barcode, Store Location, Add Product */}
-      <div className="flex flex-col gap-2.5 border-b border-border/80 bg-background/95 p-3 backdrop-blur-md md:flex-row md:items-center">
-        <div className="flex flex-1 items-center gap-2">
-          {/* Product Search */}
-          <div className="relative flex-1">
-            <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-            <input
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search catalog by title, SKU, barcode..."
-              className="h-10 w-full rounded-xl border border-border/80 bg-card pl-9 pr-8 text-xs sm:text-sm font-medium transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
-            />
-            {query && (
-              <button
-                onClick={() => setQuery("")}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-0.5 rounded-full"
-              >
-                <X className="size-3.5" />
-              </button>
-            )}
-          </div>
-
-          {/* Barcode Scanner Input */}
-          <div className="relative flex-1 lg:max-w-[280px]">
-            <ScanBarcode className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-primary" />
-            <input
-              placeholder="Scan Barcode..."
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  const b = e.currentTarget.value.trim();
-                  if (b.length > 2) {
-                    const product = products.find((p: any) => p.barcode === b || p.sku === b);
-                    if (product) {
-                      if (product.stock <= 0) {
-                        toast.error(`${product.name} is out of stock`);
-                      } else {
-                        addToCart(product.id);
-                        toast.success(`Scanned: ${product.name}`);
-                      }
-                    } else {
-                      toast.error(`Barcode not found: ${b}`);
-                    }
-                  }
-                  e.currentTarget.value = "";
-                }
-              }}
-              className="h-10 w-full rounded-xl border border-primary/30 bg-primary/8 pl-9 pr-3 font-mono text-xs sm:text-sm text-foreground placeholder:text-primary/70 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 font-semibold"
-            />
-          </div>
+      <div className="flex items-center gap-1.5 sm:gap-2 border-b border-border/80 bg-background/95 p-2 sm:p-3 backdrop-blur-md">
+        {/* Product Search */}
+        <div className="relative flex-1 min-w-0">
+          <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+          <input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search products..."
+            className="h-10 w-full rounded-xl border border-border/80 bg-card pl-9 pr-8 text-xs sm:text-sm font-medium transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+          />
+          {query && (
+            <button
+              onClick={() => setQuery("")}
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-0.5 rounded-full"
+            >
+              <X className="size-3.5" />
+            </button>
+          )}
         </div>
 
-        <div className="flex items-center gap-2 shrink-0">
+        {/* Barcode Scanner - Desktop Full Input */}
+        <div className="relative hidden md:flex flex-1 lg:max-w-[280px] shrink-0">
+          <ScanBarcode className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-primary" />
+          <input
+            placeholder="Scan Barcode..."
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                const b = e.currentTarget.value.trim();
+                if (b.length > 2) {
+                  const product = products.find((p: any) => p.barcode === b || p.sku === b);
+                  if (product) {
+                    if (product.stock <= 0) {
+                      toast.error(`${product.name} is out of stock`);
+                    } else {
+                      addToCart(product.id);
+                      toast.success(`Scanned: ${product.name}`);
+                    }
+                  } else {
+                    toast.error(`Barcode not found: ${b}`);
+                  }
+                }
+                e.currentTarget.value = "";
+              }
+            }}
+            className="h-10 w-full rounded-xl border border-primary/30 bg-primary/8 pl-9 pr-3 font-mono text-xs sm:text-sm text-foreground placeholder:text-primary/70 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 font-semibold"
+          />
+        </div>
+
+        {/* Barcode Scanner - Mobile Popover Icon Button */}
+        <div className="md:hidden shrink-0">
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                size="icon"
+                className="size-10 rounded-xl border-border/80 bg-card text-muted-foreground hover:text-primary hover:bg-muted/40"
+                title="Scan Barcode"
+              >
+                <ScanBarcode className="size-4 text-primary" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-72 p-3" align="end">
+              <div className="flex flex-col gap-2">
+                <div className="flex items-center gap-1.5 text-xs font-semibold text-primary">
+                  <ScanBarcode className="size-4" />
+                  <span>Scan or Enter Barcode</span>
+                </div>
+                <input
+                  autoFocus
+                  placeholder="Scan or enter barcode / SKU..."
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      const b = e.currentTarget.value.trim();
+                      if (b.length > 2) {
+                        const product = products.find((p: any) => p.barcode === b || p.sku === b);
+                        if (product) {
+                          if (product.stock <= 0) {
+                            toast.error(`${product.name} is out of stock`);
+                          } else {
+                            addToCart(product.id);
+                            toast.success(`Scanned: ${product.name}`);
+                          }
+                        } else {
+                          toast.error(`Barcode not found: ${b}`);
+                        }
+                      }
+                      e.currentTarget.value = "";
+                    }
+                  }}
+                  className="h-9 w-full rounded-lg border border-primary/30 bg-primary/5 px-3 font-mono text-xs text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 font-semibold"
+                />
+              </div>
+            </PopoverContent>
+          </Popover>
+        </div>
+
+        {/* Store Location Selector - Icon only on mobile, full selector on desktop */}
+        <div className="shrink-0">
           <Select 
             value={state.selectedLocationId || "default"} 
             onValueChange={(val) => state.setSelectedLocationId(val === "default" ? null : val)}
           >
-            <SelectTrigger className="w-[160px] h-10 rounded-xl bg-card border-border/80 text-xs font-semibold">
-              <MapPin className="size-3.5 mr-1.5 text-primary" />
-              <SelectValue placeholder="Main Outlet" />
+            <SelectTrigger 
+              className="size-10 p-0 justify-center rounded-xl bg-card border-border/80 text-primary hover:bg-muted/40 transition-colors md:w-[160px] md:h-10 md:px-3 md:justify-between shrink-0 [&>svg:last-child]:hidden md:[&>svg:last-child]:block"
+              title="Store / Location Outlet"
+            >
+              <div className="flex items-center gap-1.5 min-w-0">
+                <MapPin className="size-4 text-primary shrink-0" />
+                <span className="hidden md:inline truncate text-xs font-semibold">
+                  <SelectValue placeholder="Main Outlet" />
+                </span>
+              </div>
             </SelectTrigger>
-            <SelectContent>
-              {locations.length === 0 && <SelectItem value="default">Main Outlet</SelectItem>}
+            <SelectContent align="end" className="w-[200px] sm:w-[220px]">
+              <div className="px-2 py-1.5 text-[11px] font-bold uppercase tracking-wider text-muted-foreground border-b border-border/50 mb-1 flex items-center gap-1.5">
+                <MapPin className="size-3 text-primary" />
+                <span>Select Store Outlet</span>
+              </div>
+              {locations.length === 0 && (
+                <SelectItem value="default" className="text-xs font-medium">Main Outlet</SelectItem>
+              )}
               {locations.map((loc: any) => (
-                <SelectItem key={loc.id} value={loc.id} className="text-xs">{loc.name}</SelectItem>
+                <SelectItem key={loc.id} value={loc.id} className="text-xs font-medium">
+                  <div className="flex flex-col">
+                    <span>{loc.name}</span>
+                    {loc.type && (
+                      <span className="text-[10px] text-muted-foreground capitalize">({loc.type})</span>
+                    )}
+                  </div>
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
-
-          <Button
-            onClick={() => state.setShowAddProduct(true)}
-            size="sm"
-            className="h-10 rounded-xl px-3.5 font-bold gap-1.5 shadow-sm"
-          >
-            <Plus className="size-4" />
-            <span className="hidden sm:inline">Add Product</span>
-          </Button>
         </div>
+
+        {/* Add Product Button - Icon '+' on mobile, full button on desktop */}
+        <Button
+          onClick={() => state.setShowAddProduct(true)}
+          size="sm"
+          className="size-10 p-0 rounded-xl font-bold shadow-sm md:w-auto md:h-10 md:px-3.5 md:gap-1.5 shrink-0"
+          title="Add Product"
+        >
+          <Plus className="size-4" />
+          <span className="hidden md:inline">Add Product</span>
+        </Button>
       </div>
 
       {/* Horizontal Category Filter Pills */}

@@ -165,7 +165,7 @@ function ServicesPage() {
                 VariantCost: v.cost || baseRow.BaseCost,
                 VariantDuration: v.duration || baseRow.BaseDuration,
               };
-              
+
               if (v.attributes && v.attributes.length > 0) {
                 v.attributes.forEach((attr: any, index: number) => {
                   if (index < 2) {
@@ -227,7 +227,7 @@ function ServicesPage() {
       for (const [name, rows] of Object.entries(groupedData)) {
         const firstRow = rows[0];
         const hasVariants = rows.length > 1 || !!firstRow['VariantName'];
-        
+
         const variantsToCreate = hasVariants ? rows.map(row => {
           const attributes: { name: string; value: string }[] = [];
           for (let i = 1; i <= 2; i++) {
@@ -271,7 +271,7 @@ function ServicesPage() {
   };
 
   return (
-    <div className="p-4 md:p-6 lg:p-8">
+    <div>
       <DataPage
         title="Services"
         description="Manage your billable services and durations"

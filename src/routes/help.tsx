@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { PageHeader } from "@/components/layout/PageHeader";
-import { Book, MessageCircle, Phone, Video, Star, Send, Loader2 } from "lucide-react";
+import { Book, MessageCircle, Phone, PlayCircle, Video, Star, Send, Loader2 } from "lucide-react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { getHelpArticlesFn, getFaqsFn, createSupportTicketFn, createReviewFn } from "@/api/support";
 import { useState } from "react";
@@ -221,9 +221,9 @@ function HelpPage() {
               filteredVideos.map((vid: any) => {
                 const videoInfo = getEmbedVideoInfo(vid.content);
                 return (
-                  <div key={vid.id} className="p-4 border border-border/80 rounded-xl bg-card space-y-3 shadow-xs">
-                    <h4 className="font-bold text-sm text-foreground flex items-center gap-2">
-                      <Video className="size-4 text-primary shrink-0" />
+                  <div key={vid.id}>
+                    <h4 className="font-bold text-sm text-foreground flex items-center gap-2 mb-4">
+                      <PlayCircle className="size-4 text-primary shrink-0" />
                       {vid.title}
                     </h4>
                     {videoInfo.isEmbed ? (
