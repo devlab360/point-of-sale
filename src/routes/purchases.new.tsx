@@ -106,6 +106,9 @@ function NewPurchase() {
           productName: prod?.name || "Product",
           quantity: Number(l.qty) || 1,
           cost: Number(l.cost) || 0,
+          batchNo: (l as any).batchNo,
+          expiryDate: (l as any).expiryDate,
+          mrp: (l as any).mrp,
         };
       });
 
@@ -374,70 +377,115 @@ function NewPurchase() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
-                  {lines.map((l, i) => (
-                    <tr key={i} className="hover:bg-muted/30 transition-colors">
-                      <td className="px-4 py-3 text-center text-xs font-semibold text-muted-foreground">
-                        {i + 1}
-                      </td>
-                      <td className="px-4 py-3">
-                        <Select
-                          value={l.productId}
-                          onValueChange={(v) => handleUpdateLine(i, "productId", v)}
-                          disabled={isSubmitting}
-                        >
-                          <SelectTrigger className="h-9 w-full">
-                            <SelectValue placeholder="Choose product..." />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {products.map((p: any) => (
-                              <SelectItem key={p.id} value={p.id}>
-                                {p.name} {p.sku ? `(${p.sku})` : ""}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </td>
-                      <td className="px-4 py-3 text-right">
-                        <Input
-                          type="number"
-                          min="1"
-                          required
-                          placeholder="1"
-                          className="h-9 text-right font-medium"
-                          value={l.qty}
-                          onChange={(e) => handleUpdateLine(i, "qty", Number(e.target.value))}
-                          disabled={isSubmitting}
-                        />
-                      </td>
-                      <td className="px-4 py-3 text-right">
-                        <Input
-                          type="number"
-                          min="0"
-                          step="0.01"
-                          required
-                          placeholder="0.00"
-                          className="h-9 text-right font-medium"
-                          value={l.cost}
-                          onChange={(e) => handleUpdateLine(i, "cost", Number(e.target.value))}
-                          disabled={isSubmitting}
-                        />
-                      </td>
-                      <td className="px-4 py-3 text-right font-bold text-foreground">
-                        {formatCurrency((Number(l.qty) || 0) * (Number(l.cost) || 0))}
-                      </td>
-                      <td className="px-4 py-3 text-center">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="size-8 text-destructive hover:text-destructive hover:bg-destructive/10"
-                          onClick={() => setLines(lines.filter((_, idx) => idx !== i))}
-                          disabled={isSubmitting}
-                        >
-                          <Trash2 className="size-4" />
-                        </Button>
-                      </td>
-                    </tr>
-                  ))}
+                  {lines.map((l, i) => {
+                    const prod = products.find((p) => p.id === l.productId);
+                    const showBatch = prod?.hasBatch;
+                    
+                    return (
+                      <div key={i} className="contents">
+                        <tr className="hover:bg-muted/30 transition-colors">
+                          <td className="px-4 py-3 text-center text-xs font-semibold text-muted-foreground">
+                            {i + 1}
+                          </td>
+                          <td className="px-4 py-3">
+                            <Select
+                              value={l.productId}
+                              onValueChange={(v) => handleUpdateLine(i, "productId", v)}
+                              disabled={isSubmitting}
+                            >
+                              <SelectTrigger className="h-9 w-full">
+                                <SelectValue placeholder="Choose product..." />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {products.map((p: any) => (
+                                  <SelectItem key={p.id} value={p.id}>
+                                    {p.name} {p.sku ? `(${p.sku})` : ""}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </td>
+                          <td className="px-4 py-3 text-right">
+                            <Input
+                              type="number"
+                              min="1"
+                              required
+                              placeholder="1"
+                              className="h-9 text-right font-medium"
+                              value={l.qty}
+                              onChange={(e) => handleUpdateLine(i, "qty", Number(e.target.value))}
+                              disabled={isSubmitting}
+                            />
+                          </td>
+                          <td className="px-4 py-3 text-right">
+                            <Input
+                              type="number"
+                              min="0"
+                              step="0.01"
+                              required
+                              placeholder="0.00"
+                              className="h-9 text-right font-medium"
+                              value={l.cost}
+                              onChange={(e) => handleUpdateLine(i, "cost", Number(e.target.value))}
+                              disabled={isSubmitting}
+                            />
+                          </td>
+                          <td className="px-4 py-3 text-right font-bold text-foreground">
+                            {formatCurrency((Number(l.qty) || 0) * (Number(l.cost) || 0))}
+                          </td>
+                          <td className="px-4 py-3 text-center">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="size-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+                              onClick={() => setLines(lines.filter((_, idx) => idx !== i))}
+                              disabled={isSubmitting}
+                            >
+                              <Trash2 className="size-4" />
+                            </Button>
+                          </td>
+                        </tr>
+                        {showBatch && (
+                          <tr className="bg-amber-500/5">
+                            <td></td>
+                            <td colSpan={4} className="px-4 py-2 pb-3">
+                              <div className="flex gap-4 items-center">
+                                <div className="flex-1">
+                                  <label className="text-[10px] font-bold uppercase text-amber-600/80 mb-1 block">Batch Number</label>
+                                  <Input 
+                                    className="h-8 text-xs border-amber-500/20 bg-background" 
+                                    placeholder="e.g. BATCH-A01"
+                                    value={(l as any).batchNo || ""}
+                                    onChange={(e) => handleUpdateLine(i, "batchNo", e.target.value)}
+                                  />
+                                </div>
+                                <div className="flex-1">
+                                  <label className="text-[10px] font-bold uppercase text-amber-600/80 mb-1 block">Expiry Date</label>
+                                  <Input 
+                                    type="date" 
+                                    className="h-8 text-xs border-amber-500/20 bg-background" 
+                                    value={(l as any).expiryDate || ""}
+                                    onChange={(e) => handleUpdateLine(i, "expiryDate", e.target.value)}
+                                  />
+                                </div>
+                                <div className="flex-1">
+                                  <label className="text-[10px] font-bold uppercase text-amber-600/80 mb-1 block">MRP</label>
+                                  <Input 
+                                    type="number" step="0.01" 
+                                    className="h-8 text-xs border-amber-500/20 bg-background" 
+                                    placeholder="0.00"
+                                    value={(l as any).mrp || ""}
+                                    onChange={(e) => handleUpdateLine(i, "mrp", e.target.value)}
+                                  />
+                                </div>
+                              </div>
+                            </td>
+                            <td></td>
+                          </tr>
+                        )}
+                      </div>
+                    );
+                  })}
 
                   {lines.length === 0 && (
                     <tr>

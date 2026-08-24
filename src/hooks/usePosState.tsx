@@ -25,6 +25,7 @@ import {
 } from "@/api/pos";
 import { getTablesFn } from "@/api/restaurant";
 import { getRepairsFn } from "@/api/repairs";
+import { getPosBootstrapFn } from "@/api/bootstrap";
 
 export type CartLine = { 
   id: string; 
@@ -32,6 +33,8 @@ export type CartLine = {
   variantId?: string; 
   variantName?: string; 
   variantPrice?: number; 
+  batchId?: string; // Add batchId for explicit selection
+  batchNo?: string;
   modifiers?: { id: string; name: string; optionId: string; optionName: string; price: number }[];
 };
 export type PaymentMode = "cash" | "card" | "upi" | "split" | "credit" | "wallet";
@@ -43,6 +46,8 @@ export function usePosState() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const orgId = PersistStore.getOrgId() || "default";
+  
+  const STALE_TIME = 5 * 60 * 1000; // 5 minutes
 
   const {
     data: productsData,
@@ -52,21 +57,11 @@ export function usePosState() {
   } = useQuery({
     queryKey: ["posItems", orgId],
     queryFn: async () => ((await getPosItemsFn({ data: {} })) as any)?.data || [],
-    staleTime: 30000,
+    staleTime: STALE_TIME,
   });
   const products: any[] = productsData || [];
 
-  const {
-    data: customersData,
-    isLoading: isCustomersLoading,
-    isError: isCustomersError,
-    refetch: refetchCustomers,
-  } = useQuery({
-    queryKey: ["customers", orgId],
-    queryFn: async () => ((await getCustomersFn({ data: { pageSize: 1000 } })) as any)?.data || [],
-    staleTime: 30000,
-  });
-  const customers: any[] = customersData || [];
+  // Customers are now fetched dynamically in PosDialogs.tsx via global search
 
   const {
     data: categoriesData,
@@ -76,7 +71,7 @@ export function usePosState() {
   } = useQuery({
     queryKey: ["categories", orgId],
     queryFn: async () => ((await getCategoriesFn({ data: {} })) as any)?.data || [],
-    staleTime: 60000,
+    staleTime: STALE_TIME,
   });
   const categories: any[] = categoriesData || [];
 
@@ -86,62 +81,32 @@ export function usePosState() {
   });
   const heldInvoices: any[] = heldInvoicesData || [];
 
-  const { data: tablesData } = useQuery({
-    queryKey: ["tables", orgId],
-    queryFn: async () => ((await getTablesFn({ data: {} })) as any)?.data || [],
+  // --- BOOTSTRAP API INTEGRATION ---
+  const { 
+    data: bootstrapResponse, 
+    isLoading: isBootstrapLoading,
+    refetch: refetchBootstrap
+  } = useQuery({
+    queryKey: ["posBootstrap", orgId],
+    queryFn: async () => await getPosBootstrapFn(),
+    staleTime: STALE_TIME,
   });
-  const tables: any[] = tablesData || [];
+  
+  const bootstrapData = bootstrapResponse?.data;
 
-  const { data: repairsData, refetch: refetchRepairs } = useQuery({
-    queryKey: ["openRepairs", orgId],
-    queryFn: async () => {
-      const all = ((await getRepairsFn({ data: {} })) as any)?.data || [];
-      return all.filter((r: any) => r.status === "repaired" || r.status === "received" || r.status === "diagnosing");
-    },
-  });
-  const openRepairs: any[] = repairsData || [];
-
-  const { data: settingsData } = useQuery({
-    queryKey: ["settings", orgId],
-    queryFn: async () => ((await getSettingsFn({ data: {} })) as any)?.data,
-  });
-  const settings: any = settingsData;
-
-  const { data: couponsData } = useQuery({
-    queryKey: ["coupons", orgId],
-    queryFn: async () => ((await getCouponsFn({ data: {} })) as any)?.data || [],
-    staleTime: 60000,
-  });
-  const coupons: any[] = couponsData || [];
-
-  const { data: shiftsData, refetch: refetchShifts } = useQuery({
-    queryKey: ["shifts", orgId],
-    queryFn: async () => ((await getShiftsFn({ data: {} })) as any)?.data || [],
-  });
+  const tables: any[] = bootstrapData?.tables || [];
+  const openRepairs: any[] = bootstrapData?.repairs || [];
+  const settings: any = bootstrapData?.settings || null;
+  const coupons: any[] = bootstrapData?.coupons || [];
+  const units: any[] = bootstrapData?.units || [];
+  const brands: any[] = bootstrapData?.brands || [];
+  const users: any[] = bootstrapData?.users || [];
   const activeShift: any = user
-    ? (shiftsData || []).find((s: any) => s.userId === user.id && s.status === "open")
+    ? (bootstrapData?.shifts || []).find((s: any) => s.userId === user.id && s.status === "open")
     : undefined;
 
-  const { data: unitsData } = useQuery({
-    queryKey: ["units", orgId],
-    queryFn: async () => ((await getUnitsFn({ data: {} })) as any)?.data || [],
-    staleTime: 60000,
-  });
-  const units: any[] = unitsData || [];
-
-  const { data: brandsData } = useQuery({
-    queryKey: ["brands", orgId],
-    queryFn: async () => ((await getBrandsFn({ data: {} })) as any)?.data || [],
-    staleTime: 60000,
-  });
-  const brands: any[] = brandsData || [];
-
-  const { data: usersData } = useQuery({
-    queryKey: ["users", orgId],
-    queryFn: async () => ((await getUsersFn({ data: {} })) as any)?.data || [],
-    staleTime: 60000,
-  });
-  const users: any[] = usersData || [];
+  const refetchRepairs = refetchBootstrap;
+  const refetchShifts = refetchBootstrap;
 
   const isUuid = (val: string) =>
     typeof val === "string" &&
@@ -179,15 +144,13 @@ export function usePosState() {
     [brands],
   );
 
-  const isPosLoading = isProductsLoading || isCategoriesLoading || isCustomersLoading;
-  const isPosError = isProductsError || isCategoriesError || isCustomersError;
+  const isPosLoading = isProductsLoading || isCategoriesLoading || isBootstrapLoading;
+  const isPosError = isProductsError || isCategoriesError;
 
   const refetchPos = useCallback(() => {
     refetchProducts();
-    refetchCategories();
-    refetchCustomers();
-    refetchRepairs();
-  }, [refetchProducts, refetchCategories, refetchCustomers, refetchRepairs]);
+    refetchBootstrap();
+  }, [refetchProducts, refetchBootstrap]);
 
   const [activeCustomerType, setActiveCustomerType] = useState("retail");
   const [additionalProducts, setAdditionalProducts] = useState<any[]>([]);
@@ -203,7 +166,7 @@ export function usePosState() {
   const [discountPct, setDiscountPct] = useState(0);
   const [discountInput, setDiscountInput] = useState("0");
   const [payment, setPayment] = useState<PaymentMode>("card");
-  const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(null);
+  const [selectedCustomer, setSelectedCustomer] = useState<any>(null);
   const [selectedTableId, setSelectedTableId] = useState<string>("");
   const [printData, setPrintData] = useState<any>(null);
   const [saleComplete, setSaleComplete] = useState<any>(null);
@@ -244,6 +207,7 @@ export function usePosState() {
   const [startingCash, setStartingCash] = useState("");
 
   const [selectedSalesmanId, setSelectedSalesmanId] = useState("");
+  const [prescriptionRef, setPrescriptionRef] = useState("");
 
   useEffect(() => {
     if (activeShift === null) {
@@ -259,7 +223,7 @@ export function usePosState() {
     }
   }, [user, selectedSalesmanId]);
 
-  const activeCustomer = customers.find((c) => c.id === selectedCustomerId) || {
+  const activeCustomer = selectedCustomer || {
     id: "walkin",
     name: "Walk-in Customer",
     type: "retail",
@@ -269,8 +233,13 @@ export function usePosState() {
   const filtered = useMemo(
     () =>
       allProducts.filter((p) => {
-        const catMatch = activeCat === "all" || p.category === activeCat;
-        if (!catMatch) return false;
+        if (activeCat !== "all") {
+          const catObj = categories.find(c => c.name === activeCat || c.id === activeCat);
+          const catId = catObj?.id;
+          const catName = catObj?.name;
+          const isCatMatch = p.category === activeCat || p.category === catId || p.category === catName;
+          if (!isCatMatch) return false;
+        }
         if (!query.trim()) return true;
         const q = query.toLowerCase();
         return Boolean(
@@ -279,7 +248,7 @@ export function usePosState() {
           (p.barcode && String(p.barcode).toLowerCase().includes(q)),
         );
       }),
-    [activeCat, query, allProducts],
+    [activeCat, query, allProducts, categories],
   );
 
   const addToCart = useCallback(
@@ -340,6 +309,11 @@ export function usePosState() {
     [addToCart]
   );
 
+  const removeFromCart = useCallback((id: string, variantId?: string, modifiers?: CartLine['modifiers']) => {
+    const modifiersStr = JSON.stringify(modifiers || []);
+    setCart((c) => c.filter((l) => !(l.id === id && l.variantId === variantId && JSON.stringify(l.modifiers || []) === modifiersStr)));
+  }, []);
+
   const updateQty = useCallback(
     (id: string, qty: number, variantId?: string, modifiers?: CartLine['modifiers']) => {
       const modifiersStr = JSON.stringify(modifiers || []);
@@ -357,6 +331,10 @@ export function usePosState() {
     },
     [allProducts],
   );
+
+  const updateBatch = useCallback((id: string, batchId?: string, batchNo?: string) => {
+    setCart((c) => c.map((l) => l.id === id ? { ...l, batchId, batchNo } : l));
+  }, []);
 
   const lines = cart
     .map((l) => {
@@ -400,9 +378,11 @@ export function usePosState() {
                 new Date(b.expiryDate || "2099-12-31").getTime(),
             )
           : [];
-      const selectedBatch = fefoSortedBatches[0]?.batchNo
-        ? `${fefoSortedBatches[0].batchNo} (${fefoSortedBatches[0].expiryDate})`
-        : undefined;
+      const selectedBatch = l.batchNo
+        ? `${l.batchNo}` 
+        : fefoSortedBatches[0]?.batchNo
+          ? `${fefoSortedBatches[0].batchNo} (${fefoSortedBatches[0].expiryDate ? fefoSortedBatches[0].expiryDate.slice(0, 10) : 'No Exp'})`
+          : undefined;
 
       return {
         ...l,
@@ -491,7 +471,6 @@ export function usePosState() {
     isPosError,
     refetchPos,
     products,
-    customers,
     categories,
     units,
     brands,
@@ -525,8 +504,8 @@ export function usePosState() {
     setDiscountInput,
     payment,
     setPayment,
-    selectedCustomerId,
-    setSelectedCustomerId,
+    selectedCustomer,
+    setSelectedCustomer,
     selectedLocationId,
     setSelectedLocationId,
     selectedTableId,
@@ -583,6 +562,8 @@ export function usePosState() {
     setStartingCash,
     selectedSalesmanId,
     setSelectedSalesmanId,
+    prescriptionRef,
+    setPrescriptionRef,
     activeCustomer,
     filtered,
     lines,
@@ -596,8 +577,10 @@ export function usePosState() {
     changeDue,
     taxRate,
     addToCart,
+    removeFromCart,
     addRepairToCart,
     updateQty,
+    updateBatch,
     orgId,
     refetchHeld,
     refetchShifts,

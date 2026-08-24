@@ -9,6 +9,15 @@ import { usePreferences } from "@/contexts/PreferencesContext";
 
 export const Route = createFileRoute("/activity")({
   head: () => ({ meta: [{ title: "Activity Log · NexisPOS" }] }),
+  loader: async ({ context: { queryClient } }) => {
+    const orgId = PersistStore.getOrgId();
+    if (!orgId) return;
+
+    queryClient.ensureQueryData({
+      queryKey: ["activityLog", orgId],
+      queryFn: async () => ((await getActivityLogFn({ data: {} })) as any)?.data || [],
+    });
+  },
   component: ActivityPage,
 });
 

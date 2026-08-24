@@ -106,6 +106,17 @@ export const createInventoryAdjustmentFn = createServerFn({ method: "POST" })
               .update(schema.products)
               .set({ stock: updateSql })
               .where(eq(schema.products.id, line.productId));
+
+            if (line.batchId) {
+              const batchUpdateSql =
+                line.type === "addition"
+                  ? sql`${schema.inventoryBatches.quantityRemaining} + ${line.qty}`
+                  : sql`GREATEST(0, ${schema.inventoryBatches.quantityRemaining} - ${line.qty})`;
+              await tx
+                .update(schema.inventoryBatches)
+                .set({ quantityRemaining: batchUpdateSql })
+                .where(eq(schema.inventoryBatches.id, line.batchId));
+            }
           }
         }
       });
@@ -255,6 +266,86 @@ export const deleteInventoryTransferFn = createServerFn({ method: "POST" })
             eq(schema.inventoryTransfers.organizationId, orgId),
           ),
         );
+      return { success: true };
+    } catch (e) {
+      return handleApiError(e);
+    }
+  });
+
+// --- Batches ---
+export const getInventoryBatchesFn = createServerFn({ method: "GET" })
+  .validator((data: any) => data)
+  .handler(async ({ data }) => {
+    const session = await requireAuth();
+    const orgId = session.orgId;
+    try {
+      const res = await db
+        .select()
+        .from(schema.inventoryBatches)
+        .where(eq(schema.inventoryBatches.organizationId, orgId));
+      return { success: true, data: res };
+    } catch (e) {
+      return handleApiError(e);
+    }
+  });
+
+export const bulkImportBatchesFn = createServerFn({ method: "POST" })
+  .validator((data: any) => data)
+  .handler(async ({ data }) => {
+    const session = await requireAuth();
+    const orgId = session.orgId;
+    try {
+      if (!data.batches || !Array.isArray(data.batches)) throw new Error("Invalid batch data");
+      
+      const batchesToInsert = data.batches.map((b: any) => ({
+        id: b.id || crypto.randomUUID(),
+        organizationId: orgId,
+        productId: b.productId,
+        batchNo: b.batchNo || null,
+        expiryDate: b.expiryDate ? new Date(b.expiryDate).toISOString() : null,
+        mfgDate: b.mfgDate ? new Date(b.mfgDate).toISOString() : null,
+        purchaseCost: b.purchaseCost?.toString() || "0",
+        mrp: b.mrp?.toString() || null,
+        sellingPrice: b.sellingPrice?.toString() || null,
+        quantityReceived: b.quantity?.toString() || "0",
+        quantityRemaining: b.quantity?.toString() || "0",
+        receivedAt: new Date().toISOString(),
+      }));
+
+      await db.transaction(async (tx) => {
+        if (batchesToInsert.length > 0) {
+          await tx.insert(schema.inventoryBatches).values(batchesToInsert);
+          
+          // Add to inventory movements and update product stock
+          const movements: (typeof schema.inventoryMovements.$inferInsert)[] = [];
+          for (const b of data.batches) {
+            const product = await tx.query.products.findFirst({
+               where: (p, { eq, and }) => and(eq(p.id, b.productId), eq(p.organizationId, orgId))
+            });
+            if (product) {
+               movements.push({
+                 organizationId: orgId,
+                 productId: b.productId,
+                 productName: product.name,
+                 action: "batch_import",
+                 quantity: b.quantity?.toString() || "0",
+                 createdAt: new Date().toISOString(),
+               });
+               
+               await tx.update(schema.products)
+                 .set({ 
+                   stock: (Number(product.stock || 0) + Number(b.quantity || 0)).toString(),
+                   hasBatch: true 
+                 })
+                 .where(eq(schema.products.id, product.id));
+            }
+          }
+          if (movements.length > 0) {
+            await tx.insert(schema.inventoryMovements).values(movements);
+          }
+        }
+      });
+
       return { success: true };
     } catch (e) {
       return handleApiError(e);

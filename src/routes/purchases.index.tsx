@@ -82,7 +82,7 @@ function PurchasesPage() {
   };
 
   return (
-    <div className="p-4 md:p-6 lg:p-8">
+    <div>
       <DataPage
         title={t("purchases") || "Purchases"}
         description={

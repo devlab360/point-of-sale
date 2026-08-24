@@ -64,6 +64,20 @@
       "when": 1787429412825,
       "tag": "0008_fantastic_blockbuster",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1787589506661,
+      "tag": "0009_lame_sister_grimm",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1787589702991,
+      "tag": "0010_vengeful_zeigeist",
+      "breakpoints": true
     }
   ]
 }

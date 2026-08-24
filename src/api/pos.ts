@@ -24,6 +24,11 @@ export const getPosItemsFn = createServerFn({ method: "GET" })
         .from(schema.products)
         .where(eq(schema.products.organizationId, orgId));
 
+      const batches = await db
+        .select()
+        .from(schema.inventoryBatches)
+        .where(eq(schema.inventoryBatches.organizationId, orgId));
+
       const services = await db
         .select()
         .from(schema.services)
@@ -33,7 +38,10 @@ export const getPosItemsFn = createServerFn({ method: "GET" })
       const unifiedItems = [
         ...products
           .filter((p) => !p.expiryDate || new Date(p.expiryDate) >= now)
-          .map((p) => ({ ...p, referenceType: "PRODUCT", referenceId: p.id })),
+          .map((p) => {
+             const productBatches = batches.filter(b => b.productId === p.id && Number(b.quantityRemaining) > 0);
+             return { ...p, batches: p.hasBatch ? productBatches : undefined, referenceType: "PRODUCT", referenceId: p.id };
+          }),
         ...services.map((s) => ({
           ...s,
           referenceType: "SERVICE",
@@ -206,6 +214,7 @@ const SaleItemInput = z
     referenceId: z.string().optional(),
     serialNumber: z.string().optional().nullable(),
     batchNo: z.string().optional().nullable(),
+    batchId: z.string().optional().nullable(), // Added batchId for explicit selection
     modifiers: z.array(z.any()).optional().nullable(),
   })
   .passthrough();
@@ -431,8 +440,39 @@ export const completePosSaleFn = createServerFn({ method: "POST" })
               }
 
               if (p.trackFifo) {
-                // FIFO logic
-                const productBatches = allBatches.filter(b => b.productId === p.id && Number(b.quantityRemaining) > 0);
+                let productBatches = allBatches
+                  .filter(b => b.productId === p.id && Number(b.quantityRemaining) > 0)
+                  .filter(b => {
+                    // Exclude expired batches from allocation
+                    if (b.expiryDate) {
+                      const expiry = new Date(b.expiryDate);
+                      return !isNaN(expiry.getTime()) && expiry >= new Date();
+                    }
+                    return true;
+                  });
+                
+                // If a specific batch was selected, try to allocate from it first
+                if (item.batchId) {
+                  const selectedBatch = productBatches.find(b => b.id === item.batchId);
+                  if (selectedBatch) {
+                    productBatches = [
+                      selectedBatch,
+                      ...productBatches.filter(b => b.id !== item.batchId)
+                    ];
+                  }
+                } else {
+                  // FEFO / FIFO sorting
+                  productBatches.sort((a, b) => {
+                    // FEFO: sort by expiry date ascending (nearest expiry first)
+                    // Batches without expiry are pushed to the end
+                    const aExpiry = a.expiryDate ? new Date(a.expiryDate).getTime() : Infinity;
+                    const bExpiry = b.expiryDate ? new Date(b.expiryDate).getTime() : Infinity;
+                    if (aExpiry !== bExpiry) return aExpiry - bExpiry;
+                    // Tiebreaker: FIFO by receivedAt
+                    return new Date(a.receivedAt).getTime() - new Date(b.receivedAt).getTime();
+                  });
+                }
+
                 let remainingToDeduct = item.quantity;
                 for (const batch of productBatches) {
                   if (remainingToDeduct <= 0) break;

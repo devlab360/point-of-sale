@@ -10,9 +10,10 @@ import { getProfitabilityReportFn } from "@/api/reports";
 import { getProductsFn } from "@/api/products";
 import { getExpensesFn } from "@/api/expenses";
 import { getPurchasesFn } from "@/api/purchases";
+import { getInventoryBatchesFn } from "@/api/inventory";
 import { getCategoriesFn } from "@/api/categories";
 import { useCurrency } from "@/lib/currency";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import {
   BarChart3,
   DollarSign,
@@ -25,6 +26,8 @@ import {
   BookOpen,
   Users,
   ChevronRight,
+  AlertTriangle,
+  AlertCircle
 } from "lucide-react";
 import {
   Bar,
@@ -67,6 +70,8 @@ type ReportType =
   | "gstr1"
   | "gstr2"
   | "gstr3b"
+  | "near-expiry"
+  | "expired"
   | null;
 
 function ReportsPage() {
@@ -110,12 +115,19 @@ function ReportsPage() {
   });
   const categories = categoriesData || [];
 
+  const { data: batchesData, isLoading: isBatchesLoading } = useQuery({
+    queryKey: ["inventoryBatches", orgId],
+    queryFn: async () => ((await getInventoryBatchesFn({ data: {} })) as any)?.data || [],
+  });
+  const batches = batchesData || [];
+
   const isReportsLoading =
     isSalesLoading ||
     isProductsLoading ||
     isExpensesLoading ||
     isPurchasesLoading ||
-    isCategoriesLoading;
+    isCategoriesLoading ||
+    isBatchesLoading;
 
   const [activeReport, setActiveReport] = useState<ReportType>(null);
   const [dateFrom, setDateFrom] = useState("");
@@ -204,8 +216,8 @@ function ReportsPage() {
     catData.length > 0
       ? catData
       : categories
-          .slice(0, 5)
-          .map((c, i) => ({ name: c.name, value: 20, color: COLORS[i % COLORS.length] }));
+        .slice(0, 5)
+        .map((c, i) => ({ name: c.name, value: 20, color: COLORS[i % COLORS.length] }));
 
   const exportCSV = (type: string) => {
     let csv = "";
@@ -392,6 +404,18 @@ function ReportsPage() {
       icon: BarChart3,
       name: "Monthly Report",
       desc: "Period comparison with prior month",
+    },
+    {
+      type: "near-expiry" as ReportType,
+      icon: AlertTriangle,
+      name: "Near-Expiry Report",
+      desc: "Batches expiring within 90 days",
+    },
+    {
+      type: "expired" as ReportType,
+      icon: AlertCircle,
+      name: "Expired Stock Report",
+      desc: "Items that have already expired",
     },
   ];
 
@@ -1010,8 +1034,73 @@ function ReportsPage() {
                       radius={[4, 4, 0, 0]}
                       name="Profit"
                     />
+                    <Bar
+                      dataKey="expense"
+                      fill="var(--color-destructive)"
+                      radius={[4, 4, 0, 0]}
+                      name="Expense"
+                    />
                   </BarChart>
                 </ResponsiveContainer>
+              </div>
+            )}
+
+            {(activeReport === "near-expiry" || activeReport === "expired") && (
+              <div className="space-y-3">
+                <div className="rounded-lg bg-muted/40 p-3 flex justify-between">
+                  <span className="font-semibold">{activeReport === "near-expiry" ? "Batches Expiring Soon (Next 90 days)" : "Expired Stock"}</span>
+                </div>
+                <div className="overflow-x-auto rounded-lg border border-border max-h-96 shadow-soft">
+                  <table className="w-full text-sm min-w-[600px]">
+                    <thead className="bg-muted z-10 text-[11px] uppercase tracking-wider text-muted-foreground sticky top-0 shadow-sm">
+                      <tr>
+                        <th className="px-3 py-2 text-left whitespace-nowrap">Product</th>
+                        <th className="px-3 py-2 text-left whitespace-nowrap">Batch No</th>
+                        <th className="px-3 py-2 text-center whitespace-nowrap">Expiry Date</th>
+                        <th className="px-3 py-2 text-right whitespace-nowrap">Qty Left</th>
+                        <th className="px-3 py-2 text-right whitespace-nowrap">Value</th>
+                        <th className="px-3 py-2 text-center whitespace-nowrap">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-border">
+                      {batches
+                        .filter(b => b.quantityRemaining > 0 && b.expiryDate)
+                        .map(b => {
+                          const exp = new Date(b.expiryDate);
+                          const now = new Date();
+                          const diffTime = exp.getTime() - now.getTime();
+                          const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+                          let isTarget = false;
+                          if (activeReport === "near-expiry" && diffDays > 0 && diffDays <= 90) isTarget = true;
+                          if (activeReport === "expired" && diffDays <= 0) isTarget = true;
+
+                          if (!isTarget) return null;
+
+                          const prod = products.find(p => p.id === b.productId);
+                          const val = (Number(b.purchaseCost) || 0) * (Number(b.quantityRemaining) || 0);
+
+                          return (
+                            <tr key={b.id} className="hover:bg-muted/30">
+                              <td className="px-3 py-2 font-medium">{prod?.name || "Unknown Product"}</td>
+                              <td className="px-3 py-2 text-muted-foreground whitespace-nowrap">{b.batchNo}</td>
+                              <td className="px-3 py-2 text-center whitespace-nowrap">{formatDate(b.expiryDate)}</td>
+                              <td className="px-3 py-2 text-right font-semibold">{b.quantityRemaining}</td>
+                              <td className="px-3 py-2 text-right font-medium">{formatCurrency(val)}</td>
+                              <td className="px-3 py-2 text-center">
+                                {diffDays <= 0 ? (
+                                  <span className="bg-destructive/10 text-destructive text-[10px] font-bold px-2 py-0.5 rounded-full">EXPIRED</span>
+                                ) : (
+                                  <span className="bg-warning/10 text-warning text-[10px] font-bold px-2 py-0.5 rounded-full">{diffDays} days</span>
+                                )}
+                              </td>
+                            </tr>
+                          );
+                        })
+                        .filter(Boolean)}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             )}
 

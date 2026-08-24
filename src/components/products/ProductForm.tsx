@@ -18,6 +18,7 @@ import { getCategoriesFn, createCategoryFn } from "@/api/categories";
 import { getBrandsFn, createBrandFn } from "@/api/brands";
 import { getUnitsFn, createUnitFn } from "@/api/units";
 import { getLocationsFn } from "@/api/locations";
+import { getSettingsFn } from "@/api/settings";
 import { VariantManager } from "./VariantManager";
 import { BundleManager } from "./BundleManager";
 import { ModifierManager } from "./ModifierManager";
@@ -34,6 +35,9 @@ export function ProductForm({ initialData, onSubmit, isSaving }: { initialData?:
   const { data: units = [] } = useQuery({ queryKey: ["units"], queryFn: () => getUnitsFn().then(res => res.data || []) });
   const { data: locationsRes } = useQuery({ queryKey: ["locations"], queryFn: () => getLocationsFn() });
   const locations: any[] = locationsRes?.data || [];
+  
+  const { data: settingsData } = useQuery({ queryKey: ["settings"], queryFn: () => getSettingsFn().then(res => res.data) });
+  const settings: any = settingsData;
 
   // Per-location stock state: { [locationId]: number }
   const [locationStock, setLocationStock] = useState<Record<string, number>>(() => {
@@ -67,6 +71,7 @@ export function ProductForm({ initialData, onSubmit, isSaving }: { initialData?:
         batchExpiryInput: initialData.batches?.[0]?.expiryDate || "",
         batchStockInput: initialData.batches?.[0]?.stock || 0,
         gstRate: initialData.gstRate || 0,
+        metadata: initialData.metadata || {},
       };
     }
     return {
@@ -105,6 +110,7 @@ export function ProductForm({ initialData, onSubmit, isSaving }: { initialData?:
       hsnCode: "",
       gstRate: 0,
       taxInclusive: false,
+      metadata: {},
     };
   });
 
@@ -705,6 +711,27 @@ export function ProductForm({ initialData, onSubmit, isSaving }: { initialData?:
                   )}
                 </div>
               </div>
+
+              {settings?.businessType === "PHARMACY" && (
+                <div className="flex items-start gap-3 p-4 rounded-lg border border-primary/20 bg-primary/5 transition-colors">
+                  <div className="space-y-3 w-full">
+                    <Label className="font-semibold text-sm text-primary">
+                      Pharmacy Attributes
+                    </Label>
+                    <div className="flex gap-4">
+                      <label className="flex items-center gap-2 text-sm cursor-pointer">
+                        <input 
+                          type="checkbox" 
+                          className="rounded border-primary text-primary w-4 h-4 cursor-pointer"
+                          checked={formData.metadata?.prescriptionRequired || false} 
+                          onChange={(e) => setFormData({...formData, metadata: {...formData.metadata, prescriptionRequired: e.target.checked}})} 
+                        />
+                        Prescription Required
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               <div className="flex items-start gap-3 p-4 rounded-lg border border-amber-500/20 bg-amber-500/5 transition-colors">
                 <input

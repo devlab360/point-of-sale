@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { PersistStore } from "@/lib/session-store";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { getProductsFn } from "@/api/products";
@@ -9,14 +10,74 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Package, Search, MapPin, AlertCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { parseCSV, exportToCSV } from "@/lib/csv";
+import { bulkImportBatchesFn } from "@/api/inventory";
+import { toast } from "sonner";
+import { useQueryClient } from "@tanstack/react-query";
 
 export const Route = createFileRoute("/inventory/")({
+  loader: async ({ context: { queryClient } }) => {
+    const orgId = PersistStore.getOrgId();
+    if (!orgId) return;
+
+    queryClient.ensureQueryData({
+      queryKey: ["inventory-products", orgId],
+      queryFn: async () => ((await getProductsFn({ data: {} })) as any)?.data || [],
+    });
+
+    queryClient.ensureQueryData({
+      queryKey: ["locations", orgId],
+      queryFn: async () => ((await getLocationsFn({ data: {} })) as any)?.data || [],
+    });
+  },
   component: InventoryDashboard,
 });
 
 function InventoryDashboard() {
+  const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
   const [locationFilter, setLocationFilter] = useState("all");
+
+  const handleImportBatches = async (file: File) => {
+    try {
+      const data = await parseCSV(file);
+      if (data.length === 0) {
+        toast.error("No data found in the CSV");
+        return;
+      }
+
+      const batchesData = data.map(row => {
+        // Find product by SKU or Name to get productId
+        // In a real bulk importer you'd do an API search or require ProductId in CSV.
+        // For simplicity, we assume ProductId or SKU is provided.
+        const productId = row['ProductId'] || row['product_id'];
+        if (!productId) {
+          throw new Error("Missing ProductId in row");
+        }
+        return {
+          productId: productId,
+          batchNo: row['BatchNo'] || row['batch_no'] || null,
+          quantity: parseFloat(row['Quantity'] || row['qty'] || '0'),
+          purchaseCost: parseFloat(row['Cost'] || row['cost'] || '0'),
+          sellingPrice: row['Price'] || row['price'] || null,
+          mrp: row['MRP'] || row['mrp'] || null,
+          expiryDate: row['ExpiryDate'] || row['expiry_date'] || null,
+          mfgDate: row['MfgDate'] || row['mfg_date'] || null,
+        };
+      });
+
+      const res = await bulkImportBatchesFn({ data: { batches: batchesData } });
+      if (res?.success) {
+        toast.success(`Successfully imported ${batchesData.length} batches`);
+        queryClient.invalidateQueries({ queryKey: ["inventory-products"] });
+      } else {
+        toast.error(res?.error || "Failed to import batches");
+      }
+    } catch (err: any) {
+      toast.error(err.message || "Failed to parse and import CSV file");
+    }
+  };
 
   const { data: locationsRes } = useQuery({
     queryKey: ["locations"],
@@ -37,6 +98,23 @@ function InventoryDashboard() {
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Multi-Location Inventory</h1>
           <p className="text-muted-foreground">Manage and track stock across all your stores and warehouses.</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" className="font-bold" onClick={() => document.getElementById('batch-import-input')?.click()}>
+            Import Batches (CSV)
+          </Button>
+          <input
+            type="file"
+            id="batch-import-input"
+            className="hidden"
+            accept=".csv"
+            onChange={(e) => {
+              if (e.target.files?.[0]) {
+                handleImportBatches(e.target.files[0]);
+                e.target.value = '';
+              }
+            }}
+          />
         </div>
       </div>
 
@@ -145,10 +223,13 @@ function InventoryDashboard() {
                               <Package className="w-4 h-4 text-muted-foreground" />
                             )}
                           </div>
-                          <div>
-                            <p>{product.name}</p>
+                          <p>{product.name}</p>
+                          <div className="flex flex-wrap gap-1 mt-0.5">
                             {product.hasVariants && (
-                              <Badge variant="outline" className="text-[10px] h-4 px-1 mt-0.5">Has Variants</Badge>
+                              <Badge variant="outline" className="text-[10px] h-4 px-1">Has Variants</Badge>
+                            )}
+                            {product.hasBatch && (
+                              <Badge variant="outline" className="text-[10px] h-4 px-1 border-primary text-primary bg-primary/5">Batched</Badge>
                             )}
                           </div>
                         </div>

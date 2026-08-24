@@ -73,6 +73,37 @@ function EditProductPage() {
         },
       });
     },
+    onMutate: async (updatedProduct) => {
+      await queryClient.cancelQueries({ queryKey: ["products"] });
+      
+      const previousProducts = queryClient.getQueryData(["products"]);
+      
+      // Optimistically update all queries matching ["products"]
+      queryClient.setQueriesData({ queryKey: ["products"] }, (old: any) => {
+        if (!old) return old;
+        const updateItem = (item: any) => item.id === productId ? { ...item, ...updatedProduct } : item;
+        
+        if (old.data) {
+          return { ...old, data: old.data.map(updateItem) };
+        }
+        if (Array.isArray(old)) {
+          return old.map(updateItem);
+        }
+        return old;
+      });
+
+      return { previousProducts };
+    },
+    onError: (err, newProduct, context) => {
+      if (context?.previousProducts) {
+        queryClient.setQueryData(["products"], context.previousProducts);
+      }
+      toast.error("Failed to update product");
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["products"] });
+      queryClient.invalidateQueries({ queryKey: ["inventory-products"] });
+    },
     onSuccess: async (res, payload) => {
       if (res?.success) {
         if (payload.isBundle) {
@@ -91,14 +122,13 @@ function EditProductPage() {
             }
           });
         }
-        queryClient.invalidateQueries({ queryKey: ["products"] });
+        // onSettled handles invalidation
         toast.success("Product updated successfully");
         navigate({ to: "/products" });
       } else {
         toast.error(res?.error || "Failed to update product");
       }
     },
-    onError: () => toast.error("Failed to update product"),
   });
 
   if (loading) {

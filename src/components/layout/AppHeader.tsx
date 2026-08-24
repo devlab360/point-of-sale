@@ -36,11 +36,8 @@ import { applyTheme, getInitialTheme, type Theme } from "@/lib/theme";
 import { hasPermissionForRoute } from "@/lib/menu-config";
 import { SyncStatus } from "@/components/SyncStatus";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { getProductsFn } from "@/api/products";
-import { getCustomersFn } from "@/api/customers";
 import { useAppFormatter } from "@/hooks/useAppFormatter";
-import { getSalesFn } from "@/api/sales";
-import { getExpensesFn } from "@/api/expenses";
+import { getGlobalSearchFn } from "@/api/search";
 import { getNotificationsFn, markNotificationReadFn } from "@/api/notifications";
 import { PersistStore } from "@/lib/session-store";
 import { cn } from "@/lib/utils";
@@ -50,6 +47,8 @@ import { useCurrency } from "@/lib/currency";
 import { toast } from "sonner";
 import { v4 as uuidv4 } from "uuid";
 import { InstallAppButton } from "@/components/InstallAppButton";
+
+import { useDebounce } from "@/hooks/useDebounce";
 
 function pathToCrumbs(pathname: string) {
   if (pathname === "/") return [{ label: "Dashboard", to: "/" }];
@@ -71,6 +70,7 @@ export function AppHeader() {
   const [searchQuery, setSearchQuery] = useState("");
   const { formatCurrency } = useCurrency();
   const navigate = useNavigate();
+  const debouncedSearchQuery = useDebounce(searchQuery, 300);
 
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
@@ -85,25 +85,16 @@ export function AppHeader() {
 
   const orgId = PersistStore.getOrgId() || "default";
 
-  const { data: allProducts = [] } = useQuery({
-    queryKey: ["products", orgId],
-    queryFn: async () => (await getProductsFn({ data: {} })).data || [],
-  });
-  const { data: allCustomers = [] } = useQuery({
-    queryKey: ["customers", orgId],
-    queryFn: async () => (await getCustomersFn({ data: {} })).data || [],
-  });
-  const { data: allOrders = [] } = useQuery({
-    queryKey: ["sales", orgId],
-    queryFn: async () => (await getSalesFn({ data: {} })).data || [],
-  });
-  const { data: allExpenses = [] } = useQuery({
-    queryKey: ["expenses", orgId],
-    queryFn: async () => (await getExpensesFn({ data: {} })).data || [],
-  });
+  const STALE_TIME = 5 * 60 * 1000; // 5 minutes
 
-  const allSuppliers: any[] = [];
-  const allPurchases: any[] = [];
+  const { data: searchResults, isFetching: isSearching } = useQuery({
+    queryKey: ["global-search", orgId, debouncedSearchQuery],
+    queryFn: async () => {
+      if (!debouncedSearchQuery || debouncedSearchQuery.length < 2) return null;
+      return (await getGlobalSearchFn({ data: { query: debouncedSearchQuery } }))?.data || null;
+    },
+    enabled: debouncedSearchQuery.length >= 2,
+  });
 
   const APP_MODULES = useMemo(
     () => [
@@ -147,92 +138,12 @@ export function AppHeader() {
     [],
   );
 
-  const searchProducts = useMemo(() => {
-    if (!searchQuery.trim() || searchQuery.length < 1) return [];
-    const q = searchQuery.toLowerCase();
-    return allProducts
-      .filter((p: any) =>
-        Boolean(
-          (p.name && String(p.name).toLowerCase().includes(q)) ||
-          (p.sku && String(p.sku).toLowerCase().includes(q)) ||
-          (p.barcode && String(p.barcode).toLowerCase().includes(q)) ||
-          (p.category && String(p.category).toLowerCase().includes(q)) ||
-          (p.brand && String(p.brand).toLowerCase().includes(q)),
-        ),
-      )
-      .slice(0, 5);
-  }, [allProducts, searchQuery]);
-
-  const searchCustomers = useMemo(() => {
-    if (!searchQuery.trim() || searchQuery.length < 1) return [];
-    const q = searchQuery.toLowerCase();
-    return allCustomers
-      .filter((c: any) =>
-        Boolean(
-          (c.name && String(c.name).toLowerCase().includes(q)) ||
-          (c.phone && String(c.phone).includes(q)) ||
-          (c.email && String(c.email).toLowerCase().includes(q)) ||
-          (c.gstin && String(c.gstin).toLowerCase().includes(q)),
-        ),
-      )
-      .slice(0, 5);
-  }, [allCustomers, searchQuery]);
-
-  const searchOrders = useMemo(() => {
-    if (!searchQuery.trim() || searchQuery.length < 1) return [];
-    const q = searchQuery.toLowerCase();
-    return allOrders
-      .filter((s: any) =>
-        Boolean(
-          (s.id && String(s.id).toLowerCase().includes(q)) ||
-          (s.customerName && String(s.customerName).toLowerCase().includes(q)) ||
-          (s.paymentMethod && String(s.paymentMethod).toLowerCase().includes(q)),
-        ),
-      )
-      .slice(0, 5);
-  }, [allOrders, searchQuery]);
-
-  const searchSuppliers = useMemo(() => {
-    if (!searchQuery.trim() || searchQuery.length < 1) return [];
-    const q = searchQuery.toLowerCase();
-    return allSuppliers
-      .filter((s) =>
-        Boolean(
-          (s.name && String(s.name).toLowerCase().includes(q)) ||
-          (s.phone && String(s.phone).includes(q)) ||
-          (s.email && String(s.email).toLowerCase().includes(q)) ||
-          (s.contact && String(s.contact).toLowerCase().includes(q)),
-        ),
-      )
-      .slice(0, 5);
-  }, [allSuppliers, searchQuery]);
-
-  const searchPurchases = useMemo(() => {
-    if (!searchQuery.trim() || searchQuery.length < 1) return [];
-    const q = searchQuery.toLowerCase();
-    return allPurchases
-      .filter((p) =>
-        Boolean(
-          (p.id && String(p.id).toLowerCase().includes(q)) ||
-          (p.invoiceNo && String(p.invoiceNo).toLowerCase().includes(q)) ||
-          (p.supplier && String(p.supplier).toLowerCase().includes(q)),
-        ),
-      )
-      .slice(0, 5);
-  }, [allPurchases, searchQuery]);
-
-  const searchExpenses = useMemo(() => {
-    if (!searchQuery.trim() || searchQuery.length < 1) return [];
-    const q = searchQuery.toLowerCase();
-    return allExpenses
-      .filter((e: any) =>
-        Boolean(
-          (e.category && String(e.category).toLowerCase().includes(q)) ||
-          (e.description && String(e.description).toLowerCase().includes(q)),
-        ),
-      )
-      .slice(0, 5);
-  }, [allExpenses, searchQuery]);
+  const searchProducts = searchResults?.products || [];
+  const searchCustomers = searchResults?.customers || [];
+  const searchOrders = searchResults?.sales || [];
+  const searchSuppliers = searchResults?.suppliers || [];
+  const searchPurchases: any[] = []; // Optionally add purchases to search.ts later
+  const searchExpenses = searchResults?.expenses || [];
 
   const searchModules = useMemo(() => {
     if (!searchQuery.trim() || searchQuery.length < 1) return [];
@@ -265,7 +176,7 @@ export function AppHeader() {
 
   const unread = useMemo(() => notifications.filter((n: any) => !n.read).length, [notifications]);
 
-  const { user, logout, saasPlan } = useAuth();
+  const { user, logout, saasPlan, settings } = useAuth();
   const isSuperAdminUser = user?.role === "super_admin";
   const canAccessPos =
     !isSuperAdminUser &&
@@ -339,10 +250,16 @@ export function AppHeader() {
           <AppSidebar onNavigate={() => setMobileOpen(false)} />
         </SheetContent>
       </Sheet>
-      {/* Mobile page title — shown on small screens where breadcrumbs are hidden */}
-      <span className="flex-1 truncate text-sm font-semibold text-foreground md:hidden">
-        {crumbs[crumbs.length - 1]?.label || "Dashboard"}
-      </span>
+      {/* Mobile page title or Logo — shown on small screens where breadcrumbs are hidden */}
+      <div className="flex-1 md:hidden flex items-center overflow-hidden">
+        {settings?.storeLogo ? (
+          <img src={settings.storeLogo} alt="Store Logo" className="h-7 w-auto object-contain" />
+        ) : (
+          <span className="truncate text-sm font-semibold text-foreground">
+            {crumbs[crumbs.length - 1]?.label || "Dashboard"}
+          </span>
+        )}
+      </div>
 
       <nav aria-label="Breadcrumb" className="hidden min-w-0 flex-1 items-center md:flex">
         <ol className="flex items-center gap-1.5 text-sm">

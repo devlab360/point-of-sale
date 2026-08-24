@@ -175,6 +175,47 @@ export const createPurchaseFn = createServerFn({ method: "POST" })
               })
               .where(eq(schema.products.id, line.productId));
           }
+
+          // --- Batch/Lot creation for products with hasBatch enabled ---
+          // When a purchase line includes batch data (batchNo, expiryDate, etc.),
+          // create a proper inventoryBatches record. This is a generic capability
+          // used by pharmacy, grocery, cosmetics, or any business using batch tracking.
+          const originalLines = data.items || data.lines || [];
+          for (let i = 0; i < rawItems.length; i++) {
+            const line = rawItems[i];
+            const originalLine = originalLines[i] || {};
+
+            // Only create batch if batch data is provided
+            const hasBatchData = originalLine.batchNo || originalLine.expiryDate;
+            if (hasBatchData) {
+              await tx.insert(schema.inventoryBatches).values({
+                id: uuidv4(),
+                organizationId: session.orgId,
+                productId: line.productId,
+                locationId: originalLine.locationId || null,
+                batchNo: originalLine.batchNo || null,
+                expiryDate: originalLine.expiryDate
+                  ? new Date(originalLine.expiryDate).toISOString()
+                  : null,
+                mfgDate: originalLine.mfgDate
+                  ? new Date(originalLine.mfgDate).toISOString()
+                  : null,
+                purchaseCost: line.cost.toFixed(2),
+                sellingPrice: originalLine.sellingPrice
+                  ? Number(originalLine.sellingPrice).toFixed(2)
+                  : null,
+                mrp: originalLine.mrp
+                  ? Number(originalLine.mrp).toFixed(2)
+                  : null,
+                quantityReceived: line.quantity.toString(),
+                quantityRemaining: line.quantity.toString(),
+                receivedAt: new Date().toISOString(),
+                purchaseOrderId: purchaseId,
+                supplierId: data.purchase?.supplierId || null,
+                batchNote: originalLine.batchNote || null,
+              });
+            }
+          }
         }
 
         // Khatabook integration (Supplier Ledger)

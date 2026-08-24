@@ -135,4 +135,23 @@ export const INDUSTRY_SEEDS: Record<string, SeedData> = {
     units: [{ id: uuidv4(), name: "Item", short: "itm" }],
     settings: { storeName: "Books & Toys Store", headerNote: "Knowledge and fun in one place." },
   },
+  "Pharmacy & Medical": {
+    categories: [
+      { id: uuidv4(), name: "Tablets & Capsules", color: "oklch(0.6 0.1 200)", icon: "💊", count: 0 },
+      { id: uuidv4(), name: "Syrups & Liquids", color: "oklch(0.7 0.15 150)", icon: "🧴", count: 0 },
+      { id: uuidv4(), name: "Injections", color: "oklch(0.6 0.1 250)", icon: "💉", count: 0 },
+      { id: uuidv4(), name: "OTC & Wellness", color: "oklch(0.75 0.1 100)", icon: "🩹", count: 0 },
+      { id: uuidv4(), name: "Medical Devices", color: "oklch(0.65 0.1 220)", icon: "🩺", count: 0 },
+      { id: uuidv4(), name: "Personal Care", color: "oklch(0.8 0.15 320)", icon: "🧼", count: 0 },
+    ],
+    units: [
+      { id: uuidv4(), name: "Strip", short: "str" },
+      { id: uuidv4(), name: "Bottle", short: "btl" },
+      { id: uuidv4(), name: "Piece", short: "pcs" },
+      { id: uuidv4(), name: "Box", short: "box" },
+      { id: uuidv4(), name: "Tube", short: "tube" },
+      { id: uuidv4(), name: "Vial", short: "vial" },
+    ],
+    settings: { storeName: "My Pharmacy", headerNote: "Your health is our priority." },
+  },
 };

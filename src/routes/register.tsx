@@ -45,6 +45,7 @@ const INDUSTRIES = [
   "Apparel",
   "Electronics",
   "Books & Toys",
+  "Pharmacy & Medical",
 ];
 
 function RegisterPage() {

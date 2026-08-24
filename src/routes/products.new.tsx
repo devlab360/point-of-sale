@@ -17,14 +17,50 @@ function NewProductPage() {
 
   const createMutation = useMutation({
     mutationFn: async (payload: any) => {
+      const product = {
+        id: uuidv4(),
+        ...payload,
+      };
       return await createProductFn({
-        data: {
-          product: {
-            id: uuidv4(),
-            ...payload,
-          },
-        },
+        data: { product },
       });
+    },
+    onMutate: async (newProduct) => {
+      await queryClient.cancelQueries({ queryKey: ["products"] });
+      
+      const previousProducts = queryClient.getQueryData(["products"]);
+      
+      const optimisticProduct = {
+        id: uuidv4(),
+        ...newProduct,
+        stock: newProduct.stock || 0,
+        createdAt: new Date().toISOString(),
+      };
+
+      // Optimistically update all queries matching ["products"]
+      queryClient.setQueriesData({ queryKey: ["products"] }, (old: any) => {
+        if (!old) return old;
+        if (old.data) {
+          return { ...old, data: [optimisticProduct, ...old.data] };
+        }
+        if (Array.isArray(old)) {
+          return [optimisticProduct, ...old];
+        }
+        return old;
+      });
+
+      return { previousProducts };
+    },
+    onError: (err, newProduct, context) => {
+      if (context?.previousProducts) {
+        queryClient.setQueryData(["products"], context.previousProducts);
+      }
+      toast.error("Failed to create product");
+    },
+    onSettled: () => {
+      // Background re-fetch to ensure sync with server
+      queryClient.invalidateQueries({ queryKey: ["products"] });
+      queryClient.invalidateQueries({ queryKey: ["inventory-products"] });
     },
     onSuccess: async (res, payload) => {
       if (res?.success) {
@@ -44,14 +80,13 @@ function NewProductPage() {
             }
           });
         }
-        queryClient.invalidateQueries({ queryKey: ["products"] });
+        // No need to invalidate here as onSettled handles it
         toast.success("Product created successfully");
         navigate({ to: "/products" });
       } else {
         toast.error(res?.error || "Failed to create product");
       }
     },
-    onError: () => toast.error("Failed to create product"),
   });
 
   return (

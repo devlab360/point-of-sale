@@ -289,6 +289,8 @@ export const products = pgTable(
     hsnCode: text("hsn_code"),
     gstRate: numeric("gst_rate", { precision: 5, scale: 2 }),
     taxInclusive: boolean("tax_inclusive").default(false),
+    mrp: numeric("mrp", { precision: 10, scale: 2 }),
+    metadata: jsonb("metadata").$type<Record<string, any>>(),
     isBundle: boolean("is_bundle").default(false),
     trackFifo: boolean("track_fifo").default(false),
     hasModifiers: boolean("has_modifiers").default(false),
@@ -416,12 +418,14 @@ export const sales = pgTable(
     igstAmt: numeric("igst_amt", { precision: 12, scale: 2 }),
     paymentMethod: text("payment_method").notNull(),
     payments: jsonb("payments").$type<Record<string, any>[]>(),
-    cashTendered: numeric("cash_tendered", { precision: 12, scale: 2 }),
-    changeDue: numeric("change_due", { precision: 12, scale: 2 }),
+    cashTendered: numeric("cash_tendered", { precision: 10, scale: 2 }),
+    changeDue: numeric("change_due", { precision: 10, scale: 2 }),
+    metadata: jsonb("metadata").$type<Record<string, any>>(),
     salesmanId: text("salesman_id").references(() => users.id),
     salesmanName: text("salesman_name"),
     commissionAmt: numeric("commission_amt", { precision: 10, scale: 2 }),
     status: text("status").notNull().default("completed"),
+    createdAt: timestamp("created_at", { mode: "string" }).defaultNow().notNull(),
   },
   (t) => ({
     orgDateIdx: index("sales_org_date_idx").on(t.organizationId, t.date),
@@ -621,6 +625,9 @@ export const settings = pgTable(
     gstin: text("gstin"),
     stateCode: text("state_code"),
     businessType: text("business_type"),
+    config: jsonb("config").$type<Record<string, any>>(),
+    expiryWarningDays: integer("expiry_warning_days").default(30),
+    stockAllocationMethod: text("stock_allocation_method").default("FIFO"),
     createdAt: timestamp("created_at", { mode: "string" }).defaultNow().notNull(),
     updatedAt: timestamp("updated_at", { mode: "string" }).defaultNow().notNull(),
   },
@@ -834,9 +841,10 @@ export const salesReturnItems = pgTable(
       .references(() => salesReturns.id, { onDelete: "cascade" }),
     productId: text("product_id").notNull(),
     productName: text("product_name").notNull(),
-    quantity: numeric("quantity", { precision: 10, scale: 3 }).notNull(),
+    quantity: integer("quantity").notNull(),
     price: numeric("price", { precision: 10, scale: 2 }).notNull(),
     total: numeric("total", { precision: 10, scale: 2 }).notNull(),
+    batchId: text("batch_id"),
   },
   (t) => ({
     orgIdx: index("sales_return_items_org_idx").on(t.organizationId),
@@ -871,9 +879,10 @@ export const purchaseReturnItems = pgTable(
       .references(() => purchaseReturns.id, { onDelete: "cascade" }),
     productId: text("product_id").notNull(),
     productName: text("product_name").notNull(),
-    quantity: numeric("quantity", { precision: 10, scale: 3 }).notNull(),
+    quantity: integer("quantity").notNull(),
     cost: numeric("cost", { precision: 10, scale: 2 }).notNull(),
     total: numeric("total", { precision: 10, scale: 2 }).notNull(),
+    batchId: text("batch_id"),
   },
   (t) => ({
     orgIdx: index("purchase_return_items_org_idx").on(t.organizationId),
@@ -1351,16 +1360,23 @@ export const inventoryBatches = pgTable(
       .references(() => products.id, { onDelete: "cascade" }),
     locationId: text("location_id")
       .references(() => locations.id),
+    batchNo: text("batch_no"), // Batch/Lot identification number (generic — not pharmacy-specific)
+    expiryDate: timestamp("expiry_date", { mode: "string" }), // Batch-level expiry (pharmacy, grocery, cosmetics, etc.)
+    mfgDate: timestamp("mfg_date", { mode: "string" }), // Manufacturing date
     purchaseCost: numeric("purchase_cost", { precision: 10, scale: 2 }).notNull(),
+    sellingPrice: numeric("selling_price", { precision: 10, scale: 2 }), // Batch-specific selling price (optional override)
+    mrp: numeric("mrp", { precision: 10, scale: 2 }), // Maximum Retail Price (optional, India-specific)
     quantityReceived: numeric("quantity_received", { precision: 10, scale: 3 }).notNull(),
     quantityRemaining: numeric("quantity_remaining", { precision: 10, scale: 3 }).notNull(),
     receivedAt: timestamp("received_at", { mode: "string" }).defaultNow().notNull(),
     purchaseOrderId: text("purchase_order_id"),
+    supplierId: text("supplier_id").references(() => suppliers.id), // Which supplier provided this batch
     batchNote: text("batch_note"),
   },
   (t) => ({
     productIdx: index("inv_batch_product_idx").on(t.productId),
     orgIdx: index("inv_batch_org_idx").on(t.organizationId),
+    expiryIdx: index("inv_batch_expiry_idx").on(t.organizationId, t.expiryDate),
   })
 );
 

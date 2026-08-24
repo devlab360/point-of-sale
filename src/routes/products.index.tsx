@@ -856,62 +856,79 @@ function GridView({
             className="group relative flex flex-col overflow-hidden rounded-2xl border border-border/80 bg-card transition-all duration-200 hover:border-primary/50 hover:shadow-card-hover card-interactive"
           >
             <div
-              className="aspect-square bg-muted/40 cursor-pointer overflow-hidden relative"
+              className="aspect-square bg-muted/40 cursor-pointer overflow-hidden relative flex items-center justify-center border-b border-border/50"
               onClick={() => onEdit(p)}
             >
               {p.image ? (
                 <img src={p.image} alt="" className="size-full object-cover transition-transform duration-300 group-hover:scale-105" />
               ) : (
-                <div className="flex size-full items-center justify-center text-muted-foreground/30">
-                  <PackageSearch className="size-12" />
+                <div className="flex flex-col items-center justify-center text-muted-foreground/30">
+                  <PackageSearch className="size-10" strokeWidth={1.5} />
                 </div>
               )}
 
               {/* Status pill overlay */}
               {isLow && (
-                <span className="absolute left-2 top-2 rounded-full bg-destructive/90 px-2 py-0.5 text-[9px] font-extrabold uppercase tracking-wider text-white shadow-sm backdrop-blur-sm">
+                <span className="absolute left-2 top-2 rounded-full bg-warning/90 px-2 py-0.5 text-[9px] font-extrabold uppercase tracking-wider text-warning-foreground shadow-sm backdrop-blur-sm">
                   {p.stock} left
                 </span>
               )}
-            </div>
 
+              {/* Edit overlay */}
+              <div className="absolute inset-x-0 bottom-0 translate-y-full bg-gradient-to-t from-black/80 to-black/60 py-1.5 text-center text-[11px] font-bold text-white backdrop-blur-sm transition-transform duration-200 group-hover:translate-y-0 flex items-center justify-center gap-1 shadow-inner">
+                <Pencil className="size-3.5" /> Edit Product
+              </div>
+            </div>
+            
             <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
               <Button
                 variant="secondary"
                 size="icon"
-                className="size-8 rounded-xl shadow-soft bg-background/90 backdrop-blur-sm"
+                className="size-8 rounded-xl shadow-soft bg-background/90 backdrop-blur-sm hover:bg-primary hover:text-primary-foreground transition-colors"
                 onClick={(e) => {
                   e.stopPropagation();
                   onPrint(p);
                 }}
+                title="Print Barcode"
               >
                 <Printer className="size-3.5" />
               </Button>
             </div>
 
-            <div className="p-3.5 cursor-pointer flex flex-col justify-between flex-1" onClick={() => onEdit(p)}>
+            <div className="p-3 cursor-pointer flex flex-col justify-between flex-1" onClick={() => onEdit(p)}>
               <div>
-                <div className="text-xs sm:text-sm font-bold text-foreground truncate" title={p.name}>
+                <h4 className="text-xs sm:text-sm font-bold text-foreground line-clamp-2 leading-tight" title={p.name}>
                   {p.name}
-                </div>
-                <div className="mt-0.5 flex items-center justify-between text-[11px] text-muted-foreground">
-                  <span className="font-mono">{p.sku}</span>
-                  <span className="truncate max-w-[50%] text-right font-medium">{categoryName}</span>
+                </h4>
+                <div className="mt-0.5 flex items-center justify-between text-[10px] sm:text-[11px] text-muted-foreground font-medium">
+                  <span className="font-mono bg-muted px-1.5 py-0.5 rounded-md">{p.sku}</span>
+                  <span className="truncate max-w-[50%] text-right">{categoryName}</span>
                 </div>
               </div>
 
-              <div className="mt-3 flex items-baseline justify-between border-t border-border/50 pt-2">
-                <span className="number text-sm sm:text-base font-black text-primary">
-                  {formatCurrency(p.price)}
-                </span>
-                <span
-                  className={cn(
-                    "text-[11px] font-bold",
-                    isLow ? "text-destructive" : "text-muted-foreground",
-                  )}
-                >
-                  {p.stock} {unitName || "stock"}
-                </span>
+              <div className="mt-2.5 flex flex-col gap-1 border-t border-border/40 pt-2">
+                <div className="flex items-center justify-between">
+                  <span className="number text-sm sm:text-base font-black text-primary">{formatCurrency(p.price)}</span>
+                  <span
+                    className={cn(
+                      "text-[10px] font-bold px-1.5 py-0.5 rounded-md",
+                      isLow ? "bg-destructive/10 text-destructive" : "bg-muted text-muted-foreground",
+                    )}
+                  >
+                    {p.stock} {unitName || "stock"}
+                  </span>
+                </div>
+
+                {(p.wholesalePrice > 0 || p.dealerPrice > 0) && (
+                  <div className="flex items-center justify-between text-[9px] mt-0.5 font-bold">
+                    <span className="text-info/80">
+                      {p.wholesalePrice > 0 ? `WS: ${formatCurrency(p.wholesalePrice)}` : ""}
+                    </span>
+                    <span className="text-warning/80">
+                      {p.dealerPrice > 0 ? `DLR: ${formatCurrency(p.dealerPrice)}` : ""}
+                    </span>
+                  </div>
+                )}
               </div>
             </div>
           </div>

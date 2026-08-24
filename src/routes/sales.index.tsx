@@ -1,4 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { PersistStore } from "@/lib/session-store";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { exportToCSV } from "@/lib/csv";
 import { TableSkeleton } from "@/components/skeletons/TableSkeleton";
@@ -25,6 +26,20 @@ import { Label } from "@/components/ui/label";
 
 export const Route = createFileRoute("/sales/")({
   head: () => ({ meta: [{ title: "Sales · NexisPOS" }] }),
+  loader: async ({ context: { queryClient } }) => {
+    const orgId = PersistStore.getOrgId();
+    if (!orgId) return;
+
+    queryClient.ensureQueryData({
+      queryKey: ["sales", orgId, 1, 10, "", "", "", ""],
+      queryFn: async () => await getSalesFn({ data: { page: 1, pageSize: 10 } }),
+    });
+
+    queryClient.ensureQueryData({
+      queryKey: ["settings", orgId],
+      queryFn: async () => ((await getSettingsFn()) as any)?.data,
+    });
+  },
   component: SalesPage,
 });
 
@@ -151,9 +166,9 @@ function SalesPage() {
   };
 
   return (
-    <div className="page-container space-y-5">
+    <div>
       <DataPage
-        title={t("salesHistory") || "Sales History"}
+        title={t("Sales History") || "Sales History"}
         description={t("manageSales") || "Every transaction across all your registers."}
         primaryAction={{
           label: t("newSale") || "New Sale",

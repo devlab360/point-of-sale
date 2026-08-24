@@ -3,8 +3,9 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useVirtualizer } from "@tanstack/react-virtual";
 import { getLocationsFn } from "@/api/locations";
 import { VariantSelectorModal } from "./VariantSelectorModal";
 import { ModifierSelectionModal } from "./ModifierSelectionModal";
@@ -35,6 +36,34 @@ export function ProductGrid({ state }: { state: any }) {
   
   const [selectedVariantProduct, setSelectedVariantProduct] = useState<any>(null);
   const [selectedModifierProduct, setSelectedModifierProduct] = useState<{product: any, variant?: any} | null>(null);
+
+  const parentRef = useRef<HTMLDivElement>(null);
+  const [columns, setColumns] = useState(2);
+
+  useEffect(() => {
+    if (!parentRef.current) return;
+    const resizeObserver = new ResizeObserver((entries) => {
+      for (let entry of entries) {
+        const width = entry.contentRect.width;
+        if (width >= 1536) setColumns(5); // 2xl
+        else if (width >= 1280) setColumns(4); // xl
+        else if (width >= 768) setColumns(3); // md, lg
+        else if (width >= 640) setColumns(3); // sm
+        else setColumns(2);
+      }
+    });
+    resizeObserver.observe(parentRef.current);
+    return () => resizeObserver.disconnect();
+  }, []);
+
+  const rowCount = Math.ceil(filtered.length / columns);
+
+  const virtualizer = useVirtualizer({
+    count: rowCount,
+    getScrollElement: () => parentRef.current,
+    estimateSize: () => 240, // Approx height of card (130px img + 90px text) + gap
+    overscan: 4, // Render 4 rows ahead/behind
+  });
 
   return (
     <div
@@ -162,9 +191,9 @@ export function ProductGrid({ state }: { state: any }) {
                 <MapPin className="size-3 text-primary" />
                 <span>Select Store Outlet</span>
               </div>
-              {locations.length === 0 && (
-                <SelectItem value="default" className="text-xs font-medium">Main Outlet</SelectItem>
-              )}
+              <SelectItem value="default" className="text-xs font-medium">
+                Main Outlet
+              </SelectItem>
               {locations.map((loc: any) => (
                 <SelectItem key={loc.id} value={loc.id} className="text-xs font-medium">
                   <div className="flex flex-col">
@@ -218,7 +247,10 @@ export function ProductGrid({ state }: { state: any }) {
       </div>
 
       {/* Products Grid Feed */}
-      <div className="flex-1 overflow-y-auto p-3 sm:p-4">
+      <div 
+        ref={parentRef} 
+        className="flex-1 overflow-y-auto p-3 sm:p-4 relative"
+      >
         {filtered.length === 0 ? (
           <div className="flex h-64 flex-col items-center justify-center text-center text-xs text-muted-foreground">
             <div className="grid size-12 place-items-center rounded-2xl bg-muted/50 mb-2">
@@ -228,98 +260,128 @@ export function ProductGrid({ state }: { state: any }) {
             <p className="mt-0.5">Try searching by another title, SKU or category filter.</p>
           </div>
         ) : (
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
-            {filtered.map((p: any) => {
-              const isService = p.referenceType === "SERVICE";
-              const low = !isService && Number(p.stock) > 0 && Number(p.stock) <= Number(p.reorderLevel);
-              const out = !isService && p.stock <= 0;
-              const catName = getCategoryName ? getCategoryName(p.category) : p.category || "";
-              const unitName = getUnitName ? getUnitName(p.unit) : p.unit || "";
-              const brandName = getBrandName ? getBrandName(p.brand) : p.brand || "";
-              const subText = [catName, brandName].filter(Boolean).join(" · ") || unitName;
+          <div
+            style={{
+              height: `${virtualizer.getTotalSize()}px`,
+              width: "100%",
+              position: "relative",
+            }}
+          >
+            {virtualizer.getVirtualItems().map((virtualRow) => {
+              const startIndex = virtualRow.index * columns;
+              const rowItems = filtered.slice(startIndex, startIndex + columns);
 
               return (
-                <button
-                  key={p.id}
-                  type="button"
-                  onClick={() => {
-                    if (p.hasVariants) {
-                      setSelectedVariantProduct(p);
-                    } else if (p.hasModifiers) {
-                      setSelectedModifierProduct({ product: p });
-                    } else {
-                      addToCart(p.id);
-                    }
+                <div
+                  key={virtualRow.key}
+                  style={{
+                    position: "absolute",
+                    top: 0,
+                    left: 0,
+                    width: "100%",
+                    height: `${virtualRow.size}px`,
+                    transform: `translateY(${virtualRow.start}px)`,
+                    display: "grid",
+                    gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))`,
+                    gap: "12px",
+                    paddingBottom: "12px", // acts as row gap
                   }}
-                  disabled={out}
-                  className={cn(
-                    "group relative flex flex-col overflow-hidden rounded-2xl border border-border/80 bg-card text-left transition-all duration-200 hover:border-primary/50 hover:shadow-card-hover card-interactive focus:outline-none focus:ring-2 focus:ring-primary/20",
-                    out && "opacity-60 cursor-not-allowed",
-                  )}
                 >
-                  {/* Thumbnail & Badges */}
-                  <div className="relative aspect-[4/3] w-full overflow-hidden bg-muted/40 flex items-center justify-center border-b border-border/50">
-                    {p.image && !p.image.includes("1542838132") && !p.image.includes("unsplash") ? (
-                      <img
-                        src={p.image}
-                        alt={p.name}
-                        loading="lazy"
-                        className="size-full object-cover transition-transform duration-300 group-hover:scale-105"
-                      />
-                    ) : (
-                      <div className="flex flex-col items-center justify-center text-muted-foreground/30">
-                        <ImageIcon className="size-9" strokeWidth={1.5} />
-                      </div>
-                    )}
+                  {rowItems.map((p: any) => {
+                    const isService = p.referenceType === "SERVICE";
+                    const low = !isService && Number(p.stock) > 0 && Number(p.stock) <= Number(p.reorderLevel);
+                    const out = !isService && p.stock <= 0;
+                    const catName = getCategoryName ? getCategoryName(p.category) : p.category || "";
+                    const unitName = getUnitName ? getUnitName(p.unit) : p.unit || "";
+                    const brandName = getBrandName ? getBrandName(p.brand) : p.brand || "";
+                    const subText = [catName, brandName].filter(Boolean).join(" · ") || unitName;
 
-                    {/* Stock Status Pills */}
-                    {low && !out && (
-                      <span className="absolute left-2 top-2 rounded-full bg-warning/90 px-2 py-0.5 text-[9px] font-extrabold uppercase tracking-wider text-warning-foreground shadow-sm backdrop-blur-sm">
-                        {p.stock} left
-                      </span>
-                    )}
-                    {out && (
-                      <span className="absolute left-2 top-2 rounded-full bg-destructive/90 px-2 py-0.5 text-[9px] font-extrabold uppercase tracking-wider text-white shadow-sm backdrop-blur-sm">
-                        Out of Stock
-                      </span>
-                    )}
-                    {isService && (
-                      <span className="absolute left-2 top-2 rounded-full bg-primary/90 px-2 py-0.5 text-[9px] font-extrabold uppercase tracking-wider text-primary-foreground shadow-sm backdrop-blur-sm">
-                        Service
-                      </span>
-                    )}
+                    return (
+                      <button
+                        key={p.id}
+                        type="button"
+                        onClick={() => {
+                          if (p.hasVariants) {
+                            setSelectedVariantProduct(p);
+                          } else if (p.hasModifiers) {
+                            setSelectedModifierProduct({ product: p });
+                          } else {
+                            addToCart(p.id);
+                          }
+                        }}
+                        disabled={out}
+                        style={{ height: "100%" }}
+                        className={cn(
+                          "group relative flex flex-col overflow-hidden rounded-2xl border border-border/80 bg-card text-left transition-all duration-200 hover:border-primary/50 hover:shadow-card-hover card-interactive focus:outline-none focus:ring-2 focus:ring-primary/20",
+                          out && "opacity-60 cursor-not-allowed",
+                        )}
+                      >
+                        {/* Thumbnail & Badges */}
+                        <div className="relative h-[130px] w-full shrink-0 overflow-hidden bg-muted/40 flex items-center justify-center border-b border-border/50">
+                          {p.image && !p.image.includes("1542838132") && !p.image.includes("unsplash") ? (
+                            <img
+                              src={p.image}
+                              alt={p.name}
+                              loading="lazy"
+                              className="size-full object-cover transition-transform duration-300 group-hover:scale-105"
+                            />
+                          ) : (
+                            <div className="flex flex-col items-center justify-center text-muted-foreground/30">
+                              <ImageIcon className="size-9" strokeWidth={1.5} />
+                            </div>
+                          )}
 
-                    {/* Quick Add Overlay on Hover */}
-                    <div className="absolute inset-x-0 bottom-0 translate-y-full bg-gradient-to-t from-primary to-primary/90 py-1.5 text-center text-[11px] font-bold text-primary-foreground backdrop-blur-sm transition-transform duration-200 group-hover:translate-y-0 flex items-center justify-center gap-1">
-                      <Plus className="size-3.5 stroke-[2.5]" /> Quick Add
-                    </div>
-                  </div>
+                          {/* Stock Status Pills */}
+                          {low && !out && (
+                            <span className="absolute left-2 top-2 rounded-full bg-warning/90 px-2 py-0.5 text-[9px] font-extrabold uppercase tracking-wider text-warning-foreground shadow-sm backdrop-blur-sm">
+                              {p.stock} left
+                            </span>
+                          )}
+                          {out && (
+                            <span className="absolute left-2 top-2 rounded-full bg-destructive/90 px-2 py-0.5 text-[9px] font-extrabold uppercase tracking-wider text-white shadow-sm backdrop-blur-sm">
+                              Out of Stock
+                            </span>
+                          )}
+                          {isService && (
+                            <span className="absolute left-2 top-2 rounded-full bg-primary/90 px-2 py-0.5 text-[9px] font-extrabold uppercase tracking-wider text-primary-foreground shadow-sm backdrop-blur-sm">
+                              Service
+                            </span>
+                          )}
 
-                  {/* Product Details */}
-                  <div className="flex flex-1 flex-col justify-between p-3">
-                    <div>
-                      <h4 className="line-clamp-2 text-xs sm:text-sm font-bold text-foreground leading-tight">
-                        {p.name}
-                      </h4>
-                      {subText && (
-                        <p className="mt-0.5 truncate text-[10px] sm:text-[11px] font-medium text-muted-foreground">
-                          {subText}
-                        </p>
-                      )}
-                    </div>
+                          {/* Quick Add Overlay on Hover */}
+                          <div className="absolute inset-x-0 bottom-0 translate-y-full bg-gradient-to-t from-primary to-primary/90 py-1.5 text-center text-[11px] font-bold text-primary-foreground backdrop-blur-sm transition-transform duration-200 group-hover:translate-y-0 flex items-center justify-center gap-1 shadow-inner">
+                            <Plus className="size-3.5 stroke-[2.5]" /> Quick Add
+                          </div>
+                        </div>
 
-                    <div className="mt-2.5 flex items-center justify-between border-t border-border/40 pt-2">
-                      <span className="number text-sm sm:text-base font-black text-primary">
-                        {formatCurrency(p.price)}
-                      </span>
-                      {p.hasVariants && (
-                        <span className="text-[9px] font-bold rounded-md bg-secondary/80 px-1.5 py-0.5 text-secondary-foreground uppercase tracking-wider">
-                          Variants
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                </button>
+                        {/* Product Details */}
+                        <div className="flex flex-1 flex-col justify-between p-3 min-h-[80px]">
+                          <div>
+                            <h4 className="line-clamp-2 text-xs sm:text-sm font-bold text-foreground leading-tight">
+                              {p.name}
+                            </h4>
+                            {subText && (
+                              <p className="mt-0.5 truncate text-[10px] sm:text-[11px] font-medium text-muted-foreground">
+                                {subText}
+                              </p>
+                            )}
+                          </div>
+
+                          <div className="mt-2.5 flex items-center justify-between border-t border-border/40 pt-2 shrink-0">
+                            <span className="number text-sm sm:text-base font-black text-primary">
+                              {formatCurrency(p.price)}
+                            </span>
+                            {p.hasVariants && (
+                              <span className="text-[9px] font-bold rounded-md bg-secondary/80 px-1.5 py-0.5 text-secondary-foreground uppercase tracking-wider">
+                                Variants
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
               );
             })}
           </div>

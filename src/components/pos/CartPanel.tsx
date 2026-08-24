@@ -264,51 +264,89 @@ export function CartPanel({ state, onCheckout }: { state: any; onCheckout?: (isQ
                       </div>
                     </div>
 
-                    <div className="mt-0.5 flex items-center justify-between">
-                      <div className="text-[10px] text-muted-foreground flex items-center gap-1 font-medium truncate">
-                        <span>{formatCurrency(l.unitPrice)}{safeUnit ? `/${safeUnit}` : ""}</span>
-                        {l.priceTierLabel && (
-                          <span className="rounded bg-primary/10 px-1 text-[8px] font-bold text-primary uppercase">
-                            {l.priceTierLabel}
-                          </span>
-                        )}
-                      </div>
+                    <div className="mt-0.5 flex flex-col gap-1">
+                      <div className="flex items-center justify-between">
+                        <div className="text-[10px] text-muted-foreground flex items-center gap-1 font-medium truncate">
+                          <span>{formatCurrency(l.unitPrice)}{safeUnit ? `/${safeUnit}` : ""}</span>
+                          {l.priceTierLabel && (
+                            <span className="rounded bg-primary/10 px-1 text-[8px] font-bold text-primary uppercase">
+                              {l.priceTierLabel}
+                            </span>
+                          )}
+                        </div>
 
-                      {/* Compact Quantity Stepper & Remove */}
-                      <div className="flex items-center gap-1">
-                        <button
-                          onClick={() => updateQty(l.id, 0)}
-                          className="rounded p-0.5 text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors"
-                          aria-label="Remove item"
-                        >
-                          <Trash2 className="size-3" />
-                        </button>
+                        {/* Compact Quantity Stepper & Remove */}
+                        <div className="flex items-center gap-1">
+                          <button
+                            onClick={() => updateQty(l.id, 0)}
+                            className="rounded p-0.5 text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors"
+                            aria-label="Remove item"
+                          >
+                            <Trash2 className="size-3" />
+                          </button>
 
-                        <div className="inline-flex items-center rounded-md border border-border/80 bg-background shadow-xs overflow-hidden">
-                          <button
-                            type="button"
-                            onClick={() => updateQty(l.id, l.qty - 1)}
-                            className="grid size-5.5 place-items-center text-xs font-bold hover:bg-muted transition-colors active:bg-muted/80"
-                          >
-                            −
-                          </button>
-                          <input
-                            type="number"
-                            step="any"
-                            value={l.qty}
-                            onChange={(e) => updateQty(l.id, e.target.value === "" ? 0 : (parseFloat(e.target.value) || 0))}
-                            onBlur={(e) => { if (!e.target.value || Number(e.target.value) <= 0) updateQty(l.id, 1); }}
-                            className="w-8 py-0 text-center text-xs font-black bg-transparent outline-none"
-                          />
-                          <button
-                            type="button"
-                            onClick={() => updateQty(l.id, l.qty + 1)}
-                            className="grid size-5.5 place-items-center text-xs font-bold hover:bg-muted transition-colors active:bg-muted/80"
-                          >
-                            +
-                          </button>
+                          <div className="inline-flex items-center rounded-md border border-border/80 bg-background shadow-xs overflow-hidden">
+                            <button
+                              type="button"
+                              onClick={() => updateQty(l.id, l.qty - 1)}
+                              className="grid size-5.5 place-items-center text-xs font-bold hover:bg-muted transition-colors active:bg-muted/80"
+                            >
+                              −
+                            </button>
+                            <input
+                              type="number"
+                              step="any"
+                              value={l.qty}
+                              onChange={(e) => updateQty(l.id, e.target.value === "" ? 0 : (parseFloat(e.target.value) || 0))}
+                              onBlur={(e) => { if (!e.target.value || Number(e.target.value) <= 0) updateQty(l.id, 1); }}
+                              className="w-8 py-0 text-center text-xs font-black bg-transparent outline-none"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => updateQty(l.id, l.qty + 1)}
+                              className="grid size-5.5 place-items-center text-xs font-bold hover:bg-muted transition-colors active:bg-muted/80"
+                            >
+                              +
+                            </button>
+                          </div>
                         </div>
                       </div>
+
+                      {/* Pharmacy / Batch Info Row */}
+                      {(l.selectedBatch || l.product.metadata?.prescriptionRequired) && (
+                        <div className="flex flex-wrap items-center gap-2 mt-0.5">
+                          {l.selectedBatch && (
+                            <div className="text-[9px] font-bold bg-amber-500/10 text-amber-600 rounded border border-amber-500/20 px-1">
+                              {l.product.batches && l.product.batches.length > 1 ? (
+                                <select 
+                                  className="bg-transparent border-none outline-none font-bold py-0.5"
+                                  value={l.batchId || ""}
+                                  onChange={(e) => {
+                                    const selectedId = e.target.value;
+                                    const b = l.product.batches.find((b: any) => b.id === selectedId);
+                                    if (b) state.updateBatch(l.id, b.id, b.batchNo);
+                                    else state.updateBatch(l.id, undefined, undefined);
+                                  }}
+                                >
+                                  <option value="">Auto FEFO: {l.selectedBatch}</option>
+                                  {l.product.batches.filter((b: any) => Number(b.quantityRemaining) > 0).map((b: any) => (
+                                    <option key={b.id} value={b.id}>
+                                      {b.batchNo} ({b.expiryDate ? b.expiryDate.slice(0,10) : 'No Exp'})
+                                    </option>
+                                  ))}
+                                </select>
+                              ) : (
+                                <div className="px-0.5 py-0.5">{l.selectedBatch}</div>
+                              )}
+                            </div>
+                          )}
+                          {l.product.metadata?.prescriptionRequired && (
+                            <div className="flex items-center gap-1 text-[9px] font-bold bg-destructive/10 text-destructive px-1.5 py-0.5 rounded border border-destructive/20" title="Valid prescription required">
+                              <ShieldCheck className="size-2.5" /> Rx Req
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
                   </div>
                 </li>

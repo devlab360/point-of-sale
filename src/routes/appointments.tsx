@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { TableSkeleton } from "@/components/skeletons/TableSkeleton";
 import { Card, CardContent } from "@/components/ui/card";
 import { CalendarDays, Clock, User, Plus, Loader2, Calendar as CalendarIcon, Phone } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -231,9 +232,7 @@ function AppointmentsPage() {
 
       <div className="space-y-3">
         {isLoading ? (
-          <div className="flex justify-center py-16">
-            <Loader2 className="size-8 animate-spin text-muted-foreground" />
-          </div>
+          <TableSkeleton />
         ) : appointments.length === 0 ? (
           <div className="text-center py-16 border rounded-2xl bg-muted/20 border-dashed border-border/80">
             <CalendarDays className="size-10 mx-auto text-muted-foreground/50 mb-3" />
@@ -253,12 +252,18 @@ function AppointmentsPage() {
             return (
               <div
                 key={apt.id}
-                className={`rounded-2xl border border-border/80 bg-card p-4 sm:p-5 shadow-card card-interactive flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-all ${
-                  isCompleted ? "opacity-75 bg-muted/20" : isCancelled ? "opacity-50" : ""
+                className={`relative rounded-2xl border p-4 sm:p-5 shadow-sm hover:shadow-card flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-all duration-300 ease-in-out group ${
+                  isCompleted ? "opacity-75 bg-muted/20 border-border/40" : 
+                  isCancelled ? "opacity-50 border-destructive/20 bg-destructive/5" : 
+                  "bg-card border-border/80 hover:border-primary/40 hover:-translate-y-1"
                 }`}
               >
                 <div className="flex items-start gap-4">
-                  <div className="flex flex-col items-center justify-center p-3 bg-primary/10 text-primary border border-primary/20 rounded-xl min-w-20 sm:min-w-24 shrink-0">
+                  <div className={`flex flex-col items-center justify-center p-3 border rounded-xl min-w-20 sm:min-w-24 shrink-0 transition-colors ${
+                    isCompleted ? "bg-muted/50 border-muted text-muted-foreground" :
+                    isCancelled ? "bg-destructive/10 border-destructive/20 text-destructive" :
+                    "bg-primary/5 text-primary border-primary/20 group-hover:bg-primary/10 group-hover:border-primary/30"
+                  }`}>
                     <span className="text-[10px] uppercase font-bold tracking-wider opacity-80">
                       {formatAppDate(dateObj, "date", "MMM d")}
                     </span>
@@ -269,10 +274,12 @@ function AppointmentsPage() {
                   </div>
 
                   <div className="min-w-0">
-                    <h3 className="font-bold text-base text-foreground truncate">{apt.serviceName}</h3>
+                    <h3 className={`font-bold text-base truncate transition-colors ${
+                      isCompleted || isCancelled ? "text-foreground" : "text-foreground group-hover:text-primary"
+                    }`}>{apt.serviceName}</h3>
                     <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-xs text-muted-foreground mt-1 font-medium">
-                      <span className="flex items-center gap-1.5 text-foreground font-bold">
-                        <User className="size-3.5 text-primary" /> {apt.customerName}
+                      <span className="flex items-center gap-1.5 text-foreground font-bold bg-background px-2 py-0.5 rounded border shadow-sm">
+                        <User className="size-3 text-primary" /> {apt.customerName}
                       </span>
                       {apt.customerPhone && (
                         <span className="flex items-center gap-1">

@@ -53,12 +53,14 @@ import { cn } from "@/lib/utils";
 import { createCategoryFn } from "@/api/categories";
 import { createBrandFn } from "@/api/brands";
 import { v4 as uuidv4 } from "uuid";
-import { createCustomerFn } from "@/api/customers";
+import { createCustomerFn, getCustomersFn } from "@/api/customers";
 import { createProductFn } from "@/api/products";
 import { createServiceItemFn } from "@/api/services";
 import { deleteHeldInvoiceFn, splitHeldInvoiceFn } from "@/api/pos";
 import { toast } from "sonner";
 import { SplitCheckModal } from "./SplitCheckModal";
+import { useQuery } from "@tanstack/react-query";
+import { useDebounce } from "@/hooks/useDebounce";
 
 export function PosDialogs({
   state,
@@ -110,8 +112,8 @@ export function PosDialogs({
     setPrintFormat,
     printData,
     setPrintData,
-    customers,
-    setSelectedCustomerId,
+    setPayment,
+    setSelectedCustomer,
     activeCustomer,
     heldInvoices,
     coupons,
@@ -146,7 +148,23 @@ export function PosDialogs({
     categories,
     brands,
     units,
+    settings,
   } = state;
+
+  const debouncedCustomerQuery = useDebounce(customerQuery, 300);
+
+  const { data: customerSearchResults } = useQuery({
+    queryKey: ["customerSearch", orgId, debouncedCustomerQuery],
+    queryFn: async () => {
+      const res = await getCustomersFn({ 
+        data: { query: debouncedCustomerQuery, pageSize: 15 } 
+      });
+      return (res as any)?.data || [];
+    },
+    enabled: showCustomerSearch,
+  });
+
+  const displayCustomers = customerSearchResults || [];
 
   const [newProductCategory, setNewProductCategory] = useState("");
   const [newProductBrand, setNewProductBrand] = useState("");
@@ -199,7 +217,7 @@ export function PosDialogs({
       });
       if (res?.success) {
         queryClient.invalidateQueries({ queryKey: ["customers"] });
-        setSelectedCustomerId(res.data.id);
+        setSelectedCustomer(res.data);
         setShowAddCustomer(false);
         setShowCustomerSearch(false);
         toast.success(`Customer "${name}" added & selected!`);
@@ -330,8 +348,7 @@ export function PosDialogs({
 
   const sendWhatsApp = () => {
     if (!saleComplete) return;
-    const cust = customers.find((c: any) => c.name === saleComplete.customer);
-    const phone = cust?.phone || "";
+    const phone = saleComplete.phone || "";
     const text = `*${saleComplete.storeName}*\nReceipt: #${saleComplete.id}\nDate: ${saleComplete.date}\nTotal: ${currencySymbol}${(Number(saleComplete.total) || 0).toFixed(2)}\n\nThank you for shopping with us!`;
     const url = `https://wa.me/${phone.replace(/\D/g, "")}?text=${encodeURIComponent(text)}`;
     window.open(url, "_blank");
@@ -365,7 +382,7 @@ export function PosDialogs({
             <button
               className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm hover:bg-muted"
               onClick={() => {
-                setSelectedCustomerId(null);
+                setSelectedCustomer(null);
                 setShowCustomerSearch(false);
                 setCustomerQuery("");
               }}
@@ -373,13 +390,7 @@ export function PosDialogs({
               <User className="size-4 text-muted-foreground" />
               <span className="font-medium">Walk-in Customer</span>
             </button>
-            {customers
-              .filter(
-                (c: any) =>
-                  c.name.toLowerCase().includes(customerQuery.toLowerCase()) ||
-                  c.phone?.includes(customerQuery),
-              )
-              .map((c: any) => (
+            {displayCustomers.map((c: any) => (
                 <button
                   key={c.id}
                   className={cn(
@@ -387,7 +398,7 @@ export function PosDialogs({
                     activeCustomer.id === c.id && "bg-primary/10",
                   )}
                   onClick={() => {
-                    setSelectedCustomerId(c.id);
+                    setSelectedCustomer(c);
                     setShowCustomerSearch(false);
                     setCustomerQuery("");
                   }}
@@ -746,6 +757,18 @@ export function PosDialogs({
                 </>
               )}
             </AlertDialogDescription>
+            
+            {(settings?.businessType === "PHARMACY" || state.lines.some((l:any) => l.product.metadata?.prescriptionRequired)) && (
+              <div className="mt-4 pt-4 border-t">
+                <label className="text-xs font-semibold block mb-1.5 text-primary">Prescription Reference (Optional)</label>
+                <Input 
+                  placeholder="e.g. Rx-12345 / Dr. Smith"
+                  value={state.prescriptionRef}
+                  onChange={(e) => state.setPrescriptionRef(e.target.value)}
+                  className="h-9"
+                />
+              </div>
+            )}
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={isCompletingSale}>Cancel</AlertDialogCancel>

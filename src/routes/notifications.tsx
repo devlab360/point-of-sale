@@ -17,6 +17,15 @@ import { usePreferences } from "@/contexts/PreferencesContext";
 
 export const Route = createFileRoute("/notifications")({
   head: () => ({ meta: [{ title: "Notifications · NexisPOS" }] }),
+  loader: async ({ context: { queryClient } }) => {
+    const orgId = PersistStore.getOrgId();
+    if (!orgId) return;
+
+    queryClient.ensureQueryData({
+      queryKey: ["notifications", orgId],
+      queryFn: async () => ((await getNotificationsFn({ data: {} })) as any)?.data || [],
+    });
+  },
   component: NotificationsPage,
 });
 

@@ -4,6 +4,9 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { v4 as uuidv4 } from "uuid";
 import { updateShiftFn, completePosSaleFn } from "@/api/pos";
+import { getProductsFn } from "@/api/products";
+import { getPosBootstrapFn } from "@/api/bootstrap";
+import { PersistStore } from "@/lib/session-store";
 
 import { usePosState } from "@/hooks/usePosState";
 import { ProductGrid } from "@/components/pos/ProductGrid";
@@ -28,6 +31,21 @@ export const Route = createFileRoute("/pos")({
       },
     ],
   }),
+  loader: async ({ context: { queryClient } }) => {
+    const orgId = PersistStore.getOrgId();
+    if (!orgId) return;
+
+    // Prefetch critical POS data
+    queryClient.ensureQueryData({
+      queryKey: ["products", orgId],
+      queryFn: async () => ((await getProductsFn({ data: {} })) as any)?.data || [],
+    });
+
+    queryClient.ensureQueryData({
+      queryKey: ["pos_bootstrap", orgId],
+      queryFn: async () => ((await getPosBootstrapFn()) as any)?.data,
+    });
+  },
   component: PosScreen,
 });
 
@@ -69,7 +87,7 @@ function PosScreen() {
     setSplitCash,
     setSplitCard,
     setSplitUpi,
-    setSelectedCustomerId,
+    setSelectedCustomer,
     queryClient,
     mobileTab,
     setMobileTab,
@@ -90,13 +108,34 @@ function PosScreen() {
       if (e.key === "Enter") {
         if (barcodeRef.current.length > 2) {
           const barcode = barcodeRef.current;
-          const product = products.find((p: any) => p.barcode === barcode || p.sku === barcode);
+          let product = products.find((p: any) => p.barcode === barcode || p.sku === barcode);
+          let scannedBatch: any = null;
+
+          if (!product) {
+            // Search inside batches
+            for (const p of products) {
+              if (p.hasBatch && p.batches) {
+                const batch = p.batches.find((b: any) => b.batchNo === barcode);
+                if (batch) {
+                  product = p;
+                  scannedBatch = batch;
+                  break;
+                }
+              }
+            }
+          }
+
           if (product) {
             if (product.stock <= 0) {
               toast.error(`${product.name} is out of stock`);
             } else {
               addToCart(product.id);
-              toast.success(`Scanned: ${product.name}`);
+              if (scannedBatch) {
+                setTimeout(() => {
+                  state.updateBatch(product.id, scannedBatch.id, scannedBatch.batchNo);
+                }, 50);
+              }
+              toast.success(`Scanned: ${product.name}${scannedBatch ? ` (Batch ${scannedBatch.batchNo})` : ''}`);
             }
           } else {
             toast.error(`Unknown barcode: ${barcode}`);
@@ -211,7 +250,7 @@ function PosScreen() {
     } else if ((payment === "credit" || payment === "wallet") && !isQuotation) {
       if (activeCustomer.id === "walkin")
         return toast.error(`Credit/Wallet requires registered customer`);
-        
+
       if (payment === "credit") {
         advancePaid = parseFloat(cashTendered) || 0;
         cashComponent = advancePaid; // Advance paid in cash
@@ -283,15 +322,16 @@ function PosScreen() {
             paymentMethod: isQuotation ? "unpaid" : payment,
             payments: isQuotation ? null : (payment === "split"
               ? [
-                  { method: "cash", amount: parseFloat(splitCash) || 0 },
-                  { method: "card", amount: parseFloat(splitCard) || 0 },
-                  { method: "upi", amount: parseFloat(splitUpi) || 0 },
-                ].filter((p) => p.amount > 0)
+                { method: "cash", amount: parseFloat(splitCash) || 0 },
+                { method: "card", amount: parseFloat(splitCard) || 0 },
+                { method: "upi", amount: parseFloat(splitUpi) || 0 },
+              ].filter((p) => p.amount > 0)
               : null),
             discountAmt,
             status: isQuotation ? "quotation" : "completed",
             cashTendered: isQuotation ? null : (payment === "cash" && state.cashTendered ? parseFloat(state.cashTendered) : null),
             changeDue: isQuotation ? null : (payment === "cash" ? changeDue : null),
+            metadata: state.prescriptionRef ? { prescriptionRef: state.prescriptionRef } : null,
           },
           items: saleItems,
           inventoryMovements: lines.map((l: any) => ({
@@ -358,8 +398,9 @@ function PosScreen() {
         upiId: state.settings?.upiId,
         customer: activeCustomer.name,
         customerObj: activeCustomer,
-        customerType: state.customers.find((c: any) => c.id === activeCustomer.id)?.type,
-        customerGstin: state.customers.find((c: any) => c.id === activeCustomer.id)?.gstin,
+        customerType: activeCustomer.type,
+        customerGstin: activeCustomer.gstin,
+        customerStateCode: activeCustomer.stateCode,
         amountInWords: numberToWords(total),
         date: state.formatDateTime(new Date()),
         lines,
@@ -378,10 +419,10 @@ function PosScreen() {
         dueAmount: isQuotation ? null : (payment === "credit" ? Math.max(0, total - (parseFloat(state.cashTendered) || 0)) : null),
         splitPayments: isQuotation ? null : (payment === "split"
           ? [
-              { method: "cash", amount: parseFloat(state.splitCash) || 0 },
-              { method: "card", amount: parseFloat(state.splitCard) || 0 },
-              { method: "upi", amount: parseFloat(state.splitUpi) || 0 },
-            ].filter((p) => p.amount > 0)
+            { method: "cash", amount: parseFloat(state.splitCash) || 0 },
+            { method: "card", amount: parseFloat(state.splitCard) || 0 },
+            { method: "upi", amount: parseFloat(state.splitUpi) || 0 },
+          ].filter((p) => p.amount > 0)
           : null),
       };
 
@@ -396,7 +437,7 @@ function PosScreen() {
       setSplitCash("");
       setSplitCard("");
       setSplitUpi("");
-      setSelectedCustomerId(null);
+      setSelectedCustomer(null);
 
       setConfirmCheckout(false);
     } catch (e: any) {
@@ -413,7 +454,9 @@ function PosScreen() {
     setDiscountInput(String(held.discount || 0));
     const validPayments = ["cash", "card", "upi", "split", "credit", "wallet"];
     setPayment(validPayments.includes(held.payment) ? held.payment : "cash");
-    if (held.customerId) setSelectedCustomerId(held.customerId);
+    if (held.customerId) {
+      setSelectedCustomer({ id: held.customerId, name: held.customerName || "Customer", type: "retail" });
+    }
     state.setShowHeld(false);
     toast.success("Invoice resumed");
   };

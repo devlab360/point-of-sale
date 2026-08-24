@@ -78,6 +78,7 @@ export const createSalesReturnFn = createServerFn({ method: "POST" })
             quantity: i.quantity || 1,
             price: String(i.price || 0),
             total: String(i.total || 0),
+            batchId: i.batchId || null,
           }));
           await tx.insert(schema.salesReturnItems).values(formattedItems);
         }
@@ -96,6 +97,18 @@ export const createSalesReturnFn = createServerFn({ method: "POST" })
                   eq(schema.products.organizationId, orgId),
                 ),
               );
+
+            if (item.batchId) {
+              await tx
+                .update(schema.inventoryBatches)
+                .set({ quantityRemaining: sql`${schema.inventoryBatches.quantityRemaining} + ${item.quantity}` })
+                .where(
+                  and(
+                    eq(schema.inventoryBatches.id, item.batchId),
+                    eq(schema.inventoryBatches.organizationId, orgId),
+                  ),
+                );
+            }
           }
         }
 
@@ -177,15 +190,66 @@ export const createPurchaseReturnFn = createServerFn({ method: "POST" })
         purchaseId: data.returnData.purchaseId,
         supplier: data.returnData.supplier,
         reason: data.returnData.reason,
-        items: data.returnData.items || [],
+        items: (data.returnData.items || []).map((i: any) => ({
+           ...i,
+           batchId: i.batchId || null
+        })),
         total: data.returnData.total?.toString() || "0",
         status: data.returnData.status || "approved",
         date: new Date(data.returnData.date || Date.now()).toISOString(),
         stockRestored: data.returnData.stockRestored ?? false,
       };
 
-      const inserted = await db.insert(schema.purchaseReturns).values(newReturn).returning();
-      return { success: true, data: inserted[0] };
+      let returnObj;
+      await db.transaction(async (tx) => {
+        const inserted = await tx.insert(schema.purchaseReturns).values(newReturn).returning();
+        returnObj = inserted[0];
+
+        const items = data.returnData.items || [];
+        if (items.length > 0) {
+          const formattedItems = items.map((i: any) => ({
+            organizationId: orgId,
+            returnId: returnObj.id,
+            productId: i.productId || "",
+            productName: i.productName || "Unknown",
+            quantity: i.quantity || 1,
+            cost: String(i.cost || 0),
+            total: String(i.total || 0),
+            batchId: i.batchId || null,
+          }));
+          await tx.insert(schema.purchaseReturnItems).values(formattedItems);
+        }
+
+        // Stock restoration — only if stockRestored=true (For purchases, "restoring" means deducting stock since we returned it)
+        if (newReturn.stockRestored && items.length > 0) {
+          for (const item of items) {
+            if (!item.productId || !item.quantity) continue;
+
+            await tx
+              .update(schema.products)
+              .set({ stock: sql`GREATEST(0, ${schema.products.stock} - ${item.quantity})` })
+              .where(
+                and(
+                  eq(schema.products.id, item.productId),
+                  eq(schema.products.organizationId, orgId),
+                ),
+              );
+
+            if (item.batchId) {
+              await tx
+                .update(schema.inventoryBatches)
+                .set({ quantityRemaining: sql`GREATEST(0, ${schema.inventoryBatches.quantityRemaining} - ${item.quantity})` })
+                .where(
+                  and(
+                    eq(schema.inventoryBatches.id, item.batchId),
+                    eq(schema.inventoryBatches.organizationId, orgId),
+                  ),
+                );
+            }
+          }
+        }
+      });
+      return { success: true, data: returnObj };
     } catch (e) {
       return handleApiError(e);
     }

@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
+import { CardGridSkeleton } from "@/components/skeletons/CardGridSkeleton";
 import { Utensils, Plus, Loader2 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getTablesFn, createTableFn, updateTableStatusFn } from "@/api/restaurant";
@@ -53,7 +53,7 @@ function TablesPage() {
   });
 
   const updateStatus = useMutation({
-    mutationFn: (data: { id: string; status: "available" | "occupied" | "reserved" }) => 
+    mutationFn: (data: { id: string; status: "available" | "occupied" | "reserved" }) =>
       updateTableStatusFn({ data }),
     onSuccess: (res) => {
       if (res.success) {
@@ -130,9 +130,7 @@ function TablesPage() {
       </div>
 
       {isLoading ? (
-        <div className="flex justify-center py-16">
-          <Loader2 className="size-8 animate-spin text-muted-foreground" />
-        </div>
+        <CardGridSkeleton cards={8} columns="grid-cols-1 sm:grid-cols-2 lg:grid-cols-4" />
       ) : tables.length === 0 ? (
         <div className="text-center py-16 border rounded-2xl bg-muted/20 border-dashed border-border/80">
           <Utensils className="size-10 mx-auto text-muted-foreground/50 mb-3" />
@@ -149,40 +147,36 @@ function TablesPage() {
             return (
               <div
                 key={table.id}
-                className={`relative rounded-2xl border p-5 shadow-card card-interactive flex flex-col justify-between transition-all ${
-                  isOccupied
+                className={`relative rounded-2xl border p-5 shadow-sm hover:shadow-card flex flex-col justify-between transition-all duration-300 ease-in-out group ${isOccupied
                     ? "border-rose-500/30 bg-rose-500/5 dark:bg-rose-950/20"
                     : isReserved
-                    ? "border-amber-500/30 bg-amber-500/5 dark:bg-amber-950/20"
-                    : "border-border/80 bg-card hover:border-primary/40"
-                }`}
+                      ? "border-amber-500/30 bg-amber-500/5 dark:bg-amber-950/20"
+                      : "border-border/80 bg-card hover:border-primary/40 hover:-translate-y-1"
+                  }`}
               >
                 <div>
-                  <div className="flex justify-between items-start">
+                  <div className="flex justify-between items-start mb-2">
                     <div className="flex items-center gap-2.5">
-                      <div className={`grid size-10 place-items-center rounded-xl font-black text-sm border ${
-                        isOccupied ? "bg-rose-500/15 text-rose-500 border-rose-500/30" :
-                        isReserved ? "bg-amber-500/15 text-amber-500 border-amber-500/30" :
-                        "bg-emerald-500/15 text-emerald-500 border-emerald-500/30"
-                      }`}>
+                      <div className={`grid size-10 place-items-center rounded-xl font-black text-sm border ${isOccupied ? "bg-rose-500/15 text-rose-500 border-rose-500/30" :
+                          isReserved ? "bg-amber-500/15 text-amber-500 border-amber-500/30" :
+                            "bg-emerald-500/15 text-emerald-500 border-emerald-500/30"
+                        }`}>
                         {table.name.replace(/[^0-9]/g, "") || "T"}
                       </div>
                       <div>
-                        <h3 className="font-bold text-base text-foreground">{table.name}</h3>
-                        <span className="text-xs text-muted-foreground font-medium">Cap: {table.capacity} Guests</span>
+                        <h3 className="font-bold text-base text-foreground group-hover:text-primary transition-colors">{table.name}</h3>
+                        <span className="text-xs text-muted-foreground font-medium flex items-center gap-1 mt-0.5"><Utensils className="size-3" /> Cap: {table.capacity}</span>
                       </div>
                     </div>
 
-                    <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider border ${
-                      isOccupied ? "bg-rose-500/15 text-rose-500 border-rose-500/25" :
-                      isReserved ? "bg-amber-500/15 text-amber-500 border-amber-500/25" :
-                      "bg-emerald-500/15 text-emerald-500 border-emerald-500/25"
-                    }`}>
-                      <span className={`size-1.5 rounded-full ${
-                        isOccupied ? "bg-rose-500" :
-                        isReserved ? "bg-amber-500" :
-                        "bg-emerald-500"
-                      }`} />
+                    <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider border ${isOccupied ? "bg-rose-500/15 text-rose-500 border-rose-500/25" :
+                        isReserved ? "bg-amber-500/15 text-amber-500 border-amber-500/25" :
+                          "bg-emerald-500/15 text-emerald-500 border-emerald-500/25"
+                      }`}>
+                      <span className={`size-1.5 rounded-full ${isOccupied ? "bg-rose-500" :
+                          isReserved ? "bg-amber-500" :
+                            "bg-emerald-500"
+                        }`} />
                       {table.status}
                     </span>
                   </div>

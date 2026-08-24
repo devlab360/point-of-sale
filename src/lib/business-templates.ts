@@ -36,7 +36,9 @@ export type BusinessCapability =
   | "REPORTS"
   | "SETTINGS"
   | "ACCOUNTS" // Chart of Accounts, Vouchers
-  | "PROMOTIONS";
+  | "PROMOTIONS"
+  | "BATCH_EXPIRY_TRACKING" // Generic: batch/lot + expiry tracking (pharmacy, grocery, cosmetics, etc.)
+  | "FEFO_ALLOCATION"; // Generic: First Expiry First Out stock allocation strategy
 
 export type BusinessType =
   | "UNIVERSAL" // Fallback/Default: Has all basic modules enabled
@@ -48,7 +50,8 @@ export type BusinessType =
   | "BARBER"
   | "REPAIR_CENTER"
   | "MOBILE_REPAIR"
-  | "WHOLESALE";
+  | "WHOLESALE"
+  | "PHARMACY";
 
 export interface BusinessTemplate {
   type: BusinessType;
@@ -68,7 +71,8 @@ export const BUSINESS_TEMPLATES: Record<BusinessType, BusinessTemplate> = {
       "COMMISSIONS", "JOB_CARDS", "TECHNICIANS", "REPAIR_STATUS", "WARRANTY", "LOYALTY",
       "WHOLESALE", "CREDIT_SALES", "CUSTOMER_LEDGER", "DELIVERY_CHALLANS", "QUOTATIONS",
       "MEMBERSHIP", "PACKAGES", "SUBSCRIPTIONS", "RENTALS", "COUPONS", "GIFT_CARDS",
-      "EXPENSES", "REPORTS", "SETTINGS", "ACCOUNTS", "PROMOTIONS"
+      "EXPENSES", "REPORTS", "SETTINGS", "ACCOUNTS", "PROMOTIONS",
+      "BATCH_EXPIRY_TRACKING", "FEFO_ALLOCATION"
     ],
   },
   RETAIL: {
@@ -157,6 +161,18 @@ export const BUSINESS_TEMPLATES: Record<BusinessType, BusinessTemplate> = {
       "POS", "CUSTOMERS", "EXPENSES", "REPORTS", "SETTINGS", "ACCOUNTS",
       "WHOLESALE", "CREDIT_SALES", "CUSTOMER_LEDGER", "DELIVERY_CHALLANS", "QUOTATIONS",
       "PRODUCTS", "INVENTORY", "PURCHASES", "SUPPLIERS", "BARCODE"
+    ],
+  },
+  PHARMACY: {
+    type: "PHARMACY",
+    label: "Pharmacy & Medical",
+    description: "Batch tracking, expiry management, FEFO allocation, and product classification for pharmacies.",
+    capabilities: [
+      "POS", "CUSTOMERS", "EXPENSES", "REPORTS", "SETTINGS", "ACCOUNTS",
+      "PRODUCTS", "INVENTORY", "BARCODE", "PURCHASES", "SUPPLIERS", "VARIANTS",
+      "BATCH_EXPIRY_TRACKING", "FEFO_ALLOCATION",
+      "LOYALTY", "COUPONS", "PROMOTIONS",
+      "CREDIT_SALES", "CUSTOMER_LEDGER", "QUOTATIONS"
     ],
   }
 };
