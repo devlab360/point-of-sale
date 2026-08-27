@@ -72,7 +72,7 @@ export const Route = createFileRoute("/accounts")({
   component: AccountsPage,
 });
 
-export function AccountsPage() {
+function AccountsPage() {
   const { formatDateTime, formatDate } = usePreferences();
   const { formatCurrency } = useCurrency();
   const orgId = PersistStore.getOrgId() || "default";

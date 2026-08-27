@@ -45,7 +45,7 @@ export const Route = createFileRoute("/accounting-reports")({
   component: AccountingReportsPage,
 });
 
-export function AccountingReportsPage() {
+function AccountingReportsPage() {
   const { formatCurrency } = useCurrency();
   const { formatDate, formatDateTime } = usePreferences();
   const orgId = PersistStore.getOrgId() || "default";
