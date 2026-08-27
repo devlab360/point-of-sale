@@ -100,16 +100,27 @@ function NotificationsPage() {
   }, [rawNotifications]);
 
   const markAllRead = async () => {
+    queryClient.setQueryData(["notifications", orgId], (old: any) => {
+      if (Array.isArray(old)) {
+        return old.map((n) => ({ ...n, read: true }));
+      }
+      return old;
+    });
+
     const unreadIds = rawNotifications.filter((n: any) => !n.read).map((n: any) => n.id);
-    if (unreadIds.length > 0) {
-      await markAllNotificationsReadFn({ data: { ids: unreadIds } });
-      queryClient.invalidateQueries({ queryKey: ["notifications"] });
-      toast.success("All notifications marked as read");
-    }
+    await markAllNotificationsReadFn({ data: { ids: unreadIds } });
+    queryClient.invalidateQueries({ queryKey: ["notifications"] });
+    toast.success("All notifications marked as read");
   };
 
   const handleNotificationClick = async (n: any) => {
     if (!n.read) {
+      queryClient.setQueryData(["notifications", orgId], (old: any) => {
+        if (Array.isArray(old)) {
+          return old.map((item) => (item.id === n.id ? { ...item, read: true } : item));
+        }
+        return old;
+      });
       await markNotificationReadFn({ data: { id: n.id } });
       queryClient.invalidateQueries({ queryKey: ["notifications"] });
     }

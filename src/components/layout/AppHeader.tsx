@@ -38,7 +38,7 @@ import { SyncStatus } from "@/components/SyncStatus";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAppFormatter } from "@/hooks/useAppFormatter";
 import { getGlobalSearchFn } from "@/api/search";
-import { getNotificationsFn, markNotificationReadFn } from "@/api/notifications";
+import { getNotificationsFn, markNotificationReadFn, markAllNotificationsReadFn } from "@/api/notifications";
 import { PersistStore } from "@/lib/session-store";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
@@ -365,8 +365,27 @@ export function AppHeader() {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-80">
               <DropdownMenuLabel className="flex items-center justify-between">
-                <span>Notifications</span>
-                <span className="text-xs font-normal text-muted-foreground">{unread} unread</span>
+                <span className="font-bold text-xs">Notifications</span>
+                {unread > 0 ? (
+                  <button
+                    type="button"
+                    onClick={async (e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      queryClient.setQueryData(["notifications", orgId], (old: any) =>
+                        Array.isArray(old) ? old.map((n) => ({ ...n, read: true })) : old,
+                      );
+                      await markAllNotificationsReadFn({ data: {} });
+                      queryClient.invalidateQueries({ queryKey: ["notifications"] });
+                      toast.success("All notifications marked as read");
+                    }}
+                    className="text-[11px] font-bold text-primary hover:underline cursor-pointer"
+                  >
+                    Mark all read
+                  </button>
+                ) : (
+                  <span className="text-[11px] font-normal text-muted-foreground">All caught up</span>
+                )}
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
               {notifications.slice(0, 5).map((n) => (
@@ -374,6 +393,11 @@ export function AppHeader() {
                   key={n.id}
                   onClick={async () => {
                     if (!n.read) {
+                      queryClient.setQueryData(["notifications", orgId], (old: any) =>
+                        Array.isArray(old)
+                          ? old.map((item) => (item.id === n.id ? { ...item, read: true } : item))
+                          : old,
+                      );
                       await markNotificationReadFn({ data: { id: n.id } });
                       queryClient.invalidateQueries({ queryKey: ["notifications"] });
                     }

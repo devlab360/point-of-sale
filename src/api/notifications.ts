@@ -68,7 +68,7 @@ export const getNotificationsFn = createServerFn({ method: "GET" })
   });
 
 export const markNotificationReadFn = createServerFn({ method: "POST" })
-  .validator(z.any() as any)
+  .validator((data: any) => data)
   .handler(async ({ data }) => {
     let orgId = "default";
     try {
@@ -76,18 +76,23 @@ export const markNotificationReadFn = createServerFn({ method: "POST" })
       orgId = session.orgId;
     } catch {}
 
-    if (inMemoryNotifications[orgId]) {
-      const n = inMemoryNotifications[orgId].find((item) => item.id === data.id);
-      if (n) n.read = true;
+    const targetId = data?.id || data;
+
+    // Update in-memory fallback stores
+    for (const key of [orgId, "default"]) {
+      if (inMemoryNotifications[key]) {
+        const item = inMemoryNotifications[key].find((n) => n.id === targetId);
+        if (item) item.read = true;
+      }
     }
 
     try {
-      if (schema.notifications) {
+      if (schema.notifications && targetId) {
         await db
           .update(schema.notifications)
           .set({ read: true })
           .where(
-            and(eq(schema.notifications.id, data.id), eq(schema.notifications.organizationId, orgId)),
+            and(eq(schema.notifications.id, targetId), eq(schema.notifications.organizationId, orgId)),
           );
       }
       return { success: true };
@@ -98,7 +103,7 @@ export const markNotificationReadFn = createServerFn({ method: "POST" })
   });
 
 export const markAllNotificationsReadFn = createServerFn({ method: "POST" })
-  .validator(z.any() as any)
+  .validator((data: any) => data)
   .handler(async ({ data }) => {
     let orgId = "default";
     try {
@@ -106,23 +111,33 @@ export const markAllNotificationsReadFn = createServerFn({ method: "POST" })
       orgId = session.orgId;
     } catch {}
 
-    if (inMemoryNotifications[orgId]) {
-      inMemoryNotifications[orgId].forEach((n) => {
-        n.read = true;
-      });
+    // Update in-memory fallback stores
+    for (const key of [orgId, "default"]) {
+      if (inMemoryNotifications[key]) {
+        inMemoryNotifications[key].forEach((n) => {
+          n.read = true;
+        });
+      }
     }
 
     try {
-      if (schema.notifications && data.ids?.length > 0) {
-        await db
-          .update(schema.notifications)
-          .set({ read: true })
-          .where(
-            and(
-              inArray(schema.notifications.id, data.ids),
-              eq(schema.notifications.organizationId, orgId),
-            ),
-          );
+      if (schema.notifications) {
+        if (data?.ids && Array.isArray(data.ids) && data.ids.length > 0) {
+          await db
+            .update(schema.notifications)
+            .set({ read: true })
+            .where(
+              and(
+                inArray(schema.notifications.id, data.ids),
+                eq(schema.notifications.organizationId, orgId),
+              ),
+            );
+        } else {
+          await db
+            .update(schema.notifications)
+            .set({ read: true })
+            .where(eq(schema.notifications.organizationId, orgId));
+        }
       }
       return { success: true };
     } catch (e) {
