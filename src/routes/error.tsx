@@ -57,7 +57,7 @@ function ErrorPage() {
       />
 
       <div
-        className={`relative z-10 w-full max-w-lg rounded-3xl border border-border/50 bg-background/60 p-8 md:p-12 backdrop-blur-xl text-center ${shadowClass}`}
+        className={`relative z-10 w-full max-w-lg rounded-2xl border border-border/50 bg-background/60 p-8 md:p-12 backdrop-blur-xl text-center ${shadowClass}`}
       >
         {/* Animated Icon */}
         <div className="mx-auto mb-6 relative w-24 h-24">
@@ -66,7 +66,7 @@ function ErrorPage() {
             style={{ color: "inherit" }}
           />
           <div
-            className={`relative mx-auto flex h-24 w-24 items-center justify-center rounded-3xl border border-current/20 shadow-inner ${colorClass}`}
+            className={`relative mx-auto flex h-24 w-24 items-center justify-center rounded-2xl border border-current/20 shadow-inner ${colorClass}`}
           >
             <Icon className="h-12 w-12 drop-shadow-sm" />
           </div>

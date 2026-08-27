@@ -112,9 +112,9 @@ function VerifyEmailPage() {
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4 py-12">
-      <div className="w-full max-w-md overflow-hidden rounded-3xl border border-border/80 bg-card p-6 sm:p-10 shadow-elevated">
+      <div className="w-full max-w-md overflow-hidden rounded-xl border border-border/80 bg-card p-6 sm:p-10 shadow-elevated">
         <div className="text-center pb-2">
-          <div className="mx-auto mb-4 grid size-14 place-items-center rounded-2xl bg-primary/10 text-primary border border-primary/20">
+          <div className="mx-auto mb-4 grid size-14 place-items-center rounded-xl bg-primary/10 text-primary border border-primary/20">
             <Mail className="size-7" />
           </div>
           <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-foreground">

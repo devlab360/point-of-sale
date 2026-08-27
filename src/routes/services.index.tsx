@@ -379,22 +379,8 @@ function ServicesPage() {
               description="There was an error fetching the services. Please try again."
               onRetry={() => refetch()}
             />
-          ) : services.length === 0 ? (
-            <EmptyState
-              icon={List}
-              title="No Services Found"
-              description={
-                search || filters.category
-                  ? "No services match your current filters."
-                  : "Get started by creating your first service."
-              }
-              actionLabel={!search && !filters.category ? "Add Service" : undefined}
-              onAction={
-                !search && !filters.category ? () => navigate({ to: "/services/new" }) : undefined
-              }
-            />
           ) : (
-            <div className="rounded-xl border border-border bg-card shadow-soft overflow-hidden">
+            <div className="rounded-xl border border-border/80 bg-card shadow-soft overflow-hidden">
               <div className="overflow-x-auto">
                 <Table>
                   <TableHeader>
@@ -417,72 +403,95 @@ function ServicesPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody className="divide-y divide-border">
-                    {services.map((item: any, i: number) => {
-                      const catName =
-                        categories.find((c: any) => c.id === item.category)?.name || item.category;
-                      return (
-                        <TableRow key={item.id} className="hover:bg-muted/20">
-                          <TableCell className="px-4 py-3 text-muted-foreground">
-                            {(page - 1) * pageSize + i + 1}
-                          </TableCell>
-                          <TableCell className="px-4 py-3">
-                            <div className="font-semibold">{item.name}</div>
-                          </TableCell>
-                          <TableCell className="px-4 py-3 text-muted-foreground">{catName}</TableCell>
-                          <TableCell className="px-4 py-3 text-right">
-                            <div className="font-bold">{formatCurrency(Number(item.price))}</div>
-                            {Number(item.cost) > 0 && (
-                              <div className="text-[10px] text-muted-foreground">
-                                Cost: {formatCurrency(Number(item.cost))}
-                              </div>
-                            )}
-                          </TableCell>
-                          <TableCell className="px-4 py-3 text-center">
-                            {item.duration ? `${item.duration} min` : "-"}
-                          </TableCell>
-                          <TableCell className="px-4 py-3 text-center">
-                            <Badge variant={item.status === "active" ? "default" : "secondary"}>
-                              {item.status}
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="px-4 py-3 text-right">
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="icon" className="size-8">
-                                  <MoreHorizontal className="size-4" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end" className="w-36">
-                                <DropdownMenuItem onClick={() => handleEdit(item)}>
-                                  <Pencil className="mr-2 size-4" /> Edit
-                                </DropdownMenuItem>
-                                <DropdownMenuItem
-                                  className="text-destructive focus:bg-destructive/10 focus:text-destructive"
-                                  onClick={() => {
-                                    setActiveItem(item);
-                                    setShowDelete(true);
-                                  }}
-                                >
-                                  <Trash2 className="mr-2 size-4" /> Delete
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })}
+                    {services.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={7} className="h-64 text-center">
+                          <EmptyState
+                            icon={List}
+                            title="No Services Found"
+                            description={
+                              search || filters.category
+                                ? "No services match your current filters."
+                                : "Get started by creating your first service."
+                            }
+                            actionLabel={!search && !filters.category ? "Add Service" : undefined}
+                            onAction={
+                              !search && !filters.category ? () => navigate({ to: "/services/new" }) : undefined
+                            }
+                            className="border-none bg-transparent my-0 py-8 shadow-none"
+                          />
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      services.map((item: any, i: number) => {
+                        const catName =
+                          categories.find((c: any) => c.id === item.category)?.name || item.category;
+                        return (
+                          <TableRow key={item.id} className="hover:bg-muted/20">
+                            <TableCell className="px-4 py-3 text-muted-foreground">
+                              {(page - 1) * pageSize + i + 1}
+                            </TableCell>
+                            <TableCell className="px-4 py-3">
+                              <div className="font-semibold">{item.name}</div>
+                            </TableCell>
+                            <TableCell className="px-4 py-3 text-muted-foreground">{catName}</TableCell>
+                            <TableCell className="px-4 py-3 text-right">
+                              <div className="font-bold">{formatCurrency(Number(item.price))}</div>
+                              {Number(item.cost) > 0 && (
+                                <div className="text-[10px] text-muted-foreground">
+                                  Cost: {formatCurrency(Number(item.cost))}
+                                </div>
+                              )}
+                            </TableCell>
+                            <TableCell className="px-4 py-3 text-center">
+                              {item.duration ? `${item.duration} min` : "-"}
+                            </TableCell>
+                            <TableCell className="px-4 py-3 text-center">
+                              <Badge variant={item.status === "active" ? "default" : "secondary"}>
+                                {item.status}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="px-4 py-3 text-right">
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button variant="ghost" size="icon" className="size-8">
+                                    <MoreHorizontal className="size-4" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end" className="w-36">
+                                  <DropdownMenuItem onClick={() => handleEdit(item)}>
+                                    <Pencil className="mr-2 size-4" /> Edit
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    className="text-destructive focus:bg-destructive/10 focus:text-destructive"
+                                    onClick={() => {
+                                      setActiveItem(item);
+                                      setShowDelete(true);
+                                    }}
+                                  >
+                                    <Trash2 className="mr-2 size-4" /> Delete
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })
+                    )}
                   </TableBody>
                 </Table>
               </div>
 
-              <PaginationControls
-                currentPage={page}
-                totalPages={totalPages}
-                onPageChange={setPage}
-                pageSize={pageSize}
-                onPageSizeChange={setPageSize}
-                totalItems={totalItems}
-              />
+              {services.length > 0 && (
+                <PaginationControls
+                  currentPage={page}
+                  totalPages={totalPages}
+                  onPageChange={setPage}
+                  pageSize={pageSize}
+                  onPageSizeChange={setPageSize}
+                  totalItems={totalItems}
+                />
+              )}
             </div>
           )}
         </div>

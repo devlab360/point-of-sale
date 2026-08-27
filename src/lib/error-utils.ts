@@ -1,5 +1,6 @@
 import { ApiResponse } from "@/types/api";
 import { ZodError } from "zod";
+import { AppError, cleanErrorMessage } from "./errors/errors";
 
 export function handleApiError(
   e: unknown,
@@ -19,6 +20,14 @@ export function handleApiError(
     };
   }
 
+  if (e instanceof AppError) {
+    return {
+      success: false,
+      code: e.statusCode,
+      error: cleanErrorMessage(e.message),
+    };
+  }
+
   if (e instanceof Error) {
     if (e.message.startsWith("Unauthorized")) {
       return { success: false, code: 401, error: e.message };
@@ -30,9 +39,9 @@ export function handleApiError(
       return { success: false, code: 404, error: e.message };
     }
 
-    console.error("API Error Object:", e.stack || e.message);
+    console.error("API Error:", e.stack || e.message);
 
-    // Check for PostgreSQL constraint violations
+    // Check for PostgreSQL / SQLite constraint violations
     const cause = (e as any).cause || {};
     const errorCode = (e as any).code || cause.code;
     const errorDetail = (e as any).detail || cause.detail || "";
@@ -56,7 +65,8 @@ export function handleApiError(
     if (
       errorCode === "23505" ||
       errorString.includes("unique constraint") ||
-      errorString.includes("duplicate key")
+      errorString.includes("duplicate key") ||
+      errorString.includes("unique constraint failed")
     ) {
       if (errorString.includes("sku_idx") || errorString.includes("sku")) {
         return { success: false, code: 409, error: "A product with this SKU already exists." };
@@ -80,11 +90,21 @@ export function handleApiError(
       return { success: false, code: 409, error: "A record with these details already exists." };
     }
 
-    if (process.env.NODE_ENV === "development") {
-      const errorMsg = (e as any).detail ? `${e.message} - ${(e as any).detail}` : e.message;
-      return { success: false, code: 500, error: errorMsg };
+    const cleaned = cleanErrorMessage(e.message);
+    if (cleaned && cleaned !== "Error" && cleaned !== "[object Object]") {
+      return { success: false, code: 500, error: cleaned };
     }
+
     return { success: false, code: 500, error: customMessage };
+  }
+
+  if (typeof e === "string") {
+    return { success: false, code: 500, error: cleanErrorMessage(e) };
+  }
+
+  if (e && typeof e === "object" && ("error" in e || "message" in e)) {
+    const msg = (e as any).error || (e as any).message;
+    return { success: false, code: (e as any).code || 500, error: cleanErrorMessage(msg) };
   }
 
   return { success: false, code: 500, error: customMessage };

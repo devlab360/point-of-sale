@@ -252,7 +252,7 @@ function UnitsPage() {
         searchPlaceholder="Search units..."
         searchValue={search}
         onSearchChange={setSearch}
-        hideToolbar={rawUnits.length === 0}
+        hideToolbar={false}
         onExport={handleExport}
         onImport={handleImport}
         onResetFilters={handleResetFilters}
@@ -261,16 +261,16 @@ function UnitsPage() {
           <div className="space-y-4 flex flex-col h-full min-h-[50vh]">
             <div className="flex-1 space-y-4">
               <div className="space-y-2">
-                <Label>Usage Status</Label>
+                <Label>Quick Filter</Label>
                 <SearchableSelect
                   options={[
                     { value: "", label: "All Units" },
-                    { value: "in-use", label: "In Use (Has products)" },
-                    { value: "empty", label: "Empty (No products)" },
+                    { value: "kg", label: "Kilograms (kg)" },
+                    { value: "pcs", label: "Pieces (pcs)" },
                   ]}
-                  value={draftFilters.usage}
-                  onChange={(val) => setDraftFilters((prev) => ({ ...prev, usage: val }))}
-                  placeholder="Filter by Usage"
+                  value={draftFilters.type}
+                  onChange={(val) => setDraftFilters((prev) => ({ ...prev, type: val }))}
+                  placeholder="Filter by Type"
                 />
               </div>
             </div>
@@ -292,24 +292,9 @@ function UnitsPage() {
           <TableSkeleton columns={3} rows={6} showHeaderAction={false} showFilters={false} />
         ) : isUnitsError ? (
           <ErrorState onRetry={refetchUnits} />
-        ) : units.length === 0 ? (
-          <EmptyState
-            icon={Scale}
-            title="No units found"
-            description={
-              search ? "Try adjusting your search." : "You haven't created any units yet."
-            }
-            actionLabel="Add Unit"
-            onAction={() => {
-              setEditingUnit(null);
-              setName("");
-              setShort("");
-              setModalOpen(true);
-            }}
-          />
         ) : (
           <div className="space-y-4">
-            <div className="overflow-hidden rounded-2xl border border-border/80 bg-card shadow-card">
+            <div className="overflow-hidden rounded-xl border border-border/80 bg-card shadow-soft">
               {/* Desktop Table View */}
               <div className="table-desktop overflow-x-auto">
                 <Table className="min-w-[500px]">
@@ -321,75 +306,115 @@ function UnitsPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {paginatedUnits.map((u) => (
-                      <TableRow key={u.id}>
-                        <TableCell className="font-bold text-foreground whitespace-nowrap">
-                          {u.name}
-                        </TableCell>
-                        <TableCell className="font-mono text-xs text-muted-foreground whitespace-nowrap font-bold">
-                          <span className="rounded-md bg-muted px-2 py-0.5 border border-border/50">
-                            {u.short}
-                          </span>
-                        </TableCell>
-                        <TableCell className="text-right whitespace-nowrap">
-                          <div className="flex justify-end gap-1">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="size-8 rounded-lg"
-                              onClick={() => openEdit(u)}
-                            >
-                              <Pencil className="size-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="size-8 rounded-lg text-destructive hover:bg-destructive/10"
-                              onClick={() => setDeleteId(u.id)}
-                            >
-                              <Trash2 className="size-4" />
-                            </Button>
-                          </div>
+                    {paginatedUnits.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={3} className="h-64 text-center">
+                          <EmptyState
+                            icon={Scale}
+                            title="No units found"
+                            description={
+                              search ? "Try adjusting your search." : "You haven't created any units yet."
+                            }
+                            actionLabel="Add Unit"
+                            onAction={() => {
+                              setEditingUnit(null);
+                              setName("");
+                              setShort("");
+                              setModalOpen(true);
+                            }}
+                            className="border-none bg-transparent my-0 py-8 shadow-none"
+                          />
                         </TableCell>
                       </TableRow>
-                    ))}
+                    ) : (
+                      paginatedUnits.map((u) => (
+                        <TableRow key={u.id}>
+                          <TableCell className="font-bold text-foreground whitespace-nowrap">
+                            {u.name}
+                          </TableCell>
+                          <TableCell className="font-mono text-xs text-muted-foreground whitespace-nowrap font-bold">
+                            <span className="rounded-md bg-muted px-2 py-0.5 border border-border/50">
+                              {u.short}
+                            </span>
+                          </TableCell>
+                          <TableCell className="text-right whitespace-nowrap">
+                            <div className="flex justify-end gap-1">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="size-8 rounded-lg"
+                                onClick={() => openEdit(u)}
+                              >
+                                <Pencil className="size-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="size-8 rounded-lg text-destructive hover:bg-destructive/10"
+                                onClick={() => setDeleteId(u.id)}
+                              >
+                                <Trash2 className="size-4" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
                   </TableBody>
                 </Table>
               </div>
 
               {/* Mobile Cards View (< 768px) */}
               <div className="table-mobile-cards p-3 space-y-2.5">
-                {paginatedUnits.map((u) => (
-                  <div
-                    key={u.id}
-                    className="flex items-center justify-between rounded-xl border border-border/80 bg-card p-3 shadow-sm card-interactive"
-                  >
-                    <div>
-                      <div className="font-bold text-xs sm:text-sm text-foreground">{u.name}</div>
-                      <span className="inline-block mt-1 font-mono text-[11px] font-bold text-muted-foreground bg-muted px-2 py-0.5 rounded-md border border-border/50">
-                        {u.short}
-                      </span>
+                {paginatedUnits.length === 0 ? (
+                  <EmptyState
+                    icon={Scale}
+                    title="No units found"
+                    description={
+                      search ? "Try adjusting your search." : "You haven't created any units yet."
+                    }
+                    actionLabel="Add Unit"
+                    onAction={() => {
+                      setEditingUnit(null);
+                      setName("");
+                      setShort("");
+                      setModalOpen(true);
+                    }}
+                    className="border-none bg-transparent my-0 py-6 shadow-none"
+                  />
+                ) : (
+                  paginatedUnits.map((u) => (
+                    <div
+                      key={u.id}
+                      className="flex items-center justify-between rounded-xl border border-border/80 bg-card p-3 shadow-sm card-interactive"
+                    >
+                      <div>
+                        <div className="font-bold text-xs sm:text-sm text-foreground">{u.name}</div>
+                        <span className="inline-block mt-1 font-mono text-[11px] font-bold text-muted-foreground bg-muted px-2 py-0.5 rounded-md border border-border/50">
+                          {u.short}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1 shrink-0">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="size-8 rounded-lg"
+                          onClick={() => openEdit(u)}
+                        >
+                          <Pencil className="size-3.5" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="size-8 rounded-lg text-destructive hover:bg-destructive/10"
+                          onClick={() => setDeleteId(u.id)}
+                        >
+                          <Trash2 className="size-3.5" />
+                        </Button>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-1 shrink-0">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="size-8 rounded-lg"
-                        onClick={() => openEdit(u)}
-                      >
-                        <Pencil className="size-3.5" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="size-8 rounded-lg text-destructive hover:bg-destructive/10"
-                        onClick={() => setDeleteId(u.id)}
-                      >
-                        <Trash2 className="size-3.5" />
-                      </Button>
-                    </div>
-                  </div>
-                ))}
+                  ))
+                )}
               </div>
 
               {units.length > 0 && (

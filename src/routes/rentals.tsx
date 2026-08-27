@@ -184,7 +184,7 @@ function RentalsPage() {
         searchPlaceholder="Search by rental #, customer, or item..."
         searchValue={search}
         onSearchChange={setSearch}
-        hideToolbar={rawRentals.length === 0}
+        hideToolbar={false}
         onResetFilters={handleResetFilters}
         activeFilterCount={activeFilterCount}
         filtersContent={({ close }) => (
@@ -195,8 +195,8 @@ function RentalsPage() {
                 <SearchableSelect
                   options={[
                     { value: "", label: "All Statuses" },
-                    { value: "rented", label: "Active Rented" },
-                    { value: "returned", label: "Returned" },
+                    { value: "active", label: "Active Rented" },
+                    { value: "returned", label: "Returned & Closed" },
                   ]}
                   value={draftFilters.status}
                   onChange={(val) => setDraftFilters((prev) => ({ ...prev, status: val }))}
@@ -206,7 +206,7 @@ function RentalsPage() {
             </div>
             <div className="pt-4 mt-auto">
               <Button
-                className="w-full font-bold shadow-soft"
+                className="w-full"
                 onClick={() => {
                   setFilters(draftFilters);
                   close();
@@ -218,36 +218,43 @@ function RentalsPage() {
           </div>
         )}
       >
-        {filteredRentals.length === 0 ? (
-          <EmptyState
-            icon={KeyRound}
-            title="No rental bookings found"
-            description={
-              search
-                ? "Try adjusting your search query."
-                : "Create your first rental booking for cameras, tools, or vehicles."
-            }
-          />
-        ) : (
-          <div className="space-y-4">
-            <div className="overflow-hidden rounded-2xl border border-border/80 bg-card shadow-card">
-              {/* Desktop Table */}
-              <div className="table-desktop overflow-x-auto hidden md:block">
-                <Table className="min-w-[900px]">
-                  <TableHeader>
-                    <tr>
-                      <TableHead>Rental #</TableHead>
-                      <TableHead>Customer</TableHead>
-                      <TableHead>Rented Asset</TableHead>
-                      <TableHead className="text-right">Daily Rate</TableHead>
-                      <TableHead className="text-right">Deposit</TableHead>
-                      <TableHead>Return Due</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
-                    </tr>
-                  </TableHeader>
-                  <TableBody>
-                    {paginated.map((r) => (
+        <div className="space-y-4">
+          <div className="overflow-hidden rounded-xl border border-border/80 bg-card shadow-soft">
+            {/* Desktop Table */}
+            <div className="table-desktop overflow-x-auto hidden md:block">
+              <Table className="min-w-[900px]">
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Rental #</TableHead>
+                    <TableHead>Customer</TableHead>
+                    <TableHead>Rented Asset</TableHead>
+                    <TableHead className="text-right">Daily Rate</TableHead>
+                    <TableHead className="text-right">Deposit</TableHead>
+                    <TableHead>Return Due</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {paginated.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={8} className="h-64 text-center">
+                        <EmptyState
+                          icon={KeyRound}
+                          title="No rental bookings found"
+                          description={
+                            search
+                              ? "Try adjusting your search query."
+                              : "Create your first rental booking for cameras, tools, or vehicles."
+                          }
+                          actionLabel="Add Rental Booking"
+                          onAction={() => setIsAddOpen(true)}
+                          className="border-none bg-transparent my-0 py-8 shadow-none"
+                        />
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    paginated.map((r) => (
                       <TableRow key={r.id}>
                         <TableCell className="font-mono font-bold text-primary whitespace-nowrap">
                           {r.rentalNo}
@@ -301,17 +308,32 @@ function RentalsPage() {
                                 <Trash2 className="mr-2 size-3.5" /> Delete Booking
                               </DropdownMenuItem>
                             </DropdownMenuContent>
-                            </DropdownMenu>
+                          </DropdownMenu>
                         </TableCell>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </div>
 
-              {/* Mobile Card Feed (< 768px) */}
-              <div className="table-mobile-cards p-3 space-y-2.5 md:hidden">
-                {paginated.map((r) => (
+            {/* Mobile Card Feed (< 768px) */}
+            <div className="table-mobile-cards p-3 space-y-2.5 md:hidden">
+              {paginated.length === 0 ? (
+                <EmptyState
+                  icon={KeyRound}
+                  title="No rental bookings found"
+                  description={
+                    search
+                      ? "Try adjusting your search query."
+                      : "Create your first rental booking for cameras, tools, or vehicles."
+                  }
+                  actionLabel="Add Rental Booking"
+                  onAction={() => setIsAddOpen(true)}
+                  className="border-none bg-transparent my-0 py-6 shadow-none"
+                />
+              ) : (
+                paginated.map((r) => (
                   <div
                     key={r.id}
                     className="flex items-center justify-between rounded-xl border border-border/80 bg-card p-3 shadow-sm card-interactive"
@@ -359,22 +381,22 @@ function RentalsPage() {
                       )}
                     </div>
                   </div>
-                ))}
-              </div>
+                ))
+              )}
+            </div>
 
+            {filteredRentals.length > 0 && (
               <div className="border-t border-border/60 p-2 sm:p-3">
                 <PaginationControls
                   currentPage={page}
                   totalPages={totalPages}
-                  pageSize={itemsPerPage}
                   onPageChange={setPage}
-                  onPageSizeChange={() => {}}
                   totalItems={filteredRentals.length}
                 />
               </div>
-            </div>
+            )}
           </div>
-        )}
+        </div>
       </DataPage>
 
       {/* Create Rental Booking Modal */}

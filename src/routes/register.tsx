@@ -274,7 +274,7 @@ function RegisterPage() {
           </div>
 
           {/* Wizard Form Card */}
-          <div className="rounded-3xl border border-border bg-card p-8 sm:p-10 md:p-12 shadow-elevated space-y-7">
+          <div className="rounded-2xl border border-border bg-card p-7 sm:p-9 md:p-10 shadow-elevated space-y-6">
             {step === 1 ? (
               /* Step 1: Owner Details & Credentials */
               <div className="space-y-5">

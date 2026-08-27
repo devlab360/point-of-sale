@@ -152,7 +152,7 @@ function StockList() {
         searchPlaceholder="Search inventory by name or SKU..."
         searchValue={search}
         onSearchChange={setSearch}
-        hideToolbar={products.length === 0}
+        hideToolbar={false}
         onResetFilters={handleResetFilters}
         activeFilterCount={activeFilterCount}
         onExport={() => {
@@ -221,7 +221,7 @@ function StockList() {
         }
       >
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5 mb-6">
-          <div className="rounded-2xl border border-border/80 bg-card p-4 shadow-card flex flex-col justify-between card-interactive">
+          <div className="rounded-xl border border-border/80 bg-card p-4 shadow-soft flex flex-col justify-between card-interactive">
             <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
               Total Stock Count
             </p>
@@ -236,7 +236,7 @@ function StockList() {
             </p>
           </div>
 
-          <div className="rounded-2xl border border-border/80 bg-card p-4 shadow-card flex flex-col justify-between card-interactive">
+          <div className="rounded-xl border border-border/80 bg-card p-4 shadow-soft flex flex-col justify-between card-interactive">
             <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
               Inventory Value (Cost)
             </p>
@@ -248,7 +248,7 @@ function StockList() {
             </p>
           </div>
 
-          <div className="rounded-2xl border border-border/80 bg-card p-4 shadow-card flex flex-col justify-between card-interactive">
+          <div className="rounded-xl border border-border/80 bg-card p-4 shadow-soft flex flex-col justify-between card-interactive">
             <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
               Retail Valuation
             </p>
@@ -258,7 +258,7 @@ function StockList() {
             <p className="text-xs text-muted-foreground mt-1 font-medium">Expected sales revenue</p>
           </div>
 
-          <div className="rounded-2xl border border-border/80 bg-card p-4 shadow-card flex flex-col justify-between card-interactive">
+          <div className="rounded-xl border border-border/80 bg-card p-4 shadow-soft flex flex-col justify-between card-interactive">
             <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
               Stock Alerts
             </p>
@@ -272,35 +272,40 @@ function StockList() {
           </div>
         </div>
 
-        {filteredProducts.length === 0 ? (
-          <EmptyState
-            icon={PackageSearch}
-            title="No inventory records"
-            description={
-              search || filters.status
-                ? "Try adjusting your search or active filters."
-                : "You don't have any products in your inventory yet."
-            }
-            actionLabel="Add Product"
-            onAction={() => router.navigate({ to: "/products" })}
-          />
-        ) : (
-          <div className="overflow-hidden rounded-2xl border border-border/80 bg-card shadow-card">
-            {/* Desktop Table (>= 768px) */}
-            <div className="table-desktop overflow-x-auto">
-              <Table className="min-w-[800px]">
-                <TableHeader>
+        <div className="overflow-hidden rounded-xl border border-border/80 bg-card shadow-soft">
+          {/* Desktop Table (>= 768px) */}
+          <div className="table-desktop overflow-x-auto">
+            <Table className="min-w-[800px]">
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Product</TableHead>
+                  <TableHead>SKU</TableHead>
+                  <TableHead className="text-right">Stock on Hand</TableHead>
+                  <TableHead className="text-right">Reorder Point</TableHead>
+                  <TableHead className="text-right">Stock Value</TableHead>
+                  <TableHead>Health Status</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {paginatedProducts.length === 0 ? (
                   <TableRow>
-                    <TableHead>Product</TableHead>
-                    <TableHead>SKU</TableHead>
-                    <TableHead className="text-right">Stock on Hand</TableHead>
-                    <TableHead className="text-right">Reorder Point</TableHead>
-                    <TableHead className="text-right">Stock Value</TableHead>
-                    <TableHead>Health Status</TableHead>
+                    <TableCell colSpan={6} className="h-64 text-center">
+                      <EmptyState
+                        icon={PackageSearch}
+                        title="No inventory records"
+                        description={
+                          search || filters.status
+                            ? "Try adjusting your search or active filters."
+                            : "You don't have any products in your inventory yet."
+                        }
+                        actionLabel="Add Product"
+                        onAction={() => router.navigate({ to: "/products" })}
+                        className="border-none bg-transparent my-0 py-8 shadow-none"
+                      />
+                    </TableCell>
                   </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {paginatedProducts.map((p) => {
+                ) : (
+                  paginatedProducts.map((p) => {
                     const low = Number(p.stock) <= Number(p.reorderLevel);
                     const out = p.stock <= 0;
                     return (
@@ -372,14 +377,29 @@ function StockList() {
                         </TableCell>
                       </TableRow>
                     );
-                  })}
-                </TableBody>
-              </Table>
-            </div>
+                  })
+                )}
+              </TableBody>
+            </Table>
+          </div>
 
-            {/* Mobile Card Feed (< 768px) */}
-            <div className="table-mobile-cards p-3 space-y-2.5">
-              {paginatedProducts.map((p) => {
+          {/* Mobile Card Feed (< 768px) */}
+          <div className="table-mobile-cards p-3 space-y-2.5">
+            {paginatedProducts.length === 0 ? (
+              <EmptyState
+                icon={PackageSearch}
+                title="No inventory records"
+                description={
+                  search || filters.status
+                    ? "Try adjusting your search or active filters."
+                    : "You don't have any products in your inventory yet."
+                }
+                actionLabel="Add Product"
+                onAction={() => router.navigate({ to: "/products" })}
+                className="border-none bg-transparent my-0 py-6 shadow-none"
+              />
+            ) : (
+              paginatedProducts.map((p) => {
                 const low = Number(p.stock) <= Number(p.reorderLevel);
                 const out = p.stock <= 0;
                 return (
@@ -426,9 +446,11 @@ function StockList() {
                     </div>
                   </div>
                 );
-              })}
-            </div>
+              })
+            )}
+          </div>
 
+          {filteredProducts.length > 0 && (
             <div className="border-t border-border/60 p-2 sm:p-3">
               <PaginationControls
                 currentPage={page}
@@ -439,8 +461,8 @@ function StockList() {
                 totalItems={filteredProducts.length}
               />
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </DataPage>
 
       <Dialog open={showForecast} onOpenChange={setShowForecast}>

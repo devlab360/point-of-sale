@@ -4,7 +4,14 @@ import { DataPage } from "@/components/layout/DataPage";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PaginationControls } from "@/components/ui/pagination-controls";
 import { useDebounce } from "@/hooks/useDebounce";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -187,15 +194,15 @@ function RepairsPage() {
   };
 
   return (
-    <div className="p-4 md:p-6 lg:p-8 space-y-6">
+    <div>
       <DataPage
-        title="Service & Repair Job Sheets (মেরামত ও সার্ভিসিং)"
+        title="Service & Repair Job Sheets"
         description="Track electronics, mobile, computer & vehicle repair tickets from intake to delivery."
         primaryAction={{ label: "Create Repair Ticket", onClick: () => setIsAddOpen(true) }}
         searchPlaceholder="Search by ticket #, customer, or IMEI..."
         searchValue={search}
         onSearchChange={setSearch}
-        hideToolbar={rawRepairs.length === 0}
+        hideToolbar={false}
         onResetFilters={handleResetFilters}
         activeFilterCount={activeFilterCount}
         filtersContent={({ close }) => (
@@ -231,76 +238,81 @@ function RepairsPage() {
           </div>
         )}
       >
-        {filteredRepairs.length === 0 ? (
-          <EmptyState
-            icon={Wrench}
-            title="No repair tickets found"
-            description={
-              search
-                ? "Try adjusting your search query."
-                : "Create your first repair ticket to manage device service."
-            }
-          />
-        ) : (
-          <div className="space-y-4">
-            <div className="overflow-hidden rounded-2xl border border-border/80 bg-card shadow-card">
-              {/* Desktop Table */}
-              <div className="table-desktop overflow-x-auto">
-                <Table className="min-w-[900px]">
-                  <TableHeader>
+        <div className="space-y-4">
+          <div className="overflow-hidden rounded-xl border border-border/80 bg-card shadow-soft">
+            {/* Desktop Table */}
+            <div className="table-desktop overflow-x-auto">
+              <Table className="min-w-[900px]">
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Ticket #</TableHead>
+                    <TableHead>Customer</TableHead>
+                    <TableHead>Device / Model</TableHead>
+                    <TableHead>Serial / IMEI</TableHead>
+                    <TableHead className="text-right">Est. Cost</TableHead>
+                    <TableHead className="text-right">Advance</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {paginated.length === 0 ? (
                     <TableRow>
-                      <TableHead>Ticket #</TableHead>
-                      <TableHead>Customer</TableHead>
-                      <TableHead>Device / Model</TableHead>
-                      <TableHead>Serial / IMEI</TableHead>
-                      <TableHead className="text-right">Est. Cost</TableHead>
-                      <TableHead className="text-right">Advance</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
+                      <TableCell colSpan={8} className="h-64 text-center">
+                        <EmptyState
+                          icon={Wrench}
+                          title="No repair tickets found"
+                          description={
+                            search
+                              ? "Try adjusting your search query."
+                              : "Create your first repair ticket to manage device service."
+                          }
+                          className="border-none bg-transparent my-0 py-8 shadow-none"
+                        />
+                      </TableCell>
                     </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {paginated.map((r) => (
+                  ) : (
+                    paginated.map((r) => (
                       <TableRow key={r.id}>
                         <TableCell
-                          className="font-mono font-bold text-primary whitespace-nowrap cursor-pointer hover:underline"
+                          className="font-mono font-semibold text-primary whitespace-nowrap cursor-pointer hover:underline"
                           onClick={() => setViewItem(r)}
                         >
                           {r.ticketNo}
                         </TableCell>
                         <TableCell className="whitespace-nowrap">
-                          <div className="font-bold text-foreground text-xs sm:text-sm">
+                          <div className="font-semibold text-foreground text-sm">
                             {r.customerName}
                           </div>
-                          <div className="text-[11px] text-muted-foreground">{r.customerPhone}</div>
+                          <div className="text-xs text-muted-foreground">{r.customerPhone}</div>
                         </TableCell>
-                        <TableCell className="font-bold text-foreground whitespace-nowrap text-xs">
+                        <TableCell className="font-medium text-foreground whitespace-nowrap text-sm">
                           {r.deviceName}
                         </TableCell>
                         <TableCell className="font-mono text-xs text-muted-foreground whitespace-nowrap">
-                          {r.serialOrImei || "-"}
+                          {r.serialOrImei || "—"}
                         </TableCell>
-                        <TableCell className="number text-right font-black text-foreground whitespace-nowrap text-sm">
+                        <TableCell className="number text-right font-semibold text-foreground whitespace-nowrap text-sm">
                           {formatCurrency(r.estimatedCost)}
                         </TableCell>
-                        <TableCell className="number text-right font-black text-success whitespace-nowrap text-xs">
+                        <TableCell className="number text-right font-semibold text-success whitespace-nowrap text-sm">
                           {formatCurrency(r.advancePaid)}
                         </TableCell>
                         <TableCell className="whitespace-nowrap">
                           {r.status === "delivered" ? (
-                            <Badge className="bg-success/12 text-success border-success/25 text-[10px] font-bold">
+                            <Badge className="bg-success/10 text-success border-success/20 text-xs font-semibold">
                               Delivered
                             </Badge>
                           ) : r.status === "repaired" ? (
-                            <Badge className="bg-info/12 text-info border-info/25 text-[10px] font-bold">
+                            <Badge className="bg-info/10 text-info border-info/20 text-xs font-semibold">
                               Repaired & Ready
                             </Badge>
                           ) : r.status === "diagnosing" ? (
-                            <Badge className="bg-warning/15 text-warning-foreground border-warning/25 text-[10px] font-bold">
+                            <Badge className="bg-warning/10 text-warning-foreground border-warning/20 text-xs font-semibold">
                               In Diagnosis
                             </Badge>
                           ) : (
-                            <Badge variant="outline" className="text-[10px] font-bold">
+                            <Badge variant="outline" className="text-xs font-semibold">
                               Received
                             </Badge>
                           )}
@@ -308,54 +320,66 @@ function RepairsPage() {
                         <TableCell className="text-right whitespace-nowrap">
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="icon" className="size-8 rounded-lg">
+                              <Button variant="ghost" size="icon" className="size-9 rounded-lg">
                                 <MoreVertical className="size-4 text-muted-foreground" />
                               </Button>
                             </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="rounded-xl">
+                            <DropdownMenuContent align="end" className="rounded-lg">
                               <DropdownMenuItem
                                 onClick={() => setViewItem(r)}
-                                className="text-xs font-semibold"
+                                className="text-xs font-medium cursor-pointer"
                               >
-                                <Printer className="mr-2 size-3.5 text-primary" /> View / Print
-                                Ticket
+                                <Printer className="mr-2 size-4 text-primary" /> View / Print Ticket
                               </DropdownMenuItem>
                               <DropdownMenuItem
                                 onClick={() => updateStatus(r.id, "diagnosing")}
-                                className="text-xs font-semibold text-warning-foreground"
+                                className="text-xs font-medium text-warning-foreground cursor-pointer"
                               >
-                                <Wrench className="mr-2 size-3.5" /> Mark In Diagnosis
+                                <Wrench className="mr-2 size-4" /> Mark In Diagnosis
                               </DropdownMenuItem>
                               <DropdownMenuItem
                                 onClick={() => updateStatus(r.id, "repaired")}
-                                className="text-xs font-semibold text-info"
+                                className="text-xs font-medium text-info cursor-pointer"
                               >
-                                <CheckCircle2 className="mr-2 size-3.5" /> Mark Repaired
+                                <CheckCircle2 className="mr-2 size-4" /> Mark Repaired
                               </DropdownMenuItem>
                               <DropdownMenuItem
                                 onClick={() => updateStatus(r.id, "delivered")}
-                                className="text-xs font-bold text-success"
+                                className="text-xs font-semibold text-success cursor-pointer"
                               >
-                                <ShieldCheck className="mr-2 size-3.5" /> Mark Delivered
+                                <ShieldCheck className="mr-2 size-4" /> Mark Delivered
                               </DropdownMenuItem>
                               <DropdownMenuItem
-                                className="text-destructive text-xs font-semibold"
+                                className="text-destructive text-xs font-medium cursor-pointer"
                                 onClick={() => deleteRepair(r.id)}
                               >
-                                <Trash2 className="mr-2 size-3.5" /> Delete Ticket
+                                <Trash2 className="mr-2 size-4" /> Delete Ticket
                               </DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
                         </TableCell>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </div>
 
-              {/* Mobile Card Feed (< 768px) */}
-              <div className="table-mobile-cards p-3 space-y-2.5">
-                {paginated.map((r) => (
+            {/* Mobile Card Feed (< 768px) */}
+            <div className="table-mobile-cards p-3 space-y-2.5">
+              {paginated.length === 0 ? (
+                <EmptyState
+                  icon={Wrench}
+                  title="No repair tickets found"
+                  description={
+                    search
+                      ? "Try adjusting your search query."
+                      : "Create your first repair ticket to manage device service."
+                  }
+                  className="border-none bg-transparent my-0 py-6 shadow-none"
+                />
+              ) : (
+                paginated.map((r) => (
                   <div
                     key={r.id}
                     className="flex items-center justify-between rounded-xl border border-border/80 bg-card p-3 shadow-sm card-interactive"
@@ -380,28 +404,29 @@ function RepairsPage() {
                           {r.status}
                         </Badge>
                       </div>
-                      <div className="font-bold text-xs sm:text-sm text-foreground mt-0.5 truncate">
+                      <div className="mt-1 font-bold text-foreground text-xs sm:text-sm">
                         {r.customerName}
                       </div>
-                      <p className="text-[11px] text-muted-foreground truncate">
-                        {r.deviceName} · {r.serialOrImei || "No IMEI"}
-                      </p>
-                    </div>
-
-                    <div className="text-right shrink-0 pl-2">
-                      <div className="number text-sm font-black text-foreground">
-                        {formatCurrency(r.estimatedCost)}
+                      <div className="text-[11px] text-muted-foreground">
+                        {r.deviceName} · {r.customerPhone}
                       </div>
-                      {Number(r.advancePaid) > 0 && (
-                        <span className="text-[10px] text-success font-bold mt-0.5 block">
-                          Adv: {formatCurrency(r.advancePaid)}
+                      <div className="mt-1 flex items-center gap-2 text-xs">
+                        <span className="font-black text-foreground">
+                          {formatCurrency(r.estimatedCost)}
                         </span>
-                      )}
+                        {r.advancePaid > 0 && (
+                          <span className="font-bold text-success">
+                            (Adv: {formatCurrency(r.advancePaid)})
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
-                ))}
-              </div>
+                ))
+              )}
+            </div>
 
+            {filteredRepairs.length > 0 && (
               <div className="border-t border-border/60 p-2 sm:p-3">
                 <PaginationControls
                   currentPage={page}
@@ -410,9 +435,9 @@ function RepairsPage() {
                   totalItems={filteredRepairs.length}
                 />
               </div>
-            </div>
+            )}
           </div>
-        )}
+        </div>
       </DataPage>
 
       {/* Create Repair Ticket Modal */}
@@ -425,11 +450,11 @@ function RepairsPage() {
           }
         }}
       >
-        <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
+        <DialogContent className="sm:max-w-xl md:max-w-2xl max-h-[90vh] overflow-y-auto rounded-xl p-6">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
+            <DialogTitle className="flex items-center gap-2 text-lg">
               <Wrench className="size-5 text-primary" />
-              <span>Create Repair Ticket (মেরামত এন্ট্রি)</span>
+              <span>Create Service & Repair Ticket</span>
             </DialogTitle>
           </DialogHeader>
           <form noValidate onSubmit={handleCreateRepair} className="space-y-4 pt-2">

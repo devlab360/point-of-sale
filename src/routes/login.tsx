@@ -1,5 +1,5 @@
 import { Link, useNavigate, createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input, PasswordInput } from "@/components/ui/input";
@@ -32,8 +32,14 @@ function LoginPage() {
   const [mode, setMode] = useState<"email" | "otp" | "forgot">("email");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const { loginWithEmail } = useAuth();
+  const { loginWithEmail, isAuthenticated } = useAuth();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate({ to: "/" });
+    }
+  }, [isAuthenticated, navigate]);
 
   // Forgot password flow states
   const [forgotStep, setForgotStep] = useState<"request" | "verify">("request");
@@ -165,6 +171,17 @@ function LoginPage() {
       setIsResetting(false);
     }
   };
+  if (isAuthenticated) {
+    return (
+      <div className="min-h-screen w-full flex items-center justify-center bg-background text-foreground">
+        <div className="flex flex-col items-center gap-3 p-8 rounded-xl border border-border bg-card shadow-soft text-center max-w-sm">
+          <Loader2 className="size-8 animate-spin text-primary" />
+          <h3 className="font-semibold text-base">Signing you in...</h3>
+          <p className="text-sm text-muted-foreground">Redirecting to your dashboard</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen w-full flex bg-background overflow-hidden text-foreground">
@@ -176,7 +193,7 @@ function LoginPage() {
 
         {/* Brand Header */}
         <div className="relative z-10 flex items-center gap-3">
-          <div className="flex size-11 items-center justify-center rounded-2xl bg-primary-foreground/10 border border-primary-foreground/20 text-primary-foreground">
+          <div className="flex size-11 items-center justify-center rounded-xl bg-primary-foreground/10 border border-primary-foreground/20 text-primary-foreground">
             <Store className="size-6" />
           </div>
           <div>
@@ -237,8 +254,8 @@ function LoginPage() {
         <div className="w-full max-w-lg xl:max-w-xl space-y-8 py-6">
           {/* Header Icon & Title */}
           <div className="space-y-3 text-center lg:text-left">
-            <div className="inline-flex lg:hidden size-14 items-center justify-center rounded-2xl bg-primary/10 text-primary mb-2">
-              <Store className="size-7" />
+            <div className="inline-flex lg:hidden size-13 items-center justify-center rounded-xl bg-primary/10 text-primary mb-2">
+              <Store className="size-6" />
             </div>
             <h2 className="font-display text-3xl sm:text-4xl font-semibold tracking-tight text-foreground">
               {mode === "forgot" ? "Reset Password" : "Welcome Back"}
@@ -251,12 +268,12 @@ function LoginPage() {
           </div>
 
           {/* Form Card */}
-          <div className="rounded-3xl border border-border bg-card p-8 sm:p-10 md:p-12 shadow-elevated space-y-7">
+          <div className="rounded-2xl border border-border bg-card p-7 sm:p-9 md:p-10 shadow-elevated space-y-6">
             {mode === "email" ? (
-              <form noValidate onSubmit={handleEmailLogin} className="space-y-6">
-                <div className="space-y-2.5">
-                  <Label htmlFor="email" className="text-sm font-bold text-foreground">
-                    Store Email Address
+              <form noValidate onSubmit={handleEmailLogin} className="space-y-5">
+                <div className="space-y-2">
+                  <Label htmlFor="email" className="text-sm font-semibold text-foreground">
+                    Email Address
                   </Label>
                   <Input
                     id="email"
@@ -267,20 +284,20 @@ function LoginPage() {
                       clearLoginError("email");
                     }}
                     placeholder="owner@store.com"
-                    className="h-12 sm:h-13 rounded-2xl text-base px-4"
+                    className="h-11 rounded-lg text-sm sm:text-base px-3.5"
                   />
                   {loginErrors.email && <FieldError message={loginErrors.email} />}
                 </div>
 
-                <div className="space-y-2.5">
+                <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <Label htmlFor="password" className="text-sm font-bold text-foreground">
+                    <Label htmlFor="password" className="text-sm font-semibold text-foreground">
                       Password
                     </Label>
                     <button
                       type="button"
                       onClick={() => setMode("forgot")}
-                      className="text-xs sm:text-sm font-bold text-primary hover:underline"
+                      className="text-xs sm:text-sm font-semibold text-primary hover:underline"
                     >
                       Forgot password?
                     </button>
@@ -293,7 +310,7 @@ function LoginPage() {
                       clearLoginError("password");
                     }}
                     placeholder="••••••••"
-                    className="h-12 sm:h-13 rounded-2xl text-base px-4"
+                    className="h-11 rounded-lg text-sm sm:text-base px-3.5"
                   />
                   {loginErrors.password && <FieldError message={loginErrors.password} />}
                 </div>
@@ -301,7 +318,7 @@ function LoginPage() {
                 <Button
                   type="submit"
                   disabled={isLoggingIn}
-                  className="w-full h-12 sm:h-13 rounded-2xl font-semibold gap-2 text-base"
+                  className="w-full h-11 sm:h-11.5 rounded-lg font-semibold gap-2 text-sm sm:text-base"
                 >
                   {isLoggingIn ? (
                     <>
@@ -320,9 +337,9 @@ function LoginPage() {
               /* Forgot Password Flow */
               <div className="space-y-6">
                 {forgotStep === "request" ? (
-                  <form onSubmit={handleSendResetOtp} className="space-y-6">
-                    <div className="space-y-2.5">
-                      <Label htmlFor="resetEmail" className="text-sm font-bold text-foreground">
+                  <form onSubmit={handleSendResetOtp} className="space-y-5">
+                    <div className="space-y-2">
+                      <Label htmlFor="resetEmail" className="text-sm font-semibold text-foreground">
                         Registered Store Email
                       </Label>
                       <Input
@@ -331,14 +348,14 @@ function LoginPage() {
                         value={resetEmail || email}
                         onChange={(e) => setResetEmail(e.target.value)}
                         placeholder="owner@store.com"
-                        className="h-12 sm:h-13 rounded-2xl text-base px-4"
+                        className="h-11 rounded-lg text-sm sm:text-base px-3.5"
                         required
                       />
                     </div>
                     <Button
                       type="submit"
                       disabled={isSendingOtp}
-                      className="w-full h-12 sm:h-13 rounded-2xl font-semibold gap-2 text-base"
+                      className="w-full h-11 sm:h-11.5 rounded-lg font-semibold gap-2 text-sm sm:text-base"
                     >
                       {isSendingOtp ? (
                         <>
@@ -363,7 +380,7 @@ function LoginPage() {
                         onChange={(e) => setOtpInput(e.target.value)}
                         placeholder="123456"
                         maxLength={6}
-                        className="h-11 rounded-xl font-mono text-center text-lg tracking-widest"
+                        className="h-11 rounded-lg font-mono text-center text-lg tracking-widest"
                       />
                     </div>
                     <div className="space-y-1.5">
@@ -373,7 +390,7 @@ function LoginPage() {
                         value={newPassword}
                         onChange={(e) => setNewPassword(e.target.value)}
                         placeholder="••••••••"
-                        className="h-11 rounded-xl"
+                        className="h-11 rounded-lg"
                       />
                     </div>
                     <div className="space-y-1.5">
@@ -383,13 +400,13 @@ function LoginPage() {
                         value={confirmPassword}
                         onChange={(e) => setConfirmPassword(e.target.value)}
                         placeholder="••••••••"
-                        className="h-11 rounded-xl"
+                        className="h-11 rounded-lg"
                       />
                     </div>
                     <Button
                       type="submit"
                       disabled={isResetting}
-                      className="w-full h-11 rounded-xl font-bold"
+                      className="w-full h-11 rounded-lg font-bold"
                     >
                       {isResetting ? "Updating Password..." : "Update Password & Sign In"}
                     </Button>

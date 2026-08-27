@@ -221,7 +221,7 @@ function BrandsPage() {
         searchPlaceholder="Search brands..."
         searchValue={search}
         onSearchChange={setSearch}
-        hideToolbar={rawBrands.length === 0}
+        hideToolbar={false}
         onResetFilters={handleResetFilters}
         activeFilterCount={activeFilterCount}
         onExport={handleExport}
@@ -230,16 +230,15 @@ function BrandsPage() {
           <div className="space-y-4 flex flex-col h-full min-h-[50vh]">
             <div className="flex-1 space-y-4">
               <div className="space-y-2">
-                <Label>Usage Status</Label>
+                <Label>Brand Status</Label>
                 <SearchableSelect
                   options={[
-                    { value: "", label: "All Brands" },
-                    { value: "in-use", label: "In Use (Has products)" },
-                    { value: "empty", label: "Empty (No products)" },
+                    { value: "", label: "All Statuses" },
+                    { value: "active", label: "Active Brands" },
                   ]}
-                  value={draftFilters.usage}
-                  onChange={(val) => setDraftFilters((prev) => ({ ...prev, usage: val }))}
-                  placeholder="Filter by Usage"
+                  value={draftFilters.status}
+                  onChange={(val) => setDraftFilters((prev) => ({ ...prev, status: val }))}
+                  placeholder="Filter by Status"
                 />
               </div>
             </div>
@@ -261,23 +260,9 @@ function BrandsPage() {
           <TableSkeleton columns={3} rows={6} showHeaderAction={false} showFilters={false} />
         ) : isBrandsError ? (
           <ErrorState onRetry={refetchBrands} />
-        ) : brands.length === 0 ? (
-          <EmptyState
-            icon={Tag}
-            title="No brands found"
-            description={
-              search ? "Try adjusting your search." : "You haven't created any brands yet."
-            }
-            actionLabel="Add Brand"
-            onAction={() => {
-              setEditingBrand(null);
-              setName("");
-              setModalOpen(true);
-            }}
-          />
         ) : (
           <div className="space-y-4">
-            <div className="overflow-hidden rounded-2xl border border-border/80 bg-card shadow-card">
+            <div className="overflow-hidden rounded-xl border border-border/80 bg-card shadow-soft">
               {/* Desktop Table View */}
               <div className="table-desktop overflow-x-auto">
                 <Table className="min-w-[600px]">
@@ -290,90 +275,128 @@ function BrandsPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {paginatedBrands.map((b) => (
-                      <TableRow key={b.id}>
-                        <TableCell className="whitespace-nowrap">
-                          <div className="flex items-center gap-3">
-                            <div className="grid size-10 place-items-center rounded-xl bg-primary/10 text-xs font-black text-primary border border-primary/20">
-                              {b.name.slice(0, 2).toUpperCase()}
-                            </div>
-                            <span className="font-bold text-foreground">{b.name}</span>
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-muted-foreground whitespace-nowrap text-xs font-semibold">
-                          {b.products || 0} SKUs
-                        </TableCell>
-                        <TableCell className="whitespace-nowrap">
-                          <Badge className="bg-success/12 text-success hover:bg-success/20 border-success/20 text-[10px] font-bold">
-                            Active
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-right whitespace-nowrap">
-                          <div className="flex justify-end gap-1">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="size-8 rounded-lg"
-                              onClick={() => openEdit(b)}
-                            >
-                              <Pencil className="size-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="size-8 rounded-lg text-destructive hover:bg-destructive/10"
-                              onClick={() => setDeleteId(b.id)}
-                            >
-                              <Trash2 className="size-4" />
-                            </Button>
-                          </div>
+                    {paginatedBrands.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={4} className="h-64 text-center">
+                          <EmptyState
+                            icon={Tag}
+                            title="No brands found"
+                            description={
+                              search ? "Try adjusting your search." : "You haven't created any brands yet."
+                            }
+                            actionLabel="Add Brand"
+                            onAction={() => {
+                              setEditingBrand(null);
+                              setName("");
+                              setModalOpen(true);
+                            }}
+                            className="border-none bg-transparent my-0 py-8 shadow-none"
+                          />
                         </TableCell>
                       </TableRow>
-                    ))}
+                    ) : (
+                      paginatedBrands.map((b) => (
+                        <TableRow key={b.id}>
+                          <TableCell className="whitespace-nowrap">
+                            <div className="flex items-center gap-3">
+                              <div className="grid size-10 place-items-center rounded-xl bg-primary/10 text-xs font-black text-primary border border-primary/20">
+                                {b.name.slice(0, 2).toUpperCase()}
+                              </div>
+                              <span className="font-bold text-foreground">{b.name}</span>
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-muted-foreground whitespace-nowrap text-xs font-semibold">
+                            {b.products || 0} SKUs
+                          </TableCell>
+                          <TableCell className="whitespace-nowrap">
+                            <Badge className="bg-success/12 text-success hover:bg-success/20 border-success/20 text-[10px] font-bold">
+                              Active
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-right whitespace-nowrap">
+                            <div className="flex justify-end gap-1">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="size-8 rounded-lg"
+                                onClick={() => openEdit(b)}
+                              >
+                                <Pencil className="size-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="size-8 rounded-lg text-destructive hover:bg-destructive/10"
+                                onClick={() => setDeleteId(b.id)}
+                              >
+                                <Trash2 className="size-4" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
                   </TableBody>
                 </Table>
               </div>
 
               {/* Mobile Cards View (< 768px) */}
               <div className="table-mobile-cards p-3 space-y-2.5">
-                {paginatedBrands.map((b) => (
-                  <div
-                    key={b.id}
-                    className="flex items-center justify-between rounded-xl border border-border/80 bg-card p-3 shadow-sm card-interactive"
-                  >
-                    <div className="flex items-center gap-3 min-w-0">
-                      <div className="grid size-10 shrink-0 place-items-center rounded-xl bg-primary/10 text-xs font-black text-primary border border-primary/20">
-                        {b.name.slice(0, 2).toUpperCase()}
-                      </div>
-                      <div className="min-w-0">
-                        <div className="font-bold text-xs sm:text-sm text-foreground truncate">
-                          {b.name}
+                {paginatedBrands.length === 0 ? (
+                  <EmptyState
+                    icon={Tag}
+                    title="No brands found"
+                    description={
+                      search ? "Try adjusting your search." : "You haven't created any brands yet."
+                    }
+                    actionLabel="Add Brand"
+                    onAction={() => {
+                      setEditingBrand(null);
+                      setName("");
+                      setModalOpen(true);
+                    }}
+                    className="border-none bg-transparent my-0 py-6 shadow-none"
+                  />
+                ) : (
+                  paginatedBrands.map((b) => (
+                    <div
+                      key={b.id}
+                      className="flex items-center justify-between rounded-xl border border-border/80 bg-card p-3 shadow-sm card-interactive"
+                    >
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className="grid size-10 shrink-0 place-items-center rounded-xl bg-primary/10 text-xs font-black text-primary border border-primary/20">
+                          {b.name.slice(0, 2).toUpperCase()}
                         </div>
-                        <p className="text-[11px] text-muted-foreground">
-                          {b.products || 0} active products
-                        </p>
+                        <div className="min-w-0">
+                          <div className="font-bold text-xs sm:text-sm text-foreground truncate">
+                            {b.name}
+                          </div>
+                          <p className="text-[11px] text-muted-foreground">
+                            {b.products || 0} active products
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-1 shrink-0">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="size-8 rounded-lg"
+                          onClick={() => openEdit(b)}
+                        >
+                          <Pencil className="size-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="size-8 rounded-lg text-destructive hover:bg-destructive/10"
+                          onClick={() => setDeleteId(b.id)}
+                        >
+                          <Trash2 className="size-4" />
+                        </Button>
                       </div>
                     </div>
-                    <div className="flex items-center gap-1 shrink-0">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="size-8 rounded-lg"
-                        onClick={() => openEdit(b)}
-                      >
-                        <Pencil className="size-3.5" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="size-8 rounded-lg text-destructive hover:bg-destructive/10"
-                        onClick={() => setDeleteId(b.id)}
-                      >
-                        <Trash2 className="size-3.5" />
-                      </Button>
-                    </div>
-                  </div>
-                ))}
+                  ))
+                )}
               </div>
 
               {brands.length > 0 && (

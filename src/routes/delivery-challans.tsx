@@ -365,7 +365,8 @@ function DeliveryChallansPage() {
         searchPlaceholder="Search challans..."
         searchValue={search}
         onSearchChange={setSearch}
-        hideToolbar={rawChallans.length === 0}
+        hideToolbar={false}
+        onExport={handleExport}
         onResetFilters={handleResetFilters}
         activeFilterCount={activeFilterCount}
         filtersContent={({ close }) => (
@@ -376,7 +377,7 @@ function DeliveryChallansPage() {
                 <SearchableSelect
                   options={[
                     { value: "", label: "All Statuses" },
-                    { value: "delivered", label: "Delivered" },
+                    { value: "dispatched", label: "Dispatched" },
                     { value: "invoiced", label: "Invoiced" },
                   ]}
                   value={draftFilters.status}
@@ -399,42 +400,49 @@ function DeliveryChallansPage() {
           </div>
         )}
       >
-        {filteredChallans.length === 0 ? (
-          <EmptyState
-            icon={Truck}
-            title="No delivery challans found"
-            description={
-              search
-                ? "Try adjusting your search query."
-                : "Create your first delivery challan to dispatch goods."
-            }
-          />
-        ) : (
-          <div className="space-y-4">
-            <div className="overflow-hidden rounded-2xl border border-border/80 bg-card shadow-card">
-              {/* Desktop Table View */}
-              <div className="table-desktop overflow-x-auto">
-                <Table className="min-w-[700px]">
-                  <TableHeader>
+        <div className="space-y-4">
+          <div className="overflow-hidden rounded-xl border border-border/80 bg-card shadow-soft">
+            {/* Desktop Table View */}
+            <div className="table-desktop overflow-x-auto">
+              <Table className="min-w-[700px]">
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Challan #</TableHead>
+                    <TableHead>Customer Name</TableHead>
+                    <TableHead>Dispatch Date</TableHead>
+                    <TableHead>Transport / Vehicle</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {paginated.length === 0 ? (
                     <TableRow>
-                      <TableHead>Challan #</TableHead>
-                      <TableHead>Customer Name</TableHead>
-                      <TableHead>Dispatch Date</TableHead>
-                      <TableHead>Transport / Vehicle</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
+                      <TableCell colSpan={6} className="h-64 text-center">
+                        <EmptyState
+                          icon={Truck}
+                          title="No delivery challans found"
+                          description={
+                            search
+                              ? "Try adjusting your search query."
+                              : "Create your first delivery challan to dispatch goods."
+                          }
+                          actionLabel="Create Challan"
+                          onAction={() => setIsAddOpen(true)}
+                          className="border-none bg-transparent my-0 py-8 shadow-none"
+                        />
+                      </TableCell>
                     </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {paginated.map((c) => (
+                  ) : (
+                    paginated.map((c) => (
                       <TableRow key={c.id}>
                         <TableCell
-                          className="font-mono font-bold text-primary whitespace-nowrap cursor-pointer hover:underline"
+                          className="font-mono font-semibold text-primary whitespace-nowrap cursor-pointer hover:underline"
                           onClick={() => setViewItem(c)}
                         >
                           {c.challanNo}
                         </TableCell>
-                        <TableCell className="font-bold text-foreground whitespace-nowrap">
+                        <TableCell className="font-semibold text-foreground whitespace-nowrap">
                           {c.customerName}
                         </TableCell>
                         <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
@@ -488,14 +496,29 @@ function DeliveryChallansPage() {
                           </DropdownMenu>
                         </TableCell>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </div>
 
-              {/* Mobile Card Feed (< 768px) */}
-              <div className="table-mobile-cards p-3 space-y-2.5">
-                {paginated.map((c) => (
+            {/* Mobile Card Feed (< 768px) */}
+            <div className="table-mobile-cards p-3 space-y-2.5">
+              {paginated.length === 0 ? (
+                <EmptyState
+                  icon={Truck}
+                  title="No delivery challans found"
+                  description={
+                    search
+                      ? "Try adjusting your search query."
+                      : "Create your first delivery challan to dispatch goods."
+                  }
+                  actionLabel="Create Challan"
+                  onAction={() => setIsAddOpen(true)}
+                  className="border-none bg-transparent my-0 py-6 shadow-none"
+                />
+              ) : (
+                paginated.map((c) => (
                   <div
                     key={c.id}
                     className="flex items-center justify-between rounded-xl border border-border/80 bg-card p-3 shadow-sm card-interactive"
@@ -521,40 +544,45 @@ function DeliveryChallansPage() {
                     </div>
 
                     <div className="text-right shrink-0 pl-2">
-                      {c.status === "invoiced" ? (
-                        <Badge className="bg-success/12 text-success text-[10px] font-bold">
-                          Invoiced
-                        </Badge>
-                      ) : (
+                      <Badge
+                        className={
+                          c.status === "invoiced"
+                            ? "bg-success/12 text-success text-[9px] font-bold py-0"
+                            : "bg-warning/15 text-warning-foreground text-[9px] font-bold py-0"
+                        }
+                      >
+                        {c.status === "invoiced" ? "Invoiced" : "Out"}
+                      </Badge>
+                      {c.status !== "invoiced" ? (
                         <Button
                           size="sm"
-                          className="h-7 px-2 text-[11px] font-bold shadow-soft"
+                          className="h-7 px-2 text-[11px] font-bold mt-1 shadow-soft flex items-center gap-1"
                           onClick={(e) => {
                             e.stopPropagation();
                             convertChallanToInvoice(c);
                           }}
                         >
-                          Invoice →
+                          <ArrowRightLeft className="size-3" /> Invoice
                         </Button>
-                      )}
+                      ) : null}
                     </div>
                   </div>
-                ))}
-              </div>
+                ))
+              )}
+            </div>
 
+            {filteredChallans.length > 0 && (
               <div className="border-t border-border/60 p-2 sm:p-3">
                 <PaginationControls
                   currentPage={page}
                   totalPages={totalPages}
-                  pageSize={pageSize}
                   onPageChange={setPage}
-                  onPageSizeChange={setPageSize}
                   totalItems={filteredChallans.length}
                 />
               </div>
-            </div>
+            )}
           </div>
-        )}
+        </div>
       </DataPage>
 
       {/* Create Delivery Challan Modal */}

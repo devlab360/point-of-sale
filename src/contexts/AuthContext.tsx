@@ -113,9 +113,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setUser(res.user);
           SessionStore.setAuthUser(res.user.id);
           if (res.user.organizationId) {
-            const oId = res.user.organizationId;
-            PersistStore.setOrgId(oId);
-            await refetchOrgData();
+            PersistStore.setOrgId(res.user.organizationId);
+            refetchOrgData();
           }
 
           // Log SaaS Session
@@ -154,7 +153,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         SessionStore.setAuthUser(res.user.id);
         if (res.user.organizationId) {
           PersistStore.setOrgId(res.user.organizationId);
-          await refetchOrgData();
+          refetchOrgData();
         }
 
         // Log SaaS Session
@@ -189,7 +188,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           SessionStore.setAuthUser(res.user.id);
           if (res.user.organizationId) {
             PersistStore.setOrgId(res.user.organizationId);
-            await refetchOrgData();
+            refetchOrgData();
           }
 
           const sessionId = crypto.randomUUID();
@@ -233,7 +232,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           SessionStore.setAuthUser(res.user.id);
           if (res.user.organizationId) {
             PersistStore.setOrgId(res.user.organizationId);
-            await refetchOrgData();
+            refetchOrgData();
           }
 
           const sessionId = crypto.randomUUID();

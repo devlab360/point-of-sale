@@ -382,7 +382,7 @@ function ProductsPage() {
         searchPlaceholder={t("searchProducts") || "Search by name, SKU, or barcode..."}
         searchValue={search}
         onSearchChange={setSearch}
-        hideToolbar={products.length === 0}
+        hideToolbar={false}
         onExport={handleExport}
         onImport={handleImport}
         toolbar={
@@ -411,7 +411,7 @@ function ProductsPage() {
               )}
               aria-label="Grid view"
             >
-              <Grid3x3 className="size-4" />
+              <LayoutGrid className="size-4" />
             </button>
           </div>
         }
@@ -448,20 +448,20 @@ function ProductsPage() {
                 <Label>Stock Status</Label>
                 <SearchableSelect
                   options={[
-                    { value: "", label: "All Statuses" },
-                    { value: "in-stock", label: "In Stock" },
-                    { value: "low-stock", label: "Low Stock" },
-                    { value: "out-of-stock", label: "Out of Stock" },
+                    { value: "", label: "All Stock Levels" },
+                    { value: "in_stock", label: "In Stock" },
+                    { value: "low_stock", label: "Low Stock Alert" },
+                    { value: "out_of_stock", label: "Out of Stock" },
                   ]}
-                  value={draftFilters.stock}
-                  onChange={(val) => setDraftFilters((prev) => ({ ...prev, stock: val }))}
+                  value={draftFilters.stockStatus}
+                  onChange={(val) => setDraftFilters((prev) => ({ ...prev, stockStatus: val }))}
                   placeholder="Filter by Stock"
                 />
               </div>
             </div>
             <div className="pt-4 mt-auto">
               <Button
-                className="w-full font-bold shadow-soft"
+                className="w-full"
                 onClick={() => {
                   setFilters(draftFilters);
                   close();
@@ -481,22 +481,10 @@ function ProductsPage() {
           )
         ) : isProductsError ? (
           <ErrorState onRetry={refetchProducts} />
-        ) : products.length === 0 ? (
-          <EmptyState
-            icon={PackageSearch}
-            title={t("noProductsFound") || "No products found"}
-            description={
-              search
-                ? t("adjustSearch") || "Try adjusting your search query or reset filters."
-                : t("noProductsYet") || "You haven't added any products to your catalog yet."
-            }
-            actionLabel="Add Product"
-            onAction={openNew}
-          />
         ) : (
           <div className="space-y-4">
             {view === "list" ? (
-              <div className="overflow-hidden rounded-2xl border border-border/80 bg-card shadow-card">
+              <div className="overflow-hidden rounded-xl border border-border/80 bg-card shadow-soft">
                 <TableView
                   products={products}
                   categories={categories}
@@ -504,6 +492,7 @@ function ProductsPage() {
                   units={units}
                   onEdit={handleEdit}
                   onDelete={setDeleteId}
+                  onNew={openNew}
                   onPrint={(p) => {
                     setPrintProduct(p);
                     setPrintCount(1);
@@ -530,13 +519,14 @@ function ProductsPage() {
                   brands={brands}
                   units={units}
                   onEdit={handleEdit}
+                  onNew={openNew}
                   onPrint={(p) => {
                     setPrintProduct(p);
                     setPrintCount(1);
                   }}
                 />
                 {products.length > 0 && (
-                  <div className="rounded-2xl border border-border/80 bg-card p-3 shadow-card">
+                  <div className="rounded-xl border border-border/80 bg-card p-3 shadow-soft">
                     <PaginationControls
                       currentPage={page}
                       totalPages={totalPages}
@@ -664,6 +654,7 @@ function TableView({
   units,
   onEdit,
   onDelete,
+  onNew,
   onPrint,
 }: {
   products: any[];
@@ -672,6 +663,7 @@ function TableView({
   units: any[];
   onEdit: (p: any) => void;
   onDelete: (id: string) => void;
+  onNew?: () => void;
   onPrint: (p: any) => void;
 }) {
   const { formatCurrency } = useCurrency();
@@ -694,192 +686,222 @@ function TableView({
             </TableRow>
           </TableHeader>
           <TableBody>
-            {products.map((p) => {
-              const brandObj = brands.find((b) => b.id === p.brand);
-              const catObj = categories.find((c) => c.id === p.category);
-              const unitObj = units.find((u) => u.id === p.unit);
-              const isLow = Number(p.stock) <= Number(p.reorderLevel);
+            {products.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={7} className="h-64 text-center">
+                  <EmptyState
+                    icon={PackageSearch}
+                    title={t("noProductsFound") || "No products found"}
+                    description={
+                      t("noProductsYet") || "You haven't added any products to your catalog yet."
+                    }
+                    actionLabel="Add Product"
+                    onAction={onNew}
+                    className="border-none bg-transparent my-0 py-8 shadow-none"
+                  />
+                </TableCell>
+              </TableRow>
+            ) : (
+              products.map((p) => {
+                const brandObj = brands.find((b) => b.id === p.brand);
+                const catObj = categories.find((c) => c.id === p.category);
+                const unitObj = units.find((u) => u.id === p.unit);
+                const isLow = Number(p.stock) <= Number(p.reorderLevel);
 
-              return (
-                <TableRow key={p.id}>
-                  <TableCell className="px-4 py-3 whitespace-nowrap">
-                    <div className="flex items-center gap-3">
-                      <div className="grid size-11 shrink-0 place-items-center rounded-xl bg-muted/60 overflow-hidden border border-border/50">
-                        {p.image ? (
-                          <img src={p.image} alt="" className="size-full object-cover" />
+                return (
+                  <TableRow key={p.id}>
+                    <TableCell className="px-4 py-3 whitespace-nowrap">
+                      <div className="flex items-center gap-3">
+                        <div className="grid size-11 shrink-0 place-items-center rounded-xl bg-muted/60 overflow-hidden border border-border/50">
+                          {p.image ? (
+                            <img src={p.image} alt="" className="size-full object-cover" />
+                          ) : (
+                            <PackageSearch className="size-5 text-muted-foreground/50" />
+                          )}
+                        </div>
+                        <div className="min-w-0">
+                          <div
+                            className="font-bold text-foreground hover:text-primary transition-colors cursor-pointer"
+                            onClick={() => onEdit(p)}
+                          >
+                            {p.name}
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            {brandObj?.name || p.brand || "Standard SKU"}
+                          </div>
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell className="px-4 py-3 font-mono text-xs text-muted-foreground whitespace-nowrap font-medium">
+                      {p.sku || "-"}
+                    </TableCell>
+                    <TableCell className="px-4 py-3 text-muted-foreground whitespace-nowrap text-xs font-medium">
+                      {catObj?.name || p.category || "-"}
+                    </TableCell>
+                    <TableCell className="number px-4 py-3 text-right whitespace-nowrap">
+                      <div className="font-extrabold text-foreground">{formatCurrency(p.price)}</div>
+                      {(p.wholesalePrice > 0 || p.dealerPrice > 0) && (
+                        <div className="flex flex-col items-end gap-0.5 text-[10px] text-muted-foreground mt-0.5">
+                          {p.wholesalePrice > 0 && (
+                            <span className="text-info font-medium">
+                              WS: {formatCurrency(p.wholesalePrice)}
+                            </span>
+                          )}
+                          {p.dealerPrice > 0 && (
+                            <span className="text-warning font-medium">
+                              DLR: {formatCurrency(p.dealerPrice)}
+                            </span>
+                          )}
+                        </div>
+                      )}
+                    </TableCell>
+                    <TableCell className="px-4 py-3 text-right whitespace-nowrap">
+                      <span
+                        className={cn(
+                          "number font-bold text-sm",
+                          isLow ? "text-destructive" : "text-foreground",
+                        )}
+                      >
+                        {p.stock}
+                      </span>
+                      <span className="ml-1 text-xs text-muted-foreground">
+                        {unitObj?.name || p.unit || "units"}
+                      </span>
+                    </TableCell>
+                    <TableCell className="px-4 py-3 whitespace-nowrap">
+                      <div className="flex flex-wrap gap-1 items-center">
+                        {isLow ? (
+                          <Badge variant="destructive" className="text-[10px] font-bold">
+                            Low stock
+                          </Badge>
                         ) : (
-                          <PackageSearch className="size-5 text-muted-foreground/50" />
+                          <Badge className="bg-success/12 text-success hover:bg-success/20 border-success/25 text-[10px] font-bold">
+                            In stock
+                          </Badge>
                         )}
-                      </div>
-                      <div className="min-w-0">
-                        <div
-                          className="font-bold text-foreground hover:text-primary transition-colors cursor-pointer"
-                          onClick={() => onEdit(p)}
-                        >
-                          {p.name}
-                        </div>
-                        <div className="text-xs text-muted-foreground">
-                          {brandObj?.name || p.brand || "Standard SKU"}
-                        </div>
-                      </div>
-                    </div>
-                  </TableCell>
-                  <TableCell className="px-4 py-3 font-mono text-xs text-muted-foreground whitespace-nowrap font-medium">
-                    {p.sku || "-"}
-                  </TableCell>
-                  <TableCell className="px-4 py-3 text-muted-foreground whitespace-nowrap text-xs font-medium">
-                    {catObj?.name || p.category || "-"}
-                  </TableCell>
-                  <TableCell className="number px-4 py-3 text-right whitespace-nowrap">
-                    <div className="font-extrabold text-foreground">{formatCurrency(p.price)}</div>
-                    {(p.wholesalePrice > 0 || p.dealerPrice > 0) && (
-                      <div className="flex flex-col items-end gap-0.5 text-[10px] text-muted-foreground mt-0.5">
-                        {p.wholesalePrice > 0 && (
-                          <span className="text-info font-medium">
-                            WS: {formatCurrency(p.wholesalePrice)}
+                        {p.expiryDate && (
+                          <span className="rounded-md bg-muted px-1.5 py-0.5 text-[9px] font-bold text-muted-foreground">
+                            Exp: {p.expiryDate}
                           </span>
                         )}
-                        {p.dealerPrice > 0 && (
-                          <span className="text-warning font-medium">
-                            DLR: {formatCurrency(p.dealerPrice)}
+                        {p.hasSerial && (
+                          <span className="rounded-md bg-primary/10 px-1.5 py-0.5 text-[9px] font-bold text-primary">
+                            IMEI: {p.serials?.length || 0}
                           </span>
                         )}
                       </div>
-                    )}
-                  </TableCell>
-                  <TableCell className="px-4 py-3 text-right whitespace-nowrap">
-                    <span
-                      className={cn(
-                        "number font-bold text-sm",
-                        isLow ? "text-destructive" : "text-foreground",
-                      )}
-                    >
-                      {p.stock}
-                    </span>
-                    <span className="ml-1 text-xs text-muted-foreground">
-                      {unitObj?.name || p.unit || "units"}
-                    </span>
-                  </TableCell>
-                  <TableCell className="px-4 py-3 whitespace-nowrap">
-                    <div className="flex flex-wrap gap-1 items-center">
-                      {isLow ? (
-                        <Badge variant="destructive" className="text-[10px] font-bold">
-                          Low stock
-                        </Badge>
-                      ) : (
-                        <Badge className="bg-success/12 text-success hover:bg-success/20 border-success/25 text-[10px] font-bold">
-                          In stock
-                        </Badge>
-                      )}
-                      {p.expiryDate && (
-                        <span className="rounded-md bg-muted px-1.5 py-0.5 text-[9px] font-bold text-muted-foreground">
-                          Exp: {p.expiryDate}
-                        </span>
-                      )}
-                      {p.hasSerial && (
-                        <span className="rounded-md bg-primary/10 px-1.5 py-0.5 text-[9px] font-bold text-primary">
-                          IMEI: {p.serials?.length || 0}
-                        </span>
-                      )}
-                    </div>
-                  </TableCell>
-                  <TableCell className="px-4 py-3 text-right whitespace-nowrap">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="size-8 rounded-lg">
-                          <MoreHorizontal className="size-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="rounded-xl">
-                        <DropdownMenuItem
-                          onClick={() => onEdit(p)}
-                          className="text-xs font-semibold"
-                        >
-                          <Pencil className="size-3.5 mr-2" /> Edit Product
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={() => onPrint(p)}
-                          className="text-xs font-semibold"
-                        >
-                          <Printer className="size-3.5 mr-2" /> Print Barcode
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          className="text-destructive text-xs font-semibold"
-                          onClick={() => onDelete(p.id)}
-                        >
-                          <Trash2 className="size-3.5 mr-2" /> Delete
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
-                </TableRow>
-              );
-            })}
+                    </TableCell>
+                    <TableCell className="px-4 py-3 text-right whitespace-nowrap">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" className="size-8 rounded-lg">
+                            <MoreHorizontal className="size-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="rounded-xl">
+                          <DropdownMenuItem
+                            onClick={() => onEdit(p)}
+                            className="text-xs font-semibold"
+                          >
+                            <Pencil className="size-3.5 mr-2" /> Edit Product
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => onPrint(p)}
+                            className="text-xs font-semibold"
+                          >
+                            <Printer className="size-3.5 mr-2" /> Print Barcode
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            className="text-destructive text-xs font-semibold"
+                            onClick={() => onDelete(p.id)}
+                          >
+                            <Trash2 className="size-3.5 mr-2" /> Delete
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  </TableRow>
+                );
+              })
+            )}
           </TableBody>
         </Table>
       </div>
 
       {/* Mobile Card Feed (< 768px) */}
       <div className="table-mobile-cards p-3 space-y-2.5">
-        {products.map((p) => {
-          const brandObj = brands.find((b) => b.id === p.brand);
-          const catObj = categories.find((c) => c.id === p.category);
-          const isLow = Number(p.stock) <= Number(p.reorderLevel);
+        {products.length === 0 ? (
+          <EmptyState
+            icon={PackageSearch}
+            title={t("noProductsFound") || "No products found"}
+            description={
+              t("noProductsYet") || "You haven't added any products to your catalog yet."
+            }
+            actionLabel="Add Product"
+            onAction={onNew}
+            className="border-none bg-transparent my-0 py-6 shadow-none"
+          />
+        ) : (
+          products.map((p) => {
+            const brandObj = brands.find((b) => b.id === p.brand);
+            const catObj = categories.find((c) => c.id === p.category);
+            const isLow = Number(p.stock) <= Number(p.reorderLevel);
 
-          return (
-            <div
-              key={p.id}
-              className="flex items-center justify-between rounded-2xl border border-border/80 bg-card p-3 shadow-card card-interactive"
-              onClick={() => onEdit(p)}
-            >
-              <div className="flex items-center gap-3 min-w-0 flex-1">
-                <div className="grid size-12 shrink-0 place-items-center rounded-xl bg-muted/60 overflow-hidden border border-border/50">
-                  {p.image ? (
-                    <img src={p.image} alt="" className="size-full object-cover" />
-                  ) : (
-                    <PackageSearch className="size-5 text-muted-foreground/50" />
-                  )}
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="font-bold text-xs sm:text-sm text-foreground truncate">
-                    {p.name}
-                  </div>
-                  <p className="text-[11px] text-muted-foreground truncate">
-                    {p.sku} · {catObj?.name || p.category || "General"}
-                  </p>
-                  <div className="flex items-center gap-2 mt-1">
-                    {isLow ? (
-                      <span className="text-[9px] font-extrabold text-destructive bg-destructive/10 px-1.5 py-0.2 rounded-md">
-                        {p.stock} left
-                      </span>
+            return (
+              <div
+                key={p.id}
+                className="flex items-center justify-between rounded-xl border border-border/80 bg-card p-3 shadow-sm card-interactive"
+                onClick={() => onEdit(p)}
+              >
+                <div className="flex items-center gap-3 min-w-0 flex-1">
+                  <div className="grid size-12 shrink-0 place-items-center rounded-xl bg-muted/60 overflow-hidden border border-border/50">
+                    {p.image ? (
+                      <img src={p.image} alt="" className="size-full object-cover" />
                     ) : (
-                      <span className="text-[9px] font-bold text-success bg-success/10 px-1.5 py-0.2 rounded-md">
-                        {p.stock} in stock
-                      </span>
+                      <PackageSearch className="size-5 text-muted-foreground/50" />
                     )}
                   </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="font-bold text-xs sm:text-sm text-foreground truncate">
+                      {p.name}
+                    </div>
+                    <p className="text-[11px] text-muted-foreground truncate">
+                      {p.sku} · {catObj?.name || p.category || "General"}
+                    </p>
+                    <div className="flex items-center gap-2 mt-1">
+                      {isLow ? (
+                        <span className="text-[9px] font-extrabold text-destructive bg-destructive/10 px-1.5 py-0.2 rounded-md">
+                          {p.stock} left
+                        </span>
+                      ) : (
+                        <span className="text-[9px] font-bold text-success bg-success/10 px-1.5 py-0.2 rounded-md">
+                          {p.stock} in stock
+                        </span>
+                      )}
+                    </div>
+                  </div>
                 </div>
-              </div>
 
-              <div className="text-right shrink-0 pl-2">
-                <div className="number text-sm font-black text-primary">
-                  {formatCurrency(p.price)}
+                <div className="text-right shrink-0 pl-2">
+                  <div className="number text-sm font-black text-primary">
+                    {formatCurrency(p.price)}
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 px-2 text-[11px] font-semibold text-muted-foreground mt-1"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onPrint(p);
+                    }}
+                  >
+                    <Printer className="size-3 mr-1" /> Label
+                  </Button>
                 </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-7 px-2 text-[11px] font-semibold text-muted-foreground mt-1"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onPrint(p);
-                  }}
-                >
-                  <Printer className="size-3 mr-1" /> Label
-                </Button>
               </div>
-            </div>
-          );
-        })}
+            );
+          })
+        )}
       </div>
     </>
   );
@@ -891,6 +913,7 @@ function GridView({
   brands,
   units,
   onEdit,
+  onNew,
   onPrint,
 }: {
   products: any[];
@@ -898,9 +921,25 @@ function GridView({
   brands: any[];
   units: any[];
   onEdit: (p: any) => void;
+  onNew?: () => void;
   onPrint: (p: any) => void;
 }) {
   const { formatCurrency } = useCurrency();
+  const { t } = useLanguage();
+
+  if (products.length === 0) {
+    return (
+      <EmptyState
+        icon={PackageSearch}
+        title={t("noProductsFound") || "No products found"}
+        description={
+          t("noProductsYet") || "You haven't added any products to your catalog yet."
+        }
+        actionLabel="Add Product"
+        onAction={onNew}
+      />
+    );
+  }
 
   return (
     <div className="grid grid-cols-2 gap-3.5 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">

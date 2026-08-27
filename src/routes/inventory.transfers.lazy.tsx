@@ -310,15 +310,8 @@ function TransfersPage() {
         </div>
       )}
 
-      {filteredTransfers.length === 0 ? (
-        <EmptyState
-          icon={ArrowRightLeft}
-          title="No transfers found"
-          description={search ? "Try adjusting your search." : "No transfers recorded."}
-        />
-      ) : (
         <div className="space-y-4">
-          <div className="overflow-hidden rounded-2xl border border-border/80 bg-card shadow-card">
+          <div className="overflow-hidden rounded-xl border border-border/80 bg-card shadow-soft">
             {/* Desktop Table */}
             <div className="table-desktop overflow-x-auto">
               <Table className="min-w-[700px]">
@@ -332,63 +325,85 @@ function TransfersPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {paginatedTransfers.map((r) => (
-                    <TableRow key={r.ref}>
-                      <TableCell className="font-mono text-xs font-bold text-foreground whitespace-nowrap">
-                        {r.ref}
-                      </TableCell>
-                      <TableCell className="text-muted-foreground whitespace-nowrap text-xs">
-                        {formatAppDate(r.date)}
-                      </TableCell>
-                      <TableCell className="whitespace-nowrap">
-                        <div className="flex items-center gap-2 text-xs">
-                          <span className="text-muted-foreground font-medium">Main Hub</span>
-                          <ArrowRightLeft className="size-3 text-primary" />
-                          <span className="font-bold text-foreground">{r.destination}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-muted-foreground whitespace-nowrap text-xs font-semibold">
-                        {r.items}
-                      </TableCell>
-                      <TableCell className="whitespace-nowrap text-right">
-                        <Badge className="bg-success/12 text-success hover:bg-success/20 border-success/20 text-[10px] font-bold">
-                          {r.status || "Completed"}
-                        </Badge>
+                  {paginatedTransfers.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={5} className="h-64 text-center">
+                        <EmptyState
+                          icon={ArrowRightLeft}
+                          title="No transfers found"
+                          description={search ? "Try adjusting your search." : "No transfers recorded."}
+                          className="border-none bg-transparent my-0 py-8 shadow-none"
+                        />
                       </TableCell>
                     </TableRow>
-                  ))}
+                  ) : (
+                    paginatedTransfers.map((r) => (
+                      <TableRow key={r.ref}>
+                        <TableCell className="font-mono text-xs font-semibold text-foreground whitespace-nowrap">
+                          {r.ref}
+                        </TableCell>
+                        <TableCell className="text-muted-foreground whitespace-nowrap text-xs">
+                          {formatAppDate(r.date)}
+                        </TableCell>
+                        <TableCell className="whitespace-nowrap">
+                          <div className="flex items-center gap-2 text-xs">
+                            <span className="text-muted-foreground font-medium">Main Hub</span>
+                            <ArrowRightLeft className="size-3 text-primary" />
+                            <span className="font-semibold text-foreground">{r.destination}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-muted-foreground whitespace-nowrap text-xs font-semibold">
+                          {r.items}
+                        </TableCell>
+                        <TableCell className="whitespace-nowrap text-right">
+                          <Badge className="bg-success/12 text-success hover:bg-success/20 border-success/20 text-[10px] font-bold">
+                            {r.status || "Completed"}
+                          </Badge>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
                 </TableBody>
               </Table>
             </div>
 
             {/* Mobile Card Feed (< 768px) */}
             <div className="table-mobile-cards p-3 space-y-2.5">
-              {paginatedTransfers.map((r) => (
-                <div
-                  key={r.ref}
-                  className="flex items-center justify-between rounded-xl border border-border/80 bg-card p-3 shadow-sm card-interactive"
-                >
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2">
-                      <span className="font-mono text-xs font-bold text-foreground">{r.ref}</span>
-                      <span className="text-[10px] text-muted-foreground">
-                        {formatAppDate(r.date)}
-                      </span>
+              {paginatedTransfers.length === 0 ? (
+                <EmptyState
+                  icon={ArrowRightLeft}
+                  title="No transfers found"
+                  description={search ? "Try adjusting your search." : "No transfers recorded."}
+                  className="border-none bg-transparent my-0 py-6 shadow-none"
+                />
+              ) : (
+                paginatedTransfers.map((r) => (
+                  <div
+                    key={r.ref}
+                    className="flex items-center justify-between rounded-xl border border-border/80 bg-card p-3 shadow-sm card-interactive"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono text-xs font-bold text-foreground">{r.ref}</span>
+                        <span className="text-[10px] text-muted-foreground">
+                          {formatAppDate(r.date)}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1.5 text-xs mt-1">
+                        <span className="text-muted-foreground">Hub</span>
+                        <ArrowRightLeft className="size-3 text-primary" />
+                        <span className="font-bold text-foreground">{r.destination}</span>
+                      </div>
+                      <p className="text-[11px] text-muted-foreground mt-0.5">{r.items}</p>
                     </div>
-                    <div className="flex items-center gap-1.5 text-xs mt-1">
-                      <span className="text-muted-foreground">Hub</span>
-                      <ArrowRightLeft className="size-3 text-primary" />
-                      <span className="font-bold text-foreground">{r.destination}</span>
+                    <div className="text-right shrink-0 pl-2">
+                      <Badge className="bg-success/12 text-success hover:bg-success/20 border-success/20 text-[10px] font-bold">
+                        {r.status || "Completed"}
+                      </Badge>
                     </div>
-                    <p className="text-[11px] text-muted-foreground mt-0.5">{r.items}</p>
                   </div>
-                  <div className="text-right shrink-0 pl-2">
-                    <Badge className="bg-success/12 text-success hover:bg-success/20 border-success/20 text-[10px] font-bold">
-                      {r.status || "Completed"}
-                    </Badge>
-                  </div>
-                </div>
-              ))}
+                ))
+              )}
             </div>
 
             {filteredTransfers.length > 0 && (
@@ -405,7 +420,6 @@ function TransfersPage() {
             )}
           </div>
         </div>
-      )}
     </div>
   );
 }

@@ -183,7 +183,7 @@ function SalesPage() {
         searchPlaceholder={t("searchSales") || "Search by Invoice No..."}
         searchValue={query}
         onSearchChange={setQuery}
-        hideToolbar={sales.length === 0}
+        hideToolbar={false}
         onExport={handleExport}
         onResetFilters={handleResetFilters}
         activeFilterCount={activeFilterCount}
@@ -248,28 +248,15 @@ function SalesPage() {
           </div>
         )}
       >
-        {/* We override the primaryAction onClick to use a Link instead, since DataPage only takes a callback, or we can just keep the button as child. Wait, DataPage's primaryAction just takes onClick. We can just pass the Link inside children, or adapt DataPage. Actually, DataPage primaryAction is fine. */}
         {isSalesLoading ? (
           <TableSkeleton columns={7} rows={6} showHeaderAction={false} showFilters={false} />
         ) : isSalesError ? (
           <ErrorState onRetry={refetchSales} />
-        ) : sales.length === 0 ? (
-          <EmptyState
-            icon={Receipt}
-            title={t("noSalesFound") || "No sales found"}
-            description={
-              debouncedQuery
-                ? t("adjustSearch") || "Try adjusting your search query."
-                : t("noSalesYet") || "No transactions have been recorded yet."
-            }
-            actionLabel="Open POS"
-            onAction={() => void navigate({ to: "/pos" })}
-          />
         ) : (
           <div className="space-y-4">
             {/* Payment Summary Cards */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
-              <div className="rounded-2xl border border-border/80 bg-card p-4 shadow-card flex flex-col gap-1 card-interactive">
+              <div className="rounded-xl border border-border/80 bg-card p-4 shadow-soft flex flex-col gap-1 card-interactive">
                 <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
                   Cash Revenue
                 </span>
@@ -277,7 +264,7 @@ function SalesPage() {
                   {formatCurrency(summaries.cash)}
                 </span>
               </div>
-              <div className="rounded-2xl border border-border/80 bg-card p-4 shadow-card flex flex-col gap-1 card-interactive">
+              <div className="rounded-xl border border-border/80 bg-card p-4 shadow-soft flex flex-col gap-1 card-interactive">
                 <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
                   Card Revenue
                 </span>
@@ -285,7 +272,7 @@ function SalesPage() {
                   {formatCurrency(summaries.card)}
                 </span>
               </div>
-              <div className="rounded-2xl border border-border/80 bg-card p-4 shadow-card flex flex-col gap-1 card-interactive">
+              <div className="rounded-xl border border-border/80 bg-card p-4 shadow-soft flex flex-col gap-1 card-interactive">
                 <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
                   UPI / Digital
                 </span>
@@ -293,7 +280,7 @@ function SalesPage() {
                   {formatCurrency(summaries.upi)}
                 </span>
               </div>
-              <div className="rounded-2xl border border-border/80 bg-card p-4 shadow-card flex flex-col gap-1 card-interactive">
+              <div className="rounded-xl border border-border/80 bg-card p-4 shadow-soft flex flex-col gap-1 card-interactive">
                 <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
                   Credit (Due)
                 </span>
@@ -303,7 +290,7 @@ function SalesPage() {
               </div>
             </div>
 
-            <div className="overflow-hidden rounded-2xl border border-border/80 bg-card shadow-card">
+            <div className="overflow-hidden rounded-xl border border-border/80 bg-card shadow-soft">
               {/* Desktop Table View */}
               <div className="table-desktop overflow-x-auto">
                 <Table className="min-w-[850px]">
@@ -325,96 +312,115 @@ function SalesPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {sales.map((s) => (
-                      <TableRow key={s.id}>
-                        <TableCell
-                          className="font-mono text-xs font-bold text-primary cursor-pointer hover:underline"
-                          onClick={() => setViewSale(s)}
-                        >
-                          #{s.id.slice(0, 8).toUpperCase()}
-                        </TableCell>
-                        <TableCell className="font-bold text-foreground">
-                          {s.customerName || "Walk-in Customer"}
-                        </TableCell>
-                        <TableCell className="text-muted-foreground text-xs">
-                          {formatDateTime(s.date)}
-                        </TableCell>
-                        <TableCell className="text-right text-xs font-semibold text-muted-foreground">
-                          {s.items}
-                        </TableCell>
-                        <TableCell className="text-muted-foreground capitalize">
-                          {s.paymentMethod === "split" && s.payments && s.payments.length > 0 ? (
-                            <div className="flex flex-col gap-0.5 text-[10px]">
-                              <span className="font-bold text-primary">SPLIT</span>
-                              {s.payments.map((p, i) => (
-                                <span key={i} className="font-semibold text-foreground">
-                                  {p.method.toUpperCase()}: {formatCurrency(p.amount)}
-                                </span>
-                              ))}
-                            </div>
-                          ) : (
-                            <Badge
-                              variant="outline"
-                              className="font-bold text-[10px] uppercase bg-muted/40"
-                            >
-                              {s.paymentMethod || "cash"}
-                            </Badge>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          <Badge
-                            variant="outline"
-                            className={cn(
-                              "text-[10px] font-bold",
-                              s.synced
-                                ? "bg-success/10 text-success border-success/25"
-                                : "bg-warning/10 text-warning border-warning/25",
-                            )}
-                          >
-                            {s.synced ? "Synced" : "Pending"}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <Badge
-                            className={cn(
-                              "text-[10px] font-bold",
-                              s.status === "completed" &&
-                                "bg-success/12 text-success hover:bg-success/20 border-success/20",
-                              s.status === "pending" &&
-                                "bg-warning/15 text-warning-foreground hover:bg-warning/20 border-warning/20",
-                              s.status === "refunded" && "bg-muted text-muted-foreground",
-                            )}
-                          >
-                            {s.status}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-right font-black text-foreground text-sm">
-                          {formatCurrency(s.total)}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex justify-end gap-1">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="size-8 rounded-lg"
-                              title="View details"
-                              onClick={() => setViewSale(s)}
-                            >
-                              <Eye className="size-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="size-8 rounded-lg"
-                              title="Reprint receipt"
-                              onClick={() => printReceipt(s)}
-                            >
-                              <Printer className="size-4" />
-                            </Button>
-                          </div>
+                    {sales.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={9} className="h-64 text-center">
+                          <EmptyState
+                            icon={Receipt}
+                            title={t("noSalesFound") || "No sales found"}
+                            description={
+                              debouncedQuery
+                                ? t("adjustSearch") || "Try adjusting your search query."
+                                : t("noSalesYet") || "No transactions have been recorded yet."
+                            }
+                            actionLabel="Open POS"
+                            onAction={() => void navigate({ to: "/pos" })}
+                            className="border-none bg-transparent my-0 py-8 shadow-none"
+                          />
                         </TableCell>
                       </TableRow>
-                    ))}
+                    ) : (
+                      sales.map((s) => (
+                        <TableRow key={s.id}>
+                          <TableCell
+                            className="font-mono text-xs font-semibold text-primary cursor-pointer hover:underline"
+                            onClick={() => setViewSale(s)}
+                          >
+                            #{s.id.slice(0, 8).toUpperCase()}
+                          </TableCell>
+                          <TableCell className="font-semibold text-foreground">
+                            {s.customerName || "Walk-in Customer"}
+                          </TableCell>
+                          <TableCell className="text-muted-foreground text-xs">
+                            {formatDateTime(s.date)}
+                          </TableCell>
+                          <TableCell className="text-right text-xs font-semibold text-muted-foreground">
+                            {s.items}
+                          </TableCell>
+                          <TableCell className="text-muted-foreground capitalize">
+                            {s.paymentMethod === "split" && s.payments && s.payments.length > 0 ? (
+                              <div className="flex flex-col gap-0.5 text-[10px]">
+                                <span className="font-bold text-primary">SPLIT</span>
+                                {s.payments.map((p, i) => (
+                                  <span key={i} className="font-semibold text-foreground">
+                                    {p.method.toUpperCase()}: {formatCurrency(p.amount)}
+                                  </span>
+                                ))}
+                              </div>
+                            ) : (
+                              <Badge
+                                variant="outline"
+                                className="font-bold text-[10px] uppercase bg-muted/40"
+                              >
+                                {s.paymentMethod || "cash"}
+                              </Badge>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            <Badge
+                              variant="outline"
+                              className={cn(
+                                "text-[10px] font-bold",
+                                s.synced
+                                  ? "bg-success/10 text-success border-success/25"
+                                  : "bg-warning/10 text-warning border-warning/25",
+                              )}
+                            >
+                              {s.synced ? "Synced" : "Pending"}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <Badge
+                              className={cn(
+                                "text-[10px] font-bold",
+                                s.status === "completed" &&
+                                  "bg-success/12 text-success hover:bg-success/20 border-success/20",
+                                s.status === "pending" &&
+                                  "bg-warning/15 text-warning-foreground hover:bg-warning/20 border-warning/20",
+                                s.status === "refunded" && "bg-muted text-muted-foreground",
+                              )}
+                            >
+                              {s.status}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="number text-right font-black text-foreground">
+                            {formatCurrency(s.total)}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex items-center justify-end gap-1">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="size-8"
+                                onClick={() => setViewSale(s)}
+                                title="View Receipt"
+                              >
+                                <Eye className="size-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="size-8 text-primary"
+                                onClick={() => handlePrintDirect(s)}
+                                title="Quick Thermal Print"
+                              >
+                                <Printer className="size-4" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
                   </TableBody>
                 </Table>
               </div>

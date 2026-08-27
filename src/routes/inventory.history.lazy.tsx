@@ -71,19 +71,8 @@ function HistoryPage() {
           </div>
         </div>
       )}
-      {filteredMovements.length === 0 ? (
-        <EmptyState
-          icon={History}
-          title="No stock history yet"
-          description={
-            search
-              ? "Try adjusting your search."
-              : "Stock changes will appear here after purchases, sales, and adjustments."
-          }
-        />
-      ) : (
         <div className="space-y-4">
-          <div className="overflow-hidden rounded-2xl border border-border/80 bg-card shadow-card">
+          <div className="overflow-hidden rounded-xl border border-border/80 bg-card shadow-soft">
             {/* Desktop Table */}
             <div className="table-desktop overflow-x-auto">
               <Table className="min-w-[600px]">
@@ -96,72 +85,102 @@ function HistoryPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {movements.map((m, i) => (
-                    <TableRow key={m.id || i}>
-                      <TableCell className="text-muted-foreground whitespace-nowrap text-xs">
-                        {formatDateTime(m.createdAt)}
-                      </TableCell>
-                      <TableCell className="font-bold text-foreground min-w-[150px]">
-                        {m.productName}
-                      </TableCell>
-                      <TableCell className="whitespace-nowrap">
-                        <Badge
-                          variant="outline"
-                          className="capitalize text-[10px] font-bold bg-muted/50 border-border/80"
-                        >
-                          {m.action.replace("_", " ")}
-                        </Badge>
-                      </TableCell>
-                      <TableCell
-                        className={cn(
-                          "number text-right font-black whitespace-nowrap text-sm",
-                          m.quantity < 0 ? "text-destructive" : "text-success",
-                        )}
-                      >
-                        {m.quantity > 0 ? `+${m.quantity}` : m.quantity}
+                  {movements.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={4} className="h-64 text-center">
+                        <EmptyState
+                          icon={History}
+                          title="No stock history yet"
+                          description={
+                            search
+                              ? "Try adjusting your search."
+                              : "Stock changes will appear here after purchases, sales, and adjustments."
+                          }
+                          className="border-none bg-transparent my-0 py-8 shadow-none"
+                        />
                       </TableCell>
                     </TableRow>
-                  ))}
+                  ) : (
+                    movements.map((m, i) => (
+                      <TableRow key={m.id || i}>
+                        <TableCell className="text-muted-foreground whitespace-nowrap text-xs">
+                          {formatDateTime(m.createdAt)}
+                        </TableCell>
+                        <TableCell className="font-semibold text-foreground min-w-[150px]">
+                          {m.productName}
+                        </TableCell>
+                        <TableCell className="whitespace-nowrap">
+                          <Badge
+                            variant="outline"
+                            className="capitalize text-[10px] font-bold bg-muted/50 border-border/80"
+                          >
+                            {m.action.replace("_", " ")}
+                          </Badge>
+                        </TableCell>
+                        <TableCell
+                          className={cn(
+                            "number text-right font-black whitespace-nowrap text-sm",
+                            m.quantity < 0 ? "text-destructive" : "text-success",
+                          )}
+                        >
+                          {m.quantity > 0 ? `+${m.quantity}` : m.quantity}
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
                 </TableBody>
               </Table>
             </div>
 
             {/* Mobile Card Feed (< 768px) */}
             <div className="table-mobile-cards p-3 space-y-2.5">
-              {movements.map((m, i) => (
-                <div
-                  key={m.id || i}
-                  className="flex items-center justify-between rounded-xl border border-border/80 bg-card p-3 shadow-sm card-interactive"
-                >
-                  <div className="min-w-0 flex-1">
-                    <div className="text-[10px] text-muted-foreground">
-                      {formatDateTime(m.createdAt)}
+              {movements.length === 0 ? (
+                <EmptyState
+                  icon={History}
+                  title="No stock history yet"
+                  description={
+                    search
+                      ? "Try adjusting your search."
+                      : "Stock changes will appear here after purchases, sales, and adjustments."
+                  }
+                  className="border-none bg-transparent my-0 py-6 shadow-none"
+                />
+              ) : (
+                movements.map((m, i) => (
+                  <div
+                    key={m.id || i}
+                    className="flex items-center justify-between rounded-xl border border-border/80 bg-card p-3 shadow-sm card-interactive"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <div className="text-[10px] text-muted-foreground">
+                        {formatDateTime(m.createdAt)}
+                      </div>
+                      <div className="font-bold text-xs sm:text-sm text-foreground mt-0.5">
+                        {m.productName}
+                      </div>
+                      <Badge
+                        variant="outline"
+                        className="capitalize text-[9px] font-bold mt-1 bg-muted/50"
+                      >
+                        {m.action.replace("_", " ")}
+                      </Badge>
                     </div>
-                    <div className="font-bold text-xs sm:text-sm text-foreground mt-0.5">
-                      {m.productName}
+                    <div className="text-right shrink-0 pl-2">
+                      <div
+                        className={cn(
+                          "number text-sm font-black",
+                          m.quantity < 0 ? "text-destructive" : "text-success",
+                        )}
+                      >
+                        {m.quantity > 0 ? `+${m.quantity}` : m.quantity}
+                      </div>
+                      <span className="text-[9px] font-bold text-muted-foreground uppercase">
+                        delta
+                      </span>
                     </div>
-                    <Badge
-                      variant="outline"
-                      className="capitalize text-[9px] font-bold mt-1 bg-muted/50"
-                    >
-                      {m.action.replace("_", " ")}
-                    </Badge>
                   </div>
-                  <div className="text-right shrink-0 pl-2">
-                    <div
-                      className={cn(
-                        "number text-sm font-black",
-                        m.quantity < 0 ? "text-destructive" : "text-success",
-                      )}
-                    >
-                      {m.quantity > 0 ? `+${m.quantity}` : m.quantity}
-                    </div>
-                    <span className="text-[9px] font-bold text-muted-foreground uppercase">
-                      delta
-                    </span>
-                  </div>
-                </div>
-              ))}
+                ))
+              )}
             </div>
 
             {filteredMovements.length > 0 && (
@@ -178,7 +197,6 @@ function HistoryPage() {
             )}
           </div>
         </div>
-      )}
     </div>
   );
 }

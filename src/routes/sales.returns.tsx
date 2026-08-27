@@ -308,92 +308,99 @@ function SalesReturnsPage() {
           </div>
         )}
       >
-        {filteredReturns.length === 0 ? (
-          <EmptyState
-            icon={Undo2}
-            title={t("noReturnsFound") || "No returns found"}
-            description={
-              search
-                ? t("adjustSearch") || "Try adjusting your search."
-                : t("noReturnsYet") || "No sales returns have been recorded yet."
-            }
-          />
-        ) : (
-          <div className="space-y-4">
-            <div className="overflow-hidden rounded-xl border border-border bg-card shadow-soft">
-              <div className="overflow-hidden rounded-xl border border-border bg-card shadow-soft">
-                <div className="overflow-x-auto">
-                  <Table className="min-w-[700px]">
-                    <TableHeader className="bg-muted/50 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                      <TableRow>
-                        <TableHead className="px-4 py-3 whitespace-nowrap">{t("ref") || "Ref"}</TableHead>
-                        <TableHead className="px-4 py-3 whitespace-nowrap">{t("invoice") || "Invoice"}</TableHead>
-                        <TableHead className="px-4 py-3 whitespace-nowrap">
-                          {t("customer") || "Customer"}
-                        </TableHead>
-                        <TableHead className="px-4 py-3 whitespace-nowrap">{t("reason") || "Reason"}</TableHead>
-                        <TableHead className="px-4 py-3 whitespace-nowrap">{t("date") || "Date"}</TableHead>
-                        <TableHead className="px-4 py-3 whitespace-nowrap">{t("status") || "Status"}</TableHead>
-                        <TableHead className="px-4 py-3 whitespace-nowrap text-right">
-                          {t("refund") || "Refund"}
-                        </TableHead>
-                        <TableHead className="px-4 py-3 whitespace-nowrap"></TableHead>
+        <div className="space-y-4">
+          <div className="overflow-hidden rounded-xl border border-border/80 bg-card shadow-soft">
+            <div className="overflow-x-auto">
+              <Table className="min-w-[700px]">
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>{t("ref") || "Ref"}</TableHead>
+                    <TableHead>{t("invoice") || "Invoice"}</TableHead>
+                    <TableHead>
+                      {t("customer") || "Customer"}
+                    </TableHead>
+                    <TableHead>{t("reason") || "Reason"}</TableHead>
+                    <TableHead>{t("date") || "Date"}</TableHead>
+                    <TableHead>{t("status") || "Status"}</TableHead>
+                    <TableHead className="text-right">
+                      {t("refund") || "Refund"}
+                    </TableHead>
+                    <TableHead className="text-right whitespace-nowrap">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {paginatedReturns.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={8} className="h-64 text-center">
+                        <EmptyState
+                          icon={Undo2}
+                          title={t("noReturnsFound") || "No returns found"}
+                          description={
+                            search
+                              ? t("adjustSearch") || "Try adjusting your search."
+                              : t("noReturnsYet") || "No sales returns have been recorded yet."
+                          }
+                          className="border-none bg-transparent my-0 py-8 shadow-none"
+                        />
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    paginatedReturns.map((r) => (
+                      <TableRow key={r.id}>
+                        <TableCell className="font-mono text-xs font-semibold whitespace-nowrap">
+                          {r.ref}
+                        </TableCell>
+                        <TableCell className="font-mono text-xs text-muted-foreground whitespace-nowrap">
+                          {r.saleId.slice(0, 8).toUpperCase()}
+                        </TableCell>
+                        <TableCell className="font-semibold whitespace-nowrap">
+                          {r.customerName}
+                        </TableCell>
+                        <TableCell className="text-muted-foreground whitespace-nowrap">
+                          {r.reason}
+                        </TableCell>
+                        <TableCell className="text-muted-foreground whitespace-nowrap">
+                          {formatDate(r.date)}
+                        </TableCell>
+                        <TableCell className="whitespace-nowrap">
+                          <Badge
+                            className={cn(
+                              r.status === "approved" &&
+                                "bg-success/10 text-success hover:bg-success/15",
+                              r.status === "pending" && "bg-warning/15 text-warning-foreground",
+                            )}
+                          >
+                            {r.status}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right font-semibold whitespace-nowrap">
+                          {formatCurrency(r.total)}
+                        </TableCell>
+                        <TableCell className="text-right whitespace-nowrap">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon" className="size-8 rounded-lg">
+                                <MoreVertical className="size-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="rounded-xl">
+                              <DropdownMenuItem
+                                className="text-destructive text-xs font-semibold"
+                                onClick={() => setDeleteId(r.id)}
+                              >
+                                <Trash2 className="size-4 mr-2" /> Delete
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableCell>
                       </TableRow>
-                    </TableHeader>
-                    <TableBody className="divide-y divide-border">
-                      {paginatedReturns.map((r) => (
-                        <TableRow key={r.id}>
-                          <TableCell className="px-4 py-3 font-mono text-xs font-semibold whitespace-nowrap">
-                            {r.ref}
-                          </TableCell>
-                          <TableCell className="px-4 py-3 font-mono text-xs text-muted-foreground whitespace-nowrap">
-                            {r.saleId.slice(0, 8).toUpperCase()}
-                          </TableCell>
-                          <TableCell className="px-4 py-3 font-semibold whitespace-nowrap">
-                            {r.customerName}
-                          </TableCell>
-                          <TableCell className="px-4 py-3 text-muted-foreground whitespace-nowrap">
-                            {r.reason}
-                          </TableCell>
-                          <TableCell className="px-4 py-3 text-muted-foreground whitespace-nowrap">
-                            {formatDate(r.date)}
-                          </TableCell>
-                          <TableCell className="px-4 py-3 whitespace-nowrap">
-                            <Badge
-                              className={cn(
-                                r.status === "approved" &&
-                                  "bg-success/10 text-success hover:bg-success/15",
-                                r.status === "pending" && "bg-warning/15 text-warning-foreground",
-                              )}
-                            >
-                              {r.status}
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="px-4 py-3 text-right font-semibold whitespace-nowrap">
-                            {formatCurrency(r.total)}
-                          </TableCell>
-                          <TableCell className="px-4 py-3 whitespace-nowrap">
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="icon">
-                                  <MoreVertical className="size-4" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                <DropdownMenuItem
-                                  className="text-destructive"
-                                  onClick={() => setDeleteId(r.id)}
-                                >
-                                  <Trash2 className="size-4 mr-2" /> Delete
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+            {filteredReturns.length > 0 && (
+              <div className="border-t border-border/60 p-2 sm:p-3">
                 <PaginationControls
                   currentPage={page}
                   totalPages={totalPages}
@@ -403,9 +410,9 @@ function SalesReturnsPage() {
                   totalItems={filteredReturns.length}
                 />
               </div>
-            </div>
+            )}
           </div>
-        )}
+        </div>
       </DataPage>
 
       {/* Process Return Dialog */}

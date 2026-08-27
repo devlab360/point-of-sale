@@ -292,21 +292,20 @@ function CouponsPage() {
         searchPlaceholder="Search coupons by code..."
         searchValue={search}
         onSearchChange={setSearch}
-        hideToolbar={coupons.length === 0}
+        hideToolbar={false}
         onExport={handleExport}
-        onImport={handleImport}
         onResetFilters={handleResetFilters}
         activeFilterCount={activeFilterCount}
         filtersContent={({ close }) => (
           <div className="space-y-4 flex flex-col h-full min-h-[50vh]">
             <div className="flex-1 space-y-4">
               <div className="space-y-2">
-                <Label>Type</Label>
+                <Label>Discount Type</Label>
                 <SearchableSelect
                   options={[
                     { value: "", label: "All Types" },
-                    { value: "percentage", label: "Percentage (%)" },
-                    { value: "fixed", label: "Fixed Amount ($)" },
+                    { value: "percent", label: "Percentage (%)" },
+                    { value: "fixed", label: "Fixed Amount (Flat)" },
                   ]}
                   value={draftFilters.type}
                   onChange={(val) => setDraftFilters((prev) => ({ ...prev, type: val }))}
@@ -314,14 +313,13 @@ function CouponsPage() {
                 />
               </div>
               <div className="space-y-2">
-                <Label>Status</Label>
+                <Label>Coupon Status</Label>
                 <SearchableSelect
                   options={[
                     { value: "", label: "All Statuses" },
                     { value: "active", label: "Active" },
-                    { value: "expiring", label: "Expiring" },
+                    { value: "expiring", label: "Expiring Soon" },
                     { value: "expired", label: "Expired" },
-                    { value: "depleted", label: "Depleted" },
                   ]}
                   value={draftFilters.status}
                   onChange={(val) => setDraftFilters((prev) => ({ ...prev, status: val }))}
@@ -331,7 +329,7 @@ function CouponsPage() {
             </div>
             <div className="pt-4 mt-auto">
               <Button
-                className="w-full font-bold shadow-soft"
+                className="w-full"
                 onClick={() => {
                   setFilters(draftFilters);
                   close();
@@ -347,21 +345,9 @@ function CouponsPage() {
           <TableSkeleton columns={7} rows={6} showHeaderAction={false} showFilters={false} />
         ) : isCouponsError ? (
           <ErrorState onRetry={refetchCoupons} />
-        ) : filteredCoupons.length === 0 ? (
-          <EmptyState
-            icon={Ticket}
-            title="No coupons found"
-            description={search ? "Try adjusting your search query." : "No coupons created yet."}
-            actionLabel="Add Coupon"
-            onAction={() => {
-              setEditItem(null);
-              setExpiresDate("");
-              setIsAddOpen(true);
-            }}
-          />
         ) : (
           <div className="space-y-4">
-            <div className="overflow-hidden rounded-2xl border border-border/80 bg-card shadow-card">
+            <div className="overflow-hidden rounded-xl border border-border/80 bg-card shadow-soft">
               {/* Desktop Table */}
               <div className="table-desktop overflow-x-auto">
                 <Table className="min-w-[800px]">
@@ -377,139 +363,173 @@ function CouponsPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {paginatedCoupons.map((c) => (
-                      <TableRow key={c.id}>
-                        <TableCell className="whitespace-nowrap">
-                          <code className="rounded-lg bg-primary/10 border border-primary/20 px-2.5 py-1 text-xs font-mono font-black text-primary">
-                            {c.code}
-                          </code>
-                        </TableCell>
-                        <TableCell className="text-muted-foreground whitespace-nowrap capitalize text-xs font-medium">
-                          {c.type}
-                        </TableCell>
-                        <TableCell className="number font-black text-foreground whitespace-nowrap text-sm">
-                          {c.type === "percent" ? `${c.value}%` : formatCurrency(c.value)}
-                        </TableCell>
-                        <TableCell className="text-xs text-muted-foreground whitespace-nowrap font-medium">
-                          {c.usedCount} / {c.usageLimit || "∞"}
-                        </TableCell>
-                        <TableCell className="text-xs text-muted-foreground whitespace-nowrap font-medium">
-                          {c.validUntil
-                            ? formatDate(new Date(c.validUntil).toISOString())
-                            : "No expiry"}
-                        </TableCell>
-                        <TableCell className="whitespace-nowrap">
-                          <Badge
-                            className={
-                              c.status === "active"
-                                ? "bg-success/12 text-success hover:bg-success/20 border-success/20 text-[10px] font-bold"
-                                : c.status === "expiring"
-                                  ? "bg-warning/15 text-warning-foreground hover:bg-warning/20 border-warning/20 text-[10px] font-bold"
-                                  : "bg-muted text-muted-foreground hover:bg-muted text-[10px] font-medium"
-                            }
-                          >
-                            {c.status}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-right whitespace-nowrap">
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="icon" className="size-8 rounded-lg">
-                                <MoreVertical className="size-4 text-muted-foreground" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="rounded-xl">
-                              <DropdownMenuItem
-                                onClick={() => setEditItem(c)}
-                                className="text-xs font-semibold"
-                              >
-                                <Edit2 className="mr-2 size-3.5" /> Edit Coupon
-                              </DropdownMenuItem>
-                              <DropdownMenuItem
-                                className="text-destructive text-xs font-semibold"
-                                onClick={() => setDeleteId(c.id)}
-                              >
-                                <Trash2 className="mr-2 size-3.5" /> Delete
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
+                    {paginatedCoupons.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={7} className="h-64 text-center">
+                          <EmptyState
+                            icon={Ticket}
+                            title="No coupons found"
+                            description={search ? "Try adjusting your search query." : "No coupons created yet."}
+                            actionLabel="Add Coupon"
+                            onAction={() => {
+                              setEditItem(null);
+                              setExpiresDate("");
+                              setIsAddOpen(true);
+                            }}
+                            className="border-none bg-transparent my-0 py-8 shadow-none"
+                          />
                         </TableCell>
                       </TableRow>
-                    ))}
+                    ) : (
+                      paginatedCoupons.map((c) => (
+                        <TableRow key={c.id}>
+                          <TableCell className="whitespace-nowrap">
+                            <code className="rounded-lg bg-primary/10 border border-primary/20 px-2.5 py-1 text-xs font-mono font-black text-primary">
+                              {c.code}
+                            </code>
+                          </TableCell>
+                          <TableCell className="text-muted-foreground whitespace-nowrap capitalize text-xs font-medium">
+                            {c.type}
+                          </TableCell>
+                          <TableCell className="number font-black text-foreground whitespace-nowrap text-sm">
+                            {c.type === "percent" ? `${c.value}%` : formatCurrency(c.value)}
+                          </TableCell>
+                          <TableCell className="text-xs text-muted-foreground whitespace-nowrap font-medium">
+                            {c.usedCount} / {c.usageLimit || "∞"}
+                          </TableCell>
+                          <TableCell className="text-xs text-muted-foreground whitespace-nowrap font-medium">
+                            {c.validUntil
+                              ? formatDate(new Date(c.validUntil).toISOString())
+                              : "No expiry"}
+                          </TableCell>
+                          <TableCell className="whitespace-nowrap">
+                            <Badge
+                              className={
+                                c.status === "active"
+                                  ? "bg-success/12 text-success hover:bg-success/20 border-success/20 text-[10px] font-bold"
+                                  : c.status === "expiring"
+                                    ? "bg-warning/15 text-warning-foreground hover:bg-warning/20 border-warning/20 text-[10px] font-bold"
+                                    : "bg-muted text-muted-foreground hover:bg-muted text-[10px] font-medium"
+                              }
+                            >
+                              {c.status}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-right whitespace-nowrap">
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon" className="size-8 rounded-lg">
+                                  <MoreVertical className="size-4 text-muted-foreground" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end" className="rounded-xl">
+                                <DropdownMenuItem
+                                  onClick={() => setEditItem(c)}
+                                  className="text-xs font-semibold"
+                                >
+                                  <Edit2 className="mr-2 size-3.5" /> Edit Coupon
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  className="text-destructive text-xs font-semibold"
+                                  onClick={() => setDeleteId(c.id)}
+                                >
+                                  <Trash2 className="mr-2 size-3.5" /> Delete
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
                   </TableBody>
                 </Table>
               </div>
 
               {/* Mobile Card Feed (< 768px) */}
               <div className="table-mobile-cards p-3 space-y-2.5">
-                {paginatedCoupons.map((c) => (
-                  <div
-                    key={c.id}
-                    className="flex items-center justify-between rounded-xl border border-border/80 bg-card p-3 shadow-sm card-interactive"
-                  >
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2">
-                        <code className="rounded-md bg-primary/10 border border-primary/20 px-2 py-0.5 text-xs font-mono font-black text-primary">
-                          {c.code}
-                        </code>
-                        <Badge
-                          className={
-                            c.status === "active"
-                              ? "bg-success/12 text-success text-[9px] font-bold py-0"
-                              : "bg-muted text-muted-foreground text-[9px] py-0"
-                          }
-                        >
-                          {c.status}
-                        </Badge>
+                {paginatedCoupons.length === 0 ? (
+                  <EmptyState
+                    icon={Ticket}
+                    title="No coupons found"
+                    description={search ? "Try adjusting your search query." : "No coupons created yet."}
+                    actionLabel="Add Coupon"
+                    onAction={() => {
+                      setEditItem(null);
+                      setExpiresDate("");
+                      setIsAddOpen(true);
+                    }}
+                    className="border-none bg-transparent my-0 py-6 shadow-none"
+                  />
+                ) : (
+                  paginatedCoupons.map((c) => (
+                    <div
+                      key={c.id}
+                      className="flex items-center justify-between rounded-xl border border-border/80 bg-card p-3 shadow-sm card-interactive"
+                    >
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2">
+                          <code className="rounded-md bg-primary/10 border border-primary/20 px-2 py-0.5 text-xs font-mono font-black text-primary">
+                            {c.code}
+                          </code>
+                          <Badge
+                            className={
+                              c.status === "active"
+                                ? "bg-success/12 text-success text-[9px] font-bold py-0"
+                                : "bg-muted text-muted-foreground text-[9px] py-0"
+                            }
+                          >
+                            {c.status}
+                          </Badge>
+                        </div>
+                        <div className="text-xs text-muted-foreground mt-1">
+                          Expires:{" "}
+                          {c.validUntil ? formatDate(new Date(c.validUntil).toISOString()) : "Never"}
+                        </div>
+                        <div className="text-[11px] text-muted-foreground mt-0.5">
+                          Used: {c.usedCount} / {c.usageLimit || "∞"}
+                        </div>
                       </div>
-                      <div className="text-xs text-muted-foreground mt-1">
-                        Expires:{" "}
-                        {c.validUntil ? formatDate(new Date(c.validUntil).toISOString()) : "Never"}
-                      </div>
-                      <div className="text-[11px] text-muted-foreground mt-0.5">
-                        Used: {c.usedCount} / {c.usageLimit || "∞"}
+
+                      <div className="text-right shrink-0 pl-2">
+                        <div className="number text-sm font-black text-foreground">
+                          {c.type === "percent"
+                            ? `${c.value}% OFF`
+                            : `${formatCurrency(c.value)} OFF`}
+                        </div>
+                        <div className="flex justify-end gap-1 mt-1">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="size-7 rounded-lg"
+                            onClick={() => setEditItem(c)}
+                          >
+                            <Edit2 className="size-3 text-muted-foreground" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="size-7 rounded-lg text-destructive"
+                            onClick={() => setDeleteId(c.id)}
+                          >
+                            <Trash2 className="size-3" />
+                          </Button>
+                        </div>
                       </div>
                     </div>
-
-                    <div className="text-right shrink-0 pl-2">
-                      <div className="number text-sm font-black text-foreground">
-                        {c.type === "percent"
-                          ? `${c.value}% OFF`
-                          : `${formatCurrency(c.value)} OFF`}
-                      </div>
-                      <div className="flex justify-end gap-1 mt-1">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="size-7 rounded-lg"
-                          onClick={() => setEditItem(c)}
-                        >
-                          <Edit2 className="size-3 text-muted-foreground" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="size-7 rounded-lg text-destructive"
-                          onClick={() => setDeleteId(c.id)}
-                        >
-                          <Trash2 className="size-3" />
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                ))}
+                  ))
+                )}
               </div>
 
-              <div className="border-t border-border/60 p-2 sm:p-3">
-                <PaginationControls
-                  currentPage={page}
-                  totalPages={totalPages}
-                  pageSize={itemsPerPage}
-                  totalItems={filteredCoupons.length}
-                  onPageChange={setPage}
-                  onPageSizeChange={() => {}}
-                />
-              </div>
+              {filteredCoupons.length > 0 && (
+                <div className="border-t border-border/60 p-2 sm:p-3">
+                  <PaginationControls
+                    currentPage={page}
+                    totalPages={totalPages}
+                    onPageChange={setPage}
+                    totalItems={filteredCoupons.length}
+                  />
+                </div>
+              )}
             </div>
           </div>
         )}

@@ -458,7 +458,7 @@ function UsersPage() {
         searchPlaceholder="Search by name, email, or role..."
         searchValue={search}
         onSearchChange={setSearch}
-        hideToolbar={rawUsers.length === 0}
+        hideToolbar={false}
         onExport={handleExport}
         onImport={handleImport}
         onResetFilters={handleResetFilters}
@@ -467,14 +467,15 @@ function UsersPage() {
           <div className="space-y-4 flex flex-col h-full min-h-[50vh]">
             <div className="flex-1 space-y-4">
               <div className="space-y-2">
-                <Label>Role</Label>
+                <Label>Filter by Role</Label>
                 <SearchableSelect
                   options={[
                     { value: "", label: "All Roles" },
-                    ...uniqueRoles.map((r: any) => ({
-                      value: String(r),
-                      label: String(r).charAt(0).toUpperCase() + String(r).slice(1),
-                    })),
+                    { value: "admin", label: "Admin" },
+                    { value: "cashier", label: "Cashier" },
+                    { value: "manager", label: "Manager" },
+                    { value: "accountant", label: "Accountant" },
+                    { value: "stock_manager", label: "Stock Manager" },
                   ]}
                   value={draftFilters.role}
                   onChange={(val) => setDraftFilters((prev) => ({ ...prev, role: val }))}
@@ -482,13 +483,13 @@ function UsersPage() {
                 />
               </div>
               <div className="space-y-2">
-                <Label>Status</Label>
+                <Label>Filter by Status</Label>
                 <SearchableSelect
                   options={[
                     { value: "", label: "All Statuses" },
                     { value: "active", label: "Active" },
-                    { value: "pending", label: "Pending" },
-                    { value: "suspended", label: "Suspended" },
+                    { value: "pending", label: "Pending Approval" },
+                    { value: "inactive", label: "Inactive" },
                   ]}
                   value={draftFilters.status}
                   onChange={(val) => setDraftFilters((prev) => ({ ...prev, status: val }))}
@@ -498,7 +499,7 @@ function UsersPage() {
             </div>
             <div className="pt-4 mt-auto">
               <Button
-                className="w-full font-bold shadow-soft"
+                className="w-full"
                 onClick={() => {
                   setFilters(draftFilters);
                   close();
@@ -514,244 +515,284 @@ function UsersPage() {
           <TableSkeleton columns={6} rows={6} showHeaderAction={false} showFilters={false} />
         ) : isUsersError ? (
           <ErrorState onRetry={refetchUsers} />
-        ) : users.length === 0 ? (
-          <EmptyState
-            icon={Shield}
-            title="No employees found"
-            description={
-              search
-                ? "Try adjusting your search query."
-                : "You haven't added any team members yet."
-            }
-            actionLabel="Invite Employee"
-            onAction={() => setIsInviteOpen(true)}
-          />
         ) : (
           <div className="space-y-4">
-            <div className="overflow-hidden rounded-2xl border border-border/80 bg-card shadow-card">
+            <div className="overflow-hidden rounded-xl border border-border/80 bg-card shadow-soft">
               {/* Desktop Table */}
               <div className="table-desktop overflow-x-auto">
                 <Table className="min-w-[800px]">
                   <TableHeader>
-                    <tr>
+                    <TableRow>
                       <TableHead>Employee</TableHead>
                       <TableHead>Role</TableHead>
                       <TableHead>Access Permissions</TableHead>
                       <TableHead>Last Active</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead className="text-right">Actions</TableHead>
-                    </tr>
+                    </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {paginatedUsers.map((e) => (
-                      <TableRow key={e.id}>
-                        <TableCell className="whitespace-nowrap">
-                          <div className="flex items-center gap-3">
-                            <div className="grid size-10 shrink-0 place-items-center rounded-xl bg-primary/10 text-xs font-semibold text-primary border border-primary/20">
-                              {e.name
-                                .split(" ")
-                                .map((n: string) => n[0])
-                                .join("")
-                                .slice(0, 2)
-                                .toUpperCase()}
-                            </div>
-                            <div>
-                              <div className="font-bold text-foreground text-xs sm:text-sm">
-                                {e.name}
-                              </div>
-                              <div className="text-[11px] text-muted-foreground font-medium">
-                                {e.email}
-                              </div>
-                            </div>
-                          </div>
-                        </TableCell>
-                        <TableCell className="whitespace-nowrap">
-                          <Badge
-                            variant="secondary"
-                            className="capitalize text-xs font-bold py-0.5"
-                          >
-                            <Shield className="mr-1 size-3 text-primary" />
-                            {e.role}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="whitespace-nowrap">
-                          <div className="flex flex-wrap gap-1 max-w-[220px]">
-                            {(
-                              e.permissions ||
-                              DEFAULT_ROLE_PERMISSIONS[e.role?.toLowerCase()] ||
-                              []
-                            ).length >= allSelectableUserRoutes.length ? (
-                              <Badge
-                                variant="outline"
-                                className="bg-primary/10 text-primary border-primary/20 text-[10px] font-bold"
-                              >
-                                Full Access
-                              </Badge>
-                            ) : (
-                              (
-                                e.permissions ||
-                                DEFAULT_ROLE_PERMISSIONS[e.role?.toLowerCase()] ||
-                                []
-                              )
-                                .slice(0, 3)
-                                .map((p: string) => (
-                                  <Badge
-                                    key={p}
-                                    variant="outline"
-                                    className="text-[10px] uppercase font-mono bg-muted/30"
-                                  >
-                                    {p.replace(/^\//, "").replace(/-/g, " ")}
-                                  </Badge>
-                                ))
-                            )}
-                            {(
-                              e.permissions ||
-                              DEFAULT_ROLE_PERMISSIONS[e.role?.toLowerCase()] ||
-                              []
-                            ).length > 3 &&
-                              (
-                                e.permissions ||
-                                DEFAULT_ROLE_PERMISSIONS[e.role?.toLowerCase()] ||
-                                []
-                              ).length < allSelectableUserRoutes.length && (
-                                <span className="text-[10px] text-muted-foreground font-semibold self-center">
-                                  +
-                                  {(
-                                    e.permissions ||
-                                    DEFAULT_ROLE_PERMISSIONS[e.role?.toLowerCase()] ||
-                                    []
-                                  ).length - 3}{" "}
-                                  more
-                                </span>
-                              )}
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-xs text-muted-foreground whitespace-nowrap font-medium">
-                          {e.lastActive ? formatAppDate(e.lastActive, "datetime") : "Never"}
-                        </TableCell>
-                        <TableCell className="whitespace-nowrap">
-                          <Badge
-                            className={
-                              e.status === "active"
-                                ? "bg-success/12 text-success hover:bg-success/20 border-success/20 text-[10px] font-bold"
-                                : e.status === "pending"
-                                  ? "bg-warning/15 text-warning-foreground hover:bg-warning/20 border-warning/20 text-[10px] font-bold"
-                                  : "bg-destructive/12 text-destructive hover:bg-destructive/20 border-destructive/20 text-[10px] font-bold"
+                    {paginatedUsers.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={6} className="h-64 text-center">
+                          <EmptyState
+                            icon={Shield}
+                            title="No employees found"
+                            description={
+                              search
+                                ? "Try adjusting your search query."
+                                : "You haven't added any team members yet."
                             }
-                          >
-                            {e.status}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-right whitespace-nowrap">
-                          <div className="flex justify-end items-center gap-1.5">
-                            {e.status === "pending" && (
-                              <Button
-                                size="sm"
-                                onClick={() => handleApprove(e.id)}
-                                className="h-8 font-bold text-xs"
-                                disabled={approvingId === e.id}
-                              >
-                                {approvingId === e.id ? (
-                                  <Loader2 className="size-3.5 mr-1 animate-spin" />
-                                ) : (
-                                  <CheckCircle2 className="size-3.5 mr-1" />
-                                )}
-                                Approve
-                              </Button>
-                            )}
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="icon" className="size-8 rounded-lg">
-                                  <MoreVertical className="size-4 text-muted-foreground" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end" className="rounded-xl">
-                                <DropdownMenuItem
-                                  onClick={() => openEditModal(e)}
-                                  className="text-xs font-semibold"
-                                >
-                                  <Edit2 className="mr-2 size-3.5" /> Edit & Permissions
-                                </DropdownMenuItem>
-                                <DropdownMenuItem
-                                  className="text-destructive text-xs font-semibold"
-                                  onClick={() => setDeleteId(e.id)}
-                                >
-                                  <Trash2 className="mr-2 size-3.5" /> Delete Employee
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          </div>
+                            actionLabel="Invite Employee"
+                            onAction={() => setIsInviteOpen(true)}
+                            className="border-none bg-transparent my-0 py-8 shadow-none"
+                          />
                         </TableCell>
                       </TableRow>
-                    ))}
+                    ) : (
+                      paginatedUsers.map((e) => (
+                        <TableRow key={e.id}>
+                          <TableCell className="whitespace-nowrap">
+                            <div className="flex items-center gap-3">
+                              <div className="grid size-10 shrink-0 place-items-center rounded-xl bg-primary/10 text-xs font-semibold text-primary border border-primary/20">
+                                {e.name
+                                  .split(" ")
+                                  .map((n: string) => n[0])
+                                  .join("")
+                                  .slice(0, 2)
+                                  .toUpperCase()}
+                              </div>
+                              <div>
+                                <div className="font-bold text-foreground text-xs sm:text-sm">
+                                  {e.name}
+                                </div>
+                                <div className="text-[11px] text-muted-foreground font-medium">
+                                  {e.email}
+                                </div>
+                              </div>
+                            </div>
+                          </TableCell>
+                          <TableCell className="whitespace-nowrap">
+                            <Badge
+                              variant="secondary"
+                              className="capitalize text-xs font-bold py-0.5"
+                            >
+                              <Shield className="mr-1 size-3 text-primary" />
+                              {e.role}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="whitespace-nowrap">
+                            <div className="flex flex-wrap gap-1 max-w-[220px]">
+                              {(
+                                e.permissions ||
+                                DEFAULT_ROLE_PERMISSIONS[e.role?.toLowerCase()] ||
+                                []
+                              ).length >= allSelectableUserRoutes.length ? (
+                                <Badge
+                                  variant="outline"
+                                  className="bg-primary/10 text-primary border-primary/20 text-[10px] font-bold"
+                                >
+                                  Full Access
+                                </Badge>
+                              ) : (
+                                (
+                                  e.permissions ||
+                                  DEFAULT_ROLE_PERMISSIONS[e.role?.toLowerCase()] ||
+                                  []
+                                )
+                                  .slice(0, 3)
+                                  .map((p: string) => (
+                                    <Badge
+                                      key={p}
+                                      variant="outline"
+                                      className="text-[10px] uppercase font-mono bg-muted/30"
+                                    >
+                                      {p.replace(/^\//, "").replace(/-/g, " ")}
+                                    </Badge>
+                                  ))
+                              )}
+                              {(
+                                e.permissions ||
+                                DEFAULT_ROLE_PERMISSIONS[e.role?.toLowerCase()] ||
+                                []
+                              ).length > 3 &&
+                                (
+                                  e.permissions ||
+                                  DEFAULT_ROLE_PERMISSIONS[e.role?.toLowerCase()] ||
+                                  []
+                                ).length < allSelectableUserRoutes.length && (
+                                  <span className="text-[10px] text-muted-foreground font-semibold self-center">
+                                    +
+                                    {(
+                                      e.permissions ||
+                                      DEFAULT_ROLE_PERMISSIONS[e.role?.toLowerCase()] ||
+                                      []
+                                    ).length - 3}{" "}
+                                    more
+                                  </span>
+                                )}
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-xs text-muted-foreground whitespace-nowrap font-medium">
+                            {e.lastActive ? formatAppDate(e.lastActive, "datetime") : "Never"}
+                          </TableCell>
+                          <TableCell className="whitespace-nowrap">
+                            <Badge
+                              className={
+                                e.status === "active"
+                                  ? "bg-success/12 text-success hover:bg-success/20 border-success/20 text-[10px] font-bold"
+                                  : e.status === "pending"
+                                    ? "bg-warning/15 text-warning-foreground hover:bg-warning/20 border-warning/20 text-[10px] font-bold"
+                                    : "bg-destructive/12 text-destructive hover:bg-destructive/20 border-destructive/20 text-[10px] font-bold"
+                              }
+                            >
+                              {e.status}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-right whitespace-nowrap">
+                            <div className="flex justify-end items-center gap-1.5">
+                              {e.status === "pending" && (
+                                <Button
+                                  size="sm"
+                                  onClick={() => handleApprove(e.id)}
+                                  className="h-8 font-bold text-xs"
+                                  disabled={approvingId === e.id}
+                                >
+                                  {approvingId === e.id ? (
+                                    <Loader2 className="size-3.5 mr-1 animate-spin" />
+                                  ) : (
+                                    <CheckCircle2 className="size-3.5 mr-1" />
+                                  )}
+                                  Approve
+                                </Button>
+                              )}
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button variant="ghost" size="icon" className="size-8 rounded-lg">
+                                    <MoreVertical className="size-4 text-muted-foreground" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end" className="rounded-xl">
+                                  <DropdownMenuItem
+                                    onClick={() => openEditModal(e)}
+                                    className="text-xs font-semibold"
+                                  >
+                                    <Edit2 className="mr-2 size-3.5" /> Edit & Permissions
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    className="text-destructive text-xs font-semibold"
+                                    onClick={() => setDeleteId(e.id)}
+                                  >
+                                    <Trash2 className="mr-2 size-3.5" /> Delete Employee
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
                   </TableBody>
                 </Table>
               </div>
 
               {/* Mobile Card Feed (< 768px) */}
               <div className="table-mobile-cards p-3 space-y-2.5">
-                {paginatedUsers.map((e) => (
-                  <div
-                    key={e.id}
-                    className="flex items-center justify-between rounded-xl border border-border/80 bg-card p-3 shadow-sm card-interactive"
-                  >
-                    <div className="flex items-center gap-3 min-w-0 flex-1">
-                      <div className="grid size-10 shrink-0 place-items-center rounded-xl bg-primary/10 text-xs font-semibold text-primary border border-primary/20">
-                        {e.name
-                          .split(" ")
-                          .map((n: string) => n[0])
-                          .join("")
-                          .slice(0, 2)
-                          .toUpperCase()}
-                      </div>
-                      <div className="min-w-0 truncate">
-                        <div className="flex items-center gap-2">
-                          <p className="text-xs sm:text-sm font-bold text-foreground truncate">
-                            {e.name}
-                          </p>
-                          <Badge
-                            className={`text-[9px] font-bold py-0 ${
-                              e.status === "active"
-                                ? "bg-success/12 text-success"
-                                : e.status === "pending"
-                                  ? "bg-warning/15 text-warning-foreground"
-                                  : "bg-destructive/12 text-destructive"
-                            }`}
-                          >
-                            {e.status}
-                          </Badge>
+                {paginatedUsers.length === 0 ? (
+                  <EmptyState
+                    icon={Shield}
+                    title="No employees found"
+                    description={
+                      search
+                        ? "Try adjusting your search query."
+                        : "You haven't added any team members yet."
+                    }
+                    actionLabel="Invite Employee"
+                    onAction={() => setIsInviteOpen(true)}
+                    className="border-none bg-transparent my-0 py-6 shadow-none"
+                  />
+                ) : (
+                  paginatedUsers.map((e) => (
+                    <div
+                      key={e.id}
+                      className="flex items-center justify-between rounded-xl border border-border/80 bg-card p-3 shadow-sm card-interactive"
+                    >
+                      <div className="flex items-center gap-3 min-w-0 flex-1">
+                        <div className="grid size-10 shrink-0 place-items-center rounded-xl bg-primary/10 text-xs font-semibold text-primary border border-primary/20">
+                          {e.name
+                            .split(" ")
+                            .map((n: string) => n[0])
+                            .join("")
+                            .slice(0, 2)
+                            .toUpperCase()}
                         </div>
-                        <p className="text-[11px] text-muted-foreground truncate">{e.email}</p>
-                        <p className="text-[10px] text-primary capitalize font-bold mt-0.5">
-                          Role: {e.role}
-                        </p>
+                        <div className="min-w-0 truncate">
+                          <div className="flex items-center gap-2">
+                            <p className="text-xs sm:text-sm font-bold text-foreground truncate">
+                              {e.name}
+                            </p>
+                            <Badge
+                              className={`text-[9px] font-bold py-0 ${
+                                e.status === "active"
+                                  ? "bg-success/12 text-success"
+                                  : e.status === "pending"
+                                    ? "bg-warning/15 text-warning-foreground"
+                                    : "bg-destructive/12 text-destructive"
+                              }`}
+                            >
+                              {e.status}
+                            </Badge>
+                          </div>
+                          <p className="text-[11px] text-muted-foreground truncate">{e.email}</p>
+                          <p className="text-[10px] text-primary capitalize font-bold mt-0.5">
+                            Role: {e.role}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-1 shrink-0 pl-2">
+                        {e.status === "pending" && (
+                          <Button
+                            size="sm"
+                            onClick={() => handleApprove(e.id)}
+                            className="h-7 px-2 text-[11px] font-bold"
+                            disabled={approvingId === e.id}
+                          >
+                            Approve
+                          </Button>
+                        )}
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="size-7 rounded-lg"
+                          onClick={() => openEditModal(e)}
+                        >
+                          <Edit2 className="size-3.5" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="size-7 rounded-lg text-destructive"
+                          onClick={() => setDeleteId(e.id)}
+                        >
+                          <Trash2 className="size-3.5" />
+                        </Button>
                       </div>
                     </div>
-
-                    <div className="shrink-0 pl-2">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="size-8 rounded-lg"
-                        onClick={() => openEditModal(e)}
-                      >
-                        <Edit2 className="size-3.5 text-muted-foreground" />
-                      </Button>
-                    </div>
-                  </div>
-                ))}
+                  ))
+                )}
               </div>
 
-              <div className="border-t border-border/60 p-2 sm:p-3">
-                <PaginationControls
-                  currentPage={page}
-                  totalPages={totalPages}
-                  pageSize={itemsPerPage}
-                  totalItems={users.length}
-                  onPageChange={setPage}
-                  onPageSizeChange={() => {}}
-                />
-              </div>
+              {filteredUsers.length > 0 && (
+                <div className="border-t border-border/60 p-2 sm:p-3">
+                  <PaginationControls
+                    currentPage={page}
+                    totalPages={totalPages}
+                    onPageChange={setPage}
+                    totalItems={filteredUsers.length}
+                  />
+                </div>
+              )}
             </div>
           </div>
         )}

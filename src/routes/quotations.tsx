@@ -318,8 +318,8 @@ function QuotationsPage() {
         primaryAction={{ label: "Create Quotation", onClick: () => setIsAddOpen(true) }}
         searchPlaceholder="Search by quotation # or customer..."
         searchValue={search}
-        onSearchChange={setSearch}
-        hideToolbar={rawQuotations.length === 0}
+        onSearchChange={setSearch}        hideToolbar={false}
+        onExport={handleExport}
         onResetFilters={handleResetFilters}
         activeFilterCount={activeFilterCount}
         filtersContent={({ close }) => (
@@ -330,8 +330,10 @@ function QuotationsPage() {
                 <SearchableSelect
                   options={[
                     { value: "", label: "All Statuses" },
+                    { value: "draft", label: "Draft" },
                     { value: "sent", label: "Sent" },
                     { value: "converted", label: "Converted to Invoice" },
+                    { value: "expired", label: "Expired" },
                   ]}
                   value={draftFilters.status}
                   onChange={(val) => setDraftFilters((prev) => ({ ...prev, status: val }))}
@@ -353,43 +355,50 @@ function QuotationsPage() {
           </div>
         )}
       >
-        {filteredQuotations.length === 0 ? (
-          <EmptyState
-            icon={FileText}
-            title="No quotations found"
-            description={
-              search
-                ? "Try adjusting your search query."
-                : "Create your first B2B quotation to get started."
-            }
-          />
-        ) : (
-          <div className="space-y-4">
-            <div className="overflow-hidden rounded-2xl border border-border/80 bg-card shadow-card">
-              {/* Desktop Table View */}
-              <div className="table-desktop overflow-x-auto">
-                <Table className="min-w-[800px]">
-                  <TableHeader>
+        <div className="space-y-4">
+          <div className="overflow-hidden rounded-xl border border-border/80 bg-card shadow-soft">
+            {/* Desktop Table View */}
+            <div className="table-desktop overflow-x-auto">
+              <Table className="min-w-[800px]">
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Quotation #</TableHead>
+                    <TableHead>Customer</TableHead>
+                    <TableHead>Quote Date</TableHead>
+                    <TableHead>Valid Until</TableHead>
+                    <TableHead className="text-right">Estimated Total</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {paginated.length === 0 ? (
                     <TableRow>
-                      <TableHead>Quotation #</TableHead>
-                      <TableHead>Customer</TableHead>
-                      <TableHead>Quote Date</TableHead>
-                      <TableHead>Valid Until</TableHead>
-                      <TableHead className="text-right">Estimated Total</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
+                      <TableCell colSpan={7} className="h-64 text-center">
+                        <EmptyState
+                          icon={FileText}
+                          title="No quotations found"
+                          description={
+                            search
+                              ? "Try adjusting your search query."
+                              : "Create your first B2B quotation to get started."
+                          }
+                          actionLabel="Create Quotation"
+                          onAction={() => setIsAddOpen(true)}
+                          className="border-none bg-transparent my-0 py-8 shadow-none"
+                        />
+                      </TableCell>
                     </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {paginated.map((q) => (
+                  ) : (
+                    paginated.map((q) => (
                       <TableRow key={q.id}>
                         <TableCell
-                          className="font-mono font-bold text-primary whitespace-nowrap cursor-pointer hover:underline"
+                          className="font-mono font-semibold text-primary whitespace-nowrap cursor-pointer hover:underline"
                           onClick={() => setViewItem(q)}
                         >
                           {q.quotationNo}
                         </TableCell>
-                        <TableCell className="font-bold text-foreground whitespace-nowrap">
+                        <TableCell className="font-semibold text-foreground whitespace-nowrap">
                           {q.customerName}
                         </TableCell>
                         <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
@@ -449,14 +458,29 @@ function QuotationsPage() {
                           </DropdownMenu>
                         </TableCell>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </div>
 
-              {/* Mobile Card Feed (< 768px) */}
-              <div className="table-mobile-cards p-3 space-y-2.5">
-                {paginated.map((q) => (
+            {/* Mobile Card Feed (< 768px) */}
+            <div className="table-mobile-cards p-3 space-y-2.5">
+              {paginated.length === 0 ? (
+                <EmptyState
+                  icon={FileText}
+                  title="No quotations found"
+                  description={
+                    search
+                      ? "Try adjusting your search query."
+                      : "Create your first B2B quotation to get started."
+                  }
+                  actionLabel="Create Quotation"
+                  onAction={() => setIsAddOpen(true)}
+                  className="border-none bg-transparent my-0 py-6 shadow-none"
+                />
+              ) : (
+                paginated.map((q) => (
                   <div
                     key={q.id}
                     className="flex items-center justify-between rounded-xl border border-border/80 bg-card p-3 shadow-sm card-interactive"
@@ -500,31 +524,27 @@ function QuotationsPage() {
                             convertToInvoice(q);
                           }}
                         >
-                          Invoice →
+                          <ArrowRightLeft className="size-3 mr-1" /> Invoice
                         </Button>
-                      ) : (
-                        <span className="text-[10px] text-success font-bold mt-1 inline-block">
-                          Billed
-                        </span>
-                      )}
+                      ) : null}
                     </div>
                   </div>
-                ))}
-              </div>
+                ))
+              )}
+            </div>
 
+            {filteredQuotations.length > 0 && (
               <div className="border-t border-border/60 p-2 sm:p-3">
                 <PaginationControls
                   currentPage={page}
                   totalPages={totalPages}
-                  pageSize={pageSize}
                   onPageChange={setPage}
-                  onPageSizeChange={setPageSize}
                   totalItems={filteredQuotations.length}
                 />
               </div>
-            </div>
+            )}
           </div>
-        )}
+        </div>
       </DataPage>
 
       {/* Create B2B Quotation Modal */}

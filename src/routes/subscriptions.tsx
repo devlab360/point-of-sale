@@ -218,12 +218,26 @@ function SubscriptionsPage() {
         searchPlaceholder="Search by subscription #, customer, or plan..."
         searchValue={search}
         onSearchChange={setSearch}
-        hideToolbar={rawSubs.length === 0}
+        hideToolbar={false}
         onResetFilters={handleResetFilters}
         activeFilterCount={activeFilterCount}
         filtersContent={({ close }) => (
           <div className="space-y-4 flex flex-col h-full min-h-[50vh]">
             <div className="flex-1 space-y-4">
+              <div className="space-y-2">
+                <Label>Billing Cycle</Label>
+                <SearchableSelect
+                  options={[
+                    { value: "", label: "All Cycles" },
+                    { value: "monthly", label: "Monthly" },
+                    { value: "quarterly", label: "Quarterly" },
+                    { value: "yearly", label: "Yearly" },
+                  ]}
+                  value={draftFilters.cycle}
+                  onChange={(val) => setDraftFilters((prev) => ({ ...prev, cycle: val }))}
+                  placeholder="Filter by Cycle"
+                />
+              </div>
               <div className="space-y-2">
                 <Label>Status</Label>
                 <SearchableSelect
@@ -241,7 +255,7 @@ function SubscriptionsPage() {
             </div>
             <div className="pt-4 mt-auto">
               <Button
-                className="w-full font-bold shadow-soft"
+                className="w-full"
                 onClick={() => {
                   setFilters(draftFilters);
                   close();
@@ -253,36 +267,43 @@ function SubscriptionsPage() {
           </div>
         )}
       >
-        {filteredSubs.length === 0 ? (
-          <EmptyState
-            icon={Repeat}
-            title="No subscriptions found"
-            description={
-              search
-                ? "Try adjusting your search query."
-                : "Create your first recurring subscription to automate billing."
-            }
-          />
-        ) : (
-          <div className="space-y-4">
-            <div className="overflow-hidden rounded-2xl border border-border/80 bg-card shadow-card">
-              {/* Desktop Table */}
-              <div className="table-desktop overflow-x-auto hidden md:block">
-                <Table className="min-w-[900px]">
-                  <TableHeader>
-                    <tr>
-                      <TableHead>Subscription #</TableHead>
-                      <TableHead>Customer</TableHead>
-                      <TableHead>Plan Name</TableHead>
-                      <TableHead>Billing Cycle</TableHead>
-                      <TableHead className="text-right">Recurring Rate</TableHead>
-                      <TableHead>Next Renewal</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
-                    </tr>
-                  </TableHeader>
-                  <TableBody>
-                    {paginated.map((s) => (
+        <div className="space-y-4">
+          <div className="overflow-hidden rounded-xl border border-border/80 bg-card shadow-soft">
+            {/* Desktop Table */}
+            <div className="table-desktop overflow-x-auto hidden md:block">
+              <Table className="min-w-[900px]">
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Subscription #</TableHead>
+                    <TableHead>Customer</TableHead>
+                    <TableHead>Plan Name</TableHead>
+                    <TableHead>Billing Cycle</TableHead>
+                    <TableHead className="text-right">Recurring Rate</TableHead>
+                    <TableHead>Next Renewal</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {paginated.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={8} className="h-64 text-center">
+                        <EmptyState
+                          icon={Repeat}
+                          title="No subscriptions found"
+                          description={
+                            search
+                              ? "Try adjusting your search query."
+                              : "Create your first recurring subscription to automate billing."
+                          }
+                          actionLabel="Create Subscription"
+                          onAction={() => setIsAddOpen(true)}
+                          className="border-none bg-transparent my-0 py-8 shadow-none"
+                        />
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    paginated.map((s) => (
                       <TableRow key={s.id}>
                         <TableCell className="font-mono font-bold text-primary whitespace-nowrap">
                           {s.subscriptionNo}
@@ -349,17 +370,32 @@ function SubscriptionsPage() {
                                 <Trash2 className="mr-2 size-3.5" /> Cancel Subscription
                               </DropdownMenuItem>
                             </DropdownMenuContent>
-                            </DropdownMenu>
+                          </DropdownMenu>
                         </TableCell>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </div>
 
-              {/* Mobile Card Feed (< 768px) */}
-              <div className="table-mobile-cards p-3 space-y-2.5 md:hidden">
-                {paginated.map((s) => (
+            {/* Mobile Card Feed (< 768px) */}
+            <div className="table-mobile-cards p-3 space-y-2.5 md:hidden">
+              {paginated.length === 0 ? (
+                <EmptyState
+                  icon={Repeat}
+                  title="No subscriptions found"
+                  description={
+                    search
+                      ? "Try adjusting your search query."
+                      : "Create your first recurring subscription to automate billing."
+                  }
+                  actionLabel="Create Subscription"
+                  onAction={() => setIsAddOpen(true)}
+                  className="border-none bg-transparent my-0 py-6 shadow-none"
+                />
+              ) : (
+                paginated.map((s) => (
                   <div
                     key={s.id}
                     className="flex items-center justify-between rounded-xl border border-border/80 bg-card p-3 shadow-sm card-interactive"
@@ -385,22 +421,46 @@ function SubscriptionsPage() {
                         {s.customerName}
                       </div>
                       <p className="text-[11px] text-muted-foreground truncate">
-                        {s.planName} • {s.billingCycle}
+                        {s.planName} · {s.billingCycle}
                       </p>
+                      <span className="text-[10px] text-muted-foreground mt-0.5 block">
+                        Renews: {s.nextBillingDate ? formatAppDate(s.nextBillingDate) : "-"}
+                      </span>
                     </div>
 
                     <div className="text-right shrink-0 pl-2">
                       <div className="number text-sm font-black text-foreground">
                         {formatCurrency(s.amount)}
                       </div>
-                      <span className="text-[10px] text-muted-foreground mt-0.5 block">
-                        Renews {s.nextBillingDate ? formatAppDate(s.nextBillingDate) : "-"}
-                      </span>
+                      <div className="flex justify-end gap-1 mt-1">
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="size-7 rounded-lg"
+                          onClick={() => updateStatus(s.id, s.status === "active" ? "paused" : "active")}
+                        >
+                          {s.status === "active" ? (
+                            <PauseCircle className="size-3.5 text-warning" />
+                          ) : (
+                            <CheckCircle2 className="size-3.5 text-success" />
+                          )}
+                        </Button>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="size-7 rounded-lg text-destructive"
+                          onClick={() => deleteSub(s.id)}
+                        >
+                          <Trash2 className="size-3.5" />
+                        </Button>
+                      </div>
                     </div>
                   </div>
-                ))}
-              </div>
+                ))
+              )}
+            </div>
 
+            {filteredSubs.length > 0 && (
               <div className="border-t border-border/60 p-2 sm:p-3">
                 <PaginationControls
                   currentPage={page}
@@ -411,9 +471,9 @@ function SubscriptionsPage() {
                   totalItems={filteredSubs.length}
                 />
               </div>
-            </div>
+            )}
           </div>
-        )}
+        </div>
       </DataPage>
 
       {/* Create Subscription Modal */}
