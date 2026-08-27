@@ -10,10 +10,12 @@ export const sendAutomatedReport = async (
   reportType: "Daily" | "Weekly" | "Monthly",
   salesData: { totalRevenue: number; totalOrders: number; topItems: string[] },
 ) => {
-  if (!adminPhone) {
-    console.warn("Admin phone missing. Cannot send automated report.");
-    return;
+  if (!adminPhone || adminPhone.trim() === "") {
+    toast.error("Phone number missing! Please add your WhatsApp number in Profile or Settings.");
+    return false;
   }
+
+  const toastId = toast.loading(`Generating AI ${reportType} report & sending to WhatsApp...`);
 
   try {
     const systemPrompt = `You are an expert AI Data Analyst for a retail business.
@@ -38,13 +40,14 @@ export const sendAutomatedReport = async (
     const waResult = await sendWhatsAppText(adminPhone, aiMessage || "");
 
     if (!waResult.success) {
-      throw new Error("Failed to send WhatsApp message: " + waResult.error);
+      throw new Error(waResult.error || "Failed to send WhatsApp message");
     }
 
-    toast.success(`${reportType} report sent to Admin!`);
+    toast.success(`${reportType} report successfully sent to ${adminPhone}!`, { id: toastId });
     return true;
   } catch (error: any) {
     console.error("[sendAutomatedReport]", error);
+    toast.error(`WhatsApp Error: ${error.message}`, { id: toastId });
     return false;
   }
 };

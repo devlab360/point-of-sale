@@ -4,6 +4,7 @@ import { consumeLastCapturedError } from "./lib/error-capture";
 import { renderErrorPage } from "./lib/error-page";
 
 import { handleWhatsAppWebhook } from "./server/whatsapp-webhook";
+import { handleWeeklyReportCron } from "./server/cron-weekly-report";
 
 type ServerEntry = {
   fetch: (request: Request, env: unknown, ctx: unknown) => Promise<Response> | Response;
@@ -67,6 +68,11 @@ export default {
         url.pathname === "/api/webhook"
       ) {
         return handleWhatsAppWebhook(request);
+      }
+
+      // Automated Weekly Report Cron endpoint
+      if (url.pathname === "/api/cron/weekly-report") {
+        return handleWeeklyReportCron(request);
       }
 
       const handler = await getServerEntry();

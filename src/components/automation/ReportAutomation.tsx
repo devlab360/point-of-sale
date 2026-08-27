@@ -14,7 +14,7 @@ let _sessionRan = false;
 
 export function ReportAutomation() {
   const hasRun = useRef(false);
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -31,12 +31,17 @@ export function ReportAutomation() {
       try {
         const orgId = PersistStore.getOrgId() || "default";
 
-        // Fetch Settings for Admin Phone
-        const settingsRes: any = await getSettingsFn({ data: {} });
-        const settings = settingsRes?.data;
-        const adminPhone = settings?.phone;
+        // Fetch Settings for Admin Phone fallback
+        let adminPhone = user?.phone;
+        if (!adminPhone) {
+          const settingsRes: any = await getSettingsFn({ data: {} });
+          adminPhone = settingsRes?.data?.phone;
+        }
 
-        if (!adminPhone) return;
+        if (!adminPhone || adminPhone.trim() === "") {
+          console.log("[ReportAutomation] No admin phone configured, skipping auto-report.");
+          return;
+        }
 
         const now = new Date();
 
@@ -47,8 +52,8 @@ export function ReportAutomation() {
         let needsMonthly = false;
 
         if (!lastWeeklyStr) {
-          // First time ever — set the date now without sending, to avoid spamming on first login
-          localStorage.setItem(`last_weekly_report_date_${orgId}`, now.toISOString());
+          // If first time login, set flag and trigger the initial weekly summary
+          needsWeekly = true;
         } else {
           const lastWeekly = new Date(lastWeeklyStr);
           if (now.getTime() - lastWeekly.getTime() >= SEVEN_DAYS_MS) {

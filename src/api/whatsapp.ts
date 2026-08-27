@@ -22,7 +22,16 @@ const getWaUrl = () => {
 };
 
 const formatPhone = (phone: string) => {
-  return phone.replace(/[^0-9]/g, "");
+  let cleaned = phone.replace(/[^0-9]/g, "");
+  // If Bangladesh number without country code (starts with 01)
+  if (cleaned.startsWith("01") && cleaned.length === 11) {
+    cleaned = "880" + cleaned.substring(1);
+  }
+  // If Indian number without country code (10 digits starting with 6,7,8,9)
+  if (cleaned.length === 10 && /^[6-9]/.test(cleaned)) {
+    cleaned = "91" + cleaned;
+  }
+  return cleaned;
 };
 
 export const sendWhatsAppTextFn = createServerFn({ method: "POST" })
@@ -39,6 +48,8 @@ export const sendWhatsAppTextFn = createServerFn({ method: "POST" })
       const url = getWaUrl();
       const headers = getWaHeaders();
       const formattedPhone = formatPhone(data.phone);
+
+      console.log(`[WA Outgoing] Target Phone: "${formattedPhone}" (Raw: "${data.phone}") | URL: ${url}`);
 
       const payload = {
         messaging_product: "whatsapp",
@@ -58,6 +69,8 @@ export const sendWhatsAppTextFn = createServerFn({ method: "POST" })
       });
 
       const resData = await res.json();
+
+      console.log(`[WA API Response] Status: ${res.status}`, JSON.stringify(resData));
 
       if (!res.ok) {
         console.error("[WA API Error]", resData);
