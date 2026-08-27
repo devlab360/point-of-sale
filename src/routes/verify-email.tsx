@@ -111,18 +111,18 @@ function VerifyEmailPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-background via-card/30 to-primary/5 px-4 py-12">
-      <div className="w-full max-w-md overflow-hidden rounded-3xl border border-border/80 bg-card p-6 sm:p-10 shadow-card card-interactive">
+    <div className="flex min-h-screen items-center justify-center bg-background px-4 py-12">
+      <div className="w-full max-w-md overflow-hidden rounded-3xl border border-border/80 bg-card p-6 sm:p-10 shadow-elevated">
         <div className="text-center pb-2">
-          <div className="mx-auto mb-4 grid size-14 place-items-center rounded-2xl bg-gradient-to-br from-primary/20 via-primary/10 to-accent/20 text-primary border border-primary/20 shadow-soft">
+          <div className="mx-auto mb-4 grid size-14 place-items-center rounded-2xl bg-primary/10 text-primary border border-primary/20">
             <Mail className="size-7" />
           </div>
-          <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-foreground">
+          <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-foreground">
             Verify Your Email
           </h1>
           <p className="text-xs sm:text-sm text-muted-foreground mt-1.5 font-medium">
             Activate your account and start your{" "}
-            <strong className="text-primary font-black">
+            <strong className="text-primary font-semibold">
               {trialDays}-Day Full Enterprise Trial
             </strong>
             .

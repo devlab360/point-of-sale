@@ -411,7 +411,7 @@ export function AppHeader() {
         )}
 
         <DropdownMenu>
-          <DropdownMenuTrigger className="ml-1 flex size-9 items-center justify-center rounded-full bg-gradient-to-br from-primary to-info text-sm font-bold text-primary-foreground overflow-hidden">
+          <DropdownMenuTrigger className="ml-1 flex size-9 items-center justify-center rounded-full bg-primary text-sm font-semibold text-primary-foreground overflow-hidden">
             {(profile as any).avatar ? (
               <img src={(profile as any).avatar} alt="Profile" className="size-full object-cover" />
             ) : (
@@ -482,7 +482,7 @@ export function AppHeader() {
           <div className="max-h-[60vh] overflow-y-auto p-3 space-y-4 bg-background">
             {!searchQuery.trim() || searchQuery.length < 1 ? (
               <div className="py-8 text-center text-sm text-muted-foreground flex flex-col items-center gap-2">
-                <Command className="size-8 opacity-30 animate-pulse" />
+                <Command className="size-8 opacity-20" />
                 <span>Type to search across pages, products, customers, orders & finances...</span>
               </div>
             ) : searchModules.length === 0 &&
@@ -673,7 +673,7 @@ export function AppHeader() {
                 {searchExpenses.length > 0 && (
                   <div>
                     <div className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider px-2 mb-1.5 flex items-center gap-1.5">
-                      <Receipt className="size-3.5 text-purple-500" /> Expenses & Accounts (
+                      <Receipt className="size-3.5 text-primary" /> Expenses & Accounts (
                       {searchExpenses.length})
                     </div>
                     <div className="space-y-1">

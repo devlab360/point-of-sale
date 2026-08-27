@@ -283,7 +283,7 @@ export function AiCopilotDrawer() {
           side="right"
           className="w-full sm:max-w-xl p-0 flex flex-col h-full bg-background border-l border-border shadow-2xl"
         >
-          <SheetHeader className="p-4 border-b bg-gradient-to-r from-primary/10 via-background to-accent/10">
+          <SheetHeader className="p-4 border-b bg-primary/5">
             <SheetTitle className="flex items-center gap-2 text-primary font-bold">
               <Bot className="size-5" />
               <span>OneDesk360 AI Business Advisor</span>

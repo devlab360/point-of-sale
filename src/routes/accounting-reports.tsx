@@ -4,6 +4,14 @@ import { getAccountsFn } from "@/api/finance";
 import { DataPage } from "@/components/layout/DataPage";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { useCurrency } from "@/lib/currency";
 import { Loader2, AlertCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -68,7 +76,7 @@ function AccountingReportsPage() {
         description="Generate Trial Balance and Balance Sheet"
         hideToolbar
       >
-        <div className="text-red-500 flex flex-col items-center justify-center p-8">
+        <div className="text-destructive flex flex-col items-center justify-center p-8">
           <AlertCircle className="size-8 mb-2 text-destructive" />
           Error loading reports data.
         </div>
@@ -124,49 +132,49 @@ function AccountingReportsPage() {
                   )}
 
                   <div className="rounded-xl border border-border/80 overflow-x-auto bg-card">
-                    <table className="w-full text-sm text-left min-w-[650px]">
-                      <thead className="bg-muted/40 text-muted-foreground font-bold text-[11px] uppercase tracking-wider border-b border-border/80">
-                        <tr>
-                          <th className="p-3 border-r border-border/60">Code</th>
-                          <th className="p-3 border-r border-border/60">Account Name</th>
-                          <th className="p-3 border-r border-border/60">Type</th>
-                          <th className="p-3 border-r border-border/60 text-right w-40">Debit</th>
-                          <th className="p-3 text-right w-40">Credit</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-border/60">
+                    <Table className="min-w-[650px]">
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="p-3 border-r border-border/60">Code</TableHead>
+                          <TableHead className="p-3 border-r border-border/60">Account Name</TableHead>
+                          <TableHead className="p-3 border-r border-border/60">Type</TableHead>
+                          <TableHead className="p-3 border-r border-border/60 text-right w-40">Debit</TableHead>
+                          <TableHead className="p-3 text-right w-40">Credit</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
                         {trialBalanceData.map((acc: any) => (
-                          <tr key={acc.id} className="hover:bg-muted/30 transition-colors">
-                            <td className="p-3 border-r border-border/60 font-mono text-xs font-semibold text-muted-foreground">
+                          <TableRow key={acc.id}>
+                            <TableCell className="p-3 border-r border-border/60 font-mono text-xs font-semibold text-muted-foreground">
                               {acc.code}
-                            </td>
-                            <td className="p-3 border-r border-border/60 font-bold text-foreground">
+                            </TableCell>
+                            <TableCell className="p-3 border-r border-border/60 font-bold text-foreground">
                               {acc.name}
-                            </td>
-                            <td className="p-3 border-r border-border/60">
+                            </TableCell>
+                            <TableCell className="p-3 border-r border-border/60">
                               <span className="capitalize text-xs text-muted-foreground">
                                 {acc.type}
                               </span>
-                            </td>
-                            <td className="number p-3 border-r border-border/60 text-right font-black text-xs">
+                            </TableCell>
+                            <TableCell className="number p-3 border-r border-border/60 text-right font-black text-xs">
                               {acc.debit > 0 ? formatCurrency(acc.debit) : "-"}
-                            </td>
-                            <td className="number p-3 text-right font-black text-xs">
+                            </TableCell>
+                            <TableCell className="number p-3 text-right font-black text-xs">
                               {acc.credit > 0 ? formatCurrency(acc.credit) : "-"}
-                            </td>
-                          </tr>
+                            </TableCell>
+                          </TableRow>
                         ))}
                         {trialBalanceData.length === 0 && (
-                          <tr>
-                            <td
+                          <TableRow>
+                            <TableCell
                               colSpan={5}
                               className="p-8 text-center text-muted-foreground text-xs"
                             >
                               No ledger accounts recorded.
-                            </td>
-                          </tr>
+                            </TableCell>
+                          </TableRow>
                         )}
-                      </tbody>
+                      </TableBody>
                       <tfoot className="bg-muted/30 font-black border-t-2 border-border/80 text-sm">
                         <tr>
                           <td
@@ -183,7 +191,7 @@ function AccountingReportsPage() {
                           </td>
                         </tr>
                       </tfoot>
-                    </table>
+                    </Table>
                   </div>
                 </CardContent>
               </Card>
@@ -219,30 +227,30 @@ function AccountingReportsPage() {
                           </span>
                         </div>
                         <div className="p-0">
-                          <table className="w-full text-xs">
-                            <tbody className="divide-y divide-border/60">
+                          <Table className="text-xs">
+                            <TableBody>
                               {assets.map((acc: any) => (
-                                <tr key={acc.id} className="hover:bg-muted/30">
-                                  <td className="p-3 pl-4 font-semibold text-foreground">
+                                <TableRow key={acc.id}>
+                                  <TableCell className="p-3 pl-4 font-semibold text-foreground">
                                     {acc.name}
-                                  </td>
-                                  <td className="number p-3 pr-4 text-right font-black">
+                                  </TableCell>
+                                  <TableCell className="number p-3 pr-4 text-right font-black">
                                     {formatCurrency(Number(acc.balance) || 0)}
-                                  </td>
-                                </tr>
+                                  </TableCell>
+                                </TableRow>
                               ))}
                               {assets.length === 0 && (
-                                <tr>
-                                  <td
+                                <TableRow>
+                                  <TableCell
                                     colSpan={2}
                                     className="p-4 text-center text-muted-foreground text-xs"
                                   >
                                     No asset accounts found
-                                  </td>
-                                </tr>
+                                  </TableCell>
+                                </TableRow>
                               )}
-                            </tbody>
-                          </table>
+                            </TableBody>
+                          </Table>
                         </div>
                       </div>
                     </div>
@@ -258,30 +266,30 @@ function AccountingReportsPage() {
                           </span>
                         </div>
                         <div className="p-0">
-                          <table className="w-full text-xs">
-                            <tbody className="divide-y divide-border/60">
+                          <Table className="text-xs">
+                            <TableBody>
                               {liabilities.map((acc: any) => (
-                                <tr key={acc.id} className="hover:bg-muted/30">
-                                  <td className="p-3 pl-4 font-semibold text-foreground">
+                                <TableRow key={acc.id}>
+                                  <TableCell className="p-3 pl-4 font-semibold text-foreground">
                                     {acc.name}
-                                  </td>
-                                  <td className="number p-3 pr-4 text-right font-black">
+                                  </TableCell>
+                                  <TableCell className="number p-3 pr-4 text-right font-black">
                                     {formatCurrency(Number(acc.balance) || 0)}
-                                  </td>
-                                </tr>
+                                  </TableCell>
+                                </TableRow>
                               ))}
                               {liabilities.length === 0 && (
-                                <tr>
-                                  <td
+                                <TableRow>
+                                  <TableCell
                                     colSpan={2}
                                     className="p-4 text-center text-muted-foreground text-xs"
                                   >
                                     No liability accounts found
-                                  </td>
-                                </tr>
+                                  </TableCell>
+                                </TableRow>
                               )}
-                            </tbody>
-                          </table>
+                            </TableBody>
+                          </Table>
                         </div>
                       </div>
 
@@ -294,30 +302,30 @@ function AccountingReportsPage() {
                           </span>
                         </div>
                         <div className="p-0">
-                          <table className="w-full text-xs">
-                            <tbody className="divide-y divide-border/60">
+                          <Table className="text-xs">
+                            <TableBody>
                               {equity.map((acc: any) => (
-                                <tr key={acc.id} className="hover:bg-muted/30">
-                                  <td className="p-3 pl-4 font-semibold text-foreground">
+                                <TableRow key={acc.id}>
+                                  <TableCell className="p-3 pl-4 font-semibold text-foreground">
                                     {acc.name}
-                                  </td>
-                                  <td className="number p-3 pr-4 text-right font-black">
+                                  </TableCell>
+                                  <TableCell className="number p-3 pr-4 text-right font-black">
                                     {formatCurrency(Number(acc.balance) || 0)}
-                                  </td>
-                                </tr>
+                                  </TableCell>
+                                </TableRow>
                               ))}
                               {equity.length === 0 && (
-                                <tr>
-                                  <td
+                                <TableRow>
+                                  <TableCell
                                     colSpan={2}
                                     className="p-4 text-center text-muted-foreground text-xs"
                                   >
                                     No equity accounts found
-                                  </td>
-                                </tr>
+                                  </TableCell>
+                                </TableRow>
                               )}
-                            </tbody>
-                          </table>
+                            </TableBody>
+                          </Table>
                         </div>
                       </div>
 

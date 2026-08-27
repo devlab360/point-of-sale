@@ -47,6 +47,7 @@ import { cn } from "@/lib/utils";
 import { useDebounce } from "@/hooks/useDebounce";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { usePreferences } from "@/contexts/PreferencesContext";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 export const Route = createFileRoute("/sales/returns")({
   head: () => ({ meta: [{ title: "Sales Returns · OneDesk360" }] }),
@@ -322,42 +323,42 @@ function SalesReturnsPage() {
             <div className="overflow-hidden rounded-xl border border-border bg-card shadow-soft">
               <div className="overflow-hidden rounded-xl border border-border bg-card shadow-soft">
                 <div className="overflow-x-auto">
-                  <table className="w-full text-left text-sm min-w-[700px]">
-                    <thead className="bg-muted/50 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                      <tr>
-                        <th className="px-4 py-3 whitespace-nowrap">{t("ref") || "Ref"}</th>
-                        <th className="px-4 py-3 whitespace-nowrap">{t("invoice") || "Invoice"}</th>
-                        <th className="px-4 py-3 whitespace-nowrap">
+                  <Table className="min-w-[700px]">
+                    <TableHeader className="bg-muted/50 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                      <TableRow>
+                        <TableHead className="px-4 py-3 whitespace-nowrap">{t("ref") || "Ref"}</TableHead>
+                        <TableHead className="px-4 py-3 whitespace-nowrap">{t("invoice") || "Invoice"}</TableHead>
+                        <TableHead className="px-4 py-3 whitespace-nowrap">
                           {t("customer") || "Customer"}
-                        </th>
-                        <th className="px-4 py-3 whitespace-nowrap">{t("reason") || "Reason"}</th>
-                        <th className="px-4 py-3 whitespace-nowrap">{t("date") || "Date"}</th>
-                        <th className="px-4 py-3 whitespace-nowrap">{t("status") || "Status"}</th>
-                        <th className="px-4 py-3 text-right whitespace-nowrap">
+                        </TableHead>
+                        <TableHead className="px-4 py-3 whitespace-nowrap">{t("reason") || "Reason"}</TableHead>
+                        <TableHead className="px-4 py-3 whitespace-nowrap">{t("date") || "Date"}</TableHead>
+                        <TableHead className="px-4 py-3 whitespace-nowrap">{t("status") || "Status"}</TableHead>
+                        <TableHead className="px-4 py-3 whitespace-nowrap text-right">
                           {t("refund") || "Refund"}
-                        </th>
-                        <th className="px-4 py-3 whitespace-nowrap"></th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-border">
+                        </TableHead>
+                        <TableHead className="px-4 py-3 whitespace-nowrap"></TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody className="divide-y divide-border">
                       {paginatedReturns.map((r) => (
-                        <tr key={r.id} className="hover:bg-muted/30">
-                          <td className="px-4 py-3 font-mono text-xs font-semibold whitespace-nowrap">
+                        <TableRow key={r.id}>
+                          <TableCell className="px-4 py-3 font-mono text-xs font-semibold whitespace-nowrap">
                             {r.ref}
-                          </td>
-                          <td className="px-4 py-3 font-mono text-xs text-muted-foreground whitespace-nowrap">
+                          </TableCell>
+                          <TableCell className="px-4 py-3 font-mono text-xs text-muted-foreground whitespace-nowrap">
                             {r.saleId.slice(0, 8).toUpperCase()}
-                          </td>
-                          <td className="px-4 py-3 font-semibold whitespace-nowrap">
+                          </TableCell>
+                          <TableCell className="px-4 py-3 font-semibold whitespace-nowrap">
                             {r.customerName}
-                          </td>
-                          <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">
+                          </TableCell>
+                          <TableCell className="px-4 py-3 text-muted-foreground whitespace-nowrap">
                             {r.reason}
-                          </td>
-                          <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">
+                          </TableCell>
+                          <TableCell className="px-4 py-3 text-muted-foreground whitespace-nowrap">
                             {formatDate(r.date)}
-                          </td>
-                          <td className="px-4 py-3 whitespace-nowrap">
+                          </TableCell>
+                          <TableCell className="px-4 py-3 whitespace-nowrap">
                             <Badge
                               className={cn(
                                 r.status === "approved" &&
@@ -367,11 +368,11 @@ function SalesReturnsPage() {
                             >
                               {r.status}
                             </Badge>
-                          </td>
-                          <td className="number px-4 py-3 text-right font-semibold whitespace-nowrap">
+                          </TableCell>
+                          <TableCell className="px-4 py-3 text-right font-semibold whitespace-nowrap">
                             {formatCurrency(r.total)}
-                          </td>
-                          <td className="px-4 py-3 whitespace-nowrap">
+                          </TableCell>
+                          <TableCell className="px-4 py-3 whitespace-nowrap">
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
                                 <Button variant="ghost" size="icon">
@@ -387,11 +388,11 @@ function SalesReturnsPage() {
                                 </DropdownMenuItem>
                               </DropdownMenuContent>
                             </DropdownMenu>
-                          </td>
-                        </tr>
+                          </TableCell>
+                        </TableRow>
                       ))}
-                    </tbody>
-                  </table>
+                    </TableBody>
+                  </Table>
                 </div>
                 <PaginationControls
                   currentPage={page}

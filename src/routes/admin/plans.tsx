@@ -116,7 +116,7 @@ function SuperAdminPlansPage() {
               >
                 {plan.isTrialDefault && (
                   <div className="absolute -top-3 right-4">
-                    <Badge className="bg-amber-500 text-white font-bold gap-1">
+                    <Badge className="bg-warning text-warning-foreground font-bold gap-1">
                       <Sparkles className="size-3" /> Default Trial
                     </Badge>
                   </div>

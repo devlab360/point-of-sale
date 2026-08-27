@@ -8,6 +8,14 @@ import { getUnitsFn, createUnitFn, updateUnitFn, deleteUnitFn } from "@/api/unit
 import { getProductsFn } from "@/api/products";
 import { PersistStore } from "@/lib/session-store";
 import { Button } from "@/components/ui/button";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import {
   Dialog,
@@ -304,26 +312,26 @@ function UnitsPage() {
             <div className="overflow-hidden rounded-2xl border border-border/80 bg-card shadow-card">
               {/* Desktop Table View */}
               <div className="table-desktop overflow-x-auto">
-                <table className="w-full text-left text-sm min-w-[500px]">
-                  <thead className="border-b border-border/80 bg-muted/40 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
-                    <tr>
-                      <th className="px-5 py-3 whitespace-nowrap">Unit Name</th>
-                      <th className="px-5 py-3 whitespace-nowrap">Short Code</th>
-                      <th className="px-5 py-3 text-right whitespace-nowrap">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-border/60">
+                <Table className="min-w-[500px]">
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Unit Name</TableHead>
+                      <TableHead>Short Code</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
                     {paginatedUnits.map((u) => (
-                      <tr key={u.id} className="hover:bg-muted/30 transition-colors">
-                        <td className="px-5 py-3 font-bold text-foreground whitespace-nowrap">
+                      <TableRow key={u.id}>
+                        <TableCell className="font-bold text-foreground whitespace-nowrap">
                           {u.name}
-                        </td>
-                        <td className="px-5 py-3 font-mono text-xs text-muted-foreground whitespace-nowrap font-bold">
+                        </TableCell>
+                        <TableCell className="font-mono text-xs text-muted-foreground whitespace-nowrap font-bold">
                           <span className="rounded-md bg-muted px-2 py-0.5 border border-border/50">
                             {u.short}
                           </span>
-                        </td>
-                        <td className="px-5 py-3 text-right whitespace-nowrap">
+                        </TableCell>
+                        <TableCell className="text-right whitespace-nowrap">
                           <div className="flex justify-end gap-1">
                             <Button
                               variant="ghost"
@@ -342,11 +350,11 @@ function UnitsPage() {
                               <Trash2 className="size-4" />
                             </Button>
                           </div>
-                        </td>
-                      </tr>
+                        </TableCell>
+                      </TableRow>
                     ))}
-                  </tbody>
-                </table>
+                  </TableBody>
+                </Table>
               </div>
 
               {/* Mobile Cards View (< 768px) */}

@@ -17,6 +17,7 @@ import { useState, useMemo, useEffect } from "react";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PaginationControls } from "@/components/ui/pagination-controls";
 import { useDebounce } from "@/hooks/useDebounce";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { SearchableSelect } from "@/components/ui/searchable-select";
@@ -680,19 +681,19 @@ function TableView({
     <>
       {/* Desktop Table View (>= 768px) */}
       <div className="table-desktop overflow-x-auto">
-        <table className="w-full text-left text-sm min-w-[900px]">
-          <thead className="border-b border-border/80 bg-muted/40 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
-            <tr>
-              <th className="px-4 py-3 whitespace-nowrap">{t("product") || "Product"}</th>
-              <th className="px-4 py-3 whitespace-nowrap">{t("sku") || "SKU"}</th>
-              <th className="px-4 py-3 whitespace-nowrap">{t("category") || "Category"}</th>
-              <th className="px-4 py-3 text-right whitespace-nowrap">{t("price") || "Price"}</th>
-              <th className="px-4 py-3 text-right whitespace-nowrap">{t("stock") || "Stock"}</th>
-              <th className="px-4 py-3 whitespace-nowrap">{t("status") || "Status"}</th>
-              <th className="px-4 py-3 whitespace-nowrap text-right">Actions</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-border/60">
+        <Table className="min-w-[900px]">
+          <TableHeader>
+            <TableRow>
+              <TableHead className="px-4 py-3">{t("product") || "Product"}</TableHead>
+              <TableHead className="px-4 py-3">{t("sku") || "SKU"}</TableHead>
+              <TableHead className="px-4 py-3">{t("category") || "Category"}</TableHead>
+              <TableHead className="px-4 py-3 text-right">{t("price") || "Price"}</TableHead>
+              <TableHead className="px-4 py-3 text-right">{t("stock") || "Stock"}</TableHead>
+              <TableHead className="px-4 py-3">{t("status") || "Status"}</TableHead>
+              <TableHead className="px-4 py-3 text-right">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
             {products.map((p) => {
               const brandObj = brands.find((b) => b.id === p.brand);
               const catObj = categories.find((c) => c.id === p.category);
@@ -700,8 +701,8 @@ function TableView({
               const isLow = Number(p.stock) <= Number(p.reorderLevel);
 
               return (
-                <tr key={p.id} className="hover:bg-muted/30 transition-colors">
-                  <td className="px-4 py-3 whitespace-nowrap">
+                <TableRow key={p.id}>
+                  <TableCell className="px-4 py-3 whitespace-nowrap">
                     <div className="flex items-center gap-3">
                       <div className="grid size-11 shrink-0 place-items-center rounded-xl bg-muted/60 overflow-hidden border border-border/50">
                         {p.image ? (
@@ -722,14 +723,14 @@ function TableView({
                         </div>
                       </div>
                     </div>
-                  </td>
-                  <td className="px-4 py-3 font-mono text-xs text-muted-foreground whitespace-nowrap font-medium">
+                  </TableCell>
+                  <TableCell className="px-4 py-3 font-mono text-xs text-muted-foreground whitespace-nowrap font-medium">
                     {p.sku || "-"}
-                  </td>
-                  <td className="px-4 py-3 text-muted-foreground whitespace-nowrap text-xs font-medium">
+                  </TableCell>
+                  <TableCell className="px-4 py-3 text-muted-foreground whitespace-nowrap text-xs font-medium">
                     {catObj?.name || p.category || "-"}
-                  </td>
-                  <td className="number px-4 py-3 text-right whitespace-nowrap">
+                  </TableCell>
+                  <TableCell className="number px-4 py-3 text-right whitespace-nowrap">
                     <div className="font-extrabold text-foreground">{formatCurrency(p.price)}</div>
                     {(p.wholesalePrice > 0 || p.dealerPrice > 0) && (
                       <div className="flex flex-col items-end gap-0.5 text-[10px] text-muted-foreground mt-0.5">
@@ -745,8 +746,8 @@ function TableView({
                         )}
                       </div>
                     )}
-                  </td>
-                  <td className="px-4 py-3 text-right whitespace-nowrap">
+                  </TableCell>
+                  <TableCell className="px-4 py-3 text-right whitespace-nowrap">
                     <span
                       className={cn(
                         "number font-bold text-sm",
@@ -758,8 +759,8 @@ function TableView({
                     <span className="ml-1 text-xs text-muted-foreground">
                       {unitObj?.name || p.unit || "units"}
                     </span>
-                  </td>
-                  <td className="px-4 py-3 whitespace-nowrap">
+                  </TableCell>
+                  <TableCell className="px-4 py-3 whitespace-nowrap">
                     <div className="flex flex-wrap gap-1 items-center">
                       {isLow ? (
                         <Badge variant="destructive" className="text-[10px] font-bold">
@@ -781,8 +782,8 @@ function TableView({
                         </span>
                       )}
                     </div>
-                  </td>
-                  <td className="px-4 py-3 text-right whitespace-nowrap">
+                  </TableCell>
+                  <TableCell className="px-4 py-3 text-right whitespace-nowrap">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button variant="ghost" size="icon" className="size-8 rounded-lg">
@@ -810,12 +811,12 @@ function TableView({
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               );
             })}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
       </div>
 
       {/* Mobile Card Feed (< 768px) */}

@@ -8,6 +8,14 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useDebounce } from "@/hooks/useDebounce";
 import { Badge } from "@/components/ui/badge";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { StatCard } from "@/components/layout/StatCard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -340,41 +348,35 @@ function ExpensesPage() {
             <div className="overflow-hidden rounded-2xl border border-border/80 bg-card shadow-card">
               {/* Desktop Table View */}
               <div className="table-desktop overflow-x-auto">
-                <table className="w-full text-left text-sm min-w-[700px]">
-                  <thead className="border-b border-border/80 bg-muted/40 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
-                    <tr>
-                      <th className="px-5 py-3 whitespace-nowrap">{t("date") || "Date"}</th>
-                      <th className="px-5 py-3 whitespace-nowrap">{t("category") || "Category"}</th>
-                      <th className="px-5 py-3 whitespace-nowrap">
-                        {t("description") || "Expense Description"}
-                      </th>
-                      <th className="px-5 py-3 whitespace-nowrap">{t("status") || "Status"}</th>
-                      <th className="px-5 py-3 text-right whitespace-nowrap">
-                        {t("amount") || "Amount"}
-                      </th>
-                      <th className="px-5 py-3 text-right whitespace-nowrap">
-                        {t("actions") || "Actions"}
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-border/60">
+                <Table className="min-w-[700px]">
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>{t("date") || "Date"}</TableHead>
+                      <TableHead>{t("category") || "Category"}</TableHead>
+                      <TableHead>{t("description") || "Expense Description"}</TableHead>
+                      <TableHead>{t("status") || "Status"}</TableHead>
+                      <TableHead className="text-right">{t("amount") || "Amount"}</TableHead>
+                      <TableHead className="text-right">{t("actions") || "Actions"}</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
                     {paginatedExpenses.map((e) => (
-                      <tr key={e.id} className="hover:bg-muted/30 transition-colors">
-                        <td className="px-5 py-3 text-muted-foreground whitespace-nowrap text-xs font-medium">
+                      <TableRow key={e.id}>
+                        <TableCell className="text-muted-foreground whitespace-nowrap text-xs font-medium">
                           {formatDate(e.date)}
-                        </td>
-                        <td className="px-5 py-3 whitespace-nowrap">
+                        </TableCell>
+                        <TableCell className="whitespace-nowrap">
                           <Badge
                             variant="outline"
                             className="text-[10px] font-bold bg-muted/40 border-border/80"
                           >
                             {e.category}
                           </Badge>
-                        </td>
-                        <td className="px-5 py-3 font-bold text-foreground whitespace-nowrap">
+                        </TableCell>
+                        <TableCell className="font-bold text-foreground whitespace-nowrap">
                           {e.description}
-                        </td>
-                        <td className="px-5 py-3 whitespace-nowrap">
+                        </TableCell>
+                        <TableCell className="whitespace-nowrap">
                           <Badge
                             className={cn(
                               "text-[10px] font-bold",
@@ -385,11 +387,11 @@ function ExpensesPage() {
                           >
                             {e.status}
                           </Badge>
-                        </td>
-                        <td className="number px-5 py-3 text-right font-black text-foreground whitespace-nowrap text-sm">
+                        </TableCell>
+                        <TableCell className="number text-right font-black text-foreground whitespace-nowrap text-sm">
                           {formatCurrency(e.amount)}
-                        </td>
-                        <td className="px-5 py-3 text-right whitespace-nowrap">
+                        </TableCell>
+                        <TableCell className="text-right whitespace-nowrap">
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                               <Button variant="ghost" size="icon" className="size-8 rounded-lg">
@@ -415,11 +417,11 @@ function ExpensesPage() {
                               </DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
-                        </td>
-                      </tr>
+                        </TableCell>
+                      </TableRow>
                     ))}
-                  </tbody>
-                </table>
+                  </TableBody>
+                </Table>
               </div>
 
               {/* Mobile Card Feed (< 768px) */}

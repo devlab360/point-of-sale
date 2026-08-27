@@ -23,6 +23,7 @@ import { PaginationControls } from "@/components/ui/pagination-controls";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { useDebounce } from "@/hooks/useDebounce";
 import { Label } from "@/components/ui/label";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 export const Route = createFileRoute("/sales/")({
   head: () => ({ meta: [{ title: "Sales · OneDesk360" }] }),
@@ -272,7 +273,7 @@ function SalesPage() {
                 <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
                   Cash Revenue
                 </span>
-                <span className="text-xl sm:text-2xl font-black text-emerald-600 dark:text-emerald-400">
+                <span className="text-xl sm:text-2xl font-black text-success">
                   {formatCurrency(summaries.cash)}
                 </span>
               </div>
@@ -280,7 +281,7 @@ function SalesPage() {
                 <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
                   Card Revenue
                 </span>
-                <span className="text-xl sm:text-2xl font-black text-blue-600 dark:text-blue-400">
+                <span className="text-xl sm:text-2xl font-black text-info">
                   {formatCurrency(summaries.card)}
                 </span>
               </div>
@@ -288,7 +289,7 @@ function SalesPage() {
                 <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
                   UPI / Digital
                 </span>
-                <span className="text-xl sm:text-2xl font-black text-indigo-600 dark:text-indigo-400">
+                <span className="text-xl sm:text-2xl font-black text-primary">
                   {formatCurrency(summaries.upi)}
                 </span>
               </div>
@@ -296,7 +297,7 @@ function SalesPage() {
                 <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
                   Credit (Due)
                 </span>
-                <span className="text-xl sm:text-2xl font-black text-amber-600 dark:text-amber-400">
+                <span className="text-xl sm:text-2xl font-black text-warning">
                   {formatCurrency(summaries.credit)}
                 </span>
               </div>
@@ -305,43 +306,43 @@ function SalesPage() {
             <div className="overflow-hidden rounded-2xl border border-border/80 bg-card shadow-card">
               {/* Desktop Table View */}
               <div className="table-desktop overflow-x-auto">
-                <table className="w-full text-left text-sm min-w-[850px]">
-                  <thead className="border-b border-border/80 bg-muted/40 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
-                    <tr>
-                      <th className="px-5 py-3 whitespace-nowrap">{t("invoice") || "Invoice"}</th>
-                      <th className="px-5 py-3 whitespace-nowrap">{t("customer") || "Customer"}</th>
-                      <th className="px-5 py-3 whitespace-nowrap">{t("date") || "Timestamp"}</th>
-                      <th className="px-5 py-3 text-right whitespace-nowrap">
+                <Table className="min-w-[850px]">
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>{t("invoice") || "Invoice"}</TableHead>
+                      <TableHead>{t("customer") || "Customer"}</TableHead>
+                      <TableHead>{t("date") || "Timestamp"}</TableHead>
+                      <TableHead className="text-right">
                         {t("items") || "Items"}
-                      </th>
-                      <th className="px-5 py-3 whitespace-nowrap">{t("payment") || "Payment"}</th>
-                      <th className="px-5 py-3 whitespace-nowrap">{t("sync") || "Sync"}</th>
-                      <th className="px-5 py-3 whitespace-nowrap">{t("status") || "Status"}</th>
-                      <th className="px-5 py-3 text-right whitespace-nowrap">
+                      </TableHead>
+                      <TableHead>{t("payment") || "Payment"}</TableHead>
+                      <TableHead>{t("sync") || "Sync"}</TableHead>
+                      <TableHead>{t("status") || "Status"}</TableHead>
+                      <TableHead className="text-right">
                         {t("total") || "Total"}
-                      </th>
-                      <th className="px-5 py-3 text-right whitespace-nowrap">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-border/60">
+                      </TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
                     {sales.map((s) => (
-                      <tr key={s.id} className="hover:bg-muted/30 transition-colors">
-                        <td
-                          className="px-5 py-3 font-mono text-xs font-bold text-primary whitespace-nowrap cursor-pointer hover:underline"
+                      <TableRow key={s.id}>
+                        <TableCell
+                          className="font-mono text-xs font-bold text-primary cursor-pointer hover:underline"
                           onClick={() => setViewSale(s)}
                         >
                           #{s.id.slice(0, 8).toUpperCase()}
-                        </td>
-                        <td className="px-5 py-3 font-bold text-foreground whitespace-nowrap">
+                        </TableCell>
+                        <TableCell className="font-bold text-foreground">
                           {s.customerName || "Walk-in Customer"}
-                        </td>
-                        <td className="px-5 py-3 text-muted-foreground whitespace-nowrap text-xs">
+                        </TableCell>
+                        <TableCell className="text-muted-foreground text-xs">
                           {formatDateTime(s.date)}
-                        </td>
-                        <td className="px-5 py-3 text-right whitespace-nowrap text-xs font-semibold text-muted-foreground">
+                        </TableCell>
+                        <TableCell className="text-right text-xs font-semibold text-muted-foreground">
                           {s.items}
-                        </td>
-                        <td className="px-5 py-3 text-muted-foreground capitalize whitespace-nowrap">
+                        </TableCell>
+                        <TableCell className="text-muted-foreground capitalize">
                           {s.paymentMethod === "split" && s.payments && s.payments.length > 0 ? (
                             <div className="flex flex-col gap-0.5 text-[10px]">
                               <span className="font-bold text-primary">SPLIT</span>
@@ -359,8 +360,8 @@ function SalesPage() {
                               {s.paymentMethod || "cash"}
                             </Badge>
                           )}
-                        </td>
-                        <td className="px-5 py-3 whitespace-nowrap">
+                        </TableCell>
+                        <TableCell>
                           <Badge
                             variant="outline"
                             className={cn(
@@ -372,8 +373,8 @@ function SalesPage() {
                           >
                             {s.synced ? "Synced" : "Pending"}
                           </Badge>
-                        </td>
-                        <td className="px-5 py-3 whitespace-nowrap">
+                        </TableCell>
+                        <TableCell>
                           <Badge
                             className={cn(
                               "text-[10px] font-bold",
@@ -386,11 +387,11 @@ function SalesPage() {
                           >
                             {s.status}
                           </Badge>
-                        </td>
-                        <td className="number px-5 py-3 text-right font-black whitespace-nowrap text-foreground text-sm">
+                        </TableCell>
+                        <TableCell className="text-right font-black text-foreground text-sm">
                           {formatCurrency(s.total)}
-                        </td>
-                        <td className="px-5 py-3 whitespace-nowrap text-right">
+                        </TableCell>
+                        <TableCell className="text-right">
                           <div className="flex justify-end gap-1">
                             <Button
                               variant="ghost"
@@ -411,11 +412,11 @@ function SalesPage() {
                               <Printer className="size-4" />
                             </Button>
                           </div>
-                        </td>
-                      </tr>
+                        </TableCell>
+                      </TableRow>
                     ))}
-                  </tbody>
-                </table>
+                  </TableBody>
+                </Table>
               </div>
 
               {/* Mobile Card Feed (< 768px) */}
@@ -529,30 +530,30 @@ function SalesPage() {
                 </div>
               </div>
               <div className="rounded-lg border border-border overflow-x-auto">
-                <table className="w-full text-sm min-w-[400px]">
-                  <thead className="bg-muted/50 text-[11px] uppercase tracking-wider text-muted-foreground">
-                    <tr>
-                      <th className="px-3 py-2 text-left whitespace-nowrap">Item</th>
-                      <th className="px-3 py-2 text-right whitespace-nowrap">Qty</th>
-                      <th className="px-3 py-2 text-right whitespace-nowrap">Price</th>
-                      <th className="px-3 py-2 text-right whitespace-nowrap">Total</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-border">
+                <Table className="min-w-[400px]">
+                  <TableHeader className="bg-muted/50 text-[11px] uppercase tracking-wider text-muted-foreground">
+                    <TableRow>
+                      <TableHead className="px-3 py-2 whitespace-nowrap text-left">Item</TableHead>
+                      <TableHead className="px-3 py-2 whitespace-nowrap text-right">Qty</TableHead>
+                      <TableHead className="px-3 py-2 whitespace-nowrap text-right">Price</TableHead>
+                      <TableHead className="px-3 py-2 whitespace-nowrap text-right">Total</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody className="divide-y divide-border">
                     {viewSale.saleItems?.map((item, i) => (
-                      <tr key={i}>
-                        <td className="px-3 py-2 whitespace-nowrap">{item.productName}</td>
-                        <td className="px-3 py-2 text-right whitespace-nowrap">{item.quantity}</td>
-                        <td className="px-3 py-2 text-right whitespace-nowrap">
+                      <TableRow key={i}>
+                        <TableCell className="px-3 py-2 whitespace-nowrap">{item.productName}</TableCell>
+                        <TableCell className="px-3 py-2 whitespace-nowrap text-right">{item.quantity}</TableCell>
+                        <TableCell className="px-3 py-2 whitespace-nowrap text-right">
                           {formatCurrency(item.price)}
-                        </td>
-                        <td className="px-3 py-2 text-right font-semibold whitespace-nowrap">
+                        </TableCell>
+                        <TableCell className="px-3 py-2 whitespace-nowrap text-right font-semibold">
                           {formatCurrency(item.total)}
-                        </td>
-                      </tr>
+                        </TableCell>
+                      </TableRow>
                     ))}
-                  </tbody>
-                </table>
+                  </TableBody>
+                </Table>
               </div>
               <div className="space-y-1 rounded-lg bg-muted/40 p-3 text-sm">
                 {viewSale.subtotal !== undefined && (

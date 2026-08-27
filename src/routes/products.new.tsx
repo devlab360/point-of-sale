@@ -90,7 +90,7 @@ function NewProductPage() {
   });
 
   return (
-    <div className="container mx-auto">
+    <div>
       <ProductForm
         onSubmit={(data) => createMutation.mutate(data)}
         isSaving={createMutation.isPending}

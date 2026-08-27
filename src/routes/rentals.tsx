@@ -13,6 +13,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
   Dialog,
   DialogContent,
   DialogHeader,
@@ -225,41 +233,41 @@ function RentalsPage() {
             <div className="overflow-hidden rounded-2xl border border-border/80 bg-card shadow-card">
               {/* Desktop Table */}
               <div className="table-desktop overflow-x-auto hidden md:block">
-                <table className="w-full text-left text-sm min-w-[900px]">
-                  <thead className="border-b border-border/80 bg-muted/40 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                <Table className="min-w-[900px]">
+                  <TableHeader>
                     <tr>
-                      <th className="px-5 py-3 whitespace-nowrap">Rental #</th>
-                      <th className="px-5 py-3 whitespace-nowrap">Customer</th>
-                      <th className="px-5 py-3 whitespace-nowrap">Rented Asset</th>
-                      <th className="px-5 py-3 text-right whitespace-nowrap">Daily Rate</th>
-                      <th className="px-5 py-3 text-right whitespace-nowrap">Deposit</th>
-                      <th className="px-5 py-3 whitespace-nowrap">Return Due</th>
-                      <th className="px-5 py-3 whitespace-nowrap">Status</th>
-                      <th className="px-5 py-3 text-right whitespace-nowrap">Actions</th>
+                      <TableHead>Rental #</TableHead>
+                      <TableHead>Customer</TableHead>
+                      <TableHead>Rented Asset</TableHead>
+                      <TableHead className="text-right">Daily Rate</TableHead>
+                      <TableHead className="text-right">Deposit</TableHead>
+                      <TableHead>Return Due</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
                     </tr>
-                  </thead>
-                  <tbody className="divide-y divide-border/60">
+                  </TableHeader>
+                  <TableBody>
                     {paginated.map((r) => (
-                      <tr key={r.id} className="hover:bg-muted/30 transition-colors">
-                        <td className="px-5 py-3 font-mono font-bold text-primary whitespace-nowrap">
+                      <TableRow key={r.id}>
+                        <TableCell className="font-mono font-bold text-primary whitespace-nowrap">
                           {r.rentalNo}
-                        </td>
-                        <td className="px-5 py-3 font-bold text-foreground whitespace-nowrap text-xs sm:text-sm">
+                        </TableCell>
+                        <TableCell className="font-bold text-foreground whitespace-nowrap text-xs sm:text-sm">
                           {r.customerName}
-                        </td>
-                        <td className="px-5 py-3 font-medium text-foreground whitespace-nowrap text-xs">
+                        </TableCell>
+                        <TableCell className="font-medium text-foreground whitespace-nowrap text-xs">
                           {r.itemName}
-                        </td>
-                        <td className="number px-5 py-3 text-right font-black text-foreground whitespace-nowrap text-sm">
+                        </TableCell>
+                        <TableCell className="number text-right font-black text-foreground whitespace-nowrap text-sm">
                           {formatCurrency(r.dailyRate)}/day
-                        </td>
-                        <td className="number px-5 py-3 text-right font-black text-warning-foreground whitespace-nowrap text-xs">
+                        </TableCell>
+                        <TableCell className="number text-right font-black text-warning-foreground whitespace-nowrap text-xs">
                           {formatCurrency(r.securityDeposit)}
-                        </td>
-                        <td className="px-5 py-3 text-xs text-muted-foreground whitespace-nowrap font-medium">
+                        </TableCell>
+                        <TableCell className="text-xs text-muted-foreground whitespace-nowrap font-medium">
                           {r.expectedReturnDate ? formatAppDate(r.expectedReturnDate) : "-"}
-                        </td>
-                        <td className="px-5 py-3 whitespace-nowrap">
+                        </TableCell>
+                        <TableCell className="whitespace-nowrap">
                           {r.status === "returned" ? (
                             <Badge className="bg-success/12 text-success border-success/25 text-[10px] font-bold">
                               Returned
@@ -269,8 +277,8 @@ function RentalsPage() {
                               Active Rented
                             </Badge>
                           )}
-                        </td>
-                        <td className="px-5 py-3 text-right whitespace-nowrap">
+                        </TableCell>
+                        <TableCell className="text-right whitespace-nowrap">
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                               <Button variant="ghost" size="icon" className="size-8 rounded-lg">
@@ -293,12 +301,12 @@ function RentalsPage() {
                                 <Trash2 className="mr-2 size-3.5" /> Delete Booking
                               </DropdownMenuItem>
                             </DropdownMenuContent>
-                          </DropdownMenu>
-                        </td>
-                      </tr>
+                            </DropdownMenu>
+                        </TableCell>
+                      </TableRow>
                     ))}
-                  </tbody>
-                </table>
+                  </TableBody>
+                </Table>
               </div>
 
               {/* Mobile Card Feed (< 768px) */}

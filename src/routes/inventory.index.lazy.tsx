@@ -19,6 +19,14 @@ import { SearchableSelect } from "@/components/ui/searchable-select";
 import { PaginationControls } from "@/components/ui/pagination-controls";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Label } from "@/components/ui/label";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useCurrency } from "@/lib/currency";
 
@@ -280,28 +288,28 @@ function StockList() {
           <div className="overflow-hidden rounded-2xl border border-border/80 bg-card shadow-card">
             {/* Desktop Table (>= 768px) */}
             <div className="table-desktop overflow-x-auto">
-              <table className="w-full text-left text-sm min-w-[800px]">
-                <thead className="border-b border-border/80 bg-muted/40 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
-                  <tr>
-                    <th className="px-5 py-3 whitespace-nowrap">Product</th>
-                    <th className="px-5 py-3 whitespace-nowrap">SKU</th>
-                    <th className="px-5 py-3 text-right whitespace-nowrap">Stock on Hand</th>
-                    <th className="px-5 py-3 text-right whitespace-nowrap">Reorder Point</th>
-                    <th className="px-5 py-3 text-right whitespace-nowrap">Stock Value</th>
-                    <th className="px-5 py-3 whitespace-nowrap">Health Status</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border/60">
+              <Table className="min-w-[800px]">
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Product</TableHead>
+                    <TableHead>SKU</TableHead>
+                    <TableHead className="text-right">Stock on Hand</TableHead>
+                    <TableHead className="text-right">Reorder Point</TableHead>
+                    <TableHead className="text-right">Stock Value</TableHead>
+                    <TableHead>Health Status</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
                   {paginatedProducts.map((p) => {
                     const low = Number(p.stock) <= Number(p.reorderLevel);
                     const out = p.stock <= 0;
                     return (
-                      <tr
+                      <TableRow
                         key={p.id}
-                        className="hover:bg-muted/30 cursor-pointer transition-colors"
+                        className="cursor-pointer"
                         onClick={() => router.navigate({ to: "/products", search: { edit: p.id } })}
                       >
-                        <td className="px-5 py-3 whitespace-nowrap">
+                        <TableCell className="whitespace-nowrap">
                           <div className="flex items-center gap-3">
                             <div className="grid size-10 shrink-0 place-items-center rounded-xl bg-muted/60 overflow-hidden border border-border/50">
                               {p.image ? (
@@ -314,13 +322,13 @@ function StockList() {
                               {p.name}
                             </span>
                           </div>
-                        </td>
-                        <td className="px-5 py-3 font-mono text-xs text-muted-foreground whitespace-nowrap font-medium">
+                        </TableCell>
+                        <TableCell className="font-mono text-xs text-muted-foreground whitespace-nowrap font-medium">
                           {p.sku}
-                        </td>
-                        <td
+                        </TableCell>
+                        <TableCell
                           className={cn(
-                            "number px-5 py-3 text-right font-bold whitespace-nowrap text-sm",
+                            "number text-right font-bold whitespace-nowrap text-sm",
                             low ? "text-destructive" : "text-foreground",
                           )}
                         >
@@ -328,14 +336,14 @@ function StockList() {
                           <span className="text-xs font-normal text-muted-foreground">
                             {units.find((u) => u.id === p.unit)?.name || p.unit || "units"}
                           </span>
-                        </td>
-                        <td className="px-5 py-3 text-right text-muted-foreground whitespace-nowrap font-medium text-xs">
+                        </TableCell>
+                        <TableCell className="text-right text-muted-foreground whitespace-nowrap font-medium text-xs">
                           {p.reorderLevel}
-                        </td>
-                        <td className="number px-5 py-3 text-right whitespace-nowrap font-bold text-foreground">
+                        </TableCell>
+                        <TableCell className="number text-right whitespace-nowrap font-bold text-foreground">
                           {formatCurrency(p.stock * p.cost)}
-                        </td>
-                        <td className="px-5 py-3 whitespace-nowrap">
+                        </TableCell>
+                        <TableCell className="whitespace-nowrap">
                           <div className="flex gap-1.5 flex-wrap items-center">
                             {isExpired(p.expiryDate) && (
                               <Badge variant="destructive" className="text-[10px] font-bold">
@@ -361,12 +369,12 @@ function StockList() {
                               </Badge>
                             )}
                           </div>
-                        </td>
-                      </tr>
+                        </TableCell>
+                      </TableRow>
                     );
                   })}
-                </tbody>
-              </table>
+                </TableBody>
+              </Table>
             </div>
 
             {/* Mobile Card Feed (< 768px) */}

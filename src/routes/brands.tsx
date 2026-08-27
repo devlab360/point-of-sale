@@ -9,6 +9,7 @@ import { getBrandsFn, createBrandFn, updateBrandFn, deleteBrandFn } from "@/api/
 import { getProductsFn } from "@/api/products";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import {
   Dialog,
@@ -279,35 +280,35 @@ function BrandsPage() {
             <div className="overflow-hidden rounded-2xl border border-border/80 bg-card shadow-card">
               {/* Desktop Table View */}
               <div className="table-desktop overflow-x-auto">
-                <table className="w-full text-left text-sm min-w-[600px]">
-                  <thead className="border-b border-border/80 bg-muted/40 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
-                    <tr>
-                      <th className="px-5 py-3 whitespace-nowrap">Brand</th>
-                      <th className="px-5 py-3 whitespace-nowrap">Associated Products</th>
-                      <th className="px-5 py-3 whitespace-nowrap">Status</th>
-                      <th className="px-5 py-3 text-right whitespace-nowrap">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-border/60">
+                <Table className="min-w-[600px]">
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Brand</TableHead>
+                      <TableHead>Associated Products</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
                     {paginatedBrands.map((b) => (
-                      <tr key={b.id} className="hover:bg-muted/30 transition-colors">
-                        <td className="px-5 py-3 whitespace-nowrap">
+                      <TableRow key={b.id}>
+                        <TableCell className="whitespace-nowrap">
                           <div className="flex items-center gap-3">
                             <div className="grid size-10 place-items-center rounded-xl bg-primary/10 text-xs font-black text-primary border border-primary/20">
                               {b.name.slice(0, 2).toUpperCase()}
                             </div>
                             <span className="font-bold text-foreground">{b.name}</span>
                           </div>
-                        </td>
-                        <td className="px-5 py-3 text-muted-foreground whitespace-nowrap text-xs font-semibold">
+                        </TableCell>
+                        <TableCell className="text-muted-foreground whitespace-nowrap text-xs font-semibold">
                           {b.products || 0} SKUs
-                        </td>
-                        <td className="px-5 py-3 whitespace-nowrap">
+                        </TableCell>
+                        <TableCell className="whitespace-nowrap">
                           <Badge className="bg-success/12 text-success hover:bg-success/20 border-success/20 text-[10px] font-bold">
                             Active
                           </Badge>
-                        </td>
-                        <td className="px-5 py-3 text-right whitespace-nowrap">
+                        </TableCell>
+                        <TableCell className="text-right whitespace-nowrap">
                           <div className="flex justify-end gap-1">
                             <Button
                               variant="ghost"
@@ -326,11 +327,11 @@ function BrandsPage() {
                               <Trash2 className="size-4" />
                             </Button>
                           </div>
-                        </td>
-                      </tr>
+                        </TableCell>
+                      </TableRow>
                     ))}
-                  </tbody>
-                </table>
+                  </TableBody>
+                </Table>
               </div>
 
               {/* Mobile Cards View (< 768px) */}

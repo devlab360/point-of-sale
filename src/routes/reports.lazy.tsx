@@ -2,6 +2,7 @@ import { createLazyFileRoute } from "@tanstack/react-router";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { StatCard } from "@/components/layout/StatCard";
 import { Button } from "@/components/ui/button";
+import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { DatePicker } from "@/components/ui/date-picker";
 import { PersistStore } from "@/lib/session-store";
 import { useQuery } from "@tanstack/react-query";
@@ -500,8 +501,8 @@ function ReportsPage() {
               <span className="flex items-center gap-1.5 text-primary">
                 <span className="size-2.5 rounded-full bg-primary" /> Revenue
               </span>
-              <span className="flex items-center gap-1.5 text-emerald-500">
-                <span className="size-2.5 rounded-full bg-emerald-500" /> Profit
+              <span className="flex items-center gap-1.5 text-success">
+                <span className="size-2.5 rounded-full bg-success" /> Profit
               </span>
             </div>
           </div>
@@ -795,55 +796,55 @@ function ReportsPage() {
                   </div>
                 </div>
                 <div className="overflow-x-auto rounded-lg border border-border max-h-64 shadow-soft">
-                  <table className="w-full text-sm min-w-[500px]">
-                    <thead className="bg-muted z-10 text-[11px] uppercase tracking-wider text-muted-foreground sticky top-0 shadow-sm">
-                      <tr>
-                        <th className="px-3 py-2 text-left whitespace-nowrap">Invoice</th>
-                        <th className="px-3 py-2 text-left whitespace-nowrap">Customer</th>
-                        <th className="px-3 py-2 text-left whitespace-nowrap">Date</th>
-                        <th className="px-3 py-2 text-right whitespace-nowrap">Total</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-border">
+                  <Table className="min-w-[500px]">
+                    <TableHeader className="bg-muted z-10 text-[11px] uppercase tracking-wider text-muted-foreground sticky top-0 shadow-sm">
+                      <TableRow>
+                        <TableHead className="px-3 py-2 text-left whitespace-nowrap">Invoice</TableHead>
+                        <TableHead className="px-3 py-2 text-left whitespace-nowrap">Customer</TableHead>
+                        <TableHead className="px-3 py-2 text-left whitespace-nowrap">Date</TableHead>
+                        <TableHead className="px-3 py-2 text-right whitespace-nowrap">Total</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody className="divide-y divide-border">
                       {sales.slice(0, 20).map((s) => (
-                        <tr key={s.id} className="hover:bg-muted/30">
-                          <td className="px-3 py-2 font-mono text-xs whitespace-nowrap">
+                        <TableRow key={s.id} className="hover:bg-muted/30">
+                          <TableCell className="px-3 py-2 font-mono text-xs whitespace-nowrap">
                             {s.id.slice(0, 8).toUpperCase()}
-                          </td>
-                          <td className="px-3 py-2 whitespace-nowrap">
+                          </TableCell>
+                          <TableCell className="px-3 py-2 whitespace-nowrap">
                             {s.customerName || "Walk-in"}
-                          </td>
-                          <td className="px-3 py-2 text-muted-foreground whitespace-nowrap">
+                          </TableCell>
+                          <TableCell className="px-3 py-2 text-muted-foreground whitespace-nowrap">
                             {formatDate(s.date)}
-                          </td>
-                          <td className="px-3 py-2 text-right font-semibold whitespace-nowrap">
+                          </TableCell>
+                          <TableCell className="px-3 py-2 text-right font-semibold whitespace-nowrap">
                             {formatCurrency(s.total)}
-                          </td>
-                        </tr>
+                          </TableCell>
+                        </TableRow>
                       ))}
-                    </tbody>
-                  </table>
+                    </TableBody>
+                  </Table>
                 </div>
               </div>
             )}
             {activeReport === "salesman" && (
               <div className="space-y-3">
                 <div className="overflow-x-auto rounded-lg border border-border shadow-soft">
-                  <table className="w-full text-sm min-w-[700px]">
-                    <thead className="bg-muted z-10 text-[11px] uppercase tracking-wider text-muted-foreground sticky top-0 shadow-sm">
-                      <tr>
-                        <th className="px-3 py-2 text-left whitespace-nowrap">
+                  <Table className="min-w-[700px]">
+                    <TableHeader className="bg-muted z-10 text-[11px] uppercase tracking-wider text-muted-foreground sticky top-0 shadow-sm">
+                      <TableRow>
+                        <TableHead className="px-3 py-2 text-left whitespace-nowrap">
                           Sales Representative
-                        </th>
-                        <th className="px-3 py-2 text-center whitespace-nowrap">Comm. Rate</th>
-                        <th className="px-3 py-2 text-right whitespace-nowrap">Target</th>
-                        <th className="px-3 py-2 text-right whitespace-nowrap">Achieved Sales</th>
-                        <th className="px-3 py-2 text-right whitespace-nowrap">
+                        </TableHead>
+                        <TableHead className="px-3 py-2 text-center whitespace-nowrap">Comm. Rate</TableHead>
+                        <TableHead className="px-3 py-2 text-right whitespace-nowrap">Target</TableHead>
+                        <TableHead className="px-3 py-2 text-right whitespace-nowrap">Achieved Sales</TableHead>
+                        <TableHead className="px-3 py-2 text-right whitespace-nowrap">
                           Earned Commission
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-border">
+                        </TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody className="divide-y divide-border">
                       {sales.reduce(
                         (reps, sale) => {
                           if (sale.salesmanName) {
@@ -863,15 +864,15 @@ function ReportsPage() {
                         },
                         [] as { name: string; sales: number; commission: number }[],
                       ).length === 0 ? (
-                        <tr>
-                          <td
+                        <TableRow>
+                          <TableCell
                             colSpan={5}
                             className="py-6 text-center text-xs text-muted-foreground"
                           >
                             No salesman sales recorded yet. Select a Sales Rep at POS checkout to
                             track commissions.
-                          </td>
-                        </tr>
+                          </TableCell>
+                        </TableRow>
                       ) : (
                         sales
                           .reduce(
@@ -894,64 +895,64 @@ function ReportsPage() {
                             [] as { name: string; sales: number; commission: number }[],
                           )
                           .map((r, i) => (
-                            <tr key={i} className="hover:bg-muted/30">
-                              <td className="px-3 py-2 font-semibold text-primary whitespace-nowrap">
+                            <TableRow key={i} className="hover:bg-muted/30">
+                              <TableCell className="px-3 py-2 font-semibold text-primary whitespace-nowrap">
                                 {r.name}
-                              </td>
-                              <td className="px-3 py-2 text-center text-xs font-mono whitespace-nowrap">
+                              </TableCell>
+                              <TableCell className="px-3 py-2 text-center text-xs font-mono whitespace-nowrap">
                                 2.5%
-                              </td>
-                              <td className="px-3 py-2 text-right text-xs font-mono whitespace-nowrap">
+                              </TableCell>
+                              <TableCell className="px-3 py-2 text-right text-xs font-mono whitespace-nowrap">
                                 {formatCurrency(10000)}
-                              </td>
-                              <td className="px-3 py-2 text-right font-bold whitespace-nowrap">
+                              </TableCell>
+                              <TableCell className="px-3 py-2 text-right font-bold whitespace-nowrap">
                                 {formatCurrency(r.sales)}
-                              </td>
-                              <td className="px-3 py-2 text-right font-bold text-success whitespace-nowrap">
+                              </TableCell>
+                              <TableCell className="px-3 py-2 text-right font-bold text-success whitespace-nowrap">
                                 {formatCurrency(r.commission)}
-                              </td>
-                            </tr>
+                              </TableCell>
+                            </TableRow>
                           ))
                       )}
-                    </tbody>
-                  </table>
+                    </TableBody>
+                  </Table>
                 </div>
               </div>
             )}
 
             {activeReport === "inventory" && (
               <div className="overflow-x-auto rounded-lg border border-border max-h-72 shadow-soft">
-                <table className="w-full text-sm min-w-[500px]">
-                  <thead className="bg-muted z-10 text-[11px] uppercase tracking-wider text-muted-foreground sticky top-0 shadow-sm">
-                    <tr>
-                      <th className="px-3 py-2 text-left whitespace-nowrap">Product</th>
-                      <th className="px-3 py-2 text-right whitespace-nowrap">Stock</th>
-                      <th className="px-3 py-2 text-right whitespace-nowrap">Reorder</th>
-                      <th className="px-3 py-2 text-right whitespace-nowrap">Value</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-border">
+                <Table className="min-w-[500px]">
+                  <TableHeader className="bg-muted z-10 text-[11px] uppercase tracking-wider text-muted-foreground sticky top-0 shadow-sm">
+                    <TableRow>
+                      <TableHead className="px-3 py-2 text-left whitespace-nowrap">Product</TableHead>
+                      <TableHead className="px-3 py-2 text-right whitespace-nowrap">Stock</TableHead>
+                      <TableHead className="px-3 py-2 text-right whitespace-nowrap">Reorder</TableHead>
+                      <TableHead className="px-3 py-2 text-right whitespace-nowrap">Value</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody className="divide-y divide-border">
                     {products.map((p) => (
-                      <tr key={p.id} className="hover:bg-muted/30">
-                        <td className="px-3 py-2 whitespace-nowrap">{p.name}</td>
-                        <td className="px-3 py-2 text-right whitespace-nowrap">{p.stock}</td>
-                        <td className="px-3 py-2 text-right whitespace-nowrap">{p.reorderLevel}</td>
-                        <td className="px-3 py-2 text-right font-semibold whitespace-nowrap">
+                      <TableRow key={p.id} className="hover:bg-muted/30">
+                        <TableCell className="px-3 py-2 whitespace-nowrap">{p.name}</TableCell>
+                        <TableCell className="px-3 py-2 text-right whitespace-nowrap">{p.stock}</TableCell>
+                        <TableCell className="px-3 py-2 text-right whitespace-nowrap">{p.reorderLevel}</TableCell>
+                        <TableCell className="px-3 py-2 text-right font-semibold whitespace-nowrap">
                           {formatCurrency(p.stock * p.cost)}
-                        </td>
-                      </tr>
+                        </TableCell>
+                      </TableRow>
                     ))}
-                  </tbody>
-                  <tfoot className="border-t border-border bg-muted/30">
-                    <tr>
-                      <td className="px-3 py-2 font-bold">Total</td>
-                      <td colSpan={2}></td>
-                      <td className="px-3 py-2 text-right font-bold">
+                  </TableBody>
+                  <TableFooter className="border-t border-border bg-muted/30">
+                    <TableRow>
+                      <TableCell className="px-3 py-2 font-bold">Total</TableCell>
+                      <TableCell colSpan={2}></TableCell>
+                      <TableCell className="px-3 py-2 text-right font-bold">
                         {formatCurrency(stockValue)}
-                      </td>
-                    </tr>
-                  </tfoot>
-                </table>
+                      </TableCell>
+                    </TableRow>
+                  </TableFooter>
+                </Table>
               </div>
             )}
 
@@ -964,30 +965,30 @@ function ReportsPage() {
                   </span>
                 </div>
                 <div className="overflow-x-auto rounded-lg border border-border max-h-64 shadow-soft">
-                  <table className="w-full text-sm min-w-[500px]">
-                    <thead className="bg-muted z-10 text-[11px] uppercase tracking-wider text-muted-foreground sticky top-0 shadow-sm">
-                      <tr>
-                        <th className="px-3 py-2 text-left whitespace-nowrap">Date</th>
-                        <th className="px-3 py-2 text-left whitespace-nowrap">Category</th>
-                        <th className="px-3 py-2 text-left whitespace-nowrap">Description</th>
-                        <th className="px-3 py-2 text-right whitespace-nowrap">Amount</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-border">
+                  <Table className="min-w-[500px]">
+                    <TableHeader className="bg-muted z-10 text-[11px] uppercase tracking-wider text-muted-foreground sticky top-0 shadow-sm">
+                      <TableRow>
+                        <TableHead className="px-3 py-2 text-left whitespace-nowrap">Date</TableHead>
+                        <TableHead className="px-3 py-2 text-left whitespace-nowrap">Category</TableHead>
+                        <TableHead className="px-3 py-2 text-left whitespace-nowrap">Description</TableHead>
+                        <TableHead className="px-3 py-2 text-right whitespace-nowrap">Amount</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody className="divide-y divide-border">
                       {expenses.map((e) => (
-                        <tr key={e.id} className="hover:bg-muted/30">
-                          <td className="px-3 py-2 whitespace-nowrap">{e.date}</td>
-                          <td className="px-3 py-2 whitespace-nowrap">{e.category}</td>
-                          <td className="px-3 py-2 text-muted-foreground whitespace-nowrap">
+                        <TableRow key={e.id} className="hover:bg-muted/30">
+                          <TableCell className="px-3 py-2 whitespace-nowrap">{e.date}</TableCell>
+                          <TableCell className="px-3 py-2 whitespace-nowrap">{e.category}</TableCell>
+                          <TableCell className="px-3 py-2 text-muted-foreground whitespace-nowrap">
                             {e.description}
-                          </td>
-                          <td className="px-3 py-2 text-right font-semibold whitespace-nowrap">
+                          </TableCell>
+                          <TableCell className="px-3 py-2 text-right font-semibold whitespace-nowrap">
                             {formatCurrency(e.amount)}
-                          </td>
-                        </tr>
+                          </TableCell>
+                        </TableRow>
                       ))}
-                    </tbody>
-                  </table>
+                    </TableBody>
+                  </Table>
                 </div>
               </div>
             )}
@@ -1082,18 +1083,18 @@ function ReportsPage() {
                   </span>
                 </div>
                 <div className="overflow-x-auto rounded-lg border border-border max-h-96 shadow-soft">
-                  <table className="w-full text-sm min-w-[600px]">
-                    <thead className="bg-muted z-10 text-[11px] uppercase tracking-wider text-muted-foreground sticky top-0 shadow-sm">
-                      <tr>
-                        <th className="px-3 py-2 text-left whitespace-nowrap">Product</th>
-                        <th className="px-3 py-2 text-left whitespace-nowrap">Batch No</th>
-                        <th className="px-3 py-2 text-center whitespace-nowrap">Expiry Date</th>
-                        <th className="px-3 py-2 text-right whitespace-nowrap">Qty Left</th>
-                        <th className="px-3 py-2 text-right whitespace-nowrap">Value</th>
-                        <th className="px-3 py-2 text-center whitespace-nowrap">Status</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-border">
+                  <Table className="min-w-[600px]">
+                    <TableHeader className="bg-muted z-10 text-[11px] uppercase tracking-wider text-muted-foreground sticky top-0 shadow-sm">
+                      <TableRow>
+                        <TableHead className="px-3 py-2 text-left whitespace-nowrap">Product</TableHead>
+                        <TableHead className="px-3 py-2 text-left whitespace-nowrap">Batch No</TableHead>
+                        <TableHead className="px-3 py-2 text-center whitespace-nowrap">Expiry Date</TableHead>
+                        <TableHead className="px-3 py-2 text-right whitespace-nowrap">Qty Left</TableHead>
+                        <TableHead className="px-3 py-2 text-right whitespace-nowrap">Value</TableHead>
+                        <TableHead className="px-3 py-2 text-center whitespace-nowrap">Status</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody className="divide-y divide-border">
                       {batches
                         .filter((b) => b.quantityRemaining > 0 && b.expiryDate)
                         .map((b) => {
@@ -1114,23 +1115,23 @@ function ReportsPage() {
                             (Number(b.purchaseCost) || 0) * (Number(b.quantityRemaining) || 0);
 
                           return (
-                            <tr key={b.id} className="hover:bg-muted/30">
-                              <td className="px-3 py-2 font-medium">
+                            <TableRow key={b.id} className="hover:bg-muted/30">
+                              <TableCell className="px-3 py-2 font-medium">
                                 {prod?.name || "Unknown Product"}
-                              </td>
-                              <td className="px-3 py-2 text-muted-foreground whitespace-nowrap">
+                              </TableCell>
+                              <TableCell className="px-3 py-2 text-muted-foreground whitespace-nowrap">
                                 {b.batchNo}
-                              </td>
-                              <td className="px-3 py-2 text-center whitespace-nowrap">
+                              </TableCell>
+                              <TableCell className="px-3 py-2 text-center whitespace-nowrap">
                                 {formatDate(b.expiryDate)}
-                              </td>
-                              <td className="px-3 py-2 text-right font-semibold">
+                              </TableCell>
+                              <TableCell className="px-3 py-2 text-right font-semibold">
                                 {b.quantityRemaining}
-                              </td>
-                              <td className="px-3 py-2 text-right font-medium">
+                              </TableCell>
+                              <TableCell className="px-3 py-2 text-right font-medium">
                                 {formatCurrency(val)}
-                              </td>
-                              <td className="px-3 py-2 text-center">
+                              </TableCell>
+                              <TableCell className="px-3 py-2 text-center">
                                 {diffDays <= 0 ? (
                                   <span className="bg-destructive/10 text-destructive text-[10px] font-bold px-2 py-0.5 rounded-full">
                                     EXPIRED
@@ -1140,45 +1141,45 @@ function ReportsPage() {
                                     {diffDays} days
                                   </span>
                                 )}
-                              </td>
-                            </tr>
+                              </TableCell>
+                            </TableRow>
                           );
                         })
                         .filter(Boolean)}
-                    </tbody>
-                  </table>
+                    </TableBody>
+                  </Table>
                 </div>
               </div>
             )}
 
             {activeReport === "purchase" && (
               <div className="overflow-x-auto rounded-lg border border-border max-h-64 shadow-soft">
-                <table className="w-full text-sm min-w-[500px]">
-                  <thead className="bg-muted/50 text-[11px] uppercase tracking-wider text-muted-foreground sticky top-0">
-                    <tr>
-                      <th className="px-3 py-2 text-left whitespace-nowrap">PO</th>
-                      <th className="px-3 py-2 text-left whitespace-nowrap">Supplier</th>
-                      <th className="px-3 py-2 text-left whitespace-nowrap">Date</th>
-                      <th className="px-3 py-2 text-right whitespace-nowrap">Total</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-border">
+                <Table className="min-w-[500px]">
+                  <TableHeader className="bg-muted/50 text-[11px] uppercase tracking-wider text-muted-foreground sticky top-0">
+                    <TableRow>
+                      <TableHead className="px-3 py-2 text-left whitespace-nowrap">PO</TableHead>
+                      <TableHead className="px-3 py-2 text-left whitespace-nowrap">Supplier</TableHead>
+                      <TableHead className="px-3 py-2 text-left whitespace-nowrap">Date</TableHead>
+                      <TableHead className="px-3 py-2 text-right whitespace-nowrap">Total</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody className="divide-y divide-border">
                     {purchases.map((p) => (
-                      <tr key={p.id} className="hover:bg-muted/30">
-                        <td className="px-3 py-2 font-mono text-xs whitespace-nowrap">
+                      <TableRow key={p.id} className="hover:bg-muted/30">
+                        <TableCell className="px-3 py-2 font-mono text-xs whitespace-nowrap">
                           {p.id.slice(0, 8).toUpperCase()}
-                        </td>
-                        <td className="px-3 py-2 whitespace-nowrap">{p.supplier}</td>
-                        <td className="px-3 py-2 text-muted-foreground whitespace-nowrap">
+                        </TableCell>
+                        <TableCell className="px-3 py-2 whitespace-nowrap">{p.supplier}</TableCell>
+                        <TableCell className="px-3 py-2 text-muted-foreground whitespace-nowrap">
                           {formatDate(p.date)}
-                        </td>
-                        <td className="px-3 py-2 text-right font-semibold whitespace-nowrap">
+                        </TableCell>
+                        <TableCell className="px-3 py-2 text-right font-semibold whitespace-nowrap">
                           {formatCurrency(p.total)}
-                        </td>
-                      </tr>
+                        </TableCell>
+                      </TableRow>
                     ))}
-                  </tbody>
-                </table>
+                  </TableBody>
+                </Table>
               </div>
             )}
 

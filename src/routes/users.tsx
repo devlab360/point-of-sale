@@ -13,6 +13,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -523,23 +531,23 @@ function UsersPage() {
             <div className="overflow-hidden rounded-2xl border border-border/80 bg-card shadow-card">
               {/* Desktop Table */}
               <div className="table-desktop overflow-x-auto">
-                <table className="w-full text-left text-sm min-w-[800px]">
-                  <thead className="border-b border-border/80 bg-muted/40 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                <Table className="min-w-[800px]">
+                  <TableHeader>
                     <tr>
-                      <th className="px-5 py-3 whitespace-nowrap">Employee</th>
-                      <th className="px-5 py-3 whitespace-nowrap">Role</th>
-                      <th className="px-5 py-3 whitespace-nowrap">Access Permissions</th>
-                      <th className="px-5 py-3 whitespace-nowrap">Last Active</th>
-                      <th className="px-5 py-3 whitespace-nowrap">Status</th>
-                      <th className="px-5 py-3 text-right whitespace-nowrap">Actions</th>
+                      <TableHead>Employee</TableHead>
+                      <TableHead>Role</TableHead>
+                      <TableHead>Access Permissions</TableHead>
+                      <TableHead>Last Active</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
                     </tr>
-                  </thead>
-                  <tbody className="divide-y divide-border/60">
+                  </TableHeader>
+                  <TableBody>
                     {paginatedUsers.map((e) => (
-                      <tr key={e.id} className="hover:bg-muted/30 transition-colors">
-                        <td className="px-5 py-3 whitespace-nowrap">
+                      <TableRow key={e.id}>
+                        <TableCell className="whitespace-nowrap">
                           <div className="flex items-center gap-3">
-                            <div className="grid size-10 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-primary/20 via-primary/10 to-accent/20 text-xs font-black text-primary border border-primary/20">
+                            <div className="grid size-10 shrink-0 place-items-center rounded-xl bg-primary/10 text-xs font-semibold text-primary border border-primary/20">
                               {e.name
                                 .split(" ")
                                 .map((n: string) => n[0])
@@ -556,8 +564,8 @@ function UsersPage() {
                               </div>
                             </div>
                           </div>
-                        </td>
-                        <td className="px-5 py-3 whitespace-nowrap">
+                        </TableCell>
+                        <TableCell className="whitespace-nowrap">
                           <Badge
                             variant="secondary"
                             className="capitalize text-xs font-bold py-0.5"
@@ -565,8 +573,8 @@ function UsersPage() {
                             <Shield className="mr-1 size-3 text-primary" />
                             {e.role}
                           </Badge>
-                        </td>
-                        <td className="px-5 py-3 whitespace-nowrap">
+                        </TableCell>
+                        <TableCell className="whitespace-nowrap">
                           <div className="flex flex-wrap gap-1 max-w-[220px]">
                             {(
                               e.permissions ||
@@ -617,11 +625,11 @@ function UsersPage() {
                                 </span>
                               )}
                           </div>
-                        </td>
-                        <td className="px-5 py-3 text-xs text-muted-foreground whitespace-nowrap font-medium">
+                        </TableCell>
+                        <TableCell className="text-xs text-muted-foreground whitespace-nowrap font-medium">
                           {e.lastActive ? formatAppDate(e.lastActive, "datetime") : "Never"}
-                        </td>
-                        <td className="px-5 py-3 whitespace-nowrap">
+                        </TableCell>
+                        <TableCell className="whitespace-nowrap">
                           <Badge
                             className={
                               e.status === "active"
@@ -633,8 +641,8 @@ function UsersPage() {
                           >
                             {e.status}
                           </Badge>
-                        </td>
-                        <td className="px-5 py-3 text-right whitespace-nowrap">
+                        </TableCell>
+                        <TableCell className="text-right whitespace-nowrap">
                           <div className="flex justify-end items-center gap-1.5">
                             {e.status === "pending" && (
                               <Button
@@ -673,11 +681,11 @@ function UsersPage() {
                               </DropdownMenuContent>
                             </DropdownMenu>
                           </div>
-                        </td>
-                      </tr>
+                        </TableCell>
+                      </TableRow>
                     ))}
-                  </tbody>
-                </table>
+                  </TableBody>
+                </Table>
               </div>
 
               {/* Mobile Card Feed (< 768px) */}
@@ -688,7 +696,7 @@ function UsersPage() {
                     className="flex items-center justify-between rounded-xl border border-border/80 bg-card p-3 shadow-sm card-interactive"
                   >
                     <div className="flex items-center gap-3 min-w-0 flex-1">
-                      <div className="grid size-10 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-primary/20 to-accent/20 text-xs font-black text-primary border border-primary/20">
+                      <div className="grid size-10 shrink-0 place-items-center rounded-xl bg-primary/10 text-xs font-semibold text-primary border border-primary/20">
                         {e.name
                           .split(" ")
                           .map((n: string) => n[0])

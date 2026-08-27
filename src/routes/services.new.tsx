@@ -35,7 +35,7 @@ function NewServicePage() {
   });
 
   return (
-    <div className="container mx-auto">
+    <div>
       <ServiceForm
         onSubmit={(data) => createMutation.mutate(data)}
         isSaving={createMutation.isPending}

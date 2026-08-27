@@ -4,6 +4,14 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { PaginationControls } from "@/components/ui/pagination-controls";
 import {
@@ -274,43 +282,45 @@ function PurchaseReturnsPage() {
       >
         <div className="overflow-hidden rounded-xl border border-border bg-card shadow-soft">
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm min-w-[700px]">
-              <thead className="bg-muted/50 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                <tr>
-                  <th className="px-4 py-3 whitespace-nowrap">Ref</th>
-                  <th className="px-4 py-3 whitespace-nowrap">Supplier</th>
-                  <th className="px-4 py-3 whitespace-nowrap">Reason</th>
-                  <th className="px-4 py-3 whitespace-nowrap">Date</th>
-                  <th className="px-4 py-3 text-right whitespace-nowrap">Items</th>
-                  <th className="px-4 py-3 whitespace-nowrap">Status</th>
-                  <th className="px-4 py-3 text-right whitespace-nowrap">Total</th>
-                  <th className="px-4 py-3 whitespace-nowrap"></th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border">
+            <Table className="min-w-[700px]">
+              <TableHeader className="bg-muted/50 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                <TableRow>
+                  <TableHead className="px-4 py-3">Ref</TableHead>
+                  <TableHead className="px-4 py-3">Supplier</TableHead>
+                  <TableHead className="px-4 py-3">Reason</TableHead>
+                  <TableHead className="px-4 py-3">Date</TableHead>
+                  <TableHead className="px-4 py-3 text-right">Items</TableHead>
+                  <TableHead className="px-4 py-3">Status</TableHead>
+                  <TableHead className="px-4 py-3 text-right">Total</TableHead>
+                  <TableHead className="px-4 py-3"></TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody className="divide-y divide-border">
                 {filteredReturns.length === 0 ? (
-                  <tr>
-                    <td colSpan={8} className="py-8 text-center text-muted-foreground">
+                  <TableRow>
+                    <TableCell colSpan={8} className="py-8 text-center text-muted-foreground">
                       No purchase returns recorded.
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 ) : (
                   paginatedReturns.map((r) => (
-                    <tr key={r.id} className="hover:bg-muted/30">
-                      <td className="px-4 py-3 font-mono text-xs font-semibold whitespace-nowrap">
+                    <TableRow key={r.id}>
+                      <TableCell className="px-4 py-3 font-mono text-xs font-semibold whitespace-nowrap">
                         {r.ref}
-                      </td>
-                      <td className="px-4 py-3 font-semibold whitespace-nowrap">{r.supplier}</td>
-                      <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">
+                      </TableCell>
+                      <TableCell className="px-4 py-3 font-semibold whitespace-nowrap">
+                        {r.supplier}
+                      </TableCell>
+                      <TableCell className="px-4 py-3 text-muted-foreground whitespace-nowrap">
                         {r.reason}
-                      </td>
-                      <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">
+                      </TableCell>
+                      <TableCell className="px-4 py-3 text-muted-foreground whitespace-nowrap">
                         {formatDate(r.date)}
-                      </td>
-                      <td className="px-4 py-3 text-right whitespace-nowrap">
+                      </TableCell>
+                      <TableCell className="px-4 py-3 text-right whitespace-nowrap">
                         {r.items?.reduce((s, i) => s + (i.quantity || 0), 0) || 0}
-                      </td>
-                      <td className="px-4 py-3 whitespace-nowrap">
+                      </TableCell>
+                      <TableCell className="px-4 py-3 whitespace-nowrap">
                         <Badge
                           className={cn(
                             r.status === "approved" &&
@@ -320,11 +330,11 @@ function PurchaseReturnsPage() {
                         >
                           {r.status}
                         </Badge>
-                      </td>
-                      <td className="number px-4 py-3 text-right font-semibold whitespace-nowrap">
+                      </TableCell>
+                      <TableCell className="number px-4 py-3 text-right font-semibold whitespace-nowrap">
                         {formatCurrency(r.total)}
-                      </td>
-                      <td className="px-4 py-3 whitespace-nowrap">
+                      </TableCell>
+                      <TableCell className="px-4 py-3 whitespace-nowrap">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <Button variant="ghost" size="icon">
@@ -340,12 +350,12 @@ function PurchaseReturnsPage() {
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
-                      </td>
-                    </tr>
+                      </TableCell>
+                    </TableRow>
                   ))
                 )}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
           </div>
           <PaginationControls
             currentPage={page}

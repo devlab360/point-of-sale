@@ -32,6 +32,14 @@ import { ArrowRightLeft, Search, Loader2 } from "lucide-react";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PaginationControls } from "@/components/ui/pagination-controls";
 import { useDebounce } from "@/hooks/useDebounce";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 export const Route = createLazyFileRoute("/inventory/transfers")({
   component: TransfersPage,
@@ -313,44 +321,44 @@ function TransfersPage() {
           <div className="overflow-hidden rounded-2xl border border-border/80 bg-card shadow-card">
             {/* Desktop Table */}
             <div className="table-desktop overflow-x-auto">
-              <table className="w-full text-left text-sm min-w-[700px]">
-                <thead className="border-b border-border/80 bg-muted/40 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
-                  <tr>
-                    <th className="px-5 py-3 whitespace-nowrap">Transfer Ref</th>
-                    <th className="px-5 py-3 whitespace-nowrap">Date</th>
-                    <th className="px-5 py-3 whitespace-nowrap">Routing Path</th>
-                    <th className="px-5 py-3 whitespace-nowrap">Items Dispatched</th>
-                    <th className="px-5 py-3 whitespace-nowrap text-right">Transfer Status</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border/60">
+              <Table className="min-w-[700px]">
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Transfer Ref</TableHead>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Routing Path</TableHead>
+                    <TableHead>Items Dispatched</TableHead>
+                    <TableHead className="text-right">Transfer Status</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
                   {paginatedTransfers.map((r) => (
-                    <tr key={r.ref} className="hover:bg-muted/30 transition-colors">
-                      <td className="px-5 py-3 font-mono text-xs font-bold text-foreground whitespace-nowrap">
+                    <TableRow key={r.ref}>
+                      <TableCell className="font-mono text-xs font-bold text-foreground whitespace-nowrap">
                         {r.ref}
-                      </td>
-                      <td className="px-5 py-3 text-muted-foreground whitespace-nowrap text-xs">
+                      </TableCell>
+                      <TableCell className="text-muted-foreground whitespace-nowrap text-xs">
                         {formatAppDate(r.date)}
-                      </td>
-                      <td className="px-5 py-3 whitespace-nowrap">
+                      </TableCell>
+                      <TableCell className="whitespace-nowrap">
                         <div className="flex items-center gap-2 text-xs">
                           <span className="text-muted-foreground font-medium">Main Hub</span>
                           <ArrowRightLeft className="size-3 text-primary" />
                           <span className="font-bold text-foreground">{r.destination}</span>
                         </div>
-                      </td>
-                      <td className="px-5 py-3 text-muted-foreground whitespace-nowrap text-xs font-semibold">
+                      </TableCell>
+                      <TableCell className="text-muted-foreground whitespace-nowrap text-xs font-semibold">
                         {r.items}
-                      </td>
-                      <td className="px-5 py-3 whitespace-nowrap text-right">
+                      </TableCell>
+                      <TableCell className="whitespace-nowrap text-right">
                         <Badge className="bg-success/12 text-success hover:bg-success/20 border-success/20 text-[10px] font-bold">
                           {r.status || "Completed"}
                         </Badge>
-                      </td>
-                    </tr>
+                      </TableCell>
+                    </TableRow>
                   ))}
-                </tbody>
-              </table>
+                </TableBody>
+              </Table>
             </div>
 
             {/* Mobile Card Feed (< 768px) */}

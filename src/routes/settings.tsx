@@ -473,7 +473,7 @@ function SettingsPage() {
   };
 
   return (
-    <div className="mx-auto container p-4 sm:p-6 pb-20 w-full animate-in fade-in slide-in-from-bottom-2 duration-300 relative">
+    <div className="page-container pb-20 relative animate-in fade-in slide-in-from-bottom-2 duration-300">
       {/* <div className="absolute inset-0 -z-10 bg-[linear-gradient(to_right,#f0f0f0_1px,transparent_1px),linear-gradient(to_bottom,#f0f0f0_1px,transparent_1px)] bg-[size:6rem_4rem] [mask-image:radial-gradient(ellipse_80%_50%_at_50%_0%,#000_70%,transparent_110%)] opacity-30" />
       <div className="absolute inset-0 -z-10 bg-gradient-to-tr from-primary/5 via-transparent to-primary/5 opacity-50 blur-3xl pointer-events-none" /> */}
 
@@ -1420,7 +1420,7 @@ function SettingsPage() {
             </div>
 
             {/* Instructions */}
-            <div className="p-3 bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-900 rounded-md text-xs text-blue-800 dark:text-blue-300">
+            <div className="p-3 bg-info/10 border border-info/25 rounded-md text-xs text-info">
               <span className="font-semibold block mb-1">Payment Instructions:</span>
               {paymentConfig?.instructions ||
                 "Scan the QR code or transfer directly via NEFT/IMPS/RTGS. After payment, submit your Transaction ID/UTR below for verification."}
@@ -1495,7 +1495,7 @@ function SettingsPage() {
                       : paymentForm.paymentMethod === "NEFT / IMPS / RTGS"
                         ? "UTR Number / Reference No."
                         : "Cheque No. / Deposit Slip No."}{" "}
-                    <span className="text-red-500">*</span>
+                    <span className="text-destructive">*</span>
                   </Label>
                   <Input
                     value={paymentForm.utrNumber}
@@ -1759,10 +1759,10 @@ function LocationsTab() {
                   </td>
                   <td className="px-4 py-3">
                     <span
-                      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${loc.status === "active" ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400" : "bg-muted text-muted-foreground"}`}
+                      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${loc.status === "active" ? "bg-success/10 text-success" : "bg-muted text-muted-foreground"}`}
                     >
                       <span
-                        className={`size-1.5 rounded-full ${loc.status === "active" ? "bg-green-500" : "bg-muted-foreground"}`}
+                        className={`size-1.5 rounded-full ${loc.status === "active" ? "bg-success" : "bg-muted-foreground"}`}
                       />
                       {loc.status || "active"}
                     </span>

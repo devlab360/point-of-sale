@@ -11,12 +11,9 @@ import {
   Loader2,
   Mail,
   CheckCircle2,
-  Sparkles,
   Lock,
   Smartphone,
   ArrowRight,
-  TrendingUp,
-  Zap,
 } from "lucide-react";
 import { generateVerificationOtp, sendPasswordResetEmail } from "@/lib/email-service";
 import { resetPasswordFn, sendPasswordResetOtpFn } from "@/api/auth";
@@ -172,68 +169,62 @@ function LoginPage() {
   return (
     <div className="min-h-screen w-full flex bg-background overflow-hidden text-foreground">
       {/* Left Showcase Banner - Desktop */}
-      <div className="hidden lg:flex lg:w-1/2 relative bg-gradient-to-br from-primary/95 via-primary/80 to-primary/60 p-12 flex-col justify-between overflow-hidden">
-        {/* Decorative Background Elements */}
-        <div className="absolute -top-24 -left-24 size-96 rounded-full bg-white/10 blur-3xl" />
-        <div className="absolute -bottom-24 -right-24 size-96 rounded-full bg-accent/20 blur-3xl" />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 size-[600px] rounded-full border border-white/10 animate-spin-slow pointer-events-none" />
+      <div className="hidden lg:flex lg:w-1/2 relative bg-primary p-12 flex-col justify-between overflow-hidden">
+        {/* Subtle paper grain / soft radial field instead of orbs */}
+        <div className="absolute inset-0 opacity-[0.06] pointer-events-none [background-size:44px_44px] [background-image:linear-gradient(to_right,oklch(0.99 0.005 90/0.4)_1px,transparent_1px),linear-gradient(to_bottom,oklch(0.99 0.005 90/0.4)_1px,transparent_1px)]" />
+        <div className="absolute -bottom-48 -left-32 size-[480px] rounded-full bg-foreground/5 blur-3xl pointer-events-none" />
 
         {/* Brand Header */}
         <div className="relative z-10 flex items-center gap-3">
-          <div className="flex size-11 items-center justify-center rounded-2xl bg-white/15 backdrop-blur-md border border-white/20 text-white shadow-xl">
+          <div className="flex size-11 items-center justify-center rounded-2xl bg-primary-foreground/10 border border-primary-foreground/20 text-primary-foreground">
             <Store className="size-6" />
           </div>
           <div>
-            <h1 className="text-xl font-extrabold tracking-tight text-white">OneDesk360</h1>
-            <p className="text-xs text-white/80 font-medium uppercase tracking-wider">
-              Enterprise Cloud Commerce
+            <h1 className="font-display text-2xl font-semibold tracking-tight text-primary-foreground">
+              OneDesk360
+            </h1>
+            <p className="text-[11px] text-primary-foreground/75 font-medium uppercase tracking-wider">
+              Own the counter
             </p>
           </div>
         </div>
 
         {/* Feature Hero Copy */}
         <div className="relative z-10 space-y-6 max-w-lg">
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-white text-xs font-semibold">
-            <Sparkles className="size-3.5 text-amber-300" />
-            <span>Next-Gen Point of Sale Platform</span>
-          </div>
-
-          <h2 className="text-4xl font-black tracking-tight text-white leading-tight">
-            Manage Sales, Stock, & Customers in One Unified Portal.
+          <h2 className="font-display text-[2.6rem] leading-[1.08] font-semibold tracking-tight text-primary-foreground">
+            The warm, human way to run your shop.
           </h2>
 
-          <p className="text-sm text-white/85 leading-relaxed">
-            Multi-branch inventory control, real-time Khatabook customer ledgers, instant thermal
-            receipts, and automated financial analytics tailored for your business.
+          <p className="text-[15px] text-primary-foreground/85 leading-relaxed">
+            Ring up sales, look after your stock, and keep your regulars happy — all from one
+            friendly place built for how a real store actually works.
           </p>
 
-          <div className="grid grid-cols-2 gap-4 pt-4">
-            <div className="p-4 rounded-2xl bg-white/10 backdrop-blur-md border border-white/15">
-              <div className="flex items-center gap-2 text-white font-bold text-lg">
-                <TrendingUp className="size-5 text-emerald-300" />
-                <span>99.9%</span>
-              </div>
-              <p className="text-xs text-white/70 mt-1">Platform Uptime SLA</p>
-            </div>
-            <div className="p-4 rounded-2xl bg-white/10 backdrop-blur-md border border-white/15">
-              <div className="flex items-center gap-2 text-white font-bold text-lg">
-                <Zap className="size-5 text-amber-300" />
-                <span>Real-Time</span>
-              </div>
-              <p className="text-xs text-white/70 mt-1">Multi-Store Sync</p>
-            </div>
-          </div>
+          <ul className="space-y-3 pt-1">
+            {[
+              "Multi-branch inventory that just syncs",
+              "Customer ledgers your team will actually use",
+              "Instant, no-fuss thermal receipts",
+            ].map((item) => (
+              <li key={item} className="flex items-center gap-3 text-sm text-primary-foreground/90">
+                <span className="grid size-5 shrink-0 place-items-center rounded-full bg-primary-foreground/10 border border-primary-foreground/20">
+                  <CheckCircle2 className="size-3.5" />
+                </span>
+                <span>{item}</span>
+              </li>
+            ))}
+          </ul>
         </div>
 
         {/* Footer info */}
-        <div className="relative z-10 flex items-center justify-between text-xs text-white/70">
+        <div className="relative z-10 flex items-center justify-between text-xs text-primary-foreground/70">
           <p>
             © {new Date().getFullYear()}{" "}
             <a
               href="https://devlab360.com/"
               target="_blank"
               rel="noopener noreferrer"
-              className="hover:text-white transition-colors underline font-medium"
+              className="hover:text-primary-foreground transition-colors underline font-medium"
             >
               DevLab360
             </a>
@@ -249,7 +240,7 @@ function LoginPage() {
             <div className="inline-flex lg:hidden size-14 items-center justify-center rounded-2xl bg-primary/10 text-primary mb-2">
               <Store className="size-7" />
             </div>
-            <h2 className="text-3xl sm:text-4xl font-black tracking-tight text-foreground">
+            <h2 className="font-display text-3xl sm:text-4xl font-semibold tracking-tight text-foreground">
               {mode === "forgot" ? "Reset Password" : "Welcome Back"}
             </h2>
             <p className="text-base text-muted-foreground">
@@ -260,7 +251,7 @@ function LoginPage() {
           </div>
 
           {/* Form Card */}
-          <div className="rounded-3xl border border-border bg-card p-8 sm:p-10 md:p-12 shadow-md space-y-7">
+          <div className="rounded-3xl border border-border bg-card p-8 sm:p-10 md:p-12 shadow-elevated space-y-7">
             {mode === "email" ? (
               <form noValidate onSubmit={handleEmailLogin} className="space-y-6">
                 <div className="space-y-2.5">
@@ -310,7 +301,7 @@ function LoginPage() {
                 <Button
                   type="submit"
                   disabled={isLoggingIn}
-                  className="w-full h-12 sm:h-13 rounded-2xl font-extrabold gap-2 text-base shadow-md transition-all hover:scale-[1.01]"
+                  className="w-full h-12 sm:h-13 rounded-2xl font-semibold gap-2 text-base"
                 >
                   {isLoggingIn ? (
                     <>
@@ -347,7 +338,7 @@ function LoginPage() {
                     <Button
                       type="submit"
                       disabled={isSendingOtp}
-                      className="w-full h-12 sm:h-13 rounded-2xl font-extrabold gap-2 text-base"
+                      className="w-full h-12 sm:h-13 rounded-2xl font-semibold gap-2 text-base"
                     >
                       {isSendingOtp ? (
                         <>

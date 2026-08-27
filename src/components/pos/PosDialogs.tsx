@@ -403,7 +403,7 @@ export function PosDialogs({
                   setCustomerQuery("");
                 }}
               >
-                <div className="grid size-8 place-items-center rounded-full bg-gradient-to-br from-primary to-info text-xs font-bold text-white">
+                <div className="grid size-8 place-items-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
                   {c.name
                     .split(" ")
                     .map((n: any) => n[0])
@@ -811,7 +811,7 @@ export function PosDialogs({
             <Button
               onClick={() => onCheckout()}
               disabled={isCompletingSale}
-              className="bg-emerald-600 hover:bg-emerald-700 text-white font-medium"
+              className="bg-primary hover:bg-primary/90 text-primary-foreground font-medium"
             >
               {isCompletingSale ? (
                 <>

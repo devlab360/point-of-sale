@@ -119,7 +119,7 @@ function EditProductPage() {
   if (!initialData) return null;
 
   return (
-    <div className="container mx-auto">
+    <div>
       <ProductForm
         initialData={initialData}
         onSubmit={(data) => updateMutation.mutate(data)}

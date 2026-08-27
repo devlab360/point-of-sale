@@ -210,7 +210,7 @@ export function ProductForm({
             <ArrowLeft className="size-4" />
           </Button>
           <div>
-            <h1 className="text-xl sm:text-2xl font-black tracking-tight text-foreground">
+            <h1 className="text-xl sm:text-2xl font-semibold tracking-tight text-foreground">
               {initialData ? "Edit Product SKU" : "Create New Product"}
             </h1>
             <p className="text-xs text-muted-foreground hidden sm:block">
@@ -907,18 +907,18 @@ export function ProductForm({
                 </div>
               )}
 
-              <div className="flex items-start gap-3 p-4 rounded-lg border border-amber-500/20 bg-amber-500/5 transition-colors">
+              <div className="flex items-start gap-3 p-4 rounded-lg border border-warning/20 bg-warning/5 transition-colors">
                 <input
                   type="checkbox"
                   id="hasBatch"
                   checked={formData.hasBatch}
                   onChange={(e) => setFormData({ ...formData, hasBatch: e.target.checked })}
-                  className="mt-1 rounded border-amber-500 text-amber-500 w-5 h-5 cursor-pointer"
+                  className="mt-1 rounded border-warning text-warning w-5 h-5 cursor-pointer"
                 />
                 <div className="space-y-3 w-full">
                   <Label
                     htmlFor="hasBatch"
-                    className="font-semibold text-sm text-amber-600 cursor-pointer"
+                    className="font-semibold text-sm text-warning cursor-pointer"
                   >
                     Track Batches & Expiry
                   </Label>

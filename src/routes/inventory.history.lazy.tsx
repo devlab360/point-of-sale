@@ -10,6 +10,14 @@ import { PaginationControls } from "@/components/ui/pagination-controls";
 import { History, Search } from "lucide-react";
 import { usePreferences } from "@/contexts/PreferencesContext";
 import { useDebounce } from "@/hooks/useDebounce";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 export const Route = createLazyFileRoute("/inventory/history")({
   component: HistoryPage,
@@ -78,44 +86,44 @@ function HistoryPage() {
           <div className="overflow-hidden rounded-2xl border border-border/80 bg-card shadow-card">
             {/* Desktop Table */}
             <div className="table-desktop overflow-x-auto">
-              <table className="w-full text-left text-sm min-w-[600px]">
-                <thead className="border-b border-border/80 bg-muted/40 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
-                  <tr>
-                    <th className="px-5 py-3 whitespace-nowrap">Timestamp</th>
-                    <th className="px-5 py-3 whitespace-nowrap">Product SKU</th>
-                    <th className="px-5 py-3 whitespace-nowrap">Inventory Event</th>
-                    <th className="px-5 py-3 text-right whitespace-nowrap">Quantity Delta</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border/60">
+              <Table className="min-w-[600px]">
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Timestamp</TableHead>
+                    <TableHead>Product SKU</TableHead>
+                    <TableHead>Inventory Event</TableHead>
+                    <TableHead className="text-right">Quantity Delta</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
                   {movements.map((m, i) => (
-                    <tr key={m.id || i} className="hover:bg-muted/30 transition-colors">
-                      <td className="px-5 py-3 text-muted-foreground whitespace-nowrap text-xs">
+                    <TableRow key={m.id || i}>
+                      <TableCell className="text-muted-foreground whitespace-nowrap text-xs">
                         {formatDateTime(m.createdAt)}
-                      </td>
-                      <td className="px-5 py-3 font-bold text-foreground min-w-[150px]">
+                      </TableCell>
+                      <TableCell className="font-bold text-foreground min-w-[150px]">
                         {m.productName}
-                      </td>
-                      <td className="px-5 py-3 whitespace-nowrap">
+                      </TableCell>
+                      <TableCell className="whitespace-nowrap">
                         <Badge
                           variant="outline"
                           className="capitalize text-[10px] font-bold bg-muted/50 border-border/80"
                         >
                           {m.action.replace("_", " ")}
                         </Badge>
-                      </td>
-                      <td
+                      </TableCell>
+                      <TableCell
                         className={cn(
-                          "number px-5 py-3 text-right font-black whitespace-nowrap text-sm",
+                          "number text-right font-black whitespace-nowrap text-sm",
                           m.quantity < 0 ? "text-destructive" : "text-success",
                         )}
                       >
                         {m.quantity > 0 ? `+${m.quantity}` : m.quantity}
-                      </td>
-                    </tr>
+                      </TableCell>
+                    </TableRow>
                   ))}
-                </tbody>
-              </table>
+                </TableBody>
+              </Table>
             </div>
 
             {/* Mobile Card Feed (< 768px) */}

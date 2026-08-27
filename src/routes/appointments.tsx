@@ -126,7 +126,7 @@ function AppointmentsPage() {
     <div className="page-container space-y-5">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-xl sm:text-2xl font-black tracking-tight text-foreground flex items-center gap-2">
+          <h1 className="text-xl sm:text-2xl font-semibold tracking-tight text-foreground flex items-center gap-2">
             <CalendarDays className="size-6 text-primary" />
             Appointments & Service Bookings
           </h1>

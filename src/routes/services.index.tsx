@@ -33,6 +33,14 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { DataPage } from "@/components/layout/DataPage";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { PersistStore } from "@/lib/session-store";
 import { cn } from "@/lib/utils";
 import { useCurrency } from "@/lib/currency";
@@ -388,56 +396,56 @@ function ServicesPage() {
           ) : (
             <div className="rounded-xl border border-border bg-card shadow-soft overflow-hidden">
               <div className="overflow-x-auto">
-                <table className="w-full text-left text-sm">
-                  <thead>
-                    <tr className="border-b border-border bg-muted/40">
-                      <th className="px-4 py-3 font-semibold text-muted-foreground w-12">#</th>
-                      <th className="px-4 py-3 font-semibold text-muted-foreground">Name</th>
-                      <th className="px-4 py-3 font-semibold text-muted-foreground">Category</th>
-                      <th className="px-4 py-3 font-semibold text-muted-foreground text-right">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="px-4 py-3 font-semibold text-muted-foreground w-12">#</TableHead>
+                      <TableHead className="px-4 py-3 font-semibold text-muted-foreground">Name</TableHead>
+                      <TableHead className="px-4 py-3 font-semibold text-muted-foreground">Category</TableHead>
+                      <TableHead className="px-4 py-3 font-semibold text-muted-foreground text-right">
                         Price
-                      </th>
-                      <th className="px-4 py-3 font-semibold text-muted-foreground text-center">
+                      </TableHead>
+                      <TableHead className="px-4 py-3 font-semibold text-muted-foreground text-center">
                         Duration
-                      </th>
-                      <th className="px-4 py-3 font-semibold text-muted-foreground text-center">
+                      </TableHead>
+                      <TableHead className="px-4 py-3 font-semibold text-muted-foreground text-center">
                         Status
-                      </th>
-                      <th className="px-4 py-3 font-semibold text-muted-foreground text-right">
+                      </TableHead>
+                      <TableHead className="px-4 py-3 font-semibold text-muted-foreground text-right">
                         Actions
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-border">
+                      </TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody className="divide-y divide-border">
                     {services.map((item: any, i: number) => {
                       const catName =
                         categories.find((c: any) => c.id === item.category)?.name || item.category;
                       return (
-                        <tr key={item.id} className="hover:bg-muted/20 transition-colors">
-                          <td className="px-4 py-3 text-muted-foreground">
+                        <TableRow key={item.id} className="hover:bg-muted/20">
+                          <TableCell className="px-4 py-3 text-muted-foreground">
                             {(page - 1) * pageSize + i + 1}
-                          </td>
-                          <td className="px-4 py-3">
+                          </TableCell>
+                          <TableCell className="px-4 py-3">
                             <div className="font-semibold">{item.name}</div>
-                          </td>
-                          <td className="px-4 py-3 text-muted-foreground">{catName}</td>
-                          <td className="px-4 py-3 text-right">
+                          </TableCell>
+                          <TableCell className="px-4 py-3 text-muted-foreground">{catName}</TableCell>
+                          <TableCell className="px-4 py-3 text-right">
                             <div className="font-bold">{formatCurrency(Number(item.price))}</div>
                             {Number(item.cost) > 0 && (
                               <div className="text-[10px] text-muted-foreground">
                                 Cost: {formatCurrency(Number(item.cost))}
                               </div>
                             )}
-                          </td>
-                          <td className="px-4 py-3 text-center">
+                          </TableCell>
+                          <TableCell className="px-4 py-3 text-center">
                             {item.duration ? `${item.duration} min` : "-"}
-                          </td>
-                          <td className="px-4 py-3 text-center">
+                          </TableCell>
+                          <TableCell className="px-4 py-3 text-center">
                             <Badge variant={item.status === "active" ? "default" : "secondary"}>
                               {item.status}
                             </Badge>
-                          </td>
-                          <td className="px-4 py-3 text-right">
+                          </TableCell>
+                          <TableCell className="px-4 py-3 text-right">
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
                                 <Button variant="ghost" size="icon" className="size-8">
@@ -459,12 +467,12 @@ function ServicesPage() {
                                 </DropdownMenuItem>
                               </DropdownMenuContent>
                             </DropdownMenu>
-                          </td>
-                        </tr>
+                          </TableCell>
+                        </TableRow>
                       );
                     })}
-                  </tbody>
-                </table>
+                  </TableBody>
+                </Table>
               </div>
 
               <PaginationControls

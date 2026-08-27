@@ -326,7 +326,7 @@ export function CartPanel({
                       {(l.selectedBatch || l.product.metadata?.prescriptionRequired) && (
                         <div className="flex flex-wrap items-center gap-2 mt-0.5">
                           {l.selectedBatch && (
-                            <div className="text-[9px] font-bold bg-amber-500/10 text-amber-600 rounded border border-amber-500/20 px-1">
+                            <div className="text-[9px] font-bold bg-warning/10 text-warning rounded border border-warning/20 px-1">
                               {l.product.batches && l.product.batches.length > 1 ? (
                                 <select
                                   className="bg-transparent border-none outline-none font-bold py-0.5"
@@ -432,7 +432,7 @@ export function CartPanel({
                 size="sm"
                 onClick={handleSendToKitchen}
                 disabled={sendToKitchen.isPending || lines.length === 0}
-                className="h-7 rounded-md px-2 border-amber-500/30 bg-amber-500/10 text-amber-700 hover:bg-amber-500/20 text-[11px] font-bold"
+                className="h-7 rounded-md px-2 border-warning/30 bg-warning/10 text-warning hover:bg-warning/20 text-[11px] font-bold"
                 title="Send to Kitchen (KOT)"
               >
                 <ChefHat className="size-3 mr-1" /> KOT
@@ -649,7 +649,7 @@ export function CartPanel({
 
           <Button
             size="sm"
-            className="h-10 rounded-lg text-xs sm:text-sm font-black shadow-md hover:shadow-lg transition-all w-full bg-gradient-to-r from-primary to-primary/90 text-primary-foreground"
+            className="h-10 rounded-lg text-xs sm:text-sm font-semibold bg-primary text-primary-foreground"
             disabled={lines.length === 0}
             onClick={() => {
               if (

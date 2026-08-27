@@ -21,6 +21,7 @@ import { cn } from "@/lib/utils";
 import { usePreferences } from "@/contexts/PreferencesContext";
 import { Eye, Plus, ShoppingCart } from "lucide-react";
 import { useState, useMemo, useEffect } from "react";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 export const Route = createFileRoute("/purchases/")({
   head: () => ({ meta: [{ title: "Purchases · OneDesk360" }] }),
@@ -157,43 +158,43 @@ function PurchasesPage() {
             <div className="overflow-hidden rounded-2xl border border-border/80 bg-card shadow-card">
               {/* Desktop Table View */}
               <div className="table-desktop overflow-x-auto">
-                <table className="w-full text-left text-sm min-w-[700px]">
-                  <thead className="border-b border-border/80 bg-muted/40 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
-                    <tr>
-                      <th className="px-5 py-3 whitespace-nowrap">{t("po") || "PO Number"}</th>
-                      <th className="px-5 py-3 whitespace-nowrap">
+                <Table className="min-w-[700px]">
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>{t("po") || "PO Number"}</TableHead>
+                      <TableHead>
                         {t("supplier") || "Supplier Name"}
-                      </th>
-                      <th className="px-5 py-3 whitespace-nowrap">{t("date") || "Order Date"}</th>
-                      <th className="px-5 py-3 text-right whitespace-nowrap">
+                      </TableHead>
+                      <TableHead>{t("date") || "Order Date"}</TableHead>
+                      <TableHead className="text-right">
                         {t("items") || "Items"}
-                      </th>
-                      <th className="px-5 py-3 whitespace-nowrap">{t("status") || "Status"}</th>
-                      <th className="px-5 py-3 text-right whitespace-nowrap">
+                      </TableHead>
+                      <TableHead>{t("status") || "Status"}</TableHead>
+                      <TableHead className="text-right">
                         {t("total") || "Total Cost"}
-                      </th>
-                      <th className="px-5 py-3 text-right whitespace-nowrap">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-border/60">
+                      </TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
                     {purchases.map((p) => (
-                      <tr key={p.id} className="hover:bg-muted/30 transition-colors">
-                        <td
-                          className="px-5 py-3 font-mono text-xs font-bold text-primary whitespace-nowrap cursor-pointer hover:underline"
+                      <TableRow key={p.id}>
+                        <TableCell
+                          className="font-mono text-xs font-bold text-primary cursor-pointer hover:underline"
                           onClick={() => setViewPurchase(p)}
                         >
                           #{p.id.slice(0, 8).toUpperCase()}
-                        </td>
-                        <td className="px-5 py-3 font-bold text-foreground whitespace-nowrap">
+                        </TableCell>
+                        <TableCell className="font-bold text-foreground">
                           {p.supplier}
-                        </td>
-                        <td className="px-5 py-3 text-muted-foreground whitespace-nowrap text-xs">
+                        </TableCell>
+                        <TableCell className="text-muted-foreground text-xs">
                           {formatDate(p.date)}
-                        </td>
-                        <td className="px-5 py-3 text-right text-xs font-semibold text-muted-foreground whitespace-nowrap">
+                        </TableCell>
+                        <TableCell className="text-right text-xs font-semibold text-muted-foreground">
                           {p.items}
-                        </td>
-                        <td className="px-5 py-3 whitespace-nowrap">
+                        </TableCell>
+                        <TableCell>
                           <Badge
                             className={cn(
                               "text-[10px] font-bold",
@@ -207,11 +208,11 @@ function PurchasesPage() {
                           >
                             {p.status}
                           </Badge>
-                        </td>
-                        <td className="number px-5 py-3 text-right font-black text-foreground whitespace-nowrap text-sm">
+                        </TableCell>
+                        <TableCell className="text-right font-black text-foreground text-sm">
                           {formatCurrency(p.total)}
-                        </td>
-                        <td className="px-5 py-3 whitespace-nowrap text-right">
+                        </TableCell>
+                        <TableCell className="text-right">
                           <Button
                             variant="ghost"
                             size="icon"
@@ -221,11 +222,11 @@ function PurchasesPage() {
                           >
                             <Eye className="size-4" />
                           </Button>
-                        </td>
-                      </tr>
+                        </TableCell>
+                      </TableRow>
                     ))}
-                  </tbody>
-                </table>
+                  </TableBody>
+                </Table>
               </div>
 
               {/* Mobile Card Feed (< 768px) */}

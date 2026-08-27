@@ -7,6 +7,14 @@ import { SearchableSelect } from "@/components/ui/searchable-select";
 import { useDebounce } from "@/hooks/useDebounce";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -406,38 +414,38 @@ function DeliveryChallansPage() {
             <div className="overflow-hidden rounded-2xl border border-border/80 bg-card shadow-card">
               {/* Desktop Table View */}
               <div className="table-desktop overflow-x-auto">
-                <table className="w-full text-left text-sm min-w-[700px]">
-                  <thead className="border-b border-border/80 bg-muted/40 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
-                    <tr>
-                      <th className="px-5 py-3 whitespace-nowrap">Challan #</th>
-                      <th className="px-5 py-3 whitespace-nowrap">Customer Name</th>
-                      <th className="px-5 py-3 whitespace-nowrap">Dispatch Date</th>
-                      <th className="px-5 py-3 whitespace-nowrap">Transport / Vehicle</th>
-                      <th className="px-5 py-3 whitespace-nowrap">Status</th>
-                      <th className="px-5 py-3 text-right whitespace-nowrap">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-border/60">
+                <Table className="min-w-[700px]">
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Challan #</TableHead>
+                      <TableHead>Customer Name</TableHead>
+                      <TableHead>Dispatch Date</TableHead>
+                      <TableHead>Transport / Vehicle</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
                     {paginated.map((c) => (
-                      <tr key={c.id} className="hover:bg-muted/30 transition-colors">
-                        <td
-                          className="px-5 py-3 font-mono font-bold text-primary whitespace-nowrap cursor-pointer hover:underline"
+                      <TableRow key={c.id}>
+                        <TableCell
+                          className="font-mono font-bold text-primary whitespace-nowrap cursor-pointer hover:underline"
                           onClick={() => setViewItem(c)}
                         >
                           {c.challanNo}
-                        </td>
-                        <td className="px-5 py-3 font-bold text-foreground whitespace-nowrap">
+                        </TableCell>
+                        <TableCell className="font-bold text-foreground whitespace-nowrap">
                           {c.customerName}
-                        </td>
-                        <td className="px-5 py-3 text-xs text-muted-foreground whitespace-nowrap">
+                        </TableCell>
+                        <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
                           {formatDate(c.date)}
-                        </td>
-                        <td className="px-5 py-3 text-xs whitespace-nowrap font-medium text-muted-foreground">
+                        </TableCell>
+                        <TableCell className="text-xs whitespace-nowrap font-medium text-muted-foreground">
                           {c.transportName
                             ? `${c.transportName} (${c.vehicleNo || "N/A"})`
                             : "Self / Local Dispatch"}
-                        </td>
-                        <td className="px-5 py-3 whitespace-nowrap">
+                        </TableCell>
+                        <TableCell className="whitespace-nowrap">
                           {c.status === "invoiced" ? (
                             <Badge className="bg-success/12 text-success border-success/25 text-[10px] font-bold">
                               Invoiced
@@ -447,8 +455,8 @@ function DeliveryChallansPage() {
                               Dispatched / Out
                             </Badge>
                           )}
-                        </td>
-                        <td className="px-5 py-3 text-right">
+                        </TableCell>
+                        <TableCell className="text-right">
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                               <Button variant="ghost" size="icon" className="size-8 rounded-lg">
@@ -478,11 +486,11 @@ function DeliveryChallansPage() {
                               </DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
-                        </td>
-                      </tr>
+                        </TableCell>
+                      </TableRow>
                     ))}
-                  </tbody>
-                </table>
+                  </TableBody>
+                </Table>
               </div>
 
               {/* Mobile Card Feed (< 768px) */}
@@ -788,34 +796,34 @@ function DeliveryChallansPage() {
                   Dispatched Goods List
                 </h4>
                 <div className="overflow-x-auto rounded-xl border">
-                  <table className="w-full text-xs min-w-[500px]">
-                    <thead className="bg-muted/50 font-semibold uppercase text-muted-foreground">
-                      <tr>
-                        <th className="p-2.5 text-left whitespace-nowrap">#</th>
-                        <th className="p-2.5 text-left whitespace-nowrap">Description of Goods</th>
-                        <th className="p-2.5 text-right whitespace-nowrap">Quantity</th>
-                        <th className="p-2.5 text-left whitespace-nowrap">Unit</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y">
+                  <Table className="text-xs min-w-[500px]">
+                    <TableHeader className="bg-muted/50 font-semibold uppercase text-muted-foreground">
+                      <TableRow>
+                        <TableHead className="p-2.5 text-left">#</TableHead>
+                        <TableHead className="p-2.5 text-left">Description of Goods</TableHead>
+                        <TableHead className="p-2.5 text-right">Quantity</TableHead>
+                        <TableHead className="p-2.5 text-left">Unit</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
                       {viewItem.items.map((i, idx) => (
-                        <tr key={idx}>
-                          <td className="p-2.5 font-mono text-muted-foreground whitespace-nowrap">
+                        <TableRow key={idx}>
+                          <TableCell className="p-2.5 font-mono text-muted-foreground whitespace-nowrap">
                             {idx + 1}
-                          </td>
-                          <td className="p-2.5 font-semibold text-foreground whitespace-nowrap">
+                          </TableCell>
+                          <TableCell className="p-2.5 font-semibold text-foreground whitespace-nowrap">
                             {i.productName}
-                          </td>
-                          <td className="p-2.5 text-right font-bold text-base whitespace-nowrap">
+                          </TableCell>
+                          <TableCell className="p-2.5 text-right font-bold text-base whitespace-nowrap">
                             {i.quantity}
-                          </td>
-                          <td className="p-2.5 text-left font-medium text-muted-foreground whitespace-nowrap">
+                          </TableCell>
+                          <TableCell className="p-2.5 text-left font-medium text-muted-foreground whitespace-nowrap">
                             {getUnitDisplay(i.unit)}
-                          </td>
-                        </tr>
+                          </TableCell>
+                        </TableRow>
                       ))}
-                    </tbody>
-                  </table>
+                    </TableBody>
+                  </Table>
                 </div>
               </div>
 

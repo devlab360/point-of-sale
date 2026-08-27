@@ -10,6 +10,14 @@ import { useDebounce } from "@/hooks/useDebounce";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { useAppFormatter } from "@/hooks/useAppFormatter";
 import { Label } from "@/components/ui/label";
 import {
@@ -260,43 +268,43 @@ function SubscriptionsPage() {
             <div className="overflow-hidden rounded-2xl border border-border/80 bg-card shadow-card">
               {/* Desktop Table */}
               <div className="table-desktop overflow-x-auto hidden md:block">
-                <table className="w-full text-left text-sm min-w-[900px]">
-                  <thead className="border-b border-border/80 bg-muted/40 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                <Table className="min-w-[900px]">
+                  <TableHeader>
                     <tr>
-                      <th className="px-5 py-3 whitespace-nowrap">Subscription #</th>
-                      <th className="px-5 py-3 whitespace-nowrap">Customer</th>
-                      <th className="px-5 py-3 whitespace-nowrap">Plan Name</th>
-                      <th className="px-5 py-3 whitespace-nowrap">Billing Cycle</th>
-                      <th className="px-5 py-3 text-right whitespace-nowrap">Recurring Rate</th>
-                      <th className="px-5 py-3 whitespace-nowrap">Next Renewal</th>
-                      <th className="px-5 py-3 whitespace-nowrap">Status</th>
-                      <th className="px-5 py-3 text-right whitespace-nowrap">Actions</th>
+                      <TableHead>Subscription #</TableHead>
+                      <TableHead>Customer</TableHead>
+                      <TableHead>Plan Name</TableHead>
+                      <TableHead>Billing Cycle</TableHead>
+                      <TableHead className="text-right">Recurring Rate</TableHead>
+                      <TableHead>Next Renewal</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
                     </tr>
-                  </thead>
-                  <tbody className="divide-y divide-border/60">
+                  </TableHeader>
+                  <TableBody>
                     {paginated.map((s) => (
-                      <tr key={s.id} className="hover:bg-muted/30 transition-colors">
-                        <td className="px-5 py-3 font-mono font-bold text-primary whitespace-nowrap">
+                      <TableRow key={s.id}>
+                        <TableCell className="font-mono font-bold text-primary whitespace-nowrap">
                           {s.subscriptionNo}
-                        </td>
-                        <td className="px-5 py-3 font-bold text-foreground whitespace-nowrap text-xs sm:text-sm">
+                        </TableCell>
+                        <TableCell className="font-bold text-foreground whitespace-nowrap text-xs sm:text-sm">
                           {s.customerName}
-                        </td>
-                        <td className="px-5 py-3 font-medium text-foreground whitespace-nowrap text-xs">
+                        </TableCell>
+                        <TableCell className="font-medium text-foreground whitespace-nowrap text-xs">
                           {s.planName}
-                        </td>
-                        <td className="px-5 py-3 text-xs uppercase font-mono whitespace-nowrap">
+                        </TableCell>
+                        <TableCell className="text-xs uppercase font-mono whitespace-nowrap">
                           <Badge variant="outline" className="text-[10px] font-bold">
                             {s.billingCycle}
                           </Badge>
-                        </td>
-                        <td className="number px-5 py-3 text-right font-black text-foreground whitespace-nowrap text-sm">
+                        </TableCell>
+                        <TableCell className="number text-right font-black text-foreground whitespace-nowrap text-sm">
                           {formatCurrency(s.amount)}
-                        </td>
-                        <td className="px-5 py-3 text-xs text-muted-foreground whitespace-nowrap font-medium">
+                        </TableCell>
+                        <TableCell className="text-xs text-muted-foreground whitespace-nowrap font-medium">
                           {s.nextBillingDate ? formatAppDate(s.nextBillingDate) : "-"}
-                        </td>
-                        <td className="px-5 py-3 whitespace-nowrap">
+                        </TableCell>
+                        <TableCell className="whitespace-nowrap">
                           {s.status === "active" ? (
                             <Badge className="bg-success/12 text-success border-success/25 text-[10px] font-bold">
                               Active
@@ -310,8 +318,8 @@ function SubscriptionsPage() {
                               Cancelled
                             </Badge>
                           )}
-                        </td>
-                        <td className="px-5 py-3 text-right whitespace-nowrap">
+                        </TableCell>
+                        <TableCell className="text-right whitespace-nowrap">
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                               <Button variant="ghost" size="icon" className="size-8 rounded-lg">
@@ -341,12 +349,12 @@ function SubscriptionsPage() {
                                 <Trash2 className="mr-2 size-3.5" /> Cancel Subscription
                               </DropdownMenuItem>
                             </DropdownMenuContent>
-                          </DropdownMenu>
-                        </td>
-                      </tr>
+                            </DropdownMenu>
+                        </TableCell>
+                      </TableRow>
                     ))}
-                  </tbody>
-                </table>
+                  </TableBody>
+                </Table>
               </div>
 
               {/* Mobile Card Feed (< 768px) */}

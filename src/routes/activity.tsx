@@ -77,7 +77,7 @@ function ActivityPage() {
           <ol className="relative space-y-5 border-l-2 border-border/70 pl-6 ml-2">
             {activityLog.map((a) => (
               <li key={a.id} className="relative card-interactive group">
-                <span className="absolute -left-[33px] top-1 grid size-6 place-items-center rounded-full border-2 border-card bg-gradient-to-br from-primary to-accent text-[9px] font-black text-primary-foreground shadow-sm">
+                <span className="absolute -left-[33px] top-1 grid size-6 place-items-center rounded-full border-2 border-card bg-primary text-[9px] font-bold text-primary-foreground">
                   {a.user
                     .split(" ")
                     .map((n: string) => n[0])

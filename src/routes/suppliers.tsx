@@ -16,6 +16,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import {
   DropdownMenu,
@@ -689,56 +690,56 @@ function SuppliersPage() {
                 Purchase & Payment History
               </h4>
               <div className="overflow-x-auto rounded-xl border border-border shadow-soft">
-                <table className="w-full text-sm min-w-[700px]">
-                  <thead className="bg-muted/50 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                    <tr>
-                      <th className="px-3 py-2.5 text-left whitespace-nowrap">Date</th>
-                      <th className="px-3 py-2.5 text-left whitespace-nowrap">Type</th>
-                      <th className="px-3 py-2.5 text-left whitespace-nowrap">Ref #</th>
-                      <th className="px-3 py-2.5 text-right whitespace-nowrap">Debit (+Payable)</th>
-                      <th className="px-3 py-2.5 text-right whitespace-nowrap">Credit (-Paid)</th>
-                      <th className="px-3 py-2.5 text-right whitespace-nowrap">Balance</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-border">
+                <Table className="min-w-[700px]">
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="px-3 py-2.5 text-left whitespace-nowrap">Date</TableHead>
+                      <TableHead className="px-3 py-2.5 text-left whitespace-nowrap">Type</TableHead>
+                      <TableHead className="px-3 py-2.5 text-left whitespace-nowrap">Ref #</TableHead>
+                      <TableHead className="px-3 py-2.5 text-right whitespace-nowrap">Debit (+Payable)</TableHead>
+                      <TableHead className="px-3 py-2.5 text-right whitespace-nowrap">Credit (-Paid)</TableHead>
+                      <TableHead className="px-3 py-2.5 text-right whitespace-nowrap">Balance</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
                     {supplierLedgerEntries.length === 0 ? (
-                      <tr>
-                        <td colSpan={6} className="py-8 text-center text-xs text-muted-foreground">
+                      <TableRow>
+                        <TableCell colSpan={6} className="py-8 text-center text-xs text-muted-foreground">
                           No transactions recorded in supplier ledger yet.
-                        </td>
-                      </tr>
+                        </TableCell>
+                      </TableRow>
                     ) : (
                       supplierLedgerEntries.map((l) => (
-                        <tr key={l.id} className="hover:bg-muted/30">
-                          <td className="px-3 py-2.5 text-xs text-muted-foreground whitespace-nowrap">
+                        <TableRow key={l.id} className="hover:bg-muted/30">
+                          <TableCell className="px-3 py-2.5 text-xs text-muted-foreground whitespace-nowrap">
                             {new Date(l.date).toLocaleString()}
-                          </td>
-                          <td className="px-3 py-2.5 font-medium capitalize whitespace-nowrap">
+                          </TableCell>
+                          <TableCell className="px-3 py-2.5 font-medium capitalize whitespace-nowrap">
                             {l.type}
-                          </td>
-                          <td className="px-3 py-2.5 font-mono text-xs whitespace-nowrap">
+                          </TableCell>
+                          <TableCell className="px-3 py-2.5 font-mono text-xs whitespace-nowrap">
                             {l.referenceNo || "-"}
-                          </td>
-                          <td className="px-3 py-2.5 text-right font-semibold text-warning-foreground whitespace-nowrap">
+                          </TableCell>
+                          <TableCell className="px-3 py-2.5 text-right font-semibold text-warning-foreground whitespace-nowrap">
                             {l.type?.toLowerCase() === "purchase"
                               ? formatCurrency(Math.abs(Number(l.amount || 0)))
                               : "-"}
-                          </td>
-                          <td className="px-3 py-2.5 text-right font-semibold text-success whitespace-nowrap">
+                          </TableCell>
+                          <TableCell className="px-3 py-2.5 text-right font-semibold text-success whitespace-nowrap">
                             {l.type?.toLowerCase() === "payment" ||
                             l.type?.toLowerCase() === "return" ||
                             l.type?.toLowerCase() === "transfer out"
                               ? formatCurrency(Math.abs(Number(l.amount || 0)))
                               : "-"}
-                          </td>
-                          <td className="px-3 py-2.5 text-right font-bold whitespace-nowrap">
+                          </TableCell>
+                          <TableCell className="px-3 py-2.5 text-right font-bold whitespace-nowrap">
                             {formatCurrency(l.balanceAfter)}
-                          </td>
-                        </tr>
+                          </TableCell>
+                        </TableRow>
                       ))
                     )}
-                  </tbody>
-                </table>
+                  </TableBody>
+                </Table>
               </div>
             </div>
           </div>

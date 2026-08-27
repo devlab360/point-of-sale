@@ -4,6 +4,14 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { SuperAdminLayout } from "@/components/admin/SuperAdminLayout";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { toast } from "sonner";
 import {
   Dialog,
@@ -187,51 +195,51 @@ function SuperAdminTenantsPage() {
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm">
-                <thead className="bg-muted/50 border-b text-xs font-semibold text-muted-foreground uppercase">
-                  <tr>
-                    <th className="px-4 py-3">Store & Owner</th>
-                    <th className="px-4 py-3">Current Plan</th>
-                    <th className="px-4 py-3">Status</th>
-                    <th className="px-4 py-3">Plan Expiry</th>
-                    <th className="px-4 py-3 text-right">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y">
+              <Table>
+                <TableHeader className="bg-muted/50 border-b text-xs font-semibold text-muted-foreground uppercase">
+                  <TableRow>
+                    <TableHead className="px-4 py-3">Store & Owner</TableHead>
+                    <TableHead className="px-4 py-3">Current Plan</TableHead>
+                    <TableHead className="px-4 py-3">Status</TableHead>
+                    <TableHead className="px-4 py-3">Plan Expiry</TableHead>
+                    <TableHead className="px-4 py-3 text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
                   {filteredOrgs.map((org: any) => {
                     const plan = plans.find((p: any) => p.id === org.currentPlanId);
                     return (
-                      <tr key={org.id} className="hover:bg-muted/30 transition-colors">
-                        <td className="px-4 py-3">
+                      <TableRow key={org.id}>
+                        <TableCell className="px-4 py-3">
                           <div className="font-semibold text-foreground">{org.name}</div>
                           <div className="text-xs text-muted-foreground">{org.ownerEmail}</div>
-                        </td>
-                        <td className="px-4 py-3">
+                        </TableCell>
+                        <TableCell className="px-4 py-3">
                           <Badge variant="outline" className="font-mono text-xs">
                             {plan?.name || org.currentPlanId || "Basic"}
                           </Badge>
-                        </td>
-                        <td className="px-4 py-3">
+                        </TableCell>
+                        <TableCell className="px-4 py-3">
                           {org.status === "active" && (
-                            <Badge className="bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30">
+                            <Badge className="bg-success/15 text-success border-success/30">
                               Active
                             </Badge>
                           )}
                           {org.status === "trial" && (
-                            <Badge className="bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30">
+                            <Badge className="bg-warning/15 text-warning border-warning/30">
                               Trial
                             </Badge>
                           )}
                           {org.status === "suspended" && (
                             <Badge variant="destructive">Suspended</Badge>
                           )}
-                        </td>
-                        <td className="px-4 py-3 text-xs text-muted-foreground font-mono">
+                        </TableCell>
+                        <TableCell className="px-4 py-3 text-xs text-muted-foreground font-mono">
                           {org.planExpiryDate
                             ? new Date(org.planExpiryDate).toLocaleDateString()
                             : "N/A"}
-                        </td>
-                        <td className="px-4 py-3 text-right space-x-2">
+                        </TableCell>
+                        <TableCell className="px-4 py-3 text-right space-x-2">
                           <Button
                             size="sm"
                             variant="outline"
@@ -257,7 +265,7 @@ function SuperAdminTenantsPage() {
                             <Button
                               size="sm"
                               variant="ghost"
-                              className="text-emerald-600 hover:bg-emerald-500/10"
+                              className="text-success hover:bg-success/10"
                               onClick={() =>
                                 toggleStatusMutation.mutate({ orgId: org.id, status: "active" })
                               }
@@ -265,12 +273,12 @@ function SuperAdminTenantsPage() {
                               Activate
                             </Button>
                           )}
-                        </td>
-                      </tr>
+                        </TableCell>
+                      </TableRow>
                     );
                   })}
-                </tbody>
-              </table>
+                </TableBody>
+              </Table>
             </div>
           )}
         </div>

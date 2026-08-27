@@ -5,6 +5,14 @@ import { exportToCSV, parseCSV } from "@/lib/csv";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SearchableSelect } from "@/components/ui/searchable-select";
@@ -476,58 +484,58 @@ function AccountsPage() {
             <div className="overflow-hidden rounded-2xl border border-border/80 bg-card shadow-card">
               {/* Desktop Table */}
               <div className="table-desktop overflow-x-auto">
-                <table className="w-full text-left text-sm min-w-[750px]">
-                  <thead className="border-b border-border/80 bg-muted/40 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
-                    <tr>
-                      <th className="px-5 py-3 whitespace-nowrap">Voucher #</th>
-                      <th className="px-5 py-3 whitespace-nowrap">Date</th>
-                      <th className="px-5 py-3 whitespace-nowrap">Type</th>
-                      <th className="px-5 py-3 whitespace-nowrap">Debit Account</th>
-                      <th className="px-5 py-3 whitespace-nowrap">Credit Account</th>
-                      <th className="px-5 py-3 text-right whitespace-nowrap">Amount</th>
-                      <th className="px-5 py-3 whitespace-nowrap">Narration</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-border/60">
+                <Table className="min-w-[750px]">
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Voucher #</TableHead>
+                      <TableHead>Date</TableHead>
+                      <TableHead>Type</TableHead>
+                      <TableHead>Debit Account</TableHead>
+                      <TableHead>Credit Account</TableHead>
+                      <TableHead className="text-right">Amount</TableHead>
+                      <TableHead>Narration</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
                     {filteredVouchers.length === 0 ? (
-                      <tr>
-                        <td colSpan={7} className="py-8 text-center text-xs text-muted-foreground">
+                      <TableRow>
+                        <TableCell colSpan={7} className="py-8 text-center text-xs text-muted-foreground">
                           {search || filters.type
                             ? "No vouchers match your search query."
                             : 'No vouchers posted yet. Click "Post New Voucher" to create journal entries.'}
-                        </td>
-                      </tr>
+                        </TableCell>
+                      </TableRow>
                     ) : (
                       paginatedVouchers.map((v) => (
-                        <tr key={v.id} className="hover:bg-muted/30 transition-colors">
-                          <td className="px-5 py-3 font-mono font-bold text-primary whitespace-nowrap">
+                        <TableRow key={v.id}>
+                          <TableCell className="font-mono font-bold text-primary whitespace-nowrap">
                             {v.voucherNo}
-                          </td>
-                          <td className="px-5 py-3 text-xs text-muted-foreground whitespace-nowrap">
+                          </TableCell>
+                          <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
                             {formatDateTime(v.date)}
-                          </td>
-                          <td className="px-5 py-3 font-medium uppercase text-xs whitespace-nowrap">
+                          </TableCell>
+                          <TableCell className="font-medium uppercase text-xs whitespace-nowrap">
                             <Badge variant="outline" className="capitalize text-[10px] font-bold">
                               {v.type}
                             </Badge>
-                          </td>
-                          <td className="px-5 py-3 font-bold text-destructive whitespace-nowrap text-xs">
+                          </TableCell>
+                          <TableCell className="font-bold text-destructive whitespace-nowrap text-xs">
                             {v.debitAccountName}
-                          </td>
-                          <td className="px-5 py-3 font-bold text-success whitespace-nowrap text-xs">
+                          </TableCell>
+                          <TableCell className="font-bold text-success whitespace-nowrap text-xs">
                             {v.creditAccountName}
-                          </td>
-                          <td className="number px-5 py-3 text-right font-black text-foreground whitespace-nowrap text-sm">
+                          </TableCell>
+                          <TableCell className="number text-right font-black text-foreground whitespace-nowrap text-sm">
                             {formatCurrency(v.amount)}
-                          </td>
-                          <td className="px-5 py-3 text-xs text-muted-foreground truncate max-w-[180px] whitespace-nowrap">
+                          </TableCell>
+                          <TableCell className="text-xs text-muted-foreground truncate max-w-[180px] whitespace-nowrap">
                             {v.narration || "-"}
-                          </td>
-                        </tr>
+                          </TableCell>
+                        </TableRow>
                       ))
                     )}
-                  </tbody>
-                </table>
+                  </TableBody>
+                </Table>
               </div>
 
               {/* Mobile Card Feed (< 768px) */}

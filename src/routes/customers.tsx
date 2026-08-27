@@ -27,6 +27,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -431,38 +432,26 @@ function CustomersPage() {
             <div className="overflow-hidden rounded-2xl border border-border/80 bg-card shadow-card">
               {/* Desktop Table View */}
               <div className="table-desktop overflow-x-auto">
-                <table className="w-full text-left text-sm min-w-[1000px]">
-                  <thead className="border-b border-border/80 bg-muted/40 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
-                    <tr>
-                      <th className="px-5 py-3 whitespace-nowrap">{t("customer") || "Customer"}</th>
-                      <th className="px-5 py-3 whitespace-nowrap">{t("contact") || "Contact"}</th>
-                      <th className="px-5 py-3 text-right whitespace-nowrap">
-                        {t("visits") || "Visits"}
-                      </th>
-                      <th className="px-5 py-3 text-right whitespace-nowrap">
-                        {t("lifetime") || "Lifetime Spent"}
-                      </th>
-                      <th className="px-5 py-3 text-right whitespace-nowrap">
-                        {t("points") || "Points"}
-                      </th>
-                      <th className="px-5 py-3 text-right whitespace-nowrap">
-                        {t("credit") || "Due Credit"}
-                      </th>
-                      <th className="px-5 py-3 text-right whitespace-nowrap">
-                        {t("wallet") || "Wallet"}
-                      </th>
-                      <th className="px-5 py-3 whitespace-nowrap">{t("tier") || "Tier"}</th>
-                      <th className="px-5 py-3 text-right whitespace-nowrap">
-                        {t("actions") || "Actions"}
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-border/60">
+                <Table className="min-w-[1000px]">
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>{t("customer") || "Customer"}</TableHead>
+                      <TableHead>{t("contact") || "Contact"}</TableHead>
+                      <TableHead className="text-right">{t("visits") || "Visits"}</TableHead>
+                      <TableHead className="text-right">{t("lifetime") || "Lifetime Spent"}</TableHead>
+                      <TableHead className="text-right">{t("points") || "Points"}</TableHead>
+                      <TableHead className="text-right">{t("credit") || "Due Credit"}</TableHead>
+                      <TableHead className="text-right">{t("wallet") || "Wallet"}</TableHead>
+                      <TableHead>{t("tier") || "Tier"}</TableHead>
+                      <TableHead className="text-right">{t("actions") || "Actions"}</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
                     {customers.map((c: any) => (
-                      <tr key={c.id} className="hover:bg-muted/30 transition-colors">
-                        <td className="px-5 py-3 whitespace-nowrap">
+                      <TableRow key={c.id}>
+                        <TableCell className="whitespace-nowrap">
                           <div className="flex items-center gap-3">
-                            <div className="grid size-10 place-items-center rounded-xl bg-gradient-to-br from-primary/20 to-primary/5 text-xs font-black text-primary border border-primary/20">
+                            <div className="grid size-10 place-items-center rounded-xl bg-primary/10 text-xs font-semibold text-primary border border-primary/20">
                               {c.name
                                 .split(" ")
                                 .map((n: string) => n[0])
@@ -477,8 +466,8 @@ function CustomersPage() {
                               {c.name}
                             </span>
                           </div>
-                        </td>
-                        <td className="px-5 py-3 whitespace-nowrap">
+                        </TableCell>
+                        <TableCell className="whitespace-nowrap">
                           <div className="flex flex-col gap-0.5 text-xs text-muted-foreground font-medium">
                             {c.email && (
                               <span className="flex items-center gap-1.5">
@@ -489,25 +478,25 @@ function CustomersPage() {
                               <Phone className="size-3 text-muted-foreground/60" /> {c.phone}
                             </span>
                           </div>
-                        </td>
-                        <td className="number px-5 py-3 text-right whitespace-nowrap font-medium text-xs">
+                        </TableCell>
+                        <TableCell className="number text-right whitespace-nowrap font-medium text-xs">
                           {c.visits}
-                        </td>
-                        <td className="number px-5 py-3 text-right font-black whitespace-nowrap text-foreground">
+                        </TableCell>
+                        <TableCell className="number text-right font-black whitespace-nowrap text-foreground">
                           {formatCurrency(c.totalSpent)}
-                        </td>
-                        <td className="number px-5 py-3 text-right whitespace-nowrap font-bold text-xs text-muted-foreground">
+                        </TableCell>
+                        <TableCell className="number text-right whitespace-nowrap font-bold text-xs text-muted-foreground">
                           {c.loyaltyPoints.toLocaleString()}
-                        </td>
-                        <td
-                          className={`number px-5 py-3 text-right whitespace-nowrap font-black ${c.credit > 0 ? "text-destructive" : "text-muted-foreground"}`}
+                        </TableCell>
+                        <TableCell
+                          className={`number text-right whitespace-nowrap font-black ${c.credit > 0 ? "text-destructive" : "text-muted-foreground"}`}
                         >
                           {formatCurrency(c.credit)}
-                        </td>
-                        <td className="number px-5 py-3 text-right font-black text-success whitespace-nowrap">
+                        </TableCell>
+                        <TableCell className="number text-right font-black text-success whitespace-nowrap">
                           {formatCurrency(c.walletBalance || 0)}
-                        </td>
-                        <td className="px-5 py-3 whitespace-nowrap">
+                        </TableCell>
+                        <TableCell className="whitespace-nowrap">
                           <div className="flex flex-col gap-1 items-start">
                             {c.type === "wholesale" ? (
                               <Badge className="bg-primary/15 text-primary border-primary/25 text-[10px] font-bold">
@@ -533,8 +522,8 @@ function CustomersPage() {
                               <span className="text-[10px] font-extrabold text-warning">★ VIP</span>
                             ) : null}
                           </div>
-                        </td>
-                        <td className="px-5 py-3 text-right whitespace-nowrap">
+                        </TableCell>
+                        <TableCell className="text-right whitespace-nowrap">
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                               <Button variant="ghost" size="icon" className="size-8 rounded-lg">
@@ -573,11 +562,11 @@ function CustomersPage() {
                               </DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
-                        </td>
-                      </tr>
+                        </TableCell>
+                      </TableRow>
                     ))}
-                  </tbody>
-                </table>
+                  </TableBody>
+                </Table>
               </div>
 
               {/* Mobile Card Feed (< 768px) */}
@@ -892,7 +881,7 @@ function CustomersPage() {
                 <Button
                   size="sm"
                   variant="outline"
-                  className="bg-emerald-500/10 text-emerald-600 border-emerald-500/30 hover:bg-emerald-500/20 font-semibold flex-1 sm:flex-none"
+                  className="bg-success/10 text-success border-success/30 hover:bg-success/20 font-semibold flex-1 sm:flex-none"
                   onClick={() =>
                     sendAutomatedDueReminder(
                       settings?.storeName || "OneDesk360",
@@ -966,31 +955,31 @@ function CustomersPage() {
                 Transaction History Statement
               </h4>
               <div className="overflow-x-auto rounded-xl border border-border shadow-soft">
-                <table className="w-full text-sm min-w-[700px]">
-                  <thead className="bg-muted/50 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                    <tr>
-                      <th className="px-3 py-2.5 text-left whitespace-nowrap">Date</th>
-                      <th className="px-3 py-2.5 text-left whitespace-nowrap">Type</th>
-                      <th className="px-3 py-2.5 text-left whitespace-nowrap">Ref #</th>
-                      <th className="px-3 py-2.5 text-right whitespace-nowrap">Debit (+Due)</th>
-                      <th className="px-3 py-2.5 text-right whitespace-nowrap">Credit (-Paid)</th>
-                      <th className="px-3 py-2.5 text-right whitespace-nowrap">Balance</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-border">
+                <Table className="min-w-[700px]">
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="px-3 py-2.5 text-left">Date</TableHead>
+                      <TableHead className="px-3 py-2.5 text-left">Type</TableHead>
+                      <TableHead className="px-3 py-2.5 text-left">Ref #</TableHead>
+                      <TableHead className="px-3 py-2.5 text-right">Debit (+Due)</TableHead>
+                      <TableHead className="px-3 py-2.5 text-right">Credit (-Paid)</TableHead>
+                      <TableHead className="px-3 py-2.5 text-right">Balance</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
                     {customerLedgerEntries.length === 0 ? (
-                      <tr>
-                        <td colSpan={6} className="py-8 text-center text-xs text-muted-foreground">
+                      <TableRow>
+                        <TableCell colSpan={6} className="py-8 text-center text-xs text-muted-foreground">
                           No transactions recorded in ledger yet.
-                        </td>
-                      </tr>
+                        </TableCell>
+                      </TableRow>
                     ) : (
                       customerLedgerEntries.map((l) => (
-                        <tr key={l.id} className="hover:bg-muted/30">
-                          <td className="px-3 py-2.5 text-xs text-muted-foreground whitespace-nowrap">
+                        <TableRow key={l.id} className="hover:bg-muted/30">
+                          <TableCell className="px-3 py-2.5 text-xs text-muted-foreground whitespace-nowrap">
                             {new Date(l.date).toLocaleString()}
-                          </td>
-                          <td className="px-3 py-2.5 font-medium capitalize whitespace-nowrap">
+                          </TableCell>
+                          <TableCell className="px-3 py-2.5 font-medium capitalize whitespace-nowrap">
                             <span
                               className={cn(
                                 "inline-block rounded px-1.5 py-0.5 text-[10px] font-bold uppercase",
@@ -1001,26 +990,26 @@ function CustomersPage() {
                             >
                               {l.type}
                             </span>
-                          </td>
-                          <td className="px-3 py-2.5 font-mono text-xs whitespace-nowrap">
+                          </TableCell>
+                          <TableCell className="px-3 py-2.5 font-mono text-xs whitespace-nowrap">
                             {l.referenceNo || "-"}
-                          </td>
-                          <td className="px-3 py-2.5 text-right font-semibold text-destructive whitespace-nowrap">
+                          </TableCell>
+                          <TableCell className="px-3 py-2.5 text-right font-semibold text-destructive whitespace-nowrap">
                             {l.type === "invoice" ? formatCurrency(l.amount) : "-"}
-                          </td>
-                          <td className="px-3 py-2.5 text-right font-semibold text-success whitespace-nowrap">
+                          </TableCell>
+                          <TableCell className="px-3 py-2.5 text-right font-semibold text-success whitespace-nowrap">
                             {l.type === "payment" || l.type === "return"
                               ? formatCurrency(l.amount)
                               : "-"}
-                          </td>
-                          <td className="px-3 py-2.5 text-right font-bold whitespace-nowrap">
+                          </TableCell>
+                          <TableCell className="px-3 py-2.5 text-right font-bold whitespace-nowrap">
                             {formatCurrency(l.balanceAfter)}
-                          </td>
-                        </tr>
+                          </TableCell>
+                        </TableRow>
                       ))
                     )}
-                  </tbody>
-                </table>
+                  </TableBody>
+                </Table>
               </div>
             </div>
           </div>

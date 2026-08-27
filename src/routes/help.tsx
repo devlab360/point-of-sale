@@ -160,7 +160,7 @@ function HelpPage() {
   };
 
   return (
-    <div className="page-container space-y-5 container mx-auto">
+    <div className="page-container space-y-5">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <PageHeader
           title="Help Center"
@@ -191,7 +191,7 @@ function HelpPage() {
             document.getElementById("docs-section")?.scrollIntoView({ behavior: "smooth" });
           }}
         >
-          <div className="grid size-11 place-items-center rounded-xl bg-gradient-to-br from-primary/20 to-accent/20 text-primary border border-primary/20">
+          <div className="grid size-11 place-items-center rounded-xl bg-primary/10 text-primary border border-primary/20">
             <Book className="size-5" />
           </div>
           <h3 className="mt-4 font-bold text-foreground">Documentation</h3>
@@ -206,7 +206,7 @@ function HelpPage() {
             document.getElementById("videos-section")?.scrollIntoView({ behavior: "smooth" });
           }}
         >
-          <div className="grid size-11 place-items-center rounded-xl bg-gradient-to-br from-primary/20 to-accent/20 text-primary border border-primary/20">
+          <div className="grid size-11 place-items-center rounded-xl bg-primary/10 text-primary border border-primary/20">
             <Video className="size-5" />
           </div>
           <h3 className="mt-4 font-bold text-foreground">Video Tutorials</h3>
@@ -219,7 +219,7 @@ function HelpPage() {
           className="rounded-2xl border border-border/80 bg-card p-5 shadow-card hover:border-primary/50 transition-all cursor-pointer card-interactive"
           onClick={() => setIsChatOpen(true)}
         >
-          <div className="grid size-11 place-items-center rounded-xl bg-gradient-to-br from-primary/20 to-accent/20 text-primary border border-primary/20">
+          <div className="grid size-11 place-items-center rounded-xl bg-primary/10 text-primary border border-primary/20">
             <MessageCircle className="size-5" />
           </div>
           <h3 className="mt-4 font-bold text-foreground">Chat with us</h3>
@@ -229,7 +229,7 @@ function HelpPage() {
         </div>
 
         <div className="rounded-2xl border border-border/80 bg-card p-5 shadow-card cursor-default">
-          <div className="grid size-11 place-items-center rounded-xl bg-gradient-to-br from-primary/20 to-accent/20 text-primary border border-primary/20">
+          <div className="grid size-11 place-items-center rounded-xl bg-primary/10 text-primary border border-primary/20">
             <Phone className="size-5" />
           </div>
           <h3 className="mt-4 font-bold text-foreground">Call support</h3>

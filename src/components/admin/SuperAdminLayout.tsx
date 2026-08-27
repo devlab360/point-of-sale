@@ -69,7 +69,7 @@ export function SuperAdminLayout({ children }: { children: React.ReactNode }) {
         {/* Brand Header */}
         <div className="h-16 flex items-center px-6 border-b justify-between bg-card">
           <div className="flex items-center gap-3">
-            <div className="flex size-9 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-primary/80 text-primary-foreground shadow-sm shadow-primary/30">
+            <div className="flex size-9 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-soft">
               <Shield className="w-5 h-5" />
             </div>
             <div>
@@ -133,13 +133,10 @@ export function SuperAdminLayout({ children }: { children: React.ReactNode }) {
         <div className="p-4 border-t bg-muted/20 space-y-2.5">
           <div className="p-2.5 rounded-xl border border-border/80 bg-card/60 flex items-center justify-between text-xs">
             <div className="flex items-center gap-2">
-              <span className="relative flex size-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full size-2 bg-emerald-500"></span>
-              </span>
+              <span className="inline-block size-2 rounded-full bg-success"></span>
               <span className="text-[11px] font-semibold text-foreground">Local PostgreSQL</span>
             </div>
-            <span className="text-[10px] font-mono text-emerald-600 dark:text-emerald-400 font-bold">
+            <span className="text-[10px] font-mono text-success font-bold">
               ONLINE
             </span>
           </div>

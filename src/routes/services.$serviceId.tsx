@@ -78,7 +78,7 @@ function EditServicePage() {
   if (!initialData) return null;
 
   return (
-    <div className="container mx-auto">
+    <div>
       <ServiceForm
         initialData={initialData}
         onSubmit={(data) => updateMutation.mutate(data)}

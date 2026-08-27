@@ -6,12 +6,12 @@
 @theme inline {
   --radius-xs: 0.375rem;
   --radius-sm: 0.5rem;
-  --radius-md: 0.75rem;
+  --radius-md: 0.625rem;
   --radius-lg: 0.875rem;
-  --radius-xl: 1rem;
-  --radius-2xl: 1.25rem;
-  --radius-3xl: 1.5rem;
-  --radius: 0.75rem;
+  --radius-xl: 1.125rem;
+  --radius-2xl: 1.375rem;
+  --radius-3xl: 1.75rem;
+  --radius: 0.625rem;
 
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -57,15 +57,15 @@
 
   --font-sans:
     "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  --font-display: "Outfit", var(--font-sans);
-  --font-serif: "Instrument Serif", Georgia, serif;
+  --font-display: "Fraunces", var(--font-sans);
+  --font-serif: "Fraunces", Georgia, serif;
 
-  --shadow-soft: 0 2px 4px 0 oklch(0 0 0 / 0.03), 0 1px 2px 0 oklch(0 0 0 / 0.02);
-  --shadow-card: 0 2px 8px -2px oklch(0 0 0 / 0.04), 0 1px 3px -1px oklch(0 0 0 / 0.03);
-  --shadow-card-hover: 0 16px 36px -8px oklch(0 0 0 / 0.08), 0 4px 12px -4px oklch(0 0 0 / 0.04);
-  --shadow-elevated: 0 24px 48px -12px oklch(0 0 0 / 0.12), 0 8px 20px -6px oklch(0 0 0 / 0.05);
-  --shadow-modal: 0 32px 64px -16px oklch(0 0 0 / 0.28), 0 12px 24px -8px oklch(0 0 0 / 0.12);
-  --shadow-bottom-nav: 0 -4px 20px -4px oklch(0 0 0 / 0.08);
+  --shadow-soft: 0 1px 2px 0 oklch(0.3 0.02 60 / 0.04);
+  --shadow-card: 0 1px 2px 0 oklch(0.3 0.02 60 / 0.05), 0 2px 6px -2px oklch(0.3 0.02 60 / 0.04);
+  --shadow-card-hover: 0 8px 22px -6px oklch(0.3 0.02 60 / 0.12), 0 2px 6px -2px oklch(0.3 0.02 60 / 0.06);
+  --shadow-elevated: 0 12px 32px -8px oklch(0.3 0.02 60 / 0.16), 0 4px 12px -4px oklch(0.3 0.02 60 / 0.08);
+  --shadow-modal: 0 24px 56px -16px oklch(0.25 0.02 60 / 0.3), 0 8px 20px -8px oklch(0.25 0.02 60 / 0.14);
+  --shadow-bottom-nav: 0 -2px 12px -2px oklch(0.3 0.02 60 / 0.08);
 
   --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-in-out-expo: cubic-bezier(0.87, 0, 0.13, 1);
@@ -75,118 +75,118 @@
 }
 
 :root {
-  --radius: 0.75rem;
+  --radius: 0.625rem;
 
-  /* Warm Porcelain Slate Ivory Light Mode */
-  --background: oklch(0.985 0.005 85);
-  --foreground: oklch(0.18 0.03 260);
+  /* Warm Paper & Clay Light Mode */
+  --background: oklch(0.978 0.008 86);
+  --foreground: oklch(0.24 0.022 50);
 
-  --card: oklch(0.998 0.002 85);
-  --card-foreground: oklch(0.18 0.03 260);
+  --card: oklch(0.996 0.004 86);
+  --card-foreground: oklch(0.24 0.022 50);
 
-  --popover: oklch(0.998 0.002 85);
-  --popover-foreground: oklch(0.18 0.03 260);
+  --popover: oklch(0.996 0.004 86);
+  --popover-foreground: oklch(0.24 0.022 50);
 
-  /* Rich Royal Indigo / Violet Emerald Accents */
-  --primary: oklch(0.55 0.22 265);
-  --primary-foreground: oklch(0.99 0 0);
-  --primary-soft: oklch(0.95 0.04 265);
+  /* Terracotta / Burnt Clay Accent */
+  --primary: oklch(0.57 0.15 42);
+  --primary-foreground: oklch(0.99 0.005 86);
+  --primary-soft: oklch(0.94 0.035 48);
 
-  --secondary: oklch(0.95 0.008 260);
-  --secondary-foreground: oklch(0.22 0.03 260);
+  --secondary: oklch(0.95 0.014 82);
+  --secondary-foreground: oklch(0.3 0.02 55);
 
-  --muted: oklch(0.955 0.008 260);
-  --muted-foreground: oklch(0.48 0.02 260);
+  --muted: oklch(0.952 0.012 84);
+  --muted-foreground: oklch(0.5 0.022 55);
 
-  --accent: oklch(0.94 0.03 265);
-  --accent-foreground: oklch(0.28 0.08 265);
+  --accent: oklch(0.94 0.03 55);
+  --accent-foreground: oklch(0.32 0.04 45);
 
-  --destructive: oklch(0.58 0.22 25);
-  --destructive-foreground: oklch(0.99 0 0);
+  --destructive: oklch(0.55 0.17 28);
+  --destructive-foreground: oklch(0.99 0.005 86);
 
-  --success: oklch(0.62 0.18 152);
-  --success-foreground: oklch(0.99 0 0);
+  --success: oklch(0.58 0.1 150);
+  --success-foreground: oklch(0.99 0.005 86);
 
-  --warning: oklch(0.75 0.16 75);
-  --warning-foreground: oklch(0.2 0.06 75);
+  --warning: oklch(0.76 0.13 78);
+  --warning-foreground: oklch(0.28 0.03 70);
 
-  --info: oklch(0.58 0.18 245);
-  --info-foreground: oklch(0.99 0 0);
+  --info: oklch(0.58 0.09 235);
+  --info-foreground: oklch(0.99 0.005 86);
 
-  --border: oklch(0.915 0.01 260);
-  --input: oklch(0.925 0.01 260);
-  --ring: oklch(0.55 0.22 265);
+  --border: oklch(0.9 0.014 80);
+  --input: oklch(0.91 0.014 80);
+  --ring: oklch(0.57 0.15 42);
 
-  --chart-1: oklch(0.55 0.22 265);
-  --chart-2: oklch(0.62 0.18 152);
-  --chart-3: oklch(0.75 0.16 75);
-  --chart-4: oklch(0.58 0.18 245);
-  --chart-5: oklch(0.58 0.22 25);
+  --chart-1: oklch(0.57 0.15 42);
+  --chart-2: oklch(0.58 0.1 150);
+  --chart-3: oklch(0.76 0.13 78);
+  --chart-4: oklch(0.58 0.09 235);
+  --chart-5: oklch(0.62 0.14 20);
 
-  --sidebar: oklch(0.99 0.004 85);
-  --sidebar-foreground: oklch(0.3 0.025 260);
-  --sidebar-primary: oklch(0.55 0.22 265);
-  --sidebar-primary-foreground: oklch(0.99 0 0);
-  --sidebar-accent: oklch(0.95 0.008 260);
-  --sidebar-accent-foreground: oklch(0.2 0.03 260);
-  --sidebar-border: oklch(0.92 0.008 260);
-  --sidebar-ring: oklch(0.55 0.22 265);
+  --sidebar: oklch(0.994 0.006 86);
+  --sidebar-foreground: oklch(0.34 0.02 55);
+  --sidebar-primary: oklch(0.57 0.15 42);
+  --sidebar-primary-foreground: oklch(0.99 0.005 86);
+  --sidebar-accent: oklch(0.948 0.016 82);
+  --sidebar-accent-foreground: oklch(0.3 0.022 55);
+  --sidebar-border: oklch(0.906 0.014 82);
+  --sidebar-ring: oklch(0.57 0.15 42);
 }
 
 .dark {
-  /* Obsidian Velvet Midnight Dark Mode */
-  --background: oklch(0.12 0.02 260);
-  --foreground: oklch(0.98 0.005 85);
+  /* Warm Espresso Midnight Dark Mode */
+  --background: oklch(0.16 0.015 55);
+  --foreground: oklch(0.95 0.01 86);
 
-  --card: oklch(0.16 0.022 260);
-  --card-foreground: oklch(0.98 0.005 85);
+  --card: oklch(0.2 0.016 55);
+  --card-foreground: oklch(0.95 0.01 86);
 
-  --popover: oklch(0.18 0.022 260);
-  --popover-foreground: oklch(0.98 0.005 85);
+  --popover: oklch(0.22 0.016 55);
+  --popover-foreground: oklch(0.95 0.01 86);
 
-  --primary: oklch(0.68 0.22 265);
-  --primary-foreground: oklch(0.12 0.02 260);
-  --primary-soft: oklch(0.26 0.08 265);
+  --primary: oklch(0.72 0.13 42);
+  --primary-foreground: oklch(0.16 0.015 55);
+  --primary-soft: oklch(0.3 0.06 45);
 
-  --secondary: oklch(0.22 0.02 260);
-  --secondary-foreground: oklch(0.98 0.005 85);
+  --secondary: oklch(0.26 0.016 55);
+  --secondary-foreground: oklch(0.95 0.01 86);
 
-  --muted: oklch(0.2 0.018 260);
-  --muted-foreground: oklch(0.65 0.02 260);
+  --muted: oklch(0.24 0.015 55);
+  --muted-foreground: oklch(0.68 0.02 55);
 
-  --accent: oklch(0.25 0.08 265);
-  --accent-foreground: oklch(0.94 0.04 265);
+  --accent: oklch(0.29 0.05 45);
+  --accent-foreground: oklch(0.92 0.04 50);
 
-  --destructive: oklch(0.65 0.22 25);
-  --destructive-foreground: oklch(0.99 0 0);
+  --destructive: oklch(0.66 0.16 28);
+  --destructive-foreground: oklch(0.99 0.005 86);
 
-  --success: oklch(0.7 0.18 152);
-  --success-foreground: oklch(0.12 0.02 260);
+  --success: oklch(0.68 0.1 150);
+  --success-foreground: oklch(0.16 0.015 55);
 
-  --warning: oklch(0.78 0.16 75);
-  --warning-foreground: oklch(0.12 0.02 260);
+  --warning: oklch(0.8 0.12 78);
+  --warning-foreground: oklch(0.16 0.015 55);
 
-  --info: oklch(0.68 0.18 245);
-  --info-foreground: oklch(0.12 0.02 260);
+  --info: oklch(0.68 0.09 235);
+  --info-foreground: oklch(0.16 0.015 55);
 
-  --border: oklch(0.24 0.018 260);
-  --input: oklch(0.24 0.018 260);
-  --ring: oklch(0.68 0.22 265);
+  --border: oklch(0.27 0.015 55);
+  --input: oklch(0.28 0.015 55);
+  --ring: oklch(0.72 0.13 42);
 
-  --chart-1: oklch(0.68 0.22 265);
-  --chart-2: oklch(0.7 0.18 152);
-  --chart-3: oklch(0.78 0.16 75);
-  --chart-4: oklch(0.68 0.18 245);
-  --chart-5: oklch(0.65 0.22 25);
+  --chart-1: oklch(0.72 0.13 42);
+  --chart-2: oklch(0.68 0.1 150);
+  --chart-3: oklch(0.8 0.12 78);
+  --chart-4: oklch(0.68 0.09 235);
+  --chart-5: oklch(0.7 0.14 20);
 
-  --sidebar: oklch(0.14 0.02 260);
-  --sidebar-foreground: oklch(0.85 0.012 260);
-  --sidebar-primary: oklch(0.68 0.22 265);
-  --sidebar-primary-foreground: oklch(0.12 0.02 260);
-  --sidebar-accent: oklch(0.2 0.02 260);
-  --sidebar-accent-foreground: oklch(0.98 0.005 85);
-  --sidebar-border: oklch(0.22 0.018 260);
-  --sidebar-ring: oklch(0.68 0.22 265);
+  --sidebar: oklch(0.18 0.015 55);
+  --sidebar-foreground: oklch(0.88 0.012 55);
+  --sidebar-primary: oklch(0.72 0.13 42);
+  --sidebar-primary-foreground: oklch(0.16 0.015 55);
+  --sidebar-accent: oklch(0.24 0.016 55);
+  --sidebar-accent-foreground: oklch(0.95 0.01 86);
+  --sidebar-border: oklch(0.27 0.015 55);
+  --sidebar-ring: oklch(0.72 0.13 42);
 }
 
 @layer base {
@@ -248,17 +248,11 @@
   position: relative;
   transition:
     box-shadow var(--duration-normal) var(--ease-out-expo),
-    border-color var(--duration-normal) var(--ease-out-expo),
-    transform var(--duration-normal) var(--ease-out-expo);
+    border-color var(--duration-normal) var(--ease-out-expo);
 
   &:hover {
     box-shadow: var(--shadow-card-hover);
-    border-color: color-mix(in oklch, var(--color-primary) 30%, var(--color-border));
-    transform: translateY(-2px);
-  }
-
-  &:active {
-    transform: translateY(0) scale(0.995);
+    border-color: color-mix(in oklch, var(--color-primary) 25%, var(--color-border));
   }
 }
 
@@ -363,8 +357,9 @@
   font-family: var(--font-display);
   font-size: 2.25rem;
   line-height: 1.12;
-  font-weight: 800;
-  letter-spacing: -0.03em;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  font-feature-settings: "ss01", "ss02";
 
   @media (min-width: 640px) {
     font-size: 2.75rem;
@@ -374,9 +369,10 @@
 @utility text-headline {
   font-family: var(--font-display);
   font-size: 1.625rem;
-  line-height: 1.2;
-  font-weight: 700;
-  letter-spacing: -0.025em;
+  line-height: 1.22;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  font-feature-settings: "ss01", "ss02";
 }
 
 @utility text-title {
@@ -384,7 +380,7 @@
   font-size: 1.125rem;
   line-height: 1.35;
   font-weight: 600;
-  letter-spacing: -0.015em;
+  letter-spacing: -0.01em;
 }
 
 @utility text-body-strong {
@@ -398,16 +394,17 @@
   line-height: 1.4;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.04em;
 }
 
 @utility text-kpi {
   font-family: var(--font-display);
   font-size: 1.875rem;
   line-height: 1.05;
-  font-weight: 800;
-  letter-spacing: -0.03em;
+  font-weight: 600;
+  letter-spacing: -0.02em;
   font-variant-numeric: tabular-nums;
+  font-feature-settings: "ss01", "ss02";
 
   @media (min-width: 640px) {
     font-size: 2.25rem;

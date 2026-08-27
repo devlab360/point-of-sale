@@ -4,6 +4,14 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { SuperAdminLayout } from "@/components/admin/SuperAdminLayout";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { toast } from "sonner";
 import {
   getPendingPaymentsFn,
@@ -82,48 +90,48 @@ function SuperAdminPaymentsPage() {
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm">
-                <thead className="bg-muted/50 border-b text-xs font-semibold text-muted-foreground uppercase">
-                  <tr>
-                    <th className="px-4 py-3">Tenant / Org</th>
-                    <th className="px-4 py-3">Plan & Cycle</th>
-                    <th className="px-4 py-3">Amount</th>
-                    <th className="px-4 py-3">Tx Ref / Date</th>
-                    <th className="px-4 py-3">Status</th>
-                    <th className="px-4 py-3 text-right">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y">
+              <Table>
+                <TableHeader className="bg-muted/50 border-b text-xs font-semibold text-muted-foreground uppercase">
+                  <TableRow>
+                    <TableHead className="px-4 py-3">Tenant / Org</TableHead>
+                    <TableHead className="px-4 py-3">Plan & Cycle</TableHead>
+                    <TableHead className="px-4 py-3">Amount</TableHead>
+                    <TableHead className="px-4 py-3">Tx Ref / Date</TableHead>
+                    <TableHead className="px-4 py-3">Status</TableHead>
+                    <TableHead className="px-4 py-3 text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
                   {payments.map((p: any) => (
-                    <tr key={p.id} className="hover:bg-muted/30 transition-colors">
-                      <td className="px-4 py-3 font-semibold">{p.organizationId}</td>
-                      <td className="px-4 py-3 text-xs uppercase font-mono">
+                    <TableRow key={p.id}>
+                      <TableCell className="px-4 py-3 font-semibold">{p.organizationId}</TableCell>
+                      <TableCell className="px-4 py-3 text-xs uppercase font-mono">
                         {p.planId} ({p.billingCycle})
-                      </td>
-                      <td className="px-4 py-3 font-bold">${p.amount}</td>
-                      <td className="px-4 py-3 text-xs text-muted-foreground font-mono">
+                      </TableCell>
+                      <TableCell className="px-4 py-3 font-bold">${p.amount}</TableCell>
+                      <TableCell className="px-4 py-3 text-xs text-muted-foreground font-mono">
                         {p.transactionRef || "N/A"} <br />
                         {new Date(p.createdAt).toLocaleDateString()}
-                      </td>
-                      <td className="px-4 py-3">
+                      </TableCell>
+                      <TableCell className="px-4 py-3">
                         {p.status === "pending" && (
-                          <Badge className="bg-amber-500/15 text-amber-600 border-amber-500/30">
+                          <Badge className="bg-warning/15 text-warning border-warning/30">
                             Pending Review
                           </Badge>
                         )}
                         {p.status === "approved" && (
-                          <Badge className="bg-emerald-500/15 text-emerald-600 border-emerald-500/30">
+                          <Badge className="bg-success/15 text-success border-success/30">
                             Approved
                           </Badge>
                         )}
                         {p.status === "rejected" && <Badge variant="destructive">Rejected</Badge>}
-                      </td>
-                      <td className="px-4 py-3 text-right space-x-2">
+                      </TableCell>
+                      <TableCell className="px-4 py-3 text-right space-x-2">
                         {p.status === "pending" && (
                           <>
                             <Button
                               size="sm"
-                              className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                              className="bg-success hover:bg-success/90 text-success-foreground"
                               disabled={approveMutation.isPending}
                               onClick={() => approveMutation.mutate(p.id)}
                             >
@@ -140,11 +148,11 @@ function SuperAdminPaymentsPage() {
                             </Button>
                           </>
                         )}
-                      </td>
-                    </tr>
+                      </TableCell>
+                    </TableRow>
                   ))}
-                </tbody>
-              </table>
+                </TableBody>
+              </Table>
             </div>
           )}
         </div>

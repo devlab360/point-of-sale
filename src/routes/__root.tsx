@@ -153,7 +153,7 @@ function RootShell({ children }: { children: ReactNode }) {
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
         <link
-          href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Outfit:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:ital,wght@0,300..800;1,300..800&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600&family=Plus+Jakarta+Sans:ital,wght@0,300..800;1,300..800&display=swap"
           rel="stylesheet"
         />
         <HeadContent />
@@ -369,8 +369,8 @@ function AppLayout() {
     <>
       {isAuthenticated && isSuspended && (
         <AlertDialog open={true}>
-          <AlertDialogContent className="max-w-md pointer-events-auto border-border/50 bg-background/80 backdrop-blur-xl shadow-[0_0_50px_-12px_rgba(255,0,0,0.15)] overflow-hidden rounded-2xl">
-            <div className="absolute inset-0 bg-gradient-to-br from-destructive/10 to-transparent z-[-1]" />
+          <AlertDialogContent className="max-w-md pointer-events-auto border-border/60 bg-background overflow-hidden rounded-2xl">
+            <div className="absolute inset-0 bg-gradient-to-br from-destructive/5 to-transparent z-[-1]" />
             <AlertDialogHeader className="relative">
               <div className="mx-auto mb-4 flex size-16 items-center justify-center rounded-2xl bg-destructive/10 border border-destructive/20 shadow-inner">
                 <svg
@@ -405,13 +405,13 @@ function AppLayout() {
         (isTrialExpired ||
           (saasOrg?.status === "trial" && trialDaysLeft > 0 && !isTrialBannerDismissed)) && (
           <AlertDialog open={true}>
-            <AlertDialogContent className="max-w-md pointer-events-auto border-border/50 bg-background/80 backdrop-blur-xl shadow-[0_0_50px_-12px_rgba(255,0,0,0.15)] overflow-hidden rounded-2xl">
+            <AlertDialogContent className="max-w-md pointer-events-auto border-border/60 bg-background overflow-hidden rounded-2xl">
               {/* Background decorative glow */}
               <div
-                className={`absolute inset-0 bg-gradient-to-br ${isTrialExpired ? "from-destructive/10" : "from-primary/10"} to-transparent z-[-1]`}
+                className={`absolute inset-0 bg-gradient-to-br ${isTrialExpired ? "from-destructive/5" : "from-primary/5"} to-transparent z-[-1]`}
               />
               <div
-                className={`absolute -top-24 -right-24 size-48 rounded-full ${isTrialExpired ? "bg-destructive/20" : "bg-primary/20"} blur-5xl z-[-1]`}
+                className={`absolute -top-24 -right-24 size-48 rounded-full ${isTrialExpired ? "bg-destructive/10" : "bg-primary/10"} blur-3xl z-[-1]`}
               />
 
               {/* Cancel Button (Only for Active Trial) */}

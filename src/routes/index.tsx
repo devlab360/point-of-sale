@@ -37,6 +37,14 @@ import { StatCard } from "@/components/layout/StatCard";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
   Dialog,
   DialogContent,
   DialogHeader,
@@ -208,8 +216,7 @@ function Dashboard() {
       badgeClass = "bg-success/20 text-success border-success/30 font-bold";
     } else if (score >= 70) {
       grade = "Grade: A (Strong)";
-      badgeClass =
-        "bg-emerald-500/20 text-emerald-600 border-emerald-500/30 font-bold dark:text-emerald-400";
+      badgeClass = "bg-success/20 text-success border-success/30 font-bold";
     } else if (score >= 55) {
       grade = "Grade: B (Average)";
       badgeClass = "bg-info/20 text-info border-info/30 font-bold";
@@ -415,7 +422,7 @@ function Dashboard() {
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between border-b border-border/60 pb-6">
         <div>
           <div className="flex items-center gap-2.5">
-            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-foreground font-display">
+            <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-foreground font-display">
               Overview
             </h1>
             <span className="inline-flex items-center rounded-full border border-primary/20 bg-primary/10 px-3 py-0.5 text-xs font-bold text-primary font-display">
@@ -848,46 +855,46 @@ function Dashboard() {
 
             {/* Desktop Table View (>= 768px) */}
             <div className="table-desktop overflow-x-auto">
-              <table className="w-full text-left text-sm">
-                <thead>
-                  <tr className="border-b border-border/60 bg-muted/40 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
-                    <th className="px-5 py-3 whitespace-nowrap">Invoice</th>
-                    <th className="px-5 py-3 whitespace-nowrap">Customer</th>
-                    <th className="px-5 py-3 whitespace-nowrap">Payment</th>
-                    <th className="px-5 py-3 whitespace-nowrap">Status</th>
-                    <th className="px-5 py-3 whitespace-nowrap text-right">Amount</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border/60">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Invoice</TableHead>
+                    <TableHead>Customer</TableHead>
+                    <TableHead>Payment</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Amount</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
                   {recentSales.length === 0 ? (
-                    <tr>
-                      <td colSpan={5} className="py-8 text-center text-xs text-muted-foreground">
+                    <TableRow>
+                      <TableCell colSpan={5} className="py-8 text-center text-xs text-muted-foreground">
                         No sales transactions recorded yet today.
-                      </td>
-                    </tr>
+                      </TableCell>
+                    </TableRow>
                   ) : (
                     recentSales.slice(0, 6).map((s) => (
-                      <tr key={s.id} className="hover:bg-muted/40 transition-colors">
-                        <td className="px-5 py-3 font-semibold text-foreground whitespace-nowrap">
+                      <TableRow key={s.id} className="hover:bg-muted/40">
+                        <TableCell className="font-semibold text-foreground whitespace-nowrap">
                           #{s.id.slice(0, 8).toUpperCase()}
-                        </td>
-                        <td className="px-5 py-3 whitespace-nowrap font-medium text-foreground">
+                        </TableCell>
+                        <TableCell className="whitespace-nowrap font-medium text-foreground">
                           {s.customerName || "Walk-in Customer"}
-                        </td>
-                        <td className="px-5 py-3 text-muted-foreground capitalize whitespace-nowrap text-xs">
+                        </TableCell>
+                        <TableCell className="text-muted-foreground capitalize whitespace-nowrap text-xs">
                           {s.paymentMethod || "cash"}
-                        </td>
-                        <td className="px-5 py-3 whitespace-nowrap">
+                        </TableCell>
+                        <TableCell className="whitespace-nowrap">
                           <StatusBadge status={s.status} />
-                        </td>
-                        <td className="number px-5 py-3 text-right font-extrabold text-foreground whitespace-nowrap">
+                        </TableCell>
+                        <TableCell className="number text-right font-extrabold text-foreground whitespace-nowrap">
                           {formatCurrency(s.total)}
-                        </td>
-                      </tr>
+                        </TableCell>
+                      </TableRow>
                     ))
                   )}
-                </tbody>
-              </table>
+                </TableBody>
+              </Table>
             </div>
 
             {/* Mobile Cards View (< 768px) */}
@@ -1018,11 +1025,11 @@ function Dashboard() {
               </div>
               <div className="text-xl font-black text-success">{fmt(displayProfit)}</div>
             </div>
-            <div className="bg-purple-500/10 border border-purple-500/30 rounded-xl p-3.5 text-center">
+            <div className="bg-primary/8 border border-primary/20 rounded-xl p-3.5 text-center">
               <div className="flex items-center justify-center gap-1.5 text-xs font-semibold text-muted-foreground mb-1">
-                <ShoppingBag className="size-3.5 text-purple-600" /> Transactions
+                <ShoppingBag className="size-3.5 text-primary" /> Transactions
               </div>
-              <div className="text-xl font-black text-purple-600">{displayOrders} Orders</div>
+              <div className="text-xl font-black text-primary">{displayOrders} Orders</div>
             </div>
           </div>
 

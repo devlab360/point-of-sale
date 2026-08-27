@@ -212,7 +212,7 @@ function KitchenPage() {
     <div className="page-container space-y-5">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-xl sm:text-2xl font-black tracking-tight text-foreground flex items-center gap-2">
+          <h1 className="text-xl sm:text-2xl font-semibold tracking-tight text-foreground flex items-center gap-2">
             <ChefHat className="size-6 text-primary" />
             Kitchen Display System (KDS)
           </h1>
@@ -236,8 +236,8 @@ function KitchenPage() {
           <div className="flex flex-col rounded-2xl border border-border/80 bg-muted/10 p-4 shadow-sm">
             <div className="flex items-center justify-between pb-3 mb-3 border-b border-border/60">
               <div className="flex items-center gap-2">
-                <span className="size-2.5 rounded-full bg-rose-500 animate-pulse shadow-[0_0_8px_rgba(244,63,94,0.6)]" />
-                <h2 className="font-black text-sm text-foreground uppercase tracking-wide">
+                <span className="size-2.5 rounded-full bg-rose-500 animate-pulse" />
+                <h2 className="font-semibold text-sm text-foreground uppercase tracking-wide">
                   1. New Orders
                 </h2>
               </div>
@@ -267,7 +267,7 @@ function KitchenPage() {
           <div className="flex flex-col rounded-2xl border border-border/80 bg-muted/10 p-4 shadow-sm">
             <div className="flex items-center justify-between pb-3 mb-3 border-b border-border/60">
               <div className="flex items-center gap-2">
-                <span className="size-2.5 rounded-full bg-amber-500 animate-pulse shadow-[0_0_8px_rgba(245,158,11,0.6)]" />
+                <span className="size-2.5 rounded-full bg-amber-500 animate-pulse" />
                 <h2 className="font-black text-sm text-foreground uppercase tracking-wide">
                   2. Preparing
                 </h2>
@@ -298,7 +298,7 @@ function KitchenPage() {
           <div className="flex flex-col rounded-2xl border border-border/80 bg-muted/10 p-4 shadow-sm">
             <div className="flex items-center justify-between pb-3 mb-3 border-b border-border/60">
               <div className="flex items-center gap-2">
-                <span className="size-2.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.6)]" />
+                <span className="size-2.5 rounded-full bg-emerald-500" />
                 <h2 className="font-black text-sm text-foreground uppercase tracking-wide">
                   3. Ready
                 </h2>

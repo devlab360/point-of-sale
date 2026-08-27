@@ -77,7 +77,7 @@ function ErrorPage() {
           Error Code: {code}
         </div>
 
-        <h1 className="mb-3 text-3xl font-extrabold tracking-tight text-foreground md:text-4xl">
+        <h1 className="mb-3 text-3xl font-semibold tracking-tight text-foreground md:text-4xl">
           {title}
         </h1>
 

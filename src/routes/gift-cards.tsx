@@ -338,7 +338,7 @@ function GiftCardsPage() {
               {paginatedCards.map((g) => (
                 <div
                   key={g.id}
-                  className="relative overflow-hidden rounded-2xl border border-border/80 bg-gradient-to-br from-primary/10 via-card to-accent/20 p-5 shadow-card card-interactive flex flex-col justify-between"
+                  className="relative overflow-hidden rounded-2xl border border-border/80 bg-card p-5 shadow-soft card-interactive flex flex-col justify-between"
                 >
                   <div className="absolute right-4 top-4 z-10 flex items-center gap-2">
                     <DropdownMenu>

@@ -4,6 +4,7 @@ import { DataPage } from "@/components/layout/DataPage";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PaginationControls } from "@/components/ui/pagination-controls";
 import { useDebounce } from "@/hooks/useDebounce";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -245,47 +246,47 @@ function RepairsPage() {
             <div className="overflow-hidden rounded-2xl border border-border/80 bg-card shadow-card">
               {/* Desktop Table */}
               <div className="table-desktop overflow-x-auto">
-                <table className="w-full text-left text-sm min-w-[900px]">
-                  <thead className="border-b border-border/80 bg-muted/40 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
-                    <tr>
-                      <th className="px-5 py-3 whitespace-nowrap">Ticket #</th>
-                      <th className="px-5 py-3 whitespace-nowrap">Customer</th>
-                      <th className="px-5 py-3 whitespace-nowrap">Device / Model</th>
-                      <th className="px-5 py-3 whitespace-nowrap">Serial / IMEI</th>
-                      <th className="px-5 py-3 text-right whitespace-nowrap">Est. Cost</th>
-                      <th className="px-5 py-3 text-right whitespace-nowrap">Advance</th>
-                      <th className="px-5 py-3 whitespace-nowrap">Status</th>
-                      <th className="px-5 py-3 text-right whitespace-nowrap">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-border/60">
+                <Table className="min-w-[900px]">
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Ticket #</TableHead>
+                      <TableHead>Customer</TableHead>
+                      <TableHead>Device / Model</TableHead>
+                      <TableHead>Serial / IMEI</TableHead>
+                      <TableHead className="text-right">Est. Cost</TableHead>
+                      <TableHead className="text-right">Advance</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
                     {paginated.map((r) => (
-                      <tr key={r.id} className="hover:bg-muted/30 transition-colors">
-                        <td
-                          className="px-5 py-3 font-mono font-bold text-primary whitespace-nowrap cursor-pointer hover:underline"
+                      <TableRow key={r.id}>
+                        <TableCell
+                          className="font-mono font-bold text-primary whitespace-nowrap cursor-pointer hover:underline"
                           onClick={() => setViewItem(r)}
                         >
                           {r.ticketNo}
-                        </td>
-                        <td className="px-5 py-3 whitespace-nowrap">
+                        </TableCell>
+                        <TableCell className="whitespace-nowrap">
                           <div className="font-bold text-foreground text-xs sm:text-sm">
                             {r.customerName}
                           </div>
                           <div className="text-[11px] text-muted-foreground">{r.customerPhone}</div>
-                        </td>
-                        <td className="px-5 py-3 font-bold text-foreground whitespace-nowrap text-xs">
+                        </TableCell>
+                        <TableCell className="font-bold text-foreground whitespace-nowrap text-xs">
                           {r.deviceName}
-                        </td>
-                        <td className="px-5 py-3 font-mono text-xs text-muted-foreground whitespace-nowrap">
+                        </TableCell>
+                        <TableCell className="font-mono text-xs text-muted-foreground whitespace-nowrap">
                           {r.serialOrImei || "-"}
-                        </td>
-                        <td className="number px-5 py-3 text-right font-black text-foreground whitespace-nowrap text-sm">
+                        </TableCell>
+                        <TableCell className="number text-right font-black text-foreground whitespace-nowrap text-sm">
                           {formatCurrency(r.estimatedCost)}
-                        </td>
-                        <td className="number px-5 py-3 text-right font-black text-success whitespace-nowrap text-xs">
+                        </TableCell>
+                        <TableCell className="number text-right font-black text-success whitespace-nowrap text-xs">
                           {formatCurrency(r.advancePaid)}
-                        </td>
-                        <td className="px-5 py-3 whitespace-nowrap">
+                        </TableCell>
+                        <TableCell className="whitespace-nowrap">
                           {r.status === "delivered" ? (
                             <Badge className="bg-success/12 text-success border-success/25 text-[10px] font-bold">
                               Delivered
@@ -303,8 +304,8 @@ function RepairsPage() {
                               Received
                             </Badge>
                           )}
-                        </td>
-                        <td className="px-5 py-3 text-right whitespace-nowrap">
+                        </TableCell>
+                        <TableCell className="text-right whitespace-nowrap">
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                               <Button variant="ghost" size="icon" className="size-8 rounded-lg">
@@ -345,11 +346,11 @@ function RepairsPage() {
                               </DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
-                        </td>
-                      </tr>
+                        </TableCell>
+                      </TableRow>
                     ))}
-                  </tbody>
-                </table>
+                  </TableBody>
+                </Table>
               </div>
 
               {/* Mobile Card Feed (< 768px) */}

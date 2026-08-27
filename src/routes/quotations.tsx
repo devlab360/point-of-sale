@@ -6,6 +6,7 @@ import { PaginationControls } from "@/components/ui/pagination-controls";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { DatePicker } from "@/components/ui/date-picker";
 import { useDebounce } from "@/hooks/useDebounce";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -367,40 +368,40 @@ function QuotationsPage() {
             <div className="overflow-hidden rounded-2xl border border-border/80 bg-card shadow-card">
               {/* Desktop Table View */}
               <div className="table-desktop overflow-x-auto">
-                <table className="w-full text-left text-sm min-w-[800px]">
-                  <thead className="border-b border-border/80 bg-muted/40 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
-                    <tr>
-                      <th className="px-5 py-3 whitespace-nowrap">Quotation #</th>
-                      <th className="px-5 py-3 whitespace-nowrap">Customer</th>
-                      <th className="px-5 py-3 whitespace-nowrap">Quote Date</th>
-                      <th className="px-5 py-3 whitespace-nowrap">Valid Until</th>
-                      <th className="px-5 py-3 text-right whitespace-nowrap">Estimated Total</th>
-                      <th className="px-5 py-3 whitespace-nowrap">Status</th>
-                      <th className="px-5 py-3 text-right whitespace-nowrap">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-border/60">
+                <Table className="min-w-[800px]">
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Quotation #</TableHead>
+                      <TableHead>Customer</TableHead>
+                      <TableHead>Quote Date</TableHead>
+                      <TableHead>Valid Until</TableHead>
+                      <TableHead className="text-right">Estimated Total</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
                     {paginated.map((q) => (
-                      <tr key={q.id} className="hover:bg-muted/30 transition-colors">
-                        <td
-                          className="px-5 py-3 font-mono font-bold text-primary whitespace-nowrap cursor-pointer hover:underline"
+                      <TableRow key={q.id}>
+                        <TableCell
+                          className="font-mono font-bold text-primary whitespace-nowrap cursor-pointer hover:underline"
                           onClick={() => setViewItem(q)}
                         >
                           {q.quotationNo}
-                        </td>
-                        <td className="px-5 py-3 font-bold text-foreground whitespace-nowrap">
+                        </TableCell>
+                        <TableCell className="font-bold text-foreground whitespace-nowrap">
                           {q.customerName}
-                        </td>
-                        <td className="px-5 py-3 text-xs text-muted-foreground whitespace-nowrap">
+                        </TableCell>
+                        <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
                           {formatDate(q.date)}
-                        </td>
-                        <td className="px-5 py-3 text-xs text-muted-foreground whitespace-nowrap">
+                        </TableCell>
+                        <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
                           {formatDate(q.validUntil)}
-                        </td>
-                        <td className="number px-5 py-3 text-right font-black text-foreground whitespace-nowrap text-sm">
+                        </TableCell>
+                        <TableCell className="number text-right font-black text-foreground whitespace-nowrap text-sm">
                           {formatCurrency(q.total)}
-                        </td>
-                        <td className="px-5 py-3 whitespace-nowrap">
+                        </TableCell>
+                        <TableCell className="whitespace-nowrap">
                           {q.status === "converted" ? (
                             <Badge className="bg-success/12 text-success border-success/25 text-[10px] font-bold">
                               Converted to Invoice
@@ -414,8 +415,8 @@ function QuotationsPage() {
                               {q.status}
                             </Badge>
                           )}
-                        </td>
-                        <td className="px-5 py-3 text-right whitespace-nowrap">
+                        </TableCell>
+                        <TableCell className="text-right whitespace-nowrap">
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                               <Button variant="ghost" size="icon" className="size-8 rounded-lg">
@@ -446,11 +447,11 @@ function QuotationsPage() {
                               </DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
-                        </td>
-                      </tr>
+                        </TableCell>
+                      </TableRow>
                     ))}
-                  </tbody>
-                </table>
+                  </TableBody>
+                </Table>
               </div>
 
               {/* Mobile Card Feed (< 768px) */}
@@ -610,23 +611,25 @@ function QuotationsPage() {
             {/* Line Items Table */}
             {lineItems.length > 0 && (
               <div className="overflow-x-auto rounded-lg border border-border">
-                <table className="w-full text-xs min-w-[500px]">
-                  <thead className="bg-muted/50 font-semibold uppercase text-muted-foreground">
-                    <tr>
-                      <th className="p-2 text-left whitespace-nowrap">Item</th>
-                      <th className="p-2 text-center w-20 whitespace-nowrap">Qty</th>
-                      <th className="p-2 text-right w-28 whitespace-nowrap">
+                <Table className="text-xs min-w-[500px]">
+                  <TableHeader className="bg-muted/50 font-semibold uppercase text-muted-foreground">
+                    <TableRow>
+                      <TableHead className="p-2 text-left">Item</TableHead>
+                      <TableHead className="p-2 text-center w-20">Qty</TableHead>
+                      <TableHead className="p-2 text-right w-28">
                         Unit Price ({currencySymbol})
-                      </th>
-                      <th className="p-2 text-right w-24 whitespace-nowrap">Total</th>
-                      <th className="p-2 text-center w-12 whitespace-nowrap"></th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-border">
+                      </TableHead>
+                      <TableHead className="p-2 text-right w-24">Total</TableHead>
+                      <TableHead className="p-2 text-center w-12"></TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody className="divide-y divide-border">
                     {lineItems.map((item) => (
-                      <tr key={item.productId}>
-                        <td className="p-2 font-medium whitespace-nowrap">{item.productName}</td>
-                        <td className="p-2 text-center whitespace-nowrap">
+                      <TableRow key={item.productId}>
+                        <TableCell className="font-medium whitespace-nowrap">
+                          {item.productName}
+                        </TableCell>
+                        <TableCell className="text-center whitespace-nowrap">
                           <Input
                             type="number"
                             min="1"
@@ -638,8 +641,8 @@ function QuotationsPage() {
                             }
                             className="h-7 w-16 text-center text-xs"
                           />
-                        </td>
-                        <td className="p-2 text-right whitespace-nowrap">
+                        </TableCell>
+                        <TableCell className="text-right whitespace-nowrap">
                           <Input
                             type="number"
                             step="0.01"
@@ -652,11 +655,11 @@ function QuotationsPage() {
                             }
                             className="h-7 w-24 text-right text-xs"
                           />
-                        </td>
-                        <td className="p-2 text-right font-bold whitespace-nowrap">
+                        </TableCell>
+                        <TableCell className="text-right font-bold whitespace-nowrap">
                           {formatCurrency(item.price * item.quantity)}
-                        </td>
-                        <td className="p-2 text-center whitespace-nowrap">
+                        </TableCell>
+                        <TableCell className="text-center whitespace-nowrap">
                           <button
                             type="button"
                             onClick={() => updateLineQty(item.productId, 0)}
@@ -664,11 +667,11 @@ function QuotationsPage() {
                           >
                             ×
                           </button>
-                        </td>
-                      </tr>
+                        </TableCell>
+                      </TableRow>
                     ))}
-                  </tbody>
-                </table>
+                  </TableBody>
+                </Table>
               </div>
             )}
 
@@ -776,32 +779,34 @@ function QuotationsPage() {
                   Quoted Line Items
                 </h4>
                 <div className="overflow-x-auto rounded-xl border">
-                  <table className="w-full text-xs min-w-[400px]">
-                    <thead className="bg-muted/50 font-semibold uppercase text-muted-foreground">
-                      <tr>
-                        <th className="p-2.5 text-left whitespace-nowrap">Item Name</th>
-                        <th className="p-2.5 text-center whitespace-nowrap">Qty</th>
-                        <th className="p-2.5 text-right whitespace-nowrap">Price</th>
-                        <th className="p-2.5 text-right whitespace-nowrap">Total</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y">
+                  <Table className="text-xs min-w-[400px]">
+                    <TableHeader className="bg-muted/50 font-semibold uppercase text-muted-foreground">
+                      <TableRow>
+                        <TableHead className="p-2.5 text-left">Item Name</TableHead>
+                        <TableHead className="p-2.5 text-center">Qty</TableHead>
+                        <TableHead className="p-2.5 text-right">Price</TableHead>
+                        <TableHead className="p-2.5 text-right">Total</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
                       {viewItem.items.map((i, idx) => (
-                        <tr key={idx}>
-                          <td className="p-2.5 font-medium whitespace-nowrap">{i.productName}</td>
-                          <td className="p-2.5 text-center font-bold whitespace-nowrap">
+                        <TableRow key={idx}>
+                          <TableCell className="p-2.5 font-medium whitespace-nowrap">
+                            {i.productName}
+                          </TableCell>
+                          <TableCell className="p-2.5 text-center font-bold whitespace-nowrap">
                             {i.quantity}
-                          </td>
-                          <td className="p-2.5 text-right whitespace-nowrap">
+                          </TableCell>
+                          <TableCell className="p-2.5 text-right whitespace-nowrap">
                             {formatCurrency(i.price)}
-                          </td>
-                          <td className="p-2.5 text-right font-bold whitespace-nowrap">
+                          </TableCell>
+                          <TableCell className="p-2.5 text-right font-bold whitespace-nowrap">
                             {formatCurrency(i.total)}
-                          </td>
-                        </tr>
+                          </TableCell>
+                        </TableRow>
                       ))}
-                    </tbody>
-                  </table>
+                    </TableBody>
+                  </Table>
                 </div>
               </div>
 

@@ -263,7 +263,7 @@ function LoyaltyPage() {
                   >
                     {i + 1}
                   </div>
-                  <div className="grid size-9 place-items-center rounded-xl bg-gradient-to-br from-primary/20 to-primary/5 text-xs font-black text-primary border border-primary/20 shrink-0">
+                  <div className="grid size-9 place-items-center rounded-xl bg-primary/10 text-xs font-semibold text-primary border border-primary/20 shrink-0">
                     {c.name
                       .split(" ")
                       .map((n: string) => n[0])

@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { FileUpload } from "@/components/ui/file-upload";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -17,7 +18,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Loader2, ArrowLeft } from "lucide-react";
+import { useFormValidation } from "@/hooks/useFormValidation";
+import { FieldError } from "@/components/ui/field-error";
+import {
+  Loader2,
+  ArrowLeft,
+  Package,
+  IndianRupee,
+  Clock,
+  Layers,
+  Image as ImageIcon,
+} from "lucide-react";
 
 export function ServiceForm({
   initialData,
@@ -71,12 +82,26 @@ export function ServiceForm({
     };
   });
 
+  const { errors, validate, clearError } = useFormValidation({
+    name: {
+      required: "Service name is required",
+      minLength: { value: 2, message: "Name must be at least 2 characters" },
+    },
+    price: {
+      required: "Retail price is required",
+      positive: "Price must be a valid positive number",
+    },
+    cost: { positive: "Cost cannot be negative" },
+  });
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.name.trim()) {
-      return toast.error("Service Name is required");
+    const priceNum = parseFloat(String(formData.price)) || 0;
+    const costNum = parseFloat(String(formData.cost)) || 0;
+    if (!validate({ ...formData, price: priceNum, cost: costNum })) {
+      return toast.error("Please fill in all required fields correctly.");
     }
-    if (!formData.hasVariants && (!formData.price || parseFloat(formData.price as string) < 0)) {
+    if (!formData.hasVariants && priceNum < 0) {
       return toast.error("Valid price is required");
     }
 
@@ -87,6 +112,8 @@ export function ServiceForm({
 
     const payload = {
       ...formData,
+      price: priceNum,
+      cost: costNum,
       duration: durationMins > 0 ? durationMins.toString() : "",
     };
 
@@ -94,149 +121,233 @@ export function ServiceForm({
   };
 
   return (
-    <div className="container mx-auto space-y-6 pb-20 mt-4 px-4">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <h1 className="text-2xl font-bold tracking-tight">
-            {initialData ? "Edit Service" : "Add Service"}
-          </h1>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" onClick={() => navigate({ to: "/services" })}>
-            Cancel
+    <div className="page-container pb-24 relative space-y-6">
+      {/* Sticky Action Bar */}
+      <div className="sticky top-0 z-20 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-background/90 backdrop-blur-xl pb-3 pt-2 border-b border-border/80 shadow-sm -mx-4 px-4 sm:-mx-6 sm:px-6">
+        <div className="flex items-center gap-3">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => navigate({ to: "/services" })}
+            className="size-9 rounded-xl hover:bg-muted"
+          >
+            <ArrowLeft className="size-4" />
           </Button>
-          <Button onClick={handleSubmit} disabled={isSaving}>
-            {isSaving && <Loader2 className="size-4 animate-spin mr-2" />}
-            Save Service
+          <div>
+            <h1 className="text-xl sm:text-2xl font-semibold tracking-tight text-foreground">
+              {initialData ? "Edit Service" : "Add New Service"}
+            </h1>
+            <p className="text-xs text-muted-foreground hidden sm:block">
+              {initialData
+                ? "Update service details, pricing, and variants."
+                : "Configure a new service with pricing and optional variants."}
+            </p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2.5 w-full sm:w-auto">
+          <Button
+            variant="outline"
+            onClick={() => navigate({ to: "/services" })}
+            className="flex-1 sm:flex-none h-10 rounded-xl text-xs font-semibold"
+          >
+            Discard
+          </Button>
+          <Button
+            onClick={handleSubmit}
+            disabled={isSaving}
+            className="flex-1 sm:flex-none min-w-[140px] h-10 rounded-xl font-bold text-xs shadow-soft"
+          >
+            {isSaving && <Loader2 className="size-4 animate-spin mr-1.5" />}
+            {initialData ? "Save Service" : "Create Service"}
           </Button>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="md:col-span-2 space-y-6">
-          <div className="rounded-xl border bg-card text-card-foreground shadow-sm p-6 space-y-6">
-            <h2 className="text-lg font-semibold border-b pb-2">Service Information</h2>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Left Column - Main Details */}
+        <div className="lg:col-span-2 space-y-6">
+          <Card className="shadow-card border-border/80 rounded-2xl overflow-hidden">
+            <CardHeader className="border-b border-border/60 bg-muted/20 pb-3.5">
+              <CardTitle className="text-base font-bold flex items-center gap-2">
+                <Package className="size-4 text-primary" /> Service Information
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-6">
+              <div className="grid gap-6">
+                <div className="grid gap-1.5">
+                  <Label className="text-sm font-semibold">
+                    Service Name <span className="text-destructive">*</span>
+                  </Label>
+                  <Input
+                    placeholder="e.g. Basic Haircut"
+                    value={formData.name}
+                    onChange={(e) => {
+                      setFormData({ ...formData, name: e.target.value });
+                      clearError("name");
+                    }}
+                    className={`h-11 ${errors.name ? "border-destructive focus-visible:ring-destructive" : ""}`}
+                  />
+                  <FieldError message={errors.name} />
+                </div>
 
-            <div className="grid gap-4">
+                <div className="space-y-1.5">
+                  <Label htmlFor="category" className="text-sm font-semibold">
+                    {t("category") || "Category"}
+                  </Label>
+                  <SearchableSelect
+                    options={categories.map((c: any) => ({ value: c.id, label: c.name }))}
+                    value={formData.category}
+                    onChange={(val) => setFormData({ ...formData, category: val })}
+                    placeholder={t("selectCategory") || "Select category..."}
+                    onCreate={async (name) => {
+                      const res = await createCategoryFn({ data: { category: { name } } });
+                      if (res?.success) {
+                        queryClient.invalidateQueries({ queryKey: ["categories"] });
+                        return res.data?.id;
+                      }
+                    }}
+                  />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="shadow-sm border-border/60 overflow-hidden">
+            <CardHeader className="border-b bg-muted/20 pb-3.5">
+              <CardTitle className="text-base font-bold flex items-center gap-2">
+                <IndianRupee className="size-4 text-primary" /> Pricing & Duration
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-6 space-y-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                <div className="grid gap-1.5">
+                  <Label className="text-sm font-semibold">
+                    Retail Price <span className="text-destructive">*</span>
+                  </Label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <span className="text-muted-foreground text-sm">₹</span>
+                    </div>
+                    <Input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      placeholder="0.00"
+                      value={formData.price}
+                      onChange={(e) => {
+                        setFormData({ ...formData, price: e.target.value });
+                        clearError("price");
+                      }}
+                      className={`pl-8 h-11 ${errors.price ? "border-destructive focus-visible:ring-destructive" : ""}`}
+                    />
+                  </div>
+                  <FieldError message={errors.price} />
+                </div>
+                <div className="grid gap-1.5">
+                  <Label className="text-sm font-semibold">Cost (Internal)</Label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <span className="text-muted-foreground text-sm">₹</span>
+                    </div>
+                    <Input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      placeholder="0.00"
+                      value={formData.cost}
+                      onChange={(e) => {
+                        setFormData({ ...formData, cost: e.target.value });
+                        clearError("cost");
+                      }}
+                      className={`pl-8 h-11 ${errors.cost ? "border-destructive focus-visible:ring-destructive" : ""}`}
+                    />
+                  </div>
+                  <FieldError message={errors.cost} />
+                </div>
+              </div>
+
               <div className="grid gap-1.5">
-                <Label>
-                  Service Name <span className="text-destructive">*</span>
+                <Label className="text-sm font-semibold">
+                  <Clock className="inline size-3.5 mr-1.5 text-muted-foreground -mt-0.5" />
+                  Estimated Duration (Optional)
                 </Label>
-                <Input
-                  placeholder="e.g. Basic Haircut"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                <div className="flex gap-2">
+                  <Input
+                    type="number"
+                    min="0"
+                    placeholder="e.g. 30"
+                    value={formData.durationValue}
+                    onChange={(e) => setFormData({ ...formData, durationValue: e.target.value })}
+                    className="h-11 w-1/2"
+                  />
+                  <Select
+                    value={formData.durationUnit}
+                    onValueChange={(val) => setFormData({ ...formData, durationUnit: val })}
+                  >
+                    <SelectTrigger className="h-11 w-1/2">
+                      <SelectValue placeholder="Unit" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="mins">Minutes</SelectItem>
+                      <SelectItem value="hours">Hours</SelectItem>
+                      <SelectItem value="days">Days</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="shadow-sm border-border/60 overflow-hidden">
+            <CardHeader className="border-b bg-muted/20 pb-3.5">
+              <CardTitle className="text-base font-bold flex items-center gap-2">
+                <Layers className="size-4 text-primary" /> Variants
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-6 space-y-6">
+              <div className="flex items-start space-x-3 p-4 rounded-lg border border-primary/20 bg-primary/5 transition-colors hover:bg-primary/10">
+                <input
+                  type="checkbox"
+                  id="hasVariants"
+                  checked={formData.hasVariants}
+                  onChange={(e) => setFormData({ ...formData, hasVariants: e.target.checked })}
+                  className="mt-1 rounded border-primary/50 text-primary focus:ring-primary w-5 h-5 cursor-pointer"
                 />
+                <div className="space-y-1">
+                  <Label
+                    htmlFor="hasVariants"
+                    className="font-semibold cursor-pointer text-base text-foreground"
+                  >
+                    This service has variants (e.g. 30 Min vs 60 Min)
+                  </Label>
+                  <p className="text-xs text-muted-foreground">
+                    Offer the same service at different durations or price points.
+                  </p>
+                </div>
               </div>
 
-              <div className="space-y-1.5">
-                <Label htmlFor="category">{t("category") || "Category"}</Label>
-                <SearchableSelect
-                  options={categories.map((c: any) => ({ value: c.id, label: c.name }))}
-                  value={formData.category}
-                  onChange={(val) => setFormData({ ...formData, category: val })}
-                  placeholder={t("selectCategory") || "Select category..."}
-                  onCreate={async (name) => {
-                    const res = await createCategoryFn({ data: { category: { name } } });
-                    if (res?.success) {
-                      queryClient.invalidateQueries({ queryKey: ["categories"] });
-                      return res.data?.id;
-                    }
-                  }}
-                />
-              </div>
-            </div>
-          </div>
-
-          <div className="rounded-xl border bg-card text-card-foreground shadow-sm p-6 space-y-6">
-            <h2 className="text-lg font-semibold border-b pb-2">Pricing & Duration</h2>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="grid gap-1.5">
-                <Label>
-                  Retail Price <span className="text-destructive">*</span>
-                </Label>
-                <Input
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  placeholder="0.00"
-                  value={formData.price}
-                  onChange={(e) => setFormData({ ...formData, price: e.target.value })}
-                />
-              </div>
-              <div className="grid gap-1.5">
-                <Label>Cost (Internal)</Label>
-                <Input
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  placeholder="0.00"
-                  value={formData.cost}
-                  onChange={(e) => setFormData({ ...formData, cost: e.target.value })}
-                />
-              </div>
-            </div>
-
-            <div className="grid gap-1.5">
-              <Label>Estimated Duration (Optional)</Label>
-              <div className="flex gap-2">
-                <Input
-                  type="number"
-                  min="0"
-                  placeholder="e.g. 30"
-                  value={formData.durationValue}
-                  onChange={(e) => setFormData({ ...formData, durationValue: e.target.value })}
-                  className="w-1/2"
-                />
-                <Select
-                  value={formData.durationUnit}
-                  onValueChange={(val) => setFormData({ ...formData, durationUnit: val })}
-                >
-                  <SelectTrigger className="w-1/2">
-                    <SelectValue placeholder="Unit" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="mins">Minutes</SelectItem>
-                    <SelectItem value="hours">Hours</SelectItem>
-                    <SelectItem value="days">Days</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-          </div>
-
-          <div className="rounded-xl border bg-card text-card-foreground shadow-sm p-6 space-y-6">
-            <h2 className="text-lg font-semibold border-b pb-2">Variants</h2>
-
-            <div className="flex items-center space-x-2">
-              <input
-                type="checkbox"
-                id="hasVariants"
-                checked={formData.hasVariants}
-                onChange={(e) => setFormData({ ...formData, hasVariants: e.target.checked })}
-                className="rounded border-gray-300 text-primary focus:ring-primary w-4 h-4"
-              />
-              <Label htmlFor="hasVariants" className="font-medium cursor-pointer text-base">
-                This service has variants (e.g. 30 Min vs 60 Min)
-              </Label>
-            </div>
-
-            {formData.hasVariants && (
-              <VariantManager
-                mode="service"
-                variants={formData.variants}
-                onChange={(variants) => setFormData({ ...formData, variants })}
-              />
-            )}
-          </div>
+              {formData.hasVariants && (
+                <div className="pl-8">
+                  <VariantManager
+                    mode="service"
+                    variants={formData.variants}
+                    onChange={(variants) => setFormData({ ...formData, variants })}
+                  />
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </div>
 
+        {/* Right Column - Media */}
         <div className="space-y-6">
-          <div className="rounded-xl border bg-card text-card-foreground shadow-sm p-6 space-y-6">
-            <h2 className="text-lg font-semibold border-b pb-2">Media</h2>
-            <div className="grid gap-2">
-              <Label>Service Image</Label>
+          <Card className="shadow-sm border-border/60 overflow-hidden">
+            <CardHeader className="border-b bg-muted/20 pb-3.5">
+              <CardTitle className="text-base font-bold flex items-center gap-2">
+                <ImageIcon className="size-4 text-primary" /> Media
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-6">
               <FileUpload
                 value={
                   formData.image && !formData.image.includes("unsplash.com")
@@ -258,8 +369,8 @@ export function ServiceForm({
                 label=""
                 description="PNG, JPG, WEBP or GIF • Max 3MB"
               />
-            </div>
-          </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
     </div>

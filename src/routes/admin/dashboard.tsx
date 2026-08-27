@@ -86,13 +86,13 @@ function SuperAdminDashboardPage() {
     <SuperAdminLayout>
       <div className="space-y-6">
         {/* Top Header Banner */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-gradient-to-r from-primary/10 via-primary/5 to-transparent p-6 rounded-2xl border border-primary/20">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-primary/5 p-6 rounded-2xl border border-primary/10">
           <div>
             <div className="flex items-center gap-2">
               <span className="bg-primary/20 text-primary px-2 py-0.5 rounded text-xs font-bold font-mono">
                 SAAS V3.0
               </span>
-              <h2 className="text-xl font-extrabold tracking-tight">Platform Overview</h2>
+              <h2 className="text-xl font-semibold tracking-tight">Platform Overview</h2>
             </div>
             <p className="text-sm text-muted-foreground mt-1">
               Real-time multi-tenant health, metrics, and subscription approvals
@@ -120,7 +120,7 @@ function SuperAdminDashboardPage() {
                 </div>
               </div>
               <p className="text-xs text-muted-foreground mt-3 flex items-center gap-1">
-                <span className="text-emerald-500 font-bold flex items-center">
+                <span className="text-success font-bold flex items-center">
                   <ArrowUpRight className="size-3" /> +14%
                 </span>{" "}
                 vs last month
@@ -137,7 +137,7 @@ function SuperAdminDashboardPage() {
                     {isOrgLoading ? "..." : activeTenants}
                   </h3>
                 </div>
-                <div className="size-10 rounded-xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center">
+                <div className="size-10 rounded-xl bg-success/10 text-success flex items-center justify-center">
                   <ShieldCheck className="size-5" />
                 </div>
               </div>
@@ -155,7 +155,7 @@ function SuperAdminDashboardPage() {
                   <p className="text-xs font-medium text-muted-foreground">Pending Approvals</p>
                   <h3 className="text-2xl font-bold mt-1">{pendingPayments.length}</h3>
                 </div>
-                <div className="size-10 rounded-xl bg-amber-500/10 text-amber-500 flex items-center justify-center">
+                <div className="size-10 rounded-xl bg-warning/10 text-warning flex items-center justify-center">
                   <Receipt className="size-5" />
                 </div>
               </div>
@@ -172,7 +172,7 @@ function SuperAdminDashboardPage() {
                   <p className="text-xs font-medium text-muted-foreground">SaaS Pricing Tiers</p>
                   <h3 className="text-2xl font-bold mt-1">{plans.length}</h3>
                 </div>
-                <div className="size-10 rounded-xl bg-purple-500/10 text-purple-500 flex items-center justify-center">
+                <div className="size-10 rounded-xl bg-info/10 text-info flex items-center justify-center">
                   <Layers className="size-5" />
                 </div>
               </div>

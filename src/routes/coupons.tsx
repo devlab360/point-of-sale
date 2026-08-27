@@ -7,6 +7,14 @@ import { PaginationControls } from "@/components/ui/pagination-controls";
 import { useDebounce } from "@/hooks/useDebounce";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -356,41 +364,41 @@ function CouponsPage() {
             <div className="overflow-hidden rounded-2xl border border-border/80 bg-card shadow-card">
               {/* Desktop Table */}
               <div className="table-desktop overflow-x-auto">
-                <table className="w-full text-left text-sm min-w-[800px]">
-                  <thead className="border-b border-border/80 bg-muted/40 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
-                    <tr>
-                      <th className="px-5 py-3 whitespace-nowrap">Coupon Code</th>
-                      <th className="px-5 py-3 whitespace-nowrap">Discount Type</th>
-                      <th className="px-5 py-3 whitespace-nowrap">Value</th>
-                      <th className="px-5 py-3 whitespace-nowrap">Usage Limit</th>
-                      <th className="px-5 py-3 whitespace-nowrap">Expires On</th>
-                      <th className="px-5 py-3 whitespace-nowrap">Status</th>
-                      <th className="px-5 py-3 text-right whitespace-nowrap">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-border/60">
+                <Table className="min-w-[800px]">
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Coupon Code</TableHead>
+                      <TableHead>Discount Type</TableHead>
+                      <TableHead>Value</TableHead>
+                      <TableHead>Usage Limit</TableHead>
+                      <TableHead>Expires On</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
                     {paginatedCoupons.map((c) => (
-                      <tr key={c.id} className="hover:bg-muted/30 transition-colors">
-                        <td className="px-5 py-3 whitespace-nowrap">
+                      <TableRow key={c.id}>
+                        <TableCell className="whitespace-nowrap">
                           <code className="rounded-lg bg-primary/10 border border-primary/20 px-2.5 py-1 text-xs font-mono font-black text-primary">
                             {c.code}
                           </code>
-                        </td>
-                        <td className="px-5 py-3 text-muted-foreground whitespace-nowrap capitalize text-xs font-medium">
+                        </TableCell>
+                        <TableCell className="text-muted-foreground whitespace-nowrap capitalize text-xs font-medium">
                           {c.type}
-                        </td>
-                        <td className="number px-5 py-3 font-black text-foreground whitespace-nowrap text-sm">
+                        </TableCell>
+                        <TableCell className="number font-black text-foreground whitespace-nowrap text-sm">
                           {c.type === "percent" ? `${c.value}%` : formatCurrency(c.value)}
-                        </td>
-                        <td className="px-5 py-3 text-xs text-muted-foreground whitespace-nowrap font-medium">
+                        </TableCell>
+                        <TableCell className="text-xs text-muted-foreground whitespace-nowrap font-medium">
                           {c.usedCount} / {c.usageLimit || "∞"}
-                        </td>
-                        <td className="px-5 py-3 text-xs text-muted-foreground whitespace-nowrap font-medium">
+                        </TableCell>
+                        <TableCell className="text-xs text-muted-foreground whitespace-nowrap font-medium">
                           {c.validUntil
                             ? formatDate(new Date(c.validUntil).toISOString())
                             : "No expiry"}
-                        </td>
-                        <td className="px-5 py-3 whitespace-nowrap">
+                        </TableCell>
+                        <TableCell className="whitespace-nowrap">
                           <Badge
                             className={
                               c.status === "active"
@@ -402,8 +410,8 @@ function CouponsPage() {
                           >
                             {c.status}
                           </Badge>
-                        </td>
-                        <td className="px-5 py-3 text-right whitespace-nowrap">
+                        </TableCell>
+                        <TableCell className="text-right whitespace-nowrap">
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                               <Button variant="ghost" size="icon" className="size-8 rounded-lg">
@@ -425,11 +433,11 @@ function CouponsPage() {
                               </DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
-                        </td>
-                      </tr>
+                        </TableCell>
+                      </TableRow>
                     ))}
-                  </tbody>
-                </table>
+                  </TableBody>
+                </Table>
               </div>
 
               {/* Mobile Card Feed (< 768px) */}

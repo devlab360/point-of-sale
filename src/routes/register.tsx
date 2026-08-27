@@ -12,7 +12,6 @@ import {
   Store,
   User,
   Loader2,
-  Sparkles,
   Shield,
   Layers,
   ArrowRight,
@@ -178,45 +177,47 @@ function RegisterPage() {
   return (
     <div className="min-h-screen w-full flex bg-background overflow-hidden text-foreground">
       {/* Left Showcase Banner - Desktop */}
-      <div className="hidden lg:flex lg:w-1/2 relative bg-gradient-to-br from-primary/95 via-primary/80 to-primary/60 p-12 flex-col justify-between overflow-hidden">
-        <div className="absolute -top-24 -left-24 size-96 rounded-full bg-white/10 blur-3xl" />
-        <div className="absolute -bottom-24 -right-24 size-96 rounded-full bg-accent/20 blur-3xl" />
+      <div className="hidden lg:flex lg:w-1/2 relative bg-primary p-12 flex-col justify-between overflow-hidden">
+        <div className="absolute inset-0 opacity-[0.06] pointer-events-none [background-size:44px_44px] [background-image:linear-gradient(to_right,oklch(0.99 0.005 90/0.4)_1px,transparent_1px),linear-gradient(to_bottom,oklch(0.99 0.005 90/0.4)_1px,transparent_1px)]" />
+        <div className="absolute -bottom-48 -left-32 size-[480px] rounded-full bg-foreground/5 blur-3xl pointer-events-none" />
 
         {/* Brand Header */}
         <div className="relative z-10 flex items-center gap-3">
-          <div className="flex size-11 items-center justify-center rounded-2xl bg-white/15 backdrop-blur-md border border-white/20 text-white shadow-xl">
+          <div className="flex size-11 items-center justify-center rounded-2xl bg-primary-foreground/10 border border-primary-foreground/20 text-primary-foreground">
             <Store className="size-6" />
           </div>
           <div>
-            <h1 className="text-xl font-extrabold tracking-tight text-white">OneDesk360</h1>
-            <p className="text-xs text-white/80 font-medium uppercase tracking-wider">
-              Enterprise Cloud Commerce
+            <h1 className="font-display text-2xl font-semibold tracking-tight text-primary-foreground">
+              OneDesk360
+            </h1>
+            <p className="text-[11px] text-primary-foreground/75 font-medium uppercase tracking-wider">
+              Own the counter
             </p>
           </div>
         </div>
 
         {/* Value Proposition */}
         <div className="relative z-10 space-y-6 max-w-lg">
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-white text-xs font-semibold">
-            <Sparkles className="size-3.5 text-amber-300" />
-            <span>7-Day Full Access Free Trial</span>
-          </div>
-
-          <h2 className="text-4xl font-black tracking-tight text-white leading-tight">
-            Launch Your Store in Minutes. No Credit Card Required.
+          <h2 className="font-display text-[2.6rem] leading-[1.08] font-semibold tracking-tight text-primary-foreground">
+            Your shop, set up in minutes.
           </h2>
 
-          <div className="space-y-3 pt-2">
+          <p className="text-[15px] text-primary-foreground/85 leading-relaxed">
+            Start a free 7-day trial — no card needed. We pre-load your catalog so you can ring up
+            today.
+          </p>
+
+          <div className="space-y-3 pt-1">
             {[
-              "Pre-loaded product catalog templates for your industry",
-              "Unlimited invoices, multi-user accounts & Khatabook ledgers",
-              "Instant thermal printing & WhatsApp digital receipts",
-              "Automatic daily report emails & inventory stock alerts",
-            ].map((feat, idx) => (
-              <div key={idx} className="flex items-center gap-3 text-sm text-white/90">
-                <div className="size-5 rounded-full bg-emerald-400/20 text-emerald-300 flex items-center justify-center shrink-0 border border-emerald-400/30">
+              "Pre-loaded product templates for your industry",
+              "Unlimited invoices, staff logins & customer ledgers",
+              "Instant thermal & WhatsApp receipts",
+              "Automatic daily reports & stock alerts",
+            ].map((feat) => (
+              <div key={feat} className="flex items-center gap-3 text-sm text-primary-foreground/90">
+                <span className="grid size-5 shrink-0 place-items-center rounded-full bg-primary-foreground/10 border border-primary-foreground/20">
                   <CheckCircle2 className="size-3.5" />
-                </div>
+                </span>
                 <span>{feat}</span>
               </div>
             ))}
@@ -224,19 +225,19 @@ function RegisterPage() {
         </div>
 
         {/* Footer info */}
-        <div className="relative z-10 flex items-center justify-between text-xs text-white/70">
+        <div className="relative z-10 flex items-center justify-between text-xs text-primary-foreground/70">
           <p>
             © {new Date().getFullYear()}{" "}
             <a
               href="https://devlab360.com/"
               target="_blank"
               rel="noopener noreferrer"
-              className="hover:text-white transition-colors underline font-medium"
+              className="hover:text-primary-foreground transition-colors underline font-medium"
             >
               DevLab360
             </a>
           </p>
-          <Link to="/login" className="hover:text-white transition-colors underline font-medium">
+          <Link to="/login" className="hover:text-primary-foreground transition-colors underline font-medium">
             Sign In to Existing Store
           </Link>
         </div>
@@ -250,7 +251,7 @@ function RegisterPage() {
             <div className="inline-flex lg:hidden size-14 items-center justify-center rounded-2xl bg-primary/10 text-primary mb-2">
               <Store className="size-7" />
             </div>
-            <h2 className="text-3xl sm:text-4xl font-black tracking-tight text-foreground">
+            <h2 className="font-display text-3xl sm:text-4xl font-semibold tracking-tight text-foreground">
               Create Your Store Account
             </h2>
 
@@ -267,13 +268,13 @@ function RegisterPage() {
                 }`}
               />
             </div>
-            <p className="text-xs sm:text-sm font-bold text-muted-foreground uppercase tracking-wider">
+            <p className="text-xs sm:text-sm font-semibold text-muted-foreground uppercase tracking-wider">
               Step {step} of 2 — {step === 1 ? "Account Credentials" : "Store Profile"}
             </p>
           </div>
 
           {/* Wizard Form Card */}
-          <div className="rounded-3xl border border-border bg-card p-8 sm:p-10 md:p-12 shadow-md space-y-7">
+          <div className="rounded-3xl border border-border bg-card p-8 sm:p-10 md:p-12 shadow-elevated space-y-7">
             {step === 1 ? (
               /* Step 1: Owner Details & Credentials */
               <div className="space-y-5">
@@ -304,7 +305,7 @@ function RegisterPage() {
                       </span>
                     )}
                     {emailStatus === "available" && (
-                      <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">
+                      <span className="text-xs font-bold text-success">
                         Available
                       </span>
                     )}
@@ -341,7 +342,7 @@ function RegisterPage() {
 
                 <Button
                   onClick={handleNextStep}
-                  className="w-full h-12 sm:h-13 rounded-2xl font-extrabold gap-2 text-base shadow-md transition-all hover:scale-[1.01] mt-2"
+                  className="w-full h-12 sm:h-13 rounded-2xl font-semibold gap-2 text-base mt-2"
                 >
                   <span>Continue to Store Profile</span>
                   <ChevronRight className="size-5" />
@@ -407,7 +408,7 @@ function RegisterPage() {
                   <Button
                     type="submit"
                     disabled={isRegistering}
-                    className="flex-1 h-12 sm:h-13 rounded-2xl font-extrabold gap-2 text-base shadow-md transition-all hover:scale-[1.01]"
+                    className="flex-1 h-12 sm:h-13 rounded-2xl font-semibold gap-2 text-base"
                   >
                     {isRegistering ? (
                       <>
@@ -416,7 +417,7 @@ function RegisterPage() {
                       </>
                     ) : (
                       <>
-                        <Sparkles className="size-5" />
+                        <CheckCircle2 className="size-5" />
                         <span>Start 7-Day Free Trial</span>
                       </>
                     )}

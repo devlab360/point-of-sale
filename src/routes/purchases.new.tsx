@@ -30,6 +30,14 @@ import {
 import { Input } from "@/components/ui/input";
 import { PersistStore } from "@/lib/session-store";
 import { Badge } from "@/components/ui/badge";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 export const Route = createFileRoute("/purchases/new")({
   head: () => ({ meta: [{ title: "New Purchase Order · OneDesk360" }] }),
@@ -221,66 +229,69 @@ function NewPurchase() {
   };
 
   return (
-    <div className="page-container space-y-5 container mx-auto">
-      {/* Back button & Breadcrumb header */}
-      <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => navigate({ to: "/purchases" })}
-          className="h-8 px-2 text-muted-foreground hover:text-foreground"
-        >
-          <ArrowLeft className="size-4 mr-1" /> Back to Purchases
-        </Button>
-      </div>
-
-      <PageHeader
-        title="New Purchase Order"
-        description="Receive stock from suppliers, update inventory, and manage purchase bills."
-        actions={
-          <div className="flex flex-wrap items-center gap-2">
-            <input
-              type="file"
-              accept="image/*"
-              className="hidden"
-              ref={fileInputRef}
-              onChange={handleFileUpload}
-            />
-            <Button
-              size="sm"
-              variant="outline"
-              className="bg-primary/5 text-primary hover:bg-primary/10 border-primary/20 font-medium"
-              onClick={() => fileInputRef.current?.click()}
-              disabled={isAnalyzing || isSubmitting}
-            >
-              {isAnalyzing ? (
-                <Loader2 className="size-4 mr-2 animate-spin text-primary" />
-              ) : (
-                <Camera className="size-4 mr-2" />
-              )}
-              Auto-Fill with AI
-            </Button>
-            {/* <Button
-              size="sm"
-              onClick={handleSubmit}
-              disabled={isAnalyzing || isSubmitting}
-              className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold shadow-sm min-w-[130px]"
-            >
-              {isSubmitting ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Saving...
-                </>
-              ) : (
-                <>
-                  <CheckCircle2 className="mr-2 h-4 w-4" />
-                  Submit Order
-                </>
-              )}
-            </Button> */}
+    <div className="page-container pb-24 relative space-y-6">
+      {/* Sticky Action Bar */}
+      <div className="sticky top-0 z-20 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-background/90 backdrop-blur-xl pb-3 pt-2 border-b border-border/80 shadow-sm -mx-4 px-4 sm:-mx-6 sm:px-6">
+        <div className="flex items-center gap-3">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => navigate({ to: "/purchases" })}
+            className="size-9 rounded-xl hover:bg-muted"
+          >
+            <ArrowLeft className="size-4" />
+          </Button>
+          <div>
+            <h1 className="text-xl sm:text-2xl font-semibold tracking-tight text-foreground">
+              New Purchase Order
+            </h1>
+            <p className="text-xs text-muted-foreground hidden sm:block">
+              Receive stock from suppliers, update inventory, and manage purchase bills.
+            </p>
           </div>
-        }
-      />
+        </div>
+        <div className="flex items-center gap-2.5 w-full sm:w-auto">
+          <input
+            type="file"
+            accept="image/*"
+            className="hidden"
+            ref={fileInputRef}
+            onChange={handleFileUpload}
+          />
+          <Button
+            variant="outline"
+            className="bg-primary/5 text-primary hover:bg-primary/10 border-primary/20 font-medium h-10 rounded-xl text-xs"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={isAnalyzing || isSubmitting}
+          >
+            {isAnalyzing ? (
+              <Loader2 className="size-4 mr-2 animate-spin text-primary" />
+            ) : (
+              <Camera className="size-4 mr-2" />
+            )}
+            Auto-Fill with AI
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => navigate({ to: "/purchases" })}
+            className="flex-1 sm:flex-none h-10 rounded-xl text-xs font-semibold"
+          >
+            Discard
+          </Button>
+          <Button
+            onClick={handleSubmit}
+            disabled={isAnalyzing || isSubmitting}
+            className="flex-1 sm:flex-none min-w-[130px] h-10 rounded-xl font-bold text-xs shadow-soft"
+          >
+            {isSubmitting ? (
+              <Loader2 className="size-4 animate-spin mr-1.5" />
+            ) : (
+              <CheckCircle2 className="size-4 mr-1.5" />
+            )}
+            Submit Order
+          </Button>
+        </div>
+      </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3 items-start">
         {/* Main Content Form */}
@@ -335,9 +346,9 @@ function NewPurchase() {
                 <div className="h-10 flex items-center px-3 rounded-md border border-input bg-muted/20 text-sm font-medium">
                   <Badge
                     variant="outline"
-                    className="bg-emerald-500/10 text-emerald-600 border-emerald-500/30 gap-1.5"
+                    className="bg-success/10 text-success border-success/30 gap-1.5"
                   >
-                    <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                    <span className="size-1.5 rounded-full bg-success animate-pulse" />
                     Received
                   </Badge>
                 </div>
@@ -366,29 +377,29 @@ function NewPurchase() {
 
             {/* Responsive Table / Card Container */}
             <div className="overflow-x-auto rounded-xl border border-border bg-background/50">
-              <table className="w-full text-left text-sm min-w-[550px]">
-                <thead className="bg-muted/60 text-[11px] font-bold uppercase tracking-wider text-muted-foreground border-b border-border">
-                  <tr>
-                    <th className="px-4 py-3 w-10 text-center">#</th>
-                    <th className="px-4 py-3">Product</th>
-                    <th className="px-4 py-3 w-28 text-right">Qty</th>
-                    <th className="px-4 py-3 w-32 text-right">Unit Cost</th>
-                    <th className="px-4 py-3 w-36 text-right">Total Cost</th>
-                    <th className="px-4 py-3 w-12 text-center"></th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border">
+              <Table className="min-w-[550px]">
+                <TableHeader className="bg-muted/60 text-[11px] font-bold uppercase tracking-wider text-muted-foreground border-b border-border">
+                  <TableRow>
+                    <TableHead className="px-4 py-3 w-10 text-center">#</TableHead>
+                    <TableHead className="px-4 py-3">Product</TableHead>
+                    <TableHead className="px-4 py-3 w-28 text-right">Qty</TableHead>
+                    <TableHead className="px-4 py-3 w-32 text-right">Unit Cost</TableHead>
+                    <TableHead className="px-4 py-3 w-36 text-right">Total Cost</TableHead>
+                    <TableHead className="px-4 py-3 w-12 text-center"></TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody className="divide-y divide-border">
                   {lines.map((l, i) => {
                     const prod = products.find((p) => p.id === l.productId);
                     const showBatch = prod?.hasBatch;
 
                     return (
                       <div key={i} className="contents">
-                        <tr className="hover:bg-muted/30 transition-colors">
-                          <td className="px-4 py-3 text-center text-xs font-semibold text-muted-foreground">
+                        <TableRow>
+                          <TableCell className="px-4 py-3 text-center text-xs font-semibold text-muted-foreground">
                             {i + 1}
-                          </td>
-                          <td className="px-4 py-3">
+                          </TableCell>
+                          <TableCell className="px-4 py-3">
                             <Select
                               value={l.productId}
                               onValueChange={(v) => handleUpdateLine(i, "productId", v)}
@@ -405,8 +416,8 @@ function NewPurchase() {
                                 ))}
                               </SelectContent>
                             </Select>
-                          </td>
-                          <td className="px-4 py-3 text-right">
+                          </TableCell>
+                          <TableCell className="px-4 py-3 text-right">
                             <Input
                               type="number"
                               min="1"
@@ -417,8 +428,8 @@ function NewPurchase() {
                               onChange={(e) => handleUpdateLine(i, "qty", Number(e.target.value))}
                               disabled={isSubmitting}
                             />
-                          </td>
-                          <td className="px-4 py-3 text-right">
+                          </TableCell>
+                          <TableCell className="px-4 py-3 text-right">
                             <Input
                               type="number"
                               min="0"
@@ -430,11 +441,11 @@ function NewPurchase() {
                               onChange={(e) => handleUpdateLine(i, "cost", Number(e.target.value))}
                               disabled={isSubmitting}
                             />
-                          </td>
-                          <td className="px-4 py-3 text-right font-bold text-foreground">
+                          </TableCell>
+                          <TableCell className="px-4 py-3 text-right font-bold text-foreground">
                             {formatCurrency((Number(l.qty) || 0) * (Number(l.cost) || 0))}
-                          </td>
-                          <td className="px-4 py-3 text-center">
+                          </TableCell>
+                          <TableCell className="px-4 py-3 text-center">
                             <Button
                               variant="ghost"
                               size="icon"
@@ -444,31 +455,31 @@ function NewPurchase() {
                             >
                               <Trash2 className="size-4" />
                             </Button>
-                          </td>
-                        </tr>
+                          </TableCell>
+                        </TableRow>
                         {showBatch && (
-                          <tr className="bg-amber-500/5">
-                            <td></td>
-                            <td colSpan={4} className="px-4 py-2 pb-3">
+                          <TableRow className="bg-warning/5">
+                            <TableCell></TableCell>
+                            <TableCell colSpan={4} className="px-4 py-2 pb-3">
                               <div className="flex gap-4 items-center">
                                 <div className="flex-1">
-                                  <label className="text-[10px] font-bold uppercase text-amber-600/80 mb-1 block">
+                                  <label className="text-[10px] font-bold uppercase text-warning/80 mb-1 block">
                                     Batch Number
                                   </label>
                                   <Input
-                                    className="h-8 text-xs border-amber-500/20 bg-background"
+                                    className="h-8 text-xs border-warning/20 bg-background"
                                     placeholder="e.g. BATCH-A01"
                                     value={(l as any).batchNo || ""}
                                     onChange={(e) => handleUpdateLine(i, "batchNo", e.target.value)}
                                   />
                                 </div>
                                 <div className="flex-1">
-                                  <label className="text-[10px] font-bold uppercase text-amber-600/80 mb-1 block">
+                                  <label className="text-[10px] font-bold uppercase text-warning/80 mb-1 block">
                                     Expiry Date
                                   </label>
                                   <Input
                                     type="date"
-                                    className="h-8 text-xs border-amber-500/20 bg-background"
+                                    className="h-8 text-xs border-warning/20 bg-background"
                                     value={(l as any).expiryDate || ""}
                                     onChange={(e) =>
                                       handleUpdateLine(i, "expiryDate", e.target.value)
@@ -476,30 +487,30 @@ function NewPurchase() {
                                   />
                                 </div>
                                 <div className="flex-1">
-                                  <label className="text-[10px] font-bold uppercase text-amber-600/80 mb-1 block">
+                                  <label className="text-[10px] font-bold uppercase text-warning/80 mb-1 block">
                                     MRP
                                   </label>
                                   <Input
                                     type="number"
                                     step="0.01"
-                                    className="h-8 text-xs border-amber-500/20 bg-background"
+                                    className="h-8 text-xs border-warning/20 bg-background"
                                     placeholder="0.00"
                                     value={(l as any).mrp || ""}
                                     onChange={(e) => handleUpdateLine(i, "mrp", e.target.value)}
                                   />
                                 </div>
                               </div>
-                            </td>
-                            <td></td>
-                          </tr>
+                            </TableCell>
+                            <TableCell></TableCell>
+                          </TableRow>
                         )}
                       </div>
                     );
                   })}
 
                   {lines.length === 0 && (
-                    <tr>
-                      <td colSpan={6} className="py-8 text-center text-muted-foreground">
+                    <TableRow>
+                      <TableCell colSpan={6} className="py-8 text-center text-muted-foreground">
                         <div className="flex flex-col items-center gap-2">
                           <ShoppingBag className="size-8 text-muted-foreground/40" />
                           <p className="text-sm font-medium">
@@ -514,11 +525,11 @@ function NewPurchase() {
                             <Plus className="size-4 mr-1" /> Add First Item
                           </Button>
                         </div>
-                      </td>
-                    </tr>
+                      </TableCell>
+                    </TableRow>
                   )}
-                </tbody>
-              </table>
+                </TableBody>
+              </Table>
             </div>
 
             <Button
@@ -556,7 +567,7 @@ function NewPurchase() {
               <div className="border-t border-border pt-4 mt-2">
                 <div className="flex justify-between items-baseline">
                   <span className="font-bold text-base text-foreground">Grand Total</span>
-                  <span className="text-2xl font-black text-emerald-600 tracking-tight">
+                  <span className="text-2xl font-black text-primary tracking-tight">
                     {formatCurrency(total)}
                   </span>
                 </div>
@@ -564,7 +575,7 @@ function NewPurchase() {
             </div>
 
             <div className="bg-muted/40 p-3.5 rounded-xl text-xs text-muted-foreground flex items-start gap-2.5">
-              <CheckCircle2 className="size-4 text-emerald-600 shrink-0 mt-0.5" />
+              <CheckCircle2 className="size-4 text-success shrink-0 mt-0.5" />
               <span>
                 Submitting this order will automatically increment product stock levels and log
                 inventory movements.
@@ -574,7 +585,7 @@ function NewPurchase() {
             <Button
               onClick={handleSubmit}
               disabled={isAnalyzing || isSubmitting}
-              className="w-full h-11 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm shadow-md"
+              className="w-full h-11 bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-sm"
             >
               {isSubmitting ? (
                 <>
