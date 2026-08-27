@@ -1,7 +1,7 @@
-import type { getRouter } from './router.tsx'
+import type { getRouter } from "./router.tsx";
 
-declare module '@tanstack/react-router' {
+declare module "@tanstack/react-router" {
   interface Register {
-    router: Awaited<ReturnType<typeof getRouter>>
+    router: Awaited<ReturnType<typeof getRouter>>;
   }
 }

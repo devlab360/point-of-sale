@@ -48,19 +48,25 @@ export const getProductByIdFn = createServerFn({ method: "GET" })
     }
   });
 
-const VariantInputSchema = z.object({
-  id: z.string().optional(),
-  name: z.string().min(1, "Variant name is required"),
-  sku: z.string().optional(),
-  barcode: z.string().optional(),
-  price: z.union([z.string(), z.number()]),
-  cost: z.union([z.string(), z.number()]),
-  image: z.string().nullable().optional(),
-  attributes: z.array(z.object({
-    name: z.string(),
-    value: z.string()
-  })).optional()
-}).passthrough();
+const VariantInputSchema = z
+  .object({
+    id: z.string().optional(),
+    name: z.string().min(1, "Variant name is required"),
+    sku: z.string().optional(),
+    barcode: z.string().optional(),
+    price: z.union([z.string(), z.number()]),
+    cost: z.union([z.string(), z.number()]),
+    image: z.string().nullable().optional(),
+    attributes: z
+      .array(
+        z.object({
+          name: z.string(),
+          value: z.string(),
+        }),
+      )
+      .optional(),
+  })
+  .passthrough();
 
 const ProductInputSchema = z
   .object({
@@ -107,7 +113,7 @@ export const createProductFn = createServerFn({ method: "POST" })
       const product = data.product;
       const now = Date.now();
       const productId = product.id || uuidv4();
-      
+
       const productData = {
         ...product,
         id: productId,
@@ -125,7 +131,7 @@ export const createProductFn = createServerFn({ method: "POST" })
         trackFifo: Boolean(product.trackFifo),
         hasModifiers: Boolean(product.hasModifiers),
       };
-      
+
       const {
         categoryId,
         unitId,
@@ -139,12 +145,43 @@ export const createProductFn = createServerFn({ method: "POST" })
       } = productData;
 
       const allowedKeys = [
-        "id", "organizationId", "name", "sku", "barcode", "category", "brand", "unit",
-        "price", "cost", "image", "status", "expiryDate", "wholesalePrice", "dealerPrice",
-        "minWholesaleQty", "stock", "reorderLevel", "hasVariants", "hasSerial", "course",
-        "serials", "hasBatch", "batches", "locationRack", "locationShelf", "locationBin",
-        "hsnCode", "gstRate", "taxInclusive", "mrp", "metadata", "isBundle", "trackFifo",
-        "hasModifiers", "createdAt", "updatedAt"
+        "id",
+        "organizationId",
+        "name",
+        "sku",
+        "barcode",
+        "category",
+        "brand",
+        "unit",
+        "price",
+        "cost",
+        "image",
+        "status",
+        "expiryDate",
+        "wholesalePrice",
+        "dealerPrice",
+        "minWholesaleQty",
+        "stock",
+        "reorderLevel",
+        "hasVariants",
+        "hasSerial",
+        "course",
+        "serials",
+        "hasBatch",
+        "batches",
+        "locationRack",
+        "locationShelf",
+        "locationBin",
+        "hsnCode",
+        "gstRate",
+        "taxInclusive",
+        "mrp",
+        "metadata",
+        "isBundle",
+        "trackFifo",
+        "hasModifiers",
+        "createdAt",
+        "updatedAt",
       ];
       const cleanData: Record<string, any> = {};
       for (const k of allowedKeys) {
@@ -152,43 +189,44 @@ export const createProductFn = createServerFn({ method: "POST" })
           cleanData[k] = (restProductData as any)[k];
         }
       }
-      
+
       const inserted = await db
         .insert(schema.products)
         .values(cleanData as any)
         .returning();
 
       if (product.hasVariants && variants && variants.length > 0) {
-         for (const variant of variants) {
-            const variantId = variant.id || uuidv4();
-            await db.insert(schema.productVariants).values({
-               id: variantId,
-               organizationId: session.orgId,
-               productId: productId,
-               name: variant.name,
-               sku: variant.sku || `${restProductData.sku}-${variant.name}`,
-               barcode: variant.barcode || `${now}-${variant.name}`,
-               price: variant.price.toString(),
-               cost: variant.cost.toString(),
-               image: variant.image || null,
-            });
+        for (const variant of variants) {
+          const variantId = variant.id || uuidv4();
+          await db.insert(schema.productVariants).values({
+            id: variantId,
+            organizationId: session.orgId,
+            productId: productId,
+            name: variant.name,
+            sku: variant.sku || `${restProductData.sku}-${variant.name}`,
+            barcode: variant.barcode || `${now}-${variant.name}`,
+            price: variant.price.toString(),
+            cost: variant.cost.toString(),
+            image: variant.image || null,
+          });
 
-            if (variant.attributes && variant.attributes.length > 0) {
-               for (const attr of variant.attributes) {
-                  await db.insert(schema.productVariantAttributes).values({
-                     id: uuidv4(),
-                     variantId: variantId,
-                     name: attr.name,
-                     value: attr.value
-                  });
-               }
+          if (variant.attributes && variant.attributes.length > 0) {
+            for (const attr of variant.attributes) {
+              await db.insert(schema.productVariantAttributes).values({
+                id: uuidv4(),
+                variantId: variantId,
+                name: attr.name,
+                value: attr.value,
+              });
             }
-         }
+          }
+        }
       }
 
       // Handle per-location stock seeding
       if (!product.hasVariants) {
-        const locationStocksInput = (product as any).locationStocks as { locationId: string; stock: number }[] | undefined;
+        const locationStocksInput = (product as any).locationStocks as
+          { locationId: string; stock: number }[] | undefined;
         if (locationStocksInput && locationStocksInput.length > 0) {
           // New UI: explicit per-location stock array
           for (const ls of locationStocksInput) {
@@ -205,9 +243,13 @@ export const createProductFn = createServerFn({ method: "POST" })
           }
         } else if (product.stock !== undefined && product.stock > 0) {
           // Fallback: single stock, seed to Main Store
-          const orgLocations = await db.select().from(schema.locations).where(eq(schema.locations.organizationId, session.orgId));
+          const orgLocations = await db
+            .select()
+            .from(schema.locations)
+            .where(eq(schema.locations.organizationId, session.orgId));
           if (orgLocations.length > 0) {
-            const mainLocation = orgLocations.find(l => l.name === "Main Store") || orgLocations[0];
+            const mainLocation =
+              orgLocations.find((l) => l.name === "Main Store") || orgLocations[0];
             await db.insert(schema.productInventory).values({
               id: uuidv4(),
               organizationId: session.orgId,
@@ -272,12 +314,40 @@ export const updateProductFn = createServerFn({ method: "POST" })
       } = updatesObj;
 
       const allowedKeys = [
-        "name", "sku", "barcode", "category", "brand", "unit",
-        "price", "cost", "image", "status", "expiryDate", "wholesalePrice", "dealerPrice",
-        "minWholesaleQty", "stock", "reorderLevel", "hasVariants", "hasSerial", "course",
-        "serials", "hasBatch", "batches", "locationRack", "locationShelf", "locationBin",
-        "hsnCode", "gstRate", "taxInclusive", "mrp", "metadata", "isBundle", "trackFifo",
-        "hasModifiers", "updatedAt"
+        "name",
+        "sku",
+        "barcode",
+        "category",
+        "brand",
+        "unit",
+        "price",
+        "cost",
+        "image",
+        "status",
+        "expiryDate",
+        "wholesalePrice",
+        "dealerPrice",
+        "minWholesaleQty",
+        "stock",
+        "reorderLevel",
+        "hasVariants",
+        "hasSerial",
+        "course",
+        "serials",
+        "hasBatch",
+        "batches",
+        "locationRack",
+        "locationShelf",
+        "locationBin",
+        "hsnCode",
+        "gstRate",
+        "taxInclusive",
+        "mrp",
+        "metadata",
+        "isBundle",
+        "trackFifo",
+        "hasModifiers",
+        "updatedAt",
       ];
       const updateData: Record<string, unknown> = {
         updatedAt: new Date().toISOString(),
@@ -289,10 +359,12 @@ export const updateProductFn = createServerFn({ method: "POST" })
       }
       if (updatesObj.cost !== undefined) updateData.cost = updatesObj.cost.toString();
       if (updatesObj.price !== undefined) updateData.price = updatesObj.price.toString();
-      if (updatesObj.hasVariants !== undefined) updateData.hasVariants = Boolean(updatesObj.hasVariants);
+      if (updatesObj.hasVariants !== undefined)
+        updateData.hasVariants = Boolean(updatesObj.hasVariants);
       if (updatesObj.isBundle !== undefined) updateData.isBundle = Boolean(updatesObj.isBundle);
       if (updatesObj.trackFifo !== undefined) updateData.trackFifo = Boolean(updatesObj.trackFifo);
-      if (updatesObj.hasModifiers !== undefined) updateData.hasModifiers = Boolean(updatesObj.hasModifiers);
+      if (updatesObj.hasModifiers !== undefined)
+        updateData.hasModifiers = Boolean(updatesObj.hasModifiers);
 
       await db
         .update(schema.products)
@@ -300,64 +372,83 @@ export const updateProductFn = createServerFn({ method: "POST" })
         .where(
           and(eq(schema.products.id, data.id), eq(schema.products.organizationId, session.orgId)),
         );
-        
-      if (updatesObj.hasVariants && variants) {
-         // This is a naive implementation: delete all existing variants and recreate them
-         await db.delete(schema.productVariants).where(eq(schema.productVariants.productId, data.id));
-         const now = Date.now();
-         for (const variant of variants) {
-            const variantId = variant.id || uuidv4();
-            await db.insert(schema.productVariants).values({
-               id: variantId,
-               organizationId: session.orgId,
-               productId: data.id,
-               name: variant.name,
-               sku: variant.sku || `VAR-${now}-${variant.name}`,
-               barcode: variant.barcode || `${now}-${variant.name}`,
-               price: variant.price.toString(),
-               cost: variant.cost.toString(),
-               image: variant.image || null,
-            });
 
-            if (variant.attributes && variant.attributes.length > 0) {
-               for (const attr of variant.attributes) {
-                  await db.insert(schema.productVariantAttributes).values({
-                     id: uuidv4(),
-                     variantId: variantId,
-                     name: attr.name,
-                     value: attr.value
-                  });
-               }
+      if (updatesObj.hasVariants && variants) {
+        // This is a naive implementation: delete all existing variants and recreate them
+        await db
+          .delete(schema.productVariants)
+          .where(eq(schema.productVariants.productId, data.id));
+        const now = Date.now();
+        for (const variant of variants) {
+          const variantId = variant.id || uuidv4();
+          await db.insert(schema.productVariants).values({
+            id: variantId,
+            organizationId: session.orgId,
+            productId: data.id,
+            name: variant.name,
+            sku: variant.sku || `VAR-${now}-${variant.name}`,
+            barcode: variant.barcode || `${now}-${variant.name}`,
+            price: variant.price.toString(),
+            cost: variant.cost.toString(),
+            image: variant.image || null,
+          });
+
+          if (variant.attributes && variant.attributes.length > 0) {
+            for (const attr of variant.attributes) {
+              await db.insert(schema.productVariantAttributes).values({
+                id: uuidv4(),
+                variantId: variantId,
+                name: attr.name,
+                value: attr.value,
+              });
             }
-         }
+          }
+        }
       }
 
       // Handle legacy single stock update
       if (updatesObj.stock !== undefined && !updatesObj.hasVariants) {
-        const locations = await db.select().from(schema.locations).where(eq(schema.locations.organizationId, session.orgId));
+        const locations = await db
+          .select()
+          .from(schema.locations)
+          .where(eq(schema.locations.organizationId, session.orgId));
         if (locations.length > 0) {
-          const mainLocation = locations.find(l => l.name === "Main Store") || locations[0];
-          
-          const existingInv = await db.select().from(schema.productInventory).where(
-            and(eq(schema.productInventory.productId, data.id), eq(schema.productInventory.locationId, mainLocation.id))
-          );
-          
-          if (existingInv.length > 0) {
-            await db.update(schema.productInventory).set({
-              stock: updatesObj.stock.toString(),
-              reorderLevel: updatesObj.minStock ? updatesObj.minStock.toString() : existingInv[0].reorderLevel,
-            }).where(
-              and(eq(schema.productInventory.productId, data.id), eq(schema.productInventory.locationId, mainLocation.id))
+          const mainLocation = locations.find((l) => l.name === "Main Store") || locations[0];
+
+          const existingInv = await db
+            .select()
+            .from(schema.productInventory)
+            .where(
+              and(
+                eq(schema.productInventory.productId, data.id),
+                eq(schema.productInventory.locationId, mainLocation.id),
+              ),
             );
-          } else {
-             await db.insert(schema.productInventory).values({
-                id: uuidv4(),
-                organizationId: session.orgId,
-                productId: data.id,
-                locationId: mainLocation.id,
+
+          if (existingInv.length > 0) {
+            await db
+              .update(schema.productInventory)
+              .set({
                 stock: updatesObj.stock.toString(),
-                reorderLevel: updatesObj.minStock ? updatesObj.minStock.toString() : "10",
-             });
+                reorderLevel: updatesObj.minStock
+                  ? updatesObj.minStock.toString()
+                  : existingInv[0].reorderLevel,
+              })
+              .where(
+                and(
+                  eq(schema.productInventory.productId, data.id),
+                  eq(schema.productInventory.locationId, mainLocation.id),
+                ),
+              );
+          } else {
+            await db.insert(schema.productInventory).values({
+              id: uuidv4(),
+              organizationId: session.orgId,
+              productId: data.id,
+              locationId: mainLocation.id,
+              stock: updatesObj.stock.toString(),
+              reorderLevel: updatesObj.minStock ? updatesObj.minStock.toString() : "10",
+            });
           }
         }
       }
@@ -422,21 +513,21 @@ export const getProductVariantsFn = createServerFn({ method: "GET" })
         .where(
           and(
             eq(schema.productVariants.productId, data.productId),
-            eq(schema.productVariants.organizationId, session.orgId)
-          )
+            eq(schema.productVariants.organizationId, session.orgId),
+          ),
         );
-      
+
       const variantsWithAttributes = await Promise.all(
-          variants.map(async (v) => {
-            const attributes = await db
-              .select()
-              .from(schema.productVariantAttributes)
-              .where(eq(schema.productVariantAttributes.variantId, v.id));
-            return { ...v, attributes };
-          })
-        );
-        
-        return { success: true, data: variantsWithAttributes };
+        variants.map(async (v) => {
+          const attributes = await db
+            .select()
+            .from(schema.productVariantAttributes)
+            .where(eq(schema.productVariantAttributes.variantId, v.id));
+          return { ...v, attributes };
+        }),
+      );
+
+      return { success: true, data: variantsWithAttributes };
     } catch (e) {
       return handleApiError(e);
     }
@@ -451,7 +542,7 @@ export const getAllProductVariantsFn = createServerFn({ method: "GET" })
         .select()
         .from(schema.productVariants)
         .where(eq(schema.productVariants.organizationId, session.orgId));
-        
+
       if (!variants.length) return { success: true, data: [] };
 
       const variantIds = variants.map((v) => v.id);
@@ -461,10 +552,10 @@ export const getAllProductVariantsFn = createServerFn({ method: "GET" })
         .where(inArray(schema.productVariantAttributes.variantId, variantIds));
 
       const variantsWithAttributes = variants.map((v) => {
-        const vAttrs = attributes.filter(a => a.variantId === v.id);
+        const vAttrs = attributes.filter((a) => a.variantId === v.id);
         return { ...v, attributes: vAttrs };
       });
-      
+
       return { success: true, data: variantsWithAttributes };
     } catch (e) {
       return handleApiError(e);

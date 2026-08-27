@@ -345,10 +345,16 @@ function ExpensesPage() {
                     <tr>
                       <th className="px-5 py-3 whitespace-nowrap">{t("date") || "Date"}</th>
                       <th className="px-5 py-3 whitespace-nowrap">{t("category") || "Category"}</th>
-                      <th className="px-5 py-3 whitespace-nowrap">{t("description") || "Expense Description"}</th>
+                      <th className="px-5 py-3 whitespace-nowrap">
+                        {t("description") || "Expense Description"}
+                      </th>
                       <th className="px-5 py-3 whitespace-nowrap">{t("status") || "Status"}</th>
-                      <th className="px-5 py-3 text-right whitespace-nowrap">{t("amount") || "Amount"}</th>
-                      <th className="px-5 py-3 text-right whitespace-nowrap">{t("actions") || "Actions"}</th>
+                      <th className="px-5 py-3 text-right whitespace-nowrap">
+                        {t("amount") || "Amount"}
+                      </th>
+                      <th className="px-5 py-3 text-right whitespace-nowrap">
+                        {t("actions") || "Actions"}
+                      </th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border/60">
@@ -358,7 +364,10 @@ function ExpensesPage() {
                           {formatDate(e.date)}
                         </td>
                         <td className="px-5 py-3 whitespace-nowrap">
-                          <Badge variant="outline" className="text-[10px] font-bold bg-muted/40 border-border/80">
+                          <Badge
+                            variant="outline"
+                            className="text-[10px] font-bold bg-muted/40 border-border/80"
+                          >
                             {e.category}
                           </Badge>
                         </td>
@@ -425,14 +434,20 @@ function ExpensesPage() {
                         <Badge variant="outline" className="text-[9px] font-bold py-0">
                           {e.category}
                         </Badge>
-                        <span className="text-[10px] text-muted-foreground">{formatDate(e.date)}</span>
+                        <span className="text-[10px] text-muted-foreground">
+                          {formatDate(e.date)}
+                        </span>
                       </div>
-                      <div className="font-bold text-xs sm:text-sm text-foreground mt-0.5 truncate">{e.description}</div>
+                      <div className="font-bold text-xs sm:text-sm text-foreground mt-0.5 truncate">
+                        {e.description}
+                      </div>
                       <div className="mt-1">
                         <Badge
                           className={cn(
                             "text-[9px] font-bold py-0",
-                            e.status === "paid" ? "bg-success/12 text-success" : "bg-warning/15 text-warning-foreground",
+                            e.status === "paid"
+                              ? "bg-success/12 text-success"
+                              : "bg-warning/15 text-warning-foreground",
                           )}
                         >
                           {e.status}
@@ -441,7 +456,9 @@ function ExpensesPage() {
                     </div>
 
                     <div className="text-right shrink-0 pl-2">
-                      <div className="number text-sm font-black text-foreground">{formatCurrency(e.amount)}</div>
+                      <div className="number text-sm font-black text-foreground">
+                        {formatCurrency(e.amount)}
+                      </div>
                       <div className="flex justify-end gap-1 mt-1">
                         <Button
                           variant="ghost"

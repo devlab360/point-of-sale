@@ -18,8 +18,8 @@ export const getProductModifiersFn = createServerFn({ method: "GET" })
         .where(
           and(
             eq(schema.productModifiers.productId, data.productId),
-            eq(schema.productModifiers.organizationId, session.orgId)
-          )
+            eq(schema.productModifiers.organizationId, session.orgId),
+          ),
         );
 
       const options = await db
@@ -56,12 +56,12 @@ export const saveProductModifiersFn = createServerFn({ method: "POST" })
                 name: z.string(),
                 price: z.number(),
                 sortOrder: z.number(),
-              })
+              }),
             ),
-          })
+          }),
         ),
       })
-      .parse(data)
+      .parse(data),
   )
   .handler(async ({ data }) => {
     try {
@@ -74,8 +74,8 @@ export const saveProductModifiersFn = createServerFn({ method: "POST" })
           .where(
             and(
               eq(schema.productModifiers.productId, data.productId),
-              eq(schema.productModifiers.organizationId, session.orgId)
-            )
+              eq(schema.productModifiers.organizationId, session.orgId),
+            ),
           );
 
         // Insert new modifiers and their options

@@ -76,8 +76,14 @@ export class CustomerService {
       .update(schema.customers)
       .set({
         ...dto,
-        creditLimit: dto.creditLimit !== undefined && dto.creditLimit !== null ? String(dto.creditLimit) : undefined,
-        walletBalance: dto.walletBalance !== undefined && dto.walletBalance !== null ? String(dto.walletBalance) : undefined,
+        creditLimit:
+          dto.creditLimit !== undefined && dto.creditLimit !== null
+            ? String(dto.creditLimit)
+            : undefined,
+        walletBalance:
+          dto.walletBalance !== undefined && dto.walletBalance !== null
+            ? String(dto.walletBalance)
+            : undefined,
         credit: dto.credit !== undefined && dto.credit !== null ? String(dto.credit) : undefined,
         updatedAt: new Date().toISOString(),
       })

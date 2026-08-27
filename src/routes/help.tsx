@@ -4,7 +4,14 @@ import { Book, MessageCircle, Phone, PlayCircle, Video, Star, Send, Loader2 } fr
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { getHelpArticlesFn, getFaqsFn, createSupportTicketFn, createReviewFn } from "@/api/support";
 import { useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -47,7 +54,7 @@ function HelpPage() {
         setChatSubject("");
         setChatMessage("");
       } else toast.error(res.error);
-    }
+    },
   });
 
   const reviewMutation = useMutation({
@@ -59,7 +66,7 @@ function HelpPage() {
         setReviewRating(5);
         setReviewComment("");
       } else toast.error(res.error);
-    }
+    },
   });
 
   const handleSendChat = (e: React.FormEvent) => {
@@ -79,15 +86,25 @@ function HelpPage() {
     if (!url) return { isEmbed: false, type: "none", src: "" };
 
     // YouTube (standard watch, shorts, share links, embed)
-    const ytMatch = url.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|shorts\/|watch\?.+&v=))([\w-]{11})/i);
+    const ytMatch = url.match(
+      /(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|shorts\/|watch\?.+&v=))([\w-]{11})/i,
+    );
     if (ytMatch && ytMatch[1]) {
-      return { isEmbed: true, type: "youtube", src: `https://www.youtube-nocookie.com/embed/${ytMatch[1]}?rel=0` };
+      return {
+        isEmbed: true,
+        type: "youtube",
+        src: `https://www.youtube-nocookie.com/embed/${ytMatch[1]}?rel=0`,
+      };
     }
 
     // Vimeo
     const vimeoMatch = url.match(/vimeo\.com\/(?:video\/)?([0-9]+)/i);
     if (vimeoMatch && vimeoMatch[1]) {
-      return { isEmbed: true, type: "vimeo", src: `https://player.vimeo.com/video/${vimeoMatch[1]}` };
+      return {
+        isEmbed: true,
+        type: "vimeo",
+        src: `https://player.vimeo.com/video/${vimeoMatch[1]}`,
+      };
     }
 
     // Direct MP4 / WebM / Blob video
@@ -95,24 +112,46 @@ function HelpPage() {
   };
 
   const filteredDocs = articles
-    .filter((a: any) => a.type !== 'video')
-    .filter((a: any) => a.title?.toLowerCase().includes(searchQuery.toLowerCase()) || a.content?.toLowerCase().includes(searchQuery.toLowerCase()));
+    .filter((a: any) => a.type !== "video")
+    .filter(
+      (a: any) =>
+        a.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        a.content?.toLowerCase().includes(searchQuery.toLowerCase()),
+    );
 
   const filteredVideos = articles
-    .filter((a: any) => a.type === 'video')
-    .filter((a: any) => a.title?.toLowerCase().includes(searchQuery.toLowerCase()) || a.content?.toLowerCase().includes(searchQuery.toLowerCase()));
+    .filter((a: any) => a.type === "video")
+    .filter(
+      (a: any) =>
+        a.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        a.content?.toLowerCase().includes(searchQuery.toLowerCase()),
+    );
 
-  const filteredFaqs = faqs
-    .filter((f: any) => f.question?.toLowerCase().includes(searchQuery.toLowerCase()) || f.answer?.toLowerCase().includes(searchQuery.toLowerCase()));
+  const filteredFaqs = faqs.filter(
+    (f: any) =>
+      f.question?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      f.answer?.toLowerCase().includes(searchQuery.toLowerCase()),
+  );
 
   const renderSmartContent = (content: string) => {
     if (!content) return null;
     if (content.startsWith("http") && /\.(jpeg|jpg|gif|png|webp|svg)(\?.*)?$/i.test(content)) {
-      return <img src={content} alt="Help Document" className="mt-3 max-h-96 rounded-md border object-contain bg-white/50" />;
+      return (
+        <img
+          src={content}
+          alt="Help Document"
+          className="mt-3 max-h-96 rounded-md border object-contain bg-white/50"
+        />
+      );
     }
     if (content.startsWith("http")) {
       return (
-        <a href={content} target="_blank" rel="noreferrer" className="mt-2 inline-flex items-center text-sm font-medium text-primary hover:underline">
+        <a
+          href={content}
+          target="_blank"
+          rel="noreferrer"
+          className="mt-2 inline-flex items-center text-sm font-medium text-primary hover:underline"
+        >
           <Book className="w-4 h-4 mr-1.5" /> View Attached Document
         </a>
       );
@@ -134,7 +173,11 @@ function HelpPage() {
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full sm:w-64"
           />
-          <Button variant="outline" className="border-warning text-warning hover:bg-warning/10 w-full sm:w-auto" onClick={() => setIsReviewOpen(true)}>
+          <Button
+            variant="outline"
+            className="border-warning text-warning hover:bg-warning/10 w-full sm:w-auto"
+            onClick={() => setIsReviewOpen(true)}
+          >
             <Star className="w-4 h-4 mr-2 fill-current" /> Leave a Review
           </Button>
         </div>
@@ -142,32 +185,47 @@ function HelpPage() {
 
       {/* Quick Action Cards */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <div className="rounded-2xl border border-border/80 bg-card p-5 shadow-card hover:border-primary/50 transition-all cursor-pointer card-interactive" onClick={() => {
-          document.getElementById('docs-section')?.scrollIntoView({ behavior: 'smooth' });
-        }}>
+        <div
+          className="rounded-2xl border border-border/80 bg-card p-5 shadow-card hover:border-primary/50 transition-all cursor-pointer card-interactive"
+          onClick={() => {
+            document.getElementById("docs-section")?.scrollIntoView({ behavior: "smooth" });
+          }}
+        >
           <div className="grid size-11 place-items-center rounded-xl bg-gradient-to-br from-primary/20 to-accent/20 text-primary border border-primary/20">
             <Book className="size-5" />
           </div>
           <h3 className="mt-4 font-bold text-foreground">Documentation</h3>
-          <p className="mt-1 text-xs text-muted-foreground leading-relaxed">Read step-by-step guides for every feature.</p>
+          <p className="mt-1 text-xs text-muted-foreground leading-relaxed">
+            Read step-by-step guides for every feature.
+          </p>
         </div>
 
-        <div className="rounded-2xl border border-border/80 bg-card p-5 shadow-card hover:border-primary/50 transition-all cursor-pointer card-interactive" onClick={() => {
-          document.getElementById('videos-section')?.scrollIntoView({ behavior: 'smooth' });
-        }}>
+        <div
+          className="rounded-2xl border border-border/80 bg-card p-5 shadow-card hover:border-primary/50 transition-all cursor-pointer card-interactive"
+          onClick={() => {
+            document.getElementById("videos-section")?.scrollIntoView({ behavior: "smooth" });
+          }}
+        >
           <div className="grid size-11 place-items-center rounded-xl bg-gradient-to-br from-primary/20 to-accent/20 text-primary border border-primary/20">
             <Video className="size-5" />
           </div>
           <h3 className="mt-4 font-bold text-foreground">Video Tutorials</h3>
-          <p className="mt-1 text-xs text-muted-foreground leading-relaxed">Watch short walk-throughs of the POS workflow.</p>
+          <p className="mt-1 text-xs text-muted-foreground leading-relaxed">
+            Watch short walk-throughs of the POS workflow.
+          </p>
         </div>
 
-        <div className="rounded-2xl border border-border/80 bg-card p-5 shadow-card hover:border-primary/50 transition-all cursor-pointer card-interactive" onClick={() => setIsChatOpen(true)}>
+        <div
+          className="rounded-2xl border border-border/80 bg-card p-5 shadow-card hover:border-primary/50 transition-all cursor-pointer card-interactive"
+          onClick={() => setIsChatOpen(true)}
+        >
           <div className="grid size-11 place-items-center rounded-xl bg-gradient-to-br from-primary/20 to-accent/20 text-primary border border-primary/20">
             <MessageCircle className="size-5" />
           </div>
           <h3 className="mt-4 font-bold text-foreground">Chat with us</h3>
-          <p className="mt-1 text-xs text-muted-foreground leading-relaxed">Send a message to our support team.</p>
+          <p className="mt-1 text-xs text-muted-foreground leading-relaxed">
+            Send a message to our support team.
+          </p>
         </div>
 
         <div className="rounded-2xl border border-border/80 bg-card p-5 shadow-card cursor-default">
@@ -175,7 +233,9 @@ function HelpPage() {
             <Phone className="size-5" />
           </div>
           <h3 className="mt-4 font-bold text-foreground">Call support</h3>
-          <p className="mt-1 text-xs text-muted-foreground leading-relaxed">Mon–Sun, 7am – 11pm local time.</p>
+          <p className="mt-1 text-xs text-muted-foreground leading-relaxed">
+            Mon–Sun, 7am – 11pm local time.
+          </p>
         </div>
       </div>
 
@@ -188,7 +248,9 @@ function HelpPage() {
           </div>
           <div className="space-y-3">
             {loadingArticles ? (
-              <div className="p-4 text-center text-muted-foreground animate-pulse">Loading docs...</div>
+              <div className="p-4 text-center text-muted-foreground animate-pulse">
+                Loading docs...
+              </div>
             ) : filteredDocs.length === 0 ? (
               <p className="text-sm text-muted-foreground py-4 border border-dashed rounded-lg text-center">
                 {searchQuery ? "No matching docs found." : "No documentation available yet."}
@@ -205,14 +267,19 @@ function HelpPage() {
         </div>
 
         {/* Dynamic Videos */}
-        <div id="videos-section" className="rounded-xl border border-border bg-card p-5 shadow-soft">
+        <div
+          id="videos-section"
+          className="rounded-xl border border-border bg-card p-5 shadow-soft"
+        >
           <div className="flex items-center gap-2 mb-4">
             <Video className="w-5 h-5 text-primary" />
             <h2 className="font-semibold text-lg">Video Tutorials</h2>
           </div>
           <div className="space-y-4">
             {loadingArticles ? (
-              <div className="p-4 text-center text-muted-foreground animate-pulse">Loading videos...</div>
+              <div className="p-4 text-center text-muted-foreground animate-pulse">
+                Loading videos...
+              </div>
             ) : filteredVideos.length === 0 ? (
               <p className="text-sm text-muted-foreground py-4 border border-dashed rounded-lg text-center">
                 {searchQuery ? "No matching videos found." : "No video tutorials available yet."}
@@ -238,7 +305,12 @@ function HelpPage() {
                       </div>
                     ) : videoInfo.src && videoInfo.src.startsWith("http") ? (
                       <div className="aspect-video w-full rounded-lg overflow-hidden bg-black shadow-inner border border-border">
-                        <video src={videoInfo.src} controls preload="metadata" className="w-full h-full object-contain" />
+                        <video
+                          src={videoInfo.src}
+                          controls
+                          preload="metadata"
+                          className="w-full h-full object-contain"
+                        />
                       </div>
                     ) : (
                       <p className="text-xs text-muted-foreground">{vid.content}</p>
@@ -256,7 +328,9 @@ function HelpPage() {
         <h2 className="mb-4 font-semibold text-lg">Frequently asked</h2>
         <div className="divide-y divide-border">
           {loadingFaqs ? (
-            <div className="p-4 text-center text-muted-foreground animate-pulse">Loading FAQs...</div>
+            <div className="p-4 text-center text-muted-foreground animate-pulse">
+              Loading FAQs...
+            </div>
           ) : filteredFaqs.length === 0 ? (
             <p className="text-sm text-muted-foreground py-4 text-center">
               {searchQuery ? "No matching FAQs found." : "No FAQs available yet."}
@@ -289,7 +363,11 @@ function HelpPage() {
           <form onSubmit={handleSendChat} className="space-y-4 pt-2">
             <div className="space-y-2">
               <Label>Subject (Optional)</Label>
-              <Input placeholder="e.g. Printer Issue" value={chatSubject} onChange={(e) => setChatSubject(e.target.value)} />
+              <Input
+                placeholder="e.g. Printer Issue"
+                value={chatSubject}
+                onChange={(e) => setChatSubject(e.target.value)}
+              />
             </div>
             <div className="space-y-2">
               <Label>Message</Label>
@@ -302,9 +380,15 @@ function HelpPage() {
               />
             </div>
             <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setIsChatOpen(false)}>Cancel</Button>
+              <Button type="button" variant="outline" onClick={() => setIsChatOpen(false)}>
+                Cancel
+              </Button>
               <Button type="submit" disabled={chatMutation.isPending}>
-                {chatMutation.isPending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Send className="w-4 h-4 mr-2" />}
+                {chatMutation.isPending ? (
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                ) : (
+                  <Send className="w-4 h-4 mr-2" />
+                )}
                 Send Message
               </Button>
             </DialogFooter>
@@ -329,7 +413,9 @@ function HelpPage() {
                     onClick={() => setReviewRating(star)}
                     className="focus:outline-none transition-transform hover:scale-110"
                   >
-                    <Star className={`w-10 h-10 ${star <= reviewRating ? 'fill-warning text-warning' : 'text-muted-foreground/30'}`} />
+                    <Star
+                      className={`w-10 h-10 ${star <= reviewRating ? "fill-warning text-warning" : "text-muted-foreground/30"}`}
+                    />
                   </button>
                 ))}
               </div>
@@ -344,7 +430,9 @@ function HelpPage() {
               />
             </div>
             <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setIsReviewOpen(false)}>Cancel</Button>
+              <Button type="button" variant="outline" onClick={() => setIsReviewOpen(false)}>
+                Cancel
+              </Button>
               <Button type="submit" disabled={reviewMutation.isPending}>
                 {reviewMutation.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
                 Submit Review
@@ -353,7 +441,6 @@ function HelpPage() {
           </form>
         </DialogContent>
       </Dialog>
-
     </div>
   );
 }

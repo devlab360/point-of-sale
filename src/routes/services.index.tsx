@@ -145,13 +145,13 @@ function ServicesPage() {
       const exportData: any[] = [];
 
       services.forEach((s: any) => {
-        const catName = categories.find((c: any) => c.id === s.category)?.name || 'General';
+        const catName = categories.find((c: any) => c.id === s.category)?.name || "General";
         const baseRow = {
           Name: s.name,
           Category: catName,
           BasePrice: s.price,
-          BaseCost: s.cost || '0',
-          BaseDuration: s.duration || '',
+          BaseCost: s.cost || "0",
+          BaseDuration: s.duration || "",
         };
 
         if (s.hasVariants) {
@@ -184,21 +184,25 @@ function ServicesPage() {
         }
       });
 
-      exportToCSV(exportData, [
-        { key: 'Name', label: 'Name' },
-        { key: 'Category', label: 'Category' },
-        { key: 'BasePrice', label: 'Base Price' },
-        { key: 'BaseCost', label: 'Base Cost' },
-        { key: 'BaseDuration', label: 'Base Duration (min)' },
-        { key: 'VariantName', label: 'Variant Name' },
-        { key: 'VariantPrice', label: 'Variant Price' },
-        { key: 'VariantCost', label: 'Variant Cost' },
-        { key: 'VariantDuration', label: 'Variant Duration (min)' },
-        { key: 'Option1Name', label: 'Option1 Name' },
-        { key: 'Option1Value', label: 'Option1 Value' },
-        { key: 'Option2Name', label: 'Option2 Name' },
-        { key: 'Option2Value', label: 'Option2 Value' },
-      ], 'services-with-variants');
+      exportToCSV(
+        exportData,
+        [
+          { key: "Name", label: "Name" },
+          { key: "Category", label: "Category" },
+          { key: "BasePrice", label: "Base Price" },
+          { key: "BaseCost", label: "Base Cost" },
+          { key: "BaseDuration", label: "Base Duration (min)" },
+          { key: "VariantName", label: "Variant Name" },
+          { key: "VariantPrice", label: "Variant Price" },
+          { key: "VariantCost", label: "Variant Cost" },
+          { key: "VariantDuration", label: "Variant Duration (min)" },
+          { key: "Option1Name", label: "Option1 Name" },
+          { key: "Option1Value", label: "Option1 Value" },
+          { key: "Option2Name", label: "Option2 Name" },
+          { key: "Option2Value", label: "Option2 Value" },
+        ],
+        "services-with-variants",
+      );
     } catch (e) {
       toast.error("Failed to export services");
       console.error(e);
@@ -214,51 +218,58 @@ function ServicesPage() {
       }
 
       const groupedData: Record<string, any[]> = {};
-      data.forEach(row => {
-        if (row['Name']) {
-          if (!groupedData[row['Name']]) {
-            groupedData[row['Name']] = [];
+      data.forEach((row) => {
+        if (row["Name"]) {
+          if (!groupedData[row["Name"]]) {
+            groupedData[row["Name"]] = [];
           }
-          groupedData[row['Name']].push(row);
+          groupedData[row["Name"]].push(row);
         }
       });
 
       let count = 0;
       for (const [name, rows] of Object.entries(groupedData)) {
         const firstRow = rows[0];
-        const hasVariants = rows.length > 1 || !!firstRow['VariantName'];
+        const hasVariants = rows.length > 1 || !!firstRow["VariantName"];
 
-        const variantsToCreate = hasVariants ? rows.map(row => {
-          const attributes: { name: string; value: string }[] = [];
-          for (let i = 1; i <= 2; i++) {
-            if (row[`Option${i}Name`] && row[`Option${i}Value`]) {
-              attributes.push({
-                name: row[`Option${i}Name`],
-                value: row[`Option${i}Value`]
-              });
-            }
-          }
-          return {
-            name: row['VariantName'] || 'Default',
-            price: parseFloat(row['VariantPrice'] || row['BasePrice'] || '0'),
-            cost: parseFloat(row['VariantCost'] || row['BaseCost'] || '0'),
-            duration: parseInt(row['VariantDuration'] || row['BaseDuration'] || '30'),
-            attributes
-          };
-        }) : [];
+        const variantsToCreate = hasVariants
+          ? rows.map((row) => {
+              const attributes: { name: string; value: string }[] = [];
+              for (let i = 1; i <= 2; i++) {
+                if (row[`Option${i}Name`] && row[`Option${i}Value`]) {
+                  attributes.push({
+                    name: row[`Option${i}Name`],
+                    value: row[`Option${i}Value`],
+                  });
+                }
+              }
+              return {
+                name: row["VariantName"] || "Default",
+                price: parseFloat(row["VariantPrice"] || row["BasePrice"] || "0"),
+                cost: parseFloat(row["VariantCost"] || row["BaseCost"] || "0"),
+                duration: parseInt(row["VariantDuration"] || row["BaseDuration"] || "30"),
+                attributes,
+              };
+            })
+          : [];
 
         await createServiceItemFn({
           data: {
             id: uuidv4(),
             name: name,
-            category: categories.find((c: any) => c.name.toLowerCase() === (firstRow['Category'] || '').toLowerCase())?.id || categories[0]?.id || 'General',
-            price: parseFloat(firstRow['BasePrice'] || firstRow['Price'] || '0'),
-            cost: parseFloat(firstRow['BaseCost'] || firstRow['Cost'] || '0'),
-            duration: parseInt(firstRow['BaseDuration'] || firstRow['Duration (min)'] || '30'),
+            category:
+              categories.find(
+                (c: any) => c.name.toLowerCase() === (firstRow["Category"] || "").toLowerCase(),
+              )?.id ||
+              categories[0]?.id ||
+              "General",
+            price: parseFloat(firstRow["BasePrice"] || firstRow["Price"] || "0"),
+            cost: parseFloat(firstRow["BaseCost"] || firstRow["Cost"] || "0"),
+            duration: parseInt(firstRow["BaseDuration"] || firstRow["Duration (min)"] || "30"),
             hasVariants,
             variants: variantsToCreate,
-            status: 'active'
-          }
+            status: "active",
+          },
         });
         count++;
       }
@@ -371,9 +382,7 @@ function ServicesPage() {
               }
               actionLabel={!search && !filters.category ? "Add Service" : undefined}
               onAction={
-                !search && !filters.category
-                  ? () => navigate({ to: "/services/new" })
-                  : undefined
+                !search && !filters.category ? () => navigate({ to: "/services/new" }) : undefined
               }
             />
           ) : (
@@ -475,8 +484,8 @@ function ServicesPage() {
             <AlertDialogHeader>
               <AlertDialogTitle>Delete Service</AlertDialogTitle>
               <AlertDialogDescription>
-                Are you sure you want to delete <span className="font-bold">{activeItem?.name}</span>?
-                This action cannot be undone.
+                Are you sure you want to delete{" "}
+                <span className="font-bold">{activeItem?.name}</span>? This action cannot be undone.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>

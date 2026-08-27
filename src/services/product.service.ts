@@ -38,12 +38,43 @@ export interface CreateProductInput {
 }
 
 const ALLOWED_PRODUCT_COLUMNS = [
-  "id", "organizationId", "name", "sku", "barcode", "category", "brand", "unit",
-  "price", "cost", "image", "status", "expiryDate", "wholesalePrice", "dealerPrice",
-  "minWholesaleQty", "stock", "reorderLevel", "hasVariants", "hasSerial", "course",
-  "serials", "hasBatch", "batches", "locationRack", "locationShelf", "locationBin",
-  "hsnCode", "gstRate", "taxInclusive", "mrp", "metadata", "isBundle", "trackFifo",
-  "hasModifiers", "createdAt", "updatedAt"
+  "id",
+  "organizationId",
+  "name",
+  "sku",
+  "barcode",
+  "category",
+  "brand",
+  "unit",
+  "price",
+  "cost",
+  "image",
+  "status",
+  "expiryDate",
+  "wholesalePrice",
+  "dealerPrice",
+  "minWholesaleQty",
+  "stock",
+  "reorderLevel",
+  "hasVariants",
+  "hasSerial",
+  "course",
+  "serials",
+  "hasBatch",
+  "batches",
+  "locationRack",
+  "locationShelf",
+  "locationBin",
+  "hsnCode",
+  "gstRate",
+  "taxInclusive",
+  "mrp",
+  "metadata",
+  "isBundle",
+  "trackFifo",
+  "hasModifiers",
+  "createdAt",
+  "updatedAt",
 ];
 
 export class ProductService {
@@ -72,31 +103,35 @@ export class ProductService {
 
     const whereClause = and(...conditions);
 
-    const products = await db
-      .select()
-      .from(schema.products)
-      .where(whereClause)
-      .orderBy(desc(schema.products.createdAt))
-      .limit(pageSize)
-      .offset((page - 1) * pageSize);
-
-    const totalCountRes = await db
-      .select({ count: sql`count(*)` })
-      .from(schema.products)
-      .where(whereClause);
+    // Parallelize DB queries for products, count, and summary
+    const [products, totalCountRes, summaryRes] = await Promise.all([
+      db
+        .select()
+        .from(schema.products)
+        .where(whereClause)
+        .orderBy(desc(schema.products.createdAt))
+        .limit(pageSize)
+        .offset((page - 1) * pageSize),
+      db
+        .select({ count: sql`count(*)` })
+        .from(schema.products)
+        .where(whereClause),
+      db
+        .select({
+          totalStock: sql`sum(COALESCE(${schema.productInventory.stock}, 0))`,
+          totalValue: sql`sum(COALESCE(${schema.productInventory.stock}, 0) * COALESCE(${schema.products.cost}, 0))`,
+          totalRetailValue: sql`sum(COALESCE(${schema.productInventory.stock}, 0) * COALESCE(${schema.products.price}, 0))`,
+          lowStockCount: sql`count(CASE WHEN COALESCE(${schema.productInventory.stock}, 0) <= COALESCE(${schema.productInventory.reorderLevel}, 0) THEN 1 END)`,
+        })
+        .from(schema.products)
+        .leftJoin(
+          schema.productInventory,
+          eq(schema.products.id, schema.productInventory.productId),
+        )
+        .where(whereClause),
+    ]);
 
     const totalCount = Number(totalCountRes[0]?.count || 0);
-
-    const summaryRes = await db
-      .select({
-        totalStock: sql`sum(COALESCE(${schema.productInventory.stock}, 0))`,
-        totalValue: sql`sum(COALESCE(${schema.productInventory.stock}, 0) * COALESCE(${schema.products.cost}, 0))`,
-        totalRetailValue: sql`sum(COALESCE(${schema.productInventory.stock}, 0) * COALESCE(${schema.products.price}, 0))`,
-        lowStockCount: sql`count(CASE WHEN COALESCE(${schema.productInventory.stock}, 0) <= COALESCE(${schema.productInventory.reorderLevel}, 0) THEN 1 END)`,
-      })
-      .from(schema.products)
-      .leftJoin(schema.productInventory, eq(schema.products.id, schema.productInventory.productId))
-      .where(whereClause);
 
     const summary = {
       totalStock: Number(summaryRes[0]?.totalStock || 0),
@@ -138,7 +173,10 @@ export class ProductService {
       }
     }
 
-    const inserted = await db.insert(schema.products).values(cleanData as any).returning();
+    const inserted = await db
+      .insert(schema.products)
+      .values(cleanData as any)
+      .returning();
 
     // Create variants if defined
     if (input.hasVariants && input.variants && input.variants.length > 0) {
@@ -224,7 +262,12 @@ export class ProductService {
     const variants = await db
       .select()
       .from(schema.productVariants)
-      .where(and(eq(schema.productVariants.productId, productId), eq(schema.productVariants.organizationId, orgId)));
+      .where(
+        and(
+          eq(schema.productVariants.productId, productId),
+          eq(schema.productVariants.organizationId, orgId),
+        ),
+      );
 
     const bundleComponents = await db
       .select()

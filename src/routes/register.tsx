@@ -22,11 +22,7 @@ import { registerOrgFn, checkEmailAvailabilityFn } from "@/api/auth";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { INDUSTRY_SEEDS } from "@/lib/industry-seeds";
 import { getTrialDaysFromEnv } from "@/lib/email-service";
-import {
-  validateEmail,
-  validatePassword,
-  sanitizeInput,
-} from "@/lib/validation";
+import { validateEmail, validatePassword, sanitizeInput } from "@/lib/validation";
 
 export const Route = createFileRoute("/register")({
   head: () => ({ meta: [{ title: "Start Free Trial · OneDesk360 SaaS" }] }),
@@ -60,7 +56,9 @@ function RegisterPage() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isRegistering, setIsRegistering] = useState(false);
 
-  const [emailStatus, setEmailStatus] = useState<"idle" | "checking" | "available" | "taken">("idle");
+  const [emailStatus, setEmailStatus] = useState<"idle" | "checking" | "available" | "taken">(
+    "idle",
+  );
   const [emailMessage, setEmailMessage] = useState("");
 
   useEffect(() => {
@@ -146,7 +144,8 @@ function RegisterPage() {
       const trialDays = getTrialDaysFromEnv();
       const trialEndsAt = Date.now() + trialDays * 24 * 60 * 60 * 1000;
 
-      const industrySeed = INDUSTRY_SEEDS[formData.industry] || INDUSTRY_SEEDS["General Retail Store"];
+      const industrySeed =
+        INDUSTRY_SEEDS[formData.industry] || INDUSTRY_SEEDS["General Retail Store"];
 
       const res = await registerOrgFn({
         data: {
@@ -190,7 +189,9 @@ function RegisterPage() {
           </div>
           <div>
             <h1 className="text-xl font-extrabold tracking-tight text-white">OneDesk360</h1>
-            <p className="text-xs text-white/80 font-medium uppercase tracking-wider">Enterprise Cloud Commerce</p>
+            <p className="text-xs text-white/80 font-medium uppercase tracking-wider">
+              Enterprise Cloud Commerce
+            </p>
           </div>
         </div>
 
@@ -224,7 +225,17 @@ function RegisterPage() {
 
         {/* Footer info */}
         <div className="relative z-10 flex items-center justify-between text-xs text-white/70">
-          <p>© 2026 OneDesk360 Universal Inc.</p>
+          <p>
+            © {new Date().getFullYear()}{" "}
+            <a
+              href="https://devlab360.com/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-white transition-colors underline font-medium"
+            >
+              DevLab360
+            </a>
+          </p>
           <Link to="/login" className="hover:text-white transition-colors underline font-medium">
             Sign In to Existing Store
           </Link>
@@ -277,7 +288,9 @@ function RegisterPage() {
                     placeholder="John Doe"
                     className="h-12 sm:h-13 rounded-2xl text-base px-4"
                   />
-                  {errors.ownerName && <p className="text-xs text-destructive mt-1">{errors.ownerName}</p>}
+                  {errors.ownerName && (
+                    <p className="text-xs text-destructive mt-1">{errors.ownerName}</p>
+                  )}
                 </div>
 
                 <div className="space-y-2">
@@ -286,10 +299,14 @@ function RegisterPage() {
                       Email Address
                     </Label>
                     {emailStatus === "checking" && (
-                      <span className="text-xs text-muted-foreground animate-pulse">Checking availability…</span>
+                      <span className="text-xs text-muted-foreground animate-pulse">
+                        Checking availability…
+                      </span>
                     )}
                     {emailStatus === "available" && (
-                      <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">Available</span>
+                      <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">
+                        Available
+                      </span>
                     )}
                     {emailStatus === "taken" && (
                       <span className="text-xs font-bold text-destructive">Taken</span>
@@ -317,10 +334,15 @@ function RegisterPage() {
                     placeholder="••••••••"
                     className="h-12 sm:h-13 rounded-2xl text-base px-4"
                   />
-                  {errors.password && <p className="text-xs text-destructive mt-1">{errors.password}</p>}
+                  {errors.password && (
+                    <p className="text-xs text-destructive mt-1">{errors.password}</p>
+                  )}
                 </div>
 
-                <Button onClick={handleNextStep} className="w-full h-12 sm:h-13 rounded-2xl font-extrabold gap-2 text-base shadow-md transition-all hover:scale-[1.01] mt-2">
+                <Button
+                  onClick={handleNextStep}
+                  className="w-full h-12 sm:h-13 rounded-2xl font-extrabold gap-2 text-base shadow-md transition-all hover:scale-[1.01] mt-2"
+                >
                   <span>Continue to Store Profile</span>
                   <ChevronRight className="size-5" />
                 </Button>
@@ -339,7 +361,9 @@ function RegisterPage() {
                     placeholder="Apex Retail Supermarket"
                     className="h-12 sm:h-13 rounded-2xl text-base px-4"
                   />
-                  {errors.companyName && <p className="text-xs text-destructive mt-1">{errors.companyName}</p>}
+                  {errors.companyName && (
+                    <p className="text-xs text-destructive mt-1">{errors.companyName}</p>
+                  )}
                 </div>
 
                 <div className="space-y-2">
@@ -365,7 +389,9 @@ function RegisterPage() {
                     onChange={(val) => setFormData({ ...formData, industry: val })}
                     placeholder="Choose industry..."
                   />
-                  {errors.industry && <p className="text-xs text-destructive mt-1">{errors.industry}</p>}
+                  {errors.industry && (
+                    <p className="text-xs text-destructive mt-1">{errors.industry}</p>
+                  )}
                 </div>
 
                 <div className="flex items-center gap-3 pt-2">

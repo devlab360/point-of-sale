@@ -85,7 +85,7 @@ export const generateAITextFn = createServerFn({ method: "POST" })
     z.object({
       systemPrompt: z.string(),
       userMessage: z.string(),
-    })
+    }),
   )
   .handler(async ({ data }) => {
     try {
@@ -129,7 +129,7 @@ export const parseInvoiceFn = createServerFn({ method: "POST" })
     z.object({
       fileBase64: z.string(),
       mimeType: z.string(),
-    })
+    }),
   )
   .handler(async ({ data }) => {
     try {
@@ -188,7 +188,9 @@ Do not wrap it in markdown block quotes (no \`\`\`json). Use exactly these Engli
         }
         parsedData = JSON.parse(cleanText.trim());
       } catch (err) {
-        throw new Error("Failed to parse AI response into JSON. Raw output: " + text.substring(0, 100));
+        throw new Error(
+          "Failed to parse AI response into JSON. Raw output: " + text.substring(0, 100),
+        );
       }
 
       return {
@@ -196,6 +198,9 @@ Do not wrap it in markdown block quotes (no \`\`\`json). Use exactly these Engli
         data: parsedData,
       };
     } catch (error: any) {
-      return handleApiError(error, "Failed to parse invoice with AI: " + (error.message || "Unknown error"));
+      return handleApiError(
+        error,
+        "Failed to parse invoice with AI: " + (error.message || "Unknown error"),
+      );
     }
   });

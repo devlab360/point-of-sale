@@ -156,8 +156,8 @@ export function PosDialogs({
   const { data: customerSearchResults } = useQuery({
     queryKey: ["customerSearch", orgId, debouncedCustomerQuery],
     queryFn: async () => {
-      const res = await getCustomersFn({ 
-        data: { query: debouncedCustomerQuery, pageSize: 15 } 
+      const res = await getCustomersFn({
+        data: { query: debouncedCustomerQuery, pageSize: 15 },
       });
       return (res as any)?.data || [];
     },
@@ -391,33 +391,33 @@ export function PosDialogs({
               <span className="font-medium">Walk-in Customer</span>
             </button>
             {displayCustomers.map((c: any) => (
-                <button
-                  key={c.id}
-                  className={cn(
-                    "flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm hover:bg-muted",
-                    activeCustomer.id === c.id && "bg-primary/10",
-                  )}
-                  onClick={() => {
-                    setSelectedCustomer(c);
-                    setShowCustomerSearch(false);
-                    setCustomerQuery("");
-                  }}
-                >
-                  <div className="grid size-8 place-items-center rounded-full bg-gradient-to-br from-primary to-info text-xs font-bold text-white">
-                    {c.name
-                      .split(" ")
-                      .map((n: any) => n[0])
-                      .join("")
-                      .slice(0, 2)}
+              <button
+                key={c.id}
+                className={cn(
+                  "flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm hover:bg-muted",
+                  activeCustomer.id === c.id && "bg-primary/10",
+                )}
+                onClick={() => {
+                  setSelectedCustomer(c);
+                  setShowCustomerSearch(false);
+                  setCustomerQuery("");
+                }}
+              >
+                <div className="grid size-8 place-items-center rounded-full bg-gradient-to-br from-primary to-info text-xs font-bold text-white">
+                  {c.name
+                    .split(" ")
+                    .map((n: any) => n[0])
+                    .join("")
+                    .slice(0, 2)}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="font-semibold truncate">{c.name}</div>
+                  <div className="text-xs text-muted-foreground">
+                    {c.phone} · {c.loyaltyPoints} pts
                   </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="font-semibold truncate">{c.name}</div>
-                    <div className="text-xs text-muted-foreground">
-                      {c.phone} · {c.loyaltyPoints} pts
-                    </div>
-                  </div>
-                </button>
-              ))}
+                </div>
+              </button>
+            ))}
           </div>
         </DialogContent>
       </Dialog>
@@ -504,11 +504,25 @@ export function PosDialogs({
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label>Retail Price *</Label>
-                    <Input name="price" type="number" step="0.01" min="0" placeholder="0.00" required />
+                    <Input
+                      name="price"
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      placeholder="0.00"
+                      required
+                    />
                   </div>
                   <div className="space-y-2">
                     <Label>Cost Price *</Label>
-                    <Input name="cost" type="number" step="0.01" min="0" placeholder="0.00" required />
+                    <Input
+                      name="cost"
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      placeholder="0.00"
+                      required
+                    />
                   </div>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -519,7 +533,11 @@ export function PosDialogs({
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
                       <Label>Barcode / SKU</Label>
-                      <button type="button" onClick={generateBarcode} className="text-[10px] font-medium text-primary hover:underline focus:outline-none">
+                      <button
+                        type="button"
+                        onClick={generateBarcode}
+                        className="text-[10px] font-medium text-primary hover:underline focus:outline-none"
+                      >
                         Generate
                       </button>
                     </div>
@@ -572,7 +590,8 @@ export function PosDialogs({
                     Cancel
                   </Button>
                   <Button type="submit" disabled={isAddingProduct}>
-                    {isAddingProduct && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Save Product
+                    {isAddingProduct && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Save
+                    Product
                   </Button>
                 </DialogFooter>
               </form>
@@ -597,12 +616,25 @@ export function PosDialogs({
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label>Price *</Label>
-                    <Input name="price" type="number" step="0.01" min="0" placeholder="0.00" required />
+                    <Input
+                      name="price"
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      placeholder="0.00"
+                      required
+                    />
                   </div>
                   <div className="space-y-2">
                     <Label>Duration</Label>
                     <div className="flex gap-2">
-                      <Input name="duration" type="number" min="0" placeholder="e.g. 30" className="flex-1" />
+                      <Input
+                        name="duration"
+                        type="number"
+                        min="0"
+                        placeholder="e.g. 30"
+                        className="flex-1"
+                      />
                       <Select name="durationUnit" defaultValue="mins">
                         <SelectTrigger className="w-[120px]">
                           <SelectValue />
@@ -638,7 +670,8 @@ export function PosDialogs({
                     Cancel
                   </Button>
                   <Button type="submit" disabled={isAddingService}>
-                    {isAddingService && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Save Service
+                    {isAddingService && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Save
+                    Service
                   </Button>
                 </DialogFooter>
               </form>
@@ -692,8 +725,8 @@ export function PosDialogs({
                   <Button size="sm" onClick={() => onResumeInvoice(h)}>
                     Resume
                   </Button>
-                  <Button 
-                    size="sm" 
+                  <Button
+                    size="sm"
                     variant="secondary"
                     onClick={() => {
                       setShowHeld(false);
@@ -757,11 +790,14 @@ export function PosDialogs({
                 </>
               )}
             </AlertDialogDescription>
-            
-            {(settings?.businessType === "PHARMACY" || state.lines.some((l:any) => l.product.metadata?.prescriptionRequired)) && (
+
+            {(settings?.businessType === "PHARMACY" ||
+              state.lines.some((l: any) => l.product.metadata?.prescriptionRequired)) && (
               <div className="mt-4 pt-4 border-t">
-                <label className="text-xs font-semibold block mb-1.5 text-primary">Prescription Reference (Optional)</label>
-                <Input 
+                <label className="text-xs font-semibold block mb-1.5 text-primary">
+                  Prescription Reference (Optional)
+                </label>
+                <Input
                   placeholder="e.g. Rx-12345 / Dr. Smith"
                   value={state.prescriptionRef}
                   onChange={(e) => state.setPrescriptionRef(e.target.value)}
@@ -877,7 +913,7 @@ export function PosDialogs({
         onChange={handleKeyboardChange}
       />
       {/* Split Check Modal */}
-      <SplitCheckModal 
+      <SplitCheckModal
         open={!!splittingInvoice}
         onOpenChange={(open) => !open && setSplittingInvoice(null)}
         invoice={splittingInvoice}
@@ -890,7 +926,7 @@ export function PosDialogs({
               data: {
                 originalInvoiceId: splittingInvoice.id,
                 newInvoices: splits,
-              }
+              },
             });
             toast.success("Check split successfully");
             setSplittingInvoice(null);

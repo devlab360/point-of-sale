@@ -1,11 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { useRouter } from "@tanstack/react-router";
 import { toast } from "sonner";
-import {
-  loginSuperAdminFn,
-  getSuperAdminSessionFn,
-  logoutSuperAdminFn,
-} from "@/api/admin/auth";
+import { loginSuperAdminFn, getSuperAdminSessionFn, logoutSuperAdminFn } from "@/api/admin/auth";
 
 export interface SuperAdminUser {
   id: string;

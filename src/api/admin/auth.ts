@@ -44,7 +44,9 @@ export const loginSuperAdminFn = createServerFn({ method: "POST" })
 
       const sessionId = crypto.randomUUID();
       const expiresAt = new Date(Date.now() + SESSION_EXPIRY_HOURS * 60 * 60 * 1000).toISOString();
-      await db.insert(schema.superAdminSessions).values({ id: sessionId, userId: user.id, expiresAt });
+      await db
+        .insert(schema.superAdminSessions)
+        .values({ id: sessionId, userId: user.id, expiresAt });
 
       const token = await signSaToken({ userId: user.id, sessionId });
 
@@ -69,7 +71,12 @@ export const loginSuperAdminFn = createServerFn({ method: "POST" })
   });
 
 export const getSuperAdminSessionFn = createServerFn({ method: "GET" })
-  .validator((data: unknown) => z.object({}).optional().parse(data || {}))
+  .validator((data: unknown) =>
+    z
+      .object({})
+      .optional()
+      .parse(data || {}),
+  )
   .handler(async () => {
     try {
       const { userId } = await requireSuperAdminSession();
@@ -89,7 +96,12 @@ export const getSuperAdminSessionFn = createServerFn({ method: "GET" })
   });
 
 export const logoutSuperAdminFn = createServerFn({ method: "POST" })
-  .validator((data: unknown) => z.object({}).optional().parse(data || {}))
+  .validator((data: unknown) =>
+    z
+      .object({})
+      .optional()
+      .parse(data || {}),
+  )
   .handler(async () => {
     try {
       const token = getCookie(SA_COOKIE);

@@ -194,10 +194,14 @@ function UnitsPage() {
   };
 
   const handleExport = () => {
-    exportToCSV(rawUnits, [
-      { key: 'name', label: 'Unit Name' },
-      { key: 'shortName', label: 'Short Name' }
-    ], 'units');
+    exportToCSV(
+      rawUnits,
+      [
+        { key: "name", label: "Unit Name" },
+        { key: "shortName", label: "Short Name" },
+      ],
+      "units",
+    );
   };
 
   const handleImport = async (file: File) => {
@@ -210,20 +214,20 @@ function UnitsPage() {
 
       let count = 0;
       for (const row of data) {
-        if (row['Unit Name']) {
-          await createUnitFn({ 
-            data: { 
-              unit: { 
-                id: uuidv4(), 
-                name: row['Unit Name'],
-                shortName: row['Short Name'] || ''
-              } 
-            } 
+        if (row["Unit Name"]) {
+          await createUnitFn({
+            data: {
+              unit: {
+                id: uuidv4(),
+                name: row["Unit Name"],
+                shortName: row["Short Name"] || "",
+              },
+            },
           });
           count++;
         }
       }
-      
+
       queryClient.invalidateQueries({ queryKey: ["units"] });
       toast.success(`Successfully imported ${count} units`);
     } catch (error) {
@@ -311,7 +315,9 @@ function UnitsPage() {
                   <tbody className="divide-y divide-border/60">
                     {paginatedUnits.map((u) => (
                       <tr key={u.id} className="hover:bg-muted/30 transition-colors">
-                        <td className="px-5 py-3 font-bold text-foreground whitespace-nowrap">{u.name}</td>
+                        <td className="px-5 py-3 font-bold text-foreground whitespace-nowrap">
+                          {u.name}
+                        </td>
                         <td className="px-5 py-3 font-mono text-xs text-muted-foreground whitespace-nowrap font-bold">
                           <span className="rounded-md bg-muted px-2 py-0.5 border border-border/50">
                             {u.short}

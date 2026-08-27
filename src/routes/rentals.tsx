@@ -247,7 +247,9 @@ function RentalsPage() {
                         <td className="px-5 py-3 font-bold text-foreground whitespace-nowrap text-xs sm:text-sm">
                           {r.customerName}
                         </td>
-                        <td className="px-5 py-3 font-medium text-foreground whitespace-nowrap text-xs">{r.itemName}</td>
+                        <td className="px-5 py-3 font-medium text-foreground whitespace-nowrap text-xs">
+                          {r.itemName}
+                        </td>
                         <td className="number px-5 py-3 text-right font-black text-foreground whitespace-nowrap text-sm">
                           {formatCurrency(r.dailyRate)}/day
                         </td>
@@ -277,7 +279,10 @@ function RentalsPage() {
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end" className="rounded-xl">
                               {r.status !== "returned" && (
-                                <DropdownMenuItem onClick={() => markReturned(r.id)} className="text-xs font-bold text-success">
+                                <DropdownMenuItem
+                                  onClick={() => markReturned(r.id)}
+                                  className="text-xs font-bold text-success"
+                                >
                                   <CheckCircle2 className="mr-2 size-3.5" /> Mark Returned
                                 </DropdownMenuItem>
                               )}
@@ -305,16 +310,22 @@ function RentalsPage() {
                   >
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2">
-                        <span className="font-mono text-xs font-bold text-primary">{r.rentalNo}</span>
+                        <span className="font-mono text-xs font-bold text-primary">
+                          {r.rentalNo}
+                        </span>
                         <Badge
                           className={`text-[9px] font-bold py-0 ${
-                            r.status === "returned" ? "bg-success/12 text-success" : "bg-primary/12 text-primary"
+                            r.status === "returned"
+                              ? "bg-success/12 text-success"
+                              : "bg-primary/12 text-primary"
                           }`}
                         >
                           {r.status}
                         </Badge>
                       </div>
-                      <div className="font-bold text-xs sm:text-sm text-foreground mt-0.5 truncate">{r.customerName}</div>
+                      <div className="font-bold text-xs sm:text-sm text-foreground mt-0.5 truncate">
+                        {r.customerName}
+                      </div>
                       <p className="text-[11px] text-muted-foreground truncate">{r.itemName}</p>
                       <span className="text-[10px] text-muted-foreground mt-0.5 block">
                         Due: {r.expectedReturnDate ? formatAppDate(r.expectedReturnDate) : "-"}
@@ -322,7 +333,9 @@ function RentalsPage() {
                     </div>
 
                     <div className="text-right shrink-0 pl-2">
-                      <div className="number text-sm font-black text-foreground">{formatCurrency(r.dailyRate)}/d</div>
+                      <div className="number text-sm font-black text-foreground">
+                        {formatCurrency(r.dailyRate)}/d
+                      </div>
                       <span className="text-[10px] text-warning-foreground font-bold mt-0.5 block">
                         Dep: {formatCurrency(r.securityDeposit)}
                       </span>

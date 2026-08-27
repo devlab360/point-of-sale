@@ -49,7 +49,10 @@ export class ExpenseService {
       .offset((page - 1) * pageSize);
 
     const totalCountRes = await db
-      .select({ count: sql`count(*)`, totalAmount: sql`sum(COALESCE(${schema.expenses.amount}, 0))` })
+      .select({
+        count: sql`count(*)`,
+        totalAmount: sql`sum(COALESCE(${schema.expenses.amount}, 0))`,
+      })
       .from(schema.expenses)
       .where(whereClause);
 

@@ -5,15 +5,18 @@ import { SuperAdminLayout } from "@/components/admin/SuperAdminLayout";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import {
-  getAllPlansFn,
-  createOrUpdatePlanFn,
-  deletePlanFn,
-} from "@/api/admin/super-admin";
+import { getAllPlansFn, createOrUpdatePlanFn, deletePlanFn } from "@/api/admin/super-admin";
 import {
   Loader2,
   Plus,
@@ -149,7 +152,9 @@ function SuperAdminPlansPage() {
                       <span className="text-muted-foreground flex items-center gap-1.5">
                         <FileSpreadsheet className="size-3.5" /> Monthly Invoices:
                       </span>
-                      <span className="font-bold">{plan.limits?.maxInvoicesPerMonth || "Unlimited"}</span>
+                      <span className="font-bold">
+                        {plan.limits?.maxInvoicesPerMonth || "Unlimited"}
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -195,7 +200,9 @@ function SuperAdminPlansPage() {
         <Dialog open={isPlanModalOpen} onOpenChange={setIsPlanModalOpen}>
           <DialogContent className="sm:max-w-lg">
             <DialogHeader>
-              <DialogTitle>{editingPlan.id ? "Edit SaaS Plan" : "Create New SaaS Plan"}</DialogTitle>
+              <DialogTitle>
+                {editingPlan.id ? "Edit SaaS Plan" : "Create New SaaS Plan"}
+              </DialogTitle>
               <DialogDescription>
                 Define pricing structure, feature access, and account limits.
               </DialogDescription>
@@ -228,7 +235,9 @@ function SuperAdminPlansPage() {
                   step="0.01"
                   required
                   value={editingPlan.price}
-                  onChange={(e) => setEditingPlan({ ...editingPlan, price: parseFloat(e.target.value) || 0 })}
+                  onChange={(e) =>
+                    setEditingPlan({ ...editingPlan, price: parseFloat(e.target.value) || 0 })
+                  }
                 />
               </div>
 
@@ -256,7 +265,10 @@ function SuperAdminPlansPage() {
                     onChange={(e) =>
                       setEditingPlan({
                         ...editingPlan,
-                        limits: { ...editingPlan.limits, maxProducts: parseInt(e.target.value) || 100 },
+                        limits: {
+                          ...editingPlan.limits,
+                          maxProducts: parseInt(e.target.value) || 100,
+                        },
                       })
                     }
                   />
@@ -264,7 +276,9 @@ function SuperAdminPlansPage() {
               </div>
 
               <div className="flex items-center justify-between pt-2">
-                <Label htmlFor="trial-default" className="text-xs">Default Trial Plan</Label>
+                <Label htmlFor="trial-default" className="text-xs">
+                  Default Trial Plan
+                </Label>
                 <Switch
                   id="trial-default"
                   checked={editingPlan.isTrialDefault}

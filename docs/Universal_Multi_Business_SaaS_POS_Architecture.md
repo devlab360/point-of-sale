@@ -1,4 +1,5 @@
 # Universal Multi-Business SaaS POS
+
 ## Production-Level Architecture, Business Capability & Incremental Implementation Plan
 
 **Document Type:** Product + Architecture Specification  
@@ -659,23 +660,23 @@ A full matrix must be generated during the actual project audit.
 
 Example:
 
-| Feature | Retail | Grocery | Restaurant | Café | Salon | Repair | Wholesale |
-|---|---|---|---|---|---|---|---|
-| POS | YES | YES | YES | YES | YES | YES | YES |
-| Customers | YES | YES | YES | YES | YES | YES | YES |
-| Payments | YES | YES | YES | YES | YES | YES | YES |
-| Products | YES | YES | YES/OPTIONAL | YES/OPTIONAL | OPTIONAL | YES | YES |
-| Services | OPTIONAL | OPTIONAL | OPTIONAL | OPTIONAL | YES | YES | OPTIONAL |
-| Inventory | YES | YES | YES | YES | OPTIONAL | YES | YES |
-| Barcode | YES | YES | OPTIONAL | OPTIONAL | OPTIONAL | OPTIONAL | YES |
-| Tables | NO | NO | YES | YES | NO | NO | NO |
-| KOT | NO | NO | YES | YES | NO | NO | NO |
-| Kitchen | NO | NO | YES | YES | NO | NO | NO |
-| Appointments | NO | NO | OPTIONAL | OPTIONAL | YES | OPTIONAL | NO |
-| Staff Commission | OPTIONAL | OPTIONAL | OPTIONAL | OPTIONAL | YES | YES | OPTIONAL |
-| Job Cards | NO | NO | NO | NO | NO | YES | NO |
-| Technician | NO | NO | NO | NO | NO | YES | NO |
-| Credit Sales | OPTIONAL | YES | OPTIONAL | OPTIONAL | YES | YES | YES |
+| Feature          | Retail   | Grocery  | Restaurant   | Café         | Salon    | Repair   | Wholesale |
+| ---------------- | -------- | -------- | ------------ | ------------ | -------- | -------- | --------- |
+| POS              | YES      | YES      | YES          | YES          | YES      | YES      | YES       |
+| Customers        | YES      | YES      | YES          | YES          | YES      | YES      | YES       |
+| Payments         | YES      | YES      | YES          | YES          | YES      | YES      | YES       |
+| Products         | YES      | YES      | YES/OPTIONAL | YES/OPTIONAL | OPTIONAL | YES      | YES       |
+| Services         | OPTIONAL | OPTIONAL | OPTIONAL     | OPTIONAL     | YES      | YES      | OPTIONAL  |
+| Inventory        | YES      | YES      | YES          | YES          | OPTIONAL | YES      | YES       |
+| Barcode          | YES      | YES      | OPTIONAL     | OPTIONAL     | OPTIONAL | OPTIONAL | YES       |
+| Tables           | NO       | NO       | YES          | YES          | NO       | NO       | NO        |
+| KOT              | NO       | NO       | YES          | YES          | NO       | NO       | NO        |
+| Kitchen          | NO       | NO       | YES          | YES          | NO       | NO       | NO        |
+| Appointments     | NO       | NO       | OPTIONAL     | OPTIONAL     | YES      | OPTIONAL | NO        |
+| Staff Commission | OPTIONAL | OPTIONAL | OPTIONAL     | OPTIONAL     | YES      | YES      | OPTIONAL  |
+| Job Cards        | NO       | NO       | NO           | NO           | NO       | YES      | NO        |
+| Technician       | NO       | NO       | NO           | NO           | NO       | YES      | NO        |
+| Credit Sales     | OPTIONAL | YES      | OPTIONAL     | OPTIONAL     | YES      | YES      | YES       |
 
 This is only a starting example. The final matrix must be based on the codebase and domain analysis.
 

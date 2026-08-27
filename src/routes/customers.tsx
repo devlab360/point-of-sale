@@ -292,14 +292,18 @@ function CustomersPage() {
   };
 
   const handleExport = () => {
-    exportToCSV(customers, [
-      { key: 'name', label: 'Name' },
-      { key: 'email', label: 'Email' },
-      { key: 'phone', label: 'Phone' },
-      { key: 'address', label: 'Address' },
-      { key: 'type', label: 'Type' },
-      { key: 'points', label: 'Points' }
-    ], 'customers');
+    exportToCSV(
+      customers,
+      [
+        { key: "name", label: "Name" },
+        { key: "email", label: "Email" },
+        { key: "phone", label: "Phone" },
+        { key: "address", label: "Address" },
+        { key: "type", label: "Type" },
+        { key: "points", label: "Points" },
+      ],
+      "customers",
+    );
   };
 
   const handleImport = async (file: File) => {
@@ -312,24 +316,24 @@ function CustomersPage() {
 
       let count = 0;
       for (const row of data) {
-        if (row['Name']) {
-          await createCustomerFn({ 
-            data: { 
-              customer: { 
-                id: uuidv4(), 
-                name: row['Name'],
-                email: row['Email'] || '',
-                phone: row['Phone'] || '',
-                address: row['Address'] || '',
-                type: (row['Type'] as any) || 'retail',
-                points: parseInt(row['Points'] || '0')
-              } 
-            } 
+        if (row["Name"]) {
+          await createCustomerFn({
+            data: {
+              customer: {
+                id: uuidv4(),
+                name: row["Name"],
+                email: row["Email"] || "",
+                phone: row["Phone"] || "",
+                address: row["Address"] || "",
+                type: (row["Type"] as any) || "retail",
+                points: parseInt(row["Points"] || "0"),
+              },
+            },
           });
           count++;
         }
       }
-      
+
       queryClient.invalidateQueries({ queryKey: ["customers"] });
       toast.success(`Successfully imported ${count} customers`);
     } catch (error) {
@@ -432,13 +436,25 @@ function CustomersPage() {
                     <tr>
                       <th className="px-5 py-3 whitespace-nowrap">{t("customer") || "Customer"}</th>
                       <th className="px-5 py-3 whitespace-nowrap">{t("contact") || "Contact"}</th>
-                      <th className="px-5 py-3 text-right whitespace-nowrap">{t("visits") || "Visits"}</th>
-                      <th className="px-5 py-3 text-right whitespace-nowrap">{t("lifetime") || "Lifetime Spent"}</th>
-                      <th className="px-5 py-3 text-right whitespace-nowrap">{t("points") || "Points"}</th>
-                      <th className="px-5 py-3 text-right whitespace-nowrap">{t("credit") || "Due Credit"}</th>
-                      <th className="px-5 py-3 text-right whitespace-nowrap">{t("wallet") || "Wallet"}</th>
+                      <th className="px-5 py-3 text-right whitespace-nowrap">
+                        {t("visits") || "Visits"}
+                      </th>
+                      <th className="px-5 py-3 text-right whitespace-nowrap">
+                        {t("lifetime") || "Lifetime Spent"}
+                      </th>
+                      <th className="px-5 py-3 text-right whitespace-nowrap">
+                        {t("points") || "Points"}
+                      </th>
+                      <th className="px-5 py-3 text-right whitespace-nowrap">
+                        {t("credit") || "Due Credit"}
+                      </th>
+                      <th className="px-5 py-3 text-right whitespace-nowrap">
+                        {t("wallet") || "Wallet"}
+                      </th>
                       <th className="px-5 py-3 whitespace-nowrap">{t("tier") || "Tier"}</th>
-                      <th className="px-5 py-3 text-right whitespace-nowrap">{t("actions") || "Actions"}</th>
+                      <th className="px-5 py-3 text-right whitespace-nowrap">
+                        {t("actions") || "Actions"}
+                      </th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border/60">
@@ -454,7 +470,10 @@ function CustomersPage() {
                                 .slice(0, 2)
                                 .toUpperCase()}
                             </div>
-                            <span className="font-bold text-foreground hover:text-primary transition-colors cursor-pointer" onClick={() => setLedgerCustomer(c)}>
+                            <span
+                              className="font-bold text-foreground hover:text-primary transition-colors cursor-pointer"
+                              onClick={() => setLedgerCustomer(c)}
+                            >
                               {c.name}
                             </span>
                           </div>
@@ -503,7 +522,10 @@ function CustomersPage() {
                                 Corporate
                               </Badge>
                             ) : (
-                              <Badge variant="outline" className="text-muted-foreground text-[10px] font-semibold">
+                              <Badge
+                                variant="outline"
+                                className="text-muted-foreground text-[10px] font-semibold"
+                              >
                                 Retail
                               </Badge>
                             )}
@@ -520,10 +542,16 @@ function CustomersPage() {
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end" className="rounded-xl">
-                              <DropdownMenuItem onClick={() => setEditItem(c)} className="text-xs font-semibold">
+                              <DropdownMenuItem
+                                onClick={() => setEditItem(c)}
+                                className="text-xs font-semibold"
+                              >
                                 <Edit2 className="mr-2 size-3.5" /> Edit Details
                               </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => setLedgerCustomer(c)} className="text-xs font-bold text-primary">
+                              <DropdownMenuItem
+                                onClick={() => setLedgerCustomer(c)}
+                                className="text-xs font-bold text-primary"
+                              >
                                 <Users className="mr-2 size-3.5" /> Customer Ledger (Khata)
                               </DropdownMenuItem>
                               {c.credit > 0 && (
@@ -571,8 +599,12 @@ function CustomersPage() {
                       </div>
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-1.5">
-                          <span className="font-bold text-xs sm:text-sm text-foreground truncate">{c.name}</span>
-                          {c.status === "vip" && <span className="text-[10px] text-warning font-black">★</span>}
+                          <span className="font-bold text-xs sm:text-sm text-foreground truncate">
+                            {c.name}
+                          </span>
+                          {c.status === "vip" && (
+                            <span className="text-[10px] text-warning font-black">★</span>
+                          )}
                         </div>
                         <p className="text-[11px] text-muted-foreground">{c.phone}</p>
                         <div className="flex items-center gap-1.5 mt-1">

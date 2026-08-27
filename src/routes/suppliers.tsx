@@ -277,13 +277,17 @@ function SuppliersPage() {
   };
 
   const handleExport = () => {
-    exportToCSV(suppliers, [
-      { key: 'name', label: 'Name' },
-      { key: 'contactPerson', label: 'Contact Person' },
-      { key: 'email', label: 'Email' },
-      { key: 'phone', label: 'Phone' },
-      { key: 'address', label: 'Address' },
-    ], 'suppliers');
+    exportToCSV(
+      suppliers,
+      [
+        { key: "name", label: "Name" },
+        { key: "contactPerson", label: "Contact Person" },
+        { key: "email", label: "Email" },
+        { key: "phone", label: "Phone" },
+        { key: "address", label: "Address" },
+      ],
+      "suppliers",
+    );
   };
 
   const handleImport = async (file: File) => {
@@ -296,18 +300,18 @@ function SuppliersPage() {
 
       let count = 0;
       for (const row of data) {
-        if (row['Name']) {
+        if (row["Name"]) {
           await createSupplierFn({
             data: {
               supplier: {
                 id: uuidv4(),
-                name: row['Name'],
-                contactPerson: row['Contact Person'] || '',
-                email: row['Email'] || '',
-                phone: row['Phone'] || '',
-                address: row['Address'] || ''
-              }
-            }
+                name: row["Name"],
+                contactPerson: row["Contact Person"] || "",
+                email: row["Email"] || "",
+                phone: row["Phone"] || "",
+                address: row["Address"] || "",
+              },
+            },
           });
           count++;
         }
@@ -407,7 +411,10 @@ function SuppliersPage() {
                       <div className="grid size-11 place-items-center rounded-xl bg-primary/10 font-black text-sm text-primary border border-primary/20">
                         {s.name.slice(0, 2).toUpperCase()}
                       </div>
-                      <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
+                      <div
+                        className="flex items-center gap-1.5"
+                        onClick={(e) => e.stopPropagation()}
+                      >
                         {s.balance > 0 ? (
                           <span className="rounded-md bg-warning/15 px-2 py-0.5 text-xs font-black text-warning-foreground border border-warning/25">
                             {formatCurrency(s.balance)} {t("due") || "due"}
@@ -424,10 +431,16 @@ function SuppliersPage() {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end" className="rounded-xl">
-                            <DropdownMenuItem onClick={() => setEditItem(s)} className="text-xs font-semibold">
+                            <DropdownMenuItem
+                              onClick={() => setEditItem(s)}
+                              className="text-xs font-semibold"
+                            >
                               <Edit2 className="mr-2 size-3.5" /> Edit Details
                             </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => setLedgerSupplier(s)} className="text-xs font-bold text-primary">
+                            <DropdownMenuItem
+                              onClick={() => setLedgerSupplier(s)}
+                              className="text-xs font-bold text-primary"
+                            >
                               <Truck className="mr-2 size-3.5" /> View Khata / Ledger
                             </DropdownMenuItem>
                             <DropdownMenuItem
@@ -446,9 +459,7 @@ function SuppliersPage() {
                       {s.contact} {s.email && `· ${s.email}`}
                     </p>
                     {s.phone && (
-                      <p className="text-xs font-mono text-muted-foreground mt-0.5">
-                        {s.phone}
-                      </p>
+                      <p className="text-xs font-mono text-muted-foreground mt-0.5">{s.phone}</p>
                     )}
                   </div>
 
@@ -709,12 +720,14 @@ function SuppliersPage() {
                             {l.referenceNo || "-"}
                           </td>
                           <td className="px-3 py-2.5 text-right font-semibold text-warning-foreground whitespace-nowrap">
-                            {l.type?.toLowerCase() === "purchase" ? formatCurrency(Math.abs(Number(l.amount || 0))) : "-"}
+                            {l.type?.toLowerCase() === "purchase"
+                              ? formatCurrency(Math.abs(Number(l.amount || 0)))
+                              : "-"}
                           </td>
                           <td className="px-3 py-2.5 text-right font-semibold text-success whitespace-nowrap">
-                            {l.type?.toLowerCase() === "payment" || 
-                             l.type?.toLowerCase() === "return" || 
-                             l.type?.toLowerCase() === "transfer out"
+                            {l.type?.toLowerCase() === "payment" ||
+                            l.type?.toLowerCase() === "return" ||
+                            l.type?.toLowerCase() === "transfer out"
                               ? formatCurrency(Math.abs(Number(l.amount || 0)))
                               : "-"}
                           </td>

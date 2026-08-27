@@ -42,17 +42,13 @@ export const createExpenseFn = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     try {
       const session = await requireAuth();
-      const created = await expenseService.createExpense(
-        session.orgId,
-        session.userId,
-        {
-          category: data.expense.category,
-          amount: data.expense.amount,
-          description: data.expense.description || undefined,
-          date: data.expense.date || undefined,
-          status: data.expense.status || undefined,
-        },
-      );
+      const created = await expenseService.createExpense(session.orgId, session.userId, {
+        category: data.expense.category,
+        amount: data.expense.amount,
+        description: data.expense.description || undefined,
+        date: data.expense.date || undefined,
+        status: data.expense.status || undefined,
+      });
       return { success: true, data: created, message: "Expense record created" };
     } catch (e) {
       return formatErrorResponse(e);
@@ -64,23 +60,19 @@ export const updateExpenseFn = createServerFn({ method: "POST" })
     z.object({
       id: z.string(),
       updates: ExpenseInputSchema.partial(),
-    })
+    }),
   )
   .handler(async ({ data }) => {
     try {
       const session = await requireAuth();
-      const updated = await expenseService.createExpense(
-        session.orgId,
-        session.userId,
-        {
-          id: data.id,
-          category: data.updates.category || "General",
-          amount: data.updates.amount || 0,
-          description: data.updates.description || undefined,
-          date: data.updates.date || undefined,
-          status: data.updates.status || undefined,
-        }
-      );
+      const updated = await expenseService.createExpense(session.orgId, session.userId, {
+        id: data.id,
+        category: data.updates.category || "General",
+        amount: data.updates.amount || 0,
+        description: data.updates.description || undefined,
+        date: data.updates.date || undefined,
+        status: data.updates.status || undefined,
+      });
       return { success: true, data: updated, message: "Expense updated" };
     } catch (e) {
       return formatErrorResponse(e);

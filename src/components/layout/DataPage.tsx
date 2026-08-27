@@ -48,19 +48,23 @@ export function DataPage({
   const actionsContent = (
     <>
       {onImport && (
-        <Button variant="outline" size="sm" onClick={() => document.getElementById('data-page-import')?.click()}>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => document.getElementById("data-page-import")?.click()}
+        >
           <Upload className="size-4" /> Import
-          <input 
-            type="file" 
-            id="data-page-import" 
-            className="hidden" 
-            accept=".csv" 
+          <input
+            type="file"
+            id="data-page-import"
+            className="hidden"
+            accept=".csv"
             onChange={(e) => {
               if (e.target.files?.[0]) {
                 onImport(e.target.files[0]);
-                e.target.value = '';
+                e.target.value = "";
               }
-            }} 
+            }}
           />
         </Button>
       )}

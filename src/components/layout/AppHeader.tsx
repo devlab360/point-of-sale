@@ -269,7 +269,10 @@ export function AppHeader() {
               {i === crumbs.length - 1 ? (
                 <span className="font-medium text-foreground">{c.label}</span>
               ) : (
-                <Link to={c.to} className="text-muted-foreground hover:text-foreground transition-colors">
+                <Link
+                  to={c.to}
+                  className="text-muted-foreground hover:text-foreground transition-colors"
+                >
                   {c.label}
                 </Link>
               )}
@@ -278,23 +281,23 @@ export function AppHeader() {
         </ol>
       </nav>
 
-      <div className="flex flex-1 items-center justify-end gap-2 md:flex-none">
+      <div className="flex flex-1 items-center justify-end gap-2.5 md:flex-none">
         <div
           onClick={() => setSearchOpen(true)}
-          className="relative hidden md:block cursor-pointer shrink-1 min-w-0"
+          className="relative hidden md:block cursor-pointer shrink-1 min-w-0 group"
         >
-          <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-          <div className="flex items-center h-9 w-48 lg:w-64 xl:w-80 rounded-lg border border-border bg-muted/50 pl-9 pr-2 lg:pr-12 text-sm text-muted-foreground select-none hover:border-ring transition-colors overflow-hidden">
-            <span className="truncate">Search app, products, orders...</span>
+          <Search className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground group-hover:text-primary transition-colors" />
+          <div className="flex items-center h-10 w-48 lg:w-64 xl:w-80 rounded-xl border border-border/80 bg-card/80 backdrop-blur-sm pl-10 pr-3 lg:pr-12 text-xs font-medium text-muted-foreground select-none hover:border-primary/50 hover:bg-card shadow-xs transition-all overflow-hidden">
+            <span className="truncate">Search modules, products, sales...</span>
           </div>
-          <kbd className="pointer-events-none absolute right-2 top-1/2 hidden -translate-y-1/2 items-center gap-1 rounded border border-border bg-background px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground lg:inline-flex">
+          <kbd className="pointer-events-none absolute right-2.5 top-1/2 hidden -translate-y-1/2 items-center gap-1 rounded-lg border border-border/60 bg-muted/60 px-2 py-0.5 text-[10px] font-extrabold text-muted-foreground/80 lg:inline-flex shadow-2xs">
             <Command className="size-3" />K
           </kbd>
         </div>
         <Button
           variant="ghost"
           size="icon"
-          className="md:hidden"
+          className="md:hidden rounded-xl"
           onClick={() => setSearchOpen(true)}
           title="Global Search"
         >
@@ -305,7 +308,7 @@ export function AppHeader() {
         <SyncStatus />
 
         {canAccessPos && (
-          <Button asChild size="sm" className="hidden sm:flex">
+          <Button asChild size="sm" variant="gradient" className="hidden sm:inline-flex shadow-sm">
             <Link to="/pos">
               <Plus className="size-4" /> New Sale
             </Link>
@@ -347,7 +350,8 @@ export function AppHeader() {
           <Moon className="hidden size-5 dark:block" />
         </Button>
 
-        {hasPermissionForRoute(user, "/notifications", user?.role === "super_admin", saasPlan).allowed && (
+        {hasPermissionForRoute(user, "/notifications", user?.role === "super_admin", saasPlan)
+          .allowed && (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon" className="relative" aria-label="Notifications">
@@ -602,7 +606,8 @@ export function AppHeader() {
                           <div className="font-medium">Order #{o.id}</div>
                           <div className="flex items-center gap-2 text-xs text-muted-foreground font-medium">
                             <span>
-                              {o.customerName || "Walk-in Customer"} · {formatCurrency(o.total || 0)}
+                              {o.customerName || "Walk-in Customer"} ·{" "}
+                              {formatCurrency(o.total || 0)}
                             </span>{" "}
                             <ArrowRight className="size-3.5" />
                           </div>

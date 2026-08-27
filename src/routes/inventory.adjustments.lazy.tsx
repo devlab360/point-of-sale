@@ -234,11 +234,15 @@ function AdjustmentsPage() {
                 <tbody className="divide-y divide-border/60">
                   {paginatedAdjustments.map((r) => (
                     <tr key={r.ref} className="hover:bg-muted/30 transition-colors">
-                      <td className="px-5 py-3 font-mono text-xs font-bold text-foreground whitespace-nowrap">{r.ref}</td>
+                      <td className="px-5 py-3 font-mono text-xs font-bold text-foreground whitespace-nowrap">
+                        {r.ref}
+                      </td>
                       <td className="px-5 py-3 text-muted-foreground whitespace-nowrap text-xs">
                         {formatAppDate(r.date)}
                       </td>
-                      <td className="px-5 py-3 font-semibold text-foreground whitespace-nowrap">{r.reason}</td>
+                      <td className="px-5 py-3 font-semibold text-foreground whitespace-nowrap">
+                        {r.reason}
+                      </td>
                       <td className="px-5 py-3 text-muted-foreground whitespace-nowrap text-xs font-medium">
                         {r.items}
                       </td>
@@ -271,7 +275,9 @@ function AdjustmentsPage() {
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
                       <span className="font-mono text-xs font-bold text-foreground">{r.ref}</span>
-                      <span className="text-[10px] text-muted-foreground">{formatAppDate(r.date)}</span>
+                      <span className="text-[10px] text-muted-foreground">
+                        {formatAppDate(r.date)}
+                      </span>
                     </div>
                     <p className="text-xs font-bold text-foreground mt-0.5">{r.reason}</p>
                     <p className="text-[11px] text-muted-foreground mt-0.5">{r.items}</p>
@@ -285,7 +291,9 @@ function AdjustmentsPage() {
                     >
                       {r.net > 0 ? `+${r.net}` : r.net}
                     </div>
-                    <span className="text-[9px] font-bold text-muted-foreground uppercase">units</span>
+                    <span className="text-[9px] font-bold text-muted-foreground uppercase">
+                      units
+                    </span>
                   </div>
                 </div>
               ))}

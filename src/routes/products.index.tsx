@@ -204,9 +204,9 @@ function ProductsPage() {
 
       const exportData: any[] = [];
 
-      products.forEach(p => {
-        const catName = categories.find(c => c.id === p.category)?.name || 'General';
-        const brandName = brands.find(b => b.id === p.brand)?.name || 'N/A';
+      products.forEach((p) => {
+        const catName = categories.find((c) => c.id === p.category)?.name || "General";
+        const brandName = brands.find((b) => b.id === p.brand)?.name || "N/A";
         const baseRow = {
           Name: p.name,
           Category: catName,
@@ -224,8 +224,8 @@ function ProductsPage() {
               const row: any = {
                 ...baseRow,
                 VariantName: v.name,
-                VariantSKU: v.sku || '',
-                VariantBarcode: v.barcode || '',
+                VariantSKU: v.sku || "",
+                VariantBarcode: v.barcode || "",
                 VariantPrice: v.price || baseRow.BasePrice,
                 VariantCost: v.cost || baseRow.BaseCost,
               };
@@ -245,32 +245,36 @@ function ProductsPage() {
         } else {
           exportData.push({
             ...baseRow,
-            VariantSKU: p.sku || '',
-            VariantBarcode: p.barcode || ''
+            VariantSKU: p.sku || "",
+            VariantBarcode: p.barcode || "",
           });
         }
       });
 
-      exportToCSV(exportData, [
-        { key: 'Name', label: 'Name' },
-        { key: 'Category', label: 'Category' },
-        { key: 'Brand', label: 'Brand' },
-        { key: 'BasePrice', label: 'Base Price' },
-        { key: 'BaseCost', label: 'Base Cost' },
-        { key: 'Stock', label: 'Stock' },
-        { key: 'ReorderLevel', label: 'Reorder Level' },
-        { key: 'VariantName', label: 'Variant Name' },
-        { key: 'VariantSKU', label: 'Variant SKU' },
-        { key: 'VariantBarcode', label: 'Variant Barcode' },
-        { key: 'VariantPrice', label: 'Variant Price' },
-        { key: 'VariantCost', label: 'Variant Cost' },
-        { key: 'Option1Name', label: 'Option1 Name' },
-        { key: 'Option1Value', label: 'Option1 Value' },
-        { key: 'Option2Name', label: 'Option2 Name' },
-        { key: 'Option2Value', label: 'Option2 Value' },
-        { key: 'Option3Name', label: 'Option3 Name' },
-        { key: 'Option3Value', label: 'Option3 Value' },
-      ], 'products-with-variants');
+      exportToCSV(
+        exportData,
+        [
+          { key: "Name", label: "Name" },
+          { key: "Category", label: "Category" },
+          { key: "Brand", label: "Brand" },
+          { key: "BasePrice", label: "Base Price" },
+          { key: "BaseCost", label: "Base Cost" },
+          { key: "Stock", label: "Stock" },
+          { key: "ReorderLevel", label: "Reorder Level" },
+          { key: "VariantName", label: "Variant Name" },
+          { key: "VariantSKU", label: "Variant SKU" },
+          { key: "VariantBarcode", label: "Variant Barcode" },
+          { key: "VariantPrice", label: "Variant Price" },
+          { key: "VariantCost", label: "Variant Cost" },
+          { key: "Option1Name", label: "Option1 Name" },
+          { key: "Option1Value", label: "Option1 Value" },
+          { key: "Option2Name", label: "Option2 Name" },
+          { key: "Option2Value", label: "Option2 Value" },
+          { key: "Option3Name", label: "Option3 Name" },
+          { key: "Option3Value", label: "Option3 Value" },
+        ],
+        "products-with-variants",
+      );
     } catch (e) {
       toast.error("Failed to export products");
       console.error(e);
@@ -286,60 +290,75 @@ function ProductsPage() {
       }
 
       const groupedData: Record<string, any[]> = {};
-      data.forEach(row => {
-        if (row['Name']) {
-          if (!groupedData[row['Name']]) {
-            groupedData[row['Name']] = [];
+      data.forEach((row) => {
+        if (row["Name"]) {
+          if (!groupedData[row["Name"]]) {
+            groupedData[row["Name"]] = [];
           }
-          groupedData[row['Name']].push(row);
+          groupedData[row["Name"]].push(row);
         }
       });
 
       let count = 0;
       for (const [name, rows] of Object.entries(groupedData)) {
         const firstRow = rows[0];
-        const hasVariants = rows.length > 1 || !!firstRow['VariantName'];
-        
-        const variantsToCreate = hasVariants ? rows.map(row => {
-          const attributes: { name: string; value: string }[] = [];
-          for (let i = 1; i <= 3; i++) {
-            if (row[`Option${i}Name`] && row[`Option${i}Value`]) {
-              attributes.push({
-                name: row[`Option${i}Name`],
-                value: row[`Option${i}Value`]
-              });
-            }
-          }
-          return {
-            name: row['VariantName'] || 'Default',
-            sku: row['VariantSKU'] || '',
-            barcode: row['VariantBarcode'] || '',
-            price: parseFloat(row['VariantPrice'] || row['BasePrice'] || '0'),
-            cost: parseFloat(row['VariantCost'] || row['BaseCost'] || '0'),
-            attributes
-          };
-        }) : [];
+        const hasVariants = rows.length > 1 || !!firstRow["VariantName"];
+
+        const variantsToCreate = hasVariants
+          ? rows.map((row) => {
+              const attributes: { name: string; value: string }[] = [];
+              for (let i = 1; i <= 3; i++) {
+                if (row[`Option${i}Name`] && row[`Option${i}Value`]) {
+                  attributes.push({
+                    name: row[`Option${i}Name`],
+                    value: row[`Option${i}Value`],
+                  });
+                }
+              }
+              return {
+                name: row["VariantName"] || "Default",
+                sku: row["VariantSKU"] || "",
+                barcode: row["VariantBarcode"] || "",
+                price: parseFloat(row["VariantPrice"] || row["BasePrice"] || "0"),
+                cost: parseFloat(row["VariantCost"] || row["BaseCost"] || "0"),
+                attributes,
+              };
+            })
+          : [];
 
         await createProductFn({
           data: {
             product: {
               id: uuidv4(),
               name: name,
-              sku: !hasVariants ? (firstRow['VariantSKU'] || firstRow['SKU'] || `SKU-${Math.floor(Math.random() * 100000)}`) : `SKU-${Math.floor(Math.random() * 100000)}`,
-              barcode: !hasVariants ? (firstRow['VariantBarcode'] || firstRow['Barcode'] || '') : '',
-              category: categories.find(c => c.name.toLowerCase() === (firstRow['Category'] || '').toLowerCase())?.id || categories[0]?.id || 'General',
-              brand: brands.find(b => b.name.toLowerCase() === (firstRow['Brand'] || '').toLowerCase())?.id || brands[0]?.id || '',
-              cost: parseFloat(firstRow['BaseCost'] || firstRow['Cost'] || '0'),
-              price: parseFloat(firstRow['BasePrice'] || firstRow['Price'] || '0'),
-              stock: parseInt(firstRow['Stock'] || '0'),
-              reorderLevel: parseInt(firstRow['ReorderLevel'] || firstRow['Reorder Level'] || '0'),
+              sku: !hasVariants
+                ? firstRow["VariantSKU"] ||
+                  firstRow["SKU"] ||
+                  `SKU-${Math.floor(Math.random() * 100000)}`
+                : `SKU-${Math.floor(Math.random() * 100000)}`,
+              barcode: !hasVariants ? firstRow["VariantBarcode"] || firstRow["Barcode"] || "" : "",
+              category:
+                categories.find(
+                  (c) => c.name.toLowerCase() === (firstRow["Category"] || "").toLowerCase(),
+                )?.id ||
+                categories[0]?.id ||
+                "General",
+              brand:
+                brands.find((b) => b.name.toLowerCase() === (firstRow["Brand"] || "").toLowerCase())
+                  ?.id ||
+                brands[0]?.id ||
+                "",
+              cost: parseFloat(firstRow["BaseCost"] || firstRow["Cost"] || "0"),
+              price: parseFloat(firstRow["BasePrice"] || firstRow["Price"] || "0"),
+              stock: parseInt(firstRow["Stock"] || "0"),
+              reorderLevel: parseInt(firstRow["ReorderLevel"] || firstRow["Reorder Level"] || "0"),
               hasVariants,
               variants: variantsToCreate,
-              type: 'standard',
-              unit: 'pcs',
-              status: 'active'
-            }
-          }
+              type: "standard",
+              unit: "pcs",
+              status: "active",
+            },
+          },
         });
         count++;
       }
@@ -372,7 +391,9 @@ function ProductsPage() {
               onClick={() => setView("list")}
               className={cn(
                 "grid size-8 place-items-center rounded-lg transition-all",
-                view === "list" ? "bg-card text-foreground shadow-sm font-bold" : "text-muted-foreground hover:text-foreground",
+                view === "list"
+                  ? "bg-card text-foreground shadow-sm font-bold"
+                  : "text-muted-foreground hover:text-foreground",
               )}
               aria-label="List view"
             >
@@ -383,7 +404,9 @@ function ProductsPage() {
               onClick={() => setView("grid")}
               className={cn(
                 "grid size-8 place-items-center rounded-lg transition-all",
-                view === "grid" ? "bg-card text-foreground shadow-sm font-bold" : "text-muted-foreground hover:text-foreground",
+                view === "grid"
+                  ? "bg-card text-foreground shadow-sm font-bold"
+                  : "text-muted-foreground hover:text-foreground",
               )}
               aria-label="Grid view"
             >
@@ -534,11 +557,14 @@ function ProductsPage() {
           <AlertDialogHeader>
             <AlertDialogTitle className="font-bold">Delete Product?</AlertDialogTitle>
             <AlertDialogDescription className="text-xs">
-              This action cannot be undone. This SKU and its history will be removed from your catalog.
+              This action cannot be undone. This SKU and its history will be removed from your
+              catalog.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel className="rounded-xl text-xs font-semibold">Cancel</AlertDialogCancel>
+            <AlertDialogCancel className="rounded-xl text-xs font-semibold">
+              Cancel
+            </AlertDialogCancel>
             <AlertDialogAction
               onClick={confirmDelete}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90 rounded-xl text-xs font-bold"
@@ -562,8 +588,15 @@ function ProductsPage() {
           </DialogHeader>
           <div className="space-y-3.5 py-3">
             <div className="text-xs rounded-xl bg-muted/40 p-3 border border-border/60 space-y-1">
-              <div>Product: <strong className="text-foreground">{printProduct?.name}</strong></div>
-              <div>Barcode: <strong className="font-mono text-foreground">{printProduct?.barcode || printProduct?.sku}</strong></div>
+              <div>
+                Product: <strong className="text-foreground">{printProduct?.name}</strong>
+              </div>
+              <div>
+                Barcode:{" "}
+                <strong className="font-mono text-foreground">
+                  {printProduct?.barcode || printProduct?.sku}
+                </strong>
+              </div>
             </div>
             <div className="space-y-1.5">
               <Label className="text-xs font-semibold">Number of Labels</Label>
@@ -578,10 +611,17 @@ function ProductsPage() {
             </div>
           </div>
           <DialogFooter className="gap-2 sm:justify-between">
-            <Button variant="outline" onClick={() => setPrintProduct(null)} className="rounded-xl text-xs">
+            <Button
+              variant="outline"
+              onClick={() => setPrintProduct(null)}
+              className="rounded-xl text-xs"
+            >
               Cancel
             </Button>
-            <Button onClick={handlePrint} className="rounded-xl text-xs font-bold gap-1.5 shadow-sm">
+            <Button
+              onClick={handlePrint}
+              className="rounded-xl text-xs font-bold gap-1.5 shadow-sm"
+            >
               <Printer className="size-4" /> Print Labels
             </Button>
           </DialogFooter>
@@ -671,7 +711,10 @@ function TableView({
                         )}
                       </div>
                       <div className="min-w-0">
-                        <div className="font-bold text-foreground hover:text-primary transition-colors cursor-pointer" onClick={() => onEdit(p)}>
+                        <div
+                          className="font-bold text-foreground hover:text-primary transition-colors cursor-pointer"
+                          onClick={() => onEdit(p)}
+                        >
                           {p.name}
                         </div>
                         <div className="text-xs text-muted-foreground">
@@ -719,7 +762,9 @@ function TableView({
                   <td className="px-4 py-3 whitespace-nowrap">
                     <div className="flex flex-wrap gap-1 items-center">
                       {isLow ? (
-                        <Badge variant="destructive" className="text-[10px] font-bold">Low stock</Badge>
+                        <Badge variant="destructive" className="text-[10px] font-bold">
+                          Low stock
+                        </Badge>
                       ) : (
                         <Badge className="bg-success/12 text-success hover:bg-success/20 border-success/25 text-[10px] font-bold">
                           In stock
@@ -745,13 +790,22 @@ function TableView({
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end" className="rounded-xl">
-                        <DropdownMenuItem onClick={() => onEdit(p)} className="text-xs font-semibold">
+                        <DropdownMenuItem
+                          onClick={() => onEdit(p)}
+                          className="text-xs font-semibold"
+                        >
                           <Pencil className="size-3.5 mr-2" /> Edit Product
                         </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => onPrint(p)} className="text-xs font-semibold">
+                        <DropdownMenuItem
+                          onClick={() => onPrint(p)}
+                          className="text-xs font-semibold"
+                        >
                           <Printer className="size-3.5 mr-2" /> Print Barcode
                         </DropdownMenuItem>
-                        <DropdownMenuItem className="text-destructive text-xs font-semibold" onClick={() => onDelete(p.id)}>
+                        <DropdownMenuItem
+                          className="text-destructive text-xs font-semibold"
+                          onClick={() => onDelete(p.id)}
+                        >
                           <Trash2 className="size-3.5 mr-2" /> Delete
                         </DropdownMenuItem>
                       </DropdownMenuContent>
@@ -786,7 +840,9 @@ function TableView({
                   )}
                 </div>
                 <div className="min-w-0 flex-1">
-                  <div className="font-bold text-xs sm:text-sm text-foreground truncate">{p.name}</div>
+                  <div className="font-bold text-xs sm:text-sm text-foreground truncate">
+                    {p.name}
+                  </div>
                   <p className="text-[11px] text-muted-foreground truncate">
                     {p.sku} · {catObj?.name || p.category || "General"}
                   </p>
@@ -805,7 +861,9 @@ function TableView({
               </div>
 
               <div className="text-right shrink-0 pl-2">
-                <div className="number text-sm font-black text-primary">{formatCurrency(p.price)}</div>
+                <div className="number text-sm font-black text-primary">
+                  {formatCurrency(p.price)}
+                </div>
                 <Button
                   variant="ghost"
                   size="sm"
@@ -860,7 +918,11 @@ function GridView({
               onClick={() => onEdit(p)}
             >
               {p.image ? (
-                <img src={p.image} alt="" className="size-full object-cover transition-transform duration-300 group-hover:scale-105" />
+                <img
+                  src={p.image}
+                  alt=""
+                  className="size-full object-cover transition-transform duration-300 group-hover:scale-105"
+                />
               ) : (
                 <div className="flex flex-col items-center justify-center text-muted-foreground/30">
                   <PackageSearch className="size-10" strokeWidth={1.5} />
@@ -879,7 +941,7 @@ function GridView({
                 <Pencil className="size-3.5" /> Edit Product
               </div>
             </div>
-            
+
             <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
               <Button
                 variant="secondary"
@@ -895,9 +957,15 @@ function GridView({
               </Button>
             </div>
 
-            <div className="p-3 cursor-pointer flex flex-col justify-between flex-1" onClick={() => onEdit(p)}>
+            <div
+              className="p-3 cursor-pointer flex flex-col justify-between flex-1"
+              onClick={() => onEdit(p)}
+            >
               <div>
-                <h4 className="text-xs sm:text-sm font-bold text-foreground line-clamp-2 leading-tight" title={p.name}>
+                <h4
+                  className="text-xs sm:text-sm font-bold text-foreground line-clamp-2 leading-tight"
+                  title={p.name}
+                >
                   {p.name}
                 </h4>
                 <div className="mt-0.5 flex items-center justify-between text-[10px] sm:text-[11px] text-muted-foreground font-medium">
@@ -908,11 +976,15 @@ function GridView({
 
               <div className="mt-2.5 flex flex-col gap-1 border-t border-border/40 pt-2">
                 <div className="flex items-center justify-between">
-                  <span className="number text-sm sm:text-base font-black text-primary">{formatCurrency(p.price)}</span>
+                  <span className="number text-sm sm:text-base font-black text-primary">
+                    {formatCurrency(p.price)}
+                  </span>
                   <span
                     className={cn(
                       "text-[10px] font-bold px-1.5 py-0.5 rounded-md",
-                      isLow ? "bg-destructive/10 text-destructive" : "bg-muted text-muted-foreground",
+                      isLow
+                        ? "bg-destructive/10 text-destructive"
+                        : "bg-muted text-muted-foreground",
                     )}
                   >
                     {p.stock} {unitName || "stock"}
@@ -939,4 +1011,3 @@ function GridView({
 }
 
 void Link;
-

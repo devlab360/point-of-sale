@@ -46,7 +46,9 @@ export function SearchableSelect({
   const listRef = useRef<HTMLDivElement>(null);
 
   const selectedOption = useMemo(
-    () => options.find((opt) => opt.value === value) || (createdOption?.value === value ? createdOption : undefined),
+    () =>
+      options.find((opt) => opt.value === value) ||
+      (createdOption?.value === value ? createdOption : undefined),
     [options, value, createdOption],
   );
 
@@ -95,7 +97,9 @@ export function SearchableSelect({
         >
           <div className="flex items-center gap-2 flex-1 min-w-0">
             {selectedOption?.icon}
-            <span className="truncate block">{selectedOption ? selectedOption.label : placeholder}</span>
+            <span className="truncate block">
+              {selectedOption ? selectedOption.label : placeholder}
+            </span>
           </div>
 
           <div className="flex items-center gap-1 ml-auto shrink-0 opacity-70">
@@ -135,7 +139,9 @@ export function SearchableSelect({
                 e.preventDefault();
                 if (!query.trim() || isCreating) return;
 
-                const exactMatch = options.find((opt) => opt.label.toLowerCase() === query.trim().toLowerCase());
+                const exactMatch = options.find(
+                  (opt) => opt.label.toLowerCase() === query.trim().toLowerCase(),
+                );
                 if (exactMatch) {
                   onChange(exactMatch.value);
                   setOpen(false);
@@ -227,30 +233,41 @@ export function SearchableSelect({
             </div>
           )}
 
-          {query.trim() && onCreate && !options.some(opt => opt.label.toLowerCase() === query.trim().toLowerCase()) && (
-            <div 
-              className={cn("px-2.5 py-2 text-xs border-t border-border flex items-center justify-between text-muted-foreground cursor-pointer hover:bg-muted/60 transition-colors mt-1", isCreating && "opacity-50 pointer-events-none")}
-              onClick={async () => {
-                if (isCreating) return;
-                try {
-                  setIsCreating(true);
-                  const newValue = await onCreate(query.trim());
-                  if (newValue) {
-                    setCreatedOption({ value: newValue, label: query.trim() });
-                    onChange(newValue);
-                    setOpen(false);
+          {query.trim() &&
+            onCreate &&
+            !options.some((opt) => opt.label.toLowerCase() === query.trim().toLowerCase()) && (
+              <div
+                className={cn(
+                  "px-2.5 py-2 text-xs border-t border-border flex items-center justify-between text-muted-foreground cursor-pointer hover:bg-muted/60 transition-colors mt-1",
+                  isCreating && "opacity-50 pointer-events-none",
+                )}
+                onClick={async () => {
+                  if (isCreating) return;
+                  try {
+                    setIsCreating(true);
+                    const newValue = await onCreate(query.trim());
+                    if (newValue) {
+                      setCreatedOption({ value: newValue, label: query.trim() });
+                      onChange(newValue);
+                      setOpen(false);
+                    }
+                  } catch (error) {
+                    console.error(error);
+                  } finally {
+                    setIsCreating(false);
                   }
-                } catch (error) {
-                  console.error(error);
-                } finally {
-                  setIsCreating(false);
-                }
-              }}
-            >
-              <span>Create "{query.trim()}"</span>
-              {isCreating ? <Loader2 className="size-3.5 animate-spin" /> : <kbd className="text-[10px] bg-background border px-1.5 py-0.5 rounded-md font-sans">Enter</kbd>}
-            </div>
-          )}
+                }}
+              >
+                <span>Create "{query.trim()}"</span>
+                {isCreating ? (
+                  <Loader2 className="size-3.5 animate-spin" />
+                ) : (
+                  <kbd className="text-[10px] bg-background border px-1.5 py-0.5 rounded-md font-sans">
+                    Enter
+                  </kbd>
+                )}
+              </div>
+            )}
         </div>
       </PopoverContent>
     </Popover>

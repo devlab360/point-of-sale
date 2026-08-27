@@ -7,7 +7,8 @@ import { SignJWT, jwtVerify } from "jose";
 const SA_COOKIE = "sa_auth_token";
 
 export async function getJwtSecret(): Promise<Uint8Array> {
-  const secret = process.env.SA_JWT_SECRET || process.env.JWT_SECRET || "pos-super-secret-key-development";
+  const secret =
+    process.env.SA_JWT_SECRET || process.env.JWT_SECRET || "pos-super-secret-key-development";
   return new TextEncoder().encode(secret);
 }
 
@@ -41,8 +42,8 @@ export async function requireSuperAdminSession(): Promise<{ userId: string; sess
     .where(
       and(
         eq(schema.superAdminSessions.id, payload.sessionId),
-        eq(schema.superAdminSessions.userId, payload.userId)
-      )
+        eq(schema.superAdminSessions.userId, payload.userId),
+      ),
     )
     .limit(1);
   const session = sessions[0];

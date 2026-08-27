@@ -51,14 +51,15 @@ function EditProductPage() {
     },
     onMutate: async (updatedProduct) => {
       await queryClient.cancelQueries({ queryKey: ["products"] });
-      
+
       const previousProducts = queryClient.getQueryData(["products"]);
-      
+
       // Optimistically update all queries matching ["products"]
       queryClient.setQueriesData({ queryKey: ["products"] }, (old: any) => {
         if (!old) return old;
-        const updateItem = (item: any) => item.id === productId ? { ...item, ...updatedProduct } : item;
-        
+        const updateItem = (item: any) =>
+          item.id === productId ? { ...item, ...updatedProduct } : item;
+
         if (old.data) {
           return { ...old, data: old.data.map(updateItem) };
         }
@@ -86,16 +87,16 @@ function EditProductPage() {
           await saveBundleComponentsFn({
             data: {
               bundleProductId: productId,
-              components: payload.bundleComponents || []
-            }
+              components: payload.bundleComponents || [],
+            },
           });
         }
         if (payload.hasModifiers && payload.modifiers && payload.modifiers.length > 0) {
           await saveProductModifiersFn({
             data: {
               productId: productId,
-              modifiers: payload.modifiers
-            }
+              modifiers: payload.modifiers,
+            },
           });
         }
         // onSettled handles invalidation
@@ -119,10 +120,10 @@ function EditProductPage() {
 
   return (
     <div className="container mx-auto">
-      <ProductForm 
+      <ProductForm
         initialData={initialData}
-        onSubmit={(data) => updateMutation.mutate(data)} 
-        isSaving={updateMutation.isPending} 
+        onSubmit={(data) => updateMutation.mutate(data)}
+        isSaving={updateMutation.isPending}
       />
     </div>
   );

@@ -20,11 +20,14 @@ export function VariantSelectorModal({ product, onClose, onSelect }: VariantSele
 
   const { data: response, isLoading } = useQuery({
     queryKey: [isService ? "serviceVariants" : "productVariants", product.id],
-    queryFn: () => isService ? getServiceVariantsFn({ data: product.id }) : getProductVariantsFn({ data: { productId: product.id } }),
+    queryFn: () =>
+      isService
+        ? getServiceVariantsFn({ data: product.id })
+        : getProductVariantsFn({ data: { productId: product.id } }),
   });
 
   const variants = response?.data || [];
-  const selectedVariant = variants.find(v => v.id === selectedVariantId);
+  const selectedVariant = variants.find((v) => v.id === selectedVariantId);
 
   return (
     <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
@@ -32,9 +35,11 @@ export function VariantSelectorModal({ product, onClose, onSelect }: VariantSele
         <div className="p-4 border-b flex justify-between items-center bg-muted/30">
           <div>
             <h2 className="text-xl font-bold">{product.name}</h2>
-            <p className="text-sm text-muted-foreground">{t("selectVariant") || "Select a variant"}</p>
+            <p className="text-sm text-muted-foreground">
+              {t("selectVariant") || "Select a variant"}
+            </p>
           </div>
-          <button 
+          <button
             onClick={onClose}
             className="p-2 rounded-full hover:bg-muted text-muted-foreground"
           >
@@ -50,7 +55,9 @@ export function VariantSelectorModal({ product, onClose, onSelect }: VariantSele
             </div>
           ) : variants.length === 0 ? (
             <div className="py-12 text-center text-muted-foreground">
-              {isService ? "No variants found for this service." : "No variants found for this product."}
+              {isService
+                ? "No variants found for this service."
+                : "No variants found for this product."}
             </div>
           ) : (
             <div className="space-y-6">
@@ -61,9 +68,9 @@ export function VariantSelectorModal({ product, onClose, onSelect }: VariantSele
                     key={variant.id}
                     onClick={() => setSelectedVariantId(variant.id)}
                     className={`p-3 rounded-xl border text-left transition-all ${
-                      selectedVariantId === variant.id 
-                        ? 'border-primary ring-1 ring-primary bg-primary/5 shadow-sm' 
-                        : 'hover:border-muted-foreground/30 hover:bg-muted/20'
+                      selectedVariantId === variant.id
+                        ? "border-primary ring-1 ring-primary bg-primary/5 shadow-sm"
+                        : "hover:border-muted-foreground/30 hover:bg-muted/20"
                     }`}
                   >
                     <div className="font-semibold text-sm truncate">{variant.name}</div>
@@ -86,11 +93,11 @@ export function VariantSelectorModal({ product, onClose, onSelect }: VariantSele
                 <div>
                   <div className="text-sm text-muted-foreground">Total Price</div>
                   <div className="text-2xl font-bold">
-                    ₹{selectedVariant ? Number(selectedVariant.price).toFixed(2) : '0.00'}
+                    ₹{selectedVariant ? Number(selectedVariant.price).toFixed(2) : "0.00"}
                   </div>
                 </div>
-                <Button 
-                  size="lg" 
+                <Button
+                  size="lg"
                   disabled={!selectedVariant}
                   onClick={() => selectedVariant && onSelect(selectedVariant)}
                   className="rounded-full px-8 shadow-sm"

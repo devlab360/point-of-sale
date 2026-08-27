@@ -208,7 +208,9 @@ function ProfilePage() {
                   <FieldError message={profileErrors.phone} />
                 </label>
                 <label className="block">
-                  <span className="mb-1.5 block text-xs font-semibold text-muted-foreground">Role</span>
+                  <span className="mb-1.5 block text-xs font-semibold text-muted-foreground">
+                    Role
+                  </span>
                   <input
                     value={profile.role}
                     onChange={(e) => handleChange("role", e.target.value)}

@@ -17,22 +17,17 @@ import { getBrandsFn } from "@/api/brands";
 import { getSettingsFn } from "@/api/settings";
 import { getCouponsFn } from "@/api/coupons";
 import { getUsersFn } from "@/api/users";
-import {
-  getShiftsFn,
-  getHeldInvoicesFn,
-  createHeldInvoiceFn,
-  getPosItemsFn,
-} from "@/api/pos";
+import { getShiftsFn, getHeldInvoicesFn, createHeldInvoiceFn, getPosItemsFn } from "@/api/pos";
 import { getTablesFn } from "@/api/restaurant";
 import { getRepairsFn } from "@/api/repairs";
 import { getPosBootstrapFn } from "@/api/bootstrap";
 
-export type CartLine = { 
-  id: string; 
-  qty: number; 
-  variantId?: string; 
-  variantName?: string; 
-  variantPrice?: number; 
+export type CartLine = {
+  id: string;
+  qty: number;
+  variantId?: string;
+  variantName?: string;
+  variantPrice?: number;
   batchId?: string; // Add batchId for explicit selection
   batchNo?: string;
   modifiers?: { id: string; name: string; optionId: string; optionName: string; price: number }[];
@@ -46,7 +41,7 @@ export function usePosState() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const orgId = PersistStore.getOrgId() || "default";
-  
+
   const STALE_TIME = 5 * 60 * 1000; // 5 minutes
 
   const {
@@ -82,16 +77,16 @@ export function usePosState() {
   const heldInvoices: any[] = heldInvoicesData || [];
 
   // --- BOOTSTRAP API INTEGRATION ---
-  const { 
-    data: bootstrapResponse, 
+  const {
+    data: bootstrapResponse,
     isLoading: isBootstrapLoading,
-    refetch: refetchBootstrap
+    refetch: refetchBootstrap,
   } = useQuery({
     queryKey: ["posBootstrap", orgId],
     queryFn: async () => await getPosBootstrapFn(),
     staleTime: STALE_TIME,
   });
-  
+
   const bootstrapData = bootstrapResponse?.data;
 
   const tables: any[] = bootstrapData?.tables || [];
@@ -154,7 +149,10 @@ export function usePosState() {
 
   const [activeCustomerType, setActiveCustomerType] = useState("retail");
   const [additionalProducts, setAdditionalProducts] = useState<any[]>([]);
-  const allProducts = useMemo(() => [...products, ...additionalProducts], [products, additionalProducts]);
+  const allProducts = useMemo(
+    () => [...products, ...additionalProducts],
+    [products, additionalProducts],
+  );
   const [isAddingCustomer, setIsAddingCustomer] = useState(false);
   const [isAddingProduct, setIsAddingProduct] = useState(false);
   const [isAddingService, setIsAddingService] = useState(false);
@@ -234,10 +232,11 @@ export function usePosState() {
     () =>
       allProducts.filter((p) => {
         if (activeCat !== "all") {
-          const catObj = categories.find(c => c.name === activeCat || c.id === activeCat);
+          const catObj = categories.find((c) => c.name === activeCat || c.id === activeCat);
           const catId = catObj?.id;
           const catName = catObj?.name;
-          const isCatMatch = p.category === activeCat || p.category === catId || p.category === catName;
+          const isCatMatch =
+            p.category === activeCat || p.category === catId || p.category === catName;
           if (!isCatMatch) return false;
         }
         if (!query.trim()) return true;
@@ -252,21 +251,38 @@ export function usePosState() {
   );
 
   const addToCart = useCallback(
-    (id: string, variantId?: string, variantName?: string, variantPrice?: number, modifiers?: CartLine['modifiers']) => {
+    (
+      id: string,
+      variantId?: string,
+      variantName?: string,
+      variantPrice?: number,
+      modifiers?: CartLine["modifiers"],
+    ) => {
       const product = allProducts.find((p) => p.id === id);
       if (!product) return;
       setCart((c) => {
         const modifiersStr = JSON.stringify(modifiers || []);
-        const exists = c.find((l) => l.id === id && l.variantId === variantId && JSON.stringify(l.modifiers || []) === modifiersStr);
+        const exists = c.find(
+          (l) =>
+            l.id === id &&
+            l.variantId === variantId &&
+            JSON.stringify(l.modifiers || []) === modifiersStr,
+        );
         const isService = product.referenceType === "SERVICE";
-        
+
         if (exists) {
           const newQty = exists.qty + 1;
           if (!isService && newQty > product.stock) {
             toast.error(`Only ${product.stock} in stock`);
             return c;
           }
-          return c.map((l) => (l.id === id && l.variantId === variantId && JSON.stringify(l.modifiers || []) === modifiersStr ? { ...l, qty: newQty } : l));
+          return c.map((l) =>
+            l.id === id &&
+            l.variantId === variantId &&
+            JSON.stringify(l.modifiers || []) === modifiersStr
+              ? { ...l, qty: newQty }
+              : l,
+          );
         }
         if (!isService && product.stock <= 0) {
           toast.error(`${product.name} is out of stock`);
@@ -300,25 +316,46 @@ export function usePosState() {
             category: "service",
             isRepair: true,
             taxInclusive: true, // Assuming repair estimates already include tax
-          }
+          },
         ];
       });
       addToCart(pseudoId);
       toast.success("Repair ticket added to cart");
     },
-    [addToCart]
+    [addToCart],
   );
 
-  const removeFromCart = useCallback((id: string, variantId?: string, modifiers?: CartLine['modifiers']) => {
-    const modifiersStr = JSON.stringify(modifiers || []);
-    setCart((c) => c.filter((l) => !(l.id === id && l.variantId === variantId && JSON.stringify(l.modifiers || []) === modifiersStr)));
-  }, []);
+  const removeFromCart = useCallback(
+    (id: string, variantId?: string, modifiers?: CartLine["modifiers"]) => {
+      const modifiersStr = JSON.stringify(modifiers || []);
+      setCart((c) =>
+        c.filter(
+          (l) =>
+            !(
+              l.id === id &&
+              l.variantId === variantId &&
+              JSON.stringify(l.modifiers || []) === modifiersStr
+            ),
+        ),
+      );
+    },
+    [],
+  );
 
   const updateQty = useCallback(
-    (id: string, qty: number, variantId?: string, modifiers?: CartLine['modifiers']) => {
+    (id: string, qty: number, variantId?: string, modifiers?: CartLine["modifiers"]) => {
       const modifiersStr = JSON.stringify(modifiers || []);
       if (qty <= 0) {
-        setCart((c) => c.filter((l) => !(l.id === id && l.variantId === variantId && JSON.stringify(l.modifiers || []) === modifiersStr)));
+        setCart((c) =>
+          c.filter(
+            (l) =>
+              !(
+                l.id === id &&
+                l.variantId === variantId &&
+                JSON.stringify(l.modifiers || []) === modifiersStr
+              ),
+          ),
+        );
         return;
       }
       const product = allProducts.find((p) => p.id === id);
@@ -327,13 +364,21 @@ export function usePosState() {
         toast.error(`Only ${product.stock} available`);
         return;
       }
-      setCart((c) => c.map((l) => (l.id === id && l.variantId === variantId && JSON.stringify(l.modifiers || []) === modifiersStr ? { ...l, qty } : l)));
+      setCart((c) =>
+        c.map((l) =>
+          l.id === id &&
+          l.variantId === variantId &&
+          JSON.stringify(l.modifiers || []) === modifiersStr
+            ? { ...l, qty }
+            : l,
+        ),
+      );
     },
     [allProducts],
   );
 
   const updateBatch = useCallback((id: string, batchId?: string, batchNo?: string) => {
-    setCart((c) => c.map((l) => l.id === id ? { ...l, batchId, batchNo } : l));
+    setCart((c) => c.map((l) => (l.id === id ? { ...l, batchId, batchNo } : l)));
   }, []);
 
   const lines = cart
@@ -342,7 +387,7 @@ export function usePosState() {
       if (!p) return null;
 
       let unitPrice = l.variantPrice !== undefined ? l.variantPrice : p.price;
-      
+
       if (l.modifiers) {
         const modifiersTotal = l.modifiers.reduce((sum, m) => sum + m.price, 0);
         unitPrice += modifiersTotal;
@@ -379,9 +424,9 @@ export function usePosState() {
             )
           : [];
       const selectedBatch = l.batchNo
-        ? `${l.batchNo}` 
+        ? `${l.batchNo}`
         : fefoSortedBatches[0]?.batchNo
-          ? `${fefoSortedBatches[0].batchNo} (${fefoSortedBatches[0].expiryDate ? fefoSortedBatches[0].expiryDate.slice(0, 10) : 'No Exp'})`
+          ? `${fefoSortedBatches[0].batchNo} (${fefoSortedBatches[0].expiryDate ? fefoSortedBatches[0].expiryDate.slice(0, 10) : "No Exp"})`
           : undefined;
 
       return {

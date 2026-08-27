@@ -154,24 +154,25 @@ function NewPurchase() {
     const reader = new FileReader();
     reader.onload = async (event) => {
       try {
-        const base64Str = (event.target?.result as string).split(',')[1];
+        const base64Str = (event.target?.result as string).split(",")[1];
         const res = await parseInvoiceFn({
           data: {
             fileBase64: base64Str,
             mimeType: file.type,
-          }
+          },
         });
 
         if (!res.success) throw new Error(res.error || "Failed to parse invoice");
 
         const data = res.data;
-        
+
         // 1. Fuzzy match supplier
         if (data.supplierName) {
           const supplierStr = data.supplierName.toLowerCase();
-          const matchedSupplier = suppliers.find(s => 
-            s.name.toLowerCase().includes(supplierStr) || 
-            supplierStr.includes(s.name.toLowerCase())
+          const matchedSupplier = suppliers.find(
+            (s) =>
+              s.name.toLowerCase().includes(supplierStr) ||
+              supplierStr.includes(s.name.toLowerCase()),
           );
           if (matchedSupplier) {
             setSupplierId(matchedSupplier.id);
@@ -184,26 +185,26 @@ function NewPurchase() {
         if (data.items && data.items.length > 0) {
           const newLines: { productId: string; qty: number; cost: number }[] = [];
           for (const item of data.items) {
-             const prodStr = item.productName.toLowerCase();
-             const matchedProduct = products.find(p => 
-               p.name.toLowerCase().includes(prodStr) || 
-               prodStr.includes(p.name.toLowerCase())
-             );
-             if (matchedProduct) {
-               newLines.push({
-                 productId: matchedProduct.id,
-                 qty: item.quantity || 1,
-                 cost: item.cost || matchedProduct.cost || 0
-               });
-             } else {
-               toast.warning(`Product "${item.productName}" not found in inventory.`);
-             }
+            const prodStr = item.productName.toLowerCase();
+            const matchedProduct = products.find(
+              (p) =>
+                p.name.toLowerCase().includes(prodStr) || prodStr.includes(p.name.toLowerCase()),
+            );
+            if (matchedProduct) {
+              newLines.push({
+                productId: matchedProduct.id,
+                qty: item.quantity || 1,
+                cost: item.cost || matchedProduct.cost || 0,
+              });
+            } else {
+              toast.warning(`Product "${item.productName}" not found in inventory.`);
+            }
           }
           if (newLines.length > 0) {
             setLines(newLines);
           }
         }
-        
+
         toast.success("Invoice data extracted successfully!", { id: "ocr" });
       } catch (err: any) {
         toast.error(err.message || "Failed to extract invoice data", { id: "ocr" });
@@ -380,7 +381,7 @@ function NewPurchase() {
                   {lines.map((l, i) => {
                     const prod = products.find((p) => p.id === l.productId);
                     const showBatch = prod?.hasBatch;
-                    
+
                     return (
                       <div key={i} className="contents">
                         <tr className="hover:bg-muted/30 transition-colors">
@@ -451,28 +452,37 @@ function NewPurchase() {
                             <td colSpan={4} className="px-4 py-2 pb-3">
                               <div className="flex gap-4 items-center">
                                 <div className="flex-1">
-                                  <label className="text-[10px] font-bold uppercase text-amber-600/80 mb-1 block">Batch Number</label>
-                                  <Input 
-                                    className="h-8 text-xs border-amber-500/20 bg-background" 
+                                  <label className="text-[10px] font-bold uppercase text-amber-600/80 mb-1 block">
+                                    Batch Number
+                                  </label>
+                                  <Input
+                                    className="h-8 text-xs border-amber-500/20 bg-background"
                                     placeholder="e.g. BATCH-A01"
                                     value={(l as any).batchNo || ""}
                                     onChange={(e) => handleUpdateLine(i, "batchNo", e.target.value)}
                                   />
                                 </div>
                                 <div className="flex-1">
-                                  <label className="text-[10px] font-bold uppercase text-amber-600/80 mb-1 block">Expiry Date</label>
-                                  <Input 
-                                    type="date" 
-                                    className="h-8 text-xs border-amber-500/20 bg-background" 
+                                  <label className="text-[10px] font-bold uppercase text-amber-600/80 mb-1 block">
+                                    Expiry Date
+                                  </label>
+                                  <Input
+                                    type="date"
+                                    className="h-8 text-xs border-amber-500/20 bg-background"
                                     value={(l as any).expiryDate || ""}
-                                    onChange={(e) => handleUpdateLine(i, "expiryDate", e.target.value)}
+                                    onChange={(e) =>
+                                      handleUpdateLine(i, "expiryDate", e.target.value)
+                                    }
                                   />
                                 </div>
                                 <div className="flex-1">
-                                  <label className="text-[10px] font-bold uppercase text-amber-600/80 mb-1 block">MRP</label>
-                                  <Input 
-                                    type="number" step="0.01" 
-                                    className="h-8 text-xs border-amber-500/20 bg-background" 
+                                  <label className="text-[10px] font-bold uppercase text-amber-600/80 mb-1 block">
+                                    MRP
+                                  </label>
+                                  <Input
+                                    type="number"
+                                    step="0.01"
+                                    className="h-8 text-xs border-amber-500/20 bg-background"
                                     placeholder="0.00"
                                     value={(l as any).mrp || ""}
                                     onChange={(e) => handleUpdateLine(i, "mrp", e.target.value)}

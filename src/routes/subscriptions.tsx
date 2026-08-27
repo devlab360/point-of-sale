@@ -282,7 +282,9 @@ function SubscriptionsPage() {
                         <td className="px-5 py-3 font-bold text-foreground whitespace-nowrap text-xs sm:text-sm">
                           {s.customerName}
                         </td>
-                        <td className="px-5 py-3 font-medium text-foreground whitespace-nowrap text-xs">{s.planName}</td>
+                        <td className="px-5 py-3 font-medium text-foreground whitespace-nowrap text-xs">
+                          {s.planName}
+                        </td>
                         <td className="px-5 py-3 text-xs uppercase font-mono whitespace-nowrap">
                           <Badge variant="outline" className="text-[10px] font-bold">
                             {s.billingCycle}
@@ -304,7 +306,9 @@ function SubscriptionsPage() {
                               Paused
                             </Badge>
                           ) : (
-                            <Badge variant="outline" className="text-[10px] font-bold">Cancelled</Badge>
+                            <Badge variant="outline" className="text-[10px] font-bold">
+                              Cancelled
+                            </Badge>
                           )}
                         </td>
                         <td className="px-5 py-3 text-right whitespace-nowrap">
@@ -316,11 +320,17 @@ function SubscriptionsPage() {
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end" className="rounded-xl">
                               {s.status === "active" ? (
-                                <DropdownMenuItem onClick={() => updateStatus(s.id, "paused")} className="text-xs font-semibold">
+                                <DropdownMenuItem
+                                  onClick={() => updateStatus(s.id, "paused")}
+                                  className="text-xs font-semibold"
+                                >
                                   <PauseCircle className="mr-2 size-3.5 text-warning" /> Pause Plan
                                 </DropdownMenuItem>
                               ) : (
-                                <DropdownMenuItem onClick={() => updateStatus(s.id, "active")} className="text-xs font-bold text-success">
+                                <DropdownMenuItem
+                                  onClick={() => updateStatus(s.id, "active")}
+                                  className="text-xs font-bold text-success"
+                                >
                                   <CheckCircle2 className="mr-2 size-3.5" /> Resume Plan
                                 </DropdownMenuItem>
                               )}
@@ -348,22 +358,33 @@ function SubscriptionsPage() {
                   >
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2">
-                        <span className="font-mono text-xs font-bold text-primary">{s.subscriptionNo}</span>
+                        <span className="font-mono text-xs font-bold text-primary">
+                          {s.subscriptionNo}
+                        </span>
                         <Badge
                           className={`text-[9px] font-bold py-0 ${
-                            s.status === "active" ? "bg-success/12 text-success" :
-                            s.status === "paused" ? "bg-warning/15 text-warning-foreground" : "bg-muted text-muted-foreground"
+                            s.status === "active"
+                              ? "bg-success/12 text-success"
+                              : s.status === "paused"
+                                ? "bg-warning/15 text-warning-foreground"
+                                : "bg-muted text-muted-foreground"
                           }`}
                         >
                           {s.status}
                         </Badge>
                       </div>
-                      <div className="font-bold text-xs sm:text-sm text-foreground mt-0.5 truncate">{s.customerName}</div>
-                      <p className="text-[11px] text-muted-foreground truncate">{s.planName} • {s.billingCycle}</p>
+                      <div className="font-bold text-xs sm:text-sm text-foreground mt-0.5 truncate">
+                        {s.customerName}
+                      </div>
+                      <p className="text-[11px] text-muted-foreground truncate">
+                        {s.planName} • {s.billingCycle}
+                      </p>
                     </div>
 
                     <div className="text-right shrink-0 pl-2">
-                      <div className="number text-sm font-black text-foreground">{formatCurrency(s.amount)}</div>
+                      <div className="number text-sm font-black text-foreground">
+                        {formatCurrency(s.amount)}
+                      </div>
                       <span className="text-[10px] text-muted-foreground mt-0.5 block">
                         Renews {s.nextBillingDate ? formatAppDate(s.nextBillingDate) : "-"}
                       </span>

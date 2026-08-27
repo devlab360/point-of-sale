@@ -38,7 +38,18 @@ async function seedDatabase() {
       price: "49.00",
       monthlyPrice: "49.00",
       yearlyPrice: "490.00",
-      features: ["pos", "products", "inventory", "customers", "sales", "reports", "kitchen", "services", "repairs", "rentals"],
+      features: [
+        "pos",
+        "products",
+        "inventory",
+        "customers",
+        "sales",
+        "reports",
+        "kitchen",
+        "services",
+        "repairs",
+        "rentals",
+      ],
       menus: ["all"],
       limits: { maxUsers: 10, maxBranches: 3, maxProducts: 10000, maxInvoicesPerMonth: 10000 },
       trialDays: 7,
@@ -63,7 +74,11 @@ async function seedDatabase() {
   ];
 
   for (const plan of defaultPlans) {
-    const existing = await db.select().from(schema.saasPlans).where(eq(schema.saasPlans.id, plan.id)).limit(1);
+    const existing = await db
+      .select()
+      .from(schema.saasPlans)
+      .where(eq(schema.saasPlans.id, plan.id))
+      .limit(1);
     if (!existing.length) {
       await db.insert(schema.saasPlans).values(plan);
       console.log(` - Created Plan: ${plan.name}`);
@@ -103,7 +118,11 @@ async function seedDatabase() {
   const demoOrgId = "demo_flagship_org_1001";
   const demoOwnerEmail = "demo@onedesk360.com";
 
-  const existingOrg = await db.select().from(schema.organizations).where(eq(schema.organizations.id, demoOrgId)).limit(1);
+  const existingOrg = await db
+    .select()
+    .from(schema.organizations)
+    .where(eq(schema.organizations.id, demoOrgId))
+    .limit(1);
   if (!existingOrg.length) {
     await db.insert(schema.organizations).values({
       id: demoOrgId,
@@ -198,11 +217,61 @@ async function seedDatabase() {
     }
 
     const demoProducts = [
-      { name: "iPhone 15 Pro", sku: "SKU-IPH15P", barcode: "1942530001", cost: "850.00", price: "1099.00", stock: "25", category: "Electronics", brand: "Apple", unit: "Pcs" },
-      { name: "Samsung Galaxy S24", sku: "SKU-SGS24", barcode: "8806090002", cost: "700.00", price: "899.00", stock: "30", category: "Electronics", brand: "Samsung", unit: "Pcs" },
-      { name: "Organic Whole Milk 1L", sku: "SKU-MILK1L", barcode: "0123456789", cost: "1.50", price: "2.99", stock: "150", category: "Beverages", brand: "Generic", unit: "Liter" },
-      { name: "Nescafe Classic Coffee 200g", sku: "SKU-NES200", barcode: "7613030004", cost: "4.00", price: "6.50", stock: "80", category: "Groceries", brand: "Nestle", unit: "Pcs" },
-      { name: "Nike Air Max Sneakers", sku: "SKU-NKAMX", barcode: "0912010005", cost: "65.00", price: "120.00", stock: "40", category: "Apparel", brand: "Nike", unit: "Pcs" },
+      {
+        name: "iPhone 15 Pro",
+        sku: "SKU-IPH15P",
+        barcode: "1942530001",
+        cost: "850.00",
+        price: "1099.00",
+        stock: "25",
+        category: "Electronics",
+        brand: "Apple",
+        unit: "Pcs",
+      },
+      {
+        name: "Samsung Galaxy S24",
+        sku: "SKU-SGS24",
+        barcode: "8806090002",
+        cost: "700.00",
+        price: "899.00",
+        stock: "30",
+        category: "Electronics",
+        brand: "Samsung",
+        unit: "Pcs",
+      },
+      {
+        name: "Organic Whole Milk 1L",
+        sku: "SKU-MILK1L",
+        barcode: "0123456789",
+        cost: "1.50",
+        price: "2.99",
+        stock: "150",
+        category: "Beverages",
+        brand: "Generic",
+        unit: "Liter",
+      },
+      {
+        name: "Nescafe Classic Coffee 200g",
+        sku: "SKU-NES200",
+        barcode: "7613030004",
+        cost: "4.00",
+        price: "6.50",
+        stock: "80",
+        category: "Groceries",
+        brand: "Nestle",
+        unit: "Pcs",
+      },
+      {
+        name: "Nike Air Max Sneakers",
+        sku: "SKU-NKAMX",
+        barcode: "0912010005",
+        cost: "65.00",
+        price: "120.00",
+        stock: "40",
+        category: "Apparel",
+        brand: "Nike",
+        unit: "Pcs",
+      },
     ];
 
     for (const p of demoProducts) {

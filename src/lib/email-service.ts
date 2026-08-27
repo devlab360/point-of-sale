@@ -38,7 +38,9 @@ export async function sendVerificationEmail(email: string, otpCode: string): Pro
  */
 export async function sendPasswordResetEmail(email: string, otpCode: string): Promise<boolean> {
   try {
-    const result = await sendEmailFn({ data: { to: email, actionType: "RESET_PASSWORD", otpCode } });
+    const result = await sendEmailFn({
+      data: { to: email, actionType: "RESET_PASSWORD", otpCode },
+    });
     if (!result.success) throw new Error("Failed to queue email");
 
     toast.success(`Password reset OTP sent to ${email}`);

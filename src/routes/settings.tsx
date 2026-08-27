@@ -26,7 +26,12 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getSettingsFn, updateSettingsFn, getAllSaasPlansFn } from "@/api/settings";
 import { submitPaymentProofFn } from "@/api/subscription-payments";
 import { updateUserFn } from "@/api/users";
-import { getLocationsFn, createLocationFn, updateLocationFn, deleteLocationFn } from "@/api/locations";
+import {
+  getLocationsFn,
+  createLocationFn,
+  updateLocationFn,
+  deleteLocationFn,
+} from "@/api/locations";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -61,17 +66,19 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { SettingsSkeleton } from "@/components/skeletons/SettingsSkeleton";
 import { ErrorState } from "@/components/ui/error-state";
 import { SearchableSelect } from "@/components/ui/searchable-select";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { getTrialDaysFromEnv } from "@/lib/email-service";
 import { FileUpload } from "@/components/ui/file-upload";
 import { useFormValidation } from "@/hooks/useFormValidation";
 import { FieldError } from "@/components/ui/field-error";
 import { PhoneInput } from "@/components/ui/phone-input";
-import {
-  ResizablePanelGroup,
-  ResizablePanel,
-  ResizableHandle,
-} from "@/components/ui/resizable";
+import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { BUSINESS_TEMPLATES } from "@/lib/business-templates";
 
@@ -187,18 +194,30 @@ function SettingsPage() {
           utrNumber: paymentForm.utrNumber,
           paymentMethod: paymentForm.paymentMethod,
           note: paymentForm.note,
-          amount: paymentForm.billingCycle === "yearly" ? (selectedPlanForUpgrade.yearlyPrice ? Number(selectedPlanForUpgrade.yearlyPrice) : Number(selectedPlanForUpgrade.price) * 12) : (selectedPlanForUpgrade.monthlyPrice ? Number(selectedPlanForUpgrade.monthlyPrice) : Number(selectedPlanForUpgrade.price)),
-          billingCycle: paymentForm.billingCycle as any
-        }
+          amount:
+            paymentForm.billingCycle === "yearly"
+              ? selectedPlanForUpgrade.yearlyPrice
+                ? Number(selectedPlanForUpgrade.yearlyPrice)
+                : Number(selectedPlanForUpgrade.price) * 12
+              : selectedPlanForUpgrade.monthlyPrice
+                ? Number(selectedPlanForUpgrade.monthlyPrice)
+                : Number(selectedPlanForUpgrade.price),
+          billingCycle: paymentForm.billingCycle as any,
+        },
       });
       if (res.success) {
         toast.success(
           "Payment proof submitted successfully! Super Admin will verify UTR: " +
-          paymentForm.utrNumber +
-          " and activate your subscription within 2-4 hours.",
+            paymentForm.utrNumber +
+            " and activate your subscription within 2-4 hours.",
         );
         setSelectedPlanForUpgrade(null);
-        setPaymentForm({ utrNumber: "", paymentMethod: "UPI / QR Scan", note: "", billingCycle: "monthly" });
+        setPaymentForm({
+          utrNumber: "",
+          paymentMethod: "UPI / QR Scan",
+          note: "",
+          billingCycle: "monthly",
+        });
       } else {
         toast.error("Error: " + res.error);
       }
@@ -250,7 +269,12 @@ function SettingsPage() {
     setIsSaving(true);
     await new Promise((resolve) => setTimeout(resolve, 500));
     try {
-      const orgId = user?.organizationId || dbSettings?.organizationId || settings.organizationId || PersistStore.getOrgId() || "default";
+      const orgId =
+        user?.organizationId ||
+        dbSettings?.organizationId ||
+        settings.organizationId ||
+        PersistStore.getOrgId() ||
+        "default";
 
       if (orgId) {
         const res = await updateSettingsFn({
@@ -438,9 +462,9 @@ function SettingsPage() {
   }
   const parseBankDetails = (str: string) => {
     try {
-      if (str && str.trim().startsWith('{')) return JSON.parse(str);
-    } catch (e) { }
-    return { bankName: str || '', holderName: '', accountNo: '', ifscCode: '' };
+      if (str && str.trim().startsWith("{")) return JSON.parse(str);
+    } catch (e) {}
+    return { bankName: str || "", holderName: "", accountNo: "", ifscCode: "" };
   };
   const bankInfo = parseBankDetails(settings.bankDetails || "");
   const handleBankChange = (field: string, val: string) => {
@@ -775,7 +799,9 @@ function SettingsPage() {
                               : "bg-warning/10 text-warning border-warning/20"
                           }
                         >
-                          {subscriptionStatus === "active" ? "Active Subscription" : "Trial Account"}
+                          {subscriptionStatus === "active"
+                            ? "Active Subscription"
+                            : "Trial Account"}
                         </Badge>
                       </div>
                       {subscriptionStatus === "trial" ? (
@@ -786,7 +812,9 @@ function SettingsPage() {
                             const days = getTrialDaysLeft(expiryStr);
                             if (days <= 0 || isTrialExpired)
                               return (
-                                <span className="text-destructive font-semibold">Trial Expired</span>
+                                <span className="text-destructive font-semibold">
+                                  Trial Expired
+                                </span>
                               );
                             return `${days} days remaining in trial`;
                           })()}
@@ -823,14 +851,17 @@ function SettingsPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
                 {isLoadingPlans ? (
                   Array.from({ length: 3 }).map((_, i) => (
-                    <div key={i} className="rounded-xl border p-5 flex flex-col justify-between bg-card h-80 animate-pulse">
+                    <div
+                      key={i}
+                      className="rounded-xl border p-5 flex flex-col justify-between bg-card h-80 animate-pulse"
+                    >
                       <div className="space-y-4">
                         <div>
                           <div className="h-5 w-1/2 bg-muted rounded mb-2"></div>
                           <div className="h-8 w-1/3 bg-muted rounded"></div>
                         </div>
                         <div className="space-y-2 py-3 border-t border-b border-border/60">
-                          {[1, 2, 3, 4].map(j => (
+                          {[1, 2, 3, 4].map((j) => (
                             <div key={j} className="flex justify-between">
                               <div className="h-3 w-1/3 bg-muted rounded"></div>
                               <div className="h-3 w-1/4 bg-muted rounded"></div>
@@ -917,7 +948,12 @@ function SettingsPage() {
                         <Button
                           onClick={() => {
                             setSelectedPlanForUpgrade(plan);
-                            setPaymentForm({ utrNumber: "", paymentMethod: "UPI / QR Scan", note: "", billingCycle: "monthly" });
+                            setPaymentForm({
+                              utrNumber: "",
+                              paymentMethod: "UPI / QR Scan",
+                              note: "",
+                              billingCycle: "monthly",
+                            });
                           }}
                           className={`w-full mt-6 ${isCurrent ? "bg-primary hover:bg-primary/90" : ""}`}
                           variant={isCurrent ? "default" : "outline"}
@@ -1011,11 +1047,14 @@ function SettingsPage() {
           <TabsContent value="receipt" className="mt-0 outline-none">
             <ResizablePanelGroup
               direction={isMobile ? "vertical" : "horizontal"}
-              className={`items-stretch w-full gap-4 ${isMobile ? 'min-h-[1200px]' : ''}`}
+              className={`items-stretch w-full gap-4 ${isMobile ? "min-h-[1200px]" : ""}`}
             >
               <ResizablePanel defaultSize={55} minSize={30}>
                 <div className="h-full pr-1">
-                  <Card title="Receipt Configuration" desc="Customise the printed and emailed receipts.">
+                  <Card
+                    title="Receipt Configuration"
+                    desc="Customise the printed and emailed receipts."
+                  >
                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                       <Field label="Header note">
                         <input
@@ -1032,7 +1071,9 @@ function SettingsPage() {
                         />
                       </Field>
                       <div className="sm:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4 border p-4 rounded-xl bg-card/50">
-                        <h3 className="sm:col-span-2 text-sm font-semibold text-foreground border-b pb-2 mb-2">Bank Details (For NEFT/IMPS)</h3>
+                        <h3 className="sm:col-span-2 text-sm font-semibold text-foreground border-b pb-2 mb-2">
+                          Bank Details (For NEFT/IMPS)
+                        </h3>
                         <Field label="Bank Name">
                           <input
                             className="inp"
@@ -1148,7 +1189,9 @@ function SettingsPage() {
                       </div>
                     }
                   >
-                    <div className={`bg-gray-100 rounded-lg overflow-auto flex justify-center py-8 min-h-[600px] border relative ${previewFormat === 'a4' ? 'px-8' : ''}`}>
+                    <div
+                      className={`bg-gray-100 rounded-lg overflow-auto flex justify-center py-8 min-h-[600px] border relative ${previewFormat === "a4" ? "px-8" : ""}`}
+                    >
                       <PosPrintLayouts
                         preview={true}
                         state={{
@@ -1290,8 +1333,14 @@ function SettingsPage() {
             </DialogTitle>
             <p className="text-xs text-muted-foreground">
               You are upgrading/recharging to <strong>{selectedPlanForUpgrade?.name}</strong> at{" "}
-              <strong>₹{paymentForm.billingCycle === "yearly" ? (selectedPlanForUpgrade?.yearlyPrice || selectedPlanForUpgrade?.price * 12) : (selectedPlanForUpgrade?.monthlyPrice || selectedPlanForUpgrade?.price)}/{paymentForm.billingCycle === "yearly" ? "year" : "month"}</strong>. Please make the payment using
-              the QR code or Bank Account below.
+              <strong>
+                ₹
+                {paymentForm.billingCycle === "yearly"
+                  ? selectedPlanForUpgrade?.yearlyPrice || selectedPlanForUpgrade?.price * 12
+                  : selectedPlanForUpgrade?.monthlyPrice || selectedPlanForUpgrade?.price}
+                /{paymentForm.billingCycle === "yearly" ? "year" : "month"}
+              </strong>
+              . Please make the payment using the QR code or Bank Account below.
             </p>
           </DialogHeader>
 
@@ -1299,8 +1348,20 @@ function SettingsPage() {
             <div className="flex gap-4 items-center mb-2">
               <span className="text-sm font-semibold">Select Billing Cycle:</span>
               <div className="flex gap-2">
-                <Button size="sm" variant={paymentForm.billingCycle === "monthly" ? "default" : "outline"} onClick={() => setPaymentForm({ ...paymentForm, billingCycle: "monthly" })}>Monthly</Button>
-                <Button size="sm" variant={paymentForm.billingCycle === "yearly" ? "default" : "outline"} onClick={() => setPaymentForm({ ...paymentForm, billingCycle: "yearly" })}>Yearly (Save 20%)</Button>
+                <Button
+                  size="sm"
+                  variant={paymentForm.billingCycle === "monthly" ? "default" : "outline"}
+                  onClick={() => setPaymentForm({ ...paymentForm, billingCycle: "monthly" })}
+                >
+                  Monthly
+                </Button>
+                <Button
+                  size="sm"
+                  variant={paymentForm.billingCycle === "yearly" ? "default" : "outline"}
+                  onClick={() => setPaymentForm({ ...paymentForm, billingCycle: "yearly" })}
+                >
+                  Yearly (Save 20%)
+                </Button>
               </div>
             </div>
             {/* QR Code and Bank Details Grid */}
@@ -1398,10 +1459,11 @@ function SettingsPage() {
                       <div
                         key={method.id}
                         onClick={() => setPaymentForm({ ...paymentForm, paymentMethod: method.id })}
-                        className={`cursor-pointer rounded-xl border p-3 flex flex-col items-center justify-center text-center transition-all duration-200 select-none ${isSelected
-                          ? "border-primary bg-primary/10 shadow-sm ring-2 ring-primary/20 text-primary font-medium"
-                          : "border-border bg-card hover:bg-muted/50 text-foreground"
-                          }`}
+                        className={`cursor-pointer rounded-xl border p-3 flex flex-col items-center justify-center text-center transition-all duration-200 select-none ${
+                          isSelected
+                            ? "border-primary bg-primary/10 shadow-sm ring-2 ring-primary/20 text-primary font-medium"
+                            : "border-border bg-card hover:bg-muted/50 text-foreground"
+                        }`}
                       >
                         <Icon
                           className={`size-5 mb-1.5 ${isSelected ? "text-primary" : "text-muted-foreground"}`}
@@ -1421,7 +1483,7 @@ function SettingsPage() {
                 <div>
                   <Label className="text-xs">Amount Paid</Label>
                   <Input
-                    value={`₹${paymentForm.billingCycle === "yearly" ? (selectedPlanForUpgrade?.yearlyPrice || selectedPlanForUpgrade?.price * 12) : (selectedPlanForUpgrade?.monthlyPrice || selectedPlanForUpgrade?.price)}`}
+                    value={`₹${paymentForm.billingCycle === "yearly" ? selectedPlanForUpgrade?.yearlyPrice || selectedPlanForUpgrade?.price * 12 : selectedPlanForUpgrade?.monthlyPrice || selectedPlanForUpgrade?.price}`}
                     disabled
                     className="mt-1 font-mono font-bold bg-muted text-primary"
                   />
@@ -1499,7 +1561,6 @@ function SettingsPage() {
   );
 }
 
-
 function LocationsTab() {
   const queryClient = useQueryClient();
   const [showForm, setShowForm] = useState(false);
@@ -1563,14 +1624,21 @@ function LocationsTab() {
   };
 
   const typeIcon = (type: string) =>
-    type === "warehouse" ? <Warehouse className="size-4 text-muted-foreground" /> : <Store className="size-4 text-muted-foreground" />;
+    type === "warehouse" ? (
+      <Warehouse className="size-4 text-muted-foreground" />
+    ) : (
+      <Store className="size-4 text-muted-foreground" />
+    );
 
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-lg font-semibold">Store Locations</h2>
-          <p className="text-sm text-muted-foreground">Manage your branches, warehouses, and store locations. Inventory is tracked per location.</p>
+          <p className="text-sm text-muted-foreground">
+            Manage your branches, warehouses, and store locations. Inventory is tracked per
+            location.
+          </p>
         </div>
         <Button onClick={openAdd} className="gap-2">
           <Plus className="size-4" />
@@ -1582,13 +1650,18 @@ function LocationsTab() {
         <div className="rounded-xl border border-border bg-card p-5 shadow-sm space-y-4 animate-in fade-in slide-in-from-top-2 duration-200">
           <div className="flex items-center justify-between">
             <h3 className="font-semibold">{editingLocation ? "Edit Location" : "New Location"}</h3>
-            <button onClick={() => setShowForm(false)} className="text-muted-foreground hover:text-foreground transition-colors">
+            <button
+              onClick={() => setShowForm(false)}
+              className="text-muted-foreground hover:text-foreground transition-colors"
+            >
               <X className="size-4" />
             </button>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1.5">
-              <Label htmlFor="loc-name">Location Name <span className="text-destructive">*</span></Label>
+              <Label htmlFor="loc-name">
+                Location Name <span className="text-destructive">*</span>
+              </Label>
               <Input
                 id="loc-name"
                 placeholder="e.g. Main Store, Warehouse A"
@@ -1598,7 +1671,10 @@ function LocationsTab() {
             </div>
             <div className="space-y-1.5">
               <Label>Type</Label>
-              <Select value={formData.type} onValueChange={(val) => setFormData({ ...formData, type: val })}>
+              <Select
+                value={formData.type}
+                onValueChange={(val) => setFormData({ ...formData, type: val })}
+              >
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="Select type..." />
                 </SelectTrigger>
@@ -1630,10 +1706,11 @@ function LocationsTab() {
                 </SelectContent>
               </Select>
             </div>
-
           </div>
           <div className="flex justify-end gap-2 pt-2 border-t">
-            <Button variant="outline" onClick={() => setShowForm(false)} disabled={isSaving}>Cancel</Button>
+            <Button variant="outline" onClick={() => setShowForm(false)} disabled={isSaving}>
+              Cancel
+            </Button>
             <Button onClick={handleSave} disabled={isSaving}>
               {isSaving && <Loader2 className="size-4 animate-spin mr-2" />}
               {editingLocation ? "Update" : "Create"} Location
@@ -1644,12 +1721,16 @@ function LocationsTab() {
 
       <div className="rounded-xl border border-border overflow-hidden">
         {isLoading ? (
-          <div className="flex items-center justify-center py-12 text-muted-foreground text-sm">Loading locations...</div>
+          <div className="flex items-center justify-center py-12 text-muted-foreground text-sm">
+            Loading locations...
+          </div>
         ) : locations.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 gap-3">
             <MapPin className="size-10 text-muted-foreground/40" />
             <p className="text-muted-foreground font-medium">No locations yet</p>
-            <p className="text-sm text-muted-foreground">Add your first store or warehouse to start tracking per-location inventory.</p>
+            <p className="text-sm text-muted-foreground">
+              Add your first store or warehouse to start tracking per-location inventory.
+            </p>
             <Button onClick={openAdd} variant="outline" className="mt-2 gap-2">
               <Plus className="size-4" /> Add Location
             </Button>
@@ -1673,16 +1754,27 @@ function LocationsTab() {
                       <span className="font-medium">{loc.name}</span>
                     </div>
                   </td>
-                  <td className="px-4 py-3 capitalize text-muted-foreground">{loc.type || "store"}</td>
+                  <td className="px-4 py-3 capitalize text-muted-foreground">
+                    {loc.type || "store"}
+                  </td>
                   <td className="px-4 py-3">
-                    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${loc.status === "active" ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400" : "bg-muted text-muted-foreground"}`}>
-                      <span className={`size-1.5 rounded-full ${loc.status === "active" ? "bg-green-500" : "bg-muted-foreground"}`} />
+                    <span
+                      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${loc.status === "active" ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400" : "bg-muted text-muted-foreground"}`}
+                    >
+                      <span
+                        className={`size-1.5 rounded-full ${loc.status === "active" ? "bg-green-500" : "bg-muted-foreground"}`}
+                      />
                       {loc.status || "active"}
                     </span>
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => openEdit(loc)}>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-7 w-7 p-0"
+                        onClick={() => openEdit(loc)}
+                      >
                         <Pencil className="size-3.5" />
                       </Button>
                       <Button
@@ -1692,7 +1784,11 @@ function LocationsTab() {
                         onClick={() => handleDelete(loc.id)}
                         disabled={deletingId === loc.id}
                       >
-                        {deletingId === loc.id ? <Loader2 className="size-3.5 animate-spin" /> : <X className="size-3.5" />}
+                        {deletingId === loc.id ? (
+                          <Loader2 className="size-3.5 animate-spin" />
+                        ) : (
+                          <X className="size-3.5" />
+                        )}
                       </Button>
                     </div>
                   </td>
@@ -1773,4 +1869,3 @@ function ToggleRow({
     </div>
   );
 }
-

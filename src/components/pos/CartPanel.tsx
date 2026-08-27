@@ -28,14 +28,15 @@ import { createKOTFn } from "@/api/restaurant";
 import { toast } from "sonner";
 import { useMutation } from "@tanstack/react-query";
 import { useState } from "react";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
-export function CartPanel({ state, onCheckout }: { state: any; onCheckout?: (isQuotation?: boolean) => void }) {
+export function CartPanel({
+  state,
+  onCheckout,
+}: {
+  state: any;
+  onCheckout?: (isQuotation?: boolean) => void;
+}) {
   const {
     mobileTab,
     drawerWidth,
@@ -105,7 +106,7 @@ export function CartPanel({ state, onCheckout }: { state: any; onCheckout?: (isQ
       } else {
         toast.error("Failed to send order to kitchen");
       }
-    }
+    },
   });
 
   const handleSendToKitchen = () => {
@@ -120,7 +121,7 @@ export function CartPanel({ state, onCheckout }: { state: any; onCheckout?: (isQ
     sendToKitchen.mutate({
       tableId: selectedTableId || undefined,
       items: kotItems,
-      note: ""
+      note: "",
     });
   };
 
@@ -145,7 +146,9 @@ export function CartPanel({ state, onCheckout }: { state: any; onCheckout?: (isQ
               title="Change Customer"
             >
               <User className="size-3 text-primary shrink-0" />
-              <span className="max-w-[85px] sm:max-w-[110px] truncate text-foreground">{activeCustomer.name}</span>
+              <span className="max-w-[85px] sm:max-w-[110px] truncate text-foreground">
+                {activeCustomer.name}
+              </span>
               {activeCustomer.type === "wholesale" && (
                 <span className="rounded bg-primary/15 px-1 py-0.2 text-[8px] font-black text-primary uppercase">
                   WH
@@ -244,11 +247,7 @@ export function CartPanel({ state, onCheckout }: { state: any; onCheckout?: (isQ
                 >
                   <div className="grid size-8 shrink-0 place-items-center rounded-md bg-muted/50 border border-border/50 overflow-hidden">
                     {l.product.image ? (
-                      <img
-                        src={l.product.image}
-                        alt=""
-                        className="size-full object-cover"
-                      />
+                      <img src={l.product.image} alt="" className="size-full object-cover" />
                     ) : (
                       <Receipt className="size-4 text-muted-foreground/50" />
                     )}
@@ -267,7 +266,10 @@ export function CartPanel({ state, onCheckout }: { state: any; onCheckout?: (isQ
                     <div className="mt-0.5 flex flex-col gap-1">
                       <div className="flex items-center justify-between">
                         <div className="text-[10px] text-muted-foreground flex items-center gap-1 font-medium truncate">
-                          <span>{formatCurrency(l.unitPrice)}{safeUnit ? `/${safeUnit}` : ""}</span>
+                          <span>
+                            {formatCurrency(l.unitPrice)}
+                            {safeUnit ? `/${safeUnit}` : ""}
+                          </span>
                           {l.priceTierLabel && (
                             <span className="rounded bg-primary/10 px-1 text-[8px] font-bold text-primary uppercase">
                               {l.priceTierLabel}
@@ -297,8 +299,16 @@ export function CartPanel({ state, onCheckout }: { state: any; onCheckout?: (isQ
                               type="number"
                               step="any"
                               value={l.qty}
-                              onChange={(e) => updateQty(l.id, e.target.value === "" ? 0 : (parseFloat(e.target.value) || 0))}
-                              onBlur={(e) => { if (!e.target.value || Number(e.target.value) <= 0) updateQty(l.id, 1); }}
+                              onChange={(e) =>
+                                updateQty(
+                                  l.id,
+                                  e.target.value === "" ? 0 : parseFloat(e.target.value) || 0,
+                                )
+                              }
+                              onBlur={(e) => {
+                                if (!e.target.value || Number(e.target.value) <= 0)
+                                  updateQty(l.id, 1);
+                              }}
                               className="w-8 py-0 text-center text-xs font-black bg-transparent outline-none"
                             />
                             <button
@@ -318,22 +328,27 @@ export function CartPanel({ state, onCheckout }: { state: any; onCheckout?: (isQ
                           {l.selectedBatch && (
                             <div className="text-[9px] font-bold bg-amber-500/10 text-amber-600 rounded border border-amber-500/20 px-1">
                               {l.product.batches && l.product.batches.length > 1 ? (
-                                <select 
+                                <select
                                   className="bg-transparent border-none outline-none font-bold py-0.5"
                                   value={l.batchId || ""}
                                   onChange={(e) => {
                                     const selectedId = e.target.value;
-                                    const b = l.product.batches.find((b: any) => b.id === selectedId);
+                                    const b = l.product.batches.find(
+                                      (b: any) => b.id === selectedId,
+                                    );
                                     if (b) state.updateBatch(l.id, b.id, b.batchNo);
                                     else state.updateBatch(l.id, undefined, undefined);
                                   }}
                                 >
                                   <option value="">Auto FEFO: {l.selectedBatch}</option>
-                                  {l.product.batches.filter((b: any) => Number(b.quantityRemaining) > 0).map((b: any) => (
-                                    <option key={b.id} value={b.id}>
-                                      {b.batchNo} ({b.expiryDate ? b.expiryDate.slice(0,10) : 'No Exp'})
-                                    </option>
-                                  ))}
+                                  {l.product.batches
+                                    .filter((b: any) => Number(b.quantityRemaining) > 0)
+                                    .map((b: any) => (
+                                      <option key={b.id} value={b.id}>
+                                        {b.batchNo} (
+                                        {b.expiryDate ? b.expiryDate.slice(0, 10) : "No Exp"})
+                                      </option>
+                                    ))}
                                 </select>
                               ) : (
                                 <div className="px-0.5 py-0.5">{l.selectedBatch}</div>
@@ -341,7 +356,10 @@ export function CartPanel({ state, onCheckout }: { state: any; onCheckout?: (isQ
                             </div>
                           )}
                           {l.product.metadata?.prescriptionRequired && (
-                            <div className="flex items-center gap-1 text-[9px] font-bold bg-destructive/10 text-destructive px-1.5 py-0.5 rounded border border-destructive/20" title="Valid prescription required">
+                            <div
+                              className="flex items-center gap-1 text-[9px] font-bold bg-destructive/10 text-destructive px-1.5 py-0.5 rounded border border-destructive/20"
+                              title="Valid prescription required"
+                            >
                               <ShieldCheck className="size-2.5" /> Rx Req
                             </div>
                           )}
@@ -385,7 +403,10 @@ export function CartPanel({ state, onCheckout }: { state: any; onCheckout?: (isQ
               variant="outline"
               size="sm"
               onClick={() => setShowCoupon(true)}
-              className={cn("h-7 rounded-md px-2 text-[11px] font-bold", appliedCoupon && "border-success bg-success/10 text-success")}
+              className={cn(
+                "h-7 rounded-md px-2 text-[11px] font-bold",
+                appliedCoupon && "border-success bg-success/10 text-success",
+              )}
             >
               <Ticket className="size-3 mr-1" />
               {appliedCoupon ? "Coupon ✓" : "Coupon"}
@@ -433,9 +454,19 @@ export function CartPanel({ state, onCheckout }: { state: any; onCheckout?: (isQ
         {/* Row 2: Compact Calculation Breakdown Strip */}
         <div className="rounded-lg bg-muted/30 px-2.5 py-1.5 text-[11px] border border-border/60 flex items-center justify-between">
           <div className="flex items-center gap-2 text-muted-foreground font-medium truncate">
-            <span>Subtotal: <strong className="text-foreground">{formatCurrency(subtotal)}</strong></span>
-            {discountAmt > 0 && <span className="text-destructive font-bold">Disc: -{formatCurrency(discountAmt)}</span>}
-            {taxAmt > 0 && <span>Tax: <strong className="text-foreground">{formatCurrency(taxAmt)}</strong></span>}
+            <span>
+              Subtotal: <strong className="text-foreground">{formatCurrency(subtotal)}</strong>
+            </span>
+            {discountAmt > 0 && (
+              <span className="text-destructive font-bold">
+                Disc: -{formatCurrency(discountAmt)}
+              </span>
+            )}
+            {taxAmt > 0 && (
+              <span>
+                Tax: <strong className="text-foreground">{formatCurrency(taxAmt)}</strong>
+              </span>
+            )}
           </div>
           <div className="shrink-0 font-bold text-foreground">
             Total: <span className="text-sm font-black text-primary">{formatCurrency(total)}</span>
@@ -539,13 +570,28 @@ export function CartPanel({ state, onCheckout }: { state: any; onCheckout?: (isQ
 
             {/* Split Balance Live Status */}
             {(() => {
-              const entered = (parseFloat(splitCash) || 0) + (parseFloat(splitCard) || 0) + (parseFloat(splitUpi) || 0);
+              const entered =
+                (parseFloat(splitCash) || 0) +
+                (parseFloat(splitCard) || 0) +
+                (parseFloat(splitUpi) || 0);
               const remaining = total - entered;
               return (
                 <div className="flex items-center justify-between text-[10px] font-bold px-1">
                   <span className="text-muted-foreground">Entered: {formatCurrency(entered)}</span>
-                  <span className={Math.abs(remaining) < 0.01 ? "text-success font-black" : remaining > 0 ? "text-warning font-black" : "text-destructive font-black"}>
-                    {Math.abs(remaining) < 0.01 ? "Balanced ✓" : remaining > 0 ? `Remaining: ${formatCurrency(remaining)}` : `Overpaid: ${formatCurrency(Math.abs(remaining))}`}
+                  <span
+                    className={
+                      Math.abs(remaining) < 0.01
+                        ? "text-success font-black"
+                        : remaining > 0
+                          ? "text-warning font-black"
+                          : "text-destructive font-black"
+                    }
+                  >
+                    {Math.abs(remaining) < 0.01
+                      ? "Balanced ✓"
+                      : remaining > 0
+                        ? `Remaining: ${formatCurrency(remaining)}`
+                        : `Overpaid: ${formatCurrency(Math.abs(remaining))}`}
                   </span>
                 </div>
               );
@@ -606,7 +652,10 @@ export function CartPanel({ state, onCheckout }: { state: any; onCheckout?: (isQ
             className="h-10 rounded-lg text-xs sm:text-sm font-black shadow-md hover:shadow-lg transition-all w-full bg-gradient-to-r from-primary to-primary/90 text-primary-foreground"
             disabled={lines.length === 0}
             onClick={() => {
-              if ((payment === "credit" || payment === "wallet") && activeCustomer.id === "walkin") {
+              if (
+                (payment === "credit" || payment === "wallet") &&
+                activeCustomer.id === "walkin"
+              ) {
                 toast.error("Credit/Wallet requires a registered customer");
                 return;
               }
@@ -659,13 +708,21 @@ export function CartPanel({ state, onCheckout }: { state: any; onCheckout?: (isQ
                       }}
                     >
                       <div>
-                        <div className="font-bold text-primary text-xs sm:text-sm">{r.ticketNo}</div>
-                        <div className="text-xs font-semibold text-foreground">{r.customerName}</div>
+                        <div className="font-bold text-primary text-xs sm:text-sm">
+                          {r.ticketNo}
+                        </div>
+                        <div className="text-xs font-semibold text-foreground">
+                          {r.customerName}
+                        </div>
                         <div className="text-[10px] text-muted-foreground">{r.deviceName}</div>
                       </div>
                       <div className="text-right">
-                        <div className="text-[10px] text-muted-foreground uppercase font-bold">Balance Due</div>
-                        <div className="font-extrabold text-sm text-destructive">{state.formatCurrency(balance)}</div>
+                        <div className="text-[10px] text-muted-foreground uppercase font-bold">
+                          Balance Due
+                        </div>
+                        <div className="font-extrabold text-sm text-destructive">
+                          {state.formatCurrency(balance)}
+                        </div>
                       </div>
                     </div>
                   );
@@ -683,7 +740,9 @@ function Row({ label, value, negative }: { label: string; value: string; negativ
   return (
     <div className="flex justify-between text-muted-foreground text-xs">
       <span>{label}</span>
-      <span className={cn("number font-semibold", negative ? "text-destructive" : "text-foreground")}>
+      <span
+        className={cn("number font-semibold", negative ? "text-destructive" : "text-foreground")}
+      >
         {value}
       </span>
     </div>
@@ -717,4 +776,3 @@ function PayBtn({
     </button>
   );
 }
-

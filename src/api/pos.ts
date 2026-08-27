@@ -14,34 +14,46 @@ const insertSchema = schema.shifts
 const updateSchema = schema.shifts ? createInsertSchema(schema.shifts).partial() : z.any();
 
 export const getPosItemsFn = createServerFn({ method: "GET" })
-  .validator((data: unknown) => z.object({}).optional().parse(data || {}))
+  .validator((data: unknown) =>
+    z
+      .object({})
+      .optional()
+      .parse(data || {}),
+  )
   .handler(async () => {
     try {
       const session = await requireAuth();
       const orgId = session.orgId;
-      const products = await db
-        .select()
-        .from(schema.products)
-        .where(eq(schema.products.organizationId, orgId));
 
-      const batches = await db
-        .select()
-        .from(schema.inventoryBatches)
-        .where(eq(schema.inventoryBatches.organizationId, orgId));
+      // Parallelize DB queries
+      const [products, batches, services] = await Promise.all([
+        db.select().from(schema.products).where(eq(schema.products.organizationId, orgId)),
+        db
+          .select()
+          .from(schema.inventoryBatches)
+          .where(eq(schema.inventoryBatches.organizationId, orgId)),
+        db.select().from(schema.services).where(eq(schema.services.organizationId, orgId)),
+      ]);
 
-      const services = await db
-        .select()
-        .from(schema.services)
-        .where(eq(schema.services.organizationId, orgId));
+      // O(1) batch lookup map
+      const batchMap = new Map<string, any[]>();
+      batches.forEach((b) => {
+        if (Number(b.quantityRemaining) > 0 && b.productId) {
+          if (!batchMap.has(b.productId)) batchMap.set(b.productId, []);
+          batchMap.get(b.productId)!.push(b);
+        }
+      });
 
       const now = new Date();
       const unifiedItems = [
         ...products
           .filter((p) => !p.expiryDate || new Date(p.expiryDate) >= now)
-          .map((p) => {
-             const productBatches = batches.filter(b => b.productId === p.id && Number(b.quantityRemaining) > 0);
-             return { ...p, batches: p.hasBatch ? productBatches : undefined, referenceType: "PRODUCT", referenceId: p.id };
-          }),
+          .map((p) => ({
+            ...p,
+            batches: p.hasBatch ? batchMap.get(p.id) || [] : undefined,
+            referenceType: "PRODUCT",
+            referenceId: p.id,
+          })),
         ...services.map((s) => ({
           ...s,
           referenceType: "SERVICE",
@@ -58,7 +70,12 @@ export const getPosItemsFn = createServerFn({ method: "GET" })
   });
 
 export const getShiftsFn = createServerFn({ method: "GET" })
-  .validator((data: unknown) => z.object({}).optional().parse(data || {}))
+  .validator((data: unknown) =>
+    z
+      .object({})
+      .optional()
+      .parse(data || {}),
+  )
   .handler(async () => {
     try {
       const session = await requireAuth();
@@ -88,7 +105,9 @@ export const createShiftFn = createServerFn({ method: "POST" })
   });
 
 export const updateShiftFn = createServerFn({ method: "POST" })
-  .validator((data: unknown) => z.object({ id: z.string(), updates: z.any() }).passthrough().parse(data))
+  .validator((data: unknown) =>
+    z.object({ id: z.string(), updates: z.any() }).passthrough().parse(data),
+  )
   .handler(async ({ data }) => {
     try {
       const session = await requireAuth();
@@ -104,7 +123,12 @@ export const updateShiftFn = createServerFn({ method: "POST" })
   });
 
 export const getHeldInvoicesFn = createServerFn({ method: "GET" })
-  .validator((data: unknown) => z.object({}).optional().parse(data || {}))
+  .validator((data: unknown) =>
+    z
+      .object({})
+      .optional()
+      .parse(data || {}),
+  )
   .handler(async () => {
     try {
       const session = await requireAuth();
@@ -147,10 +171,10 @@ export const deleteHeldInvoiceFn = createServerFn({ method: "POST" })
           ),
         );
       return { success: true };
-      } catch (e) {
-        return handleApiError(e);
-      }
-    });
+    } catch (e) {
+      return handleApiError(e);
+    }
+  });
 
 export const splitHeldInvoiceFn = createServerFn({ method: "POST" })
   .validator(
@@ -162,27 +186,29 @@ export const splitHeldInvoiceFn = createServerFn({ method: "POST" })
           customerName: z.string().nullable().optional(),
           cart: z.array(z.any()),
           discount: z.number().default(0),
-        })
-      )
-    })
+        }),
+      ),
+    }),
   )
   .handler(async ({ data }) => {
     try {
       const session = await requireAuth();
       return await db.transaction(async (tx) => {
         // Delete the original held invoice
-        await tx.delete(schema.heldInvoices).where(
-          and(
-            eq(schema.heldInvoices.id, data.originalInvoiceId),
-            eq(schema.heldInvoices.organizationId, session.orgId)
-          )
-        );
+        await tx
+          .delete(schema.heldInvoices)
+          .where(
+            and(
+              eq(schema.heldInvoices.id, data.originalInvoiceId),
+              eq(schema.heldInvoices.organizationId, session.orgId),
+            ),
+          );
 
         // Insert the new split invoices
         for (let i = 0; i < data.newInvoices.length; i++) {
           const inv = data.newInvoices[i];
           const ref = `Split ${i + 1}/${data.newInvoices.length}`;
-          
+
           await tx.insert(schema.heldInvoices).values({
             id: uuidv4(),
             organizationId: session.orgId,
@@ -238,7 +264,6 @@ const PosSaleInput = z.object({
   couponUpdates: z.array(z.any()).optional(),
 });
 
-
 export const completePosSaleFn = createServerFn({ method: "POST" })
   .validator(PosSaleInput)
   .handler(async ({ data }) => {
@@ -268,51 +293,106 @@ export const completePosSaleFn = createServerFn({ method: "POST" })
 
         const verifiedItems: any[] = [];
         const productIds = data.items.map((i: any) => i.productId);
-        const repairIds = data.items.filter((i: any) => i.referenceType === "REPAIR").map((i: any) => i.referenceId);
+        const repairIds = data.items
+          .filter((i: any) => i.referenceType === "REPAIR")
+          .map((i: any) => i.referenceId);
 
         if (productIds.length === 0) throw new Error("Sale must contain at least one item.");
 
         // Fetch Inventory levels for the selected location (fallback to 'Main Store' if not provided)
         const locationId = data.sale.locationId;
-        const [productsList, servicesList, repairsList, inventoryList, bundlesList, batchesList] = await Promise.all([
-          tx.select().from(schema.products).where(
-            and(inArray(schema.products.id, productIds), eq(schema.products.organizationId, orgId)),
-          ),
-          tx.select().from(schema.services).where(
-            and(inArray(schema.services.id, productIds), eq(schema.services.organizationId, orgId)),
-          ),
-          repairIds.length > 0 
-            ? tx.select().from(schema.repairs).where(
-                and(inArray(schema.repairs.id, repairIds), eq(schema.repairs.organizationId, orgId))
-              ) 
-            : Promise.resolve([]),
-          locationId 
-            ? tx.select().from(schema.productInventory).where(
-                and(inArray(schema.productInventory.productId, productIds), eq(schema.productInventory.locationId, locationId), eq(schema.productInventory.organizationId, orgId))
+        const [productsList, servicesList, repairsList, inventoryList, bundlesList, batchesList] =
+          await Promise.all([
+            tx
+              .select()
+              .from(schema.products)
+              .where(
+                and(
+                  inArray(schema.products.id, productIds),
+                  eq(schema.products.organizationId, orgId),
+                ),
+              ),
+            tx
+              .select()
+              .from(schema.services)
+              .where(
+                and(
+                  inArray(schema.services.id, productIds),
+                  eq(schema.services.organizationId, orgId),
+                ),
+              ),
+            repairIds.length > 0
+              ? tx
+                  .select()
+                  .from(schema.repairs)
+                  .where(
+                    and(
+                      inArray(schema.repairs.id, repairIds),
+                      eq(schema.repairs.organizationId, orgId),
+                    ),
+                  )
+              : Promise.resolve([]),
+            locationId
+              ? tx
+                  .select()
+                  .from(schema.productInventory)
+                  .where(
+                    and(
+                      inArray(schema.productInventory.productId, productIds),
+                      eq(schema.productInventory.locationId, locationId),
+                      eq(schema.productInventory.organizationId, orgId),
+                    ),
+                  )
+              : Promise.resolve([]),
+            tx
+              .select()
+              .from(schema.productBundles)
+              .where(
+                and(
+                  inArray(schema.productBundles.bundleProductId, productIds),
+                  eq(schema.productBundles.organizationId, orgId),
+                ),
+              ),
+            tx
+              .select()
+              .from(schema.inventoryBatches)
+              .where(
+                and(
+                  inArray(schema.inventoryBatches.productId, productIds),
+                  eq(schema.inventoryBatches.organizationId, orgId),
+                ),
               )
-            : Promise.resolve([]),
-          tx.select().from(schema.productBundles).where(
-            and(inArray(schema.productBundles.bundleProductId, productIds), eq(schema.productBundles.organizationId, orgId))
-          ),
-          tx.select().from(schema.inventoryBatches).where(
-            and(inArray(schema.inventoryBatches.productId, productIds), eq(schema.inventoryBatches.organizationId, orgId))
-          ).orderBy(schema.inventoryBatches.receivedAt)
-        ]);
+              .orderBy(schema.inventoryBatches.receivedAt),
+          ]);
 
         // If there are bundle components, we need to fetch their inventory and batches too
         let componentInventoryList: any[] = [];
         let componentBatchesList: any[] = [];
-        const componentProductIds = bundlesList.map(b => b.componentProductId);
+        const componentProductIds = bundlesList.map((b) => b.componentProductId);
         if (componentProductIds.length > 0) {
           const [compInv, compBatches] = await Promise.all([
-            locationId 
-              ? tx.select().from(schema.productInventory).where(
-                  and(inArray(schema.productInventory.productId, componentProductIds), eq(schema.productInventory.locationId, locationId), eq(schema.productInventory.organizationId, orgId))
-                )
+            locationId
+              ? tx
+                  .select()
+                  .from(schema.productInventory)
+                  .where(
+                    and(
+                      inArray(schema.productInventory.productId, componentProductIds),
+                      eq(schema.productInventory.locationId, locationId),
+                      eq(schema.productInventory.organizationId, orgId),
+                    ),
+                  )
               : Promise.resolve([]),
-            tx.select().from(schema.inventoryBatches).where(
-              and(inArray(schema.inventoryBatches.productId, componentProductIds), eq(schema.inventoryBatches.organizationId, orgId))
-            ).orderBy(schema.inventoryBatches.receivedAt)
+            tx
+              .select()
+              .from(schema.inventoryBatches)
+              .where(
+                and(
+                  inArray(schema.inventoryBatches.productId, componentProductIds),
+                  eq(schema.inventoryBatches.organizationId, orgId),
+                ),
+              )
+              .orderBy(schema.inventoryBatches.receivedAt),
           ]);
           componentInventoryList = compInv;
           componentBatchesList = compBatches;
@@ -323,17 +403,21 @@ export const completePosSaleFn = createServerFn({ method: "POST" })
 
         const itemsMap = new Map();
         for (const p of productsList) {
-          const inv = allInventory.find(i => i.productId === p.id);
-          itemsMap.set(p.id, { ...p, _type: 'product', stock: inv ? Number(inv.stock) : Number(p.stock || 0) });
+          const inv = allInventory.find((i) => i.productId === p.id);
+          itemsMap.set(p.id, {
+            ...p,
+            _type: "product",
+            stock: inv ? Number(inv.stock) : Number(p.stock || 0),
+          });
         }
-        for (const s of servicesList) itemsMap.set(s.id, { ...s, _type: 'service' });
+        for (const s of servicesList) itemsMap.set(s.id, { ...s, _type: "service" });
         for (const r of repairsList) {
-          itemsMap.set(`REPAIR_${r.id}`, { 
-             id: `REPAIR_${r.id}`,
-             name: `Repair Balance (Ticket: ${r.ticketNo})`,
-             price: Number(r.estimatedCost) - Number(r.advancePaid),
-             _type: 'repair',
-             stock: 999
+          itemsMap.set(`REPAIR_${r.id}`, {
+            id: `REPAIR_${r.id}`,
+            name: `Repair Balance (Ticket: ${r.ticketNo})`,
+            price: Number(r.estimatedCost) - Number(r.advancePaid),
+            _type: "repair",
+            stock: 999,
           });
         }
 
@@ -347,7 +431,7 @@ export const completePosSaleFn = createServerFn({ method: "POST" })
           const p = itemsMap.get(item.productId);
           if (!p) throw new Error(`Product not found: ${item.productId}`);
 
-          if (p._type === 'product') {
+          if (p._type === "product") {
             // M-4 fix: Reject expired products at checkout
             if ((p as any).expiryDate) {
               const expiry = new Date((p as any).expiryDate);
@@ -371,7 +455,9 @@ export const completePosSaleFn = createServerFn({ method: "POST" })
           const lineTax = (lineSubtotal * taxPct) / 100;
           let lineDiscount = Number(item.discountAmt) || 0;
           if (lineDiscount > 0 && session.role !== "admin" && session.role !== "manager") {
-             throw new Error("Unauthorized: Only Admins or Managers can apply manual item discounts.");
+            throw new Error(
+              "Unauthorized: Only Admins or Managers can apply manual item discounts.",
+            );
           }
 
           serverSubtotal += lineSubtotal;
@@ -389,15 +475,17 @@ export const completePosSaleFn = createServerFn({ method: "POST" })
             serialNumber: item.serialNumber || null,
             batchNo: item.batchNo || null,
             modifiers: item.modifiers && item.modifiers.length > 0 ? item.modifiers : null,
-            referenceType: item.referenceType || (p._type === 'product' ? 'PRODUCT' : p._type === 'service' ? 'SERVICE' : 'REPAIR'),
+            referenceType:
+              item.referenceType ||
+              (p._type === "product" ? "PRODUCT" : p._type === "service" ? "SERVICE" : "REPAIR"),
             referenceId: item.referenceId || p.id,
           });
 
-          if (p._type === 'product') {
+          if (p._type === "product") {
             if (p.isBundle) {
-              const components = bundlesList.filter(b => b.bundleProductId === p.id);
+              const components = bundlesList.filter((b) => b.bundleProductId === p.id);
               for (const comp of components) {
-                const compInv = allInventory.find(i => i.productId === comp.componentProductId);
+                const compInv = allInventory.find((i) => i.productId === comp.componentProductId);
                 const compStock = compInv ? Number(compInv.stock) : 0;
                 const totalDeduction = Number(comp.quantity) * item.quantity;
                 const newStock = Math.max(0, compStock - totalDeduction);
@@ -405,7 +493,7 @@ export const completePosSaleFn = createServerFn({ method: "POST" })
                   productId: comp.componentProductId,
                   newStock,
                 });
-                
+
                 if (newStock <= 5) {
                   lowStockNotifications.push({
                     id: uuidv4(),
@@ -441,8 +529,8 @@ export const completePosSaleFn = createServerFn({ method: "POST" })
 
               if (p.trackFifo) {
                 let productBatches = allBatches
-                  .filter(b => b.productId === p.id && Number(b.quantityRemaining) > 0)
-                  .filter(b => {
+                  .filter((b) => b.productId === p.id && Number(b.quantityRemaining) > 0)
+                  .filter((b) => {
                     // Exclude expired batches from allocation
                     if (b.expiryDate) {
                       const expiry = new Date(b.expiryDate);
@@ -450,14 +538,14 @@ export const completePosSaleFn = createServerFn({ method: "POST" })
                     }
                     return true;
                   });
-                
+
                 // If a specific batch was selected, try to allocate from it first
                 if (item.batchId) {
-                  const selectedBatch = productBatches.find(b => b.id === item.batchId);
+                  const selectedBatch = productBatches.find((b) => b.id === item.batchId);
                   if (selectedBatch) {
                     productBatches = [
                       selectedBatch,
-                      ...productBatches.filter(b => b.id !== item.batchId)
+                      ...productBatches.filter((b) => b.id !== item.batchId),
                     ];
                   }
                 } else {
@@ -498,7 +586,9 @@ export const completePosSaleFn = createServerFn({ method: "POST" })
         // Apply global discount if provided
         const globalDiscount = Number(data.sale.discountAmt) || 0;
         if (globalDiscount > 0 && session.role !== "admin" && session.role !== "manager") {
-           throw new Error("Unauthorized: Only Admins or Managers can apply manual global discounts.");
+          throw new Error(
+            "Unauthorized: Only Admins or Managers can apply manual global discounts.",
+          );
         }
         const serverTotal = Math.max(
           0,
@@ -534,7 +624,9 @@ export const completePosSaleFn = createServerFn({ method: "POST" })
               ? data.sale.cashTendered.toFixed(2)
               : null,
           changeDue:
-            data.sale.paymentMethod === "cash" && data.sale.changeDue != null && data.sale.changeDue > 0
+            data.sale.paymentMethod === "cash" &&
+            data.sale.changeDue != null &&
+            data.sale.changeDue > 0
               ? data.sale.changeDue.toFixed(2)
               : null,
           salesmanId:
@@ -559,13 +651,17 @@ export const completePosSaleFn = createServerFn({ method: "POST" })
             for (const update of stockUpdates) {
               if (locationId) {
                 // Check if product inventory exists for this location
-                const existingInv = await tx.select().from(schema.productInventory).where(
-                  and(
-                    eq(schema.productInventory.productId, update.productId),
-                    eq(schema.productInventory.locationId, locationId),
-                    eq(schema.productInventory.organizationId, orgId)
+                const existingInv = await tx
+                  .select()
+                  .from(schema.productInventory)
+                  .where(
+                    and(
+                      eq(schema.productInventory.productId, update.productId),
+                      eq(schema.productInventory.locationId, locationId),
+                      eq(schema.productInventory.organizationId, orgId),
+                    ),
                   )
-                ).limit(1);
+                  .limit(1);
 
                 if (existingInv.length > 0) {
                   await tx
@@ -585,7 +681,7 @@ export const completePosSaleFn = createServerFn({ method: "POST" })
                     productId: update.productId,
                     locationId: locationId,
                     stock: update.newStock.toString(),
-                    reorderLevel: "10"
+                    reorderLevel: "10",
                   });
                 }
               }
@@ -601,14 +697,15 @@ export const completePosSaleFn = createServerFn({ method: "POST" })
                   ),
                 );
             }
-            
+
             if (batchConsumptionsToInsert.length > 0) {
               await tx.insert(schema.inventoryBatchConsumptions).values(batchConsumptionsToInsert);
             }
 
             if (batchUpdates.length > 0) {
               for (const bu of batchUpdates) {
-                await tx.update(schema.inventoryBatches)
+                await tx
+                  .update(schema.inventoryBatches)
                   .set({ quantityRemaining: bu.quantityRemaining })
                   .where(eq(schema.inventoryBatches.id, bu.id));
               }
@@ -617,24 +714,28 @@ export const completePosSaleFn = createServerFn({ method: "POST" })
             if (lowStockNotifications.length > 0) {
               await tx.insert(schema.notifications).values(lowStockNotifications);
             }
-            
+
             // Auto-update repair tickets to 'delivered'
             if (repairIds.length > 0) {
               await tx
                 .update(schema.repairs)
-                .set({ status: 'delivered' })
+                .set({ status: "delivered" })
                 .where(
                   and(
                     inArray(schema.repairs.id, repairIds),
-                    eq(schema.repairs.organizationId, orgId)
-                  )
+                    eq(schema.repairs.organizationId, orgId),
+                  ),
                 );
             }
           }
         }
 
         // Inventory movements
-        if (safeSale.status !== "quotation" && data.inventoryMovements && data.inventoryMovements.length > 0) {
+        if (
+          safeSale.status !== "quotation" &&
+          data.inventoryMovements &&
+          data.inventoryMovements.length > 0
+        ) {
           const safeMovements = data.inventoryMovements.map((m: any) => ({
             organizationId: orgId,
             productName: m.productName,
@@ -702,7 +803,8 @@ export const completePosSaleFn = createServerFn({ method: "POST" })
                   totalSpent: String(Number(c.totalSpent || 0) + serverTotal),
                   visits: (c.visits || 0) + 1,
                   loyaltyPoints: (c.loyaltyPoints || 0) + Math.floor(serverTotal / 10),
-                  credit: data.sale.paymentMethod === "credit" ? String(newCreditBalance) : c.credit,
+                  credit:
+                    data.sale.paymentMethod === "credit" ? String(newCreditBalance) : c.credit,
                 })
                 .where(eq(schema.customers.id, customerId));
             }

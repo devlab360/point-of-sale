@@ -5,10 +5,7 @@ import { SuperAdminLayout } from "@/components/admin/SuperAdminLayout";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import {
-  getAllOrganizationsFn,
-  getAllPlansFn,
-} from "@/api/admin/super-admin";
+import { getAllOrganizationsFn, getAllPlansFn } from "@/api/admin/super-admin";
 import { getPendingPaymentsFn } from "@/api/admin/subscription-payments";
 import {
   Store,
@@ -57,7 +54,11 @@ const monthlyGrowthData = [
 ];
 
 function SuperAdminDashboardPage() {
-  const { data: orgData, isLoading: isOrgLoading, refetch } = useQuery({
+  const {
+    data: orgData,
+    isLoading: isOrgLoading,
+    refetch,
+  } = useQuery({
     queryKey: ["saas-organizations"],
     queryFn: () => getAllOrganizationsFn({ data: {} }),
   });
@@ -109,7 +110,9 @@ function SuperAdminDashboardPage() {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs font-medium text-muted-foreground">Total Stores / Tenants</p>
+                  <p className="text-xs font-medium text-muted-foreground">
+                    Total Stores / Tenants
+                  </p>
                   <h3 className="text-2xl font-bold mt-1">{isOrgLoading ? "..." : totalTenants}</h3>
                 </div>
                 <div className="size-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
@@ -130,14 +133,17 @@ function SuperAdminDashboardPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-xs font-medium text-muted-foreground">Active Subscribers</p>
-                  <h3 className="text-2xl font-bold mt-1">{isOrgLoading ? "..." : activeTenants}</h3>
+                  <h3 className="text-2xl font-bold mt-1">
+                    {isOrgLoading ? "..." : activeTenants}
+                  </h3>
                 </div>
                 <div className="size-10 rounded-xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center">
                   <ShieldCheck className="size-5" />
                 </div>
               </div>
               <p className="text-xs text-muted-foreground mt-3">
-                <span className="font-semibold text-foreground">{trialTenants}</span> on active trial
+                <span className="font-semibold text-foreground">{trialTenants}</span> on active
+                trial
               </p>
             </CardContent>
           </Card>
@@ -153,7 +159,9 @@ function SuperAdminDashboardPage() {
                   <Receipt className="size-5" />
                 </div>
               </div>
-              <p className="text-xs text-muted-foreground mt-3">Manual bank transfers awaiting review</p>
+              <p className="text-xs text-muted-foreground mt-3">
+                Manual bank transfers awaiting review
+              </p>
             </CardContent>
           </Card>
 

@@ -185,7 +185,7 @@ function BrandsPage() {
   };
 
   const handleExport = () => {
-    exportToCSV(rawBrands, [{ key: 'name', label: 'Brand Name' }], 'brands');
+    exportToCSV(rawBrands, [{ key: "name", label: "Brand Name" }], "brands");
   };
 
   const handleImport = async (file: File) => {
@@ -198,12 +198,12 @@ function BrandsPage() {
 
       let count = 0;
       for (const row of data) {
-        if (row['Brand Name']) {
-          await createBrandFn({ data: { brand: { id: uuidv4(), name: row['Brand Name'] } } });
+        if (row["Brand Name"]) {
+          await createBrandFn({ data: { brand: { id: uuidv4(), name: row["Brand Name"] } } });
           count++;
         }
       }
-      
+
       queryClient.invalidateQueries({ queryKey: ["brands"] });
       toast.success(`Successfully imported ${count} brands`);
     } catch (error) {
@@ -345,8 +345,12 @@ function BrandsPage() {
                         {b.name.slice(0, 2).toUpperCase()}
                       </div>
                       <div className="min-w-0">
-                        <div className="font-bold text-xs sm:text-sm text-foreground truncate">{b.name}</div>
-                        <p className="text-[11px] text-muted-foreground">{b.products || 0} active products</p>
+                        <div className="font-bold text-xs sm:text-sm text-foreground truncate">
+                          {b.name}
+                        </div>
+                        <p className="text-[11px] text-muted-foreground">
+                          {b.products || 0} active products
+                        </p>
                       </div>
                     </div>
                     <div className="flex items-center gap-1 shrink-0">

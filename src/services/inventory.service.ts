@@ -63,7 +63,9 @@ export class InventoryService {
     const existing = await db
       .select()
       .from(schema.products)
-      .where(and(eq(schema.products.id, input.productId), eq(schema.products.organizationId, orgId)))
+      .where(
+        and(eq(schema.products.id, input.productId), eq(schema.products.organizationId, orgId)),
+      )
       .limit(1);
 
     if (!existing.length) {

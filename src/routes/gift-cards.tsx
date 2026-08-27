@@ -211,12 +211,16 @@ function GiftCardsPage() {
   };
 
   const handleExport = () => {
-    exportToCSV(giftCards, [
-      { key: 'code', label: 'Code' },
-      { key: 'initialBalance', label: 'Initial Balance' },
-      { key: 'currentBalance', label: 'Current Balance' },
-      { key: 'status', label: 'Status' }
-    ], 'gift-cards');
+    exportToCSV(
+      giftCards,
+      [
+        { key: "code", label: "Code" },
+        { key: "initialBalance", label: "Initial Balance" },
+        { key: "currentBalance", label: "Current Balance" },
+        { key: "status", label: "Status" },
+      ],
+      "gift-cards",
+    );
   };
 
   const handleImport = async (file: File) => {
@@ -229,23 +233,23 @@ function GiftCardsPage() {
 
       let count = 0;
       for (const row of data) {
-        if (row['Code']) {
-          await createGiftCardFn({ 
-            data: { 
-              card: { 
-                id: uuidv4(), 
-                code: row['Code'],
-                initialBalance: parseFloat(row['Initial Balance'] || '0'),
-                currentBalance: parseFloat(row['Current Balance'] || '0'),
-                status: (row['Status'] as any) || 'active',
-                issueDate: new Date().toISOString()
-              } 
-            } 
+        if (row["Code"]) {
+          await createGiftCardFn({
+            data: {
+              card: {
+                id: uuidv4(),
+                code: row["Code"],
+                initialBalance: parseFloat(row["Initial Balance"] || "0"),
+                currentBalance: parseFloat(row["Current Balance"] || "0"),
+                status: (row["Status"] as any) || "active",
+                issueDate: new Date().toISOString(),
+              },
+            },
           });
           count++;
         }
       }
-      
+
       queryClient.invalidateQueries({ queryKey: ["giftCards"] });
       toast.success(`Successfully imported ${count} gift cards`);
     } catch (error) {
@@ -344,7 +348,10 @@ function GiftCardsPage() {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end" className="rounded-xl">
-                        <DropdownMenuItem onClick={() => setEditItem(g)} className="text-xs font-semibold">
+                        <DropdownMenuItem
+                          onClick={() => setEditItem(g)}
+                          className="text-xs font-semibold"
+                        >
                           <Edit2 className="mr-2 size-3.5" /> Edit Card
                         </DropdownMenuItem>
                         <DropdownMenuItem
@@ -378,7 +385,9 @@ function GiftCardsPage() {
                     </div>
                     <div className="mt-1 text-xs text-muted-foreground">
                       Recipient:{" "}
-                      <span className="font-bold text-foreground">{g.customer || "Walk-in Customer"}</span>
+                      <span className="font-bold text-foreground">
+                        {g.customer || "Walk-in Customer"}
+                      </span>
                     </div>
                   </div>
 

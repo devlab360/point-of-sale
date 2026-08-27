@@ -103,7 +103,11 @@ function CustomerPortalPage() {
               className="pl-10 h-12 text-sm rounded-xl"
             />
           </div>
-          <Button type="submit" disabled={isSearching} className="h-12 px-6 font-bold rounded-xl shadow-soft">
+          <Button
+            type="submit"
+            disabled={isSearching}
+            className="h-12 px-6 font-bold rounded-xl shadow-soft"
+          >
             {isSearching && <Loader2 className="mr-2 size-4 animate-spin" />}
             Check Statement
           </Button>
@@ -116,7 +120,9 @@ function CustomerPortalPage() {
           {/* Customer KPI Summary */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="rounded-2xl border border-border/80 bg-card p-5 text-center shadow-card card-interactive">
-              <div className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">Customer Name</div>
+              <div className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">
+                Customer Name
+              </div>
               <div className="text-lg font-bold mt-1 text-primary">{foundCustomer.name}</div>
               <div className="text-xs text-muted-foreground mt-0.5">{foundCustomer.phone}</div>
             </div>

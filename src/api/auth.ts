@@ -11,10 +11,12 @@ import { requireAuth, createSessionToken } from "@/lib/auth-utils";
 import bcrypt from "bcryptjs";
 import { v4 as uuidv4 } from "uuid";
 
-const LoginSchema = z.object({
-  email: z.string().optional(),
-  password: z.string().optional(),
-}).passthrough();
+const LoginSchema = z
+  .object({
+    email: z.string().optional(),
+    password: z.string().optional(),
+  })
+  .passthrough();
 
 export const loginFn = createServerFn({ method: "POST" })
   .validator((data: unknown) => LoginSchema.parse(data || {}))
@@ -28,7 +30,12 @@ export const loginFn = createServerFn({ method: "POST" })
   });
 
 export const getOrgDataFn = createServerFn({ method: "GET" })
-  .validator((data: unknown) => z.object({ orgId: z.string().optional() }).optional().parse(data || {}))
+  .validator((data: unknown) =>
+    z
+      .object({ orgId: z.string().optional() })
+      .optional()
+      .parse(data || {}),
+  )
   .handler(async ({ data }) => {
     try {
       // C-3 fix: Require authentication. Verify requested orgId matches session orgId.
@@ -36,7 +43,7 @@ export const getOrgDataFn = createServerFn({ method: "GET" })
       const session = await requireAuth();
       const requestedOrgId = data?.orgId;
       if (requestedOrgId && requestedOrgId !== session.orgId) {
-          return { success: false, error: "Unauthorized access to another organization's data" };
+        return { success: false, error: "Unauthorized access to another organization's data" };
       }
       const orgId = requestedOrgId || session.orgId;
       const orgs = await db
@@ -47,16 +54,14 @@ export const getOrgDataFn = createServerFn({ method: "GET" })
       if (!orgs.length) return { success: false, error: "Org not found" };
       const org = orgs[0];
 
-      const settings = await db
-        .select()
-        .from(schema.settings)
-        .where(eq(schema.settings.organizationId, orgId))
-        .limit(1);
-      const plans = await db
-        .select()
-        .from(schema.saasPlans)
-        .where(eq(schema.saasPlans.id, org.currentPlanId))
-        .limit(1);
+      const [settings, plans] = await Promise.all([
+        db.select().from(schema.settings).where(eq(schema.settings.organizationId, orgId)).limit(1),
+        db
+          .select()
+          .from(schema.saasPlans)
+          .where(eq(schema.saasPlans.id, org.currentPlanId))
+          .limit(1),
+      ]);
       return { success: true, org, settings: settings[0], plan: plans[0] };
     } catch (e) {
       return handleApiError(e);
@@ -64,7 +69,9 @@ export const getOrgDataFn = createServerFn({ method: "GET" })
   });
 
 export const verifyUserEmailFn = createServerFn({ method: "POST" })
-  .validator((data: unknown) => z.object({ email: z.string().email("Valid email required") }).parse(data))
+  .validator((data: unknown) =>
+    z.object({ email: z.string().email("Valid email required") }).parse(data),
+  )
   .handler(async ({ data }) => {
     try {
       const users = await db
@@ -400,7 +407,8 @@ export const resetPasswordFn = createServerFn({ method: "POST" })
       }
 
       const hashedPin = await bcrypt.hash(data.newPassword, 10);
-      await db.update(schema.users)
+      await db
+        .update(schema.users)
         .set({ pin: hashedPin, emailVerificationToken: null }) // Clear the token after use
         .where(eq(schema.users.id, user.id));
 
@@ -497,7 +505,10 @@ export const loginWithOtpFn = createServerFn({ method: "POST" })
       const user = users[0];
 
       if (user.status === "inactive") {
-        return { success: false, error: "Your account is inactive. Please contact the administrator." };
+        return {
+          success: false,
+          error: "Your account is inactive. Please contact the administrator.",
+        };
       }
       if (user.status === "suspended") {
         return { success: false, error: "Your account has been suspended." };
@@ -506,7 +517,10 @@ export const loginWithOtpFn = createServerFn({ method: "POST" })
         return { success: false, error: "Your account is pending approval by the administrator." };
       }
       if (user.role !== "admin" && (!user.permissions || user.permissions.length === 0)) {
-        return { success: false, error: "You don't have permission to log in. Please contact the administrator." };
+        return {
+          success: false,
+          error: "You don't have permission to log in. Please contact the administrator.",
+        };
       }
 
       // Verify OTP securely — strict match only, no backdoors
@@ -554,7 +568,9 @@ export const loginWithGoogleFn = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     try {
       // 1. Verify token with Google
-      const userInfoRes = await fetch(`https://www.googleapis.com/oauth2/v3/userinfo?access_token=${data.accessToken}`);
+      const userInfoRes = await fetch(
+        `https://www.googleapis.com/oauth2/v3/userinfo?access_token=${data.accessToken}`,
+      );
 
       if (!userInfoRes.ok) {
         return { success: false, error: "Invalid Google token" };
@@ -589,7 +605,11 @@ export const loginWithGoogleFn = createServerFn({ method: "POST" })
 
         const insertRes = await db.transaction(async (tx) => {
           // Find starter plan
-          const plans = await tx.select().from(schema.saasPlans).where(eq(schema.saasPlans.isTrialDefault, true)).limit(1);
+          const plans = await tx
+            .select()
+            .from(schema.saasPlans)
+            .where(eq(schema.saasPlans.isTrialDefault, true))
+            .limit(1);
           let assignedPlanId = plans.length > 0 ? plans[0].id : "starter";
 
           await tx.insert(schema.organizations).values({
@@ -601,17 +621,20 @@ export const loginWithGoogleFn = createServerFn({ method: "POST" })
             planExpiryDate: new Date(trialEndsAt).toISOString(),
           });
 
-          const [u] = await tx.insert(schema.users).values({
-            id: userId,
-            organizationId: orgId,
-            email: email,
-            name: googleUser.name || "Google User",
-            role: "admin",
-            pin: "1234", // Dummy pin, won't be used since social login bypasses it
-            status: "active",
-            emailVerified: true,
-            lastActive: new Date().toISOString(),
-          }).returning();
+          const [u] = await tx
+            .insert(schema.users)
+            .values({
+              id: userId,
+              organizationId: orgId,
+              email: email,
+              name: googleUser.name || "Google User",
+              role: "admin",
+              pin: "1234", // Dummy pin, won't be used since social login bypasses it
+              status: "active",
+              emailVerified: true,
+              lastActive: new Date().toISOString(),
+            })
+            .returning();
 
           await tx.insert(schema.settings).values({
             id: uuidv4(),
@@ -635,7 +658,10 @@ export const loginWithGoogleFn = createServerFn({ method: "POST" })
       }
 
       if (user.status === "inactive") {
-        return { success: false, error: "Your account is inactive. Please contact the administrator." };
+        return {
+          success: false,
+          error: "Your account is inactive. Please contact the administrator.",
+        };
       }
       if (user.status === "suspended") {
         return { success: false, error: "Your account has been suspended by the administrator." };
@@ -644,7 +670,10 @@ export const loginWithGoogleFn = createServerFn({ method: "POST" })
         return { success: false, error: "Your account is pending approval by the administrator." };
       }
       if (user.role !== "admin" && (!user.permissions || user.permissions.length === 0)) {
-        return { success: false, error: "You don't have permission to log in. Please contact the administrator." };
+        return {
+          success: false,
+          error: "You don't have permission to log in. Please contact the administrator.",
+        };
       }
 
       // Update last active
@@ -678,7 +707,6 @@ export const loginWithGoogleFn = createServerFn({ method: "POST" })
 
       const { pin: _, ...safeUser } = user;
       return { success: true, user: safeUser, message: "Login successful!" };
-
     } catch (e) {
       return handleApiError(e);
     }
@@ -693,11 +721,14 @@ export const loginWithFirebasePhoneFn = createServerFn({ method: "POST" })
         return { success: false, error: "Firebase API Key is missing on the server" };
       }
 
-      const res = await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=${apiKey}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ idToken: data.idToken })
-      });
+      const res = await fetch(
+        `https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=${apiKey}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ idToken: data.idToken }),
+        },
+      );
 
       if (!res.ok) {
         return { success: false, error: "Invalid Firebase ID Token" };
@@ -731,7 +762,11 @@ export const loginWithFirebasePhoneFn = createServerFn({ method: "POST" })
         const storeName = "Phone User's Store";
 
         const insertRes = await db.transaction(async (tx) => {
-          const plans = await tx.select().from(schema.saasPlans).where(eq(schema.saasPlans.isTrialDefault, true)).limit(1);
+          const plans = await tx
+            .select()
+            .from(schema.saasPlans)
+            .where(eq(schema.saasPlans.isTrialDefault, true))
+            .limit(1);
           let assignedPlanId = plans.length > 0 ? plans[0].id : "starter";
 
           await tx.insert(schema.organizations).values({
@@ -743,17 +778,20 @@ export const loginWithFirebasePhoneFn = createServerFn({ method: "POST" })
             planExpiryDate: new Date(trialEndsAt).toISOString(),
           });
 
-          const [u] = await tx.insert(schema.users).values({
-            id: userId,
-            organizationId: orgId,
-            email: `phoneuser_${Date.now()}@temp.com`, // Email is required by schema
-            phone: phone,
-            name: "Phone User",
-            role: "admin",
-            pin: "1234",
-            status: "active",
-            lastActive: new Date().toISOString(),
-          }).returning();
+          const [u] = await tx
+            .insert(schema.users)
+            .values({
+              id: userId,
+              organizationId: orgId,
+              email: `phoneuser_${Date.now()}@temp.com`, // Email is required by schema
+              phone: phone,
+              name: "Phone User",
+              role: "admin",
+              pin: "1234",
+              status: "active",
+              lastActive: new Date().toISOString(),
+            })
+            .returning();
 
           await tx.insert(schema.settings).values({
             id: uuidv4(),
@@ -777,7 +815,10 @@ export const loginWithFirebasePhoneFn = createServerFn({ method: "POST" })
       }
 
       if (user.status === "inactive") {
-        return { success: false, error: "Your account is inactive. Please contact the administrator." };
+        return {
+          success: false,
+          error: "Your account is inactive. Please contact the administrator.",
+        };
       }
       if (user.status === "suspended") {
         return { success: false, error: "Your account has been suspended by the administrator." };
@@ -786,7 +827,10 @@ export const loginWithFirebasePhoneFn = createServerFn({ method: "POST" })
         return { success: false, error: "Your account is pending approval by the administrator." };
       }
       if (user.role !== "admin" && (!user.permissions || user.permissions.length === 0)) {
-        return { success: false, error: "You don't have permission to log in. Please contact the administrator." };
+        return {
+          success: false,
+          error: "You don't have permission to log in. Please contact the administrator.",
+        };
       }
 
       // Update last active
@@ -820,7 +864,6 @@ export const loginWithFirebasePhoneFn = createServerFn({ method: "POST" })
 
       const { pin: _, ...safeUser } = user;
       return { success: true, user: safeUser, message: "Login successful!" };
-
     } catch (e) {
       return handleApiError(e);
     }

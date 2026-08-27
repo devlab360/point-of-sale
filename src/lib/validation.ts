@@ -85,8 +85,7 @@ export function validateStrongPassword(password: string): { valid: boolean; erro
   if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^a-zA-Z\d])/.test(pwd)) {
     return {
       valid: false,
-      error:
-        "Password must contain uppercase, lowercase, number and special character",
+      error: "Password must contain uppercase, lowercase, number and special character",
     };
   }
   return { valid: true };

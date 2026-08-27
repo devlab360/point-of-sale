@@ -148,20 +148,24 @@ function StockList() {
         onResetFilters={handleResetFilters}
         activeFilterCount={activeFilterCount}
         onExport={() => {
-          const exportData = filteredProducts.map(p => ({
+          const exportData = filteredProducts.map((p) => ({
             name: p.name,
             sku: p.sku,
             stock: p.stock,
             reorderLevel: p.reorderLevel,
-            value: p.stock * p.cost
+            value: p.stock * p.cost,
           }));
-          exportToCSV(exportData, [
-            { key: 'name', label: 'Product' },
-            { key: 'sku', label: 'SKU' },
-            { key: 'stock', label: 'Stock' },
-            { key: 'reorderLevel', label: 'Reorder' },
-            { key: 'value', label: 'Value' }
-          ], 'inventory');
+          exportToCSV(
+            exportData,
+            [
+              { key: "name", label: "Product" },
+              { key: "sku", label: "SKU" },
+              { key: "stock", label: "Stock" },
+              { key: "reorderLevel", label: "Reorder" },
+              { key: "value", label: "Value" },
+            ],
+            "inventory",
+          );
         }}
         filtersContent={({ close }) => (
           <div className="space-y-4 flex flex-col h-full min-h-[50vh]">
@@ -210,24 +214,36 @@ function StockList() {
       >
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5 mb-6">
           <div className="rounded-2xl border border-border/80 bg-card p-4 shadow-card flex flex-col justify-between card-interactive">
-            <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Total Stock Count</p>
+            <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
+              Total Stock Count
+            </p>
             <div className="mt-2 flex items-baseline gap-1.5">
-              <span className="text-2xl sm:text-3xl font-black text-foreground">{inventorySummary?.totalStock || 0}</span>
+              <span className="text-2xl sm:text-3xl font-black text-foreground">
+                {inventorySummary?.totalStock || 0}
+              </span>
               <span className="text-xs font-semibold text-muted-foreground">units</span>
             </div>
-            <p className="text-xs text-muted-foreground mt-1 font-medium">{products.length} catalog SKUs</p>
+            <p className="text-xs text-muted-foreground mt-1 font-medium">
+              {products.length} catalog SKUs
+            </p>
           </div>
 
           <div className="rounded-2xl border border-border/80 bg-card p-4 shadow-card flex flex-col justify-between card-interactive">
-            <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Inventory Value (Cost)</p>
+            <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
+              Inventory Value (Cost)
+            </p>
             <div className="mt-2 text-2xl sm:text-3xl font-black text-foreground">
               {formatCurrency(inventorySummary?.totalValue || 0)}
             </div>
-            <p className="text-xs text-muted-foreground mt-1 font-medium">Cost valuation invested</p>
+            <p className="text-xs text-muted-foreground mt-1 font-medium">
+              Cost valuation invested
+            </p>
           </div>
 
           <div className="rounded-2xl border border-border/80 bg-card p-4 shadow-card flex flex-col justify-between card-interactive">
-            <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Retail Valuation</p>
+            <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
+              Retail Valuation
+            </p>
             <div className="mt-2 text-2xl sm:text-3xl font-black text-primary">
               {formatCurrency(inventorySummary?.totalRetailValue || 0)}
             </div>
@@ -235,7 +251,9 @@ function StockList() {
           </div>
 
           <div className="rounded-2xl border border-border/80 bg-card p-4 shadow-card flex flex-col justify-between card-interactive">
-            <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Stock Alerts</p>
+            <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
+              Stock Alerts
+            </p>
             <div className="mt-2 text-2xl sm:text-3xl font-black text-destructive">
               {inventorySummary?.lowStockCount || lowCount}
             </div>
@@ -292,7 +310,9 @@ function StockList() {
                                 <PackageSearch className="size-5 text-muted-foreground/50" />
                               )}
                             </div>
-                            <span className="font-bold text-foreground hover:text-primary transition-colors">{p.name}</span>
+                            <span className="font-bold text-foreground hover:text-primary transition-colors">
+                              {p.name}
+                            </span>
                           </div>
                         </td>
                         <td className="px-5 py-3 font-mono text-xs text-muted-foreground whitespace-nowrap font-medium">
@@ -304,7 +324,10 @@ function StockList() {
                             low ? "text-destructive" : "text-foreground",
                           )}
                         >
-                          {p.stock} <span className="text-xs font-normal text-muted-foreground">{units.find((u) => u.id === p.unit)?.name || p.unit || "units"}</span>
+                          {p.stock}{" "}
+                          <span className="text-xs font-normal text-muted-foreground">
+                            {units.find((u) => u.id === p.unit)?.name || p.unit || "units"}
+                          </span>
                         </td>
                         <td className="px-5 py-3 text-right text-muted-foreground whitespace-nowrap font-medium text-xs">
                           {p.reorderLevel}
@@ -315,7 +338,9 @@ function StockList() {
                         <td className="px-5 py-3 whitespace-nowrap">
                           <div className="flex gap-1.5 flex-wrap items-center">
                             {isExpired(p.expiryDate) && (
-                              <Badge variant="destructive" className="text-[10px] font-bold">Expired</Badge>
+                              <Badge variant="destructive" className="text-[10px] font-bold">
+                                Expired
+                              </Badge>
                             )}
                             {isExpiringSoon(p.expiryDate) && (
                               <Badge className="bg-warning/15 text-warning-foreground hover:bg-warning/20 text-[10px] font-bold">
@@ -323,7 +348,9 @@ function StockList() {
                               </Badge>
                             )}
                             {out ? (
-                              <Badge variant="destructive" className="text-[10px] font-bold">Out of stock</Badge>
+                              <Badge variant="destructive" className="text-[10px] font-bold">
+                                Out of stock
+                              </Badge>
                             ) : low ? (
                               <Badge className="bg-warning/15 text-warning-foreground hover:bg-warning/20 text-[10px] font-bold">
                                 Low stock
@@ -362,7 +389,9 @@ function StockList() {
                         )}
                       </div>
                       <div className="min-w-0 flex-1">
-                        <div className="font-bold text-xs sm:text-sm text-foreground truncate">{p.name}</div>
+                        <div className="font-bold text-xs sm:text-sm text-foreground truncate">
+                          {p.name}
+                        </div>
                         <p className="text-[11px] text-muted-foreground font-mono">{p.sku}</p>
                         <div className="flex items-center gap-2 mt-1">
                           {out ? (
@@ -385,9 +414,7 @@ function StockList() {
                       <div className="number text-xs font-bold text-foreground">
                         {formatCurrency(p.stock * p.cost)}
                       </div>
-                      <div className="text-[10px] text-muted-foreground mt-0.5">
-                        Valuation
-                      </div>
+                      <div className="text-[10px] text-muted-foreground mt-0.5">Valuation</div>
                     </div>
                   </div>
                 );
@@ -417,7 +444,8 @@ function StockList() {
           </DialogHeader>
           <div className="space-y-3 py-3">
             <p className="text-xs text-muted-foreground">
-              Based on historical sales velocity over the last 30 days, these items are projected to run out soon.
+              Based on historical sales velocity over the last 30 days, these items are projected to
+              run out soon.
             </p>
             {forecasts.length === 0 ? (
               <div className="rounded-xl border border-dashed border-border p-6 text-center text-xs text-muted-foreground">
@@ -436,9 +464,7 @@ function StockList() {
                     <div className="text-right flex flex-col items-end gap-1">
                       <Badge
                         variant={f.daysRemaining <= 3 ? "destructive" : "outline"}
-                        className={cn(
-                          f.daysRemaining <= 3 ? "text-destructive" : "text-warning",
-                        )}
+                        className={cn(f.daysRemaining <= 3 ? "text-destructive" : "text-warning")}
                       >
                         {f.daysRemaining === 0
                           ? "Runs out today"

@@ -76,10 +76,7 @@ export const updateLocationFn = createServerFn({ method: "POST" })
         .update(schema.locations)
         .set(data.updates as any)
         .where(
-          and(
-            eq(schema.locations.id, data.id),
-            eq(schema.locations.organizationId, session.orgId),
-          ),
+          and(eq(schema.locations.id, data.id), eq(schema.locations.organizationId, session.orgId)),
         );
       return { success: true, message: "Location updated successfully" };
     } catch (e) {
@@ -99,10 +96,7 @@ export const deleteLocationFn = createServerFn({ method: "POST" })
       await db
         .delete(schema.locations)
         .where(
-          and(
-            eq(schema.locations.id, data.id),
-            eq(schema.locations.organizationId, session.orgId),
-          ),
+          and(eq(schema.locations.id, data.id), eq(schema.locations.organizationId, session.orgId)),
         );
       return { success: true, message: "Location deleted successfully" };
     } catch (e) {

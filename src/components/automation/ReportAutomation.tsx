@@ -61,7 +61,9 @@ export function ReportAutomation() {
           localStorage.setItem(`last_monthly_report_date_${orgId}`, now.toISOString());
         } else {
           const lastMonthly = new Date(lastMonthlyStr);
-          const differentMonth = now.getMonth() !== lastMonthly.getMonth() || now.getFullYear() !== lastMonthly.getFullYear();
+          const differentMonth =
+            now.getMonth() !== lastMonthly.getMonth() ||
+            now.getFullYear() !== lastMonthly.getFullYear();
           if (differentMonth) {
             needsMonthly = true;
           }
@@ -80,7 +82,10 @@ export function ReportAutomation() {
         const generateReportData = (startDate: Date) => {
           const filteredSales = sales.filter((s: any) => new Date(s.date) >= startDate);
 
-          const totalRevenue = filteredSales.reduce((sum: number, s: any) => sum + (Number(s.total) || 0), 0);
+          const totalRevenue = filteredSales.reduce(
+            (sum: number, s: any) => sum + (Number(s.total) || 0),
+            0,
+          );
           const totalOrders = filteredSales.length;
 
           const productSalesMap = new Map<string, number>();
@@ -89,7 +94,7 @@ export function ReportAutomation() {
               sale.saleItems.forEach((item: any) => {
                 productSalesMap.set(
                   item.productId,
-                  (productSalesMap.get(item.productId) || 0) + Number(item.quantity || 1)
+                  (productSalesMap.get(item.productId) || 0) + Number(item.quantity || 1),
                 );
               });
             }
@@ -99,7 +104,7 @@ export function ReportAutomation() {
             .map((p: any) => ({ ...p, sold: productSalesMap.get(p.id) || 0 }))
             .sort((a, b) => b.sold - a.sold)
             .slice(0, 3)
-            .map(p => p.name);
+            .map((p) => p.name);
 
           return { totalRevenue, totalOrders, topItems: topSelling };
         };
@@ -118,7 +123,7 @@ export function ReportAutomation() {
         // Send Weekly Report (wait a bit if monthly was just sent)
         if (needsWeekly) {
           if (needsMonthly) {
-            await new Promise(resolve => setTimeout(resolve, 5000));
+            await new Promise((resolve) => setTimeout(resolve, 5000));
           }
 
           const sevenDaysAgo = new Date(now.getTime() - SEVEN_DAYS_MS);
@@ -129,7 +134,6 @@ export function ReportAutomation() {
             localStorage.setItem(`last_weekly_report_date_${orgId}`, now.toISOString());
           }
         }
-
       } catch (error) {
         console.error("ReportAutomation Error:", error);
       }

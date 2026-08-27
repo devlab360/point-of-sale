@@ -19,7 +19,7 @@ function KitchenPage() {
   const { data, isLoading } = useQuery({
     queryKey: ["kots"],
     queryFn: () => getKOTsFn(),
-    refetchInterval: 10000, 
+    refetchInterval: 10000,
   });
 
   const updateStatus = useMutation({
@@ -32,9 +32,9 @@ function KitchenPage() {
         if (!old?.data) return old;
         return {
           ...old,
-          data: old.data.map((kot: any) => 
-            kot.id === newData.id ? { ...kot, status: newData.status } : kot
-          )
+          data: old.data.map((kot: any) =>
+            kot.id === newData.id ? { ...kot, status: newData.status } : kot,
+          ),
         };
       });
       return { previousKOTs };
@@ -52,20 +52,20 @@ function KitchenPage() {
       if (res.success) {
         toast.success("Order status updated!");
       }
-    }
+    },
   });
 
   const kots = data?.success ? data.data : [];
 
-  const pendingKots = kots.filter((k: any) => k.status === 'pending');
-  const preparingKots = kots.filter((k: any) => k.status === 'preparing');
-  const readyKots = kots.filter((k: any) => k.status === 'ready');
+  const pendingKots = kots.filter((k: any) => k.status === "pending");
+  const preparingKots = kots.filter((k: any) => k.status === "preparing");
+  const readyKots = kots.filter((k: any) => k.status === "ready");
 
   const advanceStatus = (kot: any) => {
-    let nextStatus: any = 'preparing';
-    if (kot.status === 'pending') nextStatus = 'preparing';
-    else if (kot.status === 'preparing') nextStatus = 'ready';
-    else if (kot.status === 'ready') nextStatus = 'served';
+    let nextStatus: any = "preparing";
+    if (kot.status === "pending") nextStatus = "preparing";
+    else if (kot.status === "preparing") nextStatus = "ready";
+    else if (kot.status === "ready") nextStatus = "served";
 
     updateStatus.mutate({ id: kot.id, status: nextStatus });
   };
@@ -96,23 +96,35 @@ function KitchenPage() {
         exit={{ opacity: 0, scale: 0.9, transition: { duration: 0.2 } }}
         transition={{ type: "spring", stiffness: 300, damping: 25 }}
       >
-        <Card className={`relative overflow-hidden border-${colorClass}-500/30 bg-card shadow-sm hover:shadow-card transition-shadow`}>
+        <Card
+          className={`relative overflow-hidden border-${colorClass}-500/30 bg-card shadow-sm hover:shadow-card transition-shadow`}
+        >
           {/* Top Premium Accent Line */}
           <div className={`absolute top-0 inset-x-0 h-1 bg-${colorClass}-500`} />
-          
+
           {/* Stepper Visualization inside Card */}
           <div className="absolute top-2 right-2 flex items-center gap-1 opacity-70">
-            <span className={`size-2 rounded-full ${stepNum >= 1 ? `bg-${colorClass}-500` : 'bg-muted'} shadow-sm`} />
-            <span className={`w-3 h-0.5 rounded-full ${stepNum >= 2 ? `bg-${colorClass}-500` : 'bg-muted/50'}`} />
-            <span className={`size-2 rounded-full ${stepNum >= 2 ? `bg-${colorClass}-500` : 'bg-muted'} shadow-sm`} />
-            <span className={`w-3 h-0.5 rounded-full ${stepNum >= 3 ? `bg-${colorClass}-500` : 'bg-muted/50'}`} />
-            <span className={`size-2 rounded-full ${stepNum >= 3 ? `bg-${colorClass}-500` : 'bg-muted'} shadow-sm`} />
+            <span
+              className={`size-2 rounded-full ${stepNum >= 1 ? `bg-${colorClass}-500` : "bg-muted"} shadow-sm`}
+            />
+            <span
+              className={`w-3 h-0.5 rounded-full ${stepNum >= 2 ? `bg-${colorClass}-500` : "bg-muted/50"}`}
+            />
+            <span
+              className={`size-2 rounded-full ${stepNum >= 2 ? `bg-${colorClass}-500` : "bg-muted"} shadow-sm`}
+            />
+            <span
+              className={`w-3 h-0.5 rounded-full ${stepNum >= 3 ? `bg-${colorClass}-500` : "bg-muted/50"}`}
+            />
+            <span
+              className={`size-2 rounded-full ${stepNum >= 3 ? `bg-${colorClass}-500` : "bg-muted"} shadow-sm`}
+            />
           </div>
 
           <CardHeader className="pb-2 pt-5">
             <CardTitle className="text-sm flex flex-col gap-1">
               <span className="font-black text-lg text-foreground pr-16">
-                {kot.tableId ? `Table ${kot.tableId.substring(0, 4)}` : 'Takeaway'}
+                {kot.tableId ? `Table ${kot.tableId.substring(0, 4)}` : "Takeaway"}
               </span>
               <span className="flex items-center text-xs text-muted-foreground font-medium bg-muted/40 w-fit px-2 py-0.5 rounded-md border border-border/50">
                 <Clock className="w-3.5 h-3.5 mr-1.5" />
@@ -122,22 +134,32 @@ function KitchenPage() {
           </CardHeader>
           <CardContent className="pb-3">
             <div className="space-y-4 mb-2">
-              {sortedCourses.map(course => (
+              {sortedCourses.map((course) => (
                 <div key={course}>
-                  <h4 className="text-[10px] font-black text-muted-foreground uppercase tracking-widest border-b border-border/60 pb-1 mb-2">{course}</h4>
+                  <h4 className="text-[10px] font-black text-muted-foreground uppercase tracking-widest border-b border-border/60 pb-1 mb-2">
+                    {course}
+                  </h4>
                   <ul className="text-sm space-y-2">
                     {groupedItems[course].map((item: any, idx: number) => (
                       <li key={idx} className="flex flex-col pb-1">
                         <div className="flex justify-between font-bold text-foreground">
-                          <span><span className="text-primary">{item.quantity}x</span> {item.name}</span>
+                          <span>
+                            <span className="text-primary">{item.quantity}x</span> {item.name}
+                          </span>
                         </div>
                         {(item.variantName || (item.modifiers && item.modifiers.length > 0)) && (
                           <div className="text-[11px] text-muted-foreground mt-0.5 ml-5 border-l-2 border-border/50 pl-2">
-                            {item.variantName && <div className="font-medium text-foreground/80">Variant: {item.variantName}</div>}
+                            {item.variantName && (
+                              <div className="font-medium text-foreground/80">
+                                Variant: {item.variantName}
+                              </div>
+                            )}
                             {item.modifiers && item.modifiers.length > 0 && (
                               <div className="flex flex-col gap-0.5 mt-0.5">
                                 {item.modifiers.map((m: any, i: number) => (
-                                  <span key={i} className="text-foreground/70">+ {m.optionName}</span>
+                                  <span key={i} className="text-foreground/70">
+                                    + {m.optionName}
+                                  </span>
                                 ))}
                               </div>
                             )}
@@ -158,14 +180,27 @@ function KitchenPage() {
           <CardFooter className="pt-0 pb-4 px-4">
             <Button
               size="sm"
-              className={`w-full text-xs h-9 font-bold rounded-xl shadow-soft hover:-translate-y-0.5 transition-transform ${kot.status === 'ready' ? 'bg-emerald-500 hover:bg-emerald-600 text-white' : ''}`}
-              variant={kot.status === 'pending' ? 'default' : kot.status === 'preparing' ? 'secondary' : 'default'}
+              className={`w-full text-xs h-9 font-bold rounded-xl shadow-soft hover:-translate-y-0.5 transition-transform ${kot.status === "ready" ? "bg-emerald-500 hover:bg-emerald-600 text-white" : ""}`}
+              variant={
+                kot.status === "pending"
+                  ? "default"
+                  : kot.status === "preparing"
+                    ? "secondary"
+                    : "default"
+              }
               onClick={() => advanceStatus(kot)}
               disabled={updateStatus.isPending}
             >
-              {kot.status === 'pending' ? 'Start Preparing' :
-                kot.status === 'preparing' ? 'Mark Ready' : 'Serve Order'}
-              {kot.status === 'ready' ? <CheckCircle2 className="w-4 h-4 ml-2" /> : <ArrowRight className="w-4 h-4 ml-2" />}
+              {kot.status === "pending"
+                ? "Start Preparing"
+                : kot.status === "preparing"
+                  ? "Mark Ready"
+                  : "Serve Order"}
+              {kot.status === "ready" ? (
+                <CheckCircle2 className="w-4 h-4 ml-2" />
+              ) : (
+                <ArrowRight className="w-4 h-4 ml-2" />
+              )}
             </Button>
           </CardFooter>
         </Card>
@@ -202,7 +237,9 @@ function KitchenPage() {
             <div className="flex items-center justify-between pb-3 mb-3 border-b border-border/60">
               <div className="flex items-center gap-2">
                 <span className="size-2.5 rounded-full bg-rose-500 animate-pulse shadow-[0_0_8px_rgba(244,63,94,0.6)]" />
-                <h2 className="font-black text-sm text-foreground uppercase tracking-wide">1. New Orders</h2>
+                <h2 className="font-black text-sm text-foreground uppercase tracking-wide">
+                  1. New Orders
+                </h2>
               </div>
               <Badge className="bg-rose-500/15 text-rose-500 border-rose-500/30 text-xs font-black px-2.5">
                 {pendingKots.length}
@@ -211,7 +248,12 @@ function KitchenPage() {
             <div className="space-y-4 overflow-y-auto max-h-[calc(100vh-260px)] px-1 pb-4">
               <AnimatePresence mode="popLayout">
                 {pendingKots.length === 0 ? (
-                  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="text-xs font-medium text-muted-foreground p-8 text-center border rounded-xl border-dashed border-border/80 bg-card/40">
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="text-xs font-medium text-muted-foreground p-8 text-center border rounded-xl border-dashed border-border/80 bg-card/40"
+                  >
                     No new incoming tickets
                   </motion.div>
                 ) : (
@@ -226,7 +268,9 @@ function KitchenPage() {
             <div className="flex items-center justify-between pb-3 mb-3 border-b border-border/60">
               <div className="flex items-center gap-2">
                 <span className="size-2.5 rounded-full bg-amber-500 animate-pulse shadow-[0_0_8px_rgba(245,158,11,0.6)]" />
-                <h2 className="font-black text-sm text-foreground uppercase tracking-wide">2. Preparing</h2>
+                <h2 className="font-black text-sm text-foreground uppercase tracking-wide">
+                  2. Preparing
+                </h2>
               </div>
               <Badge className="bg-amber-500/15 text-amber-500 border-amber-500/30 text-xs font-black px-2.5">
                 {preparingKots.length}
@@ -235,7 +279,12 @@ function KitchenPage() {
             <div className="space-y-4 overflow-y-auto max-h-[calc(100vh-260px)] px-1 pb-4">
               <AnimatePresence mode="popLayout">
                 {preparingKots.length === 0 ? (
-                  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="text-xs font-medium text-muted-foreground p-8 text-center border rounded-xl border-dashed border-border/80 bg-card/40">
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="text-xs font-medium text-muted-foreground p-8 text-center border rounded-xl border-dashed border-border/80 bg-card/40"
+                  >
                     No tickets currently in prep
                   </motion.div>
                 ) : (
@@ -250,7 +299,9 @@ function KitchenPage() {
             <div className="flex items-center justify-between pb-3 mb-3 border-b border-border/60">
               <div className="flex items-center gap-2">
                 <span className="size-2.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.6)]" />
-                <h2 className="font-black text-sm text-foreground uppercase tracking-wide">3. Ready</h2>
+                <h2 className="font-black text-sm text-foreground uppercase tracking-wide">
+                  3. Ready
+                </h2>
               </div>
               <Badge className="bg-emerald-500/15 text-emerald-500 border-emerald-500/30 text-xs font-black px-2.5">
                 {readyKots.length}
@@ -259,7 +310,12 @@ function KitchenPage() {
             <div className="space-y-4 overflow-y-auto max-h-[calc(100vh-260px)] px-1 pb-4">
               <AnimatePresence mode="popLayout">
                 {readyKots.length === 0 ? (
-                  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="text-xs font-medium text-muted-foreground p-8 text-center border rounded-xl border-dashed border-border/80 bg-card/40">
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="text-xs font-medium text-muted-foreground p-8 text-center border rounded-xl border-dashed border-border/80 bg-card/40"
+                  >
                     No tickets waiting to be served
                   </motion.div>
                 ) : (

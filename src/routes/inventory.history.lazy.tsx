@@ -93,9 +93,14 @@ function HistoryPage() {
                       <td className="px-5 py-3 text-muted-foreground whitespace-nowrap text-xs">
                         {formatDateTime(m.createdAt)}
                       </td>
-                      <td className="px-5 py-3 font-bold text-foreground min-w-[150px]">{m.productName}</td>
+                      <td className="px-5 py-3 font-bold text-foreground min-w-[150px]">
+                        {m.productName}
+                      </td>
                       <td className="px-5 py-3 whitespace-nowrap">
-                        <Badge variant="outline" className="capitalize text-[10px] font-bold bg-muted/50 border-border/80">
+                        <Badge
+                          variant="outline"
+                          className="capitalize text-[10px] font-bold bg-muted/50 border-border/80"
+                        >
                           {m.action.replace("_", " ")}
                         </Badge>
                       </td>
@@ -121,9 +126,16 @@ function HistoryPage() {
                   className="flex items-center justify-between rounded-xl border border-border/80 bg-card p-3 shadow-sm card-interactive"
                 >
                   <div className="min-w-0 flex-1">
-                    <div className="text-[10px] text-muted-foreground">{formatDateTime(m.createdAt)}</div>
-                    <div className="font-bold text-xs sm:text-sm text-foreground mt-0.5">{m.productName}</div>
-                    <Badge variant="outline" className="capitalize text-[9px] font-bold mt-1 bg-muted/50">
+                    <div className="text-[10px] text-muted-foreground">
+                      {formatDateTime(m.createdAt)}
+                    </div>
+                    <div className="font-bold text-xs sm:text-sm text-foreground mt-0.5">
+                      {m.productName}
+                    </div>
+                    <Badge
+                      variant="outline"
+                      className="capitalize text-[9px] font-bold mt-1 bg-muted/50"
+                    >
                       {m.action.replace("_", " ")}
                     </Badge>
                   </div>
@@ -136,7 +148,9 @@ function HistoryPage() {
                     >
                       {m.quantity > 0 ? `+${m.quantity}` : m.quantity}
                     </div>
-                    <span className="text-[9px] font-bold text-muted-foreground uppercase">delta</span>
+                    <span className="text-[9px] font-bold text-muted-foreground uppercase">
+                      delta
+                    </span>
                   </div>
                 </div>
               ))}

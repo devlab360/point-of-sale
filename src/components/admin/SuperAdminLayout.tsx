@@ -27,9 +27,7 @@ export function SuperAdminLayout({ children }: { children: React.ReactNode }) {
   const navGroups = [
     {
       groupTitle: "Core Operations",
-      items: [
-        { to: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard },
-      ],
+      items: [{ to: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard }],
     },
     {
       groupTitle: "Tenants & Monetization",
@@ -51,7 +49,8 @@ export function SuperAdminLayout({ children }: { children: React.ReactNode }) {
   ];
 
   const getPageTitle = () => {
-    if (location.pathname === "/admin" || location.pathname === "/admin/") return "Super Admin Control Portal";
+    if (location.pathname === "/admin" || location.pathname === "/admin/")
+      return "Super Admin Control Portal";
     if (location.pathname.startsWith("/admin/dashboard")) return "SaaS Platform Dashboard";
     if (location.pathname.startsWith("/admin/tenants")) return "Tenant Stores & Organizations";
     if (location.pathname.startsWith("/admin/payments")) return "Subscription Payment Approvals";
@@ -75,7 +74,9 @@ export function SuperAdminLayout({ children }: { children: React.ReactNode }) {
             </div>
             <div>
               <div className="flex items-center gap-1.5">
-                <h1 className="text-sm font-extrabold tracking-tight text-foreground">OneDesk360</h1>
+                <h1 className="text-sm font-extrabold tracking-tight text-foreground">
+                  OneDesk360
+                </h1>
                 <span className="bg-primary/10 text-primary text-[10px] font-bold px-1.5 py-0.5 rounded font-mono">
                   SUPER ADMIN
                 </span>
@@ -149,8 +150,12 @@ export function SuperAdminLayout({ children }: { children: React.ReactNode }) {
                 SA
               </div>
               <div className="min-w-0">
-                <p className="text-xs font-semibold text-foreground truncate">{user?.name || "Super Admin"}</p>
-                <p className="text-[10px] text-muted-foreground truncate">{user?.email || "admin@saas.com"}</p>
+                <p className="text-xs font-semibold text-foreground truncate">
+                  {user?.name || "Super Admin"}
+                </p>
+                <p className="text-[10px] text-muted-foreground truncate">
+                  {user?.email || "admin@saas.com"}
+                </p>
               </div>
             </div>
             <Button
@@ -181,7 +186,9 @@ export function SuperAdminLayout({ children }: { children: React.ReactNode }) {
             </Button>
 
             <div>
-              <h2 className="text-base font-bold text-foreground tracking-tight">{getPageTitle()}</h2>
+              <h2 className="text-base font-bold text-foreground tracking-tight">
+                {getPageTitle()}
+              </h2>
               <p className="text-[11px] text-muted-foreground hidden sm:block">
                 SaaS Tenant & Platform Administration Portal
               </p>

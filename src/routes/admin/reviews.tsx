@@ -21,7 +21,9 @@ function SuperAdminReviewsPage() {
         <div className="rounded-xl border bg-card p-12 text-center">
           <Star className="size-10 mx-auto text-muted-foreground mb-3 opacity-40" />
           <h3 className="font-semibold text-lg">Merchant Feedback Portal</h3>
-          <p className="text-sm text-muted-foreground">Tenant ratings and feature feedback will be listed here.</p>
+          <p className="text-sm text-muted-foreground">
+            Tenant ratings and feature feedback will be listed here.
+          </p>
         </div>
       </div>
     </SuperAdminLayout>

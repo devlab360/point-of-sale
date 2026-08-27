@@ -116,13 +116,17 @@ function SalesPage() {
   }, [debouncedQuery, filters]);
 
   const handleExport = () => {
-    exportToCSV(sales, [
-      { key: 'id', label: 'Invoice No' },
-      { key: 'date', label: 'Date' },
-      { key: 'customerName', label: 'Customer' },
-      { key: 'total', label: 'Total' },
-      { key: 'status', label: 'Status' }
-    ], 'sales');
+    exportToCSV(
+      sales,
+      [
+        { key: "id", label: "Invoice No" },
+        { key: "date", label: "Date" },
+        { key: "customerName", label: "Customer" },
+        { key: "total", label: "Total" },
+        { key: "status", label: "Status" },
+      ],
+      "sales",
+    );
   };
 
   const summaries = useMemo(() => {
@@ -307,23 +311,36 @@ function SalesPage() {
                       <th className="px-5 py-3 whitespace-nowrap">{t("invoice") || "Invoice"}</th>
                       <th className="px-5 py-3 whitespace-nowrap">{t("customer") || "Customer"}</th>
                       <th className="px-5 py-3 whitespace-nowrap">{t("date") || "Timestamp"}</th>
-                      <th className="px-5 py-3 text-right whitespace-nowrap">{t("items") || "Items"}</th>
+                      <th className="px-5 py-3 text-right whitespace-nowrap">
+                        {t("items") || "Items"}
+                      </th>
                       <th className="px-5 py-3 whitespace-nowrap">{t("payment") || "Payment"}</th>
                       <th className="px-5 py-3 whitespace-nowrap">{t("sync") || "Sync"}</th>
                       <th className="px-5 py-3 whitespace-nowrap">{t("status") || "Status"}</th>
-                      <th className="px-5 py-3 text-right whitespace-nowrap">{t("total") || "Total"}</th>
+                      <th className="px-5 py-3 text-right whitespace-nowrap">
+                        {t("total") || "Total"}
+                      </th>
                       <th className="px-5 py-3 text-right whitespace-nowrap">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border/60">
                     {sales.map((s) => (
                       <tr key={s.id} className="hover:bg-muted/30 transition-colors">
-                        <td className="px-5 py-3 font-mono text-xs font-bold text-primary whitespace-nowrap cursor-pointer hover:underline" onClick={() => setViewSale(s)}>
+                        <td
+                          className="px-5 py-3 font-mono text-xs font-bold text-primary whitespace-nowrap cursor-pointer hover:underline"
+                          onClick={() => setViewSale(s)}
+                        >
                           #{s.id.slice(0, 8).toUpperCase()}
                         </td>
-                        <td className="px-5 py-3 font-bold text-foreground whitespace-nowrap">{s.customerName || "Walk-in Customer"}</td>
-                        <td className="px-5 py-3 text-muted-foreground whitespace-nowrap text-xs">{formatDateTime(s.date)}</td>
-                        <td className="px-5 py-3 text-right whitespace-nowrap text-xs font-semibold text-muted-foreground">{s.items}</td>
+                        <td className="px-5 py-3 font-bold text-foreground whitespace-nowrap">
+                          {s.customerName || "Walk-in Customer"}
+                        </td>
+                        <td className="px-5 py-3 text-muted-foreground whitespace-nowrap text-xs">
+                          {formatDateTime(s.date)}
+                        </td>
+                        <td className="px-5 py-3 text-right whitespace-nowrap text-xs font-semibold text-muted-foreground">
+                          {s.items}
+                        </td>
                         <td className="px-5 py-3 text-muted-foreground capitalize whitespace-nowrap">
                           {s.paymentMethod === "split" && s.payments && s.payments.length > 0 ? (
                             <div className="flex flex-col gap-0.5 text-[10px]">
@@ -335,7 +352,10 @@ function SalesPage() {
                               ))}
                             </div>
                           ) : (
-                            <Badge variant="outline" className="font-bold text-[10px] uppercase bg-muted/40">
+                            <Badge
+                              variant="outline"
+                              className="font-bold text-[10px] uppercase bg-muted/40"
+                            >
                               {s.paymentMethod || "cash"}
                             </Badge>
                           )}
@@ -357,8 +377,10 @@ function SalesPage() {
                           <Badge
                             className={cn(
                               "text-[10px] font-bold",
-                              s.status === "completed" && "bg-success/12 text-success hover:bg-success/20 border-success/20",
-                              s.status === "pending" && "bg-warning/15 text-warning-foreground hover:bg-warning/20 border-warning/20",
+                              s.status === "completed" &&
+                                "bg-success/12 text-success hover:bg-success/20 border-success/20",
+                              s.status === "pending" &&
+                                "bg-warning/15 text-warning-foreground hover:bg-warning/20 border-warning/20",
                               s.status === "refunded" && "bg-muted text-muted-foreground",
                             )}
                           >
@@ -406,8 +428,12 @@ function SalesPage() {
                   >
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2">
-                        <span className="font-mono text-xs font-bold text-primary">#{s.id.slice(0, 8).toUpperCase()}</span>
-                        <span className="text-[10px] text-muted-foreground">{formatDateTime(s.date)}</span>
+                        <span className="font-mono text-xs font-bold text-primary">
+                          #{s.id.slice(0, 8).toUpperCase()}
+                        </span>
+                        <span className="text-[10px] text-muted-foreground">
+                          {formatDateTime(s.date)}
+                        </span>
                       </div>
                       <div className="font-bold text-xs sm:text-sm text-foreground mt-0.5 truncate">
                         {s.customerName || "Walk-in Customer"}
@@ -419,7 +445,9 @@ function SalesPage() {
                         <Badge
                           className={cn(
                             "text-[9px] font-bold py-0",
-                            s.status === "completed" ? "bg-success/12 text-success" : "bg-warning/15 text-warning-foreground",
+                            s.status === "completed"
+                              ? "bg-success/12 text-success"
+                              : "bg-warning/15 text-warning-foreground",
                           )}
                         >
                           {s.status}
@@ -428,7 +456,9 @@ function SalesPage() {
                     </div>
 
                     <div className="text-right shrink-0 pl-2">
-                      <div className="number text-sm font-black text-foreground">{formatCurrency(s.total)}</div>
+                      <div className="number text-sm font-black text-foreground">
+                        {formatCurrency(s.total)}
+                      </div>
                       <Button
                         variant="ghost"
                         size="sm"
@@ -487,11 +517,11 @@ function SalesPage() {
                     variant="outline"
                     className={cn(
                       viewSale.status === "completed" &&
-                      "bg-success/10 text-success hover:bg-success/20 border-success/20",
+                        "bg-success/10 text-success hover:bg-success/20 border-success/20",
                       viewSale.status === "pending" &&
-                      "bg-warning/10 text-warning hover:bg-warning/20 border-warning/20",
+                        "bg-warning/10 text-warning hover:bg-warning/20 border-warning/20",
                       viewSale.status === "cancelled" &&
-                      "bg-destructive/10 text-destructive hover:bg-destructive/20 border-destructive/20",
+                        "bg-destructive/10 text-destructive hover:bg-destructive/20 border-destructive/20",
                     )}
                   >
                     {viewSale.status}
@@ -513,7 +543,9 @@ function SalesPage() {
                       <tr key={i}>
                         <td className="px-3 py-2 whitespace-nowrap">{item.productName}</td>
                         <td className="px-3 py-2 text-right whitespace-nowrap">{item.quantity}</td>
-                        <td className="px-3 py-2 text-right whitespace-nowrap">{formatCurrency(item.price)}</td>
+                        <td className="px-3 py-2 text-right whitespace-nowrap">
+                          {formatCurrency(item.price)}
+                        </td>
                         <td className="px-3 py-2 text-right font-semibold whitespace-nowrap">
                           {formatCurrency(item.total)}
                         </td>

@@ -420,7 +420,10 @@ function DeliveryChallansPage() {
                   <tbody className="divide-y divide-border/60">
                     {paginated.map((c) => (
                       <tr key={c.id} className="hover:bg-muted/30 transition-colors">
-                        <td className="px-5 py-3 font-mono font-bold text-primary whitespace-nowrap cursor-pointer hover:underline" onClick={() => setViewItem(c)}>
+                        <td
+                          className="px-5 py-3 font-mono font-bold text-primary whitespace-nowrap cursor-pointer hover:underline"
+                          onClick={() => setViewItem(c)}
+                        >
                           {c.challanNo}
                         </td>
                         <td className="px-5 py-3 font-bold text-foreground whitespace-nowrap">
@@ -453,11 +456,17 @@ function DeliveryChallansPage() {
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end" className="rounded-xl">
-                              <DropdownMenuItem onClick={() => setViewItem(c)} className="text-xs font-semibold">
+                              <DropdownMenuItem
+                                onClick={() => setViewItem(c)}
+                                className="text-xs font-semibold"
+                              >
                                 <Truck className="mr-2 size-3.5 text-primary" /> View / Print Slip
                               </DropdownMenuItem>
                               {c.status !== "invoiced" && (
-                                <DropdownMenuItem onClick={() => convertChallanToInvoice(c)} className="text-xs font-bold text-success">
+                                <DropdownMenuItem
+                                  onClick={() => convertChallanToInvoice(c)}
+                                  className="text-xs font-bold text-success"
+                                >
                                   <ArrowRightLeft className="mr-2 size-3.5" /> Convert to Invoice
                                 </DropdownMenuItem>
                               )}
@@ -486,12 +495,20 @@ function DeliveryChallansPage() {
                   >
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2">
-                        <span className="font-mono text-xs font-bold text-primary">{c.challanNo}</span>
-                        <span className="text-[10px] text-muted-foreground">{formatDate(c.date)}</span>
+                        <span className="font-mono text-xs font-bold text-primary">
+                          {c.challanNo}
+                        </span>
+                        <span className="text-[10px] text-muted-foreground">
+                          {formatDate(c.date)}
+                        </span>
                       </div>
-                      <div className="font-bold text-xs sm:text-sm text-foreground mt-0.5 truncate">{c.customerName}</div>
+                      <div className="font-bold text-xs sm:text-sm text-foreground mt-0.5 truncate">
+                        {c.customerName}
+                      </div>
                       <p className="text-[11px] text-muted-foreground mt-0.5 truncate">
-                        {c.transportName ? `${c.transportName} · ${c.vehicleNo || "N/A"}` : "Local Dispatch"}
+                        {c.transportName
+                          ? `${c.transportName} · ${c.vehicleNo || "N/A"}`
+                          : "Local Dispatch"}
                       </p>
                     </div>
 

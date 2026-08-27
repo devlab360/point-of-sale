@@ -117,10 +117,15 @@ function VerifyEmailPage() {
           <div className="mx-auto mb-4 grid size-14 place-items-center rounded-2xl bg-gradient-to-br from-primary/20 via-primary/10 to-accent/20 text-primary border border-primary/20 shadow-soft">
             <Mail className="size-7" />
           </div>
-          <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-foreground">Verify Your Email</h1>
+          <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-foreground">
+            Verify Your Email
+          </h1>
           <p className="text-xs sm:text-sm text-muted-foreground mt-1.5 font-medium">
             Activate your account and start your{" "}
-            <strong className="text-primary font-black">{trialDays}-Day Full Enterprise Trial</strong>.
+            <strong className="text-primary font-black">
+              {trialDays}-Day Full Enterprise Trial
+            </strong>
+            .
           </p>
         </div>
 
@@ -149,7 +154,9 @@ function VerifyEmailPage() {
                 }}
                 maxLength={6}
                 className={`text-center font-mono text-xl tracking-[0.5em] h-13 rounded-2xl ${
-                  otpErrors.otp ? "border-destructive focus-visible:ring-destructive" : "border-primary/40 focus-visible:ring-primary"
+                  otpErrors.otp
+                    ? "border-destructive focus-visible:ring-destructive"
+                    : "border-primary/40 focus-visible:ring-primary"
                 }`}
               />
               <FieldError message={otpErrors.otp} />
@@ -175,7 +182,8 @@ function VerifyEmailPage() {
               disabled={isSending}
               className="h-8 text-xs font-bold text-primary rounded-xl hover:bg-primary/10"
             >
-              <RefreshCw className={`mr-1.5 size-3.5 ${isSending ? "animate-spin" : ""}`} /> Resend Code
+              <RefreshCw className={`mr-1.5 size-3.5 ${isSending ? "animate-spin" : ""}`} /> Resend
+              Code
             </Button>
           </div>
         </div>

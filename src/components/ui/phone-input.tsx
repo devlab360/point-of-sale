@@ -50,12 +50,12 @@ export const PhoneInput = React.forwardRef<HTMLInputElement, PhoneInputProps>(
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
       // Allow only numeric digits
       const numericValue = e.target.value.replace(/\D/g, "");
-      
+
       // Stop if it exceeds the allowed length
       if (numericValue.length > requiredLength) return;
 
       if (!controlled) setLocalVal(numericValue);
-      
+
       // We mutate the event object so parent gets the cleaned value
       e.target.value = numericValue;
       if (onChange) onChange(e);

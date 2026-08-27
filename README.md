@@ -45,14 +45,17 @@ npm run db:seed
 ## 🔑 Default Credentials
 
 ### 1. Super Admin Portal (`/admin`)
+
 - **Email**: `admin@superadmin.com`
 - **Password**: `superadmin_password`
 
 ### 2. Demo Store Owner (`/login`)
+
 - **Email**: `demo@onedesk360.com`
 - **Password**: `password123`
 
 ### 3. Demo Cashier Staff (`/login`)
+
 - **Email**: `cashier@onedesk360.com`
 - **Password**: `password123`
 
@@ -73,3 +76,9 @@ npm run dev
 ```
 
 App runs live at: **`http://localhost:8080`**
+
+---
+
+## 📜 License & Copyright
+
+© 2026 **[DevLab360](https://devlab360.com/)**. All rights reserved.

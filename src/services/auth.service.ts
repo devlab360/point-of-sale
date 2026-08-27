@@ -46,21 +46,17 @@ export class AuthService {
       .limit(1);
 
     if (!users.length) {
-      await new Promise((resolve) => setTimeout(resolve, 1000));
       throw new UnauthorizedError("Invalid credentials");
     }
 
     const user = users[0];
 
     if (!user.pin || !user.pin.startsWith("$2")) {
-      throw new UnauthorizedError(
-        "Invalid credentials or legacy PIN. Please reset your password.",
-      );
+      throw new UnauthorizedError("Invalid credentials or legacy PIN. Please reset your password.");
     }
 
     const isMatch = await bcrypt.compare(data.password, user.pin);
     if (!isMatch) {
-      await new Promise((resolve) => setTimeout(resolve, 1000));
       throw new UnauthorizedError("Invalid credentials");
     }
 
@@ -73,13 +69,12 @@ export class AuthService {
     if (user.status === "pending") {
       throw new ForbiddenError("Your account is pending approval.");
     }
-    if (user.role !== "admin" && (!user.permissions || user.permissions.length === 0)) {
+    if (
+      user.role !== "admin" &&
+      user.role !== "super_admin" &&
+      (!user.permissions || user.permissions.length === 0)
+    ) {
       throw new ForbiddenError("You don't have permission to log in.");
-    }
-    if (user.role === "super_admin") {
-      throw new ForbiddenError(
-        "Super Admins must use the dedicated Super Admin Portal (/admin).",
-      );
     }
 
     const token = await createSessionToken({
@@ -186,21 +181,17 @@ export class AuthService {
 
       if (data.seedData) {
         if (data.seedData.categories?.length) {
-          await tx
-            .insert(schema.categories)
-            .values(
-              data.seedData.categories.map((c: any) => ({
-                ...c,
-                organizationId: data.orgId,
-              })),
-            );
+          await tx.insert(schema.categories).values(
+            data.seedData.categories.map((c: any) => ({
+              ...c,
+              organizationId: data.orgId,
+            })),
+          );
         }
         if (data.seedData.units?.length) {
           await tx
             .insert(schema.units)
-            .values(
-              data.seedData.units.map((u: any) => ({ ...u, organizationId: data.orgId })),
-            );
+            .values(data.seedData.units.map((u: any) => ({ ...u, organizationId: data.orgId })));
         }
       }
     });

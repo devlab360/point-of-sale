@@ -40,8 +40,16 @@ export function handleApiError(
     const errorString = (errorMessage + " " + errorDetail).toLowerCase();
 
     // Foreign key violation
-    if (errorCode === "23503" || errorString.includes("foreign key") || errorString.includes("violates foreign key constraint")) {
-      return { success: false, code: 409, error: "Invalid reference. Please select a valid option from the list." };
+    if (
+      errorCode === "23503" ||
+      errorString.includes("foreign key") ||
+      errorString.includes("violates foreign key constraint")
+    ) {
+      return {
+        success: false,
+        code: 409,
+        error: "Invalid reference. Please select a valid option from the list.",
+      };
     }
 
     // Unique constraint violation

@@ -278,7 +278,9 @@ function PromotionsPage() {
           <EmptyState
             icon={Megaphone}
             title="No promotions found"
-            description={search ? "Try adjusting your search query." : "No promotional campaigns created yet."}
+            description={
+              search ? "Try adjusting your search query." : "No promotional campaigns created yet."
+            }
             actionLabel="New Campaign"
             onAction={() => {
               setEditItem(null);
@@ -302,8 +304,12 @@ function PromotionsPage() {
                           <Sparkles className="size-5" />
                         </div>
                         <div>
-                          <h3 className="font-bold text-sm sm:text-base text-foreground">{p.title}</h3>
-                          <p className="text-[11px] text-muted-foreground capitalize font-medium">Type: {p.type}</p>
+                          <h3 className="font-bold text-sm sm:text-base text-foreground">
+                            {p.title}
+                          </h3>
+                          <p className="text-[11px] text-muted-foreground capitalize font-medium">
+                            Type: {p.type}
+                          </p>
                         </div>
                       </div>
                     </div>
@@ -325,7 +331,10 @@ function PromotionsPage() {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="rounded-xl">
-                          <DropdownMenuItem onClick={() => setEditItem(p)} className="text-xs font-semibold">
+                          <DropdownMenuItem
+                            onClick={() => setEditItem(p)}
+                            className="text-xs font-semibold"
+                          >
                             <Edit2 className="mr-2 size-3.5" /> Edit Campaign
                           </DropdownMenuItem>
                           <DropdownMenuItem
@@ -339,8 +348,14 @@ function PromotionsPage() {
                     </div>
 
                     <div className="mt-4 rounded-xl bg-primary/10 border border-primary/20 px-3.5 py-2.5 text-xs font-bold text-primary flex items-center justify-between">
-                      <span>{p.type === "percentage" ? `${p.value}% OFF` : `${formatCurrency(p.value)} OFF`}</span>
-                      <span className="text-[11px] text-foreground font-semibold truncate max-w-[200px]">{p.conditions}</span>
+                      <span>
+                        {p.type === "percentage"
+                          ? `${p.value}% OFF`
+                          : `${formatCurrency(p.value)} OFF`}
+                      </span>
+                      <span className="text-[11px] text-foreground font-semibold truncate max-w-[200px]">
+                        {p.conditions}
+                      </span>
                     </div>
                   </div>
 

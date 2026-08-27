@@ -62,7 +62,10 @@ function ActivityPage() {
   };
 
   return (
-    <DataPage title="Store Activity & Audit Log" description="A complete forensic timeline of every transaction, edit, and deletion across your business.">
+    <DataPage
+      title="Store Activity & Audit Log"
+      description="A complete forensic timeline of every transaction, edit, and deletion across your business."
+    >
       {activityLog.length === 0 ? (
         <EmptyState
           icon={Activity}
@@ -85,7 +88,9 @@ function ActivityPage() {
                 <div className="text-xs sm:text-sm">
                   <span className="font-bold text-foreground">{a.user}</span> {renderLogMessage(a)}
                 </div>
-                <div className="text-[11px] text-muted-foreground font-medium mt-0.5">{formatDateTime(a.timestamp)}</div>
+                <div className="text-[11px] text-muted-foreground font-medium mt-0.5">
+                  {formatDateTime(a.timestamp)}
+                </div>
               </li>
             ))}
           </ol>

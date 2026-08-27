@@ -36,8 +36,8 @@ export const saasPlans = pgTable("saas_plans", {
   monthlyPrice: numeric("monthly_price", { precision: 10, scale: 2 }),
   yearlyPrice: numeric("yearly_price", { precision: 10, scale: 2 }),
   customPrice: numeric("custom_price", { precision: 10, scale: 2 }),
-  features: jsonb("features").$type<string[]>(),   // semantic keys e.g. ['pos','products']
-  menus: jsonb("menus").$type<string[]>(),         // sidebar menu keys allowed by plan
+  features: jsonb("features").$type<string[]>(), // semantic keys e.g. ['pos','products']
+  menus: jsonb("menus").$type<string[]>(), // sidebar menu keys allowed by plan
   limits: jsonb("limits").$type<{
     maxUsers: number;
     maxProducts: number;
@@ -60,7 +60,9 @@ export const orgSubscriptions = pgTable(
     organizationId: text("organization_id")
       .notNull()
       .references(() => organizations.id, { onDelete: "cascade" }),
-    planId: text("plan_id").notNull().references(() => saasPlans.id),
+    planId: text("plan_id")
+      .notNull()
+      .references(() => saasPlans.id),
     billingCycle: text("billing_cycle").notNull().default("trial"), // 'monthly' | 'yearly' | 'custom' | 'trial'
     lockedPrice: numeric("locked_price", { precision: 10, scale: 2 }), // price frozen at subscription time
     currency: text("currency").notNull().default("INR"),
@@ -102,7 +104,9 @@ export const superAdminSessions = pgTable(
   "super_admin_sessions",
   {
     id: text("id").primaryKey(),
-    userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
     ipAddress: text("ip_address"),
     userAgent: text("user_agent"),
     expiresAt: timestamp("expires_at", { mode: "string" }).notNull(),
@@ -1282,7 +1286,7 @@ export const productInventory = pgTable(
   (t) => ({
     orgIdx: index("prod_inv_org_idx").on(t.organizationId),
     prodLocIdx: unique("prod_inv_prod_loc_idx").on(t.productId, t.locationId),
-  })
+  }),
 );
 
 export const productVariants = pgTable(
@@ -1306,7 +1310,7 @@ export const productVariants = pgTable(
     skuIdx: unique("variant_sku_idx").on(t.sku, t.organizationId),
     barcodeIdx: unique("variant_barcode_idx").on(t.barcode, t.organizationId),
     prodIdx: index("variant_prod_idx").on(t.productId),
-  })
+  }),
 );
 
 export const productVariantAttributes = pgTable(
@@ -1321,7 +1325,7 @@ export const productVariantAttributes = pgTable(
   },
   (t) => ({
     variantIdx: index("variant_attr_idx").on(t.variantId),
-  })
+  }),
 );
 
 export const productBundles = pgTable(
@@ -1337,15 +1341,14 @@ export const productBundles = pgTable(
     componentProductId: text("component_product_id")
       .notNull()
       .references(() => products.id),
-    componentVariantId: text("component_variant_id")
-      .references(() => productVariants.id),
+    componentVariantId: text("component_variant_id").references(() => productVariants.id),
     quantity: numeric("quantity", { precision: 10, scale: 3 }).notNull().default("1"),
   },
   (t) => ({
     bundleIdx: index("bundle_product_idx").on(t.bundleProductId),
     componentIdx: index("bundle_component_idx").on(t.componentProductId),
     orgIdx: index("bundle_org_idx").on(t.organizationId),
-  })
+  }),
 );
 
 export const inventoryBatches = pgTable(
@@ -1358,8 +1361,7 @@ export const inventoryBatches = pgTable(
     productId: text("product_id")
       .notNull()
       .references(() => products.id, { onDelete: "cascade" }),
-    locationId: text("location_id")
-      .references(() => locations.id),
+    locationId: text("location_id").references(() => locations.id),
     batchNo: text("batch_no"), // Batch/Lot identification number (generic — not pharmacy-specific)
     expiryDate: timestamp("expiry_date", { mode: "string" }), // Batch-level expiry (pharmacy, grocery, cosmetics, etc.)
     mfgDate: timestamp("mfg_date", { mode: "string" }), // Manufacturing date
@@ -1377,7 +1379,7 @@ export const inventoryBatches = pgTable(
     productIdx: index("inv_batch_product_idx").on(t.productId),
     orgIdx: index("inv_batch_org_idx").on(t.organizationId),
     expiryIdx: index("inv_batch_expiry_idx").on(t.organizationId, t.expiryDate),
-  })
+  }),
 );
 
 export const inventoryBatchConsumptions = pgTable(
@@ -1387,15 +1389,14 @@ export const inventoryBatchConsumptions = pgTable(
     batchId: text("batch_id")
       .notNull()
       .references(() => inventoryBatches.id, { onDelete: "cascade" }),
-    saleId: text("sale_id")
-      .references(() => sales.id),
+    saleId: text("sale_id").references(() => sales.id),
     quantityConsumed: numeric("quantity_consumed", { precision: 10, scale: 3 }).notNull(),
     consumedAt: timestamp("consumed_at", { mode: "string" }).defaultNow().notNull(),
   },
   (t) => ({
     batchIdx: index("inv_batch_cons_batch_idx").on(t.batchId),
     saleIdx: index("inv_batch_cons_sale_idx").on(t.saleId),
-  })
+  }),
 );
 
 export const productModifiers = pgTable(
@@ -1416,7 +1417,7 @@ export const productModifiers = pgTable(
   (t) => ({
     orgIdx: index("product_modifiers_org_idx").on(t.organizationId),
     productIdx: index("product_modifiers_product_idx").on(t.productId),
-  })
+  }),
 );
 
 export const productModifierOptions = pgTable(
@@ -1436,16 +1437,19 @@ export const productModifierOptions = pgTable(
   (t) => ({
     orgIdx: index("modifier_options_org_idx").on(t.organizationId),
     modifierIdx: index("modifier_options_modifier_idx").on(t.modifierId),
-  })
+  }),
 );
-
 
 export const subscriptionPayments = pgTable(
   "subscription_payments",
   {
     id: text("id").primaryKey(),
-    organizationId: text("organization_id").notNull().references(() => organizations.id, { onDelete: "cascade" }),
-    planId: text("plan_id").notNull().references(() => saasPlans.id),
+    organizationId: text("organization_id")
+      .notNull()
+      .references(() => organizations.id, { onDelete: "cascade" }),
+    planId: text("plan_id")
+      .notNull()
+      .references(() => saasPlans.id),
     utrNumber: text("utr_number").notNull(),
     paymentMethod: text("payment_method").notNull(),
     note: text("note"),

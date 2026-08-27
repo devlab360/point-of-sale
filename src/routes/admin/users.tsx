@@ -29,7 +29,9 @@ function SuperAdminUsersPage() {
                 <h3 className="font-bold text-foreground">Super Administrator</h3>
                 <Badge className="bg-primary/20 text-primary">Master Role</Badge>
               </div>
-              <p className="text-xs text-muted-foreground">Full system control, multi-tenant access, pricing configuration</p>
+              <p className="text-xs text-muted-foreground">
+                Full system control, multi-tenant access, pricing configuration
+              </p>
             </div>
           </div>
         </div>

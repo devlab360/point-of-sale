@@ -58,12 +58,20 @@ export const APP_GROUPS: MenuGroup[] = [
     tkey: "overview",
     items: [
       {
-        to: "/", menuKey: "dashboard",
+        to: "/",
+        menuKey: "dashboard",
         label: "Dashboard",
         tkey: "dashboard",
         icon: LayoutDashboard,
       },
-      { to: "/pos", menuKey: "pos", label: "POS Terminal", tkey: "pos", icon: ScanBarcode, badge: "Live" },
+      {
+        to: "/pos",
+        menuKey: "pos",
+        label: "POS Terminal",
+        tkey: "pos",
+        icon: ScanBarcode,
+        badge: "Live",
+      },
     ],
   },
   {
@@ -71,28 +79,45 @@ export const APP_GROUPS: MenuGroup[] = [
     tkey: "catalog",
     items: [
       {
-        to: "/products", menuKey: "products",
+        to: "/products",
+        menuKey: "products",
         label: "Products",
         tkey: "products",
         icon: Package,
         roles: ["admin", "manager"],
       },
       {
-        to: "/services", menuKey: "services",
+        to: "/services",
+        menuKey: "services",
         label: "Services",
         tkey: "services",
         icon: Wrench,
         roles: ["admin", "manager"],
       },
       {
-        to: "/categories", menuKey: "categories",
+        to: "/categories",
+        menuKey: "categories",
         label: "Categories",
         tkey: "categories",
         icon: Tag,
         roles: ["admin", "manager"],
       },
-      { to: "/brands", menuKey: "brands", label: "Brands", tkey: "brands", icon: Award, roles: ["admin", "manager"] },
-      { to: "/units", menuKey: "units", label: "Units", tkey: "units", icon: Ruler, roles: ["admin", "manager"] },
+      {
+        to: "/brands",
+        menuKey: "brands",
+        label: "Brands",
+        tkey: "brands",
+        icon: Award,
+        roles: ["admin", "manager"],
+      },
+      {
+        to: "/units",
+        menuKey: "units",
+        label: "Units",
+        tkey: "units",
+        icon: Ruler,
+        roles: ["admin", "manager"],
+      },
     ],
   },
   {
@@ -100,28 +125,32 @@ export const APP_GROUPS: MenuGroup[] = [
     tkey: "stock",
     items: [
       {
-        to: "/inventory", menuKey: "inventory",
+        to: "/inventory",
+        menuKey: "inventory",
         label: "Inventory",
         tkey: "inventory",
         icon: Boxes,
         roles: ["admin", "manager"],
       },
       {
-        to: "/inventory/adjustments", menuKey: "adjustments",
+        to: "/inventory/adjustments",
+        menuKey: "adjustments",
         label: "Adjustments",
         tkey: "adjustments",
         icon: PackageMinus,
         roles: ["admin", "manager"],
       },
       {
-        to: "/inventory/transfers", menuKey: "transfers",
+        to: "/inventory/transfers",
+        menuKey: "transfers",
         label: "Transfers",
         tkey: "transfers",
         icon: ArrowLeftRight,
         roles: ["admin", "manager"],
       },
       {
-        to: "/inventory/history", menuKey: "history",
+        to: "/inventory/history",
+        menuKey: "history",
         label: "Stock History",
         tkey: "stockHistory",
         icon: History,
@@ -134,50 +163,80 @@ export const APP_GROUPS: MenuGroup[] = [
     tkey: "tradeB2B",
     items: [
       {
-        to: "/purchases", menuKey: "purchases",
+        to: "/purchases",
+        menuKey: "purchases",
         label: "Purchases",
         tkey: "purchases",
         icon: ShoppingCart,
         roles: ["admin", "manager"],
       },
       {
-        to: "/purchases/returns", menuKey: "returns",
+        to: "/purchases/returns",
+        menuKey: "returns",
         label: "Purchase Returns",
         tkey: "purchaseReturns",
         icon: Undo2,
         roles: ["admin", "manager"],
       },
-      { to: "/sales", menuKey: "sales", label: "Sales Invoices", tkey: "salesInvoices", icon: ReceiptText },
       {
-        to: "/quotations", menuKey: "quotations",
+        to: "/sales",
+        menuKey: "sales",
+        label: "Sales Invoices",
+        tkey: "salesInvoices",
+        icon: ReceiptText,
+      },
+      {
+        to: "/quotations",
+        menuKey: "quotations",
         label: "Quotations",
         tkey: "quotations",
         icon: FileText,
         roles: ["admin", "manager"],
       },
       {
-        to: "/delivery-challans", menuKey: "delivery-challans",
+        to: "/delivery-challans",
+        menuKey: "delivery-challans",
         label: "Delivery Challans",
         tkey: "deliveryChallans",
         icon: Truck,
         roles: ["admin", "manager"],
       },
-      { to: "/sales/returns", menuKey: "returns", label: "Sales Returns", tkey: "salesReturns", icon: Undo2 },
+      {
+        to: "/sales/returns",
+        menuKey: "returns",
+        label: "Sales Returns",
+        tkey: "salesReturns",
+        icon: Undo2,
+      },
     ],
   },
   {
     label: "People",
     tkey: "people",
     items: [
-      { to: "/customers", menuKey: "customers", label: "Customers", tkey: "customers", icon: Users },
       {
-        to: "/suppliers", menuKey: "suppliers",
+        to: "/customers",
+        menuKey: "customers",
+        label: "Customers",
+        tkey: "customers",
+        icon: Users,
+      },
+      {
+        to: "/suppliers",
+        menuKey: "suppliers",
         label: "Suppliers",
         tkey: "suppliers",
         icon: Truck,
         roles: ["admin", "manager"],
       },
-      { to: "/users", menuKey: "users", label: "Employees", tkey: "employees", icon: UserCog, roles: ["admin"] },
+      {
+        to: "/users",
+        menuKey: "users",
+        label: "Employees",
+        tkey: "employees",
+        icon: UserCog,
+        roles: ["admin"],
+      },
     ],
   },
   {
@@ -185,28 +244,32 @@ export const APP_GROUPS: MenuGroup[] = [
     tkey: "finance",
     items: [
       {
-        to: "/accounts", menuKey: "accounts",
+        to: "/accounts",
+        menuKey: "accounts",
         label: "Chart of Accounts",
         tkey: "accounts",
         icon: BookOpen,
         roles: ["admin", "manager"],
       },
       {
-        to: "/accounting-reports", menuKey: "accounting-reports",
+        to: "/accounting-reports",
+        menuKey: "accounting-reports",
         label: "Accounting Reports",
         tkey: "accounting_reports",
         icon: FileText,
         roles: ["admin", "manager"],
       },
       {
-        to: "/expenses", menuKey: "expenses",
+        to: "/expenses",
+        menuKey: "expenses",
         label: "Expenses",
         tkey: "expenses",
         icon: Wallet,
         roles: ["admin", "manager"],
       },
       {
-        to: "/reports", menuKey: "reports",
+        to: "/reports",
+        menuKey: "reports",
         label: "Financial Reports",
         tkey: "reports",
         icon: BarChart3,
@@ -219,42 +282,48 @@ export const APP_GROUPS: MenuGroup[] = [
     tkey: "services",
     items: [
       {
-        to: "/repairs", menuKey: "repairs",
+        to: "/repairs",
+        menuKey: "repairs",
         label: "Repair Job Sheets",
         tkey: "repairs",
         icon: Wrench,
         roles: ["admin", "manager"],
       },
       {
-        to: "/subscriptions", menuKey: "subscriptions",
+        to: "/subscriptions",
+        menuKey: "subscriptions",
         label: "Subscriptions",
         tkey: "subscriptions",
         icon: Repeat,
         roles: ["admin", "manager"],
       },
       {
-        to: "/rentals", menuKey: "rentals",
+        to: "/rentals",
+        menuKey: "rentals",
         label: "Equipment Rentals",
         tkey: "rentals",
         icon: KeyRound,
         roles: ["admin", "manager"],
       },
       {
-        to: "/tables", menuKey: "tables",
+        to: "/tables",
+        menuKey: "tables",
         label: "Tables",
         tkey: "tables",
         icon: Utensils,
         roles: ["admin", "manager", "cashier"],
       },
       {
-        to: "/kitchen", menuKey: "kitchen",
+        to: "/kitchen",
+        menuKey: "kitchen",
         label: "Kitchen (KOT)",
         tkey: "kitchen",
         icon: ChefHat,
         roles: ["admin", "manager", "cashier"],
       },
       {
-        to: "/appointments", menuKey: "appointments",
+        to: "/appointments",
+        menuKey: "appointments",
         label: "Appointments",
         tkey: "appointments",
         icon: CalendarDays,
@@ -267,22 +336,31 @@ export const APP_GROUPS: MenuGroup[] = [
     tkey: "marketing",
     items: [
       {
-        to: "/coupons", menuKey: "coupons",
+        to: "/coupons",
+        menuKey: "coupons",
         label: "Coupons",
         tkey: "coupons",
         icon: Ticket,
         roles: ["admin", "manager"],
       },
-      { to: "/gift-cards", menuKey: "gift-cards", label: "Gift Cards", tkey: "giftCards", icon: Gift },
       {
-        to: "/loyalty", menuKey: "loyalty",
+        to: "/gift-cards",
+        menuKey: "gift-cards",
+        label: "Gift Cards",
+        tkey: "giftCards",
+        icon: Gift,
+      },
+      {
+        to: "/loyalty",
+        menuKey: "loyalty",
         label: "Loyalty",
         tkey: "loyalty",
         icon: Star,
         roles: ["admin", "manager"],
       },
       {
-        to: "/promotions", menuKey: "promotions",
+        to: "/promotions",
+        menuKey: "promotions",
         label: "Promotions",
         tkey: "promotions",
         icon: Megaphone,
@@ -294,11 +372,31 @@ export const APP_GROUPS: MenuGroup[] = [
     label: "System",
     tkey: "system",
     items: [
-      { to: "/portal", menuKey: "portal", label: "Client Portal", tkey: "clientPortal", icon: UserCheck },
-      { to: "/settings", menuKey: "settings", label: "Settings", tkey: "settings", icon: Settings, roles: ["admin"] },
-      { to: "/notifications", menuKey: "notifications", label: "Notifications", tkey: "notifications", icon: Bell },
       {
-        to: "/activity", menuKey: "activity",
+        to: "/portal",
+        menuKey: "portal",
+        label: "Client Portal",
+        tkey: "clientPortal",
+        icon: UserCheck,
+      },
+      {
+        to: "/settings",
+        menuKey: "settings",
+        label: "Settings",
+        tkey: "settings",
+        icon: Settings,
+        roles: ["admin"],
+      },
+      {
+        to: "/notifications",
+        menuKey: "notifications",
+        label: "Notifications",
+        tkey: "notifications",
+        icon: Bell,
+      },
+      {
+        to: "/activity",
+        menuKey: "activity",
         label: "Activity Log",
         tkey: "activityLog",
         icon: Activity,
@@ -370,7 +468,19 @@ const DEFAULT_ROLE_PERMISSIONS_FALLBACK: Record<string, string[]> = {
     "kitchen",
     "appointments",
   ],
-  manager: ["pos", "inventory", "reports", "customers", "expenses", "discounts", "returns", "notifications", "tables", "kitchen", "appointments"],
+  manager: [
+    "pos",
+    "inventory",
+    "reports",
+    "customers",
+    "expenses",
+    "discounts",
+    "returns",
+    "notifications",
+    "tables",
+    "kitchen",
+    "appointments",
+  ],
   cashier: ["pos", "customers", "discounts", "tables", "kitchen", "appointments"],
 };
 
@@ -420,7 +530,7 @@ export function hasPermissionForRoute(
   routePath: string,
   isSuperAdminUser: boolean,
   saasPlan: any,
-  businessType?: string
+  businessType?: string,
 ): { allowed: boolean; reason?: string } {
   // 1. Super Admin & Organization Admin Authorization
   if (isSuperAdminUser || user?.role?.toLowerCase() === "admin") return { allowed: true };
@@ -459,7 +569,9 @@ export function hasPermissionForRoute(
   if (routeCapabilities.length > 0) {
     // If a route requires capabilities, the business type MUST have at least one of them
     // (e.g. repairs route needs REPAIRS or JOB_CARDS capability)
-    const hasAnyRequiredCapability = routeCapabilities.some(cap => hasCapability(businessType, cap));
+    const hasAnyRequiredCapability = routeCapabilities.some((cap) =>
+      hasCapability(businessType, cap),
+    );
     if (!hasAnyRequiredCapability) {
       return {
         allowed: false,
@@ -514,7 +626,7 @@ export function hasPermissionForRoute(
       (p) =>
         p === targetPath ||
         p === targetPath.replace(/^\//, "") ||
-        (p.startsWith("/") && (targetPath === p || targetPath.startsWith(p + "/")))
+        (p.startsWith("/") && (targetPath === p || targetPath.startsWith(p + "/"))),
     );
 
     // Legacy group mapping fallback (e.g., "inventory", "reports", "pos")

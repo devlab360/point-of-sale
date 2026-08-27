@@ -210,14 +210,18 @@ function CouponsPage() {
   };
 
   const handleExport = () => {
-    exportToCSV(coupons, [
-      { key: 'code', label: 'Code' },
-      { key: 'type', label: 'Type' },
-      { key: 'value', label: 'Value' },
-      { key: 'minPurchase', label: 'Min Purchase' },
-      { key: 'maxDiscount', label: 'Max Discount' },
-      { key: 'status', label: 'Status' }
-    ], 'coupons');
+    exportToCSV(
+      coupons,
+      [
+        { key: "code", label: "Code" },
+        { key: "type", label: "Type" },
+        { key: "value", label: "Value" },
+        { key: "minPurchase", label: "Min Purchase" },
+        { key: "maxDiscount", label: "Max Discount" },
+        { key: "status", label: "Status" },
+      ],
+      "coupons",
+    );
   };
 
   const handleImport = async (file: File) => {
@@ -230,26 +234,26 @@ function CouponsPage() {
 
       let count = 0;
       for (const row of data) {
-        if (row['Code']) {
-          await createCouponFn({ 
-            data: { 
-              coupon: { 
-                id: uuidv4(), 
-                code: row['Code'],
-                type: (row['Type'] as any) || 'percentage',
-                value: parseFloat(row['Value'] || '0'),
-                minPurchase: parseFloat(row['Min Purchase'] || '0'),
-                maxDiscount: parseFloat(row['Max Discount'] || '0'),
-                status: (row['Status'] as any) || 'active',
+        if (row["Code"]) {
+          await createCouponFn({
+            data: {
+              coupon: {
+                id: uuidv4(),
+                code: row["Code"],
+                type: (row["Type"] as any) || "percentage",
+                value: parseFloat(row["Value"] || "0"),
+                minPurchase: parseFloat(row["Min Purchase"] || "0"),
+                maxDiscount: parseFloat(row["Max Discount"] || "0"),
+                status: (row["Status"] as any) || "active",
                 usageLimit: 0,
-                usedCount: 0
-              } 
-            } 
+                usedCount: 0,
+              },
+            },
           });
           count++;
         }
       }
-      
+
       queryClient.invalidateQueries({ queryKey: ["coupons"] });
       toast.success(`Successfully imported ${count} coupons`);
     } catch (error) {
@@ -265,7 +269,7 @@ function CouponsPage() {
         toast.success("Coupon deleted successfully");
       } catch (error) {
         toast.error("Failed to delete coupon");
-  } finally {
+      } finally {
         setDeleteId(null);
       }
     }
@@ -407,7 +411,10 @@ function CouponsPage() {
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end" className="rounded-xl">
-                              <DropdownMenuItem onClick={() => setEditItem(c)} className="text-xs font-semibold">
+                              <DropdownMenuItem
+                                onClick={() => setEditItem(c)}
+                                className="text-xs font-semibold"
+                              >
                                 <Edit2 className="mr-2 size-3.5" /> Edit Coupon
                               </DropdownMenuItem>
                               <DropdownMenuItem
@@ -448,7 +455,8 @@ function CouponsPage() {
                         </Badge>
                       </div>
                       <div className="text-xs text-muted-foreground mt-1">
-                        Expires: {c.validUntil ? formatDate(new Date(c.validUntil).toISOString()) : "Never"}
+                        Expires:{" "}
+                        {c.validUntil ? formatDate(new Date(c.validUntil).toISOString()) : "Never"}
                       </div>
                       <div className="text-[11px] text-muted-foreground mt-0.5">
                         Used: {c.usedCount} / {c.usageLimit || "∞"}
@@ -457,7 +465,9 @@ function CouponsPage() {
 
                     <div className="text-right shrink-0 pl-2">
                       <div className="number text-sm font-black text-foreground">
-                        {c.type === "percent" ? `${c.value}% OFF` : `${formatCurrency(c.value)} OFF`}
+                        {c.type === "percent"
+                          ? `${c.value}% OFF`
+                          : `${formatCurrency(c.value)} OFF`}
                       </div>
                       <div className="flex justify-end gap-1 mt-1">
                         <Button

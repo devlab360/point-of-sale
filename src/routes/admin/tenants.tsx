@@ -5,10 +5,23 @@ import { SuperAdminLayout } from "@/components/admin/SuperAdminLayout";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   getAllOrganizationsFn,
   updateOrganizationFn,
@@ -112,8 +125,7 @@ function SuperAdminTenantsPage() {
       org.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       org.ownerEmail?.toLowerCase().includes(searchQuery.toLowerCase());
 
-    const matchesStatus =
-      statusFilter === "all" || org.status === statusFilter;
+    const matchesStatus = statusFilter === "all" || org.status === statusFilter;
 
     return matchesSearch && matchesStatus;
   });
@@ -169,7 +181,9 @@ function SuperAdminTenantsPage() {
             <div className="text-center p-12">
               <Store className="size-10 mx-auto text-muted-foreground mb-3 opacity-40" />
               <h3 className="font-semibold text-lg">No Tenant Stores Found</h3>
-              <p className="text-sm text-muted-foreground">Try adjusting your filters or search query.</p>
+              <p className="text-sm text-muted-foreground">
+                Try adjusting your filters or search query.
+              </p>
             </div>
           ) : (
             <div className="overflow-x-auto">
@@ -343,11 +357,7 @@ function SuperAdminTenantsPage() {
               </div>
 
               <DialogFooter className="pt-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setIsCreateModalOpen(false)}
-                >
+                <Button type="button" variant="outline" onClick={() => setIsCreateModalOpen(false)}>
                   Cancel
                 </Button>
                 <Button type="submit" disabled={createTenantMutation.isPending}>

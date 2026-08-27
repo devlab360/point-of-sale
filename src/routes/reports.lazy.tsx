@@ -27,7 +27,7 @@ import {
   Users,
   ChevronRight,
   AlertTriangle,
-  AlertCircle
+  AlertCircle,
 } from "lucide-react";
 import {
   Bar,
@@ -135,7 +135,9 @@ function ReportsPage() {
 
   const { data: profitReportData, isLoading: isProfitLoading } = useQuery({
     queryKey: ["profitability", orgId, dateFrom, dateTo],
-    queryFn: async () => ((await getProfitabilityReportFn({ data: { startDate: dateFrom, endDate: dateTo } })) as any)?.data || null,
+    queryFn: async () =>
+      ((await getProfitabilityReportFn({ data: { startDate: dateFrom, endDate: dateTo } })) as any)
+        ?.data || null,
   });
 
   const mtdRevenue = profitReportData?.netRevenue || 0;
@@ -216,8 +218,8 @@ function ReportsPage() {
     catData.length > 0
       ? catData
       : categories
-        .slice(0, 5)
-        .map((c, i) => ({ name: c.name, value: 20, color: COLORS[i % COLORS.length] }));
+          .slice(0, 5)
+          .map((c, i) => ({ name: c.name, value: 20, color: COLORS[i % COLORS.length] }));
 
   const exportCSV = (type: string) => {
     let csv = "";
@@ -490,7 +492,9 @@ function ReportsPage() {
           <div className="flex items-center justify-between mb-4">
             <div>
               <h2 className="text-base font-bold text-foreground">Revenue vs Profit (12 Months)</h2>
-              <p className="text-xs text-muted-foreground mt-0.5">Historical trajectory and profitability trends</p>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Historical trajectory and profitability trends
+              </p>
             </div>
             <div className="flex items-center gap-3 text-xs font-semibold">
               <span className="flex items-center gap-1.5 text-primary">
@@ -504,7 +508,12 @@ function ReportsPage() {
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={monthly} margin={{ top: 8, right: 8, left: -16, bottom: 0 }}>
-                <CartesianGrid stroke="var(--color-border)" strokeDasharray="3 3" vertical={false} opacity={0.5} />
+                <CartesianGrid
+                  stroke="var(--color-border)"
+                  strokeDasharray="3 3"
+                  vertical={false}
+                  opacity={0.5}
+                />
                 <XAxis
                   dataKey="m"
                   axisLine={false}
@@ -601,27 +610,38 @@ function ReportsPage() {
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-2 mt-6">
         {/* Top Products */}
         <div className="rounded-2xl border border-border/80 bg-card p-5 shadow-card">
-          <h2 className="mb-4 text-base font-bold text-foreground">Top Products by Profit Margin</h2>
+          <h2 className="mb-4 text-base font-bold text-foreground">
+            Top Products by Profit Margin
+          </h2>
           <div className="space-y-3">
             {profitReportData?.topProducts?.slice(0, 5).map((p: any) => (
-              <div key={p.productId} className="flex items-center justify-between p-2 rounded-xl bg-muted/20 hover:bg-muted/40 transition-colors">
+              <div
+                key={p.productId}
+                className="flex items-center justify-between p-2 rounded-xl bg-muted/20 hover:bg-muted/40 transition-colors"
+              >
                 <div className="flex items-center gap-3 min-w-0">
                   <div className="grid size-9 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary border border-primary/20">
                     <Package className="size-4" />
                   </div>
                   <div className="min-w-0 truncate">
                     <p className="text-xs font-bold text-foreground truncate">{p.name}</p>
-                    <p className="text-[11px] text-muted-foreground">{p.quantitySold} sold • Margin: {p.margin.toFixed(0)}%</p>
+                    <p className="text-[11px] text-muted-foreground">
+                      {p.quantitySold} sold • Margin: {p.margin.toFixed(0)}%
+                    </p>
                   </div>
                 </div>
                 <div className="text-right shrink-0 pl-2">
                   <p className="text-xs font-black text-success">{formatCurrency(p.profit)}</p>
-                  <p className="text-[10px] text-muted-foreground">COGS: {formatCurrency(p.cogs)}</p>
+                  <p className="text-[10px] text-muted-foreground">
+                    COGS: {formatCurrency(p.cogs)}
+                  </p>
                 </div>
               </div>
             ))}
             {(!profitReportData?.topProducts || profitReportData.topProducts.length === 0) && (
-              <p className="text-xs text-muted-foreground text-center py-6">No product profitability data for this period.</p>
+              <p className="text-xs text-muted-foreground text-center py-6">
+                No product profitability data for this period.
+              </p>
             )}
           </div>
         </div>
@@ -632,7 +652,12 @@ function ReportsPage() {
           <div className="h-48">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={weekly} margin={{ top: 8, right: 8, left: -16, bottom: 0 }}>
-                <CartesianGrid stroke="var(--color-border)" strokeDasharray="3 3" vertical={false} opacity={0.5} />
+                <CartesianGrid
+                  stroke="var(--color-border)"
+                  strokeDasharray="3 3"
+                  vertical={false}
+                  opacity={0.5}
+                />
                 <XAxis
                   dataKey="day"
                   axisLine={false}
@@ -682,7 +707,9 @@ function ReportsPage() {
                 <Icon className="size-5" />
               </div>
               <div className="min-w-0 flex-1">
-                <h3 className="font-bold text-xs sm:text-sm text-foreground group-hover:text-primary transition-colors">{r.name}</h3>
+                <h3 className="font-bold text-xs sm:text-sm text-foreground group-hover:text-primary transition-colors">
+                  {r.name}
+                </h3>
                 <p className="mt-0.5 text-[11px] text-muted-foreground leading-snug">{r.desc}</p>
               </div>
               <div className="flex items-center self-center justify-center">
@@ -1048,7 +1075,11 @@ function ReportsPage() {
             {(activeReport === "near-expiry" || activeReport === "expired") && (
               <div className="space-y-3">
                 <div className="rounded-lg bg-muted/40 p-3 flex justify-between">
-                  <span className="font-semibold">{activeReport === "near-expiry" ? "Batches Expiring Soon (Next 90 days)" : "Expired Stock"}</span>
+                  <span className="font-semibold">
+                    {activeReport === "near-expiry"
+                      ? "Batches Expiring Soon (Next 90 days)"
+                      : "Expired Stock"}
+                  </span>
                 </div>
                 <div className="overflow-x-auto rounded-lg border border-border max-h-96 shadow-soft">
                   <table className="w-full text-sm min-w-[600px]">
@@ -1064,34 +1095,50 @@ function ReportsPage() {
                     </thead>
                     <tbody className="divide-y divide-border">
                       {batches
-                        .filter(b => b.quantityRemaining > 0 && b.expiryDate)
-                        .map(b => {
+                        .filter((b) => b.quantityRemaining > 0 && b.expiryDate)
+                        .map((b) => {
                           const exp = new Date(b.expiryDate);
                           const now = new Date();
                           const diffTime = exp.getTime() - now.getTime();
                           const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
                           let isTarget = false;
-                          if (activeReport === "near-expiry" && diffDays > 0 && diffDays <= 90) isTarget = true;
+                          if (activeReport === "near-expiry" && diffDays > 0 && diffDays <= 90)
+                            isTarget = true;
                           if (activeReport === "expired" && diffDays <= 0) isTarget = true;
 
                           if (!isTarget) return null;
 
-                          const prod = products.find(p => p.id === b.productId);
-                          const val = (Number(b.purchaseCost) || 0) * (Number(b.quantityRemaining) || 0);
+                          const prod = products.find((p) => p.id === b.productId);
+                          const val =
+                            (Number(b.purchaseCost) || 0) * (Number(b.quantityRemaining) || 0);
 
                           return (
                             <tr key={b.id} className="hover:bg-muted/30">
-                              <td className="px-3 py-2 font-medium">{prod?.name || "Unknown Product"}</td>
-                              <td className="px-3 py-2 text-muted-foreground whitespace-nowrap">{b.batchNo}</td>
-                              <td className="px-3 py-2 text-center whitespace-nowrap">{formatDate(b.expiryDate)}</td>
-                              <td className="px-3 py-2 text-right font-semibold">{b.quantityRemaining}</td>
-                              <td className="px-3 py-2 text-right font-medium">{formatCurrency(val)}</td>
+                              <td className="px-3 py-2 font-medium">
+                                {prod?.name || "Unknown Product"}
+                              </td>
+                              <td className="px-3 py-2 text-muted-foreground whitespace-nowrap">
+                                {b.batchNo}
+                              </td>
+                              <td className="px-3 py-2 text-center whitespace-nowrap">
+                                {formatDate(b.expiryDate)}
+                              </td>
+                              <td className="px-3 py-2 text-right font-semibold">
+                                {b.quantityRemaining}
+                              </td>
+                              <td className="px-3 py-2 text-right font-medium">
+                                {formatCurrency(val)}
+                              </td>
                               <td className="px-3 py-2 text-center">
                                 {diffDays <= 0 ? (
-                                  <span className="bg-destructive/10 text-destructive text-[10px] font-bold px-2 py-0.5 rounded-full">EXPIRED</span>
+                                  <span className="bg-destructive/10 text-destructive text-[10px] font-bold px-2 py-0.5 rounded-full">
+                                    EXPIRED
+                                  </span>
                                 ) : (
-                                  <span className="bg-warning/10 text-warning text-[10px] font-bold px-2 py-0.5 rounded-full">{diffDays} days</span>
+                                  <span className="bg-warning/10 text-warning text-[10px] font-bold px-2 py-0.5 rounded-full">
+                                    {diffDays} days
+                                  </span>
                                 )}
                               </td>
                             </tr>
@@ -1140,7 +1187,9 @@ function ReportsPage() {
                 <h3 className="font-semibold">Today's Summary</h3>
                 {(() => {
                   const today = formatAppDate(new Date(), "date", "yyyy-MM-dd");
-                  const todaySales = sales.filter((s) => formatAppDate(s.date, "date", "yyyy-MM-dd") === today);
+                  const todaySales = sales.filter(
+                    (s) => formatAppDate(s.date, "date", "yyyy-MM-dd") === today,
+                  );
                   const todayRevenue = todaySales.reduce((s, sale) => s + sale.total, 0);
                   return (
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">

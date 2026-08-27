@@ -30,7 +30,7 @@ function AccountingReportsPage() {
     let debit = 0;
     let credit = 0;
     const bal = Number(acc.balance) || 0;
-    
+
     // Standard normal balances
     if (["Asset", "Expense"].includes(acc.type)) {
       if (bal >= 0) debit = bal;
@@ -39,10 +39,10 @@ function AccountingReportsPage() {
       if (bal >= 0) credit = bal;
       else debit = Math.abs(bal);
     }
-    
+
     totalDebit += debit;
     totalCredit += credit;
-    
+
     return { ...acc, debit, credit };
   });
 
@@ -50,9 +50,12 @@ function AccountingReportsPage() {
   const assets = accounts.filter((a: any) => a.type === "Asset");
   const liabilities = accounts.filter((a: any) => a.type === "Liability");
   const equity = accounts.filter((a: any) => a.type === "Equity");
-  
+
   const totalAssets = assets.reduce((sum: number, a: any) => sum + (Number(a.balance) || 0), 0);
-  const totalLiabilities = liabilities.reduce((sum: number, a: any) => sum + (Number(a.balance) || 0), 0);
+  const totalLiabilities = liabilities.reduce(
+    (sum: number, a: any) => sum + (Number(a.balance) || 0),
+    0,
+  );
   const totalEquity = equity.reduce((sum: number, a: any) => sum + (Number(a.balance) || 0), 0);
   const totalLiabilitiesAndEquity = totalLiabilities + totalEquity;
 
@@ -60,7 +63,11 @@ function AccountingReportsPage() {
 
   if (error) {
     return (
-      <DataPage title="Financial Reports" description="Generate Trial Balance and Balance Sheet" hideToolbar>
+      <DataPage
+        title="Financial Reports"
+        description="Generate Trial Balance and Balance Sheet"
+        hideToolbar
+      >
         <div className="text-red-500 flex flex-col items-center justify-center p-8">
           <AlertCircle className="size-8 mb-2 text-destructive" />
           Error loading reports data.
@@ -71,7 +78,11 @@ function AccountingReportsPage() {
 
   return (
     <div className="space-y-6 h-full flex flex-col">
-      <DataPage title="Financial Reports" description="Generate Trial Balance and Balance Sheet" hideToolbar>
+      <DataPage
+        title="Financial Reports"
+        description="Generate Trial Balance and Balance Sheet"
+        hideToolbar
+      >
         {isLoading ? (
           <div className="flex h-40 items-center justify-center">
             <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
@@ -79,10 +90,16 @@ function AccountingReportsPage() {
         ) : (
           <Tabs defaultValue="trial-balance" className="w-full mt-2">
             <TabsList className="mb-4 bg-muted/60 p-1 rounded-xl">
-              <TabsTrigger value="trial-balance" className="font-bold text-xs rounded-lg data-[state=active]:shadow-soft">
+              <TabsTrigger
+                value="trial-balance"
+                className="font-bold text-xs rounded-lg data-[state=active]:shadow-soft"
+              >
                 Trial Balance
               </TabsTrigger>
-              <TabsTrigger value="balance-sheet" className="font-bold text-xs rounded-lg data-[state=active]:shadow-soft">
+              <TabsTrigger
+                value="balance-sheet"
+                className="font-bold text-xs rounded-lg data-[state=active]:shadow-soft"
+              >
                 Balance Sheet
               </TabsTrigger>
             </TabsList>
@@ -100,7 +117,8 @@ function AccountingReportsPage() {
                     <Alert variant="destructive" className="mb-4 rounded-xl border-destructive/30">
                       <AlertCircle className="h-4 w-4" />
                       <AlertDescription className="ml-2 font-medium text-xs">
-                        Warning: Trial Balance has an unadjusted discrepancy of {formatCurrency(Math.abs(totalDebit - totalCredit))}
+                        Warning: Trial Balance has an unadjusted discrepancy of{" "}
+                        {formatCurrency(Math.abs(totalDebit - totalCredit))}
                       </AlertDescription>
                     </Alert>
                   )}
@@ -122,9 +140,13 @@ function AccountingReportsPage() {
                             <td className="p-3 border-r border-border/60 font-mono text-xs font-semibold text-muted-foreground">
                               {acc.code}
                             </td>
-                            <td className="p-3 border-r border-border/60 font-bold text-foreground">{acc.name}</td>
+                            <td className="p-3 border-r border-border/60 font-bold text-foreground">
+                              {acc.name}
+                            </td>
                             <td className="p-3 border-r border-border/60">
-                              <span className="capitalize text-xs text-muted-foreground">{acc.type}</span>
+                              <span className="capitalize text-xs text-muted-foreground">
+                                {acc.type}
+                              </span>
                             </td>
                             <td className="number p-3 border-r border-border/60 text-right font-black text-xs">
                               {acc.debit > 0 ? formatCurrency(acc.debit) : "-"}
@@ -136,7 +158,10 @@ function AccountingReportsPage() {
                         ))}
                         {trialBalanceData.length === 0 && (
                           <tr>
-                            <td colSpan={5} className="p-8 text-center text-muted-foreground text-xs">
+                            <td
+                              colSpan={5}
+                              className="p-8 text-center text-muted-foreground text-xs"
+                            >
                               No ledger accounts recorded.
                             </td>
                           </tr>
@@ -144,7 +169,10 @@ function AccountingReportsPage() {
                       </tbody>
                       <tfoot className="bg-muted/30 font-black border-t-2 border-border/80 text-sm">
                         <tr>
-                          <td colSpan={3} className="p-3 border-r border-border/60 text-right uppercase tracking-wider text-xs">
+                          <td
+                            colSpan={3}
+                            className="p-3 border-r border-border/60 text-right uppercase tracking-wider text-xs"
+                          >
                             Grand Total
                           </td>
                           <td className="number p-3 border-r border-border/60 text-right text-primary">
@@ -174,7 +202,8 @@ function AccountingReportsPage() {
                     <Alert variant="destructive" className="mb-4 rounded-xl border-destructive/30">
                       <AlertCircle className="h-4 w-4" />
                       <AlertDescription className="ml-2 font-medium text-xs">
-                        Warning: Balance Sheet discrepancy detected: {formatCurrency(Math.abs(totalAssets - totalLiabilitiesAndEquity))}
+                        Warning: Balance Sheet discrepancy detected:{" "}
+                        {formatCurrency(Math.abs(totalAssets - totalLiabilitiesAndEquity))}
                       </AlertDescription>
                     </Alert>
                   )}
@@ -185,14 +214,18 @@ function AccountingReportsPage() {
                       <div className="rounded-2xl border border-border/80 bg-card overflow-hidden shadow-sm">
                         <div className="bg-primary/10 p-3.5 border-b border-border/60 font-bold uppercase tracking-wider flex justify-between text-xs text-primary">
                           <span>Total Assets</span>
-                          <span className="font-mono font-black">{formatCurrency(totalAssets)}</span>
+                          <span className="font-mono font-black">
+                            {formatCurrency(totalAssets)}
+                          </span>
                         </div>
                         <div className="p-0">
                           <table className="w-full text-xs">
                             <tbody className="divide-y divide-border/60">
                               {assets.map((acc: any) => (
                                 <tr key={acc.id} className="hover:bg-muted/30">
-                                  <td className="p-3 pl-4 font-semibold text-foreground">{acc.name}</td>
+                                  <td className="p-3 pl-4 font-semibold text-foreground">
+                                    {acc.name}
+                                  </td>
                                   <td className="number p-3 pr-4 text-right font-black">
                                     {formatCurrency(Number(acc.balance) || 0)}
                                   </td>
@@ -200,7 +233,10 @@ function AccountingReportsPage() {
                               ))}
                               {assets.length === 0 && (
                                 <tr>
-                                  <td colSpan={2} className="p-4 text-center text-muted-foreground text-xs">
+                                  <td
+                                    colSpan={2}
+                                    className="p-4 text-center text-muted-foreground text-xs"
+                                  >
                                     No asset accounts found
                                   </td>
                                 </tr>
@@ -217,14 +253,18 @@ function AccountingReportsPage() {
                       <div className="rounded-2xl border border-border/80 bg-card overflow-hidden shadow-sm">
                         <div className="bg-destructive/10 p-3.5 border-b border-border/60 font-bold uppercase tracking-wider flex justify-between text-xs text-destructive">
                           <span>Liabilities</span>
-                          <span className="font-mono font-black">{formatCurrency(totalLiabilities)}</span>
+                          <span className="font-mono font-black">
+                            {formatCurrency(totalLiabilities)}
+                          </span>
                         </div>
                         <div className="p-0">
                           <table className="w-full text-xs">
                             <tbody className="divide-y divide-border/60">
                               {liabilities.map((acc: any) => (
                                 <tr key={acc.id} className="hover:bg-muted/30">
-                                  <td className="p-3 pl-4 font-semibold text-foreground">{acc.name}</td>
+                                  <td className="p-3 pl-4 font-semibold text-foreground">
+                                    {acc.name}
+                                  </td>
                                   <td className="number p-3 pr-4 text-right font-black">
                                     {formatCurrency(Number(acc.balance) || 0)}
                                   </td>
@@ -232,7 +272,10 @@ function AccountingReportsPage() {
                               ))}
                               {liabilities.length === 0 && (
                                 <tr>
-                                  <td colSpan={2} className="p-4 text-center text-muted-foreground text-xs">
+                                  <td
+                                    colSpan={2}
+                                    className="p-4 text-center text-muted-foreground text-xs"
+                                  >
                                     No liability accounts found
                                   </td>
                                 </tr>
@@ -246,14 +289,18 @@ function AccountingReportsPage() {
                       <div className="rounded-2xl border border-border/80 bg-card overflow-hidden shadow-sm">
                         <div className="bg-success/10 p-3.5 border-b border-border/60 font-bold uppercase tracking-wider flex justify-between text-xs text-success">
                           <span>Equity & Capital</span>
-                          <span className="font-mono font-black">{formatCurrency(totalEquity)}</span>
+                          <span className="font-mono font-black">
+                            {formatCurrency(totalEquity)}
+                          </span>
                         </div>
                         <div className="p-0">
                           <table className="w-full text-xs">
                             <tbody className="divide-y divide-border/60">
                               {equity.map((acc: any) => (
                                 <tr key={acc.id} className="hover:bg-muted/30">
-                                  <td className="p-3 pl-4 font-semibold text-foreground">{acc.name}</td>
+                                  <td className="p-3 pl-4 font-semibold text-foreground">
+                                    {acc.name}
+                                  </td>
                                   <td className="number p-3 pr-4 text-right font-black">
                                     {formatCurrency(Number(acc.balance) || 0)}
                                   </td>
@@ -261,7 +308,10 @@ function AccountingReportsPage() {
                               ))}
                               {equity.length === 0 && (
                                 <tr>
-                                  <td colSpan={2} className="p-4 text-center text-muted-foreground text-xs">
+                                  <td
+                                    colSpan={2}
+                                    className="p-4 text-center text-muted-foreground text-xs"
+                                  >
                                     No equity accounts found
                                   </td>
                                 </tr>

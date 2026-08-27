@@ -10,15 +10,32 @@ import { FileUpload } from "@/components/ui/file-upload";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { getCategoriesFn, createCategoryFn } from "@/api/categories";
 import { VariantManager } from "../products/VariantManager";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Loader2, ArrowLeft } from "lucide-react";
 
-export function ServiceForm({ initialData, onSubmit, isSaving }: { initialData?: any; onSubmit: (data: any) => void; isSaving: boolean }) {
+export function ServiceForm({
+  initialData,
+  onSubmit,
+  isSaving,
+}: {
+  initialData?: any;
+  onSubmit: (data: any) => void;
+  isSaving: boolean;
+}) {
   const { t } = useLanguage();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
-  const { data: categories = [] } = useQuery({ queryKey: ["categories"], queryFn: () => getCategoriesFn().then(res => res.data || []) });
+  const { data: categories = [] } = useQuery({
+    queryKey: ["categories"],
+    queryFn: () => getCategoriesFn().then((res) => res.data || []),
+  });
 
   const [formData, setFormData] = useState(() => {
     if (initialData) {
@@ -102,7 +119,9 @@ export function ServiceForm({ initialData, onSubmit, isSaving }: { initialData?:
 
             <div className="grid gap-4">
               <div className="grid gap-1.5">
-                <Label>Service Name <span className="text-destructive">*</span></Label>
+                <Label>
+                  Service Name <span className="text-destructive">*</span>
+                </Label>
                 <Input
                   placeholder="e.g. Basic Haircut"
                   value={formData.name}
@@ -134,9 +153,14 @@ export function ServiceForm({ initialData, onSubmit, isSaving }: { initialData?:
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="grid gap-1.5">
-                <Label>Retail Price <span className="text-destructive">*</span></Label>
+                <Label>
+                  Retail Price <span className="text-destructive">*</span>
+                </Label>
                 <Input
-                  type="number" min="0" step="0.01" placeholder="0.00"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  placeholder="0.00"
                   value={formData.price}
                   onChange={(e) => setFormData({ ...formData, price: e.target.value })}
                 />
@@ -144,7 +168,10 @@ export function ServiceForm({ initialData, onSubmit, isSaving }: { initialData?:
               <div className="grid gap-1.5">
                 <Label>Cost (Internal)</Label>
                 <Input
-                  type="number" min="0" step="0.01" placeholder="0.00"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  placeholder="0.00"
                   value={formData.cost}
                   onChange={(e) => setFormData({ ...formData, cost: e.target.value })}
                 />
@@ -211,11 +238,17 @@ export function ServiceForm({ initialData, onSubmit, isSaving }: { initialData?:
             <div className="grid gap-2">
               <Label>Service Image</Label>
               <FileUpload
-                value={formData.image && !formData.image.includes("unsplash.com") ? formData.image : undefined}
+                value={
+                  formData.image && !formData.image.includes("unsplash.com")
+                    ? formData.image
+                    : undefined
+                }
                 onChange={(url: string) =>
                   setFormData({
                     ...formData,
-                    image: url || "https://images.unsplash.com/photo-1552664730-d307ca884978?auto=format&fit=crop&q=80&w=150&h=150",
+                    image:
+                      url ||
+                      "https://images.unsplash.com/photo-1552664730-d307ca884978?auto=format&fit=crop&q=80&w=150&h=150",
                   })
                 }
                 folder="services"

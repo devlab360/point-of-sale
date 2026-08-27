@@ -110,14 +110,21 @@ function NotificationsPage() {
                 />
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center justify-between gap-2">
-                    <h3 className={cn("text-xs sm:text-sm font-bold truncate", !n.read ? "text-foreground" : "text-muted-foreground")}>
+                    <h3
+                      className={cn(
+                        "text-xs sm:text-sm font-bold truncate",
+                        !n.read ? "text-foreground" : "text-muted-foreground",
+                      )}
+                    >
                       {n.title}
                     </h3>
                     <span className="text-[10px] text-muted-foreground shrink-0 font-medium">
                       {formatDateTime(n.timestamp)}
                     </span>
                   </div>
-                  <p className="mt-0.5 text-xs text-muted-foreground leading-relaxed">{n.message}</p>
+                  <p className="mt-0.5 text-xs text-muted-foreground leading-relaxed">
+                    {n.message}
+                  </p>
                 </div>
                 {n.link && (
                   <ExternalLink className="size-4 shrink-0 text-muted-foreground/50 self-center" />

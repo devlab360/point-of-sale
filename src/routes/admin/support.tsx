@@ -21,7 +21,9 @@ function SuperAdminSupportPage() {
         <div className="rounded-xl border bg-card p-12 text-center">
           <MessageCircle className="size-10 mx-auto text-muted-foreground mb-3 opacity-40" />
           <h3 className="font-semibold text-lg">Support Helpdesk Ready</h3>
-          <p className="text-sm text-muted-foreground">Merchant support tickets and inquiries will appear here.</p>
+          <p className="text-sm text-muted-foreground">
+            Merchant support tickets and inquiries will appear here.
+          </p>
         </div>
       </div>
     </SuperAdminLayout>

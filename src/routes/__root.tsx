@@ -153,7 +153,7 @@ function RootShell({ children }: { children: ReactNode }) {
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
         <link
-          href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Outfit:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:ital,wght@0,300..800;1,300..800&display=swap"
           rel="stylesheet"
         />
         <HeadContent />
@@ -230,7 +230,7 @@ function AppLayout() {
         setIsGoogleLoggingIn(true);
         // Clear the hash from the URL
         window.history.replaceState(null, "", window.location.pathname + window.location.search);
-        
+
         loginWithGoogleToken(accessToken).finally(() => {
           setIsGoogleLoggingIn(false);
         });
@@ -301,16 +301,22 @@ function AppLayout() {
 
   // Route Security Middleware (SaaS Feature Flags)
   const isSuspended = saasOrg?.status === "suspended";
-  const canAccessAiCopilot = !saasPlan || !Array.isArray(saasPlan.features) || saasPlan.features.includes("ai_copilot");
+  const canAccessAiCopilot =
+    !saasPlan || !Array.isArray(saasPlan.features) || saasPlan.features.includes("ai_copilot");
 
   const isBillingTabOrTrialWarning =
-    location.pathname === "/settings" ||
-    location.pathname === "/profile";
+    location.pathname === "/settings" || location.pathname === "/profile";
 
   let unauthorizedMessage: string | null = null;
 
   if (isAuthenticated) {
-    const permResult = hasPermissionForRoute(user, location.pathname, false, saasPlan, settings?.businessType);
+    const permResult = hasPermissionForRoute(
+      user,
+      location.pathname,
+      false,
+      saasPlan,
+      settings?.businessType,
+    );
     if (!permResult.allowed) {
       unauthorizedMessage =
         permResult.reason || "You do not have permission to access this module.";
@@ -481,7 +487,7 @@ function AppLayout() {
           <AppHeader />
           <main className="flex-1 overflow-y-auto bg-muted/20 relative bottom-nav-spacer">
             {isAuthenticated &&
-              (isSuspended || (isTrialExpired && location.pathname !== "/settings")) ? (
+            (isSuspended || (isTrialExpired && location.pathname !== "/settings")) ? (
               <div className="flex h-full w-full items-center justify-center opacity-10 select-none pointer-events-none">
                 <svg
                   className="size-32 text-destructive"

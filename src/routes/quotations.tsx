@@ -382,7 +382,10 @@ function QuotationsPage() {
                   <tbody className="divide-y divide-border/60">
                     {paginated.map((q) => (
                       <tr key={q.id} className="hover:bg-muted/30 transition-colors">
-                        <td className="px-5 py-3 font-mono font-bold text-primary whitespace-nowrap cursor-pointer hover:underline" onClick={() => setViewItem(q)}>
+                        <td
+                          className="px-5 py-3 font-mono font-bold text-primary whitespace-nowrap cursor-pointer hover:underline"
+                          onClick={() => setViewItem(q)}
+                        >
                           {q.quotationNo}
                         </td>
                         <td className="px-5 py-3 font-bold text-foreground whitespace-nowrap">
@@ -403,9 +406,13 @@ function QuotationsPage() {
                               Converted to Invoice
                             </Badge>
                           ) : q.status === "sent" ? (
-                            <Badge className="bg-info/12 text-info border-info/25 text-[10px] font-bold">Sent to Client</Badge>
+                            <Badge className="bg-info/12 text-info border-info/25 text-[10px] font-bold">
+                              Sent to Client
+                            </Badge>
                           ) : (
-                            <Badge variant="outline" className="text-[10px] font-bold capitalize">{q.status}</Badge>
+                            <Badge variant="outline" className="text-[10px] font-bold capitalize">
+                              {q.status}
+                            </Badge>
                           )}
                         </td>
                         <td className="px-5 py-3 text-right whitespace-nowrap">
@@ -416,11 +423,18 @@ function QuotationsPage() {
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end" className="rounded-xl">
-                              <DropdownMenuItem onClick={() => setViewItem(q)} className="text-xs font-semibold">
-                                <FileText className="mr-2 size-3.5 text-primary" /> View / Print Quote
+                              <DropdownMenuItem
+                                onClick={() => setViewItem(q)}
+                                className="text-xs font-semibold"
+                              >
+                                <FileText className="mr-2 size-3.5 text-primary" /> View / Print
+                                Quote
                               </DropdownMenuItem>
                               {q.status !== "converted" && (
-                                <DropdownMenuItem onClick={() => convertToInvoice(q)} className="text-xs font-bold text-success">
+                                <DropdownMenuItem
+                                  onClick={() => convertToInvoice(q)}
+                                  className="text-xs font-bold text-success"
+                                >
                                   <ArrowRightLeft className="mr-2 size-3.5" /> Convert to Invoice
                                 </DropdownMenuItem>
                               )}
@@ -449,10 +463,16 @@ function QuotationsPage() {
                   >
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2">
-                        <span className="font-mono text-xs font-bold text-primary">{q.quotationNo}</span>
-                        <span className="text-[10px] text-muted-foreground">Expires {formatDate(q.validUntil)}</span>
+                        <span className="font-mono text-xs font-bold text-primary">
+                          {q.quotationNo}
+                        </span>
+                        <span className="text-[10px] text-muted-foreground">
+                          Expires {formatDate(q.validUntil)}
+                        </span>
                       </div>
-                      <div className="font-bold text-xs sm:text-sm text-foreground mt-0.5 truncate">{q.customerName}</div>
+                      <div className="font-bold text-xs sm:text-sm text-foreground mt-0.5 truncate">
+                        {q.customerName}
+                      </div>
                       <div className="mt-1">
                         {q.status === "converted" ? (
                           <Badge className="bg-success/12 text-success text-[9px] font-bold py-0">
@@ -467,7 +487,9 @@ function QuotationsPage() {
                     </div>
 
                     <div className="text-right shrink-0 pl-2">
-                      <div className="number text-sm font-black text-foreground">{formatCurrency(q.total)}</div>
+                      <div className="number text-sm font-black text-foreground">
+                        {formatCurrency(q.total)}
+                      </div>
                       {q.status !== "converted" ? (
                         <Button
                           size="sm"
@@ -480,7 +502,9 @@ function QuotationsPage() {
                           Invoice →
                         </Button>
                       ) : (
-                        <span className="text-[10px] text-success font-bold mt-1 inline-block">Billed</span>
+                        <span className="text-[10px] text-success font-bold mt-1 inline-block">
+                          Billed
+                        </span>
                       )}
                     </div>
                   </div>

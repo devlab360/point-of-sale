@@ -7,7 +7,12 @@ import { z } from "zod";
 // ─── Organizations & Tenants ──────────────────────────────────
 
 export const getAllOrganizationsFn = createServerFn({ method: "GET" })
-  .validator((data: unknown) => z.object({}).optional().parse(data || {}))
+  .validator((data: unknown) =>
+    z
+      .object({})
+      .optional()
+      .parse(data || {}),
+  )
   .handler(async () => {
     try {
       await requireSuperAdminSession();
@@ -90,7 +95,12 @@ export const createTenantUserFn = createServerFn({ method: "POST" })
 // ─── SaaS Plan Architecture ───────────────────────────────────
 
 export const getAllPlansFn = createServerFn({ method: "GET" })
-  .validator((data: unknown) => z.object({}).optional().parse(data || {}))
+  .validator((data: unknown) =>
+    z
+      .object({})
+      .optional()
+      .parse(data || {}),
+  )
   .handler(async () => {
     try {
       await requireSuperAdminSession();

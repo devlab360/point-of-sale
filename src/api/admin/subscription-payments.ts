@@ -7,7 +7,12 @@ import { handleApiError } from "@/lib/error-utils";
 import { z } from "zod";
 
 export const getPendingPaymentsFn = createServerFn({ method: "GET" })
-  .validator((data: unknown) => z.object({}).optional().parse(data || {}))
+  .validator((data: unknown) =>
+    z
+      .object({})
+      .optional()
+      .parse(data || {}),
+  )
   .handler(async () => {
     try {
       await requireSuperAdminSession();

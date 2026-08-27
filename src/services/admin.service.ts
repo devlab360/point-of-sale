@@ -36,7 +36,10 @@ export class AdminService {
     return { orgs, plans };
   }
 
-  async updateOrganization(orgId: string, updateData: Partial<typeof schema.organizations.$inferInsert>) {
+  async updateOrganization(
+    orgId: string,
+    updateData: Partial<typeof schema.organizations.$inferInsert>,
+  ) {
     const existing = await db
       .select()
       .from(schema.organizations)
@@ -47,10 +50,7 @@ export class AdminService {
       throw new NotFoundError(`Organization with ID ${orgId} not found`);
     }
 
-    await db
-      .update(schema.organizations)
-      .set(updateData)
-      .where(eq(schema.organizations.id, orgId));
+    await db.update(schema.organizations).set(updateData).where(eq(schema.organizations.id, orgId));
   }
 
   async addTrialDays(orgId: string, days: number) {
@@ -77,10 +77,7 @@ export class AdminService {
   }
 
   async toggleOrgStatus(orgId: string, status: "active" | "suspended" | "trial") {
-    await db
-      .update(schema.organizations)
-      .set({ status })
-      .where(eq(schema.organizations.id, orgId));
+    await db.update(schema.organizations).set({ status }).where(eq(schema.organizations.id, orgId));
   }
 
   async createTenantUser(dto: CreateTenantDTO) {
@@ -207,9 +204,7 @@ export class AdminService {
   }
 
   async setAdminMenuGrants(orgId: string, menuKeys: string[], grantedBy: string) {
-    await db
-      .delete(schema.adminMenuGrants)
-      .where(eq(schema.adminMenuGrants.organizationId, orgId));
+    await db.delete(schema.adminMenuGrants).where(eq(schema.adminMenuGrants.organizationId, orgId));
 
     if (menuKeys.length > 0) {
       await db.insert(schema.adminMenuGrants).values(

@@ -281,12 +281,16 @@ function AccountsPage() {
   };
 
   const handleExport = () => {
-    exportToCSV(rawAccounts, [
-      { key: 'name', label: 'Name' },
-      { key: 'type', label: 'Type' },
-      { key: 'balance', label: 'Balance' },
-      { key: 'description', label: 'Description' }
-    ], 'accounts');
+    exportToCSV(
+      rawAccounts,
+      [
+        { key: "name", label: "Name" },
+        { key: "type", label: "Type" },
+        { key: "balance", label: "Balance" },
+        { key: "description", label: "Description" },
+      ],
+      "accounts",
+    );
   };
 
   const handleImport = async (file: File) => {
@@ -299,23 +303,23 @@ function AccountsPage() {
 
       let count = 0;
       for (const row of data) {
-        if (row['Name']) {
-          await createAccountFn({ 
-            data: { 
-              account: { 
-                id: uuidv4(), 
-                name: row['Name'],
-                type: (row['Type'] as any) || 'asset',
-                balance: parseFloat(row['Balance'] || '0'),
-                description: row['Description'] || '',
-                isDefault: false
-              } 
-            } 
+        if (row["Name"]) {
+          await createAccountFn({
+            data: {
+              account: {
+                id: uuidv4(),
+                name: row["Name"],
+                type: (row["Type"] as any) || "asset",
+                balance: parseFloat(row["Balance"] || "0"),
+                description: row["Description"] || "",
+                isDefault: false,
+              },
+            },
           });
           count++;
         }
       }
-      
+
       queryClient.invalidateQueries({ queryKey: ["accounts"] });
       toast.success(`Successfully imported ${count} accounts`);
     } catch (error) {
@@ -333,7 +337,9 @@ function AccountsPage() {
           onClick: () =>
             activeTab === "accounts" ? setIsAddAccountOpen(true) : setIsAddVoucherOpen(true),
         }}
-        searchPlaceholder={activeTab === "vouchers" ? "Search vouchers..." : "Search accounts by name..."}
+        searchPlaceholder={
+          activeTab === "vouchers" ? "Search vouchers..." : "Search accounts by name..."
+        }
         searchValue={activeTab === "vouchers" ? search : search}
         onSearchChange={setSearch}
         hideToolbar={activeTab === "accounts" ? rawAccounts.length === 0 : rawVouchers.length === 0}
@@ -431,7 +437,10 @@ function AccountsPage() {
             {/* Categorized Accounts List */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
               {(["asset", "liability", "equity", "income", "expense"] as const).map((cat) => (
-                <div key={cat} className="rounded-2xl border border-border/80 bg-card p-4 shadow-card">
+                <div
+                  key={cat}
+                  className="rounded-2xl border border-border/80 bg-card p-4 shadow-card"
+                >
                   <div className="flex items-center justify-between border-b border-border/60 pb-2.5 mb-3">
                     <h3 className="font-bold text-xs uppercase tracking-wider text-primary flex items-center gap-1.5">
                       <Wallet className="size-4" /> {cat} Accounts
@@ -524,7 +533,9 @@ function AccountsPage() {
               {/* Mobile Card Feed (< 768px) */}
               <div className="table-mobile-cards p-3 space-y-2.5">
                 {filteredVouchers.length === 0 ? (
-                  <p className="text-center py-6 text-xs text-muted-foreground">No vouchers found</p>
+                  <p className="text-center py-6 text-xs text-muted-foreground">
+                    No vouchers found
+                  </p>
                 ) : (
                   paginatedVouchers.map((v) => (
                     <div
@@ -532,7 +543,9 @@ function AccountsPage() {
                       className="rounded-xl border border-border/80 bg-card p-3 shadow-sm card-interactive space-y-2"
                     >
                       <div className="flex items-center justify-between">
-                        <span className="font-mono text-xs font-bold text-primary">{v.voucherNo}</span>
+                        <span className="font-mono text-xs font-bold text-primary">
+                          {v.voucherNo}
+                        </span>
                         <Badge variant="outline" className="text-[9px] font-bold capitalize py-0">
                           {v.type}
                         </Badge>
@@ -548,8 +561,12 @@ function AccountsPage() {
                         </div>
                       </div>
                       <div className="flex items-center justify-between pt-1 border-t border-border/50">
-                        <span className="text-[10px] text-muted-foreground">{formatDateTime(v.date)}</span>
-                        <span className="number text-sm font-black text-foreground">{formatCurrency(v.amount)}</span>
+                        <span className="text-[10px] text-muted-foreground">
+                          {formatDateTime(v.date)}
+                        </span>
+                        <span className="number text-sm font-black text-foreground">
+                          {formatCurrency(v.amount)}
+                        </span>
                       </div>
                     </div>
                   ))

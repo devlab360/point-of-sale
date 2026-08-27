@@ -224,10 +224,14 @@ function CategoriesPage() {
   };
 
   const handleExport = () => {
-    exportToCSV(rawCategories, [
-      { key: 'name', label: 'Category Name' },
-      { key: 'description', label: 'Description' }
-    ], 'categories');
+    exportToCSV(
+      rawCategories,
+      [
+        { key: "name", label: "Category Name" },
+        { key: "description", label: "Description" },
+      ],
+      "categories",
+    );
   };
 
   const handleImport = async (file: File) => {
@@ -240,22 +244,22 @@ function CategoriesPage() {
 
       let count = 0;
       for (const row of data) {
-        if (row['Category Name']) {
-          await createCategoryFn({ 
-            data: { 
-              category: { 
-                id: uuidv4(), 
-                name: row['Category Name'],
-                description: row['Description'] || '',
-                color: 'bg-primary/10',
-                icon: 'Tag'
-              } 
-            } 
+        if (row["Category Name"]) {
+          await createCategoryFn({
+            data: {
+              category: {
+                id: uuidv4(),
+                name: row["Category Name"],
+                description: row["Description"] || "",
+                color: "bg-primary/10",
+                icon: "Tag",
+              },
+            },
           });
           count++;
         }
       }
-      
+
       queryClient.invalidateQueries({ queryKey: ["categories"] });
       toast.success(`Successfully imported ${count} categories`);
     } catch (error) {

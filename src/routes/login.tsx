@@ -10,7 +10,6 @@ import {
   ArrowLeft,
   Loader2,
   Mail,
-  ShieldCheck,
   CheckCircle2,
   Sparkles,
   Lock,
@@ -154,7 +153,9 @@ function LoginPage() {
 
     setIsResetting(true);
     try {
-      const res = await resetPasswordFn({ data: { email: targetEmail, newPassword, otp: otpInput.trim() } });
+      const res = await resetPasswordFn({
+        data: { email: targetEmail, newPassword, otp: otpInput.trim() },
+      });
       if (!res?.success) {
         throw new Error(res?.error || "Failed to reset password.");
       }
@@ -184,7 +185,9 @@ function LoginPage() {
           </div>
           <div>
             <h1 className="text-xl font-extrabold tracking-tight text-white">OneDesk360</h1>
-            <p className="text-xs text-white/80 font-medium uppercase tracking-wider">Enterprise Cloud Commerce</p>
+            <p className="text-xs text-white/80 font-medium uppercase tracking-wider">
+              Enterprise Cloud Commerce
+            </p>
           </div>
         </div>
 
@@ -200,7 +203,8 @@ function LoginPage() {
           </h2>
 
           <p className="text-sm text-white/85 leading-relaxed">
-            Multi-branch inventory control, real-time Khatabook customer ledgers, instant thermal receipts, and automated financial analytics tailored for your business.
+            Multi-branch inventory control, real-time Khatabook customer ledgers, instant thermal
+            receipts, and automated financial analytics tailored for your business.
           </p>
 
           <div className="grid grid-cols-2 gap-4 pt-4">
@@ -223,12 +227,17 @@ function LoginPage() {
 
         {/* Footer info */}
         <div className="relative z-10 flex items-center justify-between text-xs text-white/70">
-          <p>© 2026 OneDesk360 Universal Inc.</p>
-          <div className="flex items-center gap-4">
-            <Link to="/admin" className="hover:text-white transition-colors underline font-medium">
-              Super Admin Portal
-            </Link>
-          </div>
+          <p>
+            © {new Date().getFullYear()}{" "}
+            <a
+              href="https://devlab360.com/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-white transition-colors underline font-medium"
+            >
+              DevLab360
+            </a>
+          </p>
         </div>
       </div>
 
@@ -335,7 +344,11 @@ function LoginPage() {
                         required
                       />
                     </div>
-                    <Button type="submit" disabled={isSendingOtp} className="w-full h-12 sm:h-13 rounded-2xl font-extrabold gap-2 text-base">
+                    <Button
+                      type="submit"
+                      disabled={isSendingOtp}
+                      className="w-full h-12 sm:h-13 rounded-2xl font-extrabold gap-2 text-base"
+                    >
                       {isSendingOtp ? (
                         <>
                           <Loader2 className="size-5 animate-spin" />
@@ -382,7 +395,11 @@ function LoginPage() {
                         className="h-11 rounded-xl"
                       />
                     </div>
-                    <Button type="submit" disabled={isResetting} className="w-full h-11 rounded-xl font-bold">
+                    <Button
+                      type="submit"
+                      disabled={isResetting}
+                      className="w-full h-11 rounded-xl font-bold"
+                    >
                       {isResetting ? "Updating Password..." : "Update Password & Sign In"}
                     </Button>
                   </form>
@@ -413,15 +430,20 @@ function LoginPage() {
             </div>
           </div>
 
-          {/* Super Admin Direct Link */}
+          {/* Copyright */}
           <div className="text-center pt-2">
-            <Link
-              to="/admin"
-              className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground font-semibold transition-colors"
-            >
-              <ShieldCheck className="size-3.5 text-primary" />
-              <span>Super Admin Portal (/admin)</span>
-            </Link>
+            <p className="text-[11px] text-muted-foreground/70 font-medium">
+              © {new Date().getFullYear()}{" "}
+              <a
+                href="https://devlab360.com/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-semibold text-muted-foreground hover:text-primary transition-colors underline decoration-dotted"
+              >
+                DevLab360
+              </a>
+              . All rights reserved.
+            </p>
           </div>
         </div>
       </div>

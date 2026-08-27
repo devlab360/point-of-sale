@@ -60,13 +60,13 @@ function TransfersPage() {
   const suppliers = suppliersData || [];
 
   const [open, setOpen] = useState(false);
-  const [formData, setFormData] = useState({ 
-    product: "", 
-    supplierId: "", 
+  const [formData, setFormData] = useState({
+    product: "",
+    supplierId: "",
     items: 1,
     totalAmount: 0,
     paidAmount: 0,
-    paymentMethod: "cash"
+    paymentMethod: "cash",
   });
 
   const [search, setSearch] = useState("");
@@ -125,7 +125,13 @@ function TransfersPage() {
             items: Number(formData.items),
             totalAmount: Number(formData.totalAmount),
             paidAmount: Number(formData.paidAmount),
-            paymentStatus: Number(formData.paidAmount) >= Number(formData.totalAmount) && Number(formData.totalAmount) > 0 ? "paid" : Number(formData.paidAmount) > 0 ? "partial" : "unpaid",
+            paymentStatus:
+              Number(formData.paidAmount) >= Number(formData.totalAmount) &&
+              Number(formData.totalAmount) > 0
+                ? "paid"
+                : Number(formData.paidAmount) > 0
+                  ? "partial"
+                  : "unpaid",
             paymentMethod: formData.paymentMethod,
             status: "completed",
           },
@@ -143,7 +149,14 @@ function TransfersPage() {
       queryClient.invalidateQueries({ queryKey: ["products"] });
       toast.success("Transfer recorded successfully");
       setOpen(false);
-      setFormData({ product: "", supplierId: "", items: 1, totalAmount: 0, paidAmount: 0, paymentMethod: "cash" });
+      setFormData({
+        product: "",
+        supplierId: "",
+        items: 1,
+        totalAmount: 0,
+        paidAmount: 0,
+        paymentMethod: "cash",
+      });
     } catch (e: any) {
       toast.error(e.message || "Error saving transfer");
     } finally {
@@ -180,12 +193,12 @@ function TransfersPage() {
                   }))}
                   value={formData.product}
                   onChange={(v) => {
-                    const prod = products.find(p => p.id === v);
-                    const cost = prod ? (Number(prod.cost) || Number(prod.price) || 0) : 0;
-                    setFormData(prev => ({ 
-                      ...prev, 
-                      product: v, 
-                      totalAmount: cost * prev.items 
+                    const prod = products.find((p) => p.id === v);
+                    const cost = prod ? Number(prod.cost) || Number(prod.price) || 0 : 0;
+                    setFormData((prev) => ({
+                      ...prev,
+                      product: v,
+                      totalAmount: cost * prev.items,
                     }));
                   }}
                   placeholder="Select product"
@@ -211,12 +224,12 @@ function TransfersPage() {
                   value={formData.items || ""}
                   onChange={(e) => {
                     const newItems = parseInt(e.target.value) || 0;
-                    const prod = products.find(p => p.id === formData.product);
-                    const cost = prod ? (Number(prod.cost) || Number(prod.price) || 0) : 0;
-                    setFormData(prev => ({ 
-                      ...prev, 
-                      items: newItems, 
-                      totalAmount: cost * newItems 
+                    const prod = products.find((p) => p.id === formData.product);
+                    const cost = prod ? Number(prod.cost) || Number(prod.price) || 0 : 0;
+                    setFormData((prev) => ({
+                      ...prev,
+                      items: newItems,
+                      totalAmount: cost * newItems,
                     }));
                   }}
                 />
@@ -227,7 +240,9 @@ function TransfersPage() {
                   type="number"
                   min="0"
                   value={formData.totalAmount || ""}
-                  onChange={(e) => setFormData({ ...formData, totalAmount: parseFloat(e.target.value) || 0 })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, totalAmount: parseFloat(e.target.value) || 0 })
+                  }
                 />
               </div>
               <div className="space-y-2">
@@ -237,7 +252,9 @@ function TransfersPage() {
                   min="0"
                   max={formData.totalAmount}
                   value={formData.paidAmount || ""}
-                  onChange={(e) => setFormData({ ...formData, paidAmount: parseFloat(e.target.value) || 0 })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, paidAmount: parseFloat(e.target.value) || 0 })
+                  }
                 />
               </div>
               <div className="space-y-2">
@@ -309,7 +326,9 @@ function TransfersPage() {
                 <tbody className="divide-y divide-border/60">
                   {paginatedTransfers.map((r) => (
                     <tr key={r.ref} className="hover:bg-muted/30 transition-colors">
-                      <td className="px-5 py-3 font-mono text-xs font-bold text-foreground whitespace-nowrap">{r.ref}</td>
+                      <td className="px-5 py-3 font-mono text-xs font-bold text-foreground whitespace-nowrap">
+                        {r.ref}
+                      </td>
                       <td className="px-5 py-3 text-muted-foreground whitespace-nowrap text-xs">
                         {formatAppDate(r.date)}
                       </td>
@@ -344,7 +363,9 @@ function TransfersPage() {
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
                       <span className="font-mono text-xs font-bold text-foreground">{r.ref}</span>
-                      <span className="text-[10px] text-muted-foreground">{formatAppDate(r.date)}</span>
+                      <span className="text-[10px] text-muted-foreground">
+                        {formatAppDate(r.date)}
+                      </span>
                     </div>
                     <div className="flex items-center gap-1.5 text-xs mt-1">
                       <span className="text-muted-foreground">Hub</span>

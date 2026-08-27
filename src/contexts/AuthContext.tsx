@@ -163,7 +163,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         toast.success(res.message || `Welcome back, ${res.user.name}`);
 
-        router.navigate({ to: "/" });
+        if (res.user.role === "super_admin") {
+          router.navigate({ to: "/admin" });
+        } else {
+          router.navigate({ to: "/" });
+        }
 
         return true;
       } catch (error) {
@@ -343,7 +347,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.error("User refresh failed:", error);
     }
   }, []);
-
 
   const value = useMemo(
     () => ({

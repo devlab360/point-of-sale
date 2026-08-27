@@ -197,16 +197,12 @@ export const createPurchaseFn = createServerFn({ method: "POST" })
                 expiryDate: originalLine.expiryDate
                   ? new Date(originalLine.expiryDate).toISOString()
                   : null,
-                mfgDate: originalLine.mfgDate
-                  ? new Date(originalLine.mfgDate).toISOString()
-                  : null,
+                mfgDate: originalLine.mfgDate ? new Date(originalLine.mfgDate).toISOString() : null,
                 purchaseCost: line.cost.toFixed(2),
                 sellingPrice: originalLine.sellingPrice
                   ? Number(originalLine.sellingPrice).toFixed(2)
                   : null,
-                mrp: originalLine.mrp
-                  ? Number(originalLine.mrp).toFixed(2)
-                  : null,
+                mrp: originalLine.mrp ? Number(originalLine.mrp).toFixed(2) : null,
                 quantityReceived: line.quantity.toString(),
                 quantityRemaining: line.quantity.toString(),
                 receivedAt: new Date().toISOString(),
@@ -221,7 +217,8 @@ export const createPurchaseFn = createServerFn({ method: "POST" })
         // Khatabook integration (Supplier Ledger)
         if (data.purchase?.supplierId && total > 0) {
           const supp = await tx.query.suppliers.findFirst({
-            where: (s, { eq, and }) => and(eq(s.id, data.purchase.supplierId), eq(s.organizationId, session.orgId))
+            where: (s, { eq, and }) =>
+              and(eq(s.id, data.purchase.supplierId), eq(s.organizationId, session.orgId)),
           });
 
           if (supp) {
@@ -232,7 +229,8 @@ export const createPurchaseFn = createServerFn({ method: "POST" })
             const netChange = total - paid;
             const newBalance = currentBalance + netChange;
 
-            await tx.update(schema.suppliers)
+            await tx
+              .update(schema.suppliers)
               .set({ balance: newBalance.toString() })
               .where(eq(schema.suppliers.id, supp.id));
 
@@ -245,19 +243,24 @@ export const createPurchaseFn = createServerFn({ method: "POST" })
               amount: netChange.toString(),
               balanceAfter: newBalance.toString(),
               referenceNo: invoiceNo,
-              note: `Purchase ${invoiceNo} - Total: ${total.toFixed(2)}, Paid: ${paid.toFixed(2)}`
+              note: `Purchase ${invoiceNo} - Total: ${total.toFixed(2)}, Paid: ${paid.toFixed(2)}`,
             });
 
             // If we paid money, log it to accounts
             if (paid > 0) {
               const account = await tx.query.accounts.findFirst({
-                where: (a, { eq, and }) => and(eq(a.type, data.purchase?.paymentMethod || "cash"), eq(a.organizationId, session.orgId))
+                where: (a, { eq, and }) =>
+                  and(
+                    eq(a.type, data.purchase?.paymentMethod || "cash"),
+                    eq(a.organizationId, session.orgId),
+                  ),
               });
 
               if (account) {
                 // Deduct from our cash account
                 const accBalance = Number(account.balance || 0) - paid;
-                await tx.update(schema.accounts)
+                await tx
+                  .update(schema.accounts)
                   .set({ balance: accBalance.toString() })
                   .where(eq(schema.accounts.id, account.id));
               }

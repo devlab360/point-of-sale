@@ -76,7 +76,9 @@ function SuperAdminPaymentsPage() {
             <div className="text-center p-12">
               <Receipt className="size-10 mx-auto text-muted-foreground mb-3 opacity-40" />
               <h3 className="font-semibold text-lg">No Payments Pending Review</h3>
-              <p className="text-sm text-muted-foreground">All subscription payment requests are processed.</p>
+              <p className="text-sm text-muted-foreground">
+                All subscription payment requests are processed.
+              </p>
             </div>
           ) : (
             <div className="overflow-x-auto">
@@ -95,7 +97,9 @@ function SuperAdminPaymentsPage() {
                   {payments.map((p: any) => (
                     <tr key={p.id} className="hover:bg-muted/30 transition-colors">
                       <td className="px-4 py-3 font-semibold">{p.organizationId}</td>
-                      <td className="px-4 py-3 text-xs uppercase font-mono">{p.planId} ({p.billingCycle})</td>
+                      <td className="px-4 py-3 text-xs uppercase font-mono">
+                        {p.planId} ({p.billingCycle})
+                      </td>
                       <td className="px-4 py-3 font-bold">${p.amount}</td>
                       <td className="px-4 py-3 text-xs text-muted-foreground font-mono">
                         {p.transactionRef || "N/A"} <br />

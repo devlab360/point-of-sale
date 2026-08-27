@@ -261,11 +261,16 @@ function RepairsPage() {
                   <tbody className="divide-y divide-border/60">
                     {paginated.map((r) => (
                       <tr key={r.id} className="hover:bg-muted/30 transition-colors">
-                        <td className="px-5 py-3 font-mono font-bold text-primary whitespace-nowrap cursor-pointer hover:underline" onClick={() => setViewItem(r)}>
+                        <td
+                          className="px-5 py-3 font-mono font-bold text-primary whitespace-nowrap cursor-pointer hover:underline"
+                          onClick={() => setViewItem(r)}
+                        >
                           {r.ticketNo}
                         </td>
                         <td className="px-5 py-3 whitespace-nowrap">
-                          <div className="font-bold text-foreground text-xs sm:text-sm">{r.customerName}</div>
+                          <div className="font-bold text-foreground text-xs sm:text-sm">
+                            {r.customerName}
+                          </div>
                           <div className="text-[11px] text-muted-foreground">{r.customerPhone}</div>
                         </td>
                         <td className="px-5 py-3 font-bold text-foreground whitespace-nowrap text-xs">
@@ -294,7 +299,9 @@ function RepairsPage() {
                               In Diagnosis
                             </Badge>
                           ) : (
-                            <Badge variant="outline" className="text-[10px] font-bold">Received</Badge>
+                            <Badge variant="outline" className="text-[10px] font-bold">
+                              Received
+                            </Badge>
                           )}
                         </td>
                         <td className="px-5 py-3 text-right whitespace-nowrap">
@@ -305,16 +312,29 @@ function RepairsPage() {
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end" className="rounded-xl">
-                              <DropdownMenuItem onClick={() => setViewItem(r)} className="text-xs font-semibold">
-                                <Printer className="mr-2 size-3.5 text-primary" /> View / Print Ticket
+                              <DropdownMenuItem
+                                onClick={() => setViewItem(r)}
+                                className="text-xs font-semibold"
+                              >
+                                <Printer className="mr-2 size-3.5 text-primary" /> View / Print
+                                Ticket
                               </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => updateStatus(r.id, "diagnosing")} className="text-xs font-semibold text-warning-foreground">
+                              <DropdownMenuItem
+                                onClick={() => updateStatus(r.id, "diagnosing")}
+                                className="text-xs font-semibold text-warning-foreground"
+                              >
                                 <Wrench className="mr-2 size-3.5" /> Mark In Diagnosis
                               </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => updateStatus(r.id, "repaired")} className="text-xs font-semibold text-info">
+                              <DropdownMenuItem
+                                onClick={() => updateStatus(r.id, "repaired")}
+                                className="text-xs font-semibold text-info"
+                              >
                                 <CheckCircle2 className="mr-2 size-3.5" /> Mark Repaired
                               </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => updateStatus(r.id, "delivered")} className="text-xs font-bold text-success">
+                              <DropdownMenuItem
+                                onClick={() => updateStatus(r.id, "delivered")}
+                                className="text-xs font-bold text-success"
+                              >
                                 <ShieldCheck className="mr-2 size-3.5" /> Mark Delivered
                               </DropdownMenuItem>
                               <DropdownMenuItem
@@ -342,25 +362,39 @@ function RepairsPage() {
                   >
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2">
-                        <span className="font-mono text-xs font-bold text-primary">{r.ticketNo}</span>
+                        <span className="font-mono text-xs font-bold text-primary">
+                          {r.ticketNo}
+                        </span>
                         <Badge
                           className={`text-[9px] font-bold py-0 ${
-                            r.status === "delivered" ? "bg-success/12 text-success" :
-                            r.status === "repaired" ? "bg-info/12 text-info" :
-                            r.status === "diagnosing" ? "bg-warning/15 text-warning-foreground" : "bg-muted text-muted-foreground"
+                            r.status === "delivered"
+                              ? "bg-success/12 text-success"
+                              : r.status === "repaired"
+                                ? "bg-info/12 text-info"
+                                : r.status === "diagnosing"
+                                  ? "bg-warning/15 text-warning-foreground"
+                                  : "bg-muted text-muted-foreground"
                           }`}
                         >
                           {r.status}
                         </Badge>
                       </div>
-                      <div className="font-bold text-xs sm:text-sm text-foreground mt-0.5 truncate">{r.customerName}</div>
-                      <p className="text-[11px] text-muted-foreground truncate">{r.deviceName} · {r.serialOrImei || "No IMEI"}</p>
+                      <div className="font-bold text-xs sm:text-sm text-foreground mt-0.5 truncate">
+                        {r.customerName}
+                      </div>
+                      <p className="text-[11px] text-muted-foreground truncate">
+                        {r.deviceName} · {r.serialOrImei || "No IMEI"}
+                      </p>
                     </div>
 
                     <div className="text-right shrink-0 pl-2">
-                      <div className="number text-sm font-black text-foreground">{formatCurrency(r.estimatedCost)}</div>
+                      <div className="number text-sm font-black text-foreground">
+                        {formatCurrency(r.estimatedCost)}
+                      </div>
                       {Number(r.advancePaid) > 0 && (
-                        <span className="text-[10px] text-success font-bold mt-0.5 block">Adv: {formatCurrency(r.advancePaid)}</span>
+                        <span className="text-[10px] text-success font-bold mt-0.5 block">
+                          Adv: {formatCurrency(r.advancePaid)}
+                        </span>
                       )}
                     </div>
                   </div>

@@ -64,7 +64,13 @@ import {
   Sparkles,
 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { getUsersFn, updateUserFn, deleteUserFn, createInvitationFn, createUserFn } from "@/api/users";
+import {
+  getUsersFn,
+  updateUserFn,
+  deleteUserFn,
+  createInvitationFn,
+  createUserFn,
+} from "@/api/users";
 import { v4 as uuidv4 } from "uuid";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
@@ -76,7 +82,7 @@ import { APP_GROUPS } from "@/lib/menu-config";
 
 const allSelectableUserRoutes = [
   ...APP_GROUPS.flatMap((g) => g.items.map((i) => i.to)).filter(
-    (to) => !["/", "/super-admin", "/profile"].includes(to)
+    (to) => !["/", "/super-admin", "/profile"].includes(to),
   ),
   "ai_copilot",
 ];
@@ -241,8 +247,8 @@ function UsersPage() {
     setEditRole(userItem.role || "cashier");
     setEditPermissions(
       userItem.permissions ||
-      DEFAULT_ROLE_PERMISSIONS[userItem.role?.toLowerCase()] ||
-      DEFAULT_ROLE_PERMISSIONS.cashier,
+        DEFAULT_ROLE_PERMISSIONS[userItem.role?.toLowerCase()] ||
+        DEFAULT_ROLE_PERMISSIONS.cashier,
     );
   };
 
@@ -277,12 +283,16 @@ function UsersPage() {
   };
 
   const handleExport = () => {
-    exportToCSV(rawUsers, [
-      { key: 'name', label: 'Name' },
-      { key: 'email', label: 'Email' },
-      { key: 'role', label: 'Role' },
-      { key: 'status', label: 'Status' }
-    ], 'users');
+    exportToCSV(
+      rawUsers,
+      [
+        { key: "name", label: "Name" },
+        { key: "email", label: "Email" },
+        { key: "role", label: "Role" },
+        { key: "status", label: "Status" },
+      ],
+      "users",
+    );
   };
 
   const handleImport = async (file: File) => {
@@ -295,20 +305,20 @@ function UsersPage() {
 
       let count = 0;
       for (const row of data) {
-        if (row['Name'] && row['Email']) {
+        if (row["Name"] && row["Email"]) {
           await createUserFn({
             data: {
               user: {
                 id: uuidv4(),
-                name: row['Name'],
-                email: row['Email'],
-                role: (row['Role'] as any) || 'cashier',
-                status: (row['Status'] as any) || 'active',
+                name: row["Name"],
+                email: row["Email"],
+                role: (row["Role"] as any) || "cashier",
+                status: (row["Status"] as any) || "active",
                 storeId: PersistStore.getOrgId() || "default",
-                lastLogin: '',
-                permissions: []
-              }
-            }
+                lastLogin: "",
+                permissions: [],
+              },
+            },
           });
           count++;
         }
@@ -501,7 +511,9 @@ function UsersPage() {
             icon={Shield}
             title="No employees found"
             description={
-              search ? "Try adjusting your search query." : "You haven't added any team members yet."
+              search
+                ? "Try adjusting your search query."
+                : "You haven't added any team members yet."
             }
             actionLabel="Invite Employee"
             onAction={() => setIsInviteOpen(true)}
@@ -536,21 +548,31 @@ function UsersPage() {
                                 .toUpperCase()}
                             </div>
                             <div>
-                              <div className="font-bold text-foreground text-xs sm:text-sm">{e.name}</div>
-                              <div className="text-[11px] text-muted-foreground font-medium">{e.email}</div>
+                              <div className="font-bold text-foreground text-xs sm:text-sm">
+                                {e.name}
+                              </div>
+                              <div className="text-[11px] text-muted-foreground font-medium">
+                                {e.email}
+                              </div>
                             </div>
                           </div>
                         </td>
                         <td className="px-5 py-3 whitespace-nowrap">
-                          <Badge variant="secondary" className="capitalize text-xs font-bold py-0.5">
+                          <Badge
+                            variant="secondary"
+                            className="capitalize text-xs font-bold py-0.5"
+                          >
                             <Shield className="mr-1 size-3 text-primary" />
                             {e.role}
                           </Badge>
                         </td>
                         <td className="px-5 py-3 whitespace-nowrap">
                           <div className="flex flex-wrap gap-1 max-w-[220px]">
-                            {(e.permissions || DEFAULT_ROLE_PERMISSIONS[e.role?.toLowerCase()] || []).length >=
-                            allSelectableUserRoutes.length ? (
+                            {(
+                              e.permissions ||
+                              DEFAULT_ROLE_PERMISSIONS[e.role?.toLowerCase()] ||
+                              []
+                            ).length >= allSelectableUserRoutes.length ? (
                               <Badge
                                 variant="outline"
                                 className="bg-primary/10 text-primary border-primary/20 text-[10px] font-bold"
@@ -558,7 +580,11 @@ function UsersPage() {
                                 Full Access
                               </Badge>
                             ) : (
-                              (e.permissions || DEFAULT_ROLE_PERMISSIONS[e.role?.toLowerCase()] || [])
+                              (
+                                e.permissions ||
+                                DEFAULT_ROLE_PERMISSIONS[e.role?.toLowerCase()] ||
+                                []
+                              )
                                 .slice(0, 3)
                                 .map((p: string) => (
                                   <Badge
@@ -570,14 +596,23 @@ function UsersPage() {
                                   </Badge>
                                 ))
                             )}
-                            {(e.permissions || DEFAULT_ROLE_PERMISSIONS[e.role?.toLowerCase()] || []).length >
-                              3 &&
-                              (e.permissions || DEFAULT_ROLE_PERMISSIONS[e.role?.toLowerCase()] || []).length <
-                                allSelectableUserRoutes.length && (
+                            {(
+                              e.permissions ||
+                              DEFAULT_ROLE_PERMISSIONS[e.role?.toLowerCase()] ||
+                              []
+                            ).length > 3 &&
+                              (
+                                e.permissions ||
+                                DEFAULT_ROLE_PERMISSIONS[e.role?.toLowerCase()] ||
+                                []
+                              ).length < allSelectableUserRoutes.length && (
                                 <span className="text-[10px] text-muted-foreground font-semibold self-center">
                                   +
-                                  {(e.permissions || DEFAULT_ROLE_PERMISSIONS[e.role?.toLowerCase()] || [])
-                                    .length - 3}{" "}
+                                  {(
+                                    e.permissions ||
+                                    DEFAULT_ROLE_PERMISSIONS[e.role?.toLowerCase()] ||
+                                    []
+                                  ).length - 3}{" "}
                                   more
                                 </span>
                               )}
@@ -623,7 +658,10 @@ function UsersPage() {
                                 </Button>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end" className="rounded-xl">
-                                <DropdownMenuItem onClick={() => openEditModal(e)} className="text-xs font-semibold">
+                                <DropdownMenuItem
+                                  onClick={() => openEditModal(e)}
+                                  className="text-xs font-semibold"
+                                >
                                   <Edit2 className="mr-2 size-3.5" /> Edit & Permissions
                                 </DropdownMenuItem>
                                 <DropdownMenuItem
@@ -660,18 +698,25 @@ function UsersPage() {
                       </div>
                       <div className="min-w-0 truncate">
                         <div className="flex items-center gap-2">
-                          <p className="text-xs sm:text-sm font-bold text-foreground truncate">{e.name}</p>
+                          <p className="text-xs sm:text-sm font-bold text-foreground truncate">
+                            {e.name}
+                          </p>
                           <Badge
                             className={`text-[9px] font-bold py-0 ${
-                              e.status === "active" ? "bg-success/12 text-success" :
-                              e.status === "pending" ? "bg-warning/15 text-warning-foreground" : "bg-destructive/12 text-destructive"
+                              e.status === "active"
+                                ? "bg-success/12 text-success"
+                                : e.status === "pending"
+                                  ? "bg-warning/15 text-warning-foreground"
+                                  : "bg-destructive/12 text-destructive"
                             }`}
                           >
                             {e.status}
                           </Badge>
                         </div>
                         <p className="text-[11px] text-muted-foreground truncate">{e.email}</p>
-                        <p className="text-[10px] text-primary capitalize font-bold mt-0.5">Role: {e.role}</p>
+                        <p className="text-[10px] text-primary capitalize font-bold mt-0.5">
+                          Role: {e.role}
+                        </p>
                       </div>
                     </div>
 
@@ -721,7 +766,9 @@ function UsersPage() {
           {!generatedLink ? (
             <form onSubmit={handleGenerateInvite} className="space-y-5">
               <div className="space-y-2">
-                <Label htmlFor="role">Assign Primary Role (e.g. Manager, Cashier, Chef, Accountant)</Label>
+                <Label htmlFor="role">
+                  Assign Primary Role (e.g. Manager, Cashier, Chef, Accountant)
+                </Label>
                 <Input
                   id="role"
                   placeholder="Enter custom role name..."
@@ -772,12 +819,14 @@ function UsersPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5 max-h-[380px] overflow-y-auto pr-1">
                   {APP_GROUPS.map((group, groupIdx) => {
                     const selectableItems = group.items.filter(
-                      (item) => !["/", "/super-admin", "/profile"].includes(item.to)
+                      (item) => !["/", "/super-admin", "/profile"].includes(item.to),
                     );
                     if (selectableItems.length === 0) return null;
 
-                    const allGroupSelected = selectableItems.every((item) =>
-                      invitePermissions.includes(item.to) || invitePermissions.includes(item.menuKey || "")
+                    const allGroupSelected = selectableItems.every(
+                      (item) =>
+                        invitePermissions.includes(item.to) ||
+                        invitePermissions.includes(item.menuKey || ""),
                     );
 
                     return (
@@ -1016,12 +1065,14 @@ function UsersPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5 max-h-[350px] overflow-y-auto pr-1">
                 {APP_GROUPS.map((group, groupIdx) => {
                   const selectableItems = group.items.filter(
-                    (item) => !["/", "/super-admin", "/profile"].includes(item.to)
+                    (item) => !["/", "/super-admin", "/profile"].includes(item.to),
                   );
                   if (selectableItems.length === 0) return null;
 
-                  const allGroupSelected = selectableItems.every((item) =>
-                    editPermissions.includes(item.to) || editPermissions.includes(item.menuKey || "")
+                  const allGroupSelected = selectableItems.every(
+                    (item) =>
+                      editPermissions.includes(item.to) ||
+                      editPermissions.includes(item.menuKey || ""),
                   );
 
                   return (

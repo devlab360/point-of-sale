@@ -21,7 +21,9 @@ function SuperAdminHelpPage() {
         <div className="rounded-xl border bg-card p-12 text-center">
           <BookOpen className="size-10 mx-auto text-muted-foreground mb-3 opacity-40" />
           <h3 className="font-semibold text-lg">Help Center Portal</h3>
-          <p className="text-sm text-muted-foreground">Published help center documentation and videos.</p>
+          <p className="text-sm text-muted-foreground">
+            Published help center documentation and videos.
+          </p>
         </div>
       </div>
     </SuperAdminLayout>
