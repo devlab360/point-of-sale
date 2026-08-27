@@ -3,6 +3,7 @@ import { exportToCSV, parseCSV } from "@/lib/csv";
 import {
   Grid3x3,
   List,
+  LayoutGrid,
   MoreHorizontal,
   Pencil,
   Plus,
@@ -453,8 +454,8 @@ function ProductsPage() {
                     { value: "low_stock", label: "Low Stock Alert" },
                     { value: "out_of_stock", label: "Out of Stock" },
                   ]}
-                  value={draftFilters.stockStatus}
-                  onChange={(val) => setDraftFilters((prev) => ({ ...prev, stockStatus: val }))}
+                  value={draftFilters.stock}
+                  onChange={(val) => setDraftFilters((prev) => ({ ...prev, stock: val }))}
                   placeholder="Filter by Stock"
                 />
               </div>

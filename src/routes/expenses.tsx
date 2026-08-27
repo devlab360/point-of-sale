@@ -34,6 +34,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -107,23 +108,53 @@ function ExpensesPage() {
     setDraftFilters({ category: "", status: "" });
   };
 
-  const expenses = useMemo(() => {
-    let filtered = rawExpenses;
+  const filteredExpenses = useMemo(() => {
+    let filtered = Array.isArray(rawExpenses) ? rawExpenses : [];
     if (debouncedSearch) {
       const lower = debouncedSearch.toLowerCase();
       filtered = filtered.filter(
         (e) =>
-          e.category.toLowerCase().includes(lower) || e.description.toLowerCase().includes(lower),
+          (e?.category || "").toLowerCase().includes(lower) ||
+          (e?.description || "").toLowerCase().includes(lower),
       );
     }
     if (filters.category) {
-      filtered = filtered.filter((e) => e.category === filters.category);
+      filtered = filtered.filter((e) => e?.category === filters.category);
     }
     if (filters.status) {
-      filtered = filtered.filter((e) => e.status === filters.status);
+      filtered = filtered.filter((e) => e?.status === filters.status);
     }
     return filtered;
   }, [rawExpenses, debouncedSearch, filters.category, filters.status]);
+  const expenses = filteredExpenses;
+
+  const handleExport = () => {
+    if (filteredExpenses.length === 0) {
+      toast.error("No expenses to export");
+      return;
+    }
+    const csvContent = [
+      ["Date", "Category", "Description", "Amount", "Status"],
+      ...filteredExpenses.map((e: any) => [
+        e?.date || "",
+        e?.category || "",
+        e?.description || "",
+        e?.amount || "0",
+        e?.status || "",
+      ]),
+    ]
+      .map((row) => row.map((val) => `"${val || ""}"`).join(","))
+      .join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `expenses_${Date.now()}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+    toast.success("Expenses exported successfully");
+  };
 
   useEffect(() => {
     setPage(1);
@@ -530,7 +561,8 @@ function ExpensesPage() {
         )}
       </DataPage>
 
-      <Dialog
+      {/* Add / Edit Expense Drawer */}
+      <Sheet
         open={isAddOpen || !!editItem}
         onOpenChange={(open) => {
           if (!open) {
@@ -540,103 +572,118 @@ function ExpensesPage() {
           }
         }}
       >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{editItem ? "Edit Expense" : "Add Expense"}</DialogTitle>
-          </DialogHeader>
-          <form id="expense-form" noValidate onSubmit={handleSave} className="space-y-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-1.5">
-                <Label htmlFor="date">
-                  Date <span className="text-destructive">*</span>
-                </Label>
-                <DatePicker
-                  name="date"
-                  date={
-                    expenseDate ||
-                    (editItem ? editItem.date : new Date().toISOString().split("T")[0])
-                  }
-                  onDateChange={(d) => {
-                    setExpenseDate(d ? d.toISOString().split("T")[0] : "");
-                    clearExpError("date");
-                  }}
-                />
-                <FieldError message={expErrors.date} />
+        <SheetContent
+          side="right"
+          className="w-full sm:max-w-xl md:max-w-2xl p-0 flex flex-col h-full bg-background border-l border-border"
+        >
+          <SheetHeader className="bg-muted/60 p-5 border-b pr-12 text-left">
+            <SheetTitle className="text-xl font-bold text-foreground">
+              {editItem ? "Edit Expense" : "Record New Expense"}
+            </SheetTitle>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Track operating costs, rent, utilities, and daily business expenditures.
+            </p>
+          </SheetHeader>
+          <form
+            id="expense-form"
+            noValidate
+            onSubmit={handleSave}
+            className="flex flex-col flex-1 overflow-hidden"
+          >
+            <div className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <Label htmlFor="date">
+                    Date <span className="text-destructive">*</span>
+                  </Label>
+                  <DatePicker
+                    name="date"
+                    date={
+                      expenseDate ||
+                      (editItem ? editItem.date : new Date().toISOString().split("T")[0])
+                    }
+                    onDateChange={(d) => {
+                      setExpenseDate(d ? d.toISOString().split("T")[0] : "");
+                      clearExpError("date");
+                    }}
+                  />
+                  <FieldError message={expErrors.date} />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="category">
+                    Category <span className="text-destructive">*</span>
+                  </Label>
+                  <Input
+                    id="category"
+                    name="category"
+                    defaultValue={editItem?.category}
+                    placeholder="e.g. Utilities"
+                    className={
+                      expErrors.category ? "border-destructive focus-visible:ring-destructive" : ""
+                    }
+                    onChange={() => clearExpError("category")}
+                  />
+                  <FieldError message={expErrors.category} />
+                </div>
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="category">
-                  Category <span className="text-destructive">*</span>
-                </Label>
-                <Input
-                  id="category"
-                  name="category"
-                  defaultValue={editItem?.category}
-                  placeholder="e.g. Utilities"
-                  className={
-                    expErrors.category ? "border-destructive focus-visible:ring-destructive" : ""
-                  }
-                  onChange={() => clearExpError("category")}
-                />
-                <FieldError message={expErrors.category} />
-              </div>
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="description">
-                Description <span className="text-destructive">*</span>
-              </Label>
-              <Input
-                id="description"
-                name="description"
-                placeholder="e.g. Electricity bill for July"
-                defaultValue={editItem?.description}
-                className={
-                  expErrors.description ? "border-destructive focus-visible:ring-destructive" : ""
-                }
-                onChange={() => clearExpError("description")}
-              />
-              <FieldError message={expErrors.description} />
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-1.5">
-                <Label htmlFor="amount">
-                  Amount ($) <span className="text-destructive">*</span>
+                <Label htmlFor="description">
+                  Description <span className="text-destructive">*</span>
                 </Label>
                 <Input
-                  id="amount"
-                  name="amount"
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  placeholder="e.g. 150.00"
-                  defaultValue={editItem?.amount}
+                  id="description"
+                  name="description"
+                  placeholder="e.g. Electricity bill for July"
+                  defaultValue={editItem?.description}
                   className={
-                    expErrors.amount ? "border-destructive focus-visible:ring-destructive" : ""
+                    expErrors.description ? "border-destructive focus-visible:ring-destructive" : ""
                   }
-                  onChange={() => clearExpError("amount")}
+                  onChange={() => clearExpError("description")}
                 />
-                <FieldError message={expErrors.amount} />
+                <FieldError message={expErrors.description} />
               </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="status">Status</Label>
-                <SearchableSelect
-                  options={[
-                    { value: "pending", label: "Pending" },
-                    { value: "paid", label: "Paid" },
-                  ]}
-                  value={editItem?.status || "pending"}
-                  onChange={(val) => {
-                    const input = document.createElement("input");
-                    input.type = "hidden";
-                    input.name = "status";
-                    input.value = val;
-                    document.getElementById("expense-form")?.appendChild(input);
-                    if (editItem) setEditItem({ ...editItem, status: val as any });
-                  }}
-                  placeholder="Select Status"
-                />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <Label htmlFor="amount">
+                    Amount ({useCurrency().currencySymbol}) <span className="text-destructive">*</span>
+                  </Label>
+                  <Input
+                    id="amount"
+                    name="amount"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    placeholder="e.g. 150.00"
+                    defaultValue={editItem?.amount}
+                    className={
+                      expErrors.amount ? "border-destructive focus-visible:ring-destructive" : ""
+                    }
+                    onChange={() => clearExpError("amount")}
+                  />
+                  <FieldError message={expErrors.amount} />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="status">Status</Label>
+                  <SearchableSelect
+                    options={[
+                      { value: "pending", label: "Pending" },
+                      { value: "paid", label: "Paid" },
+                    ]}
+                    value={editItem?.status || "pending"}
+                    onChange={(val) => {
+                      const input = document.createElement("input");
+                      input.type = "hidden";
+                      input.name = "status";
+                      input.value = val;
+                      document.getElementById("expense-form")?.appendChild(input);
+                      if (editItem) setEditItem({ ...editItem, status: val as any });
+                    }}
+                    placeholder="Select Status"
+                  />
+                </div>
               </div>
             </div>
-            <DialogFooter>
+            <div className="border-t border-border p-4 bg-card/80 backdrop-blur-sm flex items-center justify-end gap-3 shrink-0">
               <Button
                 type="button"
                 variant="outline"
@@ -648,14 +695,14 @@ function ExpensesPage() {
               >
                 Cancel
               </Button>
-              <Button type="submit" disabled={isSaving}>
+              <Button type="submit" disabled={isSaving} className="min-w-[140px]">
                 {isSaving && <Loader2 className="size-4 animate-spin mr-2" />}
                 Save Expense
               </Button>
-            </DialogFooter>
+            </div>
           </form>
-        </DialogContent>
-      </Dialog>
+        </SheetContent>
+      </Sheet>
 
       <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
         <AlertDialogContent>

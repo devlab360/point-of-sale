@@ -169,9 +169,10 @@ function SalesPage() {
     setViewSale(s);
     setTimeout(() => window.print(), 200);
   };
+  const handlePrintDirect = printReceipt;
 
   return (
-    <div>
+    <>
       <DataPage
         title={t("Sales History") || "Sales History"}
         description={t("manageSales") || "Every transaction across all your registers."}
@@ -664,6 +665,6 @@ function SalesPage() {
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 }

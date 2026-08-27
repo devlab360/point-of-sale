@@ -139,7 +139,7 @@ export const TRANSLATIONS: Record<LanguageCode, Record<string, string>> = {
     inactive: "Inactive",
     newSale: "New Sale",
     overview: "Overview",
-    catalog: "Catalog",
+    catalog: "Store Catalog",
     brands: "Brands",
     units: "Units",
     stock: "Stock",
@@ -171,6 +171,19 @@ export const TRANSLATIONS: Record<LanguageCode, Record<string, string>> = {
     superAdmin: "Super Admin SaaS",
     clientPortal: "Client Portal",
     activityLog: "Activity Log",
+    billingSales: "Billing & Sales",
+    inventoryCatalog: "Inventory & Catalog",
+    purchasesSuppliers: "Purchases & Vendors",
+    customersLoyalty: "Customers & Khata",
+    accountsExpenses: "Accounts & Expenses",
+    servicesOperations: "Services & Operations",
+    settingsSystem: "Store & Settings",
+    salesFulfillment: "Sales & Fulfillment",
+    purchasesVendors: "Purchases & Vendors",
+    customersMarketing: "Customers & Marketing",
+    financeAccounts: "Finance & Accounts",
+    administration: "Administration",
+    productsCatalog: "Products Catalog",
   },
   bn: {
     dashboard: "ড্যাশবোর্ড",
@@ -618,6 +631,13 @@ export const TRANSLATIONS: Record<LanguageCode, Record<string, string>> = {
     superAdmin: "सुपर एडमिन",
     clientPortal: "ग्राहक पोर्टल",
     activityLog: "गतिविधि लॉग",
+    billingSales: "बिलिंग एवं बिक्री",
+    inventoryCatalog: "इन्वेंट्री एवं स्टॉक",
+    purchasesSuppliers: "खरीददारी एवं सप्लायर",
+    customersLoyalty: "ग्राहक एवं खाता",
+    accountsExpenses: "हिसाब-किताब एवं खर्च",
+    servicesOperations: "सेवाएं एवं संचालन",
+    settingsSystem: "स्टोर एवं सेटिंग्स",
   },
   zh: {
     dashboard: "仪表板",
@@ -773,7 +793,7 @@ export const TRANSLATIONS: Record<LanguageCode, Record<string, string>> = {
 interface LanguageContextType {
   language: LanguageCode;
   setLanguage: (lang: LanguageCode) => void;
-  t: (key: string) => string;
+  t: (key: string, fallback?: string) => string;
   dir: "ltr" | "rtl";
 }
 
@@ -806,8 +826,8 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
   }, [language, dir]);
 
   const t = useCallback(
-    (key: string): string => {
-      return TRANSLATIONS[language]?.[key] || TRANSLATIONS["en"]?.[key] || key;
+    (key: string, fallback?: string): string => {
+      return TRANSLATIONS[language]?.[key] || TRANSLATIONS["en"]?.[key] || fallback || key;
     },
     [language],
   );

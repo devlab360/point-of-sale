@@ -94,31 +94,34 @@ function SubscriptionsPage() {
   const [amount, setAmount] = useState("");
   const [nextBillingDate, setNextBillingDate] = useState("");
 
-  const [filters, setFilters] = useState({ status: "" });
-  const [draftFilters, setDraftFilters] = useState({ status: "" });
-  const activeFilterCount = filters.status ? 1 : 0;
+  const [filters, setFilters] = useState({ status: "", cycle: "" });
+  const [draftFilters, setDraftFilters] = useState({ status: "", cycle: "" });
+  const activeFilterCount = (filters.status ? 1 : 0) + (filters.cycle ? 1 : 0);
 
   const handleResetFilters = () => {
-    setFilters({ status: "" });
-    setDraftFilters({ status: "" });
+    setFilters({ status: "", cycle: "" });
+    setDraftFilters({ status: "", cycle: "" });
   };
 
   const filteredSubs = useMemo(() => {
-    let filtered = rawSubs;
+    let filtered = Array.isArray(rawSubs) ? rawSubs : [];
     if (debouncedSearch) {
       const lower = debouncedSearch.toLowerCase();
       filtered = filtered.filter(
         (s) =>
-          s.subscriptionNo.toLowerCase().includes(lower) ||
-          s.customerName.toLowerCase().includes(lower) ||
-          s.planName.toLowerCase().includes(lower),
+          (s?.subscriptionNo || "").toLowerCase().includes(lower) ||
+          (s?.customerName || "").toLowerCase().includes(lower) ||
+          (s?.planName || "").toLowerCase().includes(lower),
       );
     }
     if (filters.status) {
-      filtered = filtered.filter((s) => s.status === filters.status);
+      filtered = filtered.filter((s) => s?.status === filters.status);
+    }
+    if (filters.cycle) {
+      filtered = filtered.filter((s) => s?.billingCycle === filters.cycle);
     }
     return [...filtered].reverse();
-  }, [rawSubs, debouncedSearch, filters.status]);
+  }, [rawSubs, debouncedSearch, filters.status, filters.cycle]);
 
   const totalPages = Math.ceil(filteredSubs.length / pageSize);
   const paginated = useMemo(() => {

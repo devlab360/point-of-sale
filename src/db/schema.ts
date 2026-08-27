@@ -1466,3 +1466,4 @@ export const subscriptionPayments = pgTable(
     statusIdx: index("sub_payments_status_idx").on(t.status),
   }),
 );
+

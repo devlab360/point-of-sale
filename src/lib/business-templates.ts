@@ -128,6 +128,8 @@ export const BUSINESS_TEMPLATES: Record<BusinessType, BusinessTemplate> = {
       "COUPONS",
       "GIFT_CARDS",
       "PROMOTIONS",
+      "QUOTATIONS",
+      "DELIVERY_CHALLANS",
     ],
   },
   GROCERY: {
@@ -153,6 +155,8 @@ export const BUSINESS_TEMPLATES: Record<BusinessType, BusinessTemplate> = {
       "COUPONS",
       "GIFT_CARDS",
       "PROMOTIONS",
+      "QUOTATIONS",
+      "DELIVERY_CHALLANS",
     ],
   },
   RESTAURANT: {

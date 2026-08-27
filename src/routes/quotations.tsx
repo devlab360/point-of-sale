@@ -73,21 +73,42 @@ function QuotationsPage() {
 
   const { data: rawQuotationsData } = useQuery({
     queryKey: ["quotations", orgId],
-    queryFn: async () => ((await getQuotationsFn({ data: {} })) as any)?.data || [],
+    queryFn: async () => {
+      try {
+        const res = (await getQuotationsFn({ data: {} })) as any;
+        return Array.isArray(res?.data) ? res.data : [];
+      } catch {
+        return [];
+      }
+    },
   });
-  const rawQuotations = rawQuotationsData || [];
+  const rawQuotations = Array.isArray(rawQuotationsData) ? rawQuotationsData : [];
 
   const { data: customersData } = useQuery({
     queryKey: ["customers", orgId],
-    queryFn: async () => ((await getCustomersFn({ data: {} })) as any)?.data || [],
+    queryFn: async () => {
+      try {
+        const res = (await getCustomersFn({ data: {} })) as any;
+        return Array.isArray(res?.data) ? res.data : [];
+      } catch {
+        return [];
+      }
+    },
   });
-  const customers = customersData || [];
+  const customers = Array.isArray(customersData) ? customersData : [];
 
   const { data: productsData } = useQuery({
     queryKey: ["products", orgId],
-    queryFn: async () => ((await getProductsFn({ data: {} })) as any)?.data || [],
+    queryFn: async () => {
+      try {
+        const res = (await getProductsFn({ data: {} })) as any;
+        return Array.isArray(res?.data) ? res.data : [];
+      } catch {
+        return [];
+      }
+    },
   });
-  const products = productsData || [];
+  const products = Array.isArray(productsData) ? productsData : [];
 
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [viewItem, setViewItem] = useState<any | null>(null);
@@ -120,17 +141,17 @@ function QuotationsPage() {
   };
 
   const filteredQuotations = useMemo(() => {
-    let filtered = rawQuotations;
+    let filtered = Array.isArray(rawQuotations) ? rawQuotations : [];
     if (debouncedSearch) {
       const lower = debouncedSearch.toLowerCase();
       filtered = filtered.filter(
         (q) =>
-          q.quotationNo.toLowerCase().includes(lower) ||
-          q.customerName.toLowerCase().includes(lower),
+          (q?.quotationNo || "").toLowerCase().includes(lower) ||
+          (q?.customerName || "").toLowerCase().includes(lower),
       );
     }
     if (filters.status) {
-      filtered = filtered.filter((q) => q.status === filters.status);
+      filtered = filtered.filter((q) => q?.status === filters.status);
     }
     return [...filtered].reverse();
   }, [rawQuotations, debouncedSearch, filters.status]);
@@ -240,7 +261,7 @@ function QuotationsPage() {
           },
         },
       });
-      if (!res?.success) throw new Error(res?.error);
+      if (!res?.success) throw new Error((res as any)?.error || "Failed to create");
 
       queryClient.invalidateQueries({ queryKey: ["quotations"] });
       toast.success(`Quotation ${quotNo} created successfully!`);
@@ -310,15 +331,45 @@ function QuotationsPage() {
     }
   };
 
+  const handleExport = () => {
+    if (filteredQuotations.length === 0) {
+      toast.error("No quotations to export");
+      return;
+    }
+    const csvContent = [
+      ["Quotation No", "Customer", "Date", "Valid Until", "Total", "Status"],
+      ...filteredQuotations.map((q: any) => [
+        q?.quotationNo || "",
+        q?.customerName || "",
+        q?.date || "",
+        q?.validUntil || "",
+        q?.total || "0",
+        q?.status || "",
+      ]),
+    ]
+      .map((row) => row.map((val) => `"${val || ""}"`).join(","))
+      .join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `quotations_${Date.now()}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+    toast.success("Quotations exported successfully");
+  };
+
   return (
-    <div className="p-4 md:p-6 lg:p-8 space-y-6">
+    <>
       <DataPage
         title="B2B Quotations & Estimates"
         description="Create proforma invoices, price quotations, and convert them to B2B invoices."
         primaryAction={{ label: "Create Quotation", onClick: () => setIsAddOpen(true) }}
         searchPlaceholder="Search by quotation # or customer..."
         searchValue={search}
-        onSearchChange={setSearch}        hideToolbar={false}
+        onSearchChange={setSearch}
+        hideToolbar={false}
         onExport={handleExport}
         onResetFilters={handleResetFilters}
         activeFilterCount={activeFilterCount}
@@ -356,6 +407,32 @@ function QuotationsPage() {
         )}
       >
         <div className="space-y-4">
+          {/* Top Summary Metrics */}
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <div className="rounded-xl border border-border/80 bg-card p-3 shadow-2xs">
+              <div className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Total Quotes</div>
+              <div className="mt-1 text-xl sm:text-2xl font-black text-foreground">{rawQuotations.length}</div>
+            </div>
+            <div className="rounded-xl border border-border/80 bg-card p-3 shadow-2xs">
+              <div className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Converted</div>
+              <div className="mt-1 text-xl sm:text-2xl font-black text-success">
+                {rawQuotations.filter((q) => q.status === "converted").length}
+              </div>
+            </div>
+            <div className="rounded-xl border border-border/80 bg-card p-3 shadow-2xs">
+              <div className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Pending / Sent</div>
+              <div className="mt-1 text-xl sm:text-2xl font-black text-amber-500">
+                {rawQuotations.filter((q) => q.status === "sent" || q.status === "draft").length}
+              </div>
+            </div>
+            <div className="rounded-xl border border-border/80 bg-card p-3 shadow-2xs">
+              <div className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Estimated Value</div>
+              <div className="mt-1 text-xl sm:text-2xl font-black text-primary truncate">
+                {formatCurrency(rawQuotations.reduce((acc, q) => acc + (parseFloat(q.total) || 0), 0))}
+              </div>
+            </div>
+          </div>
+
           <div className="overflow-hidden rounded-xl border border-border/80 bg-card shadow-soft">
             {/* Desktop Table View */}
             <div className="table-desktop overflow-x-auto">
@@ -547,8 +624,8 @@ function QuotationsPage() {
         </div>
       </DataPage>
 
-      {/* Create B2B Quotation Modal */}
-      <Dialog
+      {/* Create B2B Quotation Drawer */}
+      <Sheet
         open={isAddOpen}
         onOpenChange={(open) => {
           if (!open) {
@@ -557,161 +634,167 @@ function QuotationsPage() {
           }
         }}
       >
-        <DialogContent className="sm:max-w-4xl overflow-hidden p-0">
-          <DialogHeader className="bg-muted p-4">
-            <DialogTitle>Create New Quotation / Estimate</DialogTitle>
-          </DialogHeader>
+        <SheetContent
+          side="right"
+          className="w-full sm:max-w-3xl lg:max-w-4xl xl:max-w-5xl p-0 flex flex-col h-full bg-background border-l border-border"
+        >
+          <SheetHeader className="bg-muted/60 p-5 border-b pr-12 text-left">
+            <SheetTitle className="text-xl font-bold text-foreground">Create New Quotation / Estimate</SheetTitle>
+            <p className="text-xs text-muted-foreground mt-0.5">Generate formal estimates and convert them into sales invoices anytime.</p>
+          </SheetHeader>
           <form
             noValidate
             onSubmit={handleCreateQuotation}
-            className="space-y-4 p-4 max-h-[80vh] overflow-y-auto"
+            className="flex flex-col flex-1 overflow-hidden"
           >
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              <div className="space-y-1.5">
+            <div className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-5">
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div className="space-y-1.5">
+                  <Label>
+                    Customer / Client <span className="text-destructive">*</span>
+                  </Label>
+                  <div
+                    className={
+                      quotErrors.selectedCustomerId ? "rounded-md border border-destructive" : ""
+                    }
+                  >
+                    <SearchableSelect
+                      options={customers.map((c) => ({ value: c.id, label: c.name }))}
+                      value={selectedCustomerId}
+                      onChange={(val) => {
+                        setSelectedCustomerId(val);
+                        clearQuotError("selectedCustomerId");
+                      }}
+                      placeholder="Search customer..."
+                      onCreate={async (name) => {
+                        const res = await createCustomerFn({ data: { customer: { name } } });
+                        if (res?.success) {
+                          queryClient.invalidateQueries({ queryKey: ["customers"] });
+                          return res.data?.id;
+                        }
+                      }}
+                    />
+                  </div>
+                  <FieldError message={quotErrors.selectedCustomerId} />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Valid Until</Label>
+                  <div className="mt-1">
+                    <DatePicker
+                      date={validUntil ? new Date(validUntil) : undefined}
+                      onDateChange={(d) => setValidUntil(d ? d.toISOString().split("T")[0] : "")}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-1.5 border-t pt-4">
                 <Label>
-                  Customer / Client <span className="text-destructive">*</span>
+                  Search & Add Products to Estimate <span className="text-destructive">*</span>
                 </Label>
-                <div
-                  className={
-                    quotErrors.selectedCustomerId ? "rounded-md border border-destructive" : ""
-                  }
-                >
-                  <SearchableSelect
-                    options={customers.map((c) => ({ value: c.id, label: c.name }))}
-                    value={selectedCustomerId}
-                    onChange={(val) => {
-                      setSelectedCustomerId(val);
-                      clearQuotError("selectedCustomerId");
-                    }}
-                    placeholder="Search customer..."
-                    onCreate={async (name) => {
-                      const res = await createCustomerFn({ data: { customer: { name } } });
-                      if (res?.success) {
-                        queryClient.invalidateQueries({ queryKey: ["customers"] });
-                        return res.data?.id;
-                      }
-                    }}
-                  />
-                </div>
-                <FieldError message={quotErrors.selectedCustomerId} />
+                <SearchableSelect
+                  options={products.map((p) => ({
+                    value: p.id,
+                    label: p.name,
+                    sublabel: `Price: ${formatCurrency(p.price)}`,
+                  }))}
+                  value=""
+                  onChange={(val) => {
+                    if (val) {
+                      addItemToQuotation(val);
+                      clearQuotError("lineItems");
+                    }
+                  }}
+                  placeholder="Search products by name or code..."
+                />
+                <FieldError message={quotErrors.lineItems} />
               </div>
-              <div className="space-y-1.5">
-                <Label>Valid Until</Label>
-                <div className="mt-1">
-                  <DatePicker
-                    date={validUntil ? new Date(validUntil) : undefined}
-                    onDateChange={(d) => setValidUntil(d ? d.toISOString().split("T")[0] : "")}
-                  />
-                </div>
-              </div>
-            </div>
 
-            <div className="space-y-1.5 border-t pt-3">
-              <Label>
-                Search & Add Products to Estimate <span className="text-destructive">*</span>
-              </Label>
-              <SearchableSelect
-                options={products.map((p) => ({
-                  value: p.id,
-                  label: p.name,
-                  sublabel: `Price: ${formatCurrency(p.price)}`,
-                }))}
-                value=""
-                onChange={(val) => {
-                  if (val) {
-                    addItemToQuotation(val);
-                    clearQuotError("lineItems");
-                  }
-                }}
-                placeholder="Search products by name or code..."
-              />
-              <FieldError message={quotErrors.lineItems} />
-            </div>
-
-            {/* Line Items Table */}
-            {lineItems.length > 0 && (
-              <div className="overflow-x-auto rounded-lg border border-border">
-                <Table className="text-xs min-w-[500px]">
-                  <TableHeader className="bg-muted/50 font-semibold uppercase text-muted-foreground">
-                    <TableRow>
-                      <TableHead className="p-2 text-left">Item</TableHead>
-                      <TableHead className="p-2 text-center w-20">Qty</TableHead>
-                      <TableHead className="p-2 text-right w-28">
-                        Unit Price ({currencySymbol})
-                      </TableHead>
-                      <TableHead className="p-2 text-right w-24">Total</TableHead>
-                      <TableHead className="p-2 text-center w-12"></TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody className="divide-y divide-border">
-                    {lineItems.map((item) => (
-                      <TableRow key={item.productId}>
-                        <TableCell className="font-medium whitespace-nowrap">
-                          {item.productName}
-                        </TableCell>
-                        <TableCell className="text-center whitespace-nowrap">
-                          <Input
-                            type="number"
-                            min="1"
-                            required
-                            placeholder="1"
-                            value={item.quantity}
-                            onChange={(e) =>
-                              updateLineQty(item.productId, parseInt(e.target.value) || 1)
-                            }
-                            className="h-7 w-16 text-center text-xs"
-                          />
-                        </TableCell>
-                        <TableCell className="text-right whitespace-nowrap">
-                          <Input
-                            type="number"
-                            step="0.01"
-                            min="0"
-                            required
-                            placeholder="0.00"
-                            value={item.price}
-                            onChange={(e) =>
-                              updateLinePrice(item.productId, parseFloat(e.target.value) || 0)
-                            }
-                            className="h-7 w-24 text-right text-xs"
-                          />
-                        </TableCell>
-                        <TableCell className="text-right font-bold whitespace-nowrap">
-                          {formatCurrency(item.price * item.quantity)}
-                        </TableCell>
-                        <TableCell className="text-center whitespace-nowrap">
-                          <button
-                            type="button"
-                            onClick={() => updateLineQty(item.productId, 0)}
-                            className="text-destructive hover:underline font-bold"
-                          >
-                            ×
-                          </button>
-                        </TableCell>
+              {/* Line Items Table */}
+              {lineItems.length > 0 && (
+                <div className="overflow-x-auto rounded-xl border border-border bg-card">
+                  <Table className="text-xs min-w-[500px]">
+                    <TableHeader className="bg-muted/50 font-semibold uppercase text-muted-foreground">
+                      <TableRow>
+                        <TableHead className="p-3 text-left">Item</TableHead>
+                        <TableHead className="p-3 text-center w-24">Qty</TableHead>
+                        <TableHead className="p-3 text-right w-32">
+                          Unit Price ({currencySymbol})
+                        </TableHead>
+                        <TableHead className="p-3 text-right w-28">Total</TableHead>
+                        <TableHead className="p-3 text-center w-12"></TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            )}
+                    </TableHeader>
+                    <TableBody className="divide-y divide-border">
+                      {lineItems.map((item) => (
+                        <TableRow key={item.productId}>
+                          <TableCell className="font-medium p-3 whitespace-nowrap">
+                            {item.productName}
+                          </TableCell>
+                          <TableCell className="text-center p-3 whitespace-nowrap">
+                            <Input
+                              type="number"
+                              min="1"
+                              required
+                              placeholder="1"
+                              value={item.quantity}
+                              onChange={(e) =>
+                                updateLineQty(item.productId, parseInt(e.target.value) || 1)
+                              }
+                              className="h-8 w-20 text-center text-xs mx-auto"
+                            />
+                          </TableCell>
+                          <TableCell className="text-right p-3 whitespace-nowrap">
+                            <Input
+                              type="number"
+                              step="0.01"
+                              min="0"
+                              required
+                              placeholder="0.00"
+                              value={item.price}
+                              onChange={(e) =>
+                                updateLinePrice(item.productId, parseFloat(e.target.value) || 0)
+                              }
+                              className="h-8 w-28 text-right text-xs ml-auto"
+                            />
+                          </TableCell>
+                          <TableCell className="text-right font-black p-3 whitespace-nowrap">
+                            {formatCurrency(item.price * item.quantity)}
+                          </TableCell>
+                          <TableCell className="text-center p-3 whitespace-nowrap">
+                            <button
+                              type="button"
+                              onClick={() => updateLineQty(item.productId, 0)}
+                              className="text-destructive hover:bg-destructive/10 size-6 rounded-md inline-flex items-center justify-center font-bold"
+                            >
+                              ×
+                            </button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
 
-            {/* Summary */}
-            <div className="rounded-lg bg-muted/40 p-3 space-y-1 text-sm">
-              <div className="flex justify-between text-xs">
-                <span>Subtotal:</span>
-                <span>{formatCurrency(quotationSubtotal)}</span>
-              </div>
-              <div className="flex justify-between text-xs">
-                <span>Tax (8%):</span>
-                <span>{formatCurrency(quotationTax)}</span>
-              </div>
-              <div className="flex justify-between font-bold text-base border-t pt-1">
-                <span>Total Estimate:</span>
-                <span>{formatCurrency(quotationTotal)}</span>
+              {/* Summary */}
+              <div className="rounded-xl bg-muted/40 border border-border/80 p-4 space-y-2 text-sm">
+                <div className="flex justify-between text-xs">
+                  <span className="text-muted-foreground">Subtotal:</span>
+                  <span className="font-semibold">{formatCurrency(quotationSubtotal)}</span>
+                </div>
+                <div className="flex justify-between text-xs">
+                  <span className="text-muted-foreground">Tax (8%):</span>
+                  <span className="font-semibold">{formatCurrency(quotationTax)}</span>
+                </div>
+                <div className="flex justify-between font-black text-lg border-t border-border pt-2 text-foreground">
+                  <span>Total Estimate:</span>
+                  <span className="text-primary">{formatCurrency(quotationTotal)}</span>
+                </div>
               </div>
             </div>
 
-            <DialogFooter className="mt-6">
+            <div className="border-t border-border p-4 bg-card/80 backdrop-blur-sm flex items-center justify-end gap-3 shrink-0">
               <Button
                 type="button"
                 variant="outline"
@@ -722,20 +805,20 @@ function QuotationsPage() {
               >
                 Cancel
               </Button>
-              <Button type="submit" disabled={isSubmitting}>
+              <Button type="submit" disabled={isSubmitting} className="min-w-[160px]">
                 {isSubmitting && <Loader2 className="size-4 animate-spin mr-2" />}
                 Create Quotation
               </Button>
-            </DialogFooter>
+            </div>
           </form>
-        </DialogContent>
-      </Dialog>
+        </SheetContent>
+      </Sheet>
 
       {/* View / Print Quotation Sheet */}
       <Sheet open={!!viewItem} onOpenChange={(open) => !open && setViewItem(null)}>
         <SheetContent
           side="right"
-          className="w-full sm:max-w-2xl overflow-y-auto p-6 bg-background border-l border-border"
+          className="w-full sm:max-w-3xl lg:max-w-4xl xl:max-w-5xl overflow-y-auto p-6 bg-background border-l border-border"
         >
           <SheetHeader className="flex flex-col sm:flex-row items-start justify-between gap-3 border-b pb-4 pr-6 sm:pr-8 text-left">
             <div className="w-full sm:w-auto text-left">
@@ -849,6 +932,6 @@ function QuotationsPage() {
           )}
         </SheetContent>
       </Sheet>
-    </div>
+    </>
   );
 }

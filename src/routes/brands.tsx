@@ -18,6 +18,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tag, Pencil, Trash2, Loader2 } from "lucide-react";
@@ -230,15 +231,16 @@ function BrandsPage() {
           <div className="space-y-4 flex flex-col h-full min-h-[50vh]">
             <div className="flex-1 space-y-4">
               <div className="space-y-2">
-                <Label>Brand Status</Label>
+                <Label>Brand Usage</Label>
                 <SearchableSelect
                   options={[
-                    { value: "", label: "All Statuses" },
-                    { value: "active", label: "Active Brands" },
+                    { value: "", label: "All Brands" },
+                    { value: "in-use", label: "In Use (Has Products)" },
+                    { value: "empty", label: "Empty (No Products)" },
                   ]}
-                  value={draftFilters.status}
-                  onChange={(val) => setDraftFilters((prev) => ({ ...prev, status: val }))}
-                  placeholder="Filter by Status"
+                  value={draftFilters.usage}
+                  onChange={(val) => setDraftFilters((prev) => ({ ...prev, usage: val }))}
+                  placeholder="Filter by Usage"
                 />
               </div>
             </div>
@@ -414,7 +416,8 @@ function BrandsPage() {
         )}
       </DataPage>
 
-      <Dialog
+      {/* Add / Edit Brand Drawer */}
+      <Sheet
         open={modalOpen}
         onOpenChange={(open) => {
           if (!open) {
@@ -423,13 +426,25 @@ function BrandsPage() {
           }
         }}
       >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{editingBrand ? "Edit Brand" : "New Brand"}</DialogTitle>
-          </DialogHeader>
-          <form onSubmit={save} noValidate>
-            <div className="grid gap-4 py-4">
-              <div className="grid gap-1.5">
+        <SheetContent
+          side="right"
+          className="w-full sm:max-w-md md:max-w-lg p-0 flex flex-col h-full bg-background border-l border-border"
+        >
+          <SheetHeader className="bg-muted/60 p-5 border-b pr-12 text-left">
+            <SheetTitle className="text-xl font-bold text-foreground">
+              {editingBrand ? "Edit Brand" : "Add New Brand"}
+            </SheetTitle>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Organize inventory by product manufacturer or brand name.
+            </p>
+          </SheetHeader>
+          <form
+            onSubmit={save}
+            noValidate
+            className="flex flex-col flex-1 overflow-hidden"
+          >
+            <div className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-4">
+              <div className="space-y-1.5">
                 <Label htmlFor="name">
                   Brand Name <span className="text-destructive">*</span>
                 </Label>
@@ -440,7 +455,7 @@ function BrandsPage() {
                     setName(e.target.value);
                     clearBrandError("name");
                   }}
-                  placeholder="e.g. Nestle"
+                  placeholder="e.g. Apple, Samsung, Nestle"
                   className={
                     brandErrors.name ? "border-destructive focus-visible:ring-destructive" : ""
                   }
@@ -448,7 +463,7 @@ function BrandsPage() {
                 <FieldError message={brandErrors.name} />
               </div>
             </div>
-            <DialogFooter className="mt-6">
+            <div className="border-t border-border p-4 bg-card/80 backdrop-blur-sm flex items-center justify-end gap-3 shrink-0">
               <Button
                 type="button"
                 variant="outline"
@@ -459,14 +474,14 @@ function BrandsPage() {
               >
                 Cancel
               </Button>
-              <Button type="submit" disabled={isSaving}>
+              <Button type="submit" disabled={isSaving} className="min-w-[130px]">
                 {isSaving && <Loader2 className="size-4 animate-spin mr-2" />}
-                Save changes
+                Save Brand
               </Button>
-            </DialogFooter>
+            </div>
           </form>
-        </DialogContent>
-      </Dialog>
+        </SheetContent>
+      </Sheet>
 
       <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
         <AlertDialogContent>

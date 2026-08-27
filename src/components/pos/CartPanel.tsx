@@ -475,49 +475,88 @@ export function CartPanel({
 
         {/* Row 3: Fast Cash Input (If Cash or Credit Selected) */}
         {(payment === "cash" || payment === "credit") && (
-          <div className="flex items-center gap-1.5 bg-muted/20 px-2 py-1 rounded-lg border border-border/60">
-            <span className="text-[10px] font-bold uppercase text-muted-foreground shrink-0">
-              {payment === "credit" ? "Deposit:" : "Cash:"}
-            </span>
-            <input
-              type="number"
-              value={cashTendered}
-              onFocus={() => {
-                setActiveInput("cashTendered");
-                setKeyboardOpen(true);
-              }}
-              onChange={(e) => setCashTendered(e.target.value)}
-              placeholder={payment === "credit" ? "0.00" : formatCurrency(total)}
-              className="h-6 flex-1 rounded border border-border/80 bg-background px-1.5 text-[11px] font-mono font-bold outline-none focus:border-primary"
-            />
-            {payment === "cash" && (
-              <button
-                type="button"
-                onClick={() => setCashTendered(total.toFixed(2))}
-                className="rounded bg-primary/12 px-1.5 py-0.5 text-[10px] font-bold text-primary hover:bg-primary/20 shrink-0"
-              >
-                Exact
-              </button>
+          <div className="space-y-1.5 bg-muted/30 p-2 rounded-xl border border-border/80">
+            <div className="flex items-center gap-1.5">
+              <span className="text-xs font-bold text-muted-foreground shrink-0">
+                {payment === "credit" ? "Deposit Paid:" : "Cash Given:"}
+              </span>
+              <input
+                type="number"
+                value={cashTendered}
+                onFocus={() => {
+                  setActiveInput("cashTendered");
+                  setKeyboardOpen(true);
+                }}
+                onChange={(e) => setCashTendered(e.target.value)}
+                placeholder={payment === "credit" ? "0.00" : formatCurrency(total)}
+                className="h-8 flex-1 rounded-lg border border-border/80 bg-background px-2 text-xs sm:text-sm font-mono font-bold outline-none focus:border-primary shadow-xs"
+              />
+              {payment === "cash" && (
+                <button
+                  type="button"
+                  onClick={() => setCashTendered(total.toFixed(2))}
+                  className="rounded-lg bg-primary/15 px-2.5 h-8 text-xs font-black text-primary hover:bg-primary/25 transition-colors shrink-0"
+                >
+                  Exact
+                </button>
+              )}
+            </div>
+
+            {/* Quick Note Presets for Fast Tap */}
+            {payment === "cash" && total > 0 && (
+              <div className="flex flex-wrap gap-1 pt-0.5">
+                {[50, 100, 200, 500, 2000]
+                  .filter((note) => note >= total || [50, 100, 200, 500].includes(note))
+                  .slice(0, 4)
+                  .map((note) => (
+                    <button
+                      key={note}
+                      type="button"
+                      onClick={() => setCashTendered(note.toString())}
+                      className={cn(
+                        "flex-1 py-1 rounded-md text-[11px] font-bold border transition-all shadow-2xs",
+                        parseFloat(cashTendered) === note
+                          ? "bg-primary text-primary-foreground border-primary"
+                          : "bg-background border-border/80 text-foreground hover:bg-muted/50",
+                      )}
+                    >
+                      ₹{note}
+                    </button>
+                  ))}
+              </div>
             )}
+
+            {/* Clear, High-Contrast Return Change Banner */}
             {payment === "cash" && changeDue > 0 && (
-              <span className="text-[10px] font-bold text-success bg-success/15 px-1.5 py-0.5 rounded shrink-0">
-                Change: {formatCurrency(changeDue)}
-              </span>
+              <div className="flex items-center justify-between bg-success/15 border border-success/30 px-2.5 py-1 rounded-lg">
+                <span className="text-xs font-bold text-success flex items-center gap-1">
+                  <span>Wapas / Return Change:</span>
+                </span>
+                <span className="number text-sm sm:text-base font-black text-success">
+                  {formatCurrency(changeDue)}
+                </span>
+              </div>
             )}
+
             {payment === "credit" && (parseFloat(cashTendered) || 0) > 0 && (
-              <span className="text-[10px] font-bold text-warning bg-warning/15 px-1.5 py-0.5 rounded shrink-0">
-                Due: {formatCurrency(Math.max(0, total - (parseFloat(cashTendered) || 0)))}
-              </span>
+              <div className="flex items-center justify-between bg-warning/15 border border-warning/30 px-2.5 py-1 rounded-lg">
+                <span className="text-xs font-bold text-warning-foreground">
+                  Remaining Udhaar / Due:
+                </span>
+                <span className="number text-xs sm:text-sm font-black text-warning-foreground">
+                  {formatCurrency(Math.max(0, total - (parseFloat(cashTendered) || 0)))}
+                </span>
+              </div>
             )}
           </div>
         )}
 
         {/* Split Payments Inputs — Compact Inline Input Group */}
         {payment === "split" && (
-          <div className="space-y-1">
+          <div className="space-y-1 bg-muted/20 p-1.5 rounded-xl border border-border/70">
             <div className="grid grid-cols-3 gap-1">
-              <div className="flex items-center rounded-md border border-border/80 bg-background overflow-hidden h-7 focus-within:border-primary focus-within:ring-1 focus-within:ring-primary shadow-xs">
-                <span className="bg-muted/50 px-1.5 py-1 text-[9px] font-bold uppercase text-muted-foreground border-r border-border/60 shrink-0">
+              <div className="flex items-center rounded-lg border border-border/80 bg-background overflow-hidden h-8 focus-within:border-primary focus-within:ring-1 focus-within:ring-primary shadow-xs">
+                <span className="bg-muted/50 px-2 py-1 text-[10px] font-bold uppercase text-muted-foreground border-r border-border/60 shrink-0">
                   Cash
                 </span>
                 <input
@@ -533,8 +572,8 @@ export function CartPanel({
                 />
               </div>
 
-              <div className="flex items-center rounded-md border border-border/80 bg-background overflow-hidden h-7 focus-within:border-primary focus-within:ring-1 focus-within:ring-primary shadow-xs">
-                <span className="bg-muted/50 px-1.5 py-1 text-[9px] font-bold uppercase text-muted-foreground border-r border-border/60 shrink-0">
+              <div className="flex items-center rounded-lg border border-border/80 bg-background overflow-hidden h-8 focus-within:border-primary focus-within:ring-1 focus-within:ring-primary shadow-xs">
+                <span className="bg-muted/50 px-2 py-1 text-[10px] font-bold uppercase text-muted-foreground border-r border-border/60 shrink-0">
                   Card
                 </span>
                 <input
@@ -550,8 +589,8 @@ export function CartPanel({
                 />
               </div>
 
-              <div className="flex items-center rounded-md border border-border/80 bg-background overflow-hidden h-7 focus-within:border-primary focus-within:ring-1 focus-within:ring-primary shadow-xs">
-                <span className="bg-muted/50 px-1.5 py-1 text-[9px] font-bold uppercase text-muted-foreground border-r border-border/60 shrink-0">
+              <div className="flex items-center rounded-lg border border-border/80 bg-background overflow-hidden h-8 focus-within:border-primary focus-within:ring-1 focus-within:ring-primary shadow-xs">
+                <span className="bg-muted/50 px-2 py-1 text-[10px] font-bold uppercase text-muted-foreground border-r border-border/60 shrink-0">
                   UPI
                 </span>
                 <input
@@ -576,7 +615,7 @@ export function CartPanel({
                 (parseFloat(splitUpi) || 0);
               const remaining = total - entered;
               return (
-                <div className="flex items-center justify-between text-[10px] font-bold px-1">
+                <div className="flex items-center justify-between text-xs font-bold px-1 py-0.5">
                   <span className="text-muted-foreground">Entered: {formatCurrency(entered)}</span>
                   <span
                     className={
@@ -615,7 +654,7 @@ export function CartPanel({
           />
           <PayBtn
             icon={Smartphone}
-            label="UPI"
+            label="UPI / QR"
             active={payment === "upi"}
             onClick={() => setPayment("upi")}
           />
@@ -627,7 +666,7 @@ export function CartPanel({
           />
           <PayBtn
             icon={Receipt}
-            label="Credit"
+            label="Udhaar"
             active={payment === "credit"}
             onClick={() => setPayment("credit")}
           />

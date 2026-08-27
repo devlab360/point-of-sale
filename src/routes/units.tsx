@@ -24,6 +24,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Scale, Pencil, Trash2, Loader2 } from "lucide-react";
@@ -261,16 +262,16 @@ function UnitsPage() {
           <div className="space-y-4 flex flex-col h-full min-h-[50vh]">
             <div className="flex-1 space-y-4">
               <div className="space-y-2">
-                <Label>Quick Filter</Label>
+                <Label>Unit Usage</Label>
                 <SearchableSelect
                   options={[
                     { value: "", label: "All Units" },
-                    { value: "kg", label: "Kilograms (kg)" },
-                    { value: "pcs", label: "Pieces (pcs)" },
+                    { value: "in-use", label: "In Use (Has Products)" },
+                    { value: "empty", label: "Empty (No Products)" },
                   ]}
-                  value={draftFilters.type}
-                  onChange={(val) => setDraftFilters((prev) => ({ ...prev, type: val }))}
-                  placeholder="Filter by Type"
+                  value={draftFilters.usage}
+                  onChange={(val) => setDraftFilters((prev) => ({ ...prev, usage: val }))}
+                  placeholder="Filter by Usage"
                 />
               </div>
             </div>
@@ -432,7 +433,8 @@ function UnitsPage() {
         )}
       </DataPage>
 
-      <Dialog
+      {/* Add / Edit Unit Drawer */}
+      <Sheet
         open={modalOpen}
         onOpenChange={(open) => {
           if (!open) {
@@ -441,16 +443,28 @@ function UnitsPage() {
           }
         }}
       >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{editingUnit ? "Edit Unit" : "New Unit"}</DialogTitle>
-          </DialogHeader>
-          <form onSubmit={save} noValidate>
-            <div className="grid gap-4 py-4">
+        <SheetContent
+          side="right"
+          className="w-full sm:max-w-md md:max-w-lg p-0 flex flex-col h-full bg-background border-l border-border"
+        >
+          <SheetHeader className="bg-muted/60 p-5 border-b pr-12 text-left">
+            <SheetTitle className="text-xl font-bold text-foreground">
+              {editingUnit ? "Edit Measurement Unit" : "Add New Unit"}
+            </SheetTitle>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Define standard measurement units and abbreviations for products.
+            </p>
+          </SheetHeader>
+          <form
+            onSubmit={save}
+            noValidate
+            className="flex flex-col flex-1 overflow-hidden"
+          >
+            <div className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-4">
               <div className="grid grid-cols-2 gap-4">
-                <div className="grid gap-1.5">
+                <div className="space-y-1.5">
                   <Label htmlFor="name">
-                    Name <span className="text-destructive">*</span>
+                    Unit Name <span className="text-destructive">*</span>
                   </Label>
                   <Input
                     id="name"
@@ -466,7 +480,7 @@ function UnitsPage() {
                   />
                   <FieldError message={unitErrors.name} />
                 </div>
-                <div className="grid gap-1.5">
+                <div className="space-y-1.5">
                   <Label htmlFor="short">
                     Short Code <span className="text-destructive">*</span>
                   </Label>
@@ -477,7 +491,7 @@ function UnitsPage() {
                       setShort(e.target.value);
                       clearUnitError("short");
                     }}
-                    placeholder="e.g. kg"
+                    placeholder="e.g. kg, pcs, ltr"
                     className={
                       unitErrors.short ? "border-destructive focus-visible:ring-destructive" : ""
                     }
@@ -486,7 +500,7 @@ function UnitsPage() {
                 </div>
               </div>
             </div>
-            <DialogFooter className="mt-6">
+            <div className="border-t border-border p-4 bg-card/80 backdrop-blur-sm flex items-center justify-end gap-3 shrink-0">
               <Button
                 type="button"
                 variant="outline"
@@ -497,14 +511,14 @@ function UnitsPage() {
               >
                 Cancel
               </Button>
-              <Button type="submit" disabled={isSaving}>
+              <Button type="submit" disabled={isSaving} className="min-w-[130px]">
                 {isSaving && <Loader2 className="size-4 animate-spin mr-2" />}
-                Save changes
+                Save Unit
               </Button>
-            </DialogFooter>
+            </div>
           </form>
-        </DialogContent>
-      </Dialog>
+        </SheetContent>
+      </Sheet>
 
       <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
         <AlertDialogContent>

@@ -491,7 +491,8 @@ function SuppliersPage() {
         )}
       </DataPage>
 
-      <Dialog
+      {/* Add / Edit Supplier Drawer */}
+      <Sheet
         open={isAddOpen || !!editItem}
         onOpenChange={(open) => {
           if (!open) {
@@ -501,76 +502,90 @@ function SuppliersPage() {
           }
         }}
       >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{editItem ? "Edit Supplier" : "Add Supplier"}</DialogTitle>
-          </DialogHeader>
-          <form noValidate onSubmit={handleSave} className="space-y-4">
-            <div className="space-y-1.5">
-              <Label htmlFor="name">
-                Supplier Name <span className="text-destructive">*</span>
-              </Label>
-              <Input
-                id="name"
-                name="name"
-                placeholder="e.g. Supplier Company Name"
-                defaultValue={editItem?.name}
-                className={
-                  suppErrors.name ? "border-destructive focus-visible:ring-destructive" : ""
-                }
-                onChange={() => clearSuppError("name")}
-              />
-              <FieldError message={suppErrors.name} />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="contact">
-                Contact Person <span className="text-destructive">*</span>
-              </Label>
-              <Input
-                id="contact"
-                name="contact"
-                placeholder="e.g. Contact Person Name"
-                defaultValue={editItem?.contact}
-                className={
-                  suppErrors.contact ? "border-destructive focus-visible:ring-destructive" : ""
-                }
-                onChange={() => clearSuppError("contact")}
-              />
-              <FieldError message={suppErrors.contact} />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
+        <SheetContent
+          side="right"
+          className="w-full sm:max-w-xl md:max-w-2xl p-0 flex flex-col h-full bg-background border-l border-border"
+        >
+          <SheetHeader className="bg-muted/60 p-5 border-b pr-12 text-left">
+            <SheetTitle className="text-xl font-bold text-foreground">
+              {editItem ? "Edit Supplier Profile" : "Add New Supplier / Vendor"}
+            </SheetTitle>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Manage vendor contacts, supplier phone, and account balance.
+            </p>
+          </SheetHeader>
+          <form
+            noValidate
+            onSubmit={handleSave}
+            className="flex flex-col flex-1 overflow-hidden"
+          >
+            <div className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-4">
               <div className="space-y-1.5">
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="name">
+                  Supplier Name <span className="text-destructive">*</span>
+                </Label>
                 <Input
-                  id="email"
-                  name="email"
-                  type="email"
-                  placeholder="e.g. supplier@example.com"
-                  defaultValue={editItem?.email}
+                  id="name"
+                  name="name"
+                  placeholder="e.g. Supplier Company Name"
+                  defaultValue={editItem?.name}
                   className={
-                    suppErrors.email ? "border-destructive focus-visible:ring-destructive" : ""
+                    suppErrors.name ? "border-destructive focus-visible:ring-destructive" : ""
                   }
-                  onChange={() => clearSuppError("email")}
+                  onChange={() => clearSuppError("name")}
                 />
-                <FieldError message={suppErrors.email} />
+                <FieldError message={suppErrors.name} />
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="phone">Phone</Label>
-                <PhoneInput
-                  id="phone"
-                  name="phone"
-                  type="tel"
-                  placeholder="e.g. 1700 000000"
-                  defaultValue={editItem?.phone}
+                <Label htmlFor="contact">
+                  Contact Person <span className="text-destructive">*</span>
+                </Label>
+                <Input
+                  id="contact"
+                  name="contact"
+                  placeholder="e.g. Contact Person Name"
+                  defaultValue={editItem?.contact}
                   className={
-                    suppErrors.phone ? "border-destructive focus-visible:ring-destructive" : ""
+                    suppErrors.contact ? "border-destructive focus-visible:ring-destructive" : ""
                   }
-                  onChange={() => clearSuppError("phone")}
+                  onChange={() => clearSuppError("contact")}
                 />
-                <FieldError message={suppErrors.phone} />
+                <FieldError message={suppErrors.contact} />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <Label htmlFor="email">Email</Label>
+                  <Input
+                    id="email"
+                    name="email"
+                    type="email"
+                    placeholder="e.g. supplier@example.com"
+                    defaultValue={editItem?.email}
+                    className={
+                      suppErrors.email ? "border-destructive focus-visible:ring-destructive" : ""
+                    }
+                    onChange={() => clearSuppError("email")}
+                  />
+                  <FieldError message={suppErrors.email} />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="phone">Phone</Label>
+                  <PhoneInput
+                    id="phone"
+                    name="phone"
+                    type="tel"
+                    placeholder="e.g. 1700 000000"
+                    defaultValue={editItem?.phone}
+                    className={
+                      suppErrors.phone ? "border-destructive focus-visible:ring-destructive" : ""
+                    }
+                    onChange={() => clearSuppError("phone")}
+                  />
+                  <FieldError message={suppErrors.phone} />
+                </div>
               </div>
             </div>
-            <DialogFooter>
+            <div className="border-t border-border p-4 bg-card/80 backdrop-blur-sm flex items-center justify-end gap-3 shrink-0">
               <Button
                 type="button"
                 variant="outline"
@@ -582,14 +597,14 @@ function SuppliersPage() {
               >
                 Cancel
               </Button>
-              <Button type="submit" disabled={isSaving}>
+              <Button type="submit" disabled={isSaving} className="min-w-[140px]">
                 {isSaving && <Loader2 className="size-4 animate-spin mr-2" />}
                 Save Supplier
               </Button>
-            </DialogFooter>
+            </div>
           </form>
-        </DialogContent>
-      </Dialog>
+        </SheetContent>
+      </Sheet>
 
       <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
         <AlertDialogContent>

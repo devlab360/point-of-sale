@@ -440,8 +440,8 @@ function RepairsPage() {
         </div>
       </DataPage>
 
-      {/* Create Repair Ticket Modal */}
-      <Dialog
+      {/* Create Repair Ticket Drawer */}
+      <Sheet
         open={isAddOpen}
         onOpenChange={(open) => {
           if (!open) {
@@ -450,130 +450,142 @@ function RepairsPage() {
           }
         }}
       >
-        <DialogContent className="sm:max-w-xl md:max-w-2xl max-h-[90vh] overflow-y-auto rounded-xl p-6">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-lg">
+        <SheetContent
+          side="right"
+          className="w-full sm:max-w-2xl lg:max-w-3xl xl:max-w-4xl p-0 flex flex-col h-full bg-background border-l border-border"
+        >
+          <SheetHeader className="bg-muted/60 p-5 border-b pr-12 text-left">
+            <SheetTitle className="text-xl font-bold flex items-center gap-2 text-foreground">
               <Wrench className="size-5 text-primary" />
               <span>Create Service & Repair Ticket</span>
-            </DialogTitle>
-          </DialogHeader>
-          <form noValidate onSubmit={handleCreateRepair} className="space-y-4 pt-2">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            </SheetTitle>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Record incoming customer repair devices, IMEI/serial info, fault description, and advance deposits.
+            </p>
+          </SheetHeader>
+          <form
+            noValidate
+            onSubmit={handleCreateRepair}
+            className="flex flex-col flex-1 overflow-hidden"
+          >
+            <div className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <Label>
+                    Customer Name <span className="text-destructive">*</span>
+                  </Label>
+                  <Input
+                    placeholder="e.g. Customer Name"
+                    value={customerName}
+                    onChange={(e) => {
+                      setCustomerName(e.target.value);
+                      clearRepError("customerName");
+                    }}
+                    className={
+                      repErrors.customerName
+                        ? "border-destructive focus-visible:ring-destructive"
+                        : ""
+                    }
+                  />
+                  <FieldError message={repErrors.customerName} />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>
+                    Phone Number <span className="text-destructive">*</span>
+                  </Label>
+                  <PhoneInput
+                    placeholder="e.g. 1711000000"
+                    value={customerPhone}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                      setCustomerPhone(e.target.value);
+                      clearRepError("customerPhone");
+                    }}
+                    className={
+                      repErrors.customerPhone
+                        ? "border-destructive focus-visible:ring-destructive"
+                        : ""
+                    }
+                  />
+                  <FieldError message={repErrors.customerPhone} />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <Label>
+                    Device / Model Name <span className="text-destructive">*</span>
+                  </Label>
+                  <Input
+                    placeholder="e.g. iPhone 14 Pro, Dell XPS 15"
+                    value={deviceName}
+                    onChange={(e) => {
+                      setDeviceName(e.target.value);
+                      clearRepError("deviceName");
+                    }}
+                    className={
+                      repErrors.deviceName ? "border-destructive focus-visible:ring-destructive" : ""
+                    }
+                  />
+                  <FieldError message={repErrors.deviceName} />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Serial / IMEI Number</Label>
+                  <Input
+                    placeholder="e.g. 356890123456789"
+                    value={serialOrImei}
+                    onChange={(e) => setSerialOrImei(e.target.value)}
+                  />
+                </div>
+              </div>
+
               <div className="space-y-1.5">
                 <Label>
-                  Customer Name <span className="text-destructive">*</span>
+                  Problem / Fault Description <span className="text-destructive">*</span>
                 </Label>
-                <Input
-                  placeholder="e.g. Customer Name"
-                  value={customerName}
+                <Textarea
+                  rows={3}
+                  placeholder="e.g. Screen cracked, battery draining fast, water damage, no display"
+                  value={problemDescription}
                   onChange={(e) => {
-                    setCustomerName(e.target.value);
-                    clearRepError("customerName");
+                    setProblemDescription(e.target.value);
+                    clearRepError("problemDescription");
                   }}
                   className={
-                    repErrors.customerName
+                    repErrors.problemDescription
                       ? "border-destructive focus-visible:ring-destructive"
                       : ""
                   }
                 />
-                <FieldError message={repErrors.customerName} />
+                <FieldError message={repErrors.problemDescription} />
               </div>
-              <div className="space-y-1.5">
-                <Label>
-                  Phone Number <span className="text-destructive">*</span>
-                </Label>
-                <PhoneInput
-                  placeholder="e.g. 1711000000"
-                  value={customerPhone}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                    setCustomerPhone(e.target.value);
-                    clearRepError("customerPhone");
-                  }}
-                  className={
-                    repErrors.customerPhone
-                      ? "border-destructive focus-visible:ring-destructive"
-                      : ""
-                  }
-                />
-                <FieldError message={repErrors.customerPhone} />
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <Label>Estimated Cost ({useCurrency().currencySymbol})</Label>
+                  <Input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    placeholder="0.00"
+                    value={estimatedCost}
+                    onChange={(e) => setEstimatedCost(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Advance Paid ({useCurrency().currencySymbol})</Label>
+                  <Input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    placeholder="0.00"
+                    value={advancePaid}
+                    onChange={(e) => setAdvancePaid(e.target.value)}
+                  />
+                </div>
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-1.5">
-                <Label>
-                  Device / Model Name <span className="text-destructive">*</span>
-                </Label>
-                <Input
-                  placeholder="e.g. Device / Model Name"
-                  value={deviceName}
-                  onChange={(e) => {
-                    setDeviceName(e.target.value);
-                    clearRepError("deviceName");
-                  }}
-                  className={
-                    repErrors.deviceName ? "border-destructive focus-visible:ring-destructive" : ""
-                  }
-                />
-                <FieldError message={repErrors.deviceName} />
-              </div>
-              <div className="space-y-1.5">
-                <Label>Serial / IMEI Number</Label>
-                <Input
-                  placeholder="e.g. Serial or IMEI Number"
-                  value={serialOrImei}
-                  onChange={(e) => setSerialOrImei(e.target.value)}
-                />
-              </div>
-            </div>
-
-            <div className="space-y-1.5">
-              <Label>
-                Problem / Fault Description <span className="text-destructive">*</span>
-              </Label>
-              <Textarea
-                rows={2}
-                placeholder="e.g. Describe the device issue or fault"
-                value={problemDescription}
-                onChange={(e) => {
-                  setProblemDescription(e.target.value);
-                  clearRepError("problemDescription");
-                }}
-                className={
-                  repErrors.problemDescription
-                    ? "border-destructive focus-visible:ring-destructive"
-                    : ""
-                }
-              />
-              <FieldError message={repErrors.problemDescription} />
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Estimated Cost</Label>
-                <Input
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  placeholder="0.00"
-                  value={estimatedCost}
-                  onChange={(e) => setEstimatedCost(e.target.value)}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Advance Paid</Label>
-                <Input
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  placeholder="0.00"
-                  value={advancePaid}
-                  onChange={(e) => setAdvancePaid(e.target.value)}
-                />
-              </div>
-            </div>
-
-            <DialogFooter className="mt-6">
+            <div className="border-t border-border p-4 bg-card/80 backdrop-blur-sm flex items-center justify-end gap-3 shrink-0">
               <Button
                 type="button"
                 variant="outline"
@@ -584,20 +596,20 @@ function RepairsPage() {
               >
                 Cancel
               </Button>
-              <Button type="submit" disabled={isSubmitting}>
+              <Button type="submit" disabled={isSubmitting} className="min-w-[160px]">
                 {isSubmitting && <Loader2 className="size-4 animate-spin mr-2" />}
                 Create Repair Ticket
               </Button>
-            </DialogFooter>
+            </div>
           </form>
-        </DialogContent>
-      </Dialog>
+        </SheetContent>
+      </Sheet>
 
       {/* View / Print Repair Ticket Sheet */}
       <Sheet open={!!viewItem} onOpenChange={(open) => !open && setViewItem(null)}>
         <SheetContent
           side="right"
-          className="w-full sm:max-w-2xl overflow-y-auto p-6 bg-background border-l border-border"
+          className="w-full sm:max-w-2xl lg:max-w-3xl xl:max-w-4xl overflow-y-auto p-6 bg-background border-l border-border"
         >
           <SheetHeader className="flex flex-row items-center justify-between border-b pb-4 pr-8">
             <div>

@@ -166,24 +166,25 @@ function UsersPage() {
   };
 
   const users = useMemo(() => {
-    let filtered = rawUsers;
+    let filtered = Array.isArray(rawUsers) ? rawUsers : [];
     if (debouncedSearch) {
       const lower = debouncedSearch.toLowerCase();
       filtered = filtered.filter(
         (u) =>
-          u.name.toLowerCase().includes(lower) ||
-          u.email.toLowerCase().includes(lower) ||
-          u.role.toLowerCase().includes(lower),
+          (u?.name || "").toLowerCase().includes(lower) ||
+          (u?.email || "").toLowerCase().includes(lower) ||
+          (u?.role || "").toLowerCase().includes(lower),
       );
     }
     if (filters.role) {
-      filtered = filtered.filter((u) => u.role === filters.role);
+      filtered = filtered.filter((u) => u?.role === filters.role);
     }
     if (filters.status) {
-      filtered = filtered.filter((u) => u.status === filters.status);
+      filtered = filtered.filter((u) => u?.status === filters.status);
     }
     return filtered;
   }, [rawUsers, debouncedSearch, filters.role, filters.status]);
+  const filteredUsers = users;
 
   useEffect(() => {
     setPage(1);

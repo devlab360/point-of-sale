@@ -379,31 +379,16 @@ function CustomersPage() {
                 />
               </div>
               <div className="space-y-2">
-                <Label>Loyalty Tier</Label>
+                <Label>Account Status</Label>
                 <SearchableSelect
                   options={[
-                    { value: "", label: "All Tiers" },
-                    { value: "Bronze", label: "Bronze" },
-                    { value: "Silver", label: "Silver" },
-                    { value: "Gold", label: "Gold" },
-                    { value: "Platinum", label: "Platinum" },
+                    { value: "", label: "All Statuses" },
+                    { value: "active", label: "Active" },
+                    { value: "inactive", label: "Inactive" },
                   ]}
-                  value={draftFilters.tier}
-                  onChange={(val) => setDraftFilters((prev) => ({ ...prev, tier: val }))}
-                  placeholder="Filter by Tier"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Balance Status</Label>
-                <SearchableSelect
-                  options={[
-                    { value: "", label: "All Balances" },
-                    { value: "due", label: "Has Due / Credit" },
-                    { value: "clear", label: "No Due (Clear)" },
-                  ]}
-                  value={draftFilters.hasDue}
-                  onChange={(val) => setDraftFilters((prev) => ({ ...prev, hasDue: val }))}
-                  placeholder="Filter by Balance"
+                  value={draftFilters.status}
+                  onChange={(val) => setDraftFilters((prev) => ({ ...prev, status: val }))}
+                  placeholder="Filter by Status"
                 />
               </div>
             </div>
@@ -433,14 +418,14 @@ function CustomersPage() {
                 <Table className="min-w-[1000px]">
                   <TableHeader>
                     <TableRow>
-                      <TableHead>{t("customer") || "Customer"}</TableHead>
-                      <TableHead>{t("contact") || "Contact"}</TableHead>
+                      <TableHead>{t("customer") || "Customer Name"}</TableHead>
+                      <TableHead>{t("contact") || "Mobile Phone"}</TableHead>
                       <TableHead className="text-right">{t("visits") || "Visits"}</TableHead>
-                      <TableHead className="text-right">{t("lifetime") || "Lifetime Spent"}</TableHead>
+                      <TableHead className="text-right">{t("spent") || "Total Purchases"}</TableHead>
                       <TableHead className="text-right">{t("points") || "Points"}</TableHead>
-                      <TableHead className="text-right">{t("credit") || "Due Credit"}</TableHead>
-                      <TableHead className="text-right">{t("wallet") || "Wallet"}</TableHead>
-                      <TableHead>{t("tier") || "Tier"}</TableHead>
+                      <TableHead className="text-right text-destructive font-bold">{t("credit") || "Udhaar (Due)"}</TableHead>
+                      <TableHead className="text-right text-success font-bold">{t("wallet") || "Jama / Advance"}</TableHead>
+                      <TableHead>{t("tier") || "Category"}</TableHead>
                       <TableHead className="text-right">{t("actions") || "Actions"}</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -623,8 +608,8 @@ function CustomersPage() {
                               {c.type || "Retail"}
                             </Badge>
                             {c.credit > 0 && (
-                              <span className="text-[9px] font-black text-destructive bg-destructive/10 px-1.5 py-0.2 rounded-md">
-                                Due: {formatCurrency(c.credit)}
+                              <span className="text-[10px] font-black text-destructive bg-destructive/10 px-2 py-0.5 rounded-md border border-destructive/20">
+                                Udhaar: {formatCurrency(c.credit)}
                               </span>
                             )}
                           </div>
@@ -661,7 +646,8 @@ function CustomersPage() {
         )}
       </DataPage>
 
-      <Dialog
+      {/* Add / Edit Customer Drawer */}
+      <Sheet
         open={isAddOpen || !!editItem}
         onOpenChange={(open) => {
           if (!open) {
@@ -671,148 +657,163 @@ function CustomersPage() {
           }
         }}
       >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{editItem ? "Edit Customer" : "Add Customer"}</DialogTitle>
-          </DialogHeader>
-          <form id="customer-form" noValidate onSubmit={handleSave} className="space-y-4">
-            <div className="space-y-1.5">
-              <Label htmlFor="name">
-                Full Name <span className="text-destructive">*</span>
-              </Label>
-              <Input
-                id="name"
-                name="name"
-                placeholder="e.g. Customer Name"
-                defaultValue={editItem?.name || ""}
-                className={
-                  custErrors.name ? "border-destructive focus-visible:ring-destructive" : ""
-                }
-                onChange={() => clearCustError("name")}
-              />
-              <FieldError message={custErrors.name} />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
+        <SheetContent
+          side="right"
+          className="w-full sm:max-w-xl md:max-w-2xl p-0 flex flex-col h-full bg-background border-l border-border"
+        >
+          <SheetHeader className="bg-muted/60 p-5 border-b pr-12 text-left">
+            <SheetTitle className="text-xl font-bold text-foreground">
+              {editItem ? "Edit Customer Profile" : "Add New Customer"}
+            </SheetTitle>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Manage client details, credit limits, khata balance, and contact information.
+            </p>
+          </SheetHeader>
+          <form
+            id="customer-form"
+            noValidate
+            onSubmit={handleSave}
+            className="flex flex-col flex-1 overflow-hidden"
+          >
+            <div className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-4">
               <div className="space-y-1.5">
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="name">
+                  Full Name <span className="text-destructive">*</span>
+                </Label>
                 <Input
-                  id="email"
-                  name="email"
-                  type="email"
-                  placeholder="e.g. email@example.com"
-                  defaultValue={editItem?.email || ""}
+                  id="name"
+                  name="name"
+                  placeholder="e.g. Customer Name"
+                  defaultValue={editItem?.name || ""}
                   className={
-                    custErrors.email ? "border-destructive focus-visible:ring-destructive" : ""
+                    custErrors.name ? "border-destructive focus-visible:ring-destructive" : ""
                   }
-                  onChange={() => clearCustError("email")}
+                  onChange={() => clearCustError("name")}
                 />
-                <FieldError message={custErrors.email} />
+                <FieldError message={custErrors.name} />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <Label htmlFor="email">Email</Label>
+                  <Input
+                    id="email"
+                    name="email"
+                    type="email"
+                    placeholder="e.g. email@example.com"
+                    defaultValue={editItem?.email || ""}
+                    className={
+                      custErrors.email ? "border-destructive focus-visible:ring-destructive" : ""
+                    }
+                    onChange={() => clearCustError("email")}
+                  />
+                  <FieldError message={custErrors.email} />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="phone">Phone</Label>
+                  <PhoneInput
+                    id="phone"
+                    name="phone"
+                    type="tel"
+                    placeholder="e.g. 1700 000000"
+                    defaultValue={editItem?.phone || ""}
+                    className={
+                      custErrors.phone ? "border-destructive focus-visible:ring-destructive" : ""
+                    }
+                    onChange={() => clearCustError("phone")}
+                  />
+                  <FieldError message={custErrors.phone} />
+                </div>
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="phone">Phone</Label>
-                <PhoneInput
-                  id="phone"
-                  name="phone"
-                  type="tel"
-                  placeholder="e.g. 1700 000000"
-                  defaultValue={editItem?.phone || ""}
+                <Label htmlFor="address">Address</Label>
+                <Input
+                  id="address"
+                  name="address"
+                  placeholder="e.g. 123 Main St"
+                  defaultValue={editItem?.address || ""}
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <Label htmlFor="city">City</Label>
+                  <Input
+                    id="city"
+                    name="city"
+                    placeholder="e.g. New York"
+                    defaultValue={editItem?.city || ""}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="zipCode">Zip / Postal Code</Label>
+                  <Input
+                    id="zipCode"
+                    name="zipCode"
+                    placeholder="e.g. 10001"
+                    defaultValue={editItem?.zipCode || ""}
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="type">{t("customerType") || "Customer Type"}</Label>
+                  <SearchableSelect
+                    options={[
+                      { value: "retail", label: "Retail (B2C)" },
+                      { value: "wholesale", label: "Wholesale (B2B)" },
+                      { value: "dealer", label: "Dealer" },
+                      { value: "distributor", label: "Distributor" },
+                    ]}
+                    value={editItem?.type || "retail"}
+                    onChange={(val) => {
+                      const input = document.createElement("input");
+                      input.type = "hidden";
+                      input.name = "type";
+                      input.value = val;
+                      document.getElementById("customer-form")?.appendChild(input);
+                      if (editItem) setEditItem({ ...editItem, type: val as any });
+                    }}
+                    placeholder="Select Type"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="status">{t("status") || "Status"}</Label>
+                  <SearchableSelect
+                    options={[
+                      { value: "active", label: "Active" },
+                      { value: "inactive", label: "Inactive" },
+                    ]}
+                    value={editItem?.status || "active"}
+                    onChange={(val) => {
+                      const input = document.createElement("input");
+                      input.type = "hidden";
+                      input.name = "status";
+                      input.value = val;
+                      document.getElementById("customer-form")?.appendChild(input);
+                      if (editItem) setEditItem({ ...editItem, status: val });
+                    }}
+                    placeholder="Select Status"
+                  />
+                </div>
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="creditLimit">Credit Limit ({useCurrency().currencySymbol})</Label>
+                <Input
+                  id="creditLimit"
+                  name="creditLimit"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  placeholder="e.g. 5000"
+                  defaultValue={editItem?.creditLimit || 5000}
                   className={
-                    custErrors.phone ? "border-destructive focus-visible:ring-destructive" : ""
+                    custErrors.creditLimit ? "border-destructive focus-visible:ring-destructive" : ""
                   }
-                  onChange={() => clearCustError("phone")}
+                  onChange={() => clearCustError("creditLimit")}
                 />
-                <FieldError message={custErrors.phone} />
+                <FieldError message={custErrors.creditLimit} />
               </div>
             </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="address">Address</Label>
-              <Input
-                id="address"
-                name="address"
-                placeholder="e.g. 123 Main St"
-                defaultValue={editItem?.address || ""}
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-1.5">
-                <Label htmlFor="city">City</Label>
-                <Input
-                  id="city"
-                  name="city"
-                  placeholder="e.g. New York"
-                  defaultValue={editItem?.city || ""}
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="zipCode">Zip / Postal Code</Label>
-                <Input
-                  id="zipCode"
-                  name="zipCode"
-                  placeholder="e.g. 10001"
-                  defaultValue={editItem?.zipCode || ""}
-                />
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="type">{t("customerType") || "Customer Type"}</Label>
-                <SearchableSelect
-                  options={[
-                    { value: "retail", label: "Retail (B2C)" },
-                    { value: "wholesale", label: "Wholesale (B2B)" },
-                    { value: "dealer", label: "Dealer" },
-                    { value: "distributor", label: "Distributor" },
-                  ]}
-                  value={editItem?.type || "retail"}
-                  onChange={(val) => {
-                    const input = document.createElement("input");
-                    input.type = "hidden";
-                    input.name = "type";
-                    input.value = val;
-                    document.getElementById("customer-form")?.appendChild(input);
-                    if (editItem) setEditItem({ ...editItem, type: val as any });
-                  }}
-                  placeholder="Select Type"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="status">{t("status") || "Status"}</Label>
-                <SearchableSelect
-                  options={[
-                    { value: "active", label: "Active" },
-                    { value: "inactive", label: "Inactive" },
-                  ]}
-                  value={editItem?.status || "active"}
-                  onChange={(val) => {
-                    const input = document.createElement("input");
-                    input.type = "hidden";
-                    input.name = "status";
-                    input.value = val;
-                    document.getElementById("customer-form")?.appendChild(input);
-                    if (editItem) setEditItem({ ...editItem, status: val });
-                  }}
-                  placeholder="Select Status"
-                />
-              </div>
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="creditLimit">Credit Limit ({useCurrency().currencySymbol})</Label>
-              <Input
-                id="creditLimit"
-                name="creditLimit"
-                type="number"
-                min="0"
-                step="0.01"
-                placeholder="e.g. 5000"
-                defaultValue={editItem?.creditLimit || 5000}
-                className={
-                  custErrors.creditLimit ? "border-destructive focus-visible:ring-destructive" : ""
-                }
-                onChange={() => clearCustError("creditLimit")}
-              />
-              <FieldError message={custErrors.creditLimit} />
-            </div>
-            <DialogFooter>
+            <div className="border-t border-border p-4 bg-card/80 backdrop-blur-sm flex items-center justify-end gap-3 shrink-0">
               <Button
                 type="button"
                 variant="outline"
@@ -824,14 +825,14 @@ function CustomersPage() {
               >
                 Cancel
               </Button>
-              <Button type="submit" disabled={isSaving}>
+              <Button type="submit" disabled={isSaving} className="min-w-[140px]">
                 {isSaving && <Loader2 className="size-4 animate-spin mr-2" />}
                 Save Customer
               </Button>
-            </DialogFooter>
+            </div>
           </form>
-        </DialogContent>
-      </Dialog>
+        </SheetContent>
+      </Sheet>
 
       <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
         <AlertDialogContent>
@@ -890,7 +891,7 @@ function CustomersPage() {
       <Sheet open={!!ledgerCustomer} onOpenChange={(open) => !open && setLedgerCustomer(null)}>
         <SheetContent
           side="right"
-          className="w-full sm:max-w-2xl overflow-y-auto p-6 bg-background border-l border-border shadow-elevated"
+          className="w-full sm:max-w-3xl lg:max-w-4xl xl:max-w-5xl overflow-y-auto p-6 bg-background border-l border-border shadow-elevated"
         >
           <SheetHeader className="flex flex-col sm:flex-row items-start justify-between gap-3 border-b pb-4 pr-6 sm:pr-8 text-left">
             <div className="w-full sm:w-auto text-left">
