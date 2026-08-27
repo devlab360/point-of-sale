@@ -126,6 +126,7 @@ const SaleSchema = z.object({
   paid: z.number().optional().nullable(),
   payments: z.array(z.any()).optional().nullable(),
   salesmanName: z.string().optional().nullable(),
+  locationId: z.string().optional().nullable(),
 });
 
 export const createSaleFn = createServerFn({ method: "POST" })
@@ -234,6 +235,33 @@ export const createSaleFn = createServerFn({ method: "POST" })
                   .update(schema.products)
                   .set({ stock: newStock.toString() })
                   .where(eq(schema.products.id, item.referenceId));
+
+                // Deduct from location inventory if specified
+                if (data.sale.locationId) {
+                  const locInv = await tx
+                    .select()
+                    .from(schema.productInventory)
+                    .where(
+                      and(
+                        eq(schema.productInventory.productId, item.referenceId),
+                        eq(schema.productInventory.locationId, data.sale.locationId),
+                      ),
+                    )
+                    .limit(1);
+                  if (locInv.length > 0) {
+                    const locCurrent = Number(locInv[0].stock || 0);
+                    const locNew = Math.max(0, locCurrent - item.quantity);
+                    await tx
+                      .update(schema.productInventory)
+                      .set({ stock: locNew.toString() })
+                      .where(
+                        and(
+                          eq(schema.productInventory.productId, item.referenceId),
+                          eq(schema.productInventory.locationId, data.sale.locationId),
+                        ),
+                      );
+                  }
+                }
 
                 if (newStock <= Number(prodRes[0].reorderLevel || 5)) {
                   await tx.insert(schema.notifications).values({

@@ -2,7 +2,7 @@ import { handleApiError } from "@/lib/error-utils";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireAuth } from "@/lib/auth-utils";
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { callAiChat, cleanJsonOutput } from "@/lib/ai-client";
 
 const aiQuerySchema = z.object({
   query: z.string(),
@@ -15,15 +15,7 @@ export const askAiCopilotFn = createServerFn({ method: "POST" })
     try {
       await requireAuth();
 
-      const apiKey = process.env.VITE_GEMINI_API_KEY || process.env.GEMINI_API_KEY;
-      if (!apiKey) {
-        throw new Error("Gemini API Key is not configured.");
-      }
-
-      const genAI = new GoogleGenerativeAI(apiKey);
-      const model = genAI.getGenerativeModel({ model: "gemini-3.5-flash" });
-
-      const systemPrompt = `You are the NexisPOS AI Business Advisor, an expert retail and business consultant.
+      const systemPrompt = `You are the NexisPOS AI Business Advisor, an expert retail and business consultant powered by LongCat AI.
 You are assisting a store owner who is using the NexisPOS system.
 
 CRITICAL INSTRUCTIONS:
@@ -35,44 +27,38 @@ CRITICAL INSTRUCTIONS:
 Your JSON response must exactly match this structure:
 {
   "text": "Your natural language response here (can include markdown formatting).",
-  "dataCard": { // Optional: Include this if there is data to visualize like lists or metrics
+  "dataCard": {
     "title": "Card Title",
-    "metrics": [ // Optional
-      { "label": "Metric Name", "value": "Value (e.g. $100 or 10)", "color": "text-success | text-destructive | text-warning-foreground | text-primary" }
+    "metrics": [
+      { "label": "Metric Name", "value": "Value", "color": "text-success | text-destructive | text-warning-foreground | text-primary" }
     ],
-    "list": [ // Optional
+    "list": [
       { "label": "Item Name", "subtext": "Secondary info", "badge": "Badge text" }
     ],
     "alert": "Optional alert message at the bottom of the card."
   }
 }
 
-CAPABILITIES YOU SHOULD SUPPORT based on the context:
+CAPABILITIES:
 - Business Health Score: Calculate a score (0-100) based on Profit Margin, Dead Stock Ratio, and Overdue Debt ratio.
-- Dead Stock Items: Identify products with stock > 0 that haven't sold recently or are taking up capital. Suggest promotions.
-- Top Overdue Customers: Highlight customers with the highest debt and suggest collection strategies.
+- Dead Stock Items: Identify products with stock > 0 that haven't sold recently.
+- Top Overdue Customers: Highlight customers with highest debt.
 - Net Profit Summary: Explain Revenue - COGS - Expenses.
-- Market Comparison & Strategic Advice: Compare their metrics (like profit margin, debt ratio) against typical retail benchmarks (e.g., 15-20% net margin is good) and give strategic advice to grow the business.
-- Financial Report: Generate a comprehensive summary if asked.
+- Strategic Advice: Compare metrics against typical retail benchmarks.`;
 
-STORE CONTEXT (REAL-TIME DATA):
+      const userMessage = `STORE CONTEXT (REAL-TIME DATA):
 ${JSON.stringify(data.context, null, 2)}
 
 USER QUERY:
 ${data.query}`;
 
-      const result = await model.generateContent(systemPrompt);
-      const responseText = result.response.text();
+      const aiResponse = await callAiChat({
+        systemPrompt,
+        userMessage,
+        temperature: 0.3,
+      });
 
-      let parsedResponse;
-      try {
-        // Attempt to strip any markdown code blocks if the model accidentally included them
-        const cleanedText = responseText.replace(/```json\n?|\n?```/g, "").trim();
-        parsedResponse = JSON.parse(cleanedText);
-      } catch (parseError) {
-        console.error("Failed to parse Gemini response as JSON:", responseText);
-        throw new Error("AI returned invalid format.");
-      }
+      const parsedResponse = cleanJsonOutput(aiResponse);
 
       return { success: true, data: parsedResponse };
     } catch (error) {
@@ -91,33 +77,15 @@ export const generateAITextFn = createServerFn({ method: "POST" })
     try {
       await requireAuth();
 
-      const apiKey = process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY;
-      if (!apiKey) {
-        throw new Error("Gemini API Key is not configured.");
-      }
-
-      const genAI = new GoogleGenerativeAI(apiKey);
-      const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
-
-      const fullPrompt = `System Instruction: ${data.systemPrompt}\n\nUser Input: ${data.userMessage}`;
-
-      const result = await model.generateContent({
-        contents: [{ role: "user", parts: [{ text: fullPrompt }] }],
-        generationConfig: {
-          temperature: 0.7,
-          maxOutputTokens: 500,
-        },
+      const text = await callAiChat({
+        systemPrompt: data.systemPrompt,
+        userMessage: data.userMessage,
+        temperature: 0.7,
       });
-
-      const responseText = result.response.text();
-
-      if (!responseText) {
-        throw new Error("Invalid response format from Gemini API");
-      }
 
       return {
         success: true as const,
-        text: responseText.trim(),
+        text: text.trim(),
       };
     } catch (error) {
       return handleApiError(error, "Failed to generate AI response");
@@ -135,15 +103,7 @@ export const parseInvoiceFn = createServerFn({ method: "POST" })
     try {
       await requireAuth();
 
-      const apiKey = process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY;
-      if (!apiKey) {
-        throw new Error("Gemini API Key is not configured.");
-      }
-
-      const genAI = new GoogleGenerativeAI(apiKey);
-      const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-
-      const prompt = `Extract the following details from this invoice and return STRICTLY as a valid JSON object. 
+      const systemPrompt = `Extract the following details from this invoice and return STRICTLY as a valid JSON object. 
 Do not wrap it in markdown block quotes (no \`\`\`json). Use exactly these English keys:
 {
   "supplierName": "String or null if not found",
@@ -152,44 +112,25 @@ Do not wrap it in markdown block quotes (no \`\`\`json). Use exactly these Engli
   "items": [
     {
       "productName": "String",
-      "quantity": Number (default 1),
-      "cost": Number (unit price, default 0),
-      "total": Number (total for line, default 0)
+      "quantity": 1,
+      "cost": 0,
+      "total": 0
     }
   ],
-  "subtotal": Number,
-  "taxAmt": Number,
-  "total": Number
+  "subtotal": 0,
+  "taxAmt": 0,
+  "total": 0
 }`;
 
-      const result = await model.generateContent([
-        {
-          inlineData: {
-            data: data.fileBase64,
-            mimeType: data.mimeType,
-          },
-        },
-        { text: prompt },
-      ]);
+      const aiResponse = await callAiChat({
+        systemPrompt,
+        userMessage: "Extract invoice line items and totals from this invoice.",
+        imageBase64: data.fileBase64,
+        mimeType: data.mimeType,
+        temperature: 0.1,
+      });
 
-      const text = result.response.text();
-      // Try to parse the JSON
-      let parsedData;
-      try {
-        let cleanText = text.trim();
-        if (cleanText.startsWith("\`\`\`json")) {
-          cleanText = cleanText.substring(7);
-        }
-        if (cleanText.startsWith("\`\`\`")) {
-          cleanText = cleanText.substring(3);
-        }
-        if (cleanText.endsWith("\`\`\`")) {
-          cleanText = cleanText.substring(0, cleanText.length - 3);
-        }
-        parsedData = JSON.parse(cleanText.trim());
-      } catch (err) {
-        throw new Error("Failed to parse AI response into JSON. Raw output: " + text.substring(0, 100));
-      }
+      const parsedData = cleanJsonOutput(aiResponse);
 
       return {
         success: true as const,

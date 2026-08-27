@@ -22,8 +22,9 @@ import { getSettingsFn } from "@/api/settings";
 import { VariantManager } from "./VariantManager";
 import { BundleManager } from "./BundleManager";
 import { ModifierManager } from "./ModifierManager";
+import { AiProductMagicBar } from "./AiProductMagicBar";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, ArrowLeft, MapPin, Package, IndianRupee, Image as ImageIcon, Tags, FileText, Settings, ShieldCheck, Tag } from "lucide-react";
+import { Loader2, ArrowLeft, MapPin, Package, IndianRupee, Image as ImageIcon, Tags, FileText, Settings, ShieldCheck, Tag, TrendingUp, Sparkles, RefreshCw } from "lucide-react";
 
 export function ProductForm({ initialData, onSubmit, isSaving }: { initialData?: any; onSubmit: (data: any) => void; isSaving: boolean }) {
   const { t } = useLanguage();
@@ -141,6 +142,74 @@ export function ProductForm({ initialData, onSubmit, isSaving }: { initialData?:
     }
   };
 
+  const handleApplyAiData = (extracted: any) => {
+    setFormData((prev: any) => {
+      let matchedCatId = prev.category;
+      if (extracted.category) {
+        const match = (categories as any[]).find(
+          (c: any) => c.name.toLowerCase() === extracted.category.toLowerCase()
+        );
+        matchedCatId = match ? match.id : prev.category;
+      }
+
+      let matchedBrandId = prev.brand;
+      if (extracted.brand) {
+        const match = (brands as any[]).find(
+          (b: any) => b.name.toLowerCase() === extracted.brand.toLowerCase()
+        );
+        matchedBrandId = match ? match.id : prev.brand;
+      }
+
+      let matchedUnitId = prev.unit;
+      if (extracted.unit) {
+        const match = (units as any[]).find(
+          (u: any) =>
+            u.name.toLowerCase() === extracted.unit.toLowerCase() ||
+            u.shortName?.toLowerCase() === extracted.unit.toLowerCase()
+        );
+        matchedUnitId = match ? match.id : prev.unit;
+      }
+
+      const cleanSku =
+        extracted.sku ||
+        (extracted.name
+          ? extracted.name.substring(0, 3).toUpperCase() + "-" + Math.floor(100 + Math.random() * 900)
+          : prev.sku);
+
+      return {
+        ...prev,
+        name: extracted.name || prev.name,
+        category: matchedCatId,
+        brand: matchedBrandId,
+        unit: matchedUnitId,
+        cost: extracted.cost !== undefined ? Number(extracted.cost) : prev.cost,
+        price: extracted.price !== undefined ? Number(extracted.price) : prev.price,
+        wholesalePrice: extracted.wholesalePrice !== undefined ? Number(extracted.wholesalePrice) : prev.wholesalePrice,
+        dealerPrice: extracted.dealerPrice !== undefined ? Number(extracted.dealerPrice) : prev.dealerPrice,
+        stock: extracted.stock !== undefined ? Number(extracted.stock) : prev.stock,
+        reorderLevel: extracted.reorderLevel !== undefined ? Number(extracted.reorderLevel) : prev.reorderLevel,
+        sku: cleanSku,
+        barcode: extracted.barcode || prev.barcode,
+        hsnCode: extracted.hsnCode || prev.hsnCode,
+        gstRate: extracted.gstRate !== undefined ? Number(extracted.gstRate) : prev.gstRate,
+        expiryDate: extracted.expiryDate || prev.expiryDate,
+        hasBatch: extracted.hasBatch !== undefined ? Boolean(extracted.hasBatch) : prev.hasBatch,
+        batchNoInput: extracted.batchNo || prev.batchNoInput,
+      };
+    });
+
+    clearProdError("name");
+    clearProdError("sku");
+    clearProdError("price");
+    clearProdError("cost");
+    clearProdError("stock");
+  };
+
+  // Live Profit & Margin metrics
+  const unitProfit = (formData.price || 0) - (formData.cost || 0);
+  const marginPct = formData.price > 0 ? ((unitProfit / formData.price) * 100).toFixed(1) : "0.0";
+  const markupPct = formData.cost > 0 ? ((unitProfit / formData.cost) * 100).toFixed(1) : "0.0";
+
   return (
     <div className="page-container pb-24 relative space-y-6">
       {/* Sticky Action Bar */}
@@ -181,6 +250,14 @@ export function ProductForm({ initialData, onSubmit, isSaving }: { initialData?:
           </Button>
         </div>
       </div>
+
+      {/* 🚀 AI Smart Product Creator Bar */}
+      <AiProductMagicBar
+        categories={categories}
+        brands={brands}
+        units={units}
+        onApplyData={handleApplyAiData}
+      />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left Column - Main Details */}
@@ -306,6 +383,25 @@ export function ProductForm({ initialData, onSubmit, isSaving }: { initialData?:
                     />
                   </div>
                   <FieldError message={prodErrors.cost} />
+                </div>
+              </div>
+
+              {/* 💡 Live Margin & Profit Indicator */}
+              <div className="flex flex-wrap items-center justify-between gap-3 p-3.5 rounded-xl bg-gradient-to-r from-emerald-500/10 via-teal-500/5 to-transparent border border-emerald-500/20 text-xs">
+                <div className="flex items-center gap-2">
+                  <TrendingUp className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                  <span className="font-semibold text-foreground">Estimated Profit:</span>
+                  <span className={`font-bold ${unitProfit >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-destructive"}`}>
+                    ₹{unitProfit.toFixed(2)} / unit
+                  </span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className="bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 font-semibold px-2 py-0.5 rounded-md border border-emerald-500/30">
+                    Margin: {marginPct}%
+                  </span>
+                  <span className="bg-blue-500/15 text-blue-700 dark:text-blue-300 font-semibold px-2 py-0.5 rounded-md border border-blue-500/30">
+                    Markup: {markupPct}%
+                  </span>
                 </div>
               </div>
 
@@ -599,15 +695,31 @@ export function ProductForm({ initialData, onSubmit, isSaving }: { initialData?:
             <CardContent className="pt-6 space-y-4">
               <div className="grid gap-1.5">
                 <Label className="text-sm font-semibold">SKU <span className="text-destructive">*</span></Label>
-                <Input
-                  placeholder="e.g. SKU-001"
-                  value={formData.sku}
-                  onChange={(e) => {
-                    setFormData({ ...formData, sku: e.target.value });
-                    clearProdError("sku");
-                  }}
-                  className={`h-10 ${prodErrors.sku ? "border-destructive focus-visible:ring-destructive" : ""}`}
-                />
+                <div className="flex gap-2">
+                  <Input
+                    placeholder="e.g. SKU-001"
+                    value={formData.sku}
+                    onChange={(e) => {
+                      setFormData({ ...formData, sku: e.target.value });
+                      clearProdError("sku");
+                    }}
+                    className={`flex-1 h-10 ${prodErrors.sku ? "border-destructive focus-visible:ring-destructive" : ""}`}
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      const prefix = (formData.name ? formData.name.replace(/[^a-zA-Z]/g, "").substring(0, 3) : "SKU").toUpperCase();
+                      const rand = Math.floor(1000 + Math.random() * 9000);
+                      setFormData({ ...formData, sku: `${prefix}-${rand}` });
+                      clearProdError("sku");
+                    }}
+                    className="h-10 text-xs gap-1 shrink-0"
+                  >
+                    <RefreshCw className="h-3.5 w-3.5" />
+                    Auto
+                  </Button>
+                </div>
                 <FieldError message={prodErrors.sku} />
               </div>
               <div className="grid gap-1.5">

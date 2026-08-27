@@ -10,8 +10,9 @@ import { FileUpload } from "@/components/ui/file-upload";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { getCategoriesFn, createCategoryFn } from "@/api/categories";
 import { VariantManager } from "../products/VariantManager";
+import { AiProductMagicBar } from "../products/AiProductMagicBar";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, ArrowLeft } from "lucide-react";
+import { Loader2, ArrowLeft, Sparkles, Clock, IndianRupee } from "lucide-react";
 
 export function ServiceForm({ initialData, onSubmit, isSaving }: { initialData?: any; onSubmit: (data: any) => void; isSaving: boolean }) {
   const { t } = useLanguage();
@@ -76,6 +77,27 @@ export function ServiceForm({ initialData, onSubmit, isSaving }: { initialData?:
     onSubmit(payload);
   };
 
+  const handleApplyAiData = (extracted: any) => {
+    setFormData((prev: any) => {
+      let matchedCatId = prev.category;
+      if (extracted.category) {
+        const match = (categories as any[]).find(
+          (c: any) => c.name.toLowerCase() === extracted.category.toLowerCase()
+        );
+        matchedCatId = match ? match.id : prev.category;
+      }
+
+      return {
+        ...prev,
+        name: extracted.name || prev.name,
+        category: matchedCatId,
+        price: extracted.price !== undefined ? String(extracted.price) : prev.price,
+        cost: extracted.cost !== undefined ? String(extracted.cost) : prev.cost,
+        durationValue: extracted.duration ? String(extracted.duration) : prev.durationValue,
+      };
+    });
+  };
+
   return (
     <div className="container mx-auto space-y-6 pb-20 mt-4 px-4">
       <div className="flex items-center justify-between">
@@ -94,6 +116,12 @@ export function ServiceForm({ initialData, onSubmit, isSaving }: { initialData?:
           </Button>
         </div>
       </div>
+
+      {/* 🚀 AI Service Creator Bar */}
+      <AiProductMagicBar
+        categories={categories}
+        onApplyData={handleApplyAiData}
+      />
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="md:col-span-2 space-y-6">

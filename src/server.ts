@@ -3,6 +3,8 @@ import "./lib/error-capture";
 import { consumeLastCapturedError } from "./lib/error-capture";
 import { renderErrorPage } from "./lib/error-page";
 
+import { handleWhatsAppWebhook } from "./server/whatsapp-webhook";
+
 type ServerEntry = {
   fetch: (request: Request, env: unknown, ctx: unknown) => Promise<Response> | Response;
 };
@@ -55,6 +57,18 @@ function applySecurityHeaders(response: Response): Response {
 export default {
   async fetch(request: Request, env: unknown, ctx: unknown) {
     try {
+      const url = new URL(request.url);
+
+      // WhatsApp Cloud API Webhook endpoint
+      if (
+        url.pathname === "/api/whatsapp-webhook" ||
+        url.pathname === "/api/whatsapp/webhook" ||
+        url.pathname === "/api/webhook/whatsapp" ||
+        url.pathname === "/api/webhook"
+      ) {
+        return handleWhatsAppWebhook(request);
+      }
+
       const handler = await getServerEntry();
       const response = await handler.fetch(request, env, ctx);
       const normalized = await normalizeCatastrophicSsrResponse(response);
