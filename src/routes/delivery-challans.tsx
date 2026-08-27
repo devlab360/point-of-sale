@@ -416,7 +416,7 @@ function DeliveryChallansPage() {
   return (
     <>
       <DataPage
-        title="Delivery Challans (চালান)"
+        title="Delivery Challans"
         description="Issue goods dispatch slips, track vehicle deliveries, and convert challans to invoices."
         primaryAction={{ label: "Create Delivery Challan", onClick: () => setIsAddOpen(true) }}
         searchPlaceholder="Search challans..."

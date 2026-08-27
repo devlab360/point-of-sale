@@ -144,6 +144,73 @@ export const updateAccountFn = createServerFn({ method: "POST" })
     }
   });
 
+export const deleteAccountFn = createServerFn({ method: "POST" })
+  .validator((data: any) => data)
+  .handler(async ({ data }) => {
+    const session = await requireAuth();
+    const orgId = session.orgId;
+    try {
+      await db
+        .delete(schema.accounts)
+        .where(and(eq(schema.accounts.id, data.id), eq(schema.accounts.organizationId, orgId)));
+      return { success: true };
+    } catch (e) {
+      return handleApiError(e);
+    }
+  });
+
+export const seedDefaultAccountsFn = createServerFn({ method: "POST" })
+  .validator((data: any) => data)
+  .handler(async () => {
+    const session = await requireAuth();
+    const orgId = session.orgId;
+    try {
+      const existing = await db
+        .select()
+        .from(schema.accounts)
+        .where(eq(schema.accounts.organizationId, orgId));
+
+      const existingCodes = new Set(existing.map((a) => a.code));
+
+      const standardAccounts = [
+        { code: "1001", name: "Cash on Hand", type: "asset", balance: "0", isSystem: true },
+        { code: "1002", name: "Bank Account (Primary)", type: "asset", balance: "0", isSystem: true },
+        { code: "1003", name: "Accounts Receivable (Customer Due)", type: "asset", balance: "0", isSystem: true },
+        { code: "1004", name: "Merchandise Inventory", type: "asset", balance: "0", isSystem: true },
+        { code: "1005", name: "Undeposited Funds / POS Drawer", type: "asset", balance: "0", isSystem: true },
+        { code: "2001", name: "Accounts Payable (Supplier Due)", type: "liability", balance: "0", isSystem: true },
+        { code: "2002", name: "VAT / Sales Tax Payable", type: "liability", balance: "0", isSystem: true },
+        { code: "2003", name: "GST Output Tax Payable", type: "liability", balance: "0", isSystem: true },
+        { code: "3001", name: "Owner's Equity & Capital", type: "equity", balance: "0", isSystem: true },
+        { code: "3002", name: "Retained Earnings", type: "equity", balance: "0", isSystem: true },
+        { code: "4001", name: "Sales Revenue", type: "income", balance: "0", isSystem: true },
+        { code: "4002", name: "Service & Maintenance Revenue", type: "income", balance: "0", isSystem: true },
+        { code: "4003", name: "Discounts & Allowances Given", type: "income", balance: "0", isSystem: true },
+        { code: "5001", name: "Cost of Goods Sold (COGS)", type: "expense", balance: "0", isSystem: true },
+        { code: "5002", name: "Rent & Store Facility Expense", type: "expense", balance: "0", isSystem: true },
+        { code: "5003", name: "Staff Salaries & Employee Wages", type: "expense", balance: "0", isSystem: true },
+        { code: "5004", name: "Utilities & Electricity Expense", type: "expense", balance: "0", isSystem: true },
+        { code: "5005", name: "Marketing, Advertising & Promotions", type: "expense", balance: "0", isSystem: true },
+      ];
+
+      const toInsert = standardAccounts
+        .filter((acc) => !existingCodes.has(acc.code))
+        .map((acc) => ({
+          id: uuidv4(),
+          organizationId: orgId,
+          ...acc,
+        }));
+
+      if (toInsert.length > 0) {
+        await db.insert(schema.accounts).values(toInsert);
+      }
+
+      return { success: true, count: toInsert.length };
+    } catch (e) {
+      return handleApiError(e);
+    }
+  });
+
 // --- Vouchers ---
 export const getVouchersFn = createServerFn({ method: "GET" })
   .validator((data: any) => data)

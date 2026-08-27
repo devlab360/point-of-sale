@@ -10,6 +10,7 @@ import { SearchableSelect } from "@/components/ui/searchable-select";
 import { FileUpload } from "@/components/ui/file-upload";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { getCategoriesFn, createCategoryFn } from "@/api/categories";
+import { useCurrency } from "@/lib/currency";
 import { VariantManager } from "../products/VariantManager";
 import {
   Select,
@@ -24,10 +25,11 @@ import {
   Loader2,
   ArrowLeft,
   Package,
-  IndianRupee,
+  DollarSign,
   Clock,
   Layers,
   Image as ImageIcon,
+  CheckCircle2,
 } from "lucide-react";
 
 export function ServiceForm({
@@ -40,6 +42,7 @@ export function ServiceForm({
   isSaving: boolean;
 }) {
   const { t } = useLanguage();
+  const { formatCurrency, currencySymbol } = useCurrency();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
@@ -124,25 +127,15 @@ export function ServiceForm({
     <div className="page-container pb-24 relative space-y-6">
       {/* Sticky Action Bar */}
       <div className="sticky top-0 z-20 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-background/90 backdrop-blur-xl pb-3 pt-2 border-b border-border/80 shadow-sm -mx-4 px-4 sm:-mx-6 sm:px-6">
-        <div className="flex items-center gap-3">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => navigate({ to: "/services" })}
-            className="size-9 rounded-xl hover:bg-muted"
-          >
-            <ArrowLeft className="size-4" />
-          </Button>
-          <div>
-            <h1 className="text-xl sm:text-2xl font-semibold tracking-tight text-foreground">
-              {initialData ? "Edit Service" : "Add New Service"}
-            </h1>
-            <p className="text-xs text-muted-foreground hidden sm:block">
-              {initialData
-                ? "Update service details, pricing, and variants."
-                : "Configure a new service with pricing and optional variants."}
-            </p>
-          </div>
+        <div>
+          <h1 className="text-xl sm:text-2xl font-semibold tracking-tight text-foreground">
+            {initialData ? "Edit Service" : "Add New Service"}
+          </h1>
+          <p className="text-xs text-muted-foreground hidden sm:block">
+            {initialData
+              ? "Update service details, pricing, and variants."
+              : "Configure a new service with pricing and optional variants."}
+          </p>
         </div>
         <div className="flex items-center gap-2.5 w-full sm:w-auto">
           <Button
@@ -212,21 +205,21 @@ export function ServiceForm({
             </CardContent>
           </Card>
 
-          <Card className="shadow-sm border-border/60 overflow-hidden">
-            <CardHeader className="border-b bg-muted/20 pb-3.5">
+          <Card className="shadow-card border-border/80 rounded-2xl overflow-hidden">
+            <CardHeader className="border-b border-border/60 bg-muted/20 pb-3.5">
               <CardTitle className="text-base font-bold flex items-center gap-2">
-                <IndianRupee className="size-4 text-primary" /> Pricing & Duration
+                <DollarSign className="size-4 text-primary" /> Pricing & Duration
               </CardTitle>
             </CardHeader>
             <CardContent className="pt-6 space-y-6">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                 <div className="grid gap-1.5">
-                  <Label className="text-sm font-semibold">
-                    Retail Price <span className="text-destructive">*</span>
+                  <Label className="text-xs font-bold">
+                    Retail Price ({currencySymbol}) <span className="text-destructive">*</span>
                   </Label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <span className="text-muted-foreground text-sm">₹</span>
+                      <span className="text-muted-foreground text-xs font-bold font-mono">{currencySymbol}</span>
                     </div>
                     <Input
                       type="number"
@@ -238,16 +231,16 @@ export function ServiceForm({
                         setFormData({ ...formData, price: e.target.value });
                         clearError("price");
                       }}
-                      className={`pl-8 h-11 ${errors.price ? "border-destructive focus-visible:ring-destructive" : ""}`}
+                      className={`pl-8 h-10 rounded-xl font-bold text-sm ${errors.price ? "border-destructive focus-visible:ring-destructive" : ""}`}
                     />
                   </div>
                   <FieldError message={errors.price} />
                 </div>
                 <div className="grid gap-1.5">
-                  <Label className="text-sm font-semibold">Cost (Internal)</Label>
+                  <Label className="text-xs font-bold">Cost / Service Overhead ({currencySymbol})</Label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <span className="text-muted-foreground text-sm">₹</span>
+                      <span className="text-muted-foreground text-xs font-bold font-mono">{currencySymbol}</span>
                     </div>
                     <Input
                       type="number"
@@ -259,7 +252,7 @@ export function ServiceForm({
                         setFormData({ ...formData, cost: e.target.value });
                         clearError("cost");
                       }}
-                      className={`pl-8 h-11 ${errors.cost ? "border-destructive focus-visible:ring-destructive" : ""}`}
+                      className={`pl-8 h-10 rounded-xl font-bold text-sm ${errors.cost ? "border-destructive focus-visible:ring-destructive" : ""}`}
                     />
                   </div>
                   <FieldError message={errors.cost} />

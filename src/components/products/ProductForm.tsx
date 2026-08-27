@@ -19,6 +19,7 @@ import { getBrandsFn, createBrandFn } from "@/api/brands";
 import { getUnitsFn, createUnitFn } from "@/api/units";
 import { getLocationsFn } from "@/api/locations";
 import { getSettingsFn } from "@/api/settings";
+import { useCurrency } from "@/lib/currency";
 import { VariantManager } from "./VariantManager";
 import { BundleManager } from "./BundleManager";
 import { ModifierManager } from "./ModifierManager";
@@ -34,13 +35,16 @@ import {
   ArrowLeft,
   MapPin,
   Package,
-  IndianRupee,
+  DollarSign,
+  TrendingUp,
   Image as ImageIcon,
   Tags,
   FileText,
   Settings,
   ShieldCheck,
   Tag,
+  Sparkles,
+  Barcode as BarcodeIcon,
 } from "lucide-react";
 
 export function ProductForm({
@@ -53,6 +57,7 @@ export function ProductForm({
   isSaving: boolean;
 }) {
   const { t } = useLanguage();
+  const { formatCurrency, currencySymbol } = useCurrency();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
@@ -200,25 +205,15 @@ export function ProductForm({
     <div className="page-container pb-24 relative space-y-6">
       {/* Sticky Action Bar */}
       <div className="sticky top-0 z-20 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-background/90 backdrop-blur-xl pb-3 pt-2 border-b border-border/80 shadow-sm -mx-4 px-4 sm:-mx-6 sm:px-6">
-        <div className="flex items-center gap-3">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => navigate({ to: "/products" })}
-            className="size-9 rounded-xl hover:bg-muted"
-          >
-            <ArrowLeft className="size-4" />
-          </Button>
-          <div>
-            <h1 className="text-xl sm:text-2xl font-semibold tracking-tight text-foreground">
-              {initialData ? "Edit Product SKU" : "Create New Product"}
-            </h1>
-            <p className="text-xs text-muted-foreground hidden sm:block">
-              {initialData
-                ? "Update catalog metadata, pricing tiers, and stock allocations."
-                : "Configure attributes, pricing, and multi-location inventory."}
-            </p>
-          </div>
+        <div>
+          <h1 className="text-xl sm:text-2xl font-semibold tracking-tight text-foreground">
+            {initialData ? "Edit Product SKU" : "Create New Product"}
+          </h1>
+          <p className="text-xs text-muted-foreground hidden sm:block">
+            {initialData
+              ? "Update catalog metadata, pricing tiers, and stock allocations."
+              : "Configure attributes, pricing, and multi-location inventory."}
+          </p>
         </div>
         <div className="flex items-center gap-2.5 w-full sm:w-auto">
           <Button
@@ -328,21 +323,41 @@ export function ProductForm({
             </CardContent>
           </Card>
 
-          <Card className="shadow-sm border-border/60 overflow-hidden">
-            <CardHeader className="border-b bg-muted/20 pb-4">
-              <CardTitle className="text-lg flex items-center gap-2">
-                <IndianRupee className="size-5 text-primary" /> Pricing & Inventory
-              </CardTitle>
+          <Card className="shadow-card border-border/80 rounded-2xl overflow-hidden">
+            <CardHeader className="border-b border-border/60 bg-muted/20 pb-3.5">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-base font-bold flex items-center gap-2">
+                  <DollarSign className="size-4 text-primary" /> Pricing & Profit Margins
+                </CardTitle>
+                {formData.price > 0 && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-muted-foreground font-semibold">Margin:</span>
+                    <span
+                      className={`text-xs font-black px-2.5 py-0.5 rounded-full ${
+                        formData.price - formData.cost >= 0
+                          ? "bg-success/15 text-success border border-success/20"
+                          : "bg-destructive/15 text-destructive border border-destructive/20"
+                      }`}
+                    >
+                      {(
+                        ((formData.price - formData.cost) / (formData.price || 1)) *
+                        100
+                      ).toFixed(1)}
+                      %
+                    </span>
+                  </div>
+                )}
+              </div>
             </CardHeader>
-            <CardContent className="pt-6 space-y-8">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+            <CardContent className="pt-6 space-y-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                 <div className="grid gap-1.5">
-                  <Label className="text-sm font-semibold">
-                    Retail Price <span className="text-destructive">*</span>
+                  <Label className="text-xs font-bold">
+                    Retail Selling Price ({currencySymbol}) <span className="text-destructive">*</span>
                   </Label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <span className="text-muted-foreground text-sm">₹</span>
+                      <span className="text-muted-foreground text-xs font-bold font-mono">{currencySymbol}</span>
                     </div>
                     <Input
                       type="number"
@@ -355,18 +370,18 @@ export function ProductForm({
                         setFormData({ ...formData, price: parseFloat(e.target.value) || 0 });
                         clearProdError("price");
                       }}
-                      className={`pl-8 h-10 ${prodErrors.price ? "border-destructive focus-visible:ring-destructive" : ""}`}
+                      className={`pl-8 h-10 font-black text-sm rounded-xl ${prodErrors.price ? "border-destructive focus-visible:ring-destructive" : ""}`}
                     />
                   </div>
                   <FieldError message={prodErrors.price} />
                 </div>
                 <div className="grid gap-1.5">
-                  <Label className="text-sm font-semibold">
-                    Cost Price <span className="text-destructive">*</span>
+                  <Label className="text-xs font-bold">
+                    Unit Cost / Purchase Price ({currencySymbol}) <span className="text-destructive">*</span>
                   </Label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <span className="text-muted-foreground text-sm">₹</span>
+                      <span className="text-muted-foreground text-xs font-bold font-mono">{currencySymbol}</span>
                     </div>
                     <Input
                       type="number"
@@ -379,16 +394,34 @@ export function ProductForm({
                         setFormData({ ...formData, cost: parseFloat(e.target.value) || 0 });
                         clearProdError("cost");
                       }}
-                      className={`pl-8 h-10 ${prodErrors.cost ? "border-destructive focus-visible:ring-destructive" : ""}`}
+                      className={`pl-8 h-10 font-black text-sm rounded-xl ${prodErrors.cost ? "border-destructive focus-visible:ring-destructive" : ""}`}
                     />
                   </div>
                   <FieldError message={prodErrors.cost} />
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 bg-muted/10 p-4 rounded-lg border border-border/50">
+              {/* Real-time Profit Preview */}
+              <div className="grid grid-cols-2 gap-3 p-3.5 rounded-xl bg-muted/40 border border-border/60 text-xs">
+                <div>
+                  <span className="text-muted-foreground text-[11px] block">Gross Profit Per Unit:</span>
+                  <span className={`font-black font-mono text-sm ${formData.price >= formData.cost ? "text-primary" : "text-destructive"}`}>
+                    {formatCurrency(formData.price - formData.cost)}
+                  </span>
+                </div>
+                <div className="text-right">
+                  <span className="text-muted-foreground text-[11px] block">Markup Over Cost:</span>
+                  <span className="font-black font-mono text-sm text-foreground">
+                    {formData.cost > 0
+                      ? `${(((formData.price - formData.cost) / formData.cost) * 100).toFixed(1)}%`
+                      : "—"}
+                  </span>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-muted/20 p-4 rounded-xl border border-border/50">
                 <div className="grid gap-1.5">
-                  <Label className="text-sm">Wholesale Price (Optional)</Label>
+                  <Label className="text-xs font-bold">Wholesale Price (Optional)</Label>
                   <Input
                     type="number"
                     min="0"
@@ -398,10 +431,11 @@ export function ProductForm({
                     onChange={(e) =>
                       setFormData({ ...formData, wholesalePrice: parseFloat(e.target.value) || 0 })
                     }
+                    className="h-9 text-xs rounded-xl"
                   />
                 </div>
                 <div className="grid gap-1.5">
-                  <Label className="text-sm">Dealer Price (Optional)</Label>
+                  <Label className="text-xs font-bold">Dealer Price (Optional)</Label>
                   <Input
                     type="number"
                     min="0"
@@ -411,6 +445,7 @@ export function ProductForm({
                     onChange={(e) =>
                       setFormData({ ...formData, dealerPrice: parseFloat(e.target.value) || 0 })
                     }
+                    className="h-9 text-xs rounded-xl"
                   />
                 </div>
               </div>
@@ -712,14 +747,14 @@ export function ProductForm({
         </div>
 
         {/* Right Column - Meta Details */}
-        <div className="space-y-8">
-          <Card className="shadow-sm border-border/60 overflow-hidden">
-            <CardHeader className="border-b bg-muted/20 pb-4">
-              <CardTitle className="text-lg flex items-center gap-2">
-                <ImageIcon className="size-5 text-primary" /> Media
+        <div className="space-y-6">
+          <Card className="shadow-card border-border/80 rounded-2xl overflow-hidden">
+            <CardHeader className="border-b border-border/60 bg-muted/20 pb-3.5">
+              <CardTitle className="text-base font-bold flex items-center gap-2">
+                <ImageIcon className="size-4 text-primary" /> Product Media & Image
               </CardTitle>
             </CardHeader>
-            <CardContent className="pt-6">
+            <CardContent className="pt-5">
               <FileUpload
                 value={
                   formData.image && !formData.image.includes("unsplash.com")
@@ -739,22 +774,35 @@ export function ProductForm({
                 allowedTypes={["image/jpeg", "image/png", "image/webp", "image/gif"]}
                 maxSizeMB={3}
                 label=""
-                description="Upload a high-quality product image. Supported formats: PNG, JPG, WEBP. Max size: 3MB."
+                description="Upload high-res product photo. Max size: 3MB."
               />
             </CardContent>
           </Card>
 
-          <Card className="shadow-sm border-border/60 overflow-hidden">
-            <CardHeader className="border-b bg-muted/20 pb-4">
-              <CardTitle className="text-lg flex items-center gap-2">
-                <Tag className="size-5 text-primary" /> Identifiers
+          <Card className="shadow-card border-border/80 rounded-2xl overflow-hidden">
+            <CardHeader className="border-b border-border/60 bg-muted/20 pb-3.5">
+              <CardTitle className="text-base font-bold flex items-center gap-2">
+                <Tag className="size-4 text-primary" /> SKU & Barcode Codes
               </CardTitle>
             </CardHeader>
-            <CardContent className="pt-6 space-y-4">
+            <CardContent className="pt-5 space-y-4">
               <div className="grid gap-1.5">
-                <Label className="text-sm font-semibold">
-                  SKU <span className="text-destructive">*</span>
-                </Label>
+                <div className="flex items-center justify-between">
+                  <Label className="text-xs font-bold">
+                    SKU Identifier <span className="text-destructive">*</span>
+                  </Label>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const randSku = `SKU-${Date.now().toString().slice(-6)}`;
+                      setFormData({ ...formData, sku: randSku });
+                      clearProdError("sku");
+                    }}
+                    className="text-[11px] font-bold text-primary hover:underline"
+                  >
+                    Auto Generate
+                  </button>
+                </div>
                 <Input
                   placeholder="e.g. SKU-001"
                   value={formData.sku}
@@ -762,18 +810,18 @@ export function ProductForm({
                     setFormData({ ...formData, sku: e.target.value });
                     clearProdError("sku");
                   }}
-                  className={`h-10 ${prodErrors.sku ? "border-destructive focus-visible:ring-destructive" : ""}`}
+                  className={`h-10 text-xs rounded-xl font-mono ${prodErrors.sku ? "border-destructive focus-visible:ring-destructive" : ""}`}
                 />
                 <FieldError message={prodErrors.sku} />
               </div>
               <div className="grid gap-1.5">
-                <Label className="text-sm font-semibold">Barcode</Label>
+                <Label className="text-xs font-bold">Barcode (EAN / UPC / Code128)</Label>
                 <div className="flex gap-2">
                   <Input
                     placeholder="e.g. 123456789012"
                     value={formData.barcode}
                     onChange={(e) => setFormData({ ...formData, barcode: e.target.value })}
-                    className="flex-1 h-10"
+                    className="flex-1 h-10 text-xs rounded-xl font-mono"
                   />
                   <Button
                     type="button"
@@ -786,7 +834,7 @@ export function ProductForm({
                         ).toString(),
                       })
                     }
-                    className="h-10"
+                    className="h-10 rounded-xl text-xs font-bold"
                   >
                     Generate
                   </Button>
@@ -795,20 +843,20 @@ export function ProductForm({
             </CardContent>
           </Card>
 
-          <Card className="shadow-sm border-border/60 overflow-hidden">
-            <CardHeader className="border-b bg-muted/20 pb-4">
-              <CardTitle className="text-lg flex items-center gap-2">
-                <FileText className="size-5 text-primary" /> Tax & Compliance
+          <Card className="shadow-card border-border/80 rounded-2xl overflow-hidden">
+            <CardHeader className="border-b border-border/60 bg-muted/20 pb-3.5">
+              <CardTitle className="text-base font-bold flex items-center gap-2">
+                <FileText className="size-4 text-primary" /> Tax & Compliance
               </CardTitle>
             </CardHeader>
-            <CardContent className="pt-6 space-y-4">
+            <CardContent className="pt-5 space-y-4">
               <div className="grid gap-1.5">
-                <Label className="text-sm font-semibold">HSN / SAC Code</Label>
+                <Label className="text-xs font-bold">HSN / SAC Code</Label>
                 <Input
                   placeholder="e.g. 8517"
                   value={formData.hsnCode}
                   onChange={(e) => setFormData({ ...formData, hsnCode: e.target.value })}
-                  className="h-10"
+                  className="h-10 text-xs rounded-xl"
                 />
               </div>
               <div className="grid gap-1.5">

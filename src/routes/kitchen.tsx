@@ -213,7 +213,6 @@ function KitchenPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h1 className="text-xl sm:text-2xl font-semibold tracking-tight text-foreground flex items-center gap-2">
-            <ChefHat className="size-6 text-primary" />
             Kitchen Display System (KDS)
           </h1>
           <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">

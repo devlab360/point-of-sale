@@ -215,7 +215,7 @@ function SubscriptionsPage() {
   return (
     <div className="space-y-6">
       <DataPage
-        title="Subscriptions & Recurring Billing (সাবস্ক্রিপশন ও বিলিং)"
+        title="Subscriptions & Recurring Billing"
         description="Auto-billing for ISP internet, Gym memberships, Milk/Water supply, and SaaS billing."
         primaryAction={{ label: "Create Subscription", onClick: () => setIsAddOpen(true) }}
         searchPlaceholder="Search by subscription #, customer, or plan..."
@@ -409,13 +409,12 @@ function SubscriptionsPage() {
                           {s.subscriptionNo}
                         </span>
                         <Badge
-                          className={`text-[9px] font-bold py-0 ${
-                            s.status === "active"
+                          className={`text-[9px] font-bold py-0 ${s.status === "active"
                               ? "bg-success/12 text-success"
                               : s.status === "paused"
                                 ? "bg-warning/15 text-warning-foreground"
                                 : "bg-muted text-muted-foreground"
-                          }`}
+                            }`}
                         >
                           {s.status}
                         </Badge>
