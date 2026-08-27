@@ -192,15 +192,15 @@ function LoginPage() {
         <div className="absolute -bottom-48 -left-32 size-[480px] rounded-full bg-foreground/5 blur-3xl pointer-events-none" />
 
         {/* Brand Header */}
-        <div className="relative z-10 flex items-center gap-3">
-          <div className="flex size-11 items-center justify-center rounded-xl bg-primary-foreground/10 border border-primary-foreground/20 text-primary-foreground">
+        <div className="relative z-10 flex items-center gap-3.5">
+          <div className="flex size-12 items-center justify-center rounded-2xl bg-primary-foreground/10 border border-primary-foreground/20 text-primary-foreground shadow-sm">
             <Store className="size-6" />
           </div>
           <div>
-            <h1 className="font-display text-2xl font-semibold tracking-tight text-primary-foreground">
+            <h1 className="font-display text-2xl sm:text-3xl font-bold tracking-tight text-primary-foreground">
               OneDesk360
             </h1>
-            <p className="text-[11px] text-primary-foreground/75 font-medium uppercase tracking-wider">
+            <p className="text-xs sm:text-sm text-primary-foreground/90 font-bold uppercase tracking-wider">
               Own the counter
             </p>
           </div>
@@ -208,24 +208,24 @@ function LoginPage() {
 
         {/* Feature Hero Copy */}
         <div className="relative z-10 space-y-6 max-w-lg">
-          <h2 className="font-display text-[2.6rem] leading-[1.08] font-semibold tracking-tight text-primary-foreground">
+          <h2 className="font-display text-3xl sm:text-4xl lg:text-[2.75rem] leading-[1.15] font-bold tracking-tight text-primary-foreground">
             The warm, human way to run your shop.
           </h2>
 
-          <p className="text-[15px] text-primary-foreground/85 leading-relaxed">
+          <p className="text-base sm:text-lg text-primary-foreground/90 leading-relaxed font-normal">
             Ring up sales, look after your stock, and keep your regulars happy — all from one
             friendly place built for how a real store actually works.
           </p>
 
-          <ul className="space-y-3 pt-1">
+          <ul className="space-y-3.5 pt-2">
             {[
               "Multi-branch inventory that just syncs",
               "Customer ledgers your team will actually use",
               "Instant, no-fuss thermal receipts",
             ].map((item) => (
-              <li key={item} className="flex items-center gap-3 text-sm text-primary-foreground/90">
-                <span className="grid size-5 shrink-0 place-items-center rounded-full bg-primary-foreground/10 border border-primary-foreground/20">
-                  <CheckCircle2 className="size-3.5" />
+              <li key={item} className="flex items-center gap-3 text-base sm:text-lg text-primary-foreground/95 font-medium">
+                <span className="grid size-6 shrink-0 place-items-center rounded-full bg-primary-foreground/15 border border-primary-foreground/30 text-primary-foreground">
+                  <CheckCircle2 className="size-4" />
                 </span>
                 <span>{item}</span>
               </li>
@@ -234,14 +234,14 @@ function LoginPage() {
         </div>
 
         {/* Footer info */}
-        <div className="relative z-10 flex items-center justify-between text-xs text-primary-foreground/70">
+        <div className="relative z-10 flex items-center justify-between text-sm text-primary-foreground/80">
           <p>
             © {new Date().getFullYear()}{" "}
             <a
               href="https://devlab360.com/"
               target="_blank"
               rel="noopener noreferrer"
-              className="hover:text-primary-foreground transition-colors underline font-medium"
+              className="hover:text-primary-foreground transition-colors underline font-semibold"
             >
               DevLab360
             </a>
@@ -254,13 +254,13 @@ function LoginPage() {
         <div className="w-full max-w-lg xl:max-w-xl space-y-8 py-6">
           {/* Header Icon & Title */}
           <div className="space-y-3 text-center lg:text-left">
-            <div className="inline-flex lg:hidden size-13 items-center justify-center rounded-xl bg-primary/10 text-primary mb-2">
-              <Store className="size-6" />
+            <div className="inline-flex lg:hidden size-14 items-center justify-center rounded-2xl bg-primary/10 text-primary mb-2">
+              <Store className="size-7" />
             </div>
-            <h2 className="font-display text-3xl sm:text-4xl font-semibold tracking-tight text-foreground">
+            <h2 className="font-display text-3xl sm:text-4xl font-bold tracking-tight text-foreground">
               {mode === "forgot" ? "Reset Password" : "Welcome Back"}
             </h2>
-            <p className="text-base text-muted-foreground">
+            <p className="text-base sm:text-lg text-muted-foreground">
               {mode === "forgot"
                 ? "Enter your email to receive a password reset code"
                 : "Sign in to access your store POS dashboard"}
@@ -272,7 +272,7 @@ function LoginPage() {
             {mode === "email" ? (
               <form noValidate onSubmit={handleEmailLogin} className="space-y-5">
                 <div className="space-y-2">
-                  <Label htmlFor="email" className="text-sm font-semibold text-foreground">
+                  <Label htmlFor="email" className="text-sm sm:text-base font-bold text-foreground">
                     Email Address
                   </Label>
                   <Input
@@ -284,20 +284,20 @@ function LoginPage() {
                       clearLoginError("email");
                     }}
                     placeholder="owner@store.com"
-                    className="h-11 rounded-lg text-sm sm:text-base px-3.5"
+                    className="h-12 sm:h-13 rounded-xl text-base px-4"
                   />
                   {loginErrors.email && <FieldError message={loginErrors.email} />}
                 </div>
 
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <Label htmlFor="password" className="text-sm font-semibold text-foreground">
+                    <Label htmlFor="password" className="text-sm sm:text-base font-bold text-foreground">
                       Password
                     </Label>
                     <button
                       type="button"
                       onClick={() => setMode("forgot")}
-                      className="text-xs sm:text-sm font-semibold text-primary hover:underline"
+                      className="text-sm sm:text-base font-semibold text-primary hover:underline"
                     >
                       Forgot password?
                     </button>
@@ -310,7 +310,7 @@ function LoginPage() {
                       clearLoginError("password");
                     }}
                     placeholder="••••••••"
-                    className="h-11 rounded-lg text-sm sm:text-base px-3.5"
+                    className="h-12 sm:h-13 rounded-xl text-base px-4"
                   />
                   {loginErrors.password && <FieldError message={loginErrors.password} />}
                 </div>
@@ -318,7 +318,7 @@ function LoginPage() {
                 <Button
                   type="submit"
                   disabled={isLoggingIn}
-                  className="w-full h-11 sm:h-11.5 rounded-lg font-semibold gap-2 text-sm sm:text-base"
+                  className="w-full h-12 sm:h-13 rounded-xl font-bold gap-2 text-base sm:text-lg shadow-sm mt-2"
                 >
                   {isLoggingIn ? (
                     <>
@@ -339,7 +339,7 @@ function LoginPage() {
                 {forgotStep === "request" ? (
                   <form onSubmit={handleSendResetOtp} className="space-y-5">
                     <div className="space-y-2">
-                      <Label htmlFor="resetEmail" className="text-sm font-semibold text-foreground">
+                      <Label htmlFor="resetEmail" className="text-sm sm:text-base font-bold text-foreground">
                         Registered Store Email
                       </Label>
                       <Input
@@ -348,14 +348,14 @@ function LoginPage() {
                         value={resetEmail || email}
                         onChange={(e) => setResetEmail(e.target.value)}
                         placeholder="owner@store.com"
-                        className="h-11 rounded-lg text-sm sm:text-base px-3.5"
+                        className="h-12 sm:h-13 rounded-xl text-base px-4"
                         required
                       />
                     </div>
                     <Button
                       type="submit"
                       disabled={isSendingOtp}
-                      className="w-full h-11 sm:h-11.5 rounded-lg font-semibold gap-2 text-sm sm:text-base"
+                      className="w-full h-12 sm:h-13 rounded-xl font-bold gap-2 text-base sm:text-lg"
                     >
                       {isSendingOtp ? (
                         <>
@@ -371,42 +371,48 @@ function LoginPage() {
                     </Button>
                   </form>
                 ) : (
-                  <form onSubmit={handleResetPasswordSubmit} className="space-y-4">
-                    <div className="space-y-1.5">
-                      <Label htmlFor="otpCode">6-Digit OTP Code</Label>
+                  <form onSubmit={handleResetPasswordSubmit} className="space-y-5">
+                    <div className="space-y-2">
+                      <Label htmlFor="otpCode" className="text-sm sm:text-base font-bold text-foreground">
+                        6-Digit OTP Code
+                      </Label>
                       <Input
                         id="otpCode"
                         value={otpInput}
                         onChange={(e) => setOtpInput(e.target.value)}
                         placeholder="123456"
                         maxLength={6}
-                        className="h-11 rounded-lg font-mono text-center text-lg tracking-widest"
+                        className="h-13 rounded-xl font-mono text-center text-2xl tracking-widest font-bold"
                       />
                     </div>
-                    <div className="space-y-1.5">
-                      <Label htmlFor="newPassword">New Password</Label>
+                    <div className="space-y-2">
+                      <Label htmlFor="newPassword" className="text-sm sm:text-base font-bold text-foreground">
+                        New Password
+                      </Label>
                       <PasswordInput
                         id="newPassword"
                         value={newPassword}
                         onChange={(e) => setNewPassword(e.target.value)}
                         placeholder="••••••••"
-                        className="h-11 rounded-lg"
+                        className="h-12 sm:h-13 rounded-xl text-base px-4"
                       />
                     </div>
-                    <div className="space-y-1.5">
-                      <Label htmlFor="confirmPassword">Confirm Password</Label>
+                    <div className="space-y-2">
+                      <Label htmlFor="confirmPassword" className="text-sm sm:text-base font-bold text-foreground">
+                        Confirm Password
+                      </Label>
                       <PasswordInput
                         id="confirmPassword"
                         value={confirmPassword}
                         onChange={(e) => setConfirmPassword(e.target.value)}
                         placeholder="••••••••"
-                        className="h-11 rounded-lg"
+                        className="h-12 sm:h-13 rounded-xl text-base px-4"
                       />
                     </div>
                     <Button
                       type="submit"
                       disabled={isResetting}
-                      className="w-full h-11 rounded-lg font-bold"
+                      className="w-full h-12 sm:h-13 rounded-xl font-bold text-base sm:text-lg"
                     >
                       {isResetting ? "Updating Password..." : "Update Password & Sign In"}
                     </Button>
@@ -419,19 +425,19 @@ function LoginPage() {
                     setMode("email");
                     setForgotStep("request");
                   }}
-                  className="flex items-center justify-center gap-1.5 w-full text-xs font-semibold text-muted-foreground hover:text-foreground pt-2"
+                  className="flex items-center justify-center gap-2 w-full text-sm sm:text-base font-bold text-muted-foreground hover:text-foreground pt-2"
                 >
-                  <ArrowLeft className="size-3.5" />
+                  <ArrowLeft className="size-4" />
                   <span>Back to Sign In</span>
                 </button>
               </div>
             )}
 
             {/* Link to Register */}
-            <div className="border-t pt-4 text-center">
-              <p className="text-xs text-muted-foreground">
+            <div className="border-t border-border/80 pt-5 text-center">
+              <p className="text-sm sm:text-base text-muted-foreground">
                 Don't have a store account yet?{" "}
-                <Link to="/register" className="font-bold text-primary hover:underline">
+                <Link to="/register" className="font-bold text-primary hover:underline ml-1">
                   Start 7-Day Free Trial
                 </Link>
               </p>
@@ -440,13 +446,13 @@ function LoginPage() {
 
           {/* Copyright */}
           <div className="text-center pt-2">
-            <p className="text-[11px] text-muted-foreground/70 font-medium">
+            <p className="text-xs sm:text-sm text-muted-foreground/80 font-medium">
               © {new Date().getFullYear()}{" "}
               <a
                 href="https://devlab360.com/"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="font-semibold text-muted-foreground hover:text-primary transition-colors underline decoration-dotted"
+                className="font-bold text-muted-foreground hover:text-primary transition-colors underline decoration-dotted"
               >
                 DevLab360
               </a>
