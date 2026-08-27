@@ -13,7 +13,7 @@ import { Search, UserCheck, ShieldCheck, Printer, FileText, Loader2 } from "luci
 import { usePreferences } from "@/contexts/PreferencesContext";
 
 export const Route = createFileRoute("/portal")({
-  head: () => ({ meta: [{ title: "Customer & Client Portal · NexisPOS" }] }),
+  head: () => ({ meta: [{ title: "Customer & Client Portal · OneDesk360" }] }),
   component: CustomerPortalPage,
 });
 

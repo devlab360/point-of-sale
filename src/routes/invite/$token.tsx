@@ -11,7 +11,7 @@ import { useFormValidation } from "@/hooks/useFormValidation";
 import { FieldError } from "@/components/ui/field-error";
 
 export const Route = createFileRoute("/invite/$token")({
-  head: () => ({ meta: [{ title: "Accept Invitation · NexisPOS SaaS" }] }),
+  head: () => ({ meta: [{ title: "Accept Invitation · OneDesk360 SaaS" }] }),
   component: InvitePage,
 });
 

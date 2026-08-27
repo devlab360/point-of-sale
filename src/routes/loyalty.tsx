@@ -28,7 +28,7 @@ import {
 } from "@/components/ui/dialog";
 
 export const Route = createFileRoute("/loyalty")({
-  head: () => ({ meta: [{ title: "Loyalty Program — NexisPOS" }] }),
+  head: () => ({ meta: [{ title: "Loyalty Program — OneDesk360" }] }),
   component: LoyaltyPage,
 });
 

@@ -422,8 +422,8 @@ export function hasPermissionForRoute(
   saasPlan: any,
   businessType?: string
 ): { allowed: boolean; reason?: string } {
-  // 1. Super Admin Authorization
-  if (isSuperAdminUser) return { allowed: true };
+  // 1. Super Admin & Organization Admin Authorization
+  if (isSuperAdminUser || user?.role?.toLowerCase() === "admin") return { allowed: true };
   if (routePath.startsWith("/super-admin")) {
     return {
       allowed: false,

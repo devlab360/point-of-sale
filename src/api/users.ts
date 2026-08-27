@@ -29,6 +29,7 @@ const UserInputSchema = z
     avatar: z.string().nullable().optional(),
     phone: z.string().nullable().optional(),
     location: z.string().nullable().optional(),
+    permissions: z.array(z.string()).optional(),
     commissionRate: z.union([z.string(), z.number()]).transform(v => String(v)).nullable().optional(),
     monthlyTarget: z.union([z.string(), z.number()]).transform(v => String(v)).nullable().optional(),
   })

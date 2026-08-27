@@ -36,7 +36,7 @@ import { FieldError } from "@/components/ui/field-error";
 import { usePreferences } from "@/contexts/PreferencesContext";
 
 export const Route = createFileRoute("/accounts")({
-  head: () => ({ meta: [{ title: "Chart of Accounts & Vouchers · NexisPOS" }] }),
+  head: () => ({ meta: [{ title: "Chart of Accounts & Vouchers · OneDesk360" }] }),
   component: AccountsPage,
 });
 

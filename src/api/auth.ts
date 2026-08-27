@@ -1,107 +1,40 @@
 import { handleApiError } from "@/lib/error-utils";
+import { formatErrorResponse } from "@/lib/errors/errors";
 import { createServerFn } from "@tanstack/react-start";
-import { setCookie } from "@tanstack/react-start/server";
+import { setCookie, deleteCookie } from "@tanstack/react-start/server";
+import { authService } from "@/services/auth.service";
 import { db } from "@/db";
 import * as schema from "@/db/schema";
-import { eq, and } from "drizzle-orm";
+import { eq, and, desc } from "drizzle-orm";
 import { z } from "zod";
-import { v4 as uuidv4 } from "uuid";
+import { requireAuth, createSessionToken } from "@/lib/auth-utils";
 import bcrypt from "bcryptjs";
-import { createSessionToken, requireAuth } from "@/lib/auth-utils";
+import { v4 as uuidv4 } from "uuid";
+
+const LoginSchema = z.object({
+  email: z.string().optional(),
+  password: z.string().optional(),
+}).passthrough();
 
 export const loginFn = createServerFn({ method: "POST" })
-  .validator((data: any) => data)
+  .validator((data: unknown) => LoginSchema.parse(data || {}))
   .handler(async ({ data }) => {
     try {
-      let user: any = null;
-
-      if (data.email && data.password) {
-        const users = await db
-          .select()
-          .from(schema.users)
-          .where(eq(schema.users.email, data.email.toLowerCase()))
-          .limit(1);
-        if (users.length > 0) {
-          const u = users[0];
-          // Always use bcrypt — no plaintext fallback (security requirement)
-          if (!u.pin || !u.pin.startsWith("$2")) {
-            // Legacy unencrypted PIN or no PIN — do NOT compare plaintext, deny login
-            return { success: false, error: "Invalid credentials or legacy PIN. Please reset your password." };
-          }
-          const isMatch = await bcrypt.compare(data.password, u.pin);
-          if (isMatch) user = u;
-        }
-      }
-
-      if (user) {
-        if (user.status === "inactive") {
-          return { success: false, error: "Your account is inactive. Please contact the administrator." };
-        }
-        if (user.status === "suspended") {
-          return { success: false, error: "Your account has been suspended by the administrator." };
-        }
-        if (user.status === "pending") {
-          return { success: false, error: "Your account is pending approval by the administrator." };
-        }
-        if (user.role !== "admin" && (!user.permissions || user.permissions.length === 0)) {
-          return { success: false, error: "You don't have permission to log in. Please contact the administrator." };
-        }
-        
-        // Block Super Admins from logging into the Admin Panel (they must use pos-super-admin)
-        if (user.role === "super_admin") {
-          return { success: false, error: "Super Admins must use the dedicated Super Admin Portal." };
-        }
-
-        // Create JWT — include userName so activity logs show real names
-        const token = await createSessionToken({
-          userId: user.id,
-          orgId: user.organizationId || "",
-          role: user.role,
-          userName: user.name,
-        });
-
-        // Set HTTP-only cookie
-        setCookie("pos_auth_token", token, {
-          httpOnly: true,
-          secure: process.env.NODE_ENV === "production",
-          sameSite: "lax",
-          path: "/",
-          maxAge: 7 * 24 * 60 * 60, // 7 days
-        });
-
-        // Also set the old cookie for backward compatibility until frontend is fully migrated
-        if (user.organizationId) {
-          setCookie("pos_session_org", user.organizationId, {
-            path: "/",
-            maxAge: 7 * 24 * 60 * 60,
-          });
-        }
-
-        await db
-          .update(schema.users)
-          .set({ lastActive: new Date().toISOString() })
-          .where(eq(schema.users.id, user.id));
-
-        const { pin: _, ...safeUser } = user;
-        return { success: true, user: safeUser, message: "Login successful!" };
-      }
-
-      // Artificial delay to mitigate brute-force attacks
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      return { success: false, error: "Invalid credentials" };
+      const user = await authService.login(data);
+      return { success: true, user, message: "Login successful!" };
     } catch (e) {
-      return handleApiError(e);
+      return formatErrorResponse(e);
     }
   });
 
 export const getOrgDataFn = createServerFn({ method: "GET" })
-  .validator((data: any) => data)
+  .validator((data: unknown) => z.object({ orgId: z.string().optional() }).optional().parse(data || {}))
   .handler(async ({ data }) => {
     try {
       // C-3 fix: Require authentication. Verify requested orgId matches session orgId.
       // Require authentication. Verify requested orgId matches session orgId.
       const session = await requireAuth();
-      const requestedOrgId = data.orgId;
+      const requestedOrgId = data?.orgId;
       if (requestedOrgId && requestedOrgId !== session.orgId) {
           return { success: false, error: "Unauthorized access to another organization's data" };
       }
@@ -131,7 +64,7 @@ export const getOrgDataFn = createServerFn({ method: "GET" })
   });
 
 export const verifyUserEmailFn = createServerFn({ method: "POST" })
-  .validator((data: any) => data)
+  .validator((data: unknown) => z.object({ email: z.string().email("Valid email required") }).parse(data))
   .handler(async ({ data }) => {
     try {
       const users = await db
@@ -197,13 +130,7 @@ export const registerOrgFn = createServerFn({ method: "POST" })
       email: z.string().email(),
       phone: z.string().optional(),
       ownerName: z.string().min(2),
-      password: z
-        .string()
-        .min(8, "Password must be at least 8 characters long")
-        .regex(
-          /(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^a-zA-Z\d])/,
-          "Password must contain uppercase, lowercase, number and special character",
-        ),
+      password: z.string().min(4, "Password must be at least 4 characters long"),
       assignedPlanId: z.string(),
       seedData: z.any().optional(),
     }),
@@ -390,13 +317,7 @@ export const acceptInvitationFn = createServerFn({ method: "POST" })
       email: z.string().email(),
       role: z.string(),
       permissions: z.array(z.string()).optional(),
-      pin: z
-        .string()
-        .min(8, "Password must be at least 8 characters long")
-        .regex(
-          /(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^a-zA-Z\d])/,
-          "Password must contain uppercase, lowercase, number and special character",
-        ),
+      pin: z.string().min(4, "Password must be at least 4 characters long"),
     }),
   )
   .handler(async ({ data }) => {
@@ -459,13 +380,7 @@ export const resetPasswordFn = createServerFn({ method: "POST" })
     z.object({
       email: z.string().email(),
       otp: z.string().min(6),
-      newPassword: z
-        .string()
-        .min(8, "Password must be at least 8 characters long")
-        .regex(
-          /(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^a-zA-Z\d])/,
-          "Password must contain uppercase, lowercase, number and special character",
-        ),
+      newPassword: z.string().min(4, "Password must be at least 4 characters long"),
     }),
   )
   .handler(async ({ data }) => {
@@ -505,32 +420,40 @@ export const getCurrentUserFn = createServerFn({ method: "GET" })
         .from(schema.users)
         .where(eq(schema.users.id, session.userId))
         .limit(1);
-      if (!users.length) return { success: false, error: "User not found" };
+      if (!users.length) {
+        deleteCookie("pos_auth_token", { path: "/" });
+        return { success: false, error: "User not found" };
+      }
 
       const { pin: _, ...safeUser } = users[0];
       return { success: true, user: safeUser };
     } catch (e) {
+      deleteCookie("pos_auth_token", { path: "/" });
       return handleApiError(e);
     }
   });
 
+export const logoutFn = createServerFn({ method: "POST" })
+  .validator((data: any) => data)
+  .handler(async () => {
+    try {
+      deleteCookie("pos_auth_token", { path: "/" });
+    } catch {}
+    return { success: true };
+  });
+
 export const checkEmailAvailabilityFn = createServerFn({ method: "POST" })
-  .validator(z.object({ email: z.string().email() }))
+  .validator(z.object({ email: z.string() }))
   .handler(async ({ data }) => {
     try {
-      const email = data.email.toLowerCase();
-      const existingUser = await db
-        .select()
-        .from(schema.users)
-        .where(eq(schema.users.email, email))
-        .limit(1);
-
-      if (existingUser.length > 0) {
-        return { success: true, available: false, message: "Email is already taken" };
+      const email = data.email.trim().toLowerCase();
+      if (!email || !email.includes("@")) {
+        return { success: true, available: true, message: "Email is available" };
       }
-      return { success: true, available: true, message: "Email is available" };
+      const result = await authService.checkEmailAvailability(email);
+      return { success: true, ...result };
     } catch (e) {
-      return handleApiError(e);
+      return { success: true, available: true, message: "Email is available" };
     }
   });
 

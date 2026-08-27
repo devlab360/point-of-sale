@@ -1,11 +1,13 @@
 import { handleApiError } from "@/lib/error-utils";
+import { formatErrorResponse } from "@/lib/errors/errors";
 import { createServerFn } from "@tanstack/react-start";
+import { customerService } from "@/services/customer.service";
 import { db } from "@/db";
 import * as schema from "@/db/schema";
-import { eq, and, desc, sql, ilike, or } from "drizzle-orm";
+import { eq, and, desc } from "drizzle-orm";
+import { v4 as uuidv4 } from "uuid";
 import { z } from "zod";
 import { requireAuth } from "@/lib/auth-utils";
-import { v4 as uuidv4 } from "uuid";
 
 export const getCustomersFn = createServerFn({ method: "GET" })
   .validator(
@@ -21,39 +23,10 @@ export const getCustomersFn = createServerFn({ method: "GET" })
   .handler(async ({ data }) => {
     try {
       const session = await requireAuth();
-      const orgId = session.orgId;
-
-      let conditions = [eq(schema.customers.organizationId, orgId)];
-      if (data.query) {
-        const searchCond = or(
-          ilike(schema.customers.name, `%${data.query}%`),
-          ilike(schema.customers.phone, `%${data.query}%`),
-        );
-        if (searchCond) conditions.push(searchCond);
-      }
-      if (data.type) {
-        conditions.push(eq(schema.customers.type, data.type));
-      }
-
-      const whereClause = and(...conditions);
-
-      const res = await db
-        .select()
-        .from(schema.customers)
-        .where(whereClause)
-        .orderBy(desc(schema.customers.createdAt))
-        .limit(data.pageSize)
-        .offset((data.page - 1) * data.pageSize);
-
-      const totalCountRes = await db
-        .select({ count: sql`count(*)` })
-        .from(schema.customers)
-        .where(whereClause);
-      const totalCount = Number(totalCountRes[0].count);
-
-      return { success: true, data: res, total: totalCount };
+      const customers = await customerService.getCustomers(session.orgId, data.query);
+      return { success: true, data: customers, total: customers.length };
     } catch (e) {
-      return handleApiError(e);
+      return formatErrorResponse(e);
     }
   });
 

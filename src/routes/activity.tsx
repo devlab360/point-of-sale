@@ -8,7 +8,7 @@ import { Activity } from "lucide-react";
 import { usePreferences } from "@/contexts/PreferencesContext";
 
 export const Route = createFileRoute("/activity")({
-  head: () => ({ meta: [{ title: "Activity Log · NexisPOS" }] }),
+  head: () => ({ meta: [{ title: "Activity Log · OneDesk360" }] }),
   loader: async ({ context: { queryClient } }) => {
     const orgId = PersistStore.getOrgId();
     if (!orgId) return;

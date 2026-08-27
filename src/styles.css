@@ -206,9 +206,11 @@
 @utility page-container {
   padding: 1rem;
   padding-bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
+
   @media (min-width: 640px) {
     padding: 1.25rem;
   }
+
   @media (min-width: 768px) {
     padding: 1.5rem;
     padding-bottom: 1.5rem;
@@ -218,6 +220,7 @@
 /* Bottom nav safe area spacer */
 @utility bottom-nav-spacer {
   padding-bottom: calc(4.5rem + env(safe-area-inset-bottom, 0px));
+
   @media (min-width: 768px) {
     padding-bottom: 0;
   }
@@ -226,12 +229,14 @@
 /* Card with premium hover elevation */
 @utility card-interactive {
   transition: box-shadow var(--duration-normal) var(--ease-out-expo),
-              border-color var(--duration-normal) var(--ease-out-expo),
-              transform var(--duration-normal) var(--ease-out-expo);
+    border-color var(--duration-normal) var(--ease-out-expo),
+    transform var(--duration-normal) var(--ease-out-expo);
+
   &:hover {
     box-shadow: var(--shadow-card-hover);
     border-color: var(--color-border);
   }
+
   &:active {
     transform: scale(0.995);
   }
@@ -269,6 +274,7 @@
 /* Responsive table wrapper — hides on mobile, shows as cards */
 @utility table-desktop {
   display: none;
+
   @media (min-width: 768px) {
     display: block;
   }
@@ -277,6 +283,7 @@
 /* Responsive card wrapper — shows on mobile, hides on desktop */
 @utility table-mobile-cards {
   display: block;
+
   @media (min-width: 768px) {
     display: none;
   }
@@ -292,6 +299,7 @@
     opacity: 0;
     transform: translateY(6px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -304,6 +312,7 @@
     opacity: 0;
     transform: translateY(100%);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -312,13 +321,19 @@
 
 /* Fade in animation */
 @keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
 
 /* Status dot pulse (used for live indicators) */
 @utility status-dot {
   position: relative;
+
   &::after {
     content: "";
     position: absolute;
@@ -331,8 +346,17 @@
 }
 
 @keyframes statusPulse {
-  0%, 100% { transform: scale(1); opacity: 0.4; }
-  50% { transform: scale(1.8); opacity: 0; }
+
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 0.4;
+  }
+
+  50% {
+    transform: scale(1.8);
+    opacity: 0;
+  }
 }
 
 /* ─── Typography Utilities ─── */
@@ -342,6 +366,7 @@
   line-height: 1.15;
   font-weight: 800;
   letter-spacing: -0.025em;
+
   @media (min-width: 640px) {
     font-size: 2.5rem;
   }
@@ -381,6 +406,7 @@
   font-weight: 800;
   letter-spacing: -0.03em;
   font-variant-numeric: tabular-nums;
+
   @media (min-width: 640px) {
     font-size: 2rem;
   }
@@ -448,4 +474,3 @@ input[type="number"]::-webkit-inner-spin-button {
 input[type="number"] {
   -moz-appearance: textfield;
 }
-

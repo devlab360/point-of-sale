@@ -18,16 +18,19 @@ interface PreferencesContextType {
 const PreferencesContext = createContext<PreferencesContextType | undefined>(undefined);
 
 export function PreferencesProvider({ children }: { children: React.ReactNode }) {
-  const { user } = useAuth();
+  const { isAuthenticated } = useAuth();
   const orgId = PersistStore.getOrgId() || "default";
 
   const { data: settingsData } = useQuery({
     queryKey: ["settings", orgId],
     queryFn: async () => {
       const res = await getSettingsFn({ data: {} });
-      if (res.success) return res.data;
+      if (res && res.success) return res.data;
       return null;
     },
+    enabled: Boolean(isAuthenticated),
+    staleTime: 10 * 60 * 1000,
+    refetchOnWindowFocus: false,
   });
 
   const settings = settingsData || {};

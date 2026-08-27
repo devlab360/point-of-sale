@@ -17,7 +17,7 @@ import { useFormValidation } from "@/hooks/useFormValidation";
 import { FieldError } from "@/components/ui/field-error";
 
 export const Route = createFileRoute("/verify-email")({
-  head: () => ({ meta: [{ title: "Email Verification · NexisPOS SaaS" }] }),
+  head: () => ({ meta: [{ title: "Email Verification · OneDesk360 SaaS" }] }),
   component: VerifyEmailPage,
 });
 
@@ -93,7 +93,7 @@ function VerifyEmailPage() {
       console.log("Verify OTP response:", res);
 
       if (res?.success) {
-        toast.success("Email verified successfully! Welcome to NexisPOS.");
+        toast.success("Email verified successfully! Welcome to OneDesk360.");
         // Reload window to update auth state across app
         window.location.href = "/";
       } else {

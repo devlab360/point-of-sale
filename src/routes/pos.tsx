@@ -23,7 +23,7 @@ import { ErrorState } from "@/components/ui/error-state";
 export const Route = createFileRoute("/pos")({
   head: () => ({
     meta: [
-      { title: "POS Terminal · NexisPOS" },
+      { title: "POS Terminal · OneDesk360" },
       {
         name: "description",
         content:
@@ -355,7 +355,7 @@ function PosScreen() {
       if (activeCustomer.id !== "walkin" && activeCustomer.phone) {
         // Run asynchronously without blocking the checkout UI
         sendAutomatedReceipt(
-          state.settings?.storeName || "NexisPOS",
+          state.settings?.storeName || "OneDesk360",
           activeCustomer.name,
           activeCustomer.phone,
           invNum,

@@ -64,7 +64,7 @@ import { useAppFormatter } from "@/hooks/useAppFormatter";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Dashboard · NexisPOS" },
+      { title: "Dashboard · OneDesk360" },
       {
         name: "description",
         content: "Real-time sales, revenue, low-stock alerts and operational KPIs for your store.",

@@ -79,7 +79,7 @@ import { getSettingsFn } from "@/api/settings";
 
 export const Route = createFileRoute("/products/")({
   head: () => ({
-    meta: [{ title: "Products · NexisPOS" }],
+    meta: [{ title: "Products · OneDesk360" }],
   }),
   component: ProductsPage,
 });

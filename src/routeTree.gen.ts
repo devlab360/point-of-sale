@@ -53,6 +53,7 @@ import { Route as SalesIndexRouteImport } from './routes/sales.index'
 import { Route as PurchasesIndexRouteImport } from './routes/purchases.index'
 import { Route as ProductsIndexRouteImport } from './routes/products.index'
 import { Route as InventoryIndexRouteImport } from './routes/inventory.index'
+import { Route as AdminIndexRouteImport } from './routes/admin/index'
 import { Route as ServicesNewRouteImport } from './routes/services.new'
 import { Route as ServicesServiceIdRouteImport } from './routes/services.$serviceId'
 import { Route as SalesReturnsRouteImport } from './routes/sales.returns'
@@ -64,6 +65,14 @@ import { Route as InviteTokenRouteImport } from './routes/invite/$token'
 import { Route as InventoryTransfersRouteImport } from './routes/inventory.transfers'
 import { Route as InventoryHistoryRouteImport } from './routes/inventory.history'
 import { Route as InventoryAdjustmentsRouteImport } from './routes/inventory.adjustments'
+import { Route as AdminUsersRouteImport } from './routes/admin/users'
+import { Route as AdminTenantsRouteImport } from './routes/admin/tenants'
+import { Route as AdminSupportRouteImport } from './routes/admin/support'
+import { Route as AdminReviewsRouteImport } from './routes/admin/reviews'
+import { Route as AdminPlansRouteImport } from './routes/admin/plans'
+import { Route as AdminPaymentsRouteImport } from './routes/admin/payments'
+import { Route as AdminHelpRouteImport } from './routes/admin/help'
+import { Route as AdminDashboardRouteImport } from './routes/admin/dashboard'
 
 const VerifyEmailRoute = VerifyEmailRouteImport.update({
   id: '/verify-email',
@@ -287,6 +296,11 @@ const InventoryIndexRoute = InventoryIndexRouteImport.update({
 } as any).lazy(() =>
   import('./routes/inventory.index.lazy').then((d) => d.Route),
 )
+const AdminIndexRoute = AdminIndexRouteImport.update({
+  id: '/admin/',
+  path: '/admin/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ServicesNewRoute = ServicesNewRouteImport.update({
   id: '/new',
   path: '/new',
@@ -348,6 +362,46 @@ const InventoryAdjustmentsRoute = InventoryAdjustmentsRouteImport.update({
 } as any).lazy(() =>
   import('./routes/inventory.adjustments.lazy').then((d) => d.Route),
 )
+const AdminUsersRoute = AdminUsersRouteImport.update({
+  id: '/admin/users',
+  path: '/admin/users',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminTenantsRoute = AdminTenantsRouteImport.update({
+  id: '/admin/tenants',
+  path: '/admin/tenants',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminSupportRoute = AdminSupportRouteImport.update({
+  id: '/admin/support',
+  path: '/admin/support',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminReviewsRoute = AdminReviewsRouteImport.update({
+  id: '/admin/reviews',
+  path: '/admin/reviews',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminPlansRoute = AdminPlansRouteImport.update({
+  id: '/admin/plans',
+  path: '/admin/plans',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminPaymentsRoute = AdminPaymentsRouteImport.update({
+  id: '/admin/payments',
+  path: '/admin/payments',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminHelpRoute = AdminHelpRouteImport.update({
+  id: '/admin/help',
+  path: '/admin/help',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminDashboardRoute = AdminDashboardRouteImport.update({
+  id: '/admin/dashboard',
+  path: '/admin/dashboard',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -389,6 +443,14 @@ export interface FileRoutesByFullPath {
   '/units': typeof UnitsRoute
   '/users': typeof UsersRoute
   '/verify-email': typeof VerifyEmailRoute
+  '/admin/dashboard': typeof AdminDashboardRoute
+  '/admin/help': typeof AdminHelpRoute
+  '/admin/payments': typeof AdminPaymentsRoute
+  '/admin/plans': typeof AdminPlansRoute
+  '/admin/reviews': typeof AdminReviewsRoute
+  '/admin/support': typeof AdminSupportRoute
+  '/admin/tenants': typeof AdminTenantsRoute
+  '/admin/users': typeof AdminUsersRoute
   '/inventory/adjustments': typeof InventoryAdjustmentsRoute
   '/inventory/history': typeof InventoryHistoryRoute
   '/inventory/transfers': typeof InventoryTransfersRoute
@@ -400,6 +462,7 @@ export interface FileRoutesByFullPath {
   '/sales/returns': typeof SalesReturnsRoute
   '/services/$serviceId': typeof ServicesServiceIdRoute
   '/services/new': typeof ServicesNewRoute
+  '/admin/': typeof AdminIndexRoute
   '/inventory/': typeof InventoryIndexRoute
   '/products/': typeof ProductsIndexRoute
   '/purchases/': typeof PurchasesIndexRoute
@@ -441,6 +504,14 @@ export interface FileRoutesByTo {
   '/units': typeof UnitsRoute
   '/users': typeof UsersRoute
   '/verify-email': typeof VerifyEmailRoute
+  '/admin/dashboard': typeof AdminDashboardRoute
+  '/admin/help': typeof AdminHelpRoute
+  '/admin/payments': typeof AdminPaymentsRoute
+  '/admin/plans': typeof AdminPlansRoute
+  '/admin/reviews': typeof AdminReviewsRoute
+  '/admin/support': typeof AdminSupportRoute
+  '/admin/tenants': typeof AdminTenantsRoute
+  '/admin/users': typeof AdminUsersRoute
   '/inventory/adjustments': typeof InventoryAdjustmentsRoute
   '/inventory/history': typeof InventoryHistoryRoute
   '/inventory/transfers': typeof InventoryTransfersRoute
@@ -452,6 +523,7 @@ export interface FileRoutesByTo {
   '/sales/returns': typeof SalesReturnsRoute
   '/services/$serviceId': typeof ServicesServiceIdRoute
   '/services/new': typeof ServicesNewRoute
+  '/admin': typeof AdminIndexRoute
   '/inventory': typeof InventoryIndexRoute
   '/products': typeof ProductsIndexRoute
   '/purchases': typeof PurchasesIndexRoute
@@ -499,6 +571,14 @@ export interface FileRoutesById {
   '/units': typeof UnitsRoute
   '/users': typeof UsersRoute
   '/verify-email': typeof VerifyEmailRoute
+  '/admin/dashboard': typeof AdminDashboardRoute
+  '/admin/help': typeof AdminHelpRoute
+  '/admin/payments': typeof AdminPaymentsRoute
+  '/admin/plans': typeof AdminPlansRoute
+  '/admin/reviews': typeof AdminReviewsRoute
+  '/admin/support': typeof AdminSupportRoute
+  '/admin/tenants': typeof AdminTenantsRoute
+  '/admin/users': typeof AdminUsersRoute
   '/inventory/adjustments': typeof InventoryAdjustmentsRoute
   '/inventory/history': typeof InventoryHistoryRoute
   '/inventory/transfers': typeof InventoryTransfersRoute
@@ -510,6 +590,7 @@ export interface FileRoutesById {
   '/sales/returns': typeof SalesReturnsRoute
   '/services/$serviceId': typeof ServicesServiceIdRoute
   '/services/new': typeof ServicesNewRoute
+  '/admin/': typeof AdminIndexRoute
   '/inventory/': typeof InventoryIndexRoute
   '/products/': typeof ProductsIndexRoute
   '/purchases/': typeof PurchasesIndexRoute
@@ -558,6 +639,14 @@ export interface FileRouteTypes {
     | '/units'
     | '/users'
     | '/verify-email'
+    | '/admin/dashboard'
+    | '/admin/help'
+    | '/admin/payments'
+    | '/admin/plans'
+    | '/admin/reviews'
+    | '/admin/support'
+    | '/admin/tenants'
+    | '/admin/users'
     | '/inventory/adjustments'
     | '/inventory/history'
     | '/inventory/transfers'
@@ -569,6 +658,7 @@ export interface FileRouteTypes {
     | '/sales/returns'
     | '/services/$serviceId'
     | '/services/new'
+    | '/admin/'
     | '/inventory/'
     | '/products/'
     | '/purchases/'
@@ -610,6 +700,14 @@ export interface FileRouteTypes {
     | '/units'
     | '/users'
     | '/verify-email'
+    | '/admin/dashboard'
+    | '/admin/help'
+    | '/admin/payments'
+    | '/admin/plans'
+    | '/admin/reviews'
+    | '/admin/support'
+    | '/admin/tenants'
+    | '/admin/users'
     | '/inventory/adjustments'
     | '/inventory/history'
     | '/inventory/transfers'
@@ -621,6 +719,7 @@ export interface FileRouteTypes {
     | '/sales/returns'
     | '/services/$serviceId'
     | '/services/new'
+    | '/admin'
     | '/inventory'
     | '/products'
     | '/purchases'
@@ -667,6 +766,14 @@ export interface FileRouteTypes {
     | '/units'
     | '/users'
     | '/verify-email'
+    | '/admin/dashboard'
+    | '/admin/help'
+    | '/admin/payments'
+    | '/admin/plans'
+    | '/admin/reviews'
+    | '/admin/support'
+    | '/admin/tenants'
+    | '/admin/users'
     | '/inventory/adjustments'
     | '/inventory/history'
     | '/inventory/transfers'
@@ -678,6 +785,7 @@ export interface FileRouteTypes {
     | '/sales/returns'
     | '/services/$serviceId'
     | '/services/new'
+    | '/admin/'
     | '/inventory/'
     | '/products/'
     | '/purchases/'
@@ -725,7 +833,16 @@ export interface RootRouteChildren {
   UnitsRoute: typeof UnitsRoute
   UsersRoute: typeof UsersRoute
   VerifyEmailRoute: typeof VerifyEmailRoute
+  AdminDashboardRoute: typeof AdminDashboardRoute
+  AdminHelpRoute: typeof AdminHelpRoute
+  AdminPaymentsRoute: typeof AdminPaymentsRoute
+  AdminPlansRoute: typeof AdminPlansRoute
+  AdminReviewsRoute: typeof AdminReviewsRoute
+  AdminSupportRoute: typeof AdminSupportRoute
+  AdminTenantsRoute: typeof AdminTenantsRoute
+  AdminUsersRoute: typeof AdminUsersRoute
   InviteTokenRoute: typeof InviteTokenRoute
+  AdminIndexRoute: typeof AdminIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -1038,6 +1155,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof InventoryIndexRouteImport
       parentRoute: typeof InventoryRoute
     }
+    '/admin/': {
+      id: '/admin/'
+      path: '/admin'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AdminIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/services/new': {
       id: '/services/new'
       path: '/new'
@@ -1114,6 +1238,62 @@ declare module '@tanstack/react-router' {
       fullPath: '/inventory/adjustments'
       preLoaderRoute: typeof InventoryAdjustmentsRouteImport
       parentRoute: typeof InventoryRoute
+    }
+    '/admin/users': {
+      id: '/admin/users'
+      path: '/admin/users'
+      fullPath: '/admin/users'
+      preLoaderRoute: typeof AdminUsersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/tenants': {
+      id: '/admin/tenants'
+      path: '/admin/tenants'
+      fullPath: '/admin/tenants'
+      preLoaderRoute: typeof AdminTenantsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/support': {
+      id: '/admin/support'
+      path: '/admin/support'
+      fullPath: '/admin/support'
+      preLoaderRoute: typeof AdminSupportRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/reviews': {
+      id: '/admin/reviews'
+      path: '/admin/reviews'
+      fullPath: '/admin/reviews'
+      preLoaderRoute: typeof AdminReviewsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/plans': {
+      id: '/admin/plans'
+      path: '/admin/plans'
+      fullPath: '/admin/plans'
+      preLoaderRoute: typeof AdminPlansRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/payments': {
+      id: '/admin/payments'
+      path: '/admin/payments'
+      fullPath: '/admin/payments'
+      preLoaderRoute: typeof AdminPaymentsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/help': {
+      id: '/admin/help'
+      path: '/admin/help'
+      fullPath: '/admin/help'
+      preLoaderRoute: typeof AdminHelpRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/dashboard': {
+      id: '/admin/dashboard'
+      path: '/admin/dashboard'
+      fullPath: '/admin/dashboard'
+      preLoaderRoute: typeof AdminDashboardRouteImport
+      parentRoute: typeof rootRouteImport
     }
   }
 }
@@ -1236,7 +1416,16 @@ const rootRouteChildren: RootRouteChildren = {
   UnitsRoute: UnitsRoute,
   UsersRoute: UsersRoute,
   VerifyEmailRoute: VerifyEmailRoute,
+  AdminDashboardRoute: AdminDashboardRoute,
+  AdminHelpRoute: AdminHelpRoute,
+  AdminPaymentsRoute: AdminPaymentsRoute,
+  AdminPlansRoute: AdminPlansRoute,
+  AdminReviewsRoute: AdminReviewsRoute,
+  AdminSupportRoute: AdminSupportRoute,
+  AdminTenantsRoute: AdminTenantsRoute,
+  AdminUsersRoute: AdminUsersRoute,
   InviteTokenRoute: InviteTokenRoute,
+  AdminIndexRoute: AdminIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

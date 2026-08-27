@@ -73,7 +73,7 @@ import { CardGridSkeleton } from "@/components/skeletons/CardGridSkeleton";
 import { ErrorState } from "@/components/ui/error-state";
 
 export const Route = createFileRoute("/gift-cards")({
-  head: () => ({ meta: [{ title: "Gift Cards · NexisPOS" }] }),
+  head: () => ({ meta: [{ title: "Gift Cards · OneDesk360" }] }),
   component: GiftCardsPage,
 });
 

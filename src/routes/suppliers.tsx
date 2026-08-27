@@ -69,7 +69,7 @@ import { FieldError } from "@/components/ui/field-error";
 import { PhoneInput } from "@/components/ui/phone-input";
 
 export const Route = createFileRoute("/suppliers")({
-  head: () => ({ meta: [{ title: "Suppliers · NexisPOS" }] }),
+  head: () => ({ meta: [{ title: "Suppliers · OneDesk360" }] }),
   component: SuppliersPage,
 });
 

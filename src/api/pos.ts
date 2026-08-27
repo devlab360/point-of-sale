@@ -14,7 +14,7 @@ const insertSchema = schema.shifts
 const updateSchema = schema.shifts ? createInsertSchema(schema.shifts).partial() : z.any();
 
 export const getPosItemsFn = createServerFn({ method: "GET" })
-  .validator((data: any) => data)
+  .validator((data: unknown) => z.object({}).optional().parse(data || {}))
   .handler(async () => {
     try {
       const session = await requireAuth();
@@ -58,7 +58,7 @@ export const getPosItemsFn = createServerFn({ method: "GET" })
   });
 
 export const getShiftsFn = createServerFn({ method: "GET" })
-  .validator((data: any) => data)
+  .validator((data: unknown) => z.object({}).optional().parse(data || {}))
   .handler(async () => {
     try {
       const session = await requireAuth();
@@ -73,7 +73,7 @@ export const getShiftsFn = createServerFn({ method: "GET" })
   });
 
 export const createShiftFn = createServerFn({ method: "POST" })
-  .validator((data: any) => data)
+  .validator((data: unknown) => z.object({ shift: z.any() }).passthrough().parse(data))
   .handler(async ({ data }) => {
     try {
       const session = await requireAuth();
@@ -88,7 +88,7 @@ export const createShiftFn = createServerFn({ method: "POST" })
   });
 
 export const updateShiftFn = createServerFn({ method: "POST" })
-  .validator((data: any) => data)
+  .validator((data: unknown) => z.object({ id: z.string(), updates: z.any() }).passthrough().parse(data))
   .handler(async ({ data }) => {
     try {
       const session = await requireAuth();
@@ -104,7 +104,7 @@ export const updateShiftFn = createServerFn({ method: "POST" })
   });
 
 export const getHeldInvoicesFn = createServerFn({ method: "GET" })
-  .validator((data: any) => data)
+  .validator((data: unknown) => z.object({}).optional().parse(data || {}))
   .handler(async () => {
     try {
       const session = await requireAuth();

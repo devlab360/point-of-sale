@@ -55,7 +55,7 @@ import { TableSkeleton } from "@/components/skeletons/TableSkeleton";
 import { ErrorState } from "@/components/ui/error-state";
 
 export const Route = createFileRoute("/coupons")({
-  head: () => ({ meta: [{ title: "Coupons · NexisPOS" }] }),
+  head: () => ({ meta: [{ title: "Coupons · OneDesk360" }] }),
   component: CouponsPage,
 });
 

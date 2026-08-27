@@ -67,7 +67,7 @@ import { useFormValidation } from "@/hooks/useFormValidation";
 import { FieldError } from "@/components/ui/field-error";
 
 export const Route = createFileRoute("/customers")({
-  head: () => ({ meta: [{ title: "Customers · NexisPOS" }] }),
+  head: () => ({ meta: [{ title: "Customers · OneDesk360" }] }),
   component: CustomersPage,
 });
 
@@ -863,7 +863,7 @@ function CustomersPage() {
                   className="bg-emerald-500/10 text-emerald-600 border-emerald-500/30 hover:bg-emerald-500/20 font-semibold flex-1 sm:flex-none"
                   onClick={() =>
                     sendAutomatedDueReminder(
-                      settings?.storeName || "NexisPOS",
+                      settings?.storeName || "OneDesk360",
                       ledgerCustomer.name,
                       ledgerCustomer.phone || "",
                       ledgerCustomer.credit,

@@ -55,7 +55,7 @@ import { useFormValidation } from "@/hooks/useFormValidation";
 import { FieldError } from "@/components/ui/field-error";
 
 export const Route = createFileRoute("/subscriptions")({
-  head: () => ({ meta: [{ title: "Subscriptions & Recurring Billing · NexisPOS" }] }),
+  head: () => ({ meta: [{ title: "Subscriptions & Recurring Billing · OneDesk360" }] }),
   component: SubscriptionsPage,
 });
 

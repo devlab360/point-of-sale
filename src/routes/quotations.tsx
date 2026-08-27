@@ -53,7 +53,7 @@ import { FieldError } from "@/components/ui/field-error";
 import { usePreferences } from "@/contexts/PreferencesContext";
 
 export const Route = createFileRoute("/quotations")({
-  head: () => ({ meta: [{ title: "B2B Quotations · NexisPOS" }] }),
+  head: () => ({ meta: [{ title: "B2B Quotations · OneDesk360" }] }),
   component: QuotationsPage,
 });
 

@@ -49,7 +49,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { usePreferences } from "@/contexts/PreferencesContext";
 
 export const Route = createFileRoute("/sales/returns")({
-  head: () => ({ meta: [{ title: "Sales Returns · NexisPOS" }] }),
+  head: () => ({ meta: [{ title: "Sales Returns · OneDesk360" }] }),
   component: SalesReturnsPage,
 });
 

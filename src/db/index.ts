@@ -2,16 +2,18 @@ import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 import * as schema from "./schema";
 
-const connectionString = process.env.NEON_DB || process.env.DATABASE_URL || "";
+const connectionString = process.env.DATABASE_URL || process.env.NEON_DB || "postgres://postgres:@localhost:5432/pos_db";
+
+const isLocalHost = connectionString.includes("localhost") || connectionString.includes("127.0.0.1");
 
 const clientOptions = {
   prepare: false,
   max: Number(process.env.DB_POOL_MAX || 5),
-  idle_timeout: 20,       // Keep connection alive for 20s of inactivity (Neon cold-start buffer)
-  connect_timeout: 15,    // Allow up to 15s for Neon serverless cold-start
-  ssl: 'require' as const,
+  idle_timeout: 20,
+  connect_timeout: 15,
+  ssl: isLocalHost ? false : (process.env.DATABASE_SSL === "true" ? ("require" as const) : false),
   max_lifetime: 60 * 30,
-  max_retries: 3,         // Auto-retry transient connection failures
+  max_retries: 3,
   backoff: (retries: number) => Math.min(500 * Math.pow(2, retries), 5000),
 };
 

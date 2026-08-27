@@ -4,11 +4,23 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input, PasswordInput } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Store, UserCircle2, KeyRound, ArrowLeft, Loader2, Mail, ShieldCheck } from "lucide-react";
+import {
+  Store,
+  KeyRound,
+  ArrowLeft,
+  Loader2,
+  Mail,
+  ShieldCheck,
+  CheckCircle2,
+  Sparkles,
+  Lock,
+  Smartphone,
+  ArrowRight,
+  TrendingUp,
+  Zap,
+} from "lucide-react";
 import { generateVerificationOtp, sendPasswordResetEmail } from "@/lib/email-service";
-import { resetPasswordFn, sendPasswordResetOtpFn, sendLoginOtpFn } from "@/api/auth";
-import { auth } from "@/lib/firebase";
-import { RecaptchaVerifier, signInWithPhoneNumber, ConfirmationResult } from "firebase/auth";
+import { resetPasswordFn, sendPasswordResetOtpFn } from "@/api/auth";
 import { toast } from "sonner";
 import { validateEmail, validatePassword, sanitizeInput } from "@/lib/validation";
 import { checkRateLimit } from "@/lib/api-response";
@@ -16,27 +28,16 @@ import { useFormValidation } from "@/hooks/useFormValidation";
 import { FieldError } from "@/components/ui/field-error";
 
 export const Route = createFileRoute("/login")({
-  head: () => ({ meta: [{ title: "Login · NexisPOS" }] }),
+  head: () => ({ meta: [{ title: "Sign In · OneDesk360 SaaS" }] }),
   component: LoginPage,
 });
 
 function LoginPage() {
-  const [mode, setMode] = useState<"otp" | "email" | "forgot">("email");
+  const [mode, setMode] = useState<"email" | "otp" | "forgot">("email");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const { loginWithEmail, loginWithOtp, loginWithSocial, loginWithFirebasePhone } = useAuth();
+  const { loginWithEmail } = useAuth();
   const navigate = useNavigate();
-
-  // OTP Login states
-  const [otpLoginIdentifier, setOtpLoginIdentifier] = useState("");
-  const [otpLoginCode, setOtpLoginCode] = useState("");
-  const [otpLoginStep, setOtpLoginStep] = useState<"request" | "verify">("request");
-  const [isSendingLoginOtp, setIsSendingLoginOtp] = useState(false);
-  const [isOtpLoggingIn, setIsOtpLoggingIn] = useState(false);
-  const [confirmationResult, setConfirmationResult] = useState<ConfirmationResult | null>(null);
-
-  // Phone validation regex
-  const isPhone = (val: string) => /^\+?[1-9]\d{1,14}$/.test(val.replace(/\s+/g, ''));
 
   // Forgot password flow states
   const [forgotStep, setForgotStep] = useState<"request" | "verify">("request");
@@ -49,7 +50,6 @@ function LoginPage() {
   const [isResetting, setIsResetting] = useState(false);
   const [isLoggingIn, setIsLoggingIn] = useState(false);
 
-  // Validation hooks
   const {
     errors: loginErrors,
     validate: validateLogin,
@@ -61,131 +61,6 @@ function LoginPage() {
       minLength: { value: 4, message: "Password must be at least 4 characters" },
     },
   });
-
-  const {
-    errors: forgotErrors,
-    validate: validateForgot,
-    clearError: clearForgotError,
-  } = useFormValidation({
-    resetEmail: { required: "Email is required", email: "Enter a valid email address" },
-  });
-
-  const {
-    errors: resetErrors,
-    validate: validateReset,
-    clearError: clearResetError,
-  } = useFormValidation({
-    otpInput: {
-      required: "OTP code is required",
-      minLength: { value: 6, message: "OTP must be 6 digits" },
-    },
-    newPassword: {
-      required: "New password is required",
-      minLength: { value: 4, message: "Password must be at least 4 characters" },
-    },
-    confirmPassword: { required: "Please confirm your password" },
-  });
-
-  const handleSendLoginOtp = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const identifier = sanitizeInput(otpLoginIdentifier);
-
-    if (isPhone(identifier)) {
-      // Handle Firebase Phone Auth
-      if (!auth || Object.keys(auth).length === 0) {
-        toast.error("Firebase API Key is missing. Please check .env and refresh the page.");
-        return;
-      }
-
-      setIsSendingLoginOtp(true);
-      try {
-        if (!(window as any).recaptchaVerifier) {
-          (window as any).recaptchaVerifier = new RecaptchaVerifier(auth, "recaptcha-container", {
-            size: "invisible",
-          });
-        }
-
-        // Ensure phone has country code, default to India if not specified
-        const phone = identifier.startsWith("+") ? identifier : `+91${identifier}`;
-
-        const confirmation = await signInWithPhoneNumber(auth, phone, (window as any).recaptchaVerifier);
-        setConfirmationResult(confirmation);
-        setOtpLoginStep("verify");
-        toast.success(`SMS OTP sent to ${phone}`);
-      } catch (err: any) {
-        toast.error(err.message || "Failed to send SMS. Ensure Firebase config is set.");
-        // Reset recaptcha if failed
-        if ((window as any).recaptchaVerifier) {
-          (window as any).recaptchaVerifier.clear();
-          (window as any).recaptchaVerifier = null;
-        }
-      } finally {
-        setIsSendingLoginOtp(false);
-      }
-      return;
-    }
-
-    // Handle Email Auth
-    const emailVal = validateEmail(identifier);
-    if (!emailVal.valid) {
-      toast.error("Enter a valid email address or phone number (e.g. +91XXXXXXXXXX).");
-      return;
-    }
-
-    const rateCheck = checkRateLimit(`login_otp_${identifier}`, 3, 60000);
-    if (!rateCheck.allowed) {
-      toast.error(`OTP request limit reached. Please wait ${rateCheck.retryAfterSec} seconds.`);
-      return;
-    }
-
-    setIsSendingLoginOtp(true);
-    try {
-      const otp = generateVerificationOtp();
-      const res = await sendLoginOtpFn({ data: { email: identifier, otp } });
-      if (!res.success) {
-        throw new Error(res.error || "Failed to send OTP.");
-      }
-
-      await sendPasswordResetEmail(identifier, otp); // reusing email template
-      setConfirmationResult(null); // Ensure it's null for email flow
-      setOtpLoginStep("verify");
-      toast.success(`OTP sent to ${identifier}. Check your inbox.`);
-    } catch (err: any) {
-      toast.error(err.message || "Failed to send OTP code. Please try again.");
-    } finally {
-      setIsSendingLoginOtp(false);
-    }
-  };
-
-  const handleVerifyLoginOtp = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!otpLoginCode.trim() || otpLoginCode.length < 6) {
-      toast.error("Please enter the 6-digit OTP code.");
-      return;
-    }
-
-    setIsOtpLoggingIn(true);
-    try {
-      if (confirmationResult) {
-        // Firebase Phone verification
-        const result = await confirmationResult.confirm(otpLoginCode);
-        const idToken = await result.user.getIdToken();
-
-        // Let AuthContext handle the backend session creation using the Firebase token
-        if (loginWithFirebasePhone) {
-          await loginWithFirebasePhone(idToken);
-        }
-
-      } else {
-        // Email verification
-        await loginWithOtp(otpLoginIdentifier, otpLoginCode);
-      }
-    } catch (err: any) {
-      toast.error(err.message || "Invalid OTP code.");
-    } finally {
-      setIsOtpLoggingIn(false);
-    }
-  };
 
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -212,7 +87,6 @@ function LoginPage() {
     }
 
     setIsLoggingIn(true);
-    await new Promise((resolve) => setTimeout(resolve, 500));
     try {
       await loginWithEmail(cleanEmail, password);
     } finally {
@@ -224,8 +98,10 @@ function LoginPage() {
     e.preventDefault();
     const targetEmail = sanitizeInput(resetEmail || email);
 
-    const isValid = validateForgot({ resetEmail: targetEmail });
-    if (!isValid) return;
+    if (!targetEmail) {
+      toast.error("Please enter your registered email address.");
+      return;
+    }
 
     const emailVal = validateEmail(targetEmail);
     if (!emailVal.valid) {
@@ -239,21 +115,19 @@ function LoginPage() {
       return;
     }
     setIsSendingOtp(true);
-    await new Promise((resolve) => setTimeout(resolve, 500));
     try {
       const otp = generateVerificationOtp();
       setGeneratedOtp(otp);
 
-      // Save OTP to DB for secure backend validation
       await sendPasswordResetOtpFn({ data: { email: targetEmail, code: otp } });
-
       const success = await sendPasswordResetEmail(targetEmail, otp);
+
       if (success) {
         setForgotStep("verify");
-        toast.success(`OTP sent to ${targetEmail}. Check your email inbox.`);
+        toast.success(`OTP code sent to ${targetEmail}.`);
       }
     } catch (err: any) {
-      toast.error(err.message || "Failed to send OTP code. Please try again.");
+      toast.error(err.message || "Failed to send OTP code.");
     } finally {
       setIsSendingOtp(false);
     }
@@ -263,32 +137,22 @@ function LoginPage() {
     e.preventDefault();
     const targetEmail = (resetEmail.trim() || email.trim()).toLowerCase();
 
-    const isValid = validateReset({ otpInput, newPassword, confirmPassword });
-    if (!isValid) return;
-
     if (!otpInput.trim()) {
-      toast.error("Please enter the 6-digit OTP code sent to your email.");
-      return;
-    }
-
-    // Client-side quick check (optional, but good for UX if they haven't reloaded)
-    if (generatedOtp && otpInput.trim() !== generatedOtp && otpInput.trim() !== "123456") {
-      toast.error("Invalid OTP code. Please check your email and try again.");
+      toast.error("Please enter the 6-digit OTP code.");
       return;
     }
 
     if (newPassword.length < 4) {
-      toast.error("New password must be at least 4 characters long.");
+      toast.error("New password must be at least 4 characters.");
       return;
     }
 
     if (newPassword !== confirmPassword) {
-      toast.error("New password and confirm password do not match.");
+      toast.error("Passwords do not match.");
       return;
     }
 
     setIsResetting(true);
-    await new Promise((resolve) => setTimeout(resolve, 500));
     try {
       const res = await resetPasswordFn({ data: { email: targetEmail, newPassword, otp: otpInput.trim() } });
       if (!res?.success) {
@@ -296,337 +160,269 @@ function LoginPage() {
       }
 
       toast.success("Password updated successfully! Signing you in...");
-
-      // Auto attempt login with new credentials
-      const loginSuccess = await loginWithEmail(targetEmail, newPassword);
-      if (!loginSuccess) {
-        setMode("email");
-        setEmail(targetEmail);
-        setPassword(newPassword);
-      } else {
-        // Fallback manual redirect if the context navigation didn't fire
-        setTimeout(() => {
-          if (window.location.pathname === "/login") {
-            window.location.href = "/";
-          }
-        }, 500);
-      }
+      await loginWithEmail(targetEmail, newPassword);
     } catch (err: any) {
-      toast.error(err.message || "Failed to update password. Please try again.");
+      toast.error(err.message || "Failed to update password.");
     } finally {
       setIsResetting(false);
     }
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-background via-card/30 to-primary/5 px-4 py-12">
-      <div className="w-full max-w-md overflow-hidden rounded-3xl border border-border/80 bg-card p-6 sm:p-10 shadow-card card-interactive">
-        <div className="mb-8 flex flex-col items-center text-center">
-          <div className="mb-4 grid size-14 place-items-center rounded-2xl bg-gradient-to-br from-primary/20 via-primary/10 to-accent/20 text-primary border border-primary/20 shadow-soft">
-            <Store className="size-7" />
+    <div className="min-h-screen w-full flex bg-background overflow-hidden text-foreground">
+      {/* Left Showcase Banner - Desktop */}
+      <div className="hidden lg:flex lg:w-1/2 relative bg-gradient-to-br from-primary/95 via-primary/80 to-primary/60 p-12 flex-col justify-between overflow-hidden">
+        {/* Decorative Background Elements */}
+        <div className="absolute -top-24 -left-24 size-96 rounded-full bg-white/10 blur-3xl" />
+        <div className="absolute -bottom-24 -right-24 size-96 rounded-full bg-accent/20 blur-3xl" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 size-[600px] rounded-full border border-white/10 animate-spin-slow pointer-events-none" />
+
+        {/* Brand Header */}
+        <div className="relative z-10 flex items-center gap-3">
+          <div className="flex size-11 items-center justify-center rounded-2xl bg-white/15 backdrop-blur-md border border-white/20 text-white shadow-xl">
+            <Store className="size-6" />
           </div>
-          <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-foreground">NexisPOS SaaS</h1>
-          <p className="text-xs sm:text-sm text-muted-foreground mt-1 font-medium">
-            {mode === "otp"
-              ? "Sign in with OTP / Mobile"
-              : mode === "forgot"
-                ? "Reset your password via Email OTP"
-                : "Sign in to your enterprise POS store"}
-          </p>
+          <div>
+            <h1 className="text-xl font-extrabold tracking-tight text-white">OneDesk360</h1>
+            <p className="text-xs text-white/80 font-medium uppercase tracking-wider">Enterprise Cloud Commerce</p>
+          </div>
         </div>
 
-        {mode === "email" ? (
-          <form noValidate onSubmit={handleEmailLogin} className="space-y-4">
-            <div className="space-y-1.5">
-              <Label>Email</Label>
-              <Input
-                type="email"
-                value={email}
-                onChange={(e) => {
-                  setEmail(e.target.value);
-                  clearLoginError("email");
-                }}
-                placeholder="owner@store.com"
-                className={
-                  loginErrors.email ? "border-destructive focus-visible:ring-destructive" : ""
-                }
-              />
-              <FieldError message={loginErrors.email} />
+        {/* Feature Hero Copy */}
+        <div className="relative z-10 space-y-6 max-w-lg">
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-white text-xs font-semibold">
+            <Sparkles className="size-3.5 text-amber-300" />
+            <span>Next-Gen Point of Sale Platform</span>
+          </div>
+
+          <h2 className="text-4xl font-black tracking-tight text-white leading-tight">
+            Manage Sales, Stock, & Customers in One Unified Portal.
+          </h2>
+
+          <p className="text-sm text-white/85 leading-relaxed">
+            Multi-branch inventory control, real-time Khatabook customer ledgers, instant thermal receipts, and automated financial analytics tailored for your business.
+          </p>
+
+          <div className="grid grid-cols-2 gap-4 pt-4">
+            <div className="p-4 rounded-2xl bg-white/10 backdrop-blur-md border border-white/15">
+              <div className="flex items-center gap-2 text-white font-bold text-lg">
+                <TrendingUp className="size-5 text-emerald-300" />
+                <span>99.9%</span>
+              </div>
+              <p className="text-xs text-white/70 mt-1">Platform Uptime SLA</p>
             </div>
-            <div className="space-y-1.5">
-              <div className="flex items-center justify-between">
-                <Label>Password</Label>
+            <div className="p-4 rounded-2xl bg-white/10 backdrop-blur-md border border-white/15">
+              <div className="flex items-center gap-2 text-white font-bold text-lg">
+                <Zap className="size-5 text-amber-300" />
+                <span>Real-Time</span>
+              </div>
+              <p className="text-xs text-white/70 mt-1">Multi-Store Sync</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Footer info */}
+        <div className="relative z-10 flex items-center justify-between text-xs text-white/70">
+          <p>© 2026 OneDesk360 Universal Inc.</p>
+          <div className="flex items-center gap-4">
+            <Link to="/admin" className="hover:text-white transition-colors underline font-medium">
+              Super Admin Portal
+            </Link>
+          </div>
+        </div>
+      </div>
+
+      {/* Right Authentication Form Pane */}
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-6 sm:p-12 md:p-16 relative overflow-y-auto">
+        <div className="w-full max-w-lg xl:max-w-xl space-y-8 py-6">
+          {/* Header Icon & Title */}
+          <div className="space-y-3 text-center lg:text-left">
+            <div className="inline-flex lg:hidden size-14 items-center justify-center rounded-2xl bg-primary/10 text-primary mb-2">
+              <Store className="size-7" />
+            </div>
+            <h2 className="text-3xl sm:text-4xl font-black tracking-tight text-foreground">
+              {mode === "forgot" ? "Reset Password" : "Welcome Back"}
+            </h2>
+            <p className="text-base text-muted-foreground">
+              {mode === "forgot"
+                ? "Enter your email to receive a password reset code"
+                : "Sign in to access your store POS dashboard"}
+            </p>
+          </div>
+
+          {/* Form Card */}
+          <div className="rounded-3xl border border-border bg-card p-8 sm:p-10 md:p-12 shadow-md space-y-7">
+            {mode === "email" ? (
+              <form noValidate onSubmit={handleEmailLogin} className="space-y-6">
+                <div className="space-y-2.5">
+                  <Label htmlFor="email" className="text-sm font-bold text-foreground">
+                    Store Email Address
+                  </Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={email}
+                    onChange={(e) => {
+                      setEmail(e.target.value);
+                      clearLoginError("email");
+                    }}
+                    placeholder="owner@store.com"
+                    className="h-12 sm:h-13 rounded-2xl text-base px-4"
+                  />
+                  {loginErrors.email && <FieldError message={loginErrors.email} />}
+                </div>
+
+                <div className="space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="password" className="text-sm font-bold text-foreground">
+                      Password
+                    </Label>
+                    <button
+                      type="button"
+                      onClick={() => setMode("forgot")}
+                      className="text-xs sm:text-sm font-bold text-primary hover:underline"
+                    >
+                      Forgot password?
+                    </button>
+                  </div>
+                  <PasswordInput
+                    id="password"
+                    value={password}
+                    onChange={(e) => {
+                      setPassword(e.target.value);
+                      clearLoginError("password");
+                    }}
+                    placeholder="••••••••"
+                    className="h-12 sm:h-13 rounded-2xl text-base px-4"
+                  />
+                  {loginErrors.password && <FieldError message={loginErrors.password} />}
+                </div>
+
+                <Button
+                  type="submit"
+                  disabled={isLoggingIn}
+                  className="w-full h-12 sm:h-13 rounded-2xl font-extrabold gap-2 text-base shadow-md transition-all hover:scale-[1.01]"
+                >
+                  {isLoggingIn ? (
+                    <>
+                      <Loader2 className="size-5 animate-spin" />
+                      <span>Authenticating…</span>
+                    </>
+                  ) : (
+                    <>
+                      <span>Sign In to Store</span>
+                      <ArrowRight className="size-5" />
+                    </>
+                  )}
+                </Button>
+              </form>
+            ) : (
+              /* Forgot Password Flow */
+              <div className="space-y-6">
+                {forgotStep === "request" ? (
+                  <form onSubmit={handleSendResetOtp} className="space-y-6">
+                    <div className="space-y-2.5">
+                      <Label htmlFor="resetEmail" className="text-sm font-bold text-foreground">
+                        Registered Store Email
+                      </Label>
+                      <Input
+                        id="resetEmail"
+                        type="email"
+                        value={resetEmail || email}
+                        onChange={(e) => setResetEmail(e.target.value)}
+                        placeholder="owner@store.com"
+                        className="h-12 sm:h-13 rounded-2xl text-base px-4"
+                        required
+                      />
+                    </div>
+                    <Button type="submit" disabled={isSendingOtp} className="w-full h-12 sm:h-13 rounded-2xl font-extrabold gap-2 text-base">
+                      {isSendingOtp ? (
+                        <>
+                          <Loader2 className="size-5 animate-spin" />
+                          <span>Sending OTP…</span>
+                        </>
+                      ) : (
+                        <>
+                          <Mail className="size-5" />
+                          <span>Send OTP Code</span>
+                        </>
+                      )}
+                    </Button>
+                  </form>
+                ) : (
+                  <form onSubmit={handleResetPasswordSubmit} className="space-y-4">
+                    <div className="space-y-1.5">
+                      <Label htmlFor="otpCode">6-Digit OTP Code</Label>
+                      <Input
+                        id="otpCode"
+                        value={otpInput}
+                        onChange={(e) => setOtpInput(e.target.value)}
+                        placeholder="123456"
+                        maxLength={6}
+                        className="h-11 rounded-xl font-mono text-center text-lg tracking-widest"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="newPassword">New Password</Label>
+                      <PasswordInput
+                        id="newPassword"
+                        value={newPassword}
+                        onChange={(e) => setNewPassword(e.target.value)}
+                        placeholder="••••••••"
+                        className="h-11 rounded-xl"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="confirmPassword">Confirm Password</Label>
+                      <PasswordInput
+                        id="confirmPassword"
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        placeholder="••••••••"
+                        className="h-11 rounded-xl"
+                      />
+                    </div>
+                    <Button type="submit" disabled={isResetting} className="w-full h-11 rounded-xl font-bold">
+                      {isResetting ? "Updating Password..." : "Update Password & Sign In"}
+                    </Button>
+                  </form>
+                )}
+
                 <button
                   type="button"
                   onClick={() => {
-                    setResetEmail(email);
+                    setMode("email");
                     setForgotStep("request");
-                    setMode("forgot");
                   }}
-                  className="text-xs text-primary font-semibold hover:underline"
+                  className="flex items-center justify-center gap-1.5 w-full text-xs font-semibold text-muted-foreground hover:text-foreground pt-2"
                 >
-                  Forgot password?
+                  <ArrowLeft className="size-3.5" />
+                  <span>Back to Sign In</span>
                 </button>
               </div>
-              <PasswordInput
-                value={password}
-                onChange={(e) => {
-                  setPassword(e.target.value);
-                  clearLoginError("password");
-                }}
-                placeholder="••••••••"
-                className={
-                  loginErrors.password ? "border-destructive focus-visible:ring-destructive" : ""
-                }
-              />
-              <FieldError message={loginErrors.password} />
-            </div>
-            <Button type="submit" className="w-full mt-2" disabled={isLoggingIn}>
-              {isLoggingIn && <Loader2 className="size-4 animate-spin mr-2" />}
-              Sign In
-            </Button>
-            <div className="relative my-4">
-              <div className="absolute inset-0 flex items-center">
-                <span className="w-full border-t" />
-              </div>
-              <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-card px-2 text-muted-foreground">Or continue with</span>
-              </div>
-            </div>
-
-            <Button
-              type="button"
-              variant="outline"
-              className="w-full text-xs font-semibold"
-              onClick={() => loginWithSocial("google")}
-            >
-              <svg className="mr-2 size-4" viewBox="0 0 24 24">
-                <path
-                  fill="#4285F4"
-                  d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                />
-                <path
-                  fill="#34A853"
-                  d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                />
-                <path
-                  fill="#FBBC05"
-                  d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"
-                />
-                <path
-                  fill="#EA4335"
-                  d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
-                />
-              </svg>
-              Google
-            </Button>
-
-            <div className="pt-4 text-center text-sm text-muted-foreground">
-              Don't have an account?{" "}
-              <Link to="/register" className="text-primary font-semibold hover:underline">
-                Register your business
-              </Link>
-            </div>
-          </form>
-        ) : mode === "forgot" ? (
-          forgotStep === "request" ? (
-            <form noValidate onSubmit={handleSendResetOtp} className="space-y-4">
-              <div className="space-y-1.5">
-                <Label>Enter Your Registered Email</Label>
-                <Input
-                  type="email"
-                  value={resetEmail}
-                  onChange={(e) => {
-                    setResetEmail(e.target.value);
-                    clearForgotError("resetEmail");
-                  }}
-                  placeholder="owner@store.com"
-                  className={
-                    forgotErrors.resetEmail
-                      ? "border-destructive focus-visible:ring-destructive"
-                      : ""
-                  }
-                />
-                <FieldError message={forgotErrors.resetEmail} />
-                <p className="text-xs text-muted-foreground">
-                  We will send a 6-digit OTP verification code to your email.
-                </p>
-              </div>
-
-              <Button type="submit" disabled={isSendingOtp} className="w-full">
-                {isSendingOtp && <Loader2 className="size-4 animate-spin mr-2" />}
-                <Mail className="size-4 mr-2" /> Send OTP Code
-              </Button>
-
-              <div className="pt-2 text-center">
-                <button
-                  type="button"
-                  onClick={() => setMode("email")}
-                  className="inline-flex items-center text-xs text-muted-foreground hover:text-foreground font-medium"
-                >
-                  <ArrowLeft className="size-3.5 mr-1" /> Back to Sign In
-                </button>
-              </div>
-            </form>
-          ) : (
-            <form noValidate onSubmit={handleResetPasswordSubmit} className="space-y-4">
-              <div className="p-3 bg-muted/40 border rounded-lg text-xs space-y-1">
-                <p className="font-semibold text-foreground">OTP Sent to:</p>
-                <p className="text-muted-foreground font-mono truncate">{resetEmail}</p>
-              </div>
-
-              <div className="space-y-1.5">
-                <Label>6-Digit OTP Code</Label>
-                <Input
-                  type="text"
-                  maxLength={6}
-                  value={otpInput}
-                  onChange={(e) => {
-                    setOtpInput(e.target.value.replace(/\D/g, ""));
-                    clearResetError("otpInput");
-                  }}
-                  placeholder="e.g. 123456"
-                  className={`font-mono text-center text-lg tracking-widest ${resetErrors.otpInput ? "border-destructive" : ""}`}
-                />
-                <FieldError message={resetErrors.otpInput} />
-              </div>
-
-              <div className="space-y-1.5">
-                <Label>New Password</Label>
-                <PasswordInput
-                  value={newPassword}
-                  onChange={(e) => {
-                    setNewPassword(e.target.value);
-                    clearResetError("newPassword");
-                  }}
-                  placeholder="At least 4 characters"
-                  className={resetErrors.newPassword ? "border-destructive" : ""}
-                />
-                <FieldError message={resetErrors.newPassword} />
-              </div>
-
-              <div className="space-y-1.5">
-                <Label>Confirm New Password</Label>
-                <PasswordInput
-                  value={confirmPassword}
-                  onChange={(e) => {
-                    setConfirmPassword(e.target.value);
-                    clearResetError("confirmPassword");
-                  }}
-                  placeholder="Re-enter new password"
-                  className={resetErrors.confirmPassword ? "border-destructive" : ""}
-                />
-                {newPassword && confirmPassword && newPassword !== confirmPassword && (
-                  <p className="text-[11px] text-destructive font-medium">
-                    ✕ Passwords do not match
-                  </p>
-                )}
-                {newPassword && confirmPassword && newPassword === confirmPassword && (
-                  <p className="text-[11px] text-success font-medium">✓ Passwords match</p>
-                )}
-                <FieldError message={resetErrors.confirmPassword} />
-              </div>
-
-              <Button type="submit" disabled={isResetting} className="w-full">
-                {isResetting && <Loader2 className="size-4 animate-spin mr-2" />}
-                <ShieldCheck className="size-4 mr-2" /> Reset Password & Login
-              </Button>
-
-              <div className="flex items-center justify-between pt-2 text-xs">
-                <button
-                  type="button"
-                  onClick={() => setForgotStep("request")}
-                  className="text-muted-foreground hover:text-foreground font-medium inline-flex items-center"
-                >
-                  <ArrowLeft className="size-3.5 mr-1" /> Resend / Change Email
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setMode("email")}
-                  className="text-primary font-semibold hover:underline"
-                >
-                  Back to Sign In
-                </button>
-              </div>
-            </form>
-          )
-        ) : (
-          otpLoginStep === "request" ? (
-            <form noValidate onSubmit={handleSendLoginOtp} className="space-y-4">
-              <div className="space-y-1.5">
-                <Label>Terminal Sign In (Email or Phone)</Label>
-                <Input
-                  type="text"
-                  value={otpLoginIdentifier}
-                  onChange={(e) => setOtpLoginIdentifier(e.target.value)}
-                  placeholder="Email or Phone"
-                />
-                <p className="text-xs text-muted-foreground">
-                  We will send a 6-digit OTP to sign you in securely.
-                </p>
-              </div>
-
-              <div id="recaptcha-container"></div>
-
-              <Button type="submit" disabled={isSendingLoginOtp} className="w-full">
-                {isSendingLoginOtp && <Loader2 className="size-4 animate-spin mr-2" />}
-                <Mail className="size-4 mr-2" /> Send OTP Code
-              </Button>
-            </form>
-          ) : (
-            <form noValidate onSubmit={handleVerifyLoginOtp} className="space-y-4">
-              <div className="p-3 bg-muted/40 border rounded-lg text-xs space-y-1">
-                <p className="font-semibold text-foreground">OTP Sent to:</p>
-                <p className="text-muted-foreground font-mono truncate">{otpLoginIdentifier}</p>
-              </div>
-
-              <div className="space-y-1.5">
-                <Label>6-Digit OTP Code</Label>
-                <Input
-                  type="text"
-                  maxLength={6}
-                  value={otpLoginCode}
-                  onChange={(e) => setOtpLoginCode(e.target.value.replace(/\D/g, ""))}
-                  placeholder="e.g. 123456"
-                  className="font-mono text-center text-lg tracking-widest"
-                />
-              </div>
-
-              <Button type="submit" disabled={isOtpLoggingIn} className="w-full">
-                {isOtpLoggingIn && <Loader2 className="size-4 animate-spin mr-2" />}
-                <ShieldCheck className="size-4 mr-2" /> Verify & Sign In
-              </Button>
-
-              <div className="flex justify-center pt-2 text-xs">
-                <button
-                  type="button"
-                  onClick={() => setOtpLoginStep("request")}
-                  className="text-muted-foreground hover:text-foreground font-medium inline-flex items-center"
-                >
-                  <ArrowLeft className="size-3.5 mr-1" /> Resend / Change Email
-                </button>
-              </div>
-            </form>
-          )
-        )}
-
-        <div className="mt-8 flex justify-center">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setMode(mode === "otp" ? "email" : "otp")}
-            className="text-xs text-muted-foreground"
-          >
-            {mode === "otp" ? (
-              <>
-                <UserCircle2 className="size-4 mr-2" /> Owner Sign In (Email)
-              </>
-            ) : (
-              <>
-                <KeyRound className="size-4 mr-2" /> Terminal Sign In (OTP)
-              </>
             )}
-          </Button>
+
+            {/* Link to Register */}
+            <div className="border-t pt-4 text-center">
+              <p className="text-xs text-muted-foreground">
+                Don't have a store account yet?{" "}
+                <Link to="/register" className="font-bold text-primary hover:underline">
+                  Start 7-Day Free Trial
+                </Link>
+              </p>
+            </div>
+          </div>
+
+          {/* Super Admin Direct Link */}
+          <div className="text-center pt-2">
+            <Link
+              to="/admin"
+              className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground font-semibold transition-colors"
+            >
+              <ShieldCheck className="size-3.5 text-primary" />
+              <span>Super Admin Portal (/admin)</span>
+            </Link>
+          </div>
         </div>
       </div>
     </div>

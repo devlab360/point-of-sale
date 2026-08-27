@@ -57,7 +57,7 @@ import { TableSkeleton } from "@/components/skeletons/TableSkeleton";
 import { ErrorState } from "@/components/ui/error-state";
 
 export const Route = createFileRoute("/expenses")({
-  head: () => ({ meta: [{ title: "Expenses · NexisPOS" }] }),
+  head: () => ({ meta: [{ title: "Expenses · OneDesk360" }] }),
   component: ExpensesPage,
 });
 

@@ -36,7 +36,7 @@ import { useFormValidation } from "@/hooks/useFormValidation";
 import { FieldError } from "@/components/ui/field-error";
 
 export const Route = createFileRoute("/rentals")({
-  head: () => ({ meta: [{ title: "Equipment Rentals & Booking · NexisPOS" }] }),
+  head: () => ({ meta: [{ title: "Equipment Rentals & Booking · OneDesk360" }] }),
   component: RentalsPage,
 });
 

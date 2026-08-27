@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/reports")({
-  head: () => ({ meta: [{ title: "Reports · NexisPOS" }] }),
+  head: () => ({ meta: [{ title: "Reports · OneDesk360" }] }),
 });

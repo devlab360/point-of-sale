@@ -21,7 +21,7 @@ export default defineConfig({
           suppressWarnings: true,
         }, // Enable PWA in dev mode for testing offline
         manifest: {
-          name: "NexisPOS POS",
+          name: "OneDesk360 POS",
           short_name: "GrocerPOS",
           description:
             "Premium POS and inventory management for grocery, daily goods, and retail chains.",

@@ -9,7 +9,7 @@ import { Loader2, AlertCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
 export const Route = createFileRoute("/accounting-reports")({
-  head: () => ({ meta: [{ title: "Accounting Reports | NexisPOS" }] }),
+  head: () => ({ meta: [{ title: "Accounting Reports | OneDesk360" }] }),
   component: AccountingReportsPage,
 });
 

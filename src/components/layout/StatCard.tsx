@@ -102,4 +102,3 @@ export function StatCard({ label, value, delta, hint, icon: Icon, accent = "prim
     </div>
   );
 }
-

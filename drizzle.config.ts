@@ -7,6 +7,6 @@ export default {
   out: "./src/db/migrations",
   dialect: "postgresql",
   dbCredentials: {
-    url: process.env.NEON_DB!,
+    url: process.env.DATABASE_URL || "postgres://postgres:@localhost:5432/pos_db",
   },
 } satisfies Config;

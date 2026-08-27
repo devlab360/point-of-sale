@@ -188,7 +188,7 @@ export function AppHeader() {
 
   const profile = user || {
     name: "Admin",
-    email: "admin@nexispos.com",
+    email: "admin@OneDesk360.com",
   };
   const initials = (profile.name || "U")
     .split(" ")

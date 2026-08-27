@@ -88,7 +88,7 @@ const DEFAULT_ROLE_PERMISSIONS: Record<string, string[]> = {
 };
 
 export const Route = createFileRoute("/users")({
-  head: () => ({ meta: [{ title: "Employees · NexisPOS" }] }),
+  head: () => ({ meta: [{ title: "Employees · OneDesk360" }] }),
   component: UsersPage,
 });
 

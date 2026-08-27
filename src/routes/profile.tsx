@@ -16,7 +16,7 @@ import { ProfileSkeleton } from "@/components/skeletons/ProfileSkeleton";
 import { ErrorState } from "@/components/ui/error-state";
 
 export const Route = createFileRoute("/profile")({
-  head: () => ({ meta: [{ title: "Profile · NexisPOS" }] }),
+  head: () => ({ meta: [{ title: "Profile · OneDesk360" }] }),
   component: ProfilePage,
 });
 

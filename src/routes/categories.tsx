@@ -55,7 +55,7 @@ import { useFormValidation } from "@/hooks/useFormValidation";
 import { FieldError } from "@/components/ui/field-error";
 
 export const Route = createFileRoute("/categories")({
-  head: () => ({ meta: [{ title: "Categories · NexisPOS" }] }),
+  head: () => ({ meta: [{ title: "Categories · OneDesk360" }] }),
   component: CategoriesPage,
 });
 

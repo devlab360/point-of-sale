@@ -12,7 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/help")({
-  head: () => ({ meta: [{ title: "Help Center — NexisPOS" }] }),
+  head: () => ({ meta: [{ title: "Help Center — OneDesk360" }] }),
   component: HelpPage,
 });
 

@@ -93,7 +93,7 @@ const TIME_ZONES = [
 ];
 
 export const Route = createFileRoute("/settings")({
-  head: () => ({ meta: [{ title: "Settings · NexisPOS" }] }),
+  head: () => ({ meta: [{ title: "Settings · OneDesk360" }] }),
   validateSearch: (search: Record<string, unknown>): { tab?: string } => {
     return {
       tab: typeof search.tab === "string" ? search.tab : undefined,
@@ -1332,7 +1332,7 @@ function SettingsPage() {
                 <div>
                   <span className="text-muted-foreground block text-[10px]">Account Name</span>
                   <span className="font-semibold">
-                    {paymentConfig?.accountName || "Artistry POS Pvt Ltd"}
+                    {paymentConfig?.accountName || "OneDesk360 Pvt Ltd"}
                   </span>
                 </div>
                 <div>

@@ -16,7 +16,7 @@ import { Bell, ExternalLink } from "lucide-react";
 import { usePreferences } from "@/contexts/PreferencesContext";
 
 export const Route = createFileRoute("/notifications")({
-  head: () => ({ meta: [{ title: "Notifications · NexisPOS" }] }),
+  head: () => ({ meta: [{ title: "Notifications · OneDesk360" }] }),
   loader: async ({ context: { queryClient } }) => {
     const orgId = PersistStore.getOrgId();
     if (!orgId) return;

@@ -74,7 +74,7 @@ import { ErrorState } from "@/components/ui/error-state";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 
 export const Route = createFileRoute("/promotions")({
-  head: () => ({ meta: [{ title: "Promotions · NexisPOS" }] }),
+  head: () => ({ meta: [{ title: "Promotions · OneDesk360" }] }),
   component: PromotionsPage,
 });
 

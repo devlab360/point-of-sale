@@ -25,7 +25,7 @@ import { useDebounce } from "@/hooks/useDebounce";
 import { Label } from "@/components/ui/label";
 
 export const Route = createFileRoute("/sales/")({
-  head: () => ({ meta: [{ title: "Sales · NexisPOS" }] }),
+  head: () => ({ meta: [{ title: "Sales · OneDesk360" }] }),
   loader: async ({ context: { queryClient } }) => {
     const orgId = PersistStore.getOrgId();
     if (!orgId) return;

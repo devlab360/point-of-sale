@@ -23,7 +23,7 @@ import { Eye, Plus, ShoppingCart } from "lucide-react";
 import { useState, useMemo, useEffect } from "react";
 
 export const Route = createFileRoute("/purchases/")({
-  head: () => ({ meta: [{ title: "Purchases · NexisPOS" }] }),
+  head: () => ({ meta: [{ title: "Purchases · OneDesk360" }] }),
   component: PurchasesPage,
 });
 

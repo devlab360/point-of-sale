@@ -12,40 +12,37 @@ import {
   Store,
   User,
   Loader2,
+  Sparkles,
+  Shield,
+  Layers,
+  ArrowRight,
 } from "lucide-react";
 import { v4 as uuidv4 } from "uuid";
 import { registerOrgFn, checkEmailAvailabilityFn } from "@/api/auth";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { INDUSTRY_SEEDS } from "@/lib/industry-seeds";
 import { getTrialDaysFromEnv } from "@/lib/email-service";
-
 import {
   validateEmail,
-  validateMobile,
   validatePassword,
-  validateStrongPassword,
   sanitizeInput,
 } from "@/lib/validation";
-import { SessionStore, PersistStore } from "@/lib/session-store";
-import { PhoneInput } from "@/components/ui/phone-input";
 
 export const Route = createFileRoute("/register")({
-  head: () => ({ meta: [{ title: "Register · NexisPOS SaaS" }] }),
+  head: () => ({ meta: [{ title: "Start Free Trial · OneDesk360 SaaS" }] }),
   component: RegisterPage,
 });
 
 const INDUSTRIES = [
-  "Saloon & Spa",
-  "Grocery Shop",
+  "Super Market & Grocery",
+  "Apparel & Fashion",
+  "Electronics & Computers",
   "Hotel & Restaurant",
-  "Beauty and Cosmetics",
-  "Super Market",
-  "Hyper Market",
-  "Home Decor & Furniture",
-  "Apparel",
-  "Electronics",
-  "Books & Toys",
-  "Pharmacy & Medical",
+  "Salon & Beauty Spa",
+  "Pharmacy & Healthcare",
+  "Furniture & Home Decor",
+  "Books, Toys & Gifts",
+  "General Retail Store",
 ];
 
 function RegisterPage() {
@@ -78,387 +75,340 @@ function RegisterPage() {
       const emailCheck = validateEmail(cleanEmail);
       if (!emailCheck.valid) {
         setEmailStatus("idle");
-        return; // wait for valid format before checking backend
+        return;
       }
 
       setEmailStatus("checking");
       try {
         const res = await checkEmailAvailabilityFn({ data: { email: cleanEmail } });
-        if (res.success && "available" in res && res.available) {
+        if (res && "available" in res && !res.available) {
+          setEmailStatus("taken");
+          setEmailMessage("Email is already taken");
+        } else {
           setEmailStatus("available");
           setEmailMessage("");
-        } else {
-          setEmailStatus("taken");
-          setEmailMessage("message" in res ? (res.message as string) : "Email is already taken");
         }
-      } catch (e) {
-        setEmailStatus("idle");
+      } catch {
+        setEmailStatus("available");
+        setEmailMessage("");
       }
     };
 
-    const timeoutId = setTimeout(checkEmail, 500);
-    return () => clearTimeout(timeoutId);
+    const timer = setTimeout(() => {
+      checkEmail();
+    }, 400);
+    return () => clearTimeout(timer);
   }, [formData.email]);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-    if (errors[name]) {
-      setErrors((prev) => ({ ...prev, [name]: "" }));
-    }
-  };
-
-  const validateStep1 = (): boolean => {
+  const handleNextStep = () => {
     const newErrors: Record<string, string> = {};
     const cleanName = sanitizeInput(formData.ownerName);
     const cleanEmail = sanitizeInput(formData.email);
 
-    if (!cleanName) {
-      newErrors.ownerName = "Full Name is required";
+    if (!cleanName) newErrors.ownerName = "Full Name is required";
+    if (!cleanEmail) {
+      newErrors.email = "Email is required";
+    } else {
+      const emailCheck = validateEmail(cleanEmail);
+      if (!emailCheck.valid) newErrors.email = emailCheck.error || "Invalid email";
     }
 
-    const emailCheck = validateEmail(cleanEmail);
-    if (!emailCheck.valid) {
-      newErrors.email = emailCheck.error || "Invalid email address";
-    } else if (emailStatus === "taken") {
-      newErrors.email = emailMessage || "Email is already taken";
+    if (emailStatus === "taken") {
+      newErrors.email = "Email is already taken";
     }
 
-    const passCheck = validateStrongPassword(formData.password);
+    const passCheck = validatePassword(formData.password);
     if (!passCheck.valid) {
-      newErrors.password = passCheck.error || "Password is required";
+      newErrors.password = passCheck.error || "Invalid password";
     }
 
     setErrors(newErrors);
-
-    if (Object.keys(newErrors).length > 0) {
-      const firstError = Object.values(newErrors)[0];
-      toast.error(firstError);
-      return false;
-    }
-    return true;
-  };
-
-  const validateStep2 = (): boolean => {
-    const newErrors: Record<string, string> = {};
-    const cleanCompany = sanitizeInput(formData.companyName);
-
-    if (!cleanCompany) {
-      newErrors.companyName = "Company / Store Name is required";
-    }
-
-    if (formData.phone && formData.phone.trim() !== "") {
-      const phoneCheck = validateMobile(formData.phone);
-      if (!phoneCheck.valid) {
-        newErrors.phone = phoneCheck.error || "Enter a valid phone number";
-      }
-    }
-
-    if (!formData.industry) {
-      newErrors.industry = "Please select your business industry";
-    }
-
-    setErrors(newErrors);
-
-    if (Object.keys(newErrors).length > 0) {
-      const firstError = Object.values(newErrors)[0];
-      toast.error(firstError);
-      return false;
-    }
-    return true;
-  };
-
-  const handleNext = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (validateStep1()) {
+    if (Object.keys(newErrors).length === 0 && emailStatus !== "checking") {
       setStep(2);
     }
   };
 
-  const prevStep = () => {
-    setErrors({});
-    setStep(1);
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!validateStep2()) return;
+    const newErrors: Record<string, string> = {};
+    const cleanCompany = sanitizeInput(formData.companyName);
+
+    if (!cleanCompany) newErrors.companyName = "Store Name is required";
+    if (!formData.industry) newErrors.industry = "Please select your business type";
+
+    setErrors(newErrors);
+    if (Object.keys(newErrors).length > 0) return;
 
     setIsRegistering(true);
     try {
       const orgId = uuidv4();
       const ownerId = uuidv4();
       const trialDays = getTrialDaysFromEnv();
-      const trialEndsAt = new Date(Date.now() + trialDays * 24 * 60 * 60 * 1000).toISOString();
+      const trialEndsAt = Date.now() + trialDays * 24 * 60 * 60 * 1000;
 
-      const seedData = INDUSTRY_SEEDS[formData.industry];
-
-      let assignedPlanId = "basic";
+      const industrySeed = INDUSTRY_SEEDS[formData.industry] || INDUSTRY_SEEDS["General Retail Store"];
 
       const res = await registerOrgFn({
         data: {
           orgId,
           ownerId,
-          trialEndsAt: new Date(trialEndsAt).getTime(),
-          companyName: formData.companyName,
-          email: formData.email,
-          phone: formData.phone,
-          ownerName: formData.ownerName,
+          trialEndsAt,
+          companyName: cleanCompany,
+          email: sanitizeInput(formData.email),
+          phone: formData.phone || undefined,
+          ownerName: sanitizeInput(formData.ownerName),
           password: formData.password,
-          assignedPlanId,
-          seedData: seedData || undefined,
+          assignedPlanId: "basic",
+          seedData: industrySeed,
         },
       });
 
-      if (!res.success) {
-        throw new Error(res.error || "Registration failed on server.");
+      if (!res?.success) {
+        throw new Error(res?.error || "Registration failed.");
       }
 
-      SessionStore.setAuthUser(ownerId);
-      PersistStore.setOrgId(orgId);
-
-      toast.success("Registration successful! Redirecting to email verification...");
-      setTimeout(() => {
-        window.location.href = "/verify-email";
-      }, 500);
-    } catch (err) {
-      console.error("Registration submit error:", err);
-      toast.error("Registration failed. Please try again.");
+      toast.success("Welcome to OneDesk360! Your 7-day trial store is ready.");
+      navigate({ to: "/" });
+    } catch (err: any) {
+      toast.error(err.message || "Registration failed. Please try again.");
     } finally {
       setIsRegistering(false);
     }
   };
 
   return (
-    <div className="flex min-h-screen bg-muted/20">
-      {/* Left Panel: Hero Image & Branding */}
-      <div className="relative hidden w-1/2 flex-col justify-between p-12 text-white lg:flex overflow-hidden">
-        <div
-          className="absolute inset-0 bg-cover bg-center transition-transform duration-1000 scale-105"
-          style={{
-            backgroundImage: `url('https://images.unsplash.com/photo-1556742049-0a6754099a6d?auto=format&fit=crop&q=80&w=1600')`,
-          }}
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/60 to-black/40 backdrop-blur-[2px]" />
+    <div className="min-h-screen w-full flex bg-background overflow-hidden text-foreground">
+      {/* Left Showcase Banner - Desktop */}
+      <div className="hidden lg:flex lg:w-1/2 relative bg-gradient-to-br from-primary/95 via-primary/80 to-primary/60 p-12 flex-col justify-between overflow-hidden">
+        <div className="absolute -top-24 -left-24 size-96 rounded-full bg-white/10 blur-3xl" />
+        <div className="absolute -bottom-24 -right-24 size-96 rounded-full bg-accent/20 blur-3xl" />
 
-        <div className="relative z-10">
-          <div className="flex items-center gap-3 font-bold text-2xl tracking-tight">
-            <div className="grid size-10 place-items-center rounded-xl bg-primary text-white shadow-lg">
-              <Store className="size-6" />
-            </div>
-            <span className="text-white drop-shadow-md">NexisPOS SaaS</span>
+        {/* Brand Header */}
+        <div className="relative z-10 flex items-center gap-3">
+          <div className="flex size-11 items-center justify-center rounded-2xl bg-white/15 backdrop-blur-md border border-white/20 text-white shadow-xl">
+            <Store className="size-6" />
           </div>
-
-          <div className="mt-12 space-y-4 max-w-md">
-            <span className="rounded-full bg-primary/20 border border-primary/40 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-primary-foreground backdrop-blur-md">
-              ⚡ World-Class POS + ERP Platform
-            </span>
-            <h2 className="text-3xl font-extrabold tracking-tight leading-tight text-white drop-shadow">
-              Transform your retail & wholesale business with AI Intelligence.
-            </h2>
-            <p className="text-sm leading-relaxed text-white/80">
-              Join 10,000+ modern retailers managing POS sales, inventory, double-entry accounting,
-              repair job sheets & WhatsApp CRM in one unified platform.
-            </p>
+          <div>
+            <h1 className="text-xl font-extrabold tracking-tight text-white">OneDesk360</h1>
+            <p className="text-xs text-white/80 font-medium uppercase tracking-wider">Enterprise Cloud Commerce</p>
           </div>
         </div>
 
-        <div className="relative z-10 rounded-2xl border border-white/20 bg-white/10 p-6 backdrop-blur-md shadow-2xl space-y-3 max-w-md">
-          <div className="flex items-center gap-1 text-warning">{"★".repeat(5)}</div>
-          <p className="text-xs italic text-white/90">
-            "NexisPOS doubled our checkout speed and simplified customer khata balance reminders
-            over WhatsApp. Essential for modern retail!"
-          </p>
-          <div className="flex items-center justify-between text-xs pt-2 border-t border-white/10">
-            <span className="font-bold text-white">Supermarket Chain Owner</span>
-            <span className="text-white/70">Verified Customer</span>
-          </div>
-        </div>
-
-        <div className="relative z-10 text-xs text-white/60">
-          © 2026 NexisPOS Inc. All rights reserved.
-        </div>
-      </div>
-
-      <div className="flex w-full flex-col justify-center px-8 sm:px-16 lg:w-1/2 xl:px-24">
-        <div className="mx-auto w-full max-w-md">
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold tracking-tight text-foreground">
-              Create your account
-            </h1>
-            <p className="mt-2 text-sm text-muted-foreground">
-              Follow the steps below to setup your store.
-            </p>
+        {/* Value Proposition */}
+        <div className="relative z-10 space-y-6 max-w-lg">
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-white text-xs font-semibold">
+            <Sparkles className="size-3.5 text-amber-300" />
+            <span>7-Day Full Access Free Trial</span>
           </div>
 
-          {/* Stepper */}
-          <div className="mb-8 flex items-center justify-between px-12">
-            {[1, 2].map((i) => (
-              <div key={i} className="flex flex-col items-center gap-2">
-                <div
-                  className={`flex size-9 items-center justify-center rounded-full border-2 text-xs font-semibold ${step >= i ? "border-primary bg-primary text-primary-foreground" : "border-muted-foreground/30 text-muted-foreground"}`}
-                >
-                  {step > i ? <CheckCircle2 className="size-5" /> : i}
+          <h2 className="text-4xl font-black tracking-tight text-white leading-tight">
+            Launch Your Store in Minutes. No Credit Card Required.
+          </h2>
+
+          <div className="space-y-3 pt-2">
+            {[
+              "Pre-loaded product catalog templates for your industry",
+              "Unlimited invoices, multi-user accounts & Khatabook ledgers",
+              "Instant thermal printing & WhatsApp digital receipts",
+              "Automatic daily report emails & inventory stock alerts",
+            ].map((feat, idx) => (
+              <div key={idx} className="flex items-center gap-3 text-sm text-white/90">
+                <div className="size-5 rounded-full bg-emerald-400/20 text-emerald-300 flex items-center justify-center shrink-0 border border-emerald-400/30">
+                  <CheckCircle2 className="size-3.5" />
                 </div>
-                <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                  {i === 1 ? "Account Setup" : "Store Details"}
-                </span>
+                <span>{feat}</span>
               </div>
             ))}
           </div>
+        </div>
 
-          <form noValidate onSubmit={step === 2 ? handleSubmit : handleNext} className="space-y-6">
-            {step === 1 && (
-              <div className="space-y-4 animate-in fade-in slide-in-from-right-4">
-                <div className="space-y-1.5">
-                  <Label>Full Name</Label>
-                  <div className="relative">
-                    <User className="absolute left-3 top-3 size-4 text-muted-foreground" />
-                    <Input
-                      name="ownerName"
-                      value={formData.ownerName}
-                      onChange={handleChange}
-                      className={`pl-10 ${errors.ownerName ? "border-destructive focus-visible:ring-destructive" : ""}`}
-                      placeholder="e.g. Your Full Name"
-                    />
-                  </div>
-                  {errors.ownerName && (
-                    <p className="text-xs font-semibold text-destructive mt-1">
-                      {errors.ownerName}
-                    </p>
-                  )}
-                </div>
+        {/* Footer info */}
+        <div className="relative z-10 flex items-center justify-between text-xs text-white/70">
+          <p>© 2026 OneDesk360 Universal Inc.</p>
+          <Link to="/login" className="hover:text-white transition-colors underline font-medium">
+            Sign In to Existing Store
+          </Link>
+        </div>
+      </div>
 
-                <div className="space-y-1.5">
-                  <Label>Email Address</Label>
-                  <div className="relative">
-                    <Input
-                      type="email"
-                      name="email"
-                      value={formData.email}
-                      onChange={handleChange}
-                      className={`pr-10 ${
-                        errors.email || emailStatus === "taken"
-                          ? "border-destructive focus-visible:ring-destructive"
-                          : emailStatus === "available"
-                            ? "border-green-500 focus-visible:ring-green-500"
-                            : ""
-                      }`}
-                      placeholder="e.g. you@example.com"
-                    />
-                    <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center">
-                      {emailStatus === "checking" && <Loader2 className="size-4 animate-spin text-muted-foreground" />}
-                      {emailStatus === "available" && <CheckCircle2 className="size-4 text-green-500" />}
-                    </div>
-                  </div>
-                  {(errors.email || emailStatus === "taken") && (
-                    <p className="text-xs font-semibold text-destructive mt-1">
-                      {errors.email || emailMessage}
-                    </p>
-                  )}
-                </div>
-
-                <div className="space-y-1.5">
-                  <Label>Password</Label>
-                  <PasswordInput
-                    name="password"
-                    value={formData.password}
-                    onChange={handleChange}
-                    className={
-                      errors.password ? "border-destructive focus-visible:ring-destructive" : ""
-                    }
-                    placeholder="••••••••"
-                  />
-                  {errors.password && (
-                    <p className="text-xs font-semibold text-destructive mt-1">{errors.password}</p>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {step === 2 && (
-              <div className="space-y-4 animate-in fade-in slide-in-from-right-4">
-                <div className="space-y-1.5">
-                  <Label>Company / Store Name</Label>
-                  <div className="relative">
-                    <Briefcase className="absolute left-3 top-3 size-4 text-muted-foreground" />
-                    <Input
-                      name="companyName"
-                      value={formData.companyName}
-                      onChange={handleChange}
-                      className={`pl-10 ${errors.companyName ? "border-destructive focus-visible:ring-destructive" : ""}`}
-                      placeholder="e.g. Store or Company Name"
-                    />
-                  </div>
-                  {errors.companyName && (
-                    <p className="text-xs font-semibold text-destructive mt-1">
-                      {errors.companyName}
-                    </p>
-                  )}
-                </div>
-
-                <div className="space-y-1.5">
-                  <Label>Phone Number</Label>
-                  <PhoneInput
-                    type="tel"
-                    name="phone"
-                    value={formData.phone}
-                    onChange={handleChange}
-                    className={
-                      errors.phone ? "border-destructive focus-visible:ring-destructive" : ""
-                    }
-                    placeholder="e.g. 1700 000000"
-                  />
-                  {errors.phone && (
-                    <p className="text-xs font-semibold text-destructive mt-1">{errors.phone}</p>
-                  )}
-                </div>
-
-                <div className="space-y-1.5">
-                  <Label>Industry</Label>
-                  <SearchableSelect
-                    options={INDUSTRIES.map((ind) => ({ value: ind, label: ind }))}
-                    value={formData.industry}
-                    onChange={(val) => {
-                      setFormData((p) => ({ ...p, industry: val }));
-                      if (errors.industry) setErrors((e) => ({ ...e, industry: "" }));
-                    }}
-                    placeholder="Select your industry"
-                  />
-                  {errors.industry && (
-                    <p className="text-xs font-semibold text-destructive mt-1">{errors.industry}</p>
-                  )}
-                </div>
-              </div>
-            )}
-
-            <div className="flex gap-4 pt-4">
-              {step > 1 && (
-                <Button type="button" variant="outline" className="w-full" onClick={prevStep}>
-                  <ChevronLeft className="size-4 mr-2" /> Back
-                </Button>
-              )}
-              <Button type="submit" className="w-full" disabled={isRegistering}>
-                {isRegistering ? (
-                  <>
-                    <Loader2 className="size-4 animate-spin mr-2" /> Processing...
-                  </>
-                ) : (
-                  <>
-                    {step === 2 ? `Start ${getTrialDaysFromEnv()}-Day Free Trial` : "Continue"}{" "}
-                    {step < 2 && <ChevronRight className="size-4 ml-2" />}
-                  </>
-                )}
-              </Button>
+      {/* Right Registration Wizard Pane */}
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-6 sm:p-12 md:p-16 relative overflow-y-auto">
+        <div className="w-full max-w-lg xl:max-w-xl space-y-8 py-6">
+          {/* Header Title & Step Indicator */}
+          <div className="space-y-3 text-center lg:text-left">
+            <div className="inline-flex lg:hidden size-14 items-center justify-center rounded-2xl bg-primary/10 text-primary mb-2">
+              <Store className="size-7" />
             </div>
-          </form>
+            <h2 className="text-3xl sm:text-4xl font-black tracking-tight text-foreground">
+              Create Your Store Account
+            </h2>
 
-          <p className="mt-8 text-center text-sm text-muted-foreground">
-            Already have an account?{" "}
-            <Link to="/login" className="font-semibold text-primary hover:underline">
-              Sign in
-            </Link>
-          </p>
+            {/* Step Progress Bar */}
+            <div className="flex items-center gap-2 pt-1">
+              <div
+                className={`h-2.5 flex-1 rounded-full transition-all ${
+                  step >= 1 ? "bg-primary shadow-xs" : "bg-muted"
+                }`}
+              />
+              <div
+                className={`h-2.5 flex-1 rounded-full transition-all ${
+                  step >= 2 ? "bg-primary shadow-xs" : "bg-muted"
+                }`}
+              />
+            </div>
+            <p className="text-xs sm:text-sm font-bold text-muted-foreground uppercase tracking-wider">
+              Step {step} of 2 — {step === 1 ? "Account Credentials" : "Store Profile"}
+            </p>
+          </div>
+
+          {/* Wizard Form Card */}
+          <div className="rounded-3xl border border-border bg-card p-8 sm:p-10 md:p-12 shadow-md space-y-7">
+            {step === 1 ? (
+              /* Step 1: Owner Details & Credentials */
+              <div className="space-y-5">
+                <div className="space-y-2">
+                  <Label htmlFor="ownerName" className="text-sm font-bold text-foreground">
+                    Owner / Admin Name
+                  </Label>
+                  <Input
+                    id="ownerName"
+                    value={formData.ownerName}
+                    onChange={(e) => setFormData({ ...formData, ownerName: e.target.value })}
+                    placeholder="John Doe"
+                    className="h-12 sm:h-13 rounded-2xl text-base px-4"
+                  />
+                  {errors.ownerName && <p className="text-xs text-destructive mt-1">{errors.ownerName}</p>}
+                </div>
+
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="email" className="text-sm font-bold text-foreground">
+                      Email Address
+                    </Label>
+                    {emailStatus === "checking" && (
+                      <span className="text-xs text-muted-foreground animate-pulse">Checking availability…</span>
+                    )}
+                    {emailStatus === "available" && (
+                      <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">Available</span>
+                    )}
+                    {emailStatus === "taken" && (
+                      <span className="text-xs font-bold text-destructive">Taken</span>
+                    )}
+                  </div>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    placeholder="owner@store.com"
+                    className="h-12 sm:h-13 rounded-2xl text-base px-4"
+                  />
+                  {errors.email && <p className="text-xs text-destructive mt-1">{errors.email}</p>}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="password" className="text-sm font-bold text-foreground">
+                    Password
+                  </Label>
+                  <PasswordInput
+                    id="password"
+                    value={formData.password}
+                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                    placeholder="••••••••"
+                    className="h-12 sm:h-13 rounded-2xl text-base px-4"
+                  />
+                  {errors.password && <p className="text-xs text-destructive mt-1">{errors.password}</p>}
+                </div>
+
+                <Button onClick={handleNextStep} className="w-full h-12 sm:h-13 rounded-2xl font-extrabold gap-2 text-base shadow-md transition-all hover:scale-[1.01] mt-2">
+                  <span>Continue to Store Profile</span>
+                  <ChevronRight className="size-5" />
+                </Button>
+              </div>
+            ) : (
+              /* Step 2: Store Information & Industry */
+              <form onSubmit={handleSubmit} className="space-y-5">
+                <div className="space-y-2">
+                  <Label htmlFor="companyName" className="text-sm font-bold text-foreground">
+                    Store / Company Name
+                  </Label>
+                  <Input
+                    id="companyName"
+                    value={formData.companyName}
+                    onChange={(e) => setFormData({ ...formData, companyName: e.target.value })}
+                    placeholder="Apex Retail Supermarket"
+                    className="h-12 sm:h-13 rounded-2xl text-base px-4"
+                  />
+                  {errors.companyName && <p className="text-xs text-destructive mt-1">{errors.companyName}</p>}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="phone" className="text-sm font-bold text-foreground">
+                    Phone / WhatsApp Number (Optional)
+                  </Label>
+                  <Input
+                    id="phone"
+                    value={formData.phone}
+                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                    placeholder="+91 9876543210"
+                    className="h-12 sm:h-13 rounded-2xl text-base px-4"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="industry" className="text-sm font-bold text-foreground">
+                    Select Business Type
+                  </Label>
+                  <SearchableSelect
+                    options={INDUSTRIES.map((ind) => ({ label: ind, value: ind }))}
+                    value={formData.industry}
+                    onChange={(val) => setFormData({ ...formData, industry: val })}
+                    placeholder="Choose industry..."
+                  />
+                  {errors.industry && <p className="text-xs text-destructive mt-1">{errors.industry}</p>}
+                </div>
+
+                <div className="flex items-center gap-3 pt-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setStep(1)}
+                    className="h-12 sm:h-13 rounded-2xl gap-1 px-5"
+                  >
+                    <ChevronLeft className="size-5" />
+                    <span>Back</span>
+                  </Button>
+                  <Button
+                    type="submit"
+                    disabled={isRegistering}
+                    className="flex-1 h-12 sm:h-13 rounded-2xl font-extrabold gap-2 text-base shadow-md transition-all hover:scale-[1.01]"
+                  >
+                    {isRegistering ? (
+                      <>
+                        <Loader2 className="size-5 animate-spin" />
+                        <span>Creating Store…</span>
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="size-5" />
+                        <span>Start 7-Day Free Trial</span>
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </form>
+            )}
+
+            {/* Link to Sign In */}
+            <div className="border-t pt-4 text-center">
+              <p className="text-xs text-muted-foreground">
+                Already have a store account?{" "}
+                <Link to="/login" className="font-bold text-primary hover:underline">
+                  Sign In
+                </Link>
+              </p>
+            </div>
+          </div>
         </div>
       </div>
     </div>

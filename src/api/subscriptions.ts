@@ -9,7 +9,8 @@ export const getEffectiveMenusFn = createServerFn({ method: "GET" })
   .handler(async () => {
     try {
       const session = await requireAuth();
-      if (session.role === "super_admin") {
+      if (session.role === "super_admin" || session.role === "admin") {
+        // Super Admin & Store Organization Admins get full menu access
         return { success: true as const, menus: ["all"] };
       }
       if (!session.orgId) {
@@ -18,20 +19,30 @@ export const getEffectiveMenusFn = createServerFn({ method: "GET" })
       const orgs = await db.select().from(schema.organizations).where(eq(schema.organizations.id, session.orgId)).limit(1);
       if (!orgs.length) return { success: false as const, error: "Org not found" };
       const org = orgs[0];
+
+      // Trial Organizations get full menu access during 7-day trial
+      if (org.status === "trial") {
+        return { success: true as const, menus: ["all"] };
+      }
+
       const plans = await db.select().from(schema.saasPlans).where(eq(schema.saasPlans.id, org.currentPlanId)).limit(1);
       const plan = plans[0];
       let allowedMenus: string[] = [];
-      if (plan && Array.isArray(plan.menus)) {
+      if (plan && Array.isArray(plan.menus) && plan.menus.includes("all")) {
+        allowedMenus = ["all"];
+      } else if (plan && Array.isArray(plan.menus)) {
         allowedMenus = [...plan.menus];
       } else if (plan && Array.isArray(plan.features)) {
         allowedMenus = plan.features.map((f: string) => f.replace("/", ""));
+      } else {
+        allowedMenus = ["all"];
       }
 
-      // Intersection logic: PLAN ALLOWED MENUS ∩ SUPER ADMIN GRANTED MENUS = EFFECTIVE ADMIN MENUS
+      // Grants from Super Admin (overrides / extends plan)
       const grants = await db.select().from(schema.adminMenuGrants).where(eq(schema.adminMenuGrants.organizationId, session.orgId));
       if (grants.length > 0) {
         const grantedKeys = grants.map(g => g.menuKey);
-        allowedMenus = allowedMenus.filter(menu => grantedKeys.includes(menu));
+        allowedMenus = Array.from(new Set([...allowedMenus, ...grantedKeys]));
       }
 
       return { success: true as const, menus: allowedMenus };

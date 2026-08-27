@@ -39,7 +39,7 @@ import { useFormValidation } from "@/hooks/useFormValidation";
 import { FieldError } from "@/components/ui/field-error";
 
 export const Route = createFileRoute("/units")({
-  head: () => ({ meta: [{ title: "Units · NexisPOS" }] }),
+  head: () => ({ meta: [{ title: "Units · OneDesk360" }] }),
   component: UnitsPage,
 });
 

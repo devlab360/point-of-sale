@@ -60,7 +60,7 @@ import { getCategoriesFn } from "@/api/categories";
 
 export const Route = createFileRoute("/services/")({
   head: () => ({
-    meta: [{ title: "Services · NexisPOS" }],
+    meta: [{ title: "Services · OneDesk360" }],
   }),
   component: ServicesPage,
 });

@@ -1,9 +1,11 @@
 import { handleApiError } from "@/lib/error-utils";
+import { formatErrorResponse } from "@/lib/errors/errors";
 import { createServerFn } from "@tanstack/react-start";
-import { v4 as uuidv4 } from "uuid";
+import { productService } from "@/services/product.service";
 import { db } from "@/db";
 import * as schema from "@/db/schema";
-import { eq, and, desc, sql, ilike, or, inArray } from "drizzle-orm";
+import { eq, and, inArray, desc } from "drizzle-orm";
+import { v4 as uuidv4 } from "uuid";
 import { assertProductLimit } from "@/lib/plan-limits";
 import { z } from "zod";
 import { requireAuth, requireAdmin } from "@/lib/auth-utils";
@@ -23,62 +25,26 @@ export const getProductsFn = createServerFn({ method: "GET" })
   .handler(async ({ data }) => {
     try {
       const session = await requireAuth();
-      const orgId = session.orgId;
-
-      let conditions = [eq(schema.products.organizationId, orgId)];
-      if (data.query) {
-        const searchCond = or(
-          ilike(schema.products.name, `%${data.query}%`),
-          ilike(schema.products.sku, `%${data.query}%`),
-          ilike(schema.products.barcode, `%${data.query}%`),
-        );
-        if (searchCond) conditions.push(searchCond);
-      }
-      if (data.categoryId && data.categoryId !== "all") {
-        conditions.push(eq(schema.products.category, data.categoryId));
-      }
-      if (data.status) {
-        conditions.push(eq(schema.products.status, data.status));
-      }
-
-      const whereClause = and(...conditions);
-
-      const products = await db
-        .select()
-        .from(schema.products)
-        .where(whereClause)
-        .orderBy(desc(schema.products.createdAt))
-        .limit(data.pageSize)
-        .offset((data.page - 1) * data.pageSize);
-
-      const totalCountRes = await db
-        .select({ count: sql`count(*)` })
-        .from(schema.products)
-        .where(whereClause);
-      const totalCount = Number(totalCountRes[0].count);
-
-      // Aggregate stock from product_inventory
-      const summaryRes = await db
-        .select({
-          totalStock: sql`sum(COALESCE(${schema.productInventory.stock}, 0))`,
-          totalValue: sql`sum(COALESCE(${schema.productInventory.stock}, 0) * COALESCE(${schema.products.cost}, 0))`,
-          totalRetailValue: sql`sum(COALESCE(${schema.productInventory.stock}, 0) * COALESCE(${schema.products.price}, 0))`,
-          lowStockCount: sql`count(CASE WHEN COALESCE(${schema.productInventory.stock}, 0) <= COALESCE(${schema.productInventory.reorderLevel}, 0) THEN 1 END)`
-        })
-        .from(schema.products)
-        .leftJoin(schema.productInventory, eq(schema.products.id, schema.productInventory.productId))
-        .where(whereClause);
-
-      const summary = {
-        totalStock: Number(summaryRes[0]?.totalStock || 0),
-        totalValue: Number(summaryRes[0]?.totalValue || 0),
-        totalRetailValue: Number(summaryRes[0]?.totalRetailValue || 0),
-        lowStockCount: Number(summaryRes[0]?.lowStockCount || 0),
-      };
+      const { products, totalCount, summary } = await productService.getProducts(
+        session.orgId,
+        data,
+      );
 
       return { success: true, data: products, total: totalCount, summary };
     } catch (e) {
-      return handleApiError(e);
+      return formatErrorResponse(e);
+    }
+  });
+
+export const getProductByIdFn = createServerFn({ method: "GET" })
+  .validator((data: unknown) => z.object({ id: z.string() }).parse(data))
+  .handler(async ({ data }) => {
+    try {
+      const session = await requireAuth();
+      const product = await productService.getProductById(session.orgId, data.id);
+      return { success: true, data: product };
+    } catch (e) {
+      return formatErrorResponse(e);
     }
   });
 
@@ -160,11 +126,36 @@ export const createProductFn = createServerFn({ method: "POST" })
         hasModifiers: Boolean(product.hasModifiers),
       };
       
-      const { variants, ...restProductData } = productData;
+      const {
+        categoryId,
+        unitId,
+        minStock,
+        taxPct,
+        type,
+        variants,
+        locationStocks,
+        images,
+        ...restProductData
+      } = productData;
+
+      const allowedKeys = [
+        "id", "organizationId", "name", "sku", "barcode", "category", "brand", "unit",
+        "price", "cost", "image", "status", "expiryDate", "wholesalePrice", "dealerPrice",
+        "minWholesaleQty", "stock", "reorderLevel", "hasVariants", "hasSerial", "course",
+        "serials", "hasBatch", "batches", "locationRack", "locationShelf", "locationBin",
+        "hsnCode", "gstRate", "taxInclusive", "mrp", "metadata", "isBundle", "trackFifo",
+        "hasModifiers", "createdAt", "updatedAt"
+      ];
+      const cleanData: Record<string, any> = {};
+      for (const k of allowedKeys) {
+        if ((restProductData as any)[k] !== undefined) {
+          cleanData[k] = (restProductData as any)[k];
+        }
+      }
       
       const inserted = await db
         .insert(schema.products)
-        .values(restProductData as any)
+        .values(cleanData as any)
         .returning();
 
       if (product.hasVariants && variants && variants.length > 0) {
@@ -268,12 +259,34 @@ export const updateProductFn = createServerFn({ method: "POST" })
       const session = await requireAuth();
 
       const updatesObj = data.updates;
-      const { variants, ...restUpdates } = updatesObj;
+      const {
+        categoryId,
+        unitId,
+        minStock,
+        taxPct,
+        type,
+        variants,
+        locationStocks,
+        images,
+        ...restUpdates
+      } = updatesObj;
 
+      const allowedKeys = [
+        "name", "sku", "barcode", "category", "brand", "unit",
+        "price", "cost", "image", "status", "expiryDate", "wholesalePrice", "dealerPrice",
+        "minWholesaleQty", "stock", "reorderLevel", "hasVariants", "hasSerial", "course",
+        "serials", "hasBatch", "batches", "locationRack", "locationShelf", "locationBin",
+        "hsnCode", "gstRate", "taxInclusive", "mrp", "metadata", "isBundle", "trackFifo",
+        "hasModifiers", "updatedAt"
+      ];
       const updateData: Record<string, unknown> = {
-        ...restUpdates,
         updatedAt: new Date().toISOString(),
       };
+      for (const k of allowedKeys) {
+        if ((restUpdates as any)[k] !== undefined) {
+          updateData[k] = (restUpdates as any)[k];
+        }
+      }
       if (updatesObj.cost !== undefined) updateData.cost = updatesObj.cost.toString();
       if (updatesObj.price !== undefined) updateData.price = updatesObj.price.toString();
       if (updatesObj.hasVariants !== undefined) updateData.hasVariants = Boolean(updatesObj.hasVariants);
@@ -439,9 +452,13 @@ export const getAllProductVariantsFn = createServerFn({ method: "GET" })
         .from(schema.productVariants)
         .where(eq(schema.productVariants.organizationId, session.orgId));
         
+      if (!variants.length) return { success: true, data: [] };
+
+      const variantIds = variants.map((v) => v.id);
       const attributes = await db
         .select()
-        .from(schema.productVariantAttributes);
+        .from(schema.productVariantAttributes)
+        .where(inArray(schema.productVariantAttributes.variantId, variantIds));
 
       const variantsWithAttributes = variants.map((v) => {
         const vAttrs = attributes.filter(a => a.variantId === v.id);

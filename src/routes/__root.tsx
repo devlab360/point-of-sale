@@ -19,6 +19,7 @@ import { AppHeader } from "@/components/layout/AppHeader";
 import { Toaster } from "sonner";
 import { Button } from "@/components/ui/button";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
+import { AdminAuthProvider } from "@/contexts/AdminAuthContext";
 import { getTrialDaysLeft } from "@/lib/utils";
 import { X } from "lucide-react";
 import { LanguageProvider } from "@/contexts/LanguageContext";
@@ -91,20 +92,20 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "NexisPOS — Advanced Universal POS" },
+      { title: "OneDesk360 — Advanced Universal POS" },
       {
         name: "description",
         content:
           "Premium POS and inventory management for grocery, daily goods, and retail chains.",
       },
-      { property: "og:title", content: "NexisPOS — Advanced Universal POS" },
+      { property: "og:title", content: "OneDesk360 — Advanced Universal POS" },
       {
         property: "og:description",
         content: "Premium POS and inventory management for grocery and retail.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
-      { name: "twitter:title", content: "NexisPOS — Advanced Universal POS" },
+      { name: "twitter:title", content: "OneDesk360 — Advanced Universal POS" },
       {
         name: "description",
         content:
@@ -184,10 +185,12 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       <LanguageProvider>
         <AuthProvider>
-          <PreferencesProvider>
-            <ReportAutomation />
-            <AppLayout />
-          </PreferencesProvider>
+          <AdminAuthProvider>
+            <PreferencesProvider>
+              <ReportAutomation />
+              <AppLayout />
+            </PreferencesProvider>
+          </AdminAuthProvider>
         </AuthProvider>
       </LanguageProvider>
     </QueryClientProvider>
@@ -214,7 +217,9 @@ function AppLayout() {
 
   const publicRoutes = ["/login", "/register", "/verify-email"];
   const isPublicRoute =
-    publicRoutes.includes(location.pathname) || location.pathname.startsWith("/invite");
+    publicRoutes.includes(location.pathname) ||
+    location.pathname.startsWith("/invite") ||
+    location.pathname.startsWith("/admin");
 
   useEffect(() => {
     const hash = window.location.hash;

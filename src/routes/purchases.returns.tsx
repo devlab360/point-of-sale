@@ -47,7 +47,7 @@ import { cn } from "@/lib/utils";
 import { usePreferences } from "@/contexts/PreferencesContext";
 
 export const Route = createFileRoute("/purchases/returns")({
-  head: () => ({ meta: [{ title: "Purchase Returns · NexisPOS" }] }),
+  head: () => ({ meta: [{ title: "Purchase Returns · OneDesk360" }] }),
   component: PurchaseReturnsPage,
 });
 
