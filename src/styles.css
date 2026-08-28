@@ -203,6 +203,12 @@
     text-rendering: optimizeLegibility;
     letter-spacing: -0.01em;
   }
+
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]),
+  a {
+    cursor: pointer;
+  }
 }
 
 @utility font-display {
