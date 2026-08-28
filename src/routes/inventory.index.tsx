@@ -28,6 +28,7 @@ import { parseCSV, exportToCSV } from "@/lib/csv";
 import { bulkImportBatchesFn } from "@/api/inventory";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
+import { useCurrency } from "@/lib/currency";
 
 export const Route = createFileRoute("/inventory/")({
   loader: async ({ context: { queryClient } }) => {
@@ -49,6 +50,7 @@ export const Route = createFileRoute("/inventory/")({
 
 function InventoryDashboard() {
   const queryClient = useQueryClient();
+  const { currencySymbol } = useCurrency();
   const [search, setSearch] = useState("");
   const [locationFilter, setLocationFilter] = useState("all");
 
@@ -155,17 +157,19 @@ function InventoryDashboard() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Inventory Value</CardTitle>
-            <span className="text-sm text-muted-foreground">₹</span>
+            <span className="text-sm text-muted-foreground">{currencySymbol}</span>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">₹{summary.totalValue.toLocaleString()}</div>
+            <div className="text-2xl font-bold">
+              {currencySymbol}
+              {summary.totalValue.toLocaleString()}
+            </div>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Low Stock Alerts</CardTitle>
             <AlertCircle className="h-4 w-4 text-destructive" />
-            
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-destructive">{summary.lowStockCount}</div>

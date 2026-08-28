@@ -11,6 +11,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import { useCurrency } from "@/lib/currency";
 
 export interface ModifierOption {
   id?: string;
@@ -34,6 +35,7 @@ interface ModifierManagerProps {
 }
 
 export function ModifierManager({ modifiers, onChange }: ModifierManagerProps) {
+  const { currencySymbol } = useCurrency();
   const addGroup = () => {
     onChange([
       ...modifiers,
@@ -156,7 +158,7 @@ export function ModifierManager({ modifiers, onChange }: ModifierManagerProps) {
                 />
                 <div className="w-32 relative">
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
-                    ₹
+                    {currencySymbol}
                   </span>
                   <Input
                     className="pl-7"

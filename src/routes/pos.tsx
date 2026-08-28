@@ -178,7 +178,7 @@ function PosScreen() {
         setShowCustomerSearch(true);
       } else if (e.key === "F3") {
         e.preventDefault();
-        const discInput = document.querySelector<HTMLInputElement>('input[placeholder="Disc %"]');
+        const discInput = document.querySelector<HTMLInputElement>('input[placeholder*="iscount"]');
         discInput?.focus();
       } else if (e.key === "F4") {
         e.preventDefault();
@@ -528,34 +528,34 @@ function PosScreen() {
   return (
     <>
       {/* Mobile Top Navigation Tabs */}
-      <div className="md:hidden flex bg-card/95 border-b border-border/80 sticky top-0 z-20 backdrop-blur-md px-3 py-1.5 gap-2">
+      <div className="md:hidden flex bg-card/95 border-b border-border/80 sticky top-0 z-20 backdrop-blur-md px-3 py-2 gap-2">
         <button
           type="button"
           onClick={() => setMobileTab("products")}
           className={cn(
-            "flex-1 py-2 text-xs font-extrabold text-center rounded-xl transition-all",
+            "flex-1 py-2.5 text-sm font-extrabold text-center rounded-xl transition-all active:scale-[0.98]",
             mobileTab === "products"
               ? "bg-primary text-primary-foreground shadow-sm"
               : "bg-muted/40 text-muted-foreground hover:bg-muted hover:text-foreground",
           )}
         >
-          Catalog Feed
+          Products
         </button>
         <button
           type="button"
           onClick={() => setMobileTab("cart")}
           className={cn(
-            "flex-1 py-2 text-xs font-extrabold text-center rounded-xl transition-all flex items-center justify-center gap-1.5",
+            "flex-1 py-2.5 text-sm font-extrabold text-center rounded-xl transition-all active:scale-[0.98] flex items-center justify-center gap-2",
             mobileTab === "cart"
               ? "bg-primary text-primary-foreground shadow-sm"
               : "bg-muted/40 text-muted-foreground hover:bg-muted hover:text-foreground",
           )}
         >
-          <span>Order Cart</span>
+          <span>Cart</span>
           {cartItemCount > 0 && (
             <span
               className={cn(
-                "rounded-full px-1.5 py-0.2 text-[10px] font-black",
+                "rounded-full px-2 py-0.5 text-xs font-black",
                 mobileTab === "cart"
                   ? "bg-primary-foreground/20 text-primary-foreground"
                   : "bg-primary text-primary-foreground",
@@ -585,15 +585,15 @@ function PosScreen() {
           <div className="fixed bottom-16 inset-x-3 z-30 md:hidden animate-in fade-in slide-in-from-bottom-4 duration-200">
             <button
               onClick={() => setMobileTab("cart")}
-              className="w-full flex items-center justify-between bg-primary text-primary-foreground rounded-2xl p-3.5 shadow-elevated font-bold text-xs"
+              className="w-full flex items-center justify-between bg-primary text-primary-foreground rounded-2xl p-4 shadow-elevated font-bold text-sm"
             >
-              <div className="flex items-center gap-2">
-                <span className="grid size-6 place-items-center rounded-full bg-primary-foreground/20 text-[11px] font-black">
+              <div className="flex items-center gap-2.5">
+                <span className="grid size-7 place-items-center rounded-full bg-primary-foreground/20 text-xs font-black">
                   {cartItemCount}
                 </span>
-                <span>View Order & Checkout</span>
+                <span>View Cart & Checkout</span>
               </div>
-              <div className="number text-sm font-black tracking-tight">
+              <div className="number text-base font-black tracking-tight">
                 {state.formatCurrency(state.total)} →
               </div>
             </button>

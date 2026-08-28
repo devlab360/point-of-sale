@@ -2,22 +2,23 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 export function POSSkeleton() {
   return (
-    <div className="flex flex-col lg:flex-row h-[calc(100vh-4rem)] w-full gap-4 p-4 overflow-hidden animate-in fade-in-50 duration-300">
+    <div className="flex flex-col lg:flex-row h-[calc(100vh-5rem)] w-full gap-4 p-4 overflow-hidden animate-in fade-in-50 duration-300">
       {/* Left Product Catalog Section */}
       <div className="flex-1 flex flex-col space-y-4 min-w-0">
         {/* Top Header & Search Bar */}
-        <div className="flex flex-col sm:flex-row items-center gap-3">
-          <Skeleton className="h-10 w-full sm:w-80 rounded-lg" />
-          <div className="flex items-center gap-2 w-full sm:w-auto">
-            <Skeleton className="h-10 w-32 rounded-lg" />
-            <Skeleton className="h-10 w-28 rounded-lg" />
+        <div className="flex flex-col gap-2.5">
+          <div className="grid grid-cols-2 md:flex gap-2.5 md:items-center">
+            <Skeleton className="h-12 col-span-2 md:flex-[3] rounded-xl" />
+            <Skeleton className="h-12 hidden md:flex md:flex-[2] rounded-xl" />
+            <Skeleton className="h-12 rounded-xl" />
+            <Skeleton className="h-12 md:w-40 rounded-xl" />
           </div>
         </div>
 
         {/* Categories Pill Scroll Bar */}
         <div className="flex items-center gap-2 overflow-x-auto pb-1">
           {Array.from({ length: 7 }).map((_, i) => (
-            <Skeleton key={i} className="h-9 w-24 rounded-full shrink-0" />
+            <Skeleton key={i} className="h-10 w-28 rounded-full shrink-0" />
           ))}
         </div>
 
@@ -26,14 +27,14 @@ export function POSSkeleton() {
           {Array.from({ length: 10 }).map((_, i) => (
             <div
               key={i}
-              className="rounded-xl border bg-card p-3 shadow-soft space-y-2.5 flex flex-col justify-between"
+              className="rounded-2xl border bg-card shadow-soft space-y-2.5 flex flex-col justify-between overflow-hidden"
             >
-              <Skeleton className="h-24 w-full rounded-lg" />
-              <div className="space-y-1">
-                <Skeleton className="h-3.5 w-full" />
+              <Skeleton className="h-28 w-full rounded-none" />
+              <div className="space-y-1 p-3 pt-0">
+                <Skeleton className="h-4 w-full" />
                 <Skeleton className="h-3 w-16" />
               </div>
-              <div className="flex items-center justify-between pt-1">
+              <div className="flex items-center justify-between p-3 pt-0">
                 <Skeleton className="h-4 w-12" />
                 <Skeleton className="size-7 rounded-lg" />
               </div>
@@ -46,11 +47,11 @@ export function POSSkeleton() {
       <div className="w-full lg:w-96 rounded-xl border bg-card p-4 shadow-soft flex flex-col justify-between shrink-0 space-y-4">
         {/* Customer & Register Header */}
         <div className="space-y-3 pb-3 border-b">
-          <div className="flex items-center justify-between">
-            <Skeleton className="h-5 w-28" />
-            <Skeleton className="h-7 w-20 rounded-md" />
+          <div className="flex items-center justify-between gap-2">
+            <Skeleton className="h-11 flex-1 rounded-xl" />
+            <Skeleton className="h-11 w-16 rounded-xl" />
+            <Skeleton className="h-11 w-11 rounded-xl" />
           </div>
-          <Skeleton className="h-10 w-full rounded-lg" />
         </div>
 
         {/* Cart Item Rows */}
@@ -58,14 +59,14 @@ export function POSSkeleton() {
           {Array.from({ length: 3 }).map((_, i) => (
             <div
               key={i}
-              className="flex items-center justify-between p-2 rounded-lg border bg-muted/20"
+              className="flex items-center justify-between p-2.5 rounded-xl border bg-muted/20"
             >
               <div className="space-y-1 flex-1 min-w-0 mr-2">
                 <Skeleton className="h-4 w-3/4" />
                 <Skeleton className="h-3 w-16" />
               </div>
               <div className="flex items-center gap-2">
-                <Skeleton className="h-7 w-16" />
+                <Skeleton className="h-8 w-16" />
                 <Skeleton className="h-4 w-12" />
               </div>
             </div>

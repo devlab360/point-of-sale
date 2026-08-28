@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Plus, Trash2, X, Sparkles } from "lucide-react";
+import { useCurrency } from "@/lib/currency";
 
 export interface Variant {
   id?: string;
@@ -32,6 +33,7 @@ const cartesian = (...a: any[][]) =>
   a.reduce((a, b) => a.flatMap((d) => b.map((e) => [d, e].flat())));
 
 export function VariantManager({ variants, onChange, mode = "product" }: VariantManagerProps) {
+  const { currencySymbol } = useCurrency();
   // Try to reconstruct options from existing variants
   const initialOptions = useMemo(() => {
     if (!variants || variants.length === 0) return [{ name: "Size", values: [] }];
@@ -261,8 +263,8 @@ export function VariantManager({ variants, onChange, mode = "product" }: Variant
                 <thead className="bg-muted/50 text-muted-foreground text-xs uppercase font-semibold">
                   <tr>
                     <th className="px-4 py-3">Variant</th>
-                    <th className="px-4 py-3 w-40">Price (₹)</th>
-                    <th className="px-4 py-3 w-40">Cost (₹)</th>
+                    <th className="px-4 py-3 w-40">Price ({currencySymbol})</th>
+                    <th className="px-4 py-3 w-40">Cost ({currencySymbol})</th>
                     {mode === "product" && <th className="px-4 py-3 w-48">SKU (Optional)</th>}
                     {mode === "service" && <th className="px-4 py-3 w-48">Duration (Mins)</th>}
                   </tr>

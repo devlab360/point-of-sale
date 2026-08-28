@@ -5,6 +5,7 @@ import { getProductVariantsFn } from "@/api/products";
 import { getServiceVariantsFn } from "@/api/services";
 import { Loader2, X, ShoppingCart } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useCurrency } from "@/lib/currency";
 
 interface VariantSelectorModalProps {
   product: any;
@@ -14,6 +15,7 @@ interface VariantSelectorModalProps {
 
 export function VariantSelectorModal({ product, onClose, onSelect }: VariantSelectorModalProps) {
   const { t } = useLanguage();
+  const { formatCurrency } = useCurrency();
   const [selectedVariantId, setSelectedVariantId] = useState<string | null>(null);
 
   const isService = product.referenceType === "SERVICE";
@@ -76,7 +78,7 @@ export function VariantSelectorModal({ product, onClose, onSelect }: VariantSele
                     <div className="font-semibold text-sm truncate">{variant.name}</div>
                     <div className="flex items-center gap-2 mt-1">
                       <div className="text-primary font-medium">
-                        ₹{Number(variant.price).toFixed(2)}
+                        {formatCurrency(variant.price)}
                       </div>
                       {isService && variant.duration && (
                         <div className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
@@ -93,7 +95,7 @@ export function VariantSelectorModal({ product, onClose, onSelect }: VariantSele
                 <div>
                   <div className="text-sm text-muted-foreground">Total Price</div>
                   <div className="text-2xl font-bold">
-                    ₹{selectedVariant ? Number(selectedVariant.price).toFixed(2) : "0.00"}
+                    {formatCurrency(selectedVariant ? selectedVariant.price : 0)}
                   </div>
                 </div>
                 <Button
