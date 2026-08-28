@@ -16,7 +16,8 @@ import { BottomNav } from "@/components/layout/BottomNav";
 import { APP_GROUPS, hasPermissionForRoute } from "@/lib/menu-config";
 import { AppHeader } from "@/components/layout/AppHeader";
 
-import { Toaster, toast } from "sonner";
+import { toast } from "sonner";
+import { Toaster } from "@/components/ui/sonner";
 import { Button } from "@/components/ui/button";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { AdminAuthProvider } from "@/contexts/AdminAuthContext";
@@ -406,14 +407,7 @@ function AppLayout() {
         <ErrorBoundary scopeName="public_outlet">
           <Outlet />
         </ErrorBoundary>
-        <Toaster
-          position="top-right"
-          toastOptions={{
-            classNames: {
-              toast: "bg-card text-card-foreground border-border shadow-elevated",
-            },
-          }}
-        />
+        <Toaster />
       </>
     );
   }
@@ -634,14 +628,7 @@ function AppLayout() {
       {/* Mobile bottom navigation (hidden on md+) */}
       <BottomNav />
       {canAccessAiCopilot && <AiCopilotDrawer />}
-      <Toaster
-        position="top-right"
-        toastOptions={{
-          classNames: {
-            toast: "bg-card text-card-foreground border-border shadow-elevated",
-          },
-        }}
-      />
+      <Toaster />
     </>
   );
 }

@@ -588,3 +588,138 @@ input[type="number"] {
     color: #000 !important;
   }
 }
+
+/* ==========================================================================
+   Industry Standard Enterprise Toast Notification System (Stripe / Shadcn UI)
+   ========================================================================== */
+[data-sonner-toaster] {
+  --normal-bg: var(--card);
+  --normal-border: var(--border);
+  --normal-text: var(--foreground);
+  font-family: var(--font-sans) !important;
+  z-index: 99999 !important;
+}
+
+[data-sonner-toaster] [data-sonner-toast] {
+  background: var(--card) !important;
+  color: var(--card-foreground) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 0.75rem !important;
+  padding: 0.875rem 2.25rem 0.875rem 1rem !important;
+  box-shadow: 0 10px 25px -5px oklch(0.25 0.02 50 / 0.12), 0 8px 10px -6px oklch(0.25 0.02 50 / 0.06), 0 0 0 1px oklch(0.25 0.02 50 / 0.04) !important;
+  font-family: var(--font-sans) !important;
+  display: flex !important;
+  align-items: flex-start !important;
+  gap: 0.75rem !important;
+  min-width: 330px !important;
+  max-width: 420px !important;
+  transition: all 0.2s ease !important;
+}
+
+[data-sonner-toaster] [data-sonner-toast] [data-content] {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 0.15rem !important;
+  flex: 1 !important;
+  min-width: 0 !important;
+}
+
+[data-sonner-toaster] [data-sonner-toast] [data-title] {
+  font-weight: 600 !important;
+  font-size: 0.875rem !important;
+  line-height: 1.35 !important;
+  color: var(--foreground) !important;
+  letter-spacing: -0.01em !important;
+}
+
+[data-sonner-toaster] [data-sonner-toast] [data-description] {
+  font-size: 0.8125rem !important;
+  font-weight: 400 !important;
+  color: var(--muted-foreground) !important;
+  line-height: 1.45 !important;
+}
+
+[data-sonner-toaster] [data-sonner-toast] [data-icon] {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 1.25rem !important;
+  height: 1.25rem !important;
+  margin-top: 0.125rem !important;
+  flex-shrink: 0 !important;
+}
+
+/* Success Toast */
+[data-sonner-toaster] [data-sonner-toast][data-type="success"] [data-icon] {
+  color: #10b981 !important;
+}
+
+/* Error / Destructive Toast */
+[data-sonner-toaster] [data-sonner-toast][data-type="error"] [data-icon] {
+  color: #ef4444 !important;
+}
+
+/* Warning Toast */
+[data-sonner-toaster] [data-sonner-toast][data-type="warning"] [data-icon] {
+  color: #f59e0b !important;
+}
+
+/* Info Toast */
+[data-sonner-toaster] [data-sonner-toast][data-type="info"] [data-icon] {
+  color: var(--primary) !important;
+}
+
+/* Industry Standard Close Button */
+[data-sonner-toaster] [data-sonner-toast] [data-close-button] {
+  position: absolute !important;
+  right: 0.5rem !important;
+  top: 0.5rem !important;
+  transform: none !important;
+  left: auto !important;
+  width: 1.5rem !important;
+  height: 1.5rem !important;
+  border-radius: 0.375rem !important;
+  background: transparent !important;
+  border: none !important;
+  color: var(--muted-foreground) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  opacity: 0.7 !important;
+  cursor: pointer !important;
+  transition: all 0.15s ease !important;
+  z-index: 10 !important;
+}
+
+[data-sonner-toaster] [data-sonner-toast] [data-close-button] svg {
+  width: 0.875rem !important;
+  height: 0.875rem !important;
+  stroke: currentColor !important;
+  stroke-width: 2 !important;
+  display: block !important;
+}
+
+[data-sonner-toaster] [data-sonner-toast] [data-close-button]:hover {
+  opacity: 1 !important;
+  background: var(--muted) !important;
+  color: var(--foreground) !important;
+}
+
+/* Standard Action & Cancel Buttons */
+[data-sonner-toaster] [data-sonner-toast] [data-button] {
+  border-radius: 0.375rem !important;
+  font-weight: 600 !important;
+  font-size: 0.75rem !important;
+  padding: 0.35rem 0.75rem !important;
+  background: var(--primary) !important;
+  color: var(--primary-foreground) !important;
+  cursor: pointer !important;
+  transition: opacity 0.15s ease !important;
+  margin-top: 0.375rem !important;
+  align-self: flex-start !important;
+}
+[data-sonner-toaster] [data-sonner-toast] [data-button]:hover {
+  opacity: 0.9 !important;
+}
+
+
