@@ -72,6 +72,7 @@ import { cn } from "@/lib/utils";
 // Use queryClient from state
 import { createCategoryFn } from "@/api/categories";
 import { createBrandFn } from "@/api/brands";
+import { createUnitFn } from "@/api/units";
 import { v4 as uuidv4 } from "uuid";
 import { createCustomerFn, getCustomersFn } from "@/api/customers";
 import { getCouponsFn } from "@/api/coupons";
@@ -237,7 +238,9 @@ export function PosDialogs({
 
   const [newProductCategory, setNewProductCategory] = useState("");
   const [newProductBrand, setNewProductBrand] = useState("");
+  const [newProductUnit, setNewProductUnit] = useState("");
   const [newServiceCategory, setNewServiceCategory] = useState("");
+  const [newServiceUnit, setNewServiceUnit] = useState("");
   const [newProductBarcode, setNewProductBarcode] = useState("");
   const [newProductImage, setNewProductImage] = useState("");
   const [newServiceImage, setNewServiceImage] = useState("");
@@ -308,11 +311,13 @@ export function PosDialogs({
     const cost = parseFloat(formData.get("cost") as string) || 0;
     const category = (formData.get("category") as string) || "";
     const brand = (formData.get("brand") as string) || "";
+    const unit = (formData.get("unit") as string) || "";
     const barcode = ((formData.get("barcode") as string) || "").trim();
     const stock = parseInt(formData.get("stock") as string, 10) || 0;
 
     if (!name) return toast.error("Product name is required");
     if (price <= 0) return toast.error("Valid price is required");
+    if (!unit) return toast.error("Unit is required");
 
     setIsAddingProduct(true);
     try {
@@ -322,7 +327,7 @@ export function PosDialogs({
         barcode: barcode || "",
         category,
         brand,
-        unit: "",
+        unit,
         price,
         cost,
         stock,
@@ -340,6 +345,7 @@ export function PosDialogs({
         setShowAddProduct(false);
         setNewProductBarcode(""); // Reset barcode field
         setNewProductImage(""); // Reset image field
+        setNewProductUnit(""); // Reset unit field
         toast.success(`Product "${name}" added successfully!`);
       } else {
         toast.error(res?.error || "Failed to add product");
@@ -357,6 +363,7 @@ export function PosDialogs({
     const name = ((formData.get("name") as string) || "").trim();
     const price = parseFloat(formData.get("price") as string) || 0;
     const categoryId = (formData.get("category") as string) || "";
+    const unit = (formData.get("unit") as string) || "";
 
     const rawDuration = parseFloat(formData.get("duration") as string) || 0;
     const durationUnit = (formData.get("durationUnit") as string) || "mins";
@@ -367,6 +374,7 @@ export function PosDialogs({
 
     if (!name) return toast.error("Service name is required");
     if (price < 0) return toast.error("Valid price is required");
+    if (!unit) return toast.error("Unit is required");
 
     setIsAddingService(true);
     try {
@@ -376,6 +384,7 @@ export function PosDialogs({
         price: price.toString(),
         cost: "0",
         duration,
+        unit,
         image: newServiceImage,
         status: "active",
       };
@@ -389,6 +398,7 @@ export function PosDialogs({
         queryClient.invalidateQueries({ queryKey: ["services"] });
         setShowAddService(false);
         setNewServiceImage(""); // Reset image field
+        setNewServiceUnit(""); // Reset unit field
         toast.success(`Service "${name}" added successfully!`);
       } else {
         toast.error(res?.error || "Failed to add service");
@@ -417,7 +427,8 @@ export function PosDialogs({
 
   const sendWhatsApp = () => {
     if (!saleComplete) return;
-    const phone = saleComplete.customerObj?.phone || saleComplete.customerPhone || saleComplete.phone || "";
+    const phone =
+      saleComplete.customerObj?.phone || saleComplete.customerPhone || saleComplete.phone || "";
     if (!phone) {
       toast.error("Customer phone number not available for WhatsApp");
       return;
@@ -518,8 +529,7 @@ export function PosDialogs({
           {/* Customer List Body */}
           <div className="max-h-[380px] overflow-y-auto p-3 sm:p-4 space-y-2">
             {/* Walk-in Customer Special Hero Option */}
-            {(!customerQuery.trim() ||
-              "walk-in customer".includes(customerQuery.toLowerCase())) &&
+            {(!customerQuery.trim() || "walk-in customer".includes(customerQuery.toLowerCase())) &&
               customerTypeFilter === "all" && (
                 <button
                   type="button"
@@ -548,9 +558,7 @@ export function PosDialogs({
                     </div>
                     <div className="min-w-0">
                       <div className="flex items-center gap-2">
-                        <span className="font-bold text-sm text-foreground">
-                          Walk-in Customer
-                        </span>
+                        <span className="font-bold text-sm text-foreground">Walk-in Customer</span>
                         <span className="rounded-md bg-muted px-1.5 py-0.5 text-[10px] font-semibold text-muted-foreground">
                           Default
                         </span>
@@ -698,9 +706,7 @@ export function PosDialogs({
                   <User className="size-6" />
                 </div>
                 <div>
-                  <h4 className="font-bold text-sm text-foreground">
-                    No customers found
-                  </h4>
+                  <h4 className="font-bold text-sm text-foreground">No customers found</h4>
                   <p className="text-xs text-muted-foreground mt-0.5">
                     {customerQuery
                       ? `No customer matching "${customerQuery}"`
@@ -902,7 +908,26 @@ export function PosDialogs({
                     />
                   </div>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  <div className="space-y-2">
+                    <Label>Unit *</Label>
+                    <input type="hidden" name="unit" value={newProductUnit} />
+                    <SearchableSelect
+                      value={newProductUnit}
+                      onChange={setNewProductUnit}
+                      options={units.map((u: any) => ({ value: u.id, label: u.name }))}
+                      placeholder="Select Unit"
+                      onCreate={async (name) => {
+                        const res = await createUnitFn({
+                          data: { unit: { name, shortName: name } },
+                        });
+                        if (res?.success) {
+                          queryClient.invalidateQueries({ queryKey: ["units"] });
+                          return res.data?.id;
+                        }
+                      }}
+                    />
+                  </div>
                   <div className="space-y-2">
                     <Label>Category</Label>
                     <input type="hidden" name="category" value={newProductCategory} />
@@ -989,7 +1014,7 @@ export function PosDialogs({
                         className="flex-1"
                       />
                       <Select name="durationUnit" defaultValue="mins">
-                        <SelectTrigger className="w-[120px]">
+                        <SelectTrigger className="w-[120px] h-10 rounded-lg">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -1001,22 +1026,43 @@ export function PosDialogs({
                     </div>
                   </div>
                 </div>
-                <div className="space-y-2">
-                  <Label>Category</Label>
-                  <input type="hidden" name="category" value={newServiceCategory} />
-                  <SearchableSelect
-                    value={newServiceCategory}
-                    onChange={setNewServiceCategory}
-                    options={categories.map((c: any) => ({ value: c.id, label: c.name }))}
-                    placeholder="Select Category"
-                    onCreate={async (name) => {
-                      const res = await createCategoryFn({ data: { category: { name } } });
-                      if (res?.success) {
-                        queryClient.invalidateQueries({ queryKey: ["categories"] });
-                        return res.data?.id;
-                      }
-                    }}
-                  />
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Unit *</Label>
+                    <input type="hidden" name="unit" value={newServiceUnit} />
+                    <SearchableSelect
+                      value={newServiceUnit}
+                      onChange={setNewServiceUnit}
+                      options={units.map((u: any) => ({ value: u.id, label: u.name }))}
+                      placeholder="Select Unit"
+                      onCreate={async (name) => {
+                        const res = await createUnitFn({
+                          data: { unit: { name, shortName: name } },
+                        });
+                        if (res?.success) {
+                          queryClient.invalidateQueries({ queryKey: ["units"] });
+                          return res.data?.id;
+                        }
+                      }}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Category</Label>
+                    <input type="hidden" name="category" value={newServiceCategory} />
+                    <SearchableSelect
+                      value={newServiceCategory}
+                      onChange={setNewServiceCategory}
+                      options={categories.map((c: any) => ({ value: c.id, label: c.name }))}
+                      placeholder="Select Category"
+                      onCreate={async (name) => {
+                        const res = await createCategoryFn({ data: { category: { name } } });
+                        if (res?.success) {
+                          queryClient.invalidateQueries({ queryKey: ["categories"] });
+                          return res.data?.id;
+                        }
+                      }}
+                    />
+                  </div>
                 </div>
                 <DialogFooter>
                   <Button type="button" variant="outline" onClick={() => setShowAddProduct(false)}>
@@ -1071,21 +1117,32 @@ export function PosDialogs({
             {heldInvoices.map((h: any) => {
               let cartCount = 0;
               try {
-                const parsed = typeof h.cart === "string" ? JSON.parse(h.cart || "[]") : (h.cart || []);
+                const parsed =
+                  typeof h.cart === "string" ? JSON.parse(h.cart || "[]") : h.cart || [];
                 cartCount = Array.isArray(parsed) ? parsed.length : 0;
               } catch {
                 cartCount = 0;
               }
               return (
-                <div key={h.id} className="flex justify-between items-center border border-border/80 p-3 rounded-xl bg-card shadow-2xs">
+                <div
+                  key={h.id}
+                  className="flex justify-between items-center border border-border/80 p-3 rounded-xl bg-card shadow-2xs"
+                >
                   <div>
-                    <div className="font-bold text-sm text-foreground">{h.customerName || "Walk-in Customer"}</div>
+                    <div className="font-bold text-sm text-foreground">
+                      {h.customerName || "Walk-in Customer"}
+                    </div>
                     <div className="text-xs text-muted-foreground">
-                      {cartCount} {cartCount === 1 ? "item" : "items"} {h.discount ? `· ${h.discount}% disc` : ""}
+                      {cartCount} {cartCount === 1 ? "item" : "items"}{" "}
+                      {h.discount ? `· ${h.discount}% disc` : ""}
                     </div>
                   </div>
                   <div className="flex items-center gap-1.5">
-                    <Button size="sm" onClick={() => onResumeInvoice(h)} className="h-8 text-xs font-semibold">
+                    <Button
+                      size="sm"
+                      onClick={() => onResumeInvoice(h)}
+                      className="h-8 text-xs font-semibold"
+                    >
                       Resume
                     </Button>
                     <Button
@@ -1197,7 +1254,10 @@ export function PosDialogs({
                 { id: "all", label: `All Offers (${availableCoupons.length})` },
                 { id: "percent", label: "Percentage %" },
                 { id: "flat", label: "Flat OFF" },
-                { id: "eligible", label: `Eligible for Cart (${currencySymbol}${subtotal.toFixed(2)})` },
+                {
+                  id: "eligible",
+                  label: `Eligible for Cart (${currencySymbol}${subtotal.toFixed(2)})`,
+                },
               ].map((tab) => {
                 const isActive = couponFilterTab === tab.id;
                 return (
@@ -1230,10 +1290,10 @@ export function PosDialogs({
               const shortAmount = minOrder - subtotal;
               const expiryFormatted = c.expires
                 ? new Date(c.expires).toLocaleDateString(undefined, {
-                  day: "numeric",
-                  month: "short",
-                  year: "numeric",
-                })
+                    day: "numeric",
+                    month: "short",
+                    year: "numeric",
+                  })
                 : "No expiry";
 
               return (
@@ -1288,7 +1348,8 @@ export function PosDialogs({
                       <div className="flex items-center gap-3 text-[11px] text-muted-foreground mt-1.5 flex-wrap">
                         {minOrder > 0 && (
                           <span className="font-semibold text-foreground/70">
-                            Min Order: {currencySymbol}{minOrder}
+                            Min Order: {currencySymbol}
+                            {minOrder}
                           </span>
                         )}
                         <span className="inline-flex items-center gap-1">
@@ -1301,11 +1362,13 @@ export function PosDialogs({
                       <div className="mt-1.5">
                         {minOrder > 0 && !isEligible ? (
                           <span className="text-[10px] font-bold text-amber-600 dark:text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded-md inline-block">
-                            Add {currencySymbol}{shortAmount.toFixed(2)} more to unlock
+                            Add {currencySymbol}
+                            {shortAmount.toFixed(2)} more to unlock
                           </span>
                         ) : (
                           <span className="text-[10px] font-semibold text-success bg-success/10 border border-success/20 px-2 py-0.5 rounded-md inline-block">
-                            ✓ Eligible on current cart ({currencySymbol}{subtotal.toFixed(2)})
+                            ✓ Eligible on current cart ({currencySymbol}
+                            {subtotal.toFixed(2)})
                           </span>
                         )}
                       </div>
@@ -1350,9 +1413,7 @@ export function PosDialogs({
                   <Ticket className="size-6" />
                 </div>
                 <div>
-                  <h4 className="font-bold text-sm text-foreground">
-                    No coupons available
-                  </h4>
+                  <h4 className="font-bold text-sm text-foreground">No coupons available</h4>
                   <p className="text-xs text-muted-foreground mt-0.5">
                     {couponSearch
                       ? `No coupon matching "${couponSearch}"`
@@ -1390,7 +1451,9 @@ export function PosDialogs({
                   {payment === "upi" && <Smartphone className="size-3.5 text-primary" />}
                   {payment === "credit" && <Receipt className="size-3.5 text-warning" />}
                   {payment === "split" && <Users className="size-3.5 text-secondary" />}
-                  <span>Payment: {payment === "credit" ? "Udhaar / Khata" : payment.toUpperCase()}</span>
+                  <span>
+                    Payment: {payment === "credit" ? "Udhaar / Khata" : payment.toUpperCase()}
+                  </span>
                 </div>
               </div>
 
@@ -1419,18 +1482,18 @@ export function PosDialogs({
 
             {(settings?.businessType === "PHARMACY" ||
               state.lines.some((l: any) => l.product.metadata?.prescriptionRequired)) && (
-                <div className="mt-4 pt-3 border-t">
-                  <label className="text-xs font-semibold block mb-1 text-primary text-left">
-                    Prescription Reference (Optional)
-                  </label>
-                  <Input
-                    placeholder="e.g. Rx-12345"
-                    value={state.prescriptionRef}
-                    onChange={(e) => state.setPrescriptionRef(e.target.value)}
-                    className="h-9"
-                  />
-                </div>
-              )}
+              <div className="mt-4 pt-3 border-t">
+                <label className="text-xs font-semibold block mb-1 text-primary text-left">
+                  Prescription Reference (Optional)
+                </label>
+                <Input
+                  placeholder="e.g. Rx-12345"
+                  value={state.prescriptionRef}
+                  onChange={(e) => state.setPrescriptionRef(e.target.value)}
+                  className="h-9"
+                />
+              </div>
+            )}
           </AlertDialogHeader>
           <AlertDialogFooter className="grid grid-cols-2 gap-2 sm:space-x-0 mt-2">
             <AlertDialogCancel

@@ -15,12 +15,10 @@ import {
   Wrench,
   Receipt,
   FileText,
-  Sparkles,
   ChevronRight,
   ShieldCheck,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { cn } from "@/lib/utils";
 import { hasCapability } from "@/lib/business-templates";
@@ -59,10 +57,6 @@ export function CartPanel({
     subtotal,
     discountAmt,
     settings,
-    totalCgst,
-    totalSgst,
-    totalIgst,
-    taxRate,
     taxAmt,
     total,
     payment,
@@ -121,8 +115,6 @@ export function CartPanel({
       note: "",
     });
   };
-
-  const discountPresets = [0, 5, 10, 15, 20];
 
   return (
     <aside
@@ -719,6 +711,7 @@ export function CartPanel({
               <div className="space-y-2">
                 {openRepairs.map((r: any) => {
                   const balance = Math.max(0, r.estimatedCost - r.advancePaid);
+
                   return (
                     <div
                       key={r.id}
@@ -754,19 +747,6 @@ export function CartPanel({
         </DialogContent>
       </Dialog>
     </aside>
-  );
-}
-
-function Row({ label, value, negative }: { label: string; value: string; negative?: boolean }) {
-  return (
-    <div className="flex justify-between text-muted-foreground text-xs">
-      <span>{label}</span>
-      <span
-        className={cn("number font-semibold", negative ? "text-destructive" : "text-foreground")}
-      >
-        {value}
-      </span>
-    </div>
   );
 }
 

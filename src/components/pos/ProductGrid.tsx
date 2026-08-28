@@ -1,4 +1,4 @@
-import { Search, ScanBarcode, Plus, Image as ImageIcon, MapPin, X, Sparkles } from "lucide-react";
+import { Search, ScanBarcode, Plus, Image as ImageIcon, MapPin, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Select,
