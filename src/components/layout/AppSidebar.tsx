@@ -18,6 +18,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 
 import { APP_GROUPS, hasPermissionForRoute, MenuItem, SubMenuItem } from "@/lib/menu-config";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { LogoutConfirmDialog } from "./LogoutConfirmDialog";
 
 export function AppSidebar({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
@@ -55,6 +56,7 @@ export function AppSidebar({ onNavigate }: { onNavigate?: () => void }) {
   };
 
   const { user, logout, saasPlan } = useAuth();
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const { t } = useLanguage();
 
   const orgId = PersistStore.getOrgId() || "default";
@@ -339,7 +341,7 @@ export function AppSidebar({ onNavigate }: { onNavigate?: () => void }) {
             </div>
           )}
           <button
-            onClick={logout}
+            onClick={() => setShowLogoutConfirm(true)}
             className={cn(
               "grid shrink-0 place-items-center rounded-lg border border-transparent text-muted-foreground hover:border-destructive/30 hover:bg-destructive/10 hover:text-destructive transition-all duration-150 active:scale-95",
               isMinimized ? "size-8 w-full" : "size-7.5",
@@ -349,6 +351,14 @@ export function AppSidebar({ onNavigate }: { onNavigate?: () => void }) {
             <LogOut className="size-4" />
           </button>
         </div>
+
+        <LogoutConfirmDialog
+          open={showLogoutConfirm}
+          onOpenChange={setShowLogoutConfirm}
+          onConfirm={logout}
+          userName={user?.name}
+          userEmail={user?.email}
+        />
       </div>
     </div>
   );

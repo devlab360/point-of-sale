@@ -80,15 +80,21 @@ function AccountsPage() {
 
   const { data: rawAccountsData, isLoading: isAccountsLoading } = useQuery({
     queryKey: ["accounts", orgId],
-    queryFn: async () => ((await getAccountsFn({ data: {} })) as any)?.data || [],
+    queryFn: async () => {
+      const res = (await getAccountsFn({ data: {} })) as any;
+      return Array.isArray(res?.data) ? res.data : [];
+    },
   });
-  const rawAccounts: any[] = rawAccountsData || [];
+  const rawAccounts: any[] = Array.isArray(rawAccountsData) ? rawAccountsData : [];
 
   const { data: vouchersData, isLoading: isVouchersLoading } = useQuery({
     queryKey: ["vouchers", orgId],
-    queryFn: async () => ((await getVouchersFn({ data: {} })) as any)?.data || [],
+    queryFn: async () => {
+      const res = (await getVouchersFn({ data: {} })) as any;
+      return Array.isArray(res?.data) ? res.data : [];
+    },
   });
-  const rawVouchers: any[] = vouchersData || [];
+  const rawVouchers: any[] = Array.isArray(vouchersData) ? vouchersData : [];
 
   const [activeTab, setActiveTab] = useState<"accounts" | "vouchers">("accounts");
   const [isAddAccountOpen, setIsAddAccountOpen] = useState(false);
@@ -118,7 +124,7 @@ function AccountsPage() {
   };
 
   const filteredVouchers = useMemo(() => {
-    let filtered = rawVouchers;
+    let filtered = Array.isArray(rawVouchers) ? rawVouchers : [];
     if (debouncedSearch) {
       const lower = debouncedSearch.toLowerCase();
       filtered = filtered.filter(
@@ -132,13 +138,13 @@ function AccountsPage() {
     if (filters.type) {
       filtered = filtered.filter((v) => v.type === filters.type);
     }
-    return [...filtered].reverse();
+    return Array.isArray(filtered) ? [...filtered].reverse() : [];
   }, [rawVouchers, debouncedSearch, filters.type]);
 
-  const totalPages = Math.ceil(filteredVouchers.length / pageSize);
+  const totalPages = Math.ceil((filteredVouchers?.length || 0) / pageSize) || 1;
   const paginatedVouchers = useMemo(() => {
     const start = (page - 1) * pageSize;
-    return filteredVouchers.slice(start, start + pageSize);
+    return (filteredVouchers || []).slice(start, start + pageSize);
   }, [filteredVouchers, page, pageSize]);
 
   useEffect(() => {
@@ -155,12 +161,13 @@ function AccountsPage() {
   const [narration, setNarration] = useState("");
 
   const accountsByType = useMemo(() => {
+    const list = Array.isArray(rawAccounts) ? rawAccounts : [];
     return {
-      asset: rawAccounts.filter((a) => a.type?.toLowerCase() === "asset"),
-      liability: rawAccounts.filter((a) => a.type?.toLowerCase() === "liability"),
-      equity: rawAccounts.filter((a) => a.type?.toLowerCase() === "equity"),
-      income: rawAccounts.filter((a) => a.type?.toLowerCase() === "income"),
-      expense: rawAccounts.filter((a) => a.type?.toLowerCase() === "expense"),
+      asset: list.filter((a) => a.type?.toLowerCase() === "asset"),
+      liability: list.filter((a) => a.type?.toLowerCase() === "liability"),
+      equity: list.filter((a) => a.type?.toLowerCase() === "equity"),
+      income: list.filter((a) => a.type?.toLowerCase() === "income"),
+      expense: list.filter((a) => a.type?.toLowerCase() === "expense"),
     };
   }, [rawAccounts]);
 

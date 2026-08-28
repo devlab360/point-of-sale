@@ -16,9 +16,9 @@ import { eq } from "drizzle-orm";
 export const getSettingsFn = createServerFn({ method: "GET" })
   .validator((data: any) => data)
   .handler(async ({ data }) => {
-    const session = await requireAuth();
-    const orgId = session.orgId;
     try {
+      const session = await requireAuth();
+      const orgId = session.orgId;
       const res = await db
         .select()
         .from(schema.settings)
@@ -34,14 +34,30 @@ export const getSettingsFn = createServerFn({ method: "GET" })
 export const updateSettingsFn = createServerFn({ method: "POST" })
   .validator((data: any) => data)
   .handler(async ({ data }) => {
-    const session = await requireAdmin();
-    const orgId = session.orgId;
     try {
-      const updated = await db
-        .update(schema.settings)
-        .set(data.settings)
+      const session = await requireAdmin();
+      const orgId = session.orgId;
+      const payload = data.settings || data.updates || {};
+      const existing = await db
+        .select()
+        .from(schema.settings)
         .where(eq(schema.settings.organizationId, orgId))
-        .returning();
+        .limit(1);
+
+      if (existing.length === 0) {
+        await db.insert(schema.settings).values({
+          id: `setting_${Date.now()}`,
+          organizationId: orgId,
+          storeName: payload.storeName || "My Store",
+          ...payload,
+        });
+      } else {
+        await db
+          .update(schema.settings)
+          .set(payload)
+          .where(eq(schema.settings.organizationId, orgId))
+          .returning();
+      }
       return { success: true };
     } catch (e) {
       return handleApiError(e);

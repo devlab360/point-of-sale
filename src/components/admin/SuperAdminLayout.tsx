@@ -18,11 +18,13 @@ import {
   Building2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { LogoutConfirmDialog } from "@/components/layout/LogoutConfirmDialog";
 
 export function SuperAdminLayout({ children }: { children: React.ReactNode }) {
   const { user, logout } = useAdminAuth();
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   const navGroups = [
     {
@@ -159,12 +161,20 @@ export function SuperAdminLayout({ children }: { children: React.ReactNode }) {
               variant="ghost"
               size="icon"
               className="size-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg shrink-0"
-              onClick={logout}
+              onClick={() => setShowLogoutConfirm(true)}
               title="Logout Super Admin"
             >
               <LogOut className="size-4" />
             </Button>
           </div>
+
+          <LogoutConfirmDialog
+            open={showLogoutConfirm}
+            onOpenChange={setShowLogoutConfirm}
+            onConfirm={logout}
+            userName={user?.name || "Super Admin"}
+            userEmail={user?.email || "admin@saas.com"}
+          />
         </div>
       </aside>
 

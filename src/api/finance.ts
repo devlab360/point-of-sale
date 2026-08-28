@@ -14,9 +14,9 @@ import { v4 as uuidv4 } from "uuid";
 export const getExpensesFn = createServerFn({ method: "GET" })
   .validator((data: any) => data)
   .handler(async ({ data }) => {
-    const session = await requireAuth();
-    const orgId = session.orgId;
     try {
+      const session = await requireAuth();
+      const orgId = session.orgId;
       const all = await db
         .select()
         .from(schema.expenses)
@@ -30,9 +30,9 @@ export const getExpensesFn = createServerFn({ method: "GET" })
 export const createExpenseFn = createServerFn({ method: "POST" })
   .validator((data: any) => data)
   .handler(async ({ data }) => {
-    const session = await requireAuth();
-    const orgId = session.orgId;
     try {
+      const session = await requireAuth();
+      const orgId = session.orgId;
       await db.insert(schema.expenses).values({
         id: uuidv4(),
         organizationId: orgId,
@@ -51,9 +51,9 @@ export const createExpenseFn = createServerFn({ method: "POST" })
 export const updateExpenseFn = createServerFn({ method: "POST" })
   .validator((data: any) => data)
   .handler(async ({ data }) => {
-    const session = await requireAuth();
-    const orgId = session.orgId;
     try {
+      const session = await requireAuth();
+      const orgId = session.orgId;
       await db
         .update(schema.expenses)
         .set({
@@ -73,9 +73,9 @@ export const updateExpenseFn = createServerFn({ method: "POST" })
 export const deleteExpenseFn = createServerFn({ method: "POST" })
   .validator((data: any) => data)
   .handler(async ({ data }) => {
-    const session = await requireAuth();
-    const orgId = session.orgId;
     try {
+      const session = await requireAuth();
+      const orgId = session.orgId;
       await db
         .delete(schema.expenses)
         .where(and(eq(schema.expenses.id, data.id), eq(schema.expenses.organizationId, orgId)));
@@ -89,9 +89,9 @@ export const deleteExpenseFn = createServerFn({ method: "POST" })
 export const getAccountsFn = createServerFn({ method: "GET" })
   .validator((data: any) => data)
   .handler(async ({ data }) => {
-    const session = await requireAuth();
-    const orgId = session.orgId;
     try {
+      const session = await requireAuth();
+      const orgId = session.orgId;
       const all = await db
         .select()
         .from(schema.accounts)
@@ -105,9 +105,9 @@ export const getAccountsFn = createServerFn({ method: "GET" })
 export const createAccountFn = createServerFn({ method: "POST" })
   .validator((data: any) => data)
   .handler(async ({ data }) => {
-    const session = await requireAuth();
-    const orgId = session.orgId;
     try {
+      const session = await requireAuth();
+      const orgId = session.orgId;
       await db.insert(schema.accounts).values({
         id: uuidv4(),
         organizationId: orgId,
@@ -126,9 +126,9 @@ export const createAccountFn = createServerFn({ method: "POST" })
 export const updateAccountFn = createServerFn({ method: "POST" })
   .validator((data: any) => data)
   .handler(async ({ data }) => {
-    const session = await requireAuth();
-    const orgId = session.orgId;
     try {
+      const session = await requireAuth();
+      const orgId = session.orgId;
       await db
         .update(schema.accounts)
         .set({
@@ -147,9 +147,9 @@ export const updateAccountFn = createServerFn({ method: "POST" })
 export const deleteAccountFn = createServerFn({ method: "POST" })
   .validator((data: any) => data)
   .handler(async ({ data }) => {
-    const session = await requireAuth();
-    const orgId = session.orgId;
     try {
+      const session = await requireAuth();
+      const orgId = session.orgId;
       await db
         .delete(schema.accounts)
         .where(and(eq(schema.accounts.id, data.id), eq(schema.accounts.organizationId, orgId)));
@@ -162,9 +162,9 @@ export const deleteAccountFn = createServerFn({ method: "POST" })
 export const seedDefaultAccountsFn = createServerFn({ method: "POST" })
   .validator((data: any) => data)
   .handler(async () => {
-    const session = await requireAuth();
-    const orgId = session.orgId;
     try {
+      const session = await requireAuth();
+      const orgId = session.orgId;
       const existing = await db
         .select()
         .from(schema.accounts)
@@ -215,9 +215,9 @@ export const seedDefaultAccountsFn = createServerFn({ method: "POST" })
 export const getVouchersFn = createServerFn({ method: "GET" })
   .validator((data: any) => data)
   .handler(async ({ data }) => {
-    const session = await requireAuth();
-    const orgId = session.orgId;
     try {
+      const session = await requireAuth();
+      const orgId = session.orgId;
       const all = await db
         .select()
         .from(schema.vouchers)
@@ -231,9 +231,9 @@ export const getVouchersFn = createServerFn({ method: "GET" })
 export const createVoucherFn = createServerFn({ method: "POST" })
   .validator((data: any) => data)
   .handler(async ({ data }) => {
-    const session = await requireAuth();
-    const orgId = session.orgId;
     try {
+      const session = await requireAuth();
+      const orgId = session.orgId;
       await db.transaction(async (tx) => {
         await tx.insert(schema.vouchers).values({
           id: uuidv4(),

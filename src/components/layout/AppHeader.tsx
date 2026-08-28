@@ -46,9 +46,9 @@ import { useLanguage, LANGUAGES } from "@/contexts/LanguageContext";
 import { useCurrency } from "@/lib/currency";
 import { toast } from "sonner";
 import { v4 as uuidv4 } from "uuid";
-import { InstallAppButton } from "@/components/InstallAppButton";
-
 import { useDebounce } from "@/hooks/useDebounce";
+import { InstallAppButton } from "@/components/InstallAppButton";
+import { LogoutConfirmDialog } from "./LogoutConfirmDialog";
 
 function pathToCrumbs(pathname: string) {
   if (pathname === "/") return [{ label: "Dashboard", to: "/" }];
@@ -68,6 +68,7 @@ export function AppHeader() {
   const [theme, setTheme] = useState<Theme>("light");
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const { formatCurrency } = useCurrency();
   const navigate = useNavigate();
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
@@ -471,13 +472,24 @@ export function AppHeader() {
               </DropdownMenuItem>
             )}
             <DropdownMenuItem
-              onClick={logout}
-              className="text-destructive flex items-center gap-2 font-medium"
+              onSelect={(e) => {
+                e.preventDefault();
+                setShowLogoutConfirm(true);
+              }}
+              className="text-destructive flex items-center gap-2 font-medium cursor-pointer"
             >
               <LogOut className="size-4" /> {t("logout") || "Sign out"}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
+
+        <LogoutConfirmDialog
+          open={showLogoutConfirm}
+          onOpenChange={setShowLogoutConfirm}
+          onConfirm={logout}
+          userName={profile.name}
+          userEmail={profile.email}
+        />
       </div>
 
       <Dialog open={searchOpen} onOpenChange={setSearchOpen}>

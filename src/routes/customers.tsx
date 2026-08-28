@@ -477,12 +477,12 @@ function CustomersPage() {
                               <div className="text-xs text-muted-foreground">{c.email}</div>
                             )}
                           </TableCell>
-                          <TableCell className="number text-right font-medium">{c.visits}</TableCell>
+                          <TableCell className="number text-right font-medium">{c.visits || 0}</TableCell>
                           <TableCell className="number text-right font-semibold">
-                            {formatCurrency(c.totalSpent)}
+                            {formatCurrency(c.totalSpent || 0)}
                           </TableCell>
                           <TableCell className="number text-right font-semibold text-primary">
-                            {c.points} pts
+                            {(c.loyaltyPoints ?? c.points ?? 0).toLocaleString()} pts
                           </TableCell>
                           <TableCell className="number text-right font-bold text-destructive">
                             {c.credit > 0 ? formatCurrency(c.credit) : "—"}
@@ -607,6 +607,9 @@ function CustomersPage() {
                             <Badge variant="outline" className="text-[9px] font-bold py-0 capitalize">
                               {c.type || "Retail"}
                             </Badge>
+                            <span className="text-[10px] font-bold text-primary bg-primary/10 px-1.5 py-0.5 rounded border border-primary/20">
+                              {(c.loyaltyPoints ?? 0).toLocaleString()} pts
+                            </span>
                             {c.credit > 0 && (
                               <span className="text-[10px] font-black text-destructive bg-destructive/10 px-2 py-0.5 rounded-md border border-destructive/20">
                                 Udhaar: {formatCurrency(c.credit)}

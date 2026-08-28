@@ -29,13 +29,13 @@ import { ReportAutomation } from "@/components/automation/ReportAutomation";
 import { DashboardSkeleton } from "@/components/skeletons/DashboardSkeleton";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
-  AlertDialog,
-  AlertDialogContent,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogDescription,
-  AlertDialogFooter,
-} from "@/components/ui/alert-dialog";
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
 
 function NotFoundComponent() {
   return (
@@ -67,8 +67,13 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
           Something went wrong
         </h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          The page didn't load. You can try again or head back home.
+          {error?.message || "The page didn't load. You can try again or head back home."}
         </p>
+        {error?.stack && (
+          <pre className="mt-4 p-3 text-xs bg-muted/80 text-destructive rounded-xl text-left overflow-auto max-h-48 border border-destructive/20 font-mono">
+            {error.stack}
+          </pre>
+        )}
         <div className="mt-6 flex flex-wrap justify-center gap-2">
           <Button
             onClick={() => {
@@ -368,10 +373,10 @@ function AppLayout() {
   return (
     <>
       {isAuthenticated && isSuspended && (
-        <AlertDialog open={true}>
-          <AlertDialogContent className="max-w-md pointer-events-auto border-border/60 bg-background overflow-hidden rounded-2xl">
+        <Dialog open={true}>
+          <DialogContent className="max-w-md pointer-events-auto border-border/60 bg-background overflow-hidden rounded-2xl [&>button]:hidden">
             <div className="absolute inset-0 bg-gradient-to-br from-destructive/5 to-transparent z-[-1]" />
-            <AlertDialogHeader className="relative">
+            <DialogHeader className="relative">
               <div className="mx-auto mb-4 flex size-16 items-center justify-center rounded-2xl bg-destructive/10 border border-destructive/20 shadow-inner">
                 <svg
                   className="size-8 text-destructive drop-shadow-sm"
@@ -387,16 +392,16 @@ function AppLayout() {
                   />
                 </svg>
               </div>
-              <AlertDialogTitle className="text-center text-2xl font-bold tracking-tight">
+              <DialogTitle className="text-center text-2xl font-bold tracking-tight">
                 Account Suspended
-              </AlertDialogTitle>
-              <AlertDialogDescription className="text-center text-sm mt-3 text-foreground/70 leading-relaxed px-2">
+              </DialogTitle>
+              <DialogDescription className="text-center text-sm mt-3 text-foreground/70 leading-relaxed px-2">
                 Your account has been suspended by the administrator. Please contact support for
                 more information.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-          </AlertDialogContent>
-        </AlertDialog>
+              </DialogDescription>
+            </DialogHeader>
+          </DialogContent>
+        </Dialog>
       )}
 
       {isAuthenticated &&
@@ -404,8 +409,8 @@ function AppLayout() {
         location.pathname !== "/settings" &&
         (isTrialExpired ||
           (saasOrg?.status === "trial" && trialDaysLeft > 0 && !isTrialBannerDismissed)) && (
-          <AlertDialog open={true}>
-            <AlertDialogContent className="max-w-md pointer-events-auto border-border/60 bg-background overflow-hidden rounded-2xl">
+          <Dialog open={true}>
+            <DialogContent className="max-w-md pointer-events-auto border-border/60 bg-background overflow-hidden rounded-2xl [&>button]:hidden">
               {/* Background decorative glow */}
               <div
                 className={`absolute inset-0 bg-gradient-to-br ${isTrialExpired ? "from-destructive/5" : "from-primary/5"} to-transparent z-[-1]`}
@@ -424,7 +429,7 @@ function AppLayout() {
                 </button>
               )}
 
-              <AlertDialogHeader className="relative">
+              <DialogHeader className="relative">
                 <div
                   className={`mx-auto mb-4 flex size-16 items-center justify-center rounded-2xl border shadow-inner ${isTrialExpired ? "bg-destructive/10 border-destructive/20" : "bg-primary/10 border-primary/20"}`}
                 >
@@ -451,16 +456,16 @@ function AppLayout() {
                     )}
                   </svg>
                 </div>
-                <AlertDialogTitle className="text-center text-2xl font-bold tracking-tight">
+                <DialogTitle className="text-center text-2xl font-bold tracking-tight">
                   {isTrialExpired ? "Trial Expired" : "Free Trial Active"}
-                </AlertDialogTitle>
-                <AlertDialogDescription className="text-center text-sm mt-3 text-foreground/70 leading-relaxed px-2">
+                </DialogTitle>
+                <DialogDescription className="text-center text-sm mt-3 text-foreground/70 leading-relaxed px-2">
                   {isTrialExpired
                     ? "Your free trial has ended. Please upgrade to a premium plan to unlock your store and continue using all our powerful POS features."
                     : `You have ${trialDaysLeft} days left in your free trial. Upgrade now to avoid any interruption.`}
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter className="sm:justify-center mt-8">
+                </DialogDescription>
+              </DialogHeader>
+              <DialogFooter className="sm:justify-center mt-8">
                 <Button
                   size="lg"
                   onClick={() => {
@@ -473,9 +478,9 @@ function AppLayout() {
                 >
                   {isTrialExpired ? "Unlock My Store" : "Upgrade Now"}
                 </Button>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         )}
 
       <div className="flex h-screen w-full overflow-hidden bg-background text-foreground">
