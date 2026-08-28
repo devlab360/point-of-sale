@@ -275,8 +275,14 @@ export function ProductGrid({ state }: { state: any }) {
         })}
       </div>
 
-      {/* Products Grid Feed */}
-      <div ref={parentRef} className="flex-1 overflow-y-auto p-3 sm:p-4 relative">
+      {/* Products Grid Feed — Scrollable inner area with bottom safe padding */}
+      <div
+        ref={parentRef}
+        className={cn(
+          "flex-1 overflow-y-auto p-3 sm:p-4 relative overscroll-contain",
+          (state.cart || []).length > 0 ? "pb-24 md:pb-4" : "pb-4",
+        )}
+      >
         {filtered.length === 0 ? (
           <div className="flex h-64 flex-col items-center justify-center text-center text-sm text-muted-foreground">
             <div className="grid size-14 place-items-center rounded-2xl bg-muted/50 mb-3">

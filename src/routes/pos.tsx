@@ -702,21 +702,22 @@ function PosScreen() {
 
         <CartPanel state={state} onCheckout={handleCheckout} onPrintBill={handlePrintBill} />
 
-        {/* Floating Mobile Cart Summary Pill (Shown when looking at Catalog on mobile with items in cart) */}
+        {/* Fixed Mobile Cart Bottom Bar (Sticky at bottom, inner catalog scrolls smoothly past it) */}
         {mobileTab === "products" && cartItemCount > 0 && (
-          <div className="fixed bottom-4 inset-x-3 z-30 md:hidden animate-in fade-in slide-in-from-bottom-4 duration-200">
+          <div className="fixed bottom-0 inset-x-0 z-30 md:hidden p-3 bg-background/90 backdrop-blur-md border-t border-border/80 shadow-elevated animate-in fade-in slide-in-from-bottom-2 duration-200">
             <button
               onClick={() => setMobileTab("cart")}
-              className="w-full flex items-center justify-between bg-primary text-primary-foreground rounded-2xl p-4 shadow-elevated font-bold text-sm active:scale-[0.98] transition-transform cursor-pointer"
+              className="w-full flex items-center justify-between bg-primary text-primary-foreground rounded-xl h-12 px-4 shadow-soft font-bold text-sm active:scale-[0.98] transition-transform cursor-pointer"
             >
               <div className="flex items-center gap-2.5">
-                <span className="grid size-7 place-items-center rounded-full bg-primary-foreground/20 text-xs font-black">
+                <span className="grid size-6 place-items-center rounded-full bg-primary-foreground/20 text-xs font-black">
                   {cartItemCount}
                 </span>
                 <span>View Cart & Checkout</span>
               </div>
-              <div className="number text-base font-black tracking-tight">
-                {state.formatCurrency(state.total)} →
+              <div className="number text-sm font-black tracking-tight flex items-center gap-1">
+                <span>{state.formatCurrency(state.total)}</span>
+                <span>→</span>
               </div>
             </button>
           </div>
