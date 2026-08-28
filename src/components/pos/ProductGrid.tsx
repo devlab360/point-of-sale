@@ -207,18 +207,18 @@ export function ProductGrid({ state }: { state: any }) {
           <span className="text-xs">Add Product</span>
         </Button>
 
-        {/* Store Location Selector — full width on mobile */}
+        {/* Store Location Selector */}
         <Select
           value={state.selectedLocationId || "default"}
           onValueChange={(val) => state.setSelectedLocationId(val === "default" ? null : val)}
         >
           <SelectTrigger
-            className="h-12 rounded-xl bg-card border-border/80 text-primary hover:bg-muted/40 transition-colors [&>svg:last-child]:hidden md:w-[150px] md:px-3 md:justify-between justify-center col-span-2"
+            className="h-12 rounded-xl bg-card border-border/80 text-foreground hover:bg-muted/40 transition-colors md:w-auto md:min-w-[140px] px-3 gap-2 col-span-2 shrink-0 cursor-pointer"
             title="Store / Location Outlet"
           >
-            <div className="flex items-center justify-center md:justify-between gap-1.5 min-w-0 w-full">
+            <div className="flex items-center gap-2 min-w-0">
               <MapPin className="size-4 text-primary shrink-0" />
-              <span className="hidden md:inline truncate text-xs font-semibold">
+              <span className="truncate text-xs font-semibold">
                 <SelectValue placeholder="Main Outlet" />
               </span>
             </div>
