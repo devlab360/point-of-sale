@@ -43,9 +43,6 @@ export function CartPanel({
     activeCustomer,
     setShowCustomerSearch,
     setShowAddCustomer,
-    selectedSalesmanId,
-    setSelectedSalesmanId,
-    users,
     heldInvoices,
     setShowHeld,
     lines,
@@ -135,22 +132,24 @@ export function CartPanel({
       )}
       style={{ "--drawer-width": `${drawerWidth}px` } as React.CSSProperties}
     >
-      {/* Customer & Rep Selection Header */}
+      {/* Customer Selection Header */}
       <div className="border-b border-border/80 p-2 bg-muted/20 shrink-0 space-y-1.5">
         <div className="flex items-center justify-between gap-1.5">
           <div className="flex items-center gap-1.5 flex-1 min-w-0">
             {/* Customer Pill */}
             <button
               onClick={() => setShowCustomerSearch(true)}
-              className="flex items-center gap-1 text-xs font-bold min-w-0 bg-background border border-border/80 rounded-lg px-2 h-8 hover:border-primary/50 transition-colors shadow-xs"
+              className="flex items-center gap-1.5 text-xs font-bold flex-1 min-w-0 bg-background border border-border/80 rounded-lg px-2.5 h-8 hover:border-primary/50 transition-colors shadow-xs justify-between"
               title="Change Customer"
             >
-              <User className="size-3 text-primary shrink-0" />
-              <span className="max-w-[85px] sm:max-w-[110px] truncate text-foreground">
-                {activeCustomer.name}
-              </span>
+              <div className="flex items-center gap-1.5 truncate">
+                <User className="size-3.5 text-primary shrink-0" />
+                <span className="truncate text-foreground">
+                  {activeCustomer.name}
+                </span>
+              </div>
               {activeCustomer.type === "wholesale" && (
-                <span className="rounded bg-primary/15 px-1 py-0.2 text-[8px] font-black text-primary uppercase">
+                <span className="rounded bg-primary/15 px-1 py-0.5 text-[8px] font-black text-primary uppercase shrink-0">
                   WH
                 </span>
               )}
@@ -164,18 +163,6 @@ export function CartPanel({
             >
               <Plus className="size-3.5 stroke-[2.5]" />
             </button>
-
-            {/* Sales Rep Selector */}
-            <div className="flex-1 min-w-[100px]">
-              <SearchableSelect
-                value={selectedSalesmanId}
-                onChange={(val) => setSelectedSalesmanId(val)}
-                options={[
-                  { value: "", label: "Rep: Default" },
-                  ...users.map((u: any) => ({ value: u.id, label: `Rep: ${u.name}` })),
-                ]}
-              />
-            </div>
           </div>
 
           {/* Held Invoices Button */}

@@ -8,6 +8,34 @@ import { defineConfig } from "@lovable.dev/vite-tanstack-config";
 import { VitePWA } from "vite-plugin-pwa";
 export default defineConfig({
   vite: {
+    server: {
+      watch: {
+        usePolling: false,
+        ignored: ["**/node_modules/**", "**/.git/**", "**/.output/**", "**/dist/**"],
+      },
+    },
+    optimizeDeps: {
+      include: [
+        "react",
+        "react-dom",
+        "react-dom/client",
+        "@tanstack/react-router",
+        "@tanstack/router-core",
+        "@tanstack/router-core/isServer",
+        "@tanstack/router-core/ssr/client",
+        "seroval",
+        "@tanstack/react-query",
+        "lucide-react",
+        "sonner",
+        "clsx",
+        "tailwind-merge",
+        "date-fns",
+        "drizzle-orm",
+        "uuid",
+        "zod",
+      ],
+      exclude: ["virtual:pwa-register"],
+    },
     ssr: {
       external: ["firebase-admin"],
     },
@@ -15,11 +43,8 @@ export default defineConfig({
       VitePWA({
         registerType: "autoUpdate",
         devOptions: {
-          enabled: true,
-          type: "module",
-          navigateFallback: "/",
-          suppressWarnings: true,
-        }, // Enable PWA in dev mode for testing offline
+          enabled: false, // Disabled in dev mode to prevent heavy ServiceWorker rebuilds on every file edit
+        },
         manifest: {
           name: "OneDesk360 POS",
           short_name: "GrocerPOS",

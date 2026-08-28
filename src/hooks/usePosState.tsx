@@ -16,8 +16,7 @@ import { getUnitsFn } from "@/api/units";
 import { getBrandsFn } from "@/api/brands";
 import { getSettingsFn } from "@/api/settings";
 import { getCouponsFn } from "@/api/coupons";
-import { getUsersFn } from "@/api/users";
-import { getShiftsFn, getHeldInvoicesFn, createHeldInvoiceFn, getPosItemsFn } from "@/api/pos";
+import { getShiftsFn, getHeldInvoicesFn, createHeldInvoiceFn, getPosItemsFn, createShiftFn } from "@/api/pos";
 import { getTablesFn } from "@/api/restaurant";
 import { getRepairsFn } from "@/api/repairs";
 import { getPosBootstrapFn } from "@/api/bootstrap";
@@ -511,7 +510,55 @@ export function usePosState() {
     }
   }, [cart, activeCustomer, discountPct, payment, orgId, queryClient]);
 
+  const handleOpenRegister = useCallback(async () => {
+    const cash = parseFloat(startingCash) || 0;
+    if (cash < 0) return toast.error("Starting cash must be a positive number");
+    try {
+      const res = await createShiftFn({
+        data: {
+          shift: {
+            id: uuidv4(),
+            userId: user?.id,
+            userName: user?.name || "Cashier",
+            startTime: new Date().toISOString(),
+            startingCash: cash.toString(),
+            status: "open",
+          },
+        },
+      });
+      if (res?.success) {
+        toast.success(`Register opened with starting cash: ${currencySymbol}${cash}`);
+        setShowOpenRegister(false);
+        queryClient.invalidateQueries({ queryKey: ["posBootstrap"] });
+      } else {
+        toast.error(res?.error || "Failed to open register");
+      }
+    } catch (err: any) {
+      toast.error(err.message || "Failed to open register");
+    }
+  }, [startingCash, user, currencySymbol, queryClient]);
+
+  const applyCoupon = useCallback(() => {
+    if (!couponCode.trim()) return toast.error("Enter a coupon code");
+    const code = couponCode.trim().toUpperCase();
+    const found = coupons.find((c: any) => c.code?.toUpperCase() === code && c.status === "active");
+    if (!found) {
+      toast.error("Invalid or expired coupon code");
+      return;
+    }
+    const minOrder = Number(found.minOrder || 0);
+    if (subtotal < minOrder) {
+      toast.error(`Minimum order of ${currencySymbol}${minOrder} required for this coupon`);
+      return;
+    }
+    setAppliedCoupon(found);
+    setShowCoupon(false);
+    toast.success(`Coupon "${found.code}" applied!`);
+  }, [couponCode, coupons, subtotal, currencySymbol]);
+
   return {
+    handleOpenRegister,
+    applyCoupon,
     isPosLoading,
     isPosError,
     refetchPos,

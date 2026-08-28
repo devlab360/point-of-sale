@@ -52,6 +52,16 @@ import {
   Smartphone,
   Receipt,
   Users,
+  Phone,
+  MapPin,
+  Sparkles,
+  Check,
+  X,
+  Star,
+  Coins,
+  Building2,
+  UserCheck,
+  Wallet,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 // Use queryClient from state
@@ -170,6 +180,16 @@ export function PosDialogs({
   });
 
   const displayCustomers = customerSearchResults || [];
+  const [customerTypeFilter, setCustomerTypeFilter] = useState<string>("all");
+
+  const filteredCustomers = React.useMemo(() => {
+    if (!displayCustomers) return [];
+    if (customerTypeFilter === "all") return displayCustomers;
+    if (customerTypeFilter === "credit") {
+      return displayCustomers.filter((c: any) => parseFloat(c.credit || "0") > 0);
+    }
+    return displayCustomers.filter((c: any) => c.type === customerTypeFilter);
+  }, [displayCustomers, customerTypeFilter]);
 
   const [newProductCategory, setNewProductCategory] = useState("");
   const [newProductBrand, setNewProductBrand] = useState("");
@@ -353,125 +373,409 @@ export function PosDialogs({
 
   const sendWhatsApp = () => {
     if (!saleComplete) return;
-    const phone = saleComplete.phone || "";
-    const text = `*${saleComplete.storeName}*\nReceipt: #${saleComplete.id}\nDate: ${saleComplete.date}\nTotal: ${currencySymbol}${(Number(saleComplete.total) || 0).toFixed(2)}\n\nThank you for shopping with us!`;
-    const url = `https://wa.me/${phone.replace(/\D/g, "")}?text=${encodeURIComponent(text)}`;
+    const phone = saleComplete.customerObj?.phone || saleComplete.customerPhone || saleComplete.phone || "";
+    if (!phone) {
+      toast.error("Customer phone number not available for WhatsApp");
+      return;
+    }
+    const cleanPhone = phone.replace(/\D/g, "");
+    const text = `*${saleComplete.storeName || "OneDesk360"}*\nReceipt: #${saleComplete.id}\nDate: ${saleComplete.date}\nTotal: ${currencySymbol}${(Number(saleComplete.total) || 0).toFixed(2)}\n\nThank you for shopping with us!`;
+    const url = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(text)}`;
     window.open(url, "_blank");
   };
 
   return (
     <>
+      {/* Modern Redesigned Select Customer Dialog */}
       <Dialog open={showCustomerSearch} onOpenChange={setShowCustomerSearch}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader className="flex flex-row items-center justify-between pr-6">
-            <DialogTitle>Select Customer</DialogTitle>
+        <DialogContent className="sm:max-w-xl p-0 gap-0 overflow-hidden rounded-2xl border-border/80 shadow-2xl bg-card">
+          {/* Header */}
+          <div className="p-4 sm:p-5 border-b border-border/80 bg-muted/20 flex items-center justify-between">
+            <div className="flex items-center gap-2.5">
+              <div className="size-9 rounded-xl bg-primary/10 border border-primary/20 grid place-items-center text-primary shadow-xs">
+                <Users className="size-4.5" />
+              </div>
+              <div>
+                <DialogTitle className="text-base font-bold text-foreground">
+                  Select Customer
+                </DialogTitle>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Choose a customer for billing, pricing tiers, and loyalty points
+                </p>
+              </div>
+            </div>
             <Button
               size="sm"
-              onClick={() => setShowAddCustomer(true)}
-              className="h-8 gap-1 text-xs"
-            >
-              <Plus className="size-3.5" /> Add Customer
-            </Button>
-          </DialogHeader>
-          <div className="relative mb-3">
-            <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              value={customerQuery}
-              onChange={(e) => setCustomerQuery(e.target.value)}
-              placeholder="Search by name or phone..."
-              className="pl-9"
-              autoFocus
-            />
-          </div>
-          <div className="max-h-64 overflow-y-auto space-y-1">
-            <button
-              className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm hover:bg-muted"
               onClick={() => {
-                setSelectedCustomer(null);
-                setShowCustomerSearch(false);
-                setCustomerQuery("");
+                setShowAddCustomer(true);
               }}
+              className="h-9 gap-1.5 text-xs font-semibold rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground shadow-xs"
             >
-              <User className="size-4 text-muted-foreground" />
-              <span className="font-medium">Walk-in Customer</span>
-            </button>
-            {displayCustomers.map((c: any) => (
-              <button
-                key={c.id}
-                className={cn(
-                  "flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm hover:bg-muted",
-                  activeCustomer.id === c.id && "bg-primary/10",
-                )}
-                onClick={() => {
-                  setSelectedCustomer(c);
-                  setShowCustomerSearch(false);
-                  setCustomerQuery("");
-                }}
-              >
-                <div className="grid size-8 place-items-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
-                  {c.name
-                    .split(" ")
-                    .map((n: any) => n[0])
-                    .join("")
-                    .slice(0, 2)}
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="font-semibold truncate">{c.name}</div>
-                  <div className="text-xs text-muted-foreground">
-                    {c.phone} · {c.loyaltyPoints} pts
+              <Plus className="size-3.5 stroke-[2.5]" />
+              <span>Add Customer</span>
+              <kbd className="hidden sm:inline-block ml-1 rounded bg-primary-foreground/20 px-1.5 py-0.5 text-[9px] font-mono font-bold">
+                F2
+              </kbd>
+            </Button>
+          </div>
+
+          {/* Search & Filter Bar */}
+          <div className="p-4 border-b border-border/80 space-y-3 bg-background/50">
+            <div className="relative">
+              <Search className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                value={customerQuery}
+                onChange={(e) => setCustomerQuery(e.target.value)}
+                placeholder="Search by name, phone, email, or city..."
+                className="h-10 pl-9.5 pr-8 rounded-xl border-border/80 bg-card text-xs sm:text-sm font-medium focus-visible:ring-primary/20"
+                autoFocus
+              />
+              {customerQuery && (
+                <button
+                  type="button"
+                  onClick={() => setCustomerQuery("")}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 size-5 rounded-full bg-muted text-muted-foreground hover:text-foreground grid place-items-center text-xs"
+                  title="Clear search"
+                >
+                  <X className="size-3" />
+                </button>
+              )}
+            </div>
+
+            {/* Quick Type Filter Pills */}
+            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar text-xs">
+              {[
+                { id: "all", label: "All Customers" },
+                { id: "retail", label: "Retail" },
+                { id: "wholesale", label: "Wholesale" },
+                { id: "dealer", label: "Dealer" },
+                { id: "credit", label: "Udhaar / Due" },
+              ].map((tab) => {
+                const isActive = customerTypeFilter === tab.id;
+                return (
+                  <button
+                    key={tab.id}
+                    type="button"
+                    onClick={() => setCustomerTypeFilter(tab.id)}
+                    className={cn(
+                      "px-2.5 py-1 rounded-lg font-semibold whitespace-nowrap transition-all text-xs border",
+                      isActive
+                        ? "bg-primary text-primary-foreground border-primary shadow-xs"
+                        : "bg-muted/40 text-muted-foreground border-border/60 hover:bg-muted hover:text-foreground",
+                    )}
+                  >
+                    {tab.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Customer List Body */}
+          <div className="max-h-[380px] overflow-y-auto p-3 sm:p-4 space-y-2">
+            {/* Walk-in Customer Special Hero Option */}
+            {(!customerQuery.trim() ||
+              "walk-in customer".includes(customerQuery.toLowerCase())) &&
+              customerTypeFilter === "all" && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedCustomer(null);
+                    setShowCustomerSearch(false);
+                    setCustomerQuery("");
+                  }}
+                  className={cn(
+                    "w-full flex items-center justify-between p-3 rounded-xl border transition-all text-left group",
+                    activeCustomer.id === "walkin"
+                      ? "bg-primary/10 border-primary/40 ring-1 ring-primary/20 shadow-xs"
+                      : "bg-card border-border/80 hover:border-primary/40 hover:bg-muted/30",
+                  )}
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div
+                      className={cn(
+                        "size-10 rounded-xl grid place-items-center font-bold text-sm shrink-0 border transition-colors",
+                        activeCustomer.id === "walkin"
+                          ? "bg-primary text-primary-foreground border-primary"
+                          : "bg-muted text-muted-foreground border-border group-hover:bg-primary/10 group-hover:text-primary",
+                      )}
+                    >
+                      <User className="size-5" />
+                    </div>
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold text-sm text-foreground">
+                          Walk-in Customer
+                        </span>
+                        <span className="rounded-md bg-muted px-1.5 py-0.5 text-[10px] font-semibold text-muted-foreground">
+                          Default
+                        </span>
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        Direct POS billing without customer account
+                      </p>
+                    </div>
                   </div>
+                  {activeCustomer.id === "walkin" && (
+                    <div className="size-6 rounded-full bg-primary text-primary-foreground grid place-items-center shrink-0">
+                      <Check className="size-3.5 stroke-[3]" />
+                    </div>
+                  )}
+                </button>
+              )}
+
+            {/* List of Customers */}
+            {filteredCustomers.map((c: any) => {
+              const isSelected = activeCustomer.id === c.id;
+              const dueAmount = parseFloat(c.credit || "0");
+              const walletBal = parseFloat(c.walletBalance || "0");
+
+              return (
+                <button
+                  key={c.id}
+                  type="button"
+                  onClick={() => {
+                    setSelectedCustomer(c);
+                    setShowCustomerSearch(false);
+                    setCustomerQuery("");
+                  }}
+                  className={cn(
+                    "w-full flex items-center justify-between p-3 rounded-xl border transition-all text-left group",
+                    isSelected
+                      ? "bg-primary/10 border-primary/40 ring-1 ring-primary/20 shadow-xs"
+                      : "bg-card border-border/80 hover:border-primary/40 hover:bg-muted/30",
+                  )}
+                >
+                  <div className="flex items-center gap-3 min-w-0 flex-1 mr-2">
+                    {/* Initials Avatar */}
+                    <div
+                      className={cn(
+                        "size-10 rounded-xl grid place-items-center font-bold text-xs shrink-0 border uppercase",
+                        isSelected
+                          ? "bg-primary text-primary-foreground border-primary"
+                          : c.type === "wholesale"
+                            ? "bg-blue-500/10 text-blue-600 border-blue-500/20"
+                            : c.type === "dealer"
+                              ? "bg-purple-500/10 text-purple-600 border-purple-500/20"
+                              : "bg-muted text-foreground border-border/80",
+                      )}
+                    >
+                      {c.name
+                        .split(" ")
+                        .map((n: string) => n[0])
+                        .join("")
+                        .slice(0, 2)}
+                    </div>
+
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <span className="font-bold text-sm text-foreground truncate max-w-[200px]">
+                          {c.name}
+                        </span>
+
+                        {/* Customer Type Badges */}
+                        {c.type === "wholesale" && (
+                          <span className="rounded bg-blue-500/15 text-blue-600 dark:text-blue-400 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider">
+                            Wholesale
+                          </span>
+                        )}
+                        {c.type === "dealer" && (
+                          <span className="rounded bg-purple-500/15 text-purple-600 dark:text-purple-400 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider">
+                            Dealer
+                          </span>
+                        )}
+                        {c.type === "corporate" && (
+                          <span className="rounded bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider">
+                            Corporate
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="flex items-center gap-3 text-xs text-muted-foreground mt-1 flex-wrap">
+                        {c.phone && (
+                          <span className="inline-flex items-center gap-1 font-mono">
+                            <Phone className="size-3 text-muted-foreground" />
+                            {c.phone}
+                          </span>
+                        )}
+                        {c.city && (
+                          <span className="inline-flex items-center gap-1">
+                            <MapPin className="size-3 text-muted-foreground" />
+                            {c.city}
+                          </span>
+                        )}
+                        {c.loyaltyPoints > 0 && (
+                          <span className="inline-flex items-center gap-1 font-semibold text-amber-600 dark:text-amber-400">
+                            <Star className="size-3 fill-amber-500 text-amber-500" />
+                            {c.loyaltyPoints} pts
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Right Side: Due Balance / Selected Check */}
+                  <div className="flex items-center gap-2 shrink-0">
+                    {dueAmount > 0 && (
+                      <div className="text-right">
+                        <span className="text-[10px] uppercase font-bold text-destructive block">
+                          Udhaar Due
+                        </span>
+                        <span className="text-xs font-black text-destructive font-mono">
+                          {formatCurrency(dueAmount)}
+                        </span>
+                      </div>
+                    )}
+                    {walletBal > 0 && (
+                      <div className="text-right">
+                        <span className="text-[10px] uppercase font-bold text-success block">
+                          Wallet
+                        </span>
+                        <span className="text-xs font-black text-success font-mono">
+                          {formatCurrency(walletBal)}
+                        </span>
+                      </div>
+                    )}
+
+                    {isSelected && (
+                      <div className="size-6 rounded-full bg-primary text-primary-foreground grid place-items-center shrink-0 shadow-xs">
+                        <Check className="size-3.5 stroke-[3]" />
+                      </div>
+                    )}
+                  </div>
+                </button>
+              );
+            })}
+
+            {/* Empty State */}
+            {filteredCustomers.length === 0 && (
+              <div className="py-8 text-center bg-muted/20 rounded-2xl border border-dashed border-border p-6 space-y-3">
+                <div className="size-12 rounded-2xl bg-muted grid place-items-center mx-auto text-muted-foreground">
+                  <User className="size-6" />
                 </div>
-              </button>
-            ))}
+                <div>
+                  <h4 className="font-bold text-sm text-foreground">
+                    No customers found
+                  </h4>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    {customerQuery
+                      ? `No customer matching "${customerQuery}"`
+                      : "No customers in this category yet"}
+                  </p>
+                </div>
+                <Button
+                  size="sm"
+                  onClick={() => {
+                    setShowAddCustomer(true);
+                  }}
+                  className="gap-1.5 text-xs font-bold rounded-xl"
+                >
+                  <Plus className="size-3.5 stroke-[2.5]" />
+                  <span>Create New Customer</span>
+                </Button>
+              </div>
+            )}
           </div>
         </DialogContent>
       </Dialog>
 
+      {/* Modern Quick Add Customer Dialog */}
       <Dialog open={showAddCustomer} onOpenChange={setShowAddCustomer}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <User className="size-5 text-primary" />
-              <span>Quick Add Customer</span>
-            </DialogTitle>
-          </DialogHeader>
-          <form onSubmit={handleQuickAddCustomer} className="space-y-4 pt-2">
-            <div className="space-y-2">
-              <Label>Full Name *</Label>
-              <Input name="name" required autoFocus />
+        <DialogContent className="sm:max-w-md p-0 gap-0 overflow-hidden rounded-2xl border-border/80 shadow-2xl bg-card">
+          <div className="p-4 sm:p-5 border-b border-border/80 bg-muted/20 flex items-center gap-2.5">
+            <div className="size-9 rounded-xl bg-primary/10 border border-primary/20 grid place-items-center text-primary shadow-xs">
+              <User className="size-4.5" />
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Phone Number *</Label>
-                <PhoneInput name="phone" required />
+            <div>
+              <DialogTitle className="text-base font-bold text-foreground">
+                Quick Add Customer
+              </DialogTitle>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Register a new customer profile for immediate billing
+              </p>
+            </div>
+          </div>
+          <form onSubmit={handleQuickAddCustomer} className="p-4 sm:p-5 space-y-4">
+            <div className="space-y-1.5">
+              <Label className="text-xs font-bold text-foreground">Full Name *</Label>
+              <Input
+                name="name"
+                placeholder="e.g. Rajesh Kumar"
+                required
+                defaultValue={!/^\d+$/.test(customerQuery) ? customerQuery : ""}
+                className="h-10 rounded-xl"
+                autoFocus
+              />
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label className="text-xs font-bold text-foreground">Phone Number *</Label>
+                <PhoneInput
+                  name="phone"
+                  required
+                  defaultValue={/^\d+$/.test(customerQuery) ? customerQuery : ""}
+                />
               </div>
-              <div className="space-y-2">
-                <Label>Email</Label>
-                <Input name="email" type="email" />
+              <div className="space-y-1.5">
+                <Label className="text-xs font-bold text-foreground">Customer Type</Label>
+                <Select name="type" defaultValue="retail">
+                  <SelectTrigger className="h-10 rounded-xl">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="retail">Retail</SelectItem>
+                    <SelectItem value="wholesale">Wholesale</SelectItem>
+                    <SelectItem value="dealer">Dealer</SelectItem>
+                    <SelectItem value="corporate">Corporate</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
-            <div className="space-y-2">
-              <Label>Address</Label>
-              <Input name="address" placeholder="e.g. 123 Main St" />
+            <div className="space-y-1.5">
+              <Label className="text-xs font-bold text-foreground">Email (Optional)</Label>
+              <Input
+                name="email"
+                type="email"
+                placeholder="customer@example.com"
+                className="h-10 rounded-xl"
+              />
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>City</Label>
-                <Input name="city" />
+            <div className="space-y-1.5">
+              <Label className="text-xs font-bold text-foreground">Address</Label>
+              <Input
+                name="address"
+                placeholder="Shop / House No, Street name"
+                className="h-10 rounded-xl"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label className="text-xs font-bold text-foreground">City</Label>
+                <Input name="city" placeholder="City" className="h-10 rounded-xl" />
               </div>
-              <div className="space-y-2">
-                <Label>Zip Code</Label>
-                <Input name="zipCode" />
+              <div className="space-y-1.5">
+                <Label className="text-xs font-bold text-foreground">Zip Code</Label>
+                <Input name="zipCode" placeholder="Postal Code" className="h-10 rounded-xl" />
               </div>
             </div>
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setShowAddCustomer(false)}>
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-border/80">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setShowAddCustomer(false)}
+                className="rounded-xl h-10 text-xs font-semibold"
+              >
                 Cancel
               </Button>
-              <Button type="submit" disabled={isAddingCustomer}>
-                {isAddingCustomer && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Save
+              <Button
+                type="submit"
+                disabled={isAddingCustomer}
+                className="rounded-xl h-10 text-xs font-bold bg-primary hover:bg-primary/90 text-primary-foreground shadow-xs"
+              >
+                {isAddingCustomer && <Loader2 className="mr-2 size-4 animate-spin" />}
+                Save & Select Customer
               </Button>
-            </DialogFooter>
+            </div>
           </form>
         </DialogContent>
       </Dialog>
@@ -720,39 +1024,54 @@ export function PosDialogs({
             <DialogTitle>Held Invoices ({heldInvoices.length})</DialogTitle>
           </DialogHeader>
           <div className="space-y-2 max-h-64 overflow-y-auto">
-            {heldInvoices.map((h: any) => (
-              <div key={h.id} className="flex justify-between border p-3 rounded-lg">
-                <div>
-                  <div className="font-semibold text-sm">{h.customerName || "Walk-in"}</div>
-                  <div className="text-xs text-muted-foreground">{h.cart.length} items</div>
+            {heldInvoices.map((h: any) => {
+              let cartCount = 0;
+              try {
+                const parsed = typeof h.cart === "string" ? JSON.parse(h.cart || "[]") : (h.cart || []);
+                cartCount = Array.isArray(parsed) ? parsed.length : 0;
+              } catch {
+                cartCount = 0;
+              }
+              return (
+                <div key={h.id} className="flex justify-between items-center border border-border/80 p-3 rounded-xl bg-card shadow-2xs">
+                  <div>
+                    <div className="font-bold text-sm text-foreground">{h.customerName || "Walk-in Customer"}</div>
+                    <div className="text-xs text-muted-foreground">
+                      {cartCount} {cartCount === 1 ? "item" : "items"} {h.discount ? `· ${h.discount}% disc` : ""}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <Button size="sm" onClick={() => onResumeInvoice(h)} className="h-8 text-xs font-semibold">
+                      Resume
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      onClick={() => {
+                        setShowHeld(false);
+                        setSplittingInvoice(h);
+                      }}
+                      className="h-8 text-xs"
+                    >
+                      Split
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={async () => {
+                        await deleteHeldInvoiceFn({ data: { id: h.id } });
+                        refetchHeld();
+                        toast.success("Held invoice removed");
+                      }}
+                      className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive"
+                      title="Delete held bill"
+                    >
+                      <Trash2 className="size-4" />
+                    </Button>
+                  </div>
                 </div>
-                <div className="flex gap-2">
-                  <Button size="sm" onClick={() => onResumeInvoice(h)}>
-                    Resume
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="secondary"
-                    onClick={() => {
-                      setShowHeld(false);
-                      setSplittingInvoice(h);
-                    }}
-                  >
-                    Split
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={async () => {
-                      await deleteHeldInvoiceFn({ data: { id: h.id } });
-                      refetchHeld();
-                    }}
-                  >
-                    <Trash2 className="size-4 text-destructive" />
-                  </Button>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </DialogContent>
       </Dialog>
