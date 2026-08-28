@@ -473,6 +473,17 @@ function PosScreen() {
       setPrintData(printObj);
       setSaleComplete(printObj);
 
+      // Auto-print the receipt (thermal) right after a completed sale.
+      // The "Sale Complete" dialog stays open for manual re-print / WhatsApp.
+      if (!isQuotation) {
+        state.setPrintFormat("thermal");
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            window.print();
+          });
+        });
+      }
+
       setCart([]);
       setDiscountPct(0);
       setDiscountInput("0");

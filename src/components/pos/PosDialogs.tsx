@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -95,6 +95,7 @@ export function PosDialogs({
 }) {
   const [splittingInvoice, setSplittingInvoice] = useState<any>(null);
   const [isSplitting, setIsSplitting] = useState(false);
+  const [pendingPrint, setPendingPrint] = useState<null | "thermal" | "a4">(null);
 
   const {
     showCustomerSearch,
@@ -174,6 +175,20 @@ export function PosDialogs({
     units,
     settings,
   } = state;
+
+  // Reliable manual print: wait until React has committed the chosen print
+  // format before opening the print dialog, then clean up the screen state.
+  useEffect(() => {
+    if (!pendingPrint) return;
+    const t = setTimeout(() => {
+      window.print();
+      setSaleComplete(null);
+      setPrintData(null);
+      setPendingPrint(null);
+    }, 250);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pendingPrint, printFormat]);
 
   const debouncedCustomerQuery = useDebounce(customerQuery, 300);
 
@@ -731,7 +746,7 @@ export function PosDialogs({
 
       {/* Modern Quick Add Customer Dialog */}
       <Dialog open={showAddCustomer} onOpenChange={setShowAddCustomer}>
-        <DialogContent className="sm:max-w-md p-0 gap-0 overflow-hidden rounded-2xl border-border/80 shadow-2xl bg-card">
+        <DialogContent className="sm:max-w-xl p-0 gap-0 overflow-hidden rounded-2xl border-border/80 shadow-2xl bg-card">
           <div className="p-4 sm:p-5 border-b border-border/80 bg-muted/20 flex items-center gap-2.5">
             <div className="size-9 rounded-xl bg-primary/10 border border-primary/20 grid place-items-center text-primary shadow-xs">
               <User className="size-4.5" />
@@ -781,22 +796,24 @@ export function PosDialogs({
                 </Select>
               </div>
             </div>
-            <div className="space-y-1.5">
-              <Label className="text-xs font-bold text-foreground">Email (Optional)</Label>
-              <Input
-                name="email"
-                type="email"
-                placeholder="customer@example.com"
-                className="h-10 rounded-xl"
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label className="text-xs font-bold text-foreground">Address</Label>
-              <Input
-                name="address"
-                placeholder="Shop / House No, Street name"
-                className="h-10 rounded-xl"
-              />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label className="text-xs font-bold text-foreground">Email (Optional)</Label>
+                <Input
+                  name="email"
+                  type="email"
+                  placeholder="customer@example.com"
+                  className="h-10 rounded-xl"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs font-bold text-foreground">Address</Label>
+                <Input
+                  name="address"
+                  placeholder="Shop / House No, Street name"
+                  className="h-10 rounded-xl"
+                />
+              </div>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
@@ -1537,11 +1554,7 @@ export function PosDialogs({
             <Button
               onClick={() => {
                 setPrintFormat("thermal");
-                setTimeout(() => {
-                  window.print();
-                  setSaleComplete(null);
-                  setPrintData(null);
-                }, 150);
+                setPendingPrint("thermal");
               }}
             >
               <Printer className="mr-2 size-4" /> Thermal
@@ -1549,11 +1562,7 @@ export function PosDialogs({
             <Button
               onClick={() => {
                 setPrintFormat("a4");
-                setTimeout(() => {
-                  window.print();
-                  setSaleComplete(null);
-                  setPrintData(null);
-                }, 150);
+                setPendingPrint("a4");
               }}
               variant="outline"
             >

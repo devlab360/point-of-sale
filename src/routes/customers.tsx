@@ -761,10 +761,10 @@ function CustomersPage() {
                   <Label htmlFor="type">{t("customerType") || "Customer Type"}</Label>
                   <SearchableSelect
                     options={[
-                      { value: "retail", label: "Retail (B2C)" },
-                      { value: "wholesale", label: "Wholesale (B2B)" },
+                      { value: "retail", label: "Retail" },
+                      { value: "wholesale", label: "Wholesale" },
                       { value: "dealer", label: "Dealer" },
-                      { value: "distributor", label: "Distributor" },
+                      { value: "corporate", label: "Corporate" },
                     ]}
                     value={editItem?.type || "retail"}
                     onChange={(val) => {

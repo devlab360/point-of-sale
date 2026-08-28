@@ -62,9 +62,12 @@
 
   --shadow-soft: 0 1px 2px 0 oklch(0.3 0.02 60 / 0.04);
   --shadow-card: 0 1px 2px 0 oklch(0.3 0.02 60 / 0.05), 0 2px 6px -2px oklch(0.3 0.02 60 / 0.04);
-  --shadow-card-hover: 0 8px 22px -6px oklch(0.3 0.02 60 / 0.12), 0 2px 6px -2px oklch(0.3 0.02 60 / 0.06);
-  --shadow-elevated: 0 12px 32px -8px oklch(0.3 0.02 60 / 0.16), 0 4px 12px -4px oklch(0.3 0.02 60 / 0.08);
-  --shadow-modal: 0 24px 56px -16px oklch(0.25 0.02 60 / 0.3), 0 8px 20px -8px oklch(0.25 0.02 60 / 0.14);
+  --shadow-card-hover:
+    0 8px 22px -6px oklch(0.3 0.02 60 / 0.12), 0 2px 6px -2px oklch(0.3 0.02 60 / 0.06);
+  --shadow-elevated:
+    0 12px 32px -8px oklch(0.3 0.02 60 / 0.16), 0 4px 12px -4px oklch(0.3 0.02 60 / 0.08);
+  --shadow-modal:
+    0 24px 56px -16px oklch(0.25 0.02 60 / 0.3), 0 8px 20px -8px oklch(0.25 0.02 60 / 0.14);
   --shadow-bottom-nav: 0 -2px 12px -2px oklch(0.3 0.02 60 / 0.08);
 
   --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
@@ -476,4 +479,38 @@ input[type="number"]::-webkit-inner-spin-button {
 
 input[type="number"] {
   -moz-appearance: textfield;
+}
+
+/* Hide Radix dialog/alert portals (and their popper layers) so only the
+   print receipt (the `hidden print:*` blocks) is printed in the POS. */
+@media print {
+  [data-radix-portal],
+  [data-radix-popper-content-wrapper] {
+    display: none !important;
+  }
+  body {
+    background: #fff !important;
+  }
+
+  /* Bulletproof reveal of the printable receipt. The receipt wrappers start as
+     `hidden` (display:none) and rely on Tailwind's `print:*` variant, which can
+     be fragile depending on utility ordering. Force them visible with
+     `!important` and neutralize the fixed/inset positioning so the receipt
+     flows normally across the printed page. */
+  .pos-print-thermal {
+    display: flex !important;
+  }
+  .pos-print-a4 {
+    display: block !important;
+  }
+  .pos-print-thermal,
+  .pos-print-a4 {
+    position: static !important;
+    inset: auto !important;
+    width: 100% !important;
+    max-width: none !important;
+    background: #fff !important;
+    box-shadow: none !important;
+    overflow: visible !important;
+  }
 }
