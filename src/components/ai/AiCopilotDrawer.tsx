@@ -48,27 +48,55 @@ export function AiCopilotDrawer() {
 
   const { data: salesData } = useQuery({
     queryKey: ["sales", orgId],
-    queryFn: async () => (await getSalesFn({ data: {} })).data || [],
+    queryFn: async () => {
+      try {
+        const res = (await getSalesFn({ data: {} })) as any;
+        return Array.isArray(res?.data) ? res.data : [];
+      } catch {
+        return [];
+      }
+    },
   });
-  const sales = salesData || [];
+  const sales = Array.isArray(salesData) ? salesData : [];
 
   const { data: productsData } = useQuery({
     queryKey: ["products", orgId],
-    queryFn: async () => (await getProductsFn({ data: {} })).data || [],
+    queryFn: async () => {
+      try {
+        const res = (await getProductsFn({ data: {} })) as any;
+        return Array.isArray(res?.data) ? res.data : [];
+      } catch {
+        return [];
+      }
+    },
   });
-  const products = productsData || [];
+  const products = Array.isArray(productsData) ? productsData : [];
 
   const { data: customersData } = useQuery({
     queryKey: ["customers", orgId],
-    queryFn: async () => (await getCustomersFn({ data: {} })).data || [],
+    queryFn: async () => {
+      try {
+        const res = (await getCustomersFn({ data: {} })) as any;
+        return Array.isArray(res?.data) ? res.data : [];
+      } catch {
+        return [];
+      }
+    },
   });
-  const customers = customersData || [];
+  const customers = Array.isArray(customersData) ? customersData : [];
 
   const { data: expensesData } = useQuery({
     queryKey: ["expenses", orgId],
-    queryFn: async () => (await getExpensesFn({ data: {} })).data || [],
+    queryFn: async () => {
+      try {
+        const res = (await getExpensesFn({ data: {} })) as any;
+        return Array.isArray(res?.data) ? res.data : [];
+      } catch {
+        return [];
+      }
+    },
   });
-  const expenses = expensesData || [];
+  const expenses = Array.isArray(expensesData) ? expensesData : [];
 
   // Key Shortcut Ctrl + K or Cmd + K
   useEffect(() => {
@@ -84,14 +112,19 @@ export function AiCopilotDrawer() {
 
   // Compute Metrics & Business Health Score (0-100)
   const healthAnalysis = useMemo(() => {
-    const totalSalesRev = sales.reduce((sum, s) => sum + s.total, 0);
-    const totalExp = expenses.reduce((sum, e) => sum + e.amount, 0);
+    const safeSales: any[] = Array.isArray(sales) ? sales : [];
+    const safeExpenses: any[] = Array.isArray(expenses) ? expenses : [];
+    const safeProducts: any[] = Array.isArray(products) ? products : [];
+    const safeCustomers: any[] = Array.isArray(customers) ? customers : [];
+
+    const totalSalesRev = safeSales.reduce((sum, s) => sum + (Number(s?.total) || 0), 0);
+    const totalExp = safeExpenses.reduce((sum, e) => sum + (Number(e?.amount) || 0), 0);
 
     let totalCogs = 0;
-    sales.forEach((s) => {
-      s.saleItems?.forEach((i) => {
-        const prod = products.find((p) => p.id === i.productId);
-        if (prod) totalCogs += prod.cost * i.quantity;
+    safeSales.forEach((s) => {
+      s?.saleItems?.forEach((i: any) => {
+        const prod = safeProducts.find((p) => p.id === i.productId);
+        if (prod) totalCogs += (Number(prod.cost) || 0) * (Number(i.quantity) || 0);
       });
     });
     const netProfit = totalSalesRev - totalCogs - totalExp;
@@ -99,14 +132,14 @@ export function AiCopilotDrawer() {
 
     // Dead Stock Calculation (Unsold products with positive stock)
     const soldProductIds = new Set(
-      sales.flatMap((s) => s.saleItems?.map((i) => i.productId) || []),
+      safeSales.flatMap((s) => s?.saleItems?.map((i: any) => i.productId) || []),
     );
-    const deadStockItems = products.filter((p) => p.stock > 0 && !soldProductIds.has(p.id));
-    const totalStockValue = products.reduce((sum, p) => sum + p.stock * p.cost, 0);
-    const deadStockValue = deadStockItems.reduce((sum, p) => sum + p.stock * p.cost, 0);
+    const deadStockItems = safeProducts.filter((p) => (Number(p?.stock) || 0) > 0 && !soldProductIds.has(p?.id));
+    const totalStockValue = safeProducts.reduce((sum, p) => sum + (Number(p?.stock) || 0) * (Number(p?.cost) || 0), 0);
+    const deadStockValue = deadStockItems.reduce((sum, p) => sum + (Number(p?.stock) || 0) * (Number(p?.cost) || 0), 0);
 
     // Due Collection Health
-    const totalDue = customers.reduce((sum, c) => sum + (c.credit || 0), 0);
+    const totalDue = safeCustomers.reduce((sum, c) => sum + (Number(c?.credit) || 0), 0);
     const overDueRatio = totalSalesRev > 0 ? (totalDue / totalSalesRev) * 100 : 0;
 
     // Score Calculation out of 100
@@ -132,7 +165,7 @@ export function AiCopilotDrawer() {
       deadStockItems,
       deadStockValue,
       totalDue,
-      topDueCustomers: [...customers].sort((a, b) => (b.credit || 0) - (a.credit || 0)).slice(0, 4),
+      topDueCustomers: [...safeCustomers].sort((a, b) => (Number(b?.credit) || 0) - (Number(a?.credit) || 0)).slice(0, 4),
     };
   }, [sales, products, customers, expenses]);
 

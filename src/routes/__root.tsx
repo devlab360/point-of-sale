@@ -409,8 +409,17 @@ function AppLayout() {
         location.pathname !== "/settings" &&
         (isTrialExpired ||
           (saasOrg?.status === "trial" && trialDaysLeft > 0 && !isTrialBannerDismissed)) && (
-          <Dialog open={true}>
-            <DialogContent className="max-w-md pointer-events-auto border-border/60 bg-background overflow-hidden rounded-2xl [&>button]:hidden">
+          <Dialog
+            open={true}
+            onOpenChange={(open) => {
+              if (!open && !isTrialExpired) {
+                setIsTrialBannerDismissed(true);
+              }
+            }}
+          >
+            <DialogContent
+              className="max-w-md pointer-events-auto border-border/60 bg-background overflow-hidden rounded-2xl [&>button.absolute]:hidden"
+            >
               {/* Background decorative glow */}
               <div
                 className={`absolute inset-0 bg-gradient-to-br ${isTrialExpired ? "from-destructive/5" : "from-primary/5"} to-transparent z-[-1]`}
@@ -418,16 +427,6 @@ function AppLayout() {
               <div
                 className={`absolute -top-24 -right-24 size-48 rounded-full ${isTrialExpired ? "bg-destructive/10" : "bg-primary/10"} blur-3xl z-[-1]`}
               />
-
-              {/* Cancel Button (Only for Active Trial) */}
-              {!isTrialExpired && (
-                <button
-                  onClick={() => setIsTrialBannerDismissed(true)}
-                  className="absolute right-4 top-4 text-foreground/50 hover:text-foreground hover:bg-muted p-1.5 rounded-full transition-colors z-10"
-                >
-                  <X className="size-5" />
-                </button>
-              )}
 
               <DialogHeader className="relative">
                 <div
@@ -465,7 +464,18 @@ function AppLayout() {
                     : `You have ${trialDaysLeft} days left in your free trial. Upgrade now to avoid any interruption.`}
                 </DialogDescription>
               </DialogHeader>
-              <DialogFooter className="sm:justify-center mt-8">
+              <DialogFooter className="flex flex-col sm:flex-row gap-2.5 mt-8 sm:justify-center">
+                {!isTrialExpired && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="lg"
+                    onClick={() => setIsTrialBannerDismissed(true)}
+                    className="w-full sm:w-1/2 font-semibold h-12 rounded-xl"
+                  >
+                    Maybe Later
+                  </Button>
+                )}
                 <Button
                   size="lg"
                   onClick={() => {
@@ -474,7 +484,7 @@ function AppLayout() {
                     }
                     if (!isTrialExpired) setIsTrialBannerDismissed(true);
                   }}
-                  className={`w-full font-semibold shadow-lg transition-all h-12 ${isTrialExpired ? "bg-primary hover:bg-primary/90 text-primary-foreground hover:shadow-primary/25" : "bg-primary hover:bg-primary/90 text-primary-foreground hover:shadow-primary/25"}`}
+                  className={`w-full ${!isTrialExpired ? "sm:w-1/2" : ""} font-semibold shadow-lg transition-all h-12 bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl`}
                 >
                   {isTrialExpired ? "Unlock My Store" : "Upgrade Now"}
                 </Button>
@@ -492,7 +502,7 @@ function AppLayout() {
           <AppHeader />
           <main className="flex-1 overflow-y-auto bg-muted/20 relative bottom-nav-spacer">
             {isAuthenticated &&
-            (isSuspended || (isTrialExpired && location.pathname !== "/settings")) ? (
+              (isSuspended || (isTrialExpired && location.pathname !== "/settings")) ? (
               <div className="flex h-full w-full items-center justify-center opacity-10 select-none pointer-events-none">
                 <svg
                   className="size-32 text-destructive"
