@@ -1,56 +1,72 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { DataPage } from "@/components/layout/DataPage";
-import { exportToCSV, parseCSV } from "@/lib/csv";
 import { EmptyState } from "@/components/ui/empty-state";
-import { PaginationControls } from "@/components/ui/pagination-controls";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getUnitsFn, createUnitFn, updateUnitFn, deleteUnitFn } from "@/api/units";
 import { getProductsFn } from "@/api/products";
 import { PersistStore } from "@/lib/session-store";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { PageHeader } from "@/components/layout/PageHeader";
+import { StatCard } from "@/components/layout/StatCard";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { SearchableSelect } from "@/components/ui/searchable-select";
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+  SheetFooter,
+} from "@/components/ui/sheet";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Scale, Pencil, Trash2, Loader2 } from "lucide-react";
-import { useState, useMemo, useEffect } from "react";
-import { TableSkeleton } from "@/components/skeletons/TableSkeleton";
-import { ErrorState } from "@/components/ui/error-state";
+import {
+  Scale,
+  Pencil,
+  Trash2,
+  Loader2,
+  Plus,
+  Search,
+  Package,
+  LayoutGrid,
+  Table as TableIcon,
+  CheckCircle2,
+  Layers,
+} from "lucide-react";
+import { useState, useMemo } from "react";
 import { useDebounce } from "@/hooks/useDebounce";
 import { v4 as uuidv4 } from "uuid";
 import { toast } from "sonner";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 import { useFormValidation } from "@/hooks/useFormValidation";
 import { FieldError } from "@/components/ui/field-error";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { PaginationControls } from "@/components/ui/pagination-controls";
+import { TableSkeleton } from "@/components/skeletons/TableSkeleton";
+import { CardGridSkeleton } from "@/components/skeletons/CardGridSkeleton";
+import { ErrorState } from "@/components/ui/error-state";
 
 export const Route = createFileRoute("/units")({
-  head: () => ({ meta: [{ title: "Units · OneDesk360" }] }),
+  head: () => ({ meta: [{ title: "Units of Measurement · OneDesk360" }] }),
   component: UnitsPage,
 });
+
+const STANDARD_UNIT_PRESETS = [
+  { name: "Pieces", short: "pcs" },
+  { name: "Kilograms", short: "kg" },
+  { name: "Grams", short: "g" },
+  { name: "Liters", short: "ltr" },
+  { name: "Milliliters", short: "ml" },
+  { name: "Boxes", short: "box" },
+  { name: "Packs", short: "pack" },
+  { name: "Dozens", short: "doz" },
+  { name: "Meters", short: "m" },
+];
 
 function UnitsPage() {
   const orgId = PersistStore.getOrgId() || "default";
@@ -65,21 +81,22 @@ function UnitsPage() {
     queryKey: ["units", orgId],
     queryFn: async () => ((await getUnitsFn({ data: {} })) as any)?.data || [],
   });
-  const rawUnits = rawUnitsData || [];
+  const rawUnits = Array.isArray(rawUnitsData) ? rawUnitsData : [];
 
   const { data: productsData } = useQuery({
     queryKey: ["products", orgId],
     queryFn: async () => ((await getProductsFn({ data: {} })) as any)?.data || [],
   });
-  const products = productsData || [];
+  const products = Array.isArray(productsData) ? productsData : [];
 
   const unitsWithCounts = useMemo(() => {
-    return rawUnits.map((u) => ({
+    return rawUnits.map((u: any) => ({
       ...u,
-      products: products.filter((p) => p.unit === u.id || p.unit === u.name).length,
+      products: products.filter((p: any) => p.unit === u.id || p.unit === u.name || p.unit === u.short).length,
     }));
   }, [rawUnits, products]);
 
+  const [viewMode, setViewMode] = useState<"grid" | "table">("grid");
   const [modalOpen, setModalOpen] = useState(false);
   const [editingUnit, setEditingUnit] = useState<any>(null);
   const [isSaving, setIsSaving] = useState(false);
@@ -90,58 +107,29 @@ function UnitsPage() {
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search, 300);
   const [page, setPage] = useState(1);
-  const itemsPerPage = 10;
+  const pageSize = 12;
 
-  const [filters, setFilters] = useState({ usage: "" });
-  const [draftFilters, setDraftFilters] = useState({ usage: "" });
-  const activeFilterCount = filters.usage ? 1 : 0;
+  // KPI Calculations
+  const totalUnits = unitsWithCounts.length;
+  const inUseCount = useMemo(() => unitsWithCounts.filter((u) => u.products > 0).length, [unitsWithCounts]);
+  const totalLinkedItems = useMemo(() => unitsWithCounts.reduce((sum, u) => sum + u.products, 0), [unitsWithCounts]);
 
-  const handleResetFilters = () => {
-    setFilters({ usage: "" });
-    setDraftFilters({ usage: "" });
-  };
-
-  const units = useMemo(() => {
-    let filtered = unitsWithCounts;
+  const filteredUnits = useMemo(() => {
+    let list = unitsWithCounts;
     if (debouncedSearch) {
       const lower = debouncedSearch.toLowerCase();
-      filtered = filtered.filter(
-        (u) => u.name.toLowerCase().includes(lower) || u.short.toLowerCase().includes(lower),
+      list = list.filter(
+        (u: any) => u.name?.toLowerCase().includes(lower) || u.short?.toLowerCase().includes(lower)
       );
     }
-    if (filters.usage === "in-use") {
-      filtered = filtered.filter((u) => u.products > 0);
-    } else if (filters.usage === "empty") {
-      filtered = filtered.filter((u) => u.products === 0);
-    }
-    return filtered;
-  }, [unitsWithCounts, debouncedSearch, filters.usage]);
+    return list;
+  }, [unitsWithCounts, debouncedSearch]);
 
-  useEffect(() => {
-    setPage(1);
-  }, [debouncedSearch, filters.usage]);
-
-  useEffect(() => {
-    const maxPage = Math.max(1, Math.ceil(units.length / itemsPerPage));
-    if (page > maxPage) setPage(maxPage);
-  }, [units.length, page]);
-
-  const totalPages = Math.ceil(units.length / itemsPerPage);
-  const paginatedUnits = units.slice((page - 1) * itemsPerPage, page * itemsPerPage);
-
-  const openNew = () => {
-    setEditingUnit(null);
-    setName("");
-    setShort("");
-    setModalOpen(true);
-  };
-
-  const openEdit = (unit: any) => {
-    setEditingUnit(unit);
-    setName(unit.name);
-    setShort(unit.short);
-    setModalOpen(true);
-  };
+  const totalPages = Math.ceil(filteredUnits.length / pageSize) || 1;
+  const paginatedUnits = useMemo(() => {
+    const start = (page - 1) * pageSize;
+    return filteredUnits.slice(start, start + pageSize);
+  }, [filteredUnits, page, pageSize]);
 
   const {
     errors: unitErrors,
@@ -150,395 +138,457 @@ function UnitsPage() {
     clearAll: clearUnitAll,
   } = useFormValidation({
     name: { required: "Unit name is required" },
-    short: { required: "Short code is required" },
+    short: { required: "Abbreviation is required" },
   });
 
-  const save = async (e?: React.FormEvent<HTMLFormElement>) => {
-    if (e) e.preventDefault();
-    const isValid = validateUnit({ name, short });
+  const openNew = () => {
+    setEditingUnit(null);
+    setName("");
+    setShort("");
+    clearUnitAll();
+    setModalOpen(true);
+  };
+
+  const openEdit = (unit: any) => {
+    setEditingUnit(unit);
+    setName(unit.name || "");
+    setShort(unit.short || "");
+    clearUnitAll();
+    setModalOpen(true);
+  };
+
+  const handleSave = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const isValid = validateUnit({ name: name.trim(), short: short.trim() });
     if (!isValid) return;
 
     setIsSaving(true);
-    await new Promise((resolve) => setTimeout(resolve, 500));
     try {
       if (editingUnit) {
-        const res = await updateUnitFn({ data: { id: editingUnit.id, updates: { name, short } } });
-        if (res?.success) toast.success("Unit updated");
-        else throw new Error(res?.error);
+        const res = (await updateUnitFn({
+          data: {
+            id: editingUnit.id,
+            updates: { name: name.trim(), short: short.trim() },
+          },
+        })) as any;
+        if (res?.success) {
+          toast.success("Unit updated successfully");
+          setModalOpen(false);
+          queryClient.invalidateQueries({ queryKey: ["units", orgId] });
+        } else throw new Error(res?.error);
       } else {
-        const res = await createUnitFn({
+        const res = (await createUnitFn({
           data: {
             unit: {
-              name,
-              short,
+              id: uuidv4(),
+              name: name.trim(),
+              short: short.trim(),
             },
           },
-        });
-        if (res?.success) toast.success("Unit created");
-        else throw new Error(res?.error);
+        })) as any;
+        if (res?.success) {
+          toast.success("Unit added to system");
+          setModalOpen(false);
+          queryClient.invalidateQueries({ queryKey: ["units", orgId] });
+        } else throw new Error(res?.error);
       }
-      queryClient.invalidateQueries({ queryKey: ["units"] });
-      setModalOpen(false);
-      clearUnitAll();
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "An error occurred");
+    } catch (err: any) {
+      toast.error(err.message || "Failed to save unit");
     } finally {
       setIsSaving(false);
     }
   };
 
-  const confirmDelete = async () => {
-    if (!deleteId) return;
-    try {
-      const res = await deleteUnitFn({ data: { id: deleteId } });
-      if (res?.success) {
-        toast.success("Unit deleted");
-        queryClient.invalidateQueries({ queryKey: ["units"] });
-      } else throw new Error(res?.error);
-    } catch (error) {
-      toast.error("Failed to delete unit");
-    } finally {
-      setDeleteId(null);
-    }
-  };
-
-  const handleExport = () => {
-    exportToCSV(
-      rawUnits,
-      [
-        { key: "name", label: "Unit Name" },
-        { key: "shortName", label: "Short Name" },
-      ],
-      "units",
-    );
-  };
-
-  const handleImport = async (file: File) => {
-    try {
-      const data = await parseCSV(file);
-      if (data.length === 0) {
-        toast.error("No data found in the CSV");
-        return;
+  const handleDelete = async () => {
+    if (deleteId) {
+      try {
+        const res = (await deleteUnitFn({ data: { id: deleteId } })) as any;
+        if (res?.success) {
+          toast.success("Unit deleted");
+          setDeleteId(null);
+          queryClient.invalidateQueries({ queryKey: ["units", orgId] });
+        } else throw new Error(res?.error);
+      } catch (err: any) {
+        toast.error(err.message || "Failed to delete unit");
       }
-
-      let count = 0;
-      for (const row of data) {
-        if (row["Unit Name"]) {
-          await createUnitFn({
-            data: {
-              unit: {
-                id: uuidv4(),
-                name: row["Unit Name"],
-                shortName: row["Short Name"] || "",
-              },
-            },
-          });
-          count++;
-        }
-      }
-
-      queryClient.invalidateQueries({ queryKey: ["units"] });
-      toast.success(`Successfully imported ${count} units`);
-    } catch (error) {
-      toast.error("Failed to parse CSV file");
     }
   };
 
   return (
-    <div>
-      <DataPage
-        title="Units of Measure"
-        description="Define how products are sold — piece, kilogram, litre, pack and more."
-        primaryAction={{ label: "New Unit", onClick: openNew }}
-        searchPlaceholder="Search units..."
-        searchValue={search}
-        onSearchChange={setSearch}
-        hideToolbar={false}
-        onExport={handleExport}
-        onImport={handleImport}
-        onResetFilters={handleResetFilters}
-        activeFilterCount={activeFilterCount}
-        filtersContent={({ close }) => (
-          <div className="space-y-4 flex flex-col h-full min-h-[50vh]">
-            <div className="flex-1 space-y-4">
-              <div className="space-y-2">
-                <Label>Unit Usage</Label>
-                <SearchableSelect
-                  options={[
-                    { value: "", label: "All Units" },
-                    { value: "in-use", label: "In Use (Has Products)" },
-                    { value: "empty", label: "Empty (No Products)" },
-                  ]}
-                  value={draftFilters.usage}
-                  onChange={(val) => setDraftFilters((prev) => ({ ...prev, usage: val }))}
-                  placeholder="Filter by Usage"
-                />
-              </div>
-            </div>
-            <div className="pt-4 mt-auto">
-              <Button
-                className="w-full"
-                onClick={() => {
-                  setFilters(draftFilters);
-                  close();
-                }}
-              >
-                Apply Filters
-              </Button>
-            </div>
+    <div className="page-container space-y-6">
+      {/* Standard PageHeader */}
+      <PageHeader
+        title="Units of Measurement (UOM)"
+        description="Standardize quantity packaging, bulk measurement scales, and stock unit conversions."
+        actions={
+          <Button size="sm" onClick={openNew} className="gap-1.5">
+            <Plus className="size-4" /> Add Unit
+          </Button>
+        }
+      />
+
+      {/* Standard StatCard Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <StatCard
+          label="Total Units (UOM)"
+          value={String(totalUnits)}
+          hint="Registered units"
+          icon={Scale}
+          accent="primary"
+        />
+        <StatCard
+          label="Active in Use"
+          value={String(inUseCount)}
+          hint="Has linked SKUs"
+          icon={CheckCircle2}
+          accent="success"
+        />
+        <StatCard
+          label="Linked Catalog SKUs"
+          value={`${totalLinkedItems} items`}
+          hint="Inventory products"
+          icon={Package}
+          accent="info"
+        />
+        <StatCard
+          label="Standard Presets"
+          value="9 Available"
+          hint="Common packaging scales"
+          icon={Layers}
+          accent="warning"
+        />
+      </div>
+
+      {/* Main Section */}
+      <div className="space-y-4">
+        {/* Controls Toolbar */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="relative w-full sm:w-80">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+            <Input
+              placeholder="Search units or abbreviations..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-9 h-9 text-sm rounded-lg"
+            />
           </div>
-        )}
-      >
+
+          <div className="inline-flex rounded-lg border border-border/80 bg-muted/30 p-0.5 shadow-sm self-end sm:self-auto">
+            <button
+              type="button"
+              onClick={() => setViewMode("grid")}
+              className={`grid size-8 place-items-center rounded-md transition-all ${
+                viewMode === "grid"
+                  ? "bg-card text-foreground shadow-sm font-bold"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+              title="Grid View"
+            >
+              <LayoutGrid className="size-4" />
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode("table")}
+              className={`grid size-8 place-items-center rounded-md transition-all ${
+                viewMode === "table"
+                  ? "bg-card text-foreground shadow-sm font-bold"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+              title="Table View"
+            >
+              <TableIcon className="size-4" />
+            </button>
+          </div>
+        </div>
+
+        {/* Content View */}
         {isUnitsLoading ? (
-          <TableSkeleton columns={3} rows={6} showHeaderAction={false} showFilters={false} />
+          viewMode === "grid" ? (
+            <CardGridSkeleton cards={8} />
+          ) : (
+            <TableSkeleton columns={4} rows={6} />
+          )
         ) : isUnitsError ? (
           <ErrorState onRetry={refetchUnits} />
-        ) : (
+        ) : filteredUnits.length === 0 ? (
+          <EmptyState
+            icon={Scale}
+            title="No units found"
+            description={
+              search ? "Try adjusting your search criteria." : "You haven't created any measurement units yet."
+            }
+            actionLabel="Add Unit"
+            onAction={openNew}
+          />
+        ) : viewMode === "grid" ? (
+          /* Grid View */
           <div className="space-y-4">
-            <div className="overflow-hidden rounded-xl border border-border/80 bg-card shadow-soft">
-              {/* Desktop Table View */}
-              <div className="table-desktop overflow-x-auto">
-                <Table className="min-w-[500px]">
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Unit Name</TableHead>
-                      <TableHead>Short Code</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {paginatedUnits.length === 0 ? (
-                      <TableRow>
-                        <TableCell colSpan={3} className="h-64 text-center">
-                          <EmptyState
-                            icon={Scale}
-                            title="No units found"
-                            description={
-                              search ? "Try adjusting your search." : "You haven't created any units yet."
-                            }
-                            actionLabel="Add Unit"
-                            onAction={() => {
-                              setEditingUnit(null);
-                              setName("");
-                              setShort("");
-                              setModalOpen(true);
-                            }}
-                            className="border-none bg-transparent my-0 py-8 shadow-none"
-                          />
-                        </TableCell>
-                      </TableRow>
-                    ) : (
-                      paginatedUnits.map((u) => (
-                        <TableRow key={u.id}>
-                          <TableCell className="font-bold text-foreground whitespace-nowrap">
-                            {u.name}
-                          </TableCell>
-                          <TableCell className="font-mono text-xs text-muted-foreground whitespace-nowrap font-bold">
-                            <span className="rounded-md bg-muted px-2 py-0.5 border border-border/50">
-                              {u.short}
-                            </span>
-                          </TableCell>
-                          <TableCell className="text-right whitespace-nowrap">
-                            <div className="flex justify-end gap-1">
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="size-8 rounded-lg"
-                                onClick={() => openEdit(u)}
-                              >
-                                <Pencil className="size-4" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="size-8 rounded-lg text-destructive hover:bg-destructive/10"
-                                onClick={() => setDeleteId(u.id)}
-                              >
-                                <Trash2 className="size-4" />
-                              </Button>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))
-                    )}
-                  </TableBody>
-                </Table>
-              </div>
-
-              {/* Mobile Cards View (< 768px) */}
-              <div className="table-mobile-cards p-3 space-y-2.5">
-                {paginatedUnits.length === 0 ? (
-                  <EmptyState
-                    icon={Scale}
-                    title="No units found"
-                    description={
-                      search ? "Try adjusting your search." : "You haven't created any units yet."
-                    }
-                    actionLabel="Add Unit"
-                    onAction={() => {
-                      setEditingUnit(null);
-                      setName("");
-                      setShort("");
-                      setModalOpen(true);
-                    }}
-                    className="border-none bg-transparent my-0 py-6 shadow-none"
-                  />
-                ) : (
-                  paginatedUnits.map((u) => (
-                    <div
-                      key={u.id}
-                      className="flex items-center justify-between rounded-xl border border-border/80 bg-card p-3 shadow-sm card-interactive"
-                    >
-                      <div>
-                        <div className="font-bold text-xs sm:text-sm text-foreground">{u.name}</div>
-                        <span className="inline-block mt-1 font-mono text-[11px] font-bold text-muted-foreground bg-muted px-2 py-0.5 rounded-md border border-border/50">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+              {paginatedUnits.map((u: any) => {
+                return (
+                  <div
+                    key={u.id}
+                    className="rounded-2xl border border-border/80 bg-card p-5 shadow-soft flex flex-col justify-between space-y-4 hover:border-border transition-all group"
+                  >
+                    <div className="space-y-3">
+                      <div className="flex items-start justify-between">
+                        <div className="grid size-12 place-items-center rounded-xl bg-primary/10 text-primary font-bold text-sm transition-transform group-hover:scale-105">
                           {u.short}
-                        </span>
+                        </div>
+                        <Badge variant="outline" className="text-xs font-semibold">
+                          {u.products} {u.products === 1 ? "Product" : "Products"}
+                        </Badge>
                       </div>
-                      <div className="flex items-center gap-1 shrink-0">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="size-8 rounded-lg"
-                          onClick={() => openEdit(u)}
-                        >
-                          <Pencil className="size-3.5" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="size-8 rounded-lg text-destructive hover:bg-destructive/10"
-                          onClick={() => setDeleteId(u.id)}
-                        >
-                          <Trash2 className="size-3.5" />
-                        </Button>
+
+                      <div>
+                        <h3 className="font-bold text-base text-foreground group-hover:text-primary transition-colors truncate">
+                          {u.name}
+                        </h3>
+                        <p className="text-xs font-mono text-muted-foreground mt-0.5">
+                          Symbol: <span className="font-bold text-foreground">{u.short}</span>
+                        </p>
                       </div>
                     </div>
-                  ))
-                )}
-              </div>
 
-              {units.length > 0 && (
-                <div className="border-t border-border/60 p-2 sm:p-3">
-                  <PaginationControls
-                    currentPage={page}
-                    totalPages={totalPages}
-                    onPageChange={setPage}
-                    totalItems={units.length}
-                  />
-                </div>
-              )}
+                    <div className="pt-3 border-t border-border/60 flex items-center justify-end gap-1">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => openEdit(u)}
+                        className="h-8 text-xs font-semibold"
+                      >
+                        <Pencil className="size-3.5 mr-1" /> Edit
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setDeleteId(u.id)}
+                        className="h-8 text-xs text-muted-foreground hover:text-destructive"
+                      >
+                        <Trash2 className="size-3.5" />
+                      </Button>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
+            {filteredUnits.length > 0 && (
+              <div className="rounded-xl border border-border/80 bg-card p-3 shadow-soft">
+                <PaginationControls
+                  currentPage={page}
+                  totalPages={totalPages}
+                  pageSize={pageSize}
+                  totalItems={filteredUnits.length}
+                  onPageChange={setPage}
+                  onPageSizeChange={() => {}}
+                />
+              </div>
+            )}
+          </div>
+        ) : (
+          /* Table View */
+          <div className="overflow-hidden rounded-xl border border-border/80 bg-card shadow-soft">
+            <div className="table-desktop overflow-x-auto">
+              <Table className="min-w-[650px]">
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Unit Name</TableHead>
+                    <TableHead>Symbol / Abbreviation</TableHead>
+                    <TableHead>Catalog Items</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {paginatedUnits.map((u: any) => (
+                    <TableRow key={u.id} className="hover:bg-muted/30 transition-colors">
+                      <TableCell>
+                        <span className="font-semibold text-foreground">{u.name}</span>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className="font-mono text-xs font-bold">
+                          {u.short}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className="text-xs font-semibold">
+                          {u.products} products
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex items-center justify-end gap-1">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => openEdit(u)}
+                            className="h-8 text-xs font-semibold"
+                          >
+                            <Pencil className="size-3.5 mr-1" /> Edit
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setDeleteId(u.id)}
+                            className="h-8 text-xs text-muted-foreground hover:text-destructive"
+                          >
+                            <Trash2 className="size-3.5" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+            {filteredUnits.length > 0 && (
+              <div className="border-t border-border/60 p-3">
+                <PaginationControls
+                  currentPage={page}
+                  totalPages={totalPages}
+                  pageSize={pageSize}
+                  totalItems={filteredUnits.length}
+                  onPageChange={setPage}
+                  onPageSizeChange={() => {}}
+                />
+              </div>
+            )}
           </div>
         )}
-      </DataPage>
+      </div>
 
-      {/* Add / Edit Unit Drawer */}
-      <Sheet
-        open={modalOpen}
-        onOpenChange={(open) => {
-          if (!open) {
-            setModalOpen(false);
-            clearUnitAll();
-          }
-        }}
-      >
+      {/* Drawer */}
+      <Sheet open={modalOpen} onOpenChange={setModalOpen}>
         <SheetContent
           side="right"
-          className="w-full sm:max-w-md md:max-w-lg p-0 flex flex-col h-full bg-background border-l border-border"
+          className="w-full sm:max-w-md p-0 flex flex-col h-full bg-background border-l border-border"
         >
-          <SheetHeader className="bg-muted/60 p-5 border-b pr-12 text-left">
-            <SheetTitle className="text-xl font-bold text-foreground">
-              {editingUnit ? "Edit Measurement Unit" : "Add New Unit"}
-            </SheetTitle>
-            <p className="text-xs text-muted-foreground mt-0.5">
-              Define standard measurement units and abbreviations for products.
-            </p>
-          </SheetHeader>
-          <form
-            onSubmit={save}
-            noValidate
-            className="flex flex-col flex-1 overflow-hidden"
-          >
-            <div className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+          <div className="flex flex-col h-full overflow-hidden">
+            <SheetHeader className="bg-muted/40 p-5 border-b pr-12 text-left shrink-0">
+              <SheetTitle className="text-xl font-bold text-foreground">
+                {editingUnit ? "Edit Unit of Measurement" : "Add New Unit"}
+              </SheetTitle>
+              <SheetDescription className="text-xs text-muted-foreground mt-0.5">
+                Define packaging dimensions and retail measurement scales.
+              </SheetDescription>
+            </SheetHeader>
+
+            <form onSubmit={handleSave} className="flex-1 flex flex-col justify-between overflow-hidden">
+              <div className="flex-1 overflow-y-auto p-5 space-y-4">
+                {/* Standard Presets */}
+                {!editingUnit && (
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-semibold">Quick Presets</Label>
+                    <div className="flex flex-wrap gap-1.5 pt-1">
+                      {STANDARD_UNIT_PRESETS.map((preset) => (
+                        <button
+                          key={preset.short}
+                          type="button"
+                          onClick={() => {
+                            setName(preset.name);
+                            setShort(preset.short);
+                            clearUnitAll();
+                          }}
+                          className="px-2.5 py-1 rounded-lg border border-border/70 text-xs font-semibold hover:bg-muted/60 transition-colors"
+                        >
+                          {preset.name} ({preset.short})
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 <div className="space-y-1.5">
-                  <Label htmlFor="name">
+                  <Label htmlFor="unit-name" className="text-xs font-semibold">
                     Unit Name <span className="text-destructive">*</span>
                   </Label>
                   <Input
-                    id="name"
+                    id="unit-name"
                     value={name}
                     onChange={(e) => {
                       setName(e.target.value);
                       clearUnitError("name");
                     }}
-                    placeholder="e.g. Kilogram"
-                    className={
-                      unitErrors.name ? "border-destructive focus-visible:ring-destructive" : ""
-                    }
+                    placeholder="e.g. Kilograms, Liters, Boxes"
+                    className={unitErrors.name ? "border-destructive" : ""}
                   />
                   <FieldError message={unitErrors.name} />
                 </div>
+
                 <div className="space-y-1.5">
-                  <Label htmlFor="short">
-                    Short Code <span className="text-destructive">*</span>
+                  <Label htmlFor="unit-short" className="text-xs font-semibold">
+                    Abbreviation / Symbol <span className="text-destructive">*</span>
                   </Label>
                   <Input
-                    id="short"
+                    id="unit-short"
                     value={short}
                     onChange={(e) => {
                       setShort(e.target.value);
                       clearUnitError("short");
                     }}
-                    placeholder="e.g. kg, pcs, ltr"
-                    className={
-                      unitErrors.short ? "border-destructive focus-visible:ring-destructive" : ""
-                    }
+                    placeholder="e.g. kg, ltr, box, pcs"
+                    className={unitErrors.short ? "border-destructive" : ""}
                   />
                   <FieldError message={unitErrors.short} />
                 </div>
               </div>
-            </div>
-            <div className="border-t border-border p-4 bg-card/80 backdrop-blur-sm flex items-center justify-end gap-3 shrink-0">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => {
-                  setModalOpen(false);
-                  clearUnitAll();
-                }}
-              >
-                Cancel
-              </Button>
-              <Button type="submit" disabled={isSaving} className="min-w-[130px]">
-                {isSaving && <Loader2 className="size-4 animate-spin mr-2" />}
-                Save Unit
-              </Button>
-            </div>
-          </form>
+
+              <SheetFooter className="p-4 border-t border-border/60 bg-muted/20 flex flex-row items-center justify-end gap-2 shrink-0">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setModalOpen(false)}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={isSaving}
+                  className="font-semibold shadow-sm"
+                >
+                  {isSaving && <Loader2 className="size-4 animate-spin mr-2" />}
+                  {editingUnit ? "Update Unit" : "Create Unit"}
+                </Button>
+              </SheetFooter>
+            </form>
+          </div>
         </SheetContent>
       </Sheet>
 
-      <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete the unit.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={confirmDelete}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+      {/* Delete Confirmation */}
+      <Dialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
+        <DialogContent className="max-w-md rounded-2xl p-6 border border-border shadow-soft bg-card">
+          <DialogHeader className="space-y-2 text-left">
+            <div className="flex items-center gap-3">
+              <div className="grid size-10 place-items-center rounded-xl bg-destructive/10 text-destructive shrink-0">
+                <Trash2 className="size-5" />
+              </div>
+              <div>
+                <DialogTitle className="text-lg font-bold text-foreground">
+                  Delete Unit of Measurement
+                </DialogTitle>
+                <DialogDescription className="text-xs text-muted-foreground mt-0.5">
+                  Are you sure you want to delete this unit? Linked products will keep their unit assignment.
+                </DialogDescription>
+              </div>
+            </div>
+          </DialogHeader>
+          <DialogFooter className="mt-4 flex flex-row items-center justify-end gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setDeleteId(null)}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              onClick={handleDelete}
             >
               Delete
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

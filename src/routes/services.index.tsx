@@ -1,30 +1,30 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { List, MoreHorizontal, Pencil, Plus, Trash2, PackageSearch, Loader2 } from "lucide-react";
+import {
+  List,
+  Pencil,
+  Plus,
+  Trash2,
+  PackageSearch,
+  Clock,
+  Layers,
+  DollarSign,
+  Search,
+  LayoutGrid,
+  Table as TableIcon,
+  Download,
+  CheckCircle2,
+  Wrench,
+} from "lucide-react";
 import { useState, useMemo } from "react";
-import { exportToCSV, parseCSV } from "@/lib/csv";
-import { v4 as uuidv4 } from "uuid";
+import { exportToCSV } from "@/lib/csv";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PaginationControls } from "@/components/ui/pagination-controls";
 import { useDebounce } from "@/hooks/useDebounce";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { FileUpload } from "@/components/ui/file-upload";
-import { SearchableSelect } from "@/components/ui/searchable-select";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { PageHeader } from "@/components/layout/PageHeader";
+import { StatCard } from "@/components/layout/StatCard";
 import {
   Select,
   SelectContent,
@@ -32,43 +32,32 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { DataPage } from "@/components/layout/DataPage";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { PersistStore } from "@/lib/session-store";
-import { cn } from "@/lib/utils";
 import { useCurrency } from "@/lib/currency";
 import { toast } from "sonner";
 import { TableSkeleton } from "@/components/skeletons/TableSkeleton";
+import { CardGridSkeleton } from "@/components/skeletons/CardGridSkeleton";
 import { ErrorState } from "@/components/ui/error-state";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   getServicesListFn,
-  createServiceItemFn,
   deleteServiceItemFn,
   getAllServiceVariantsFn,
 } from "@/api/services";
 import { getCategoriesFn } from "@/api/categories";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 export const Route = createFileRoute("/services/")({
   head: () => ({
-    meta: [{ title: "Services · OneDesk360" }],
+    meta: [{ title: "Services Catalog · OneDesk360" }],
   }),
   component: ServicesPage,
 });
@@ -79,19 +68,20 @@ function ServicesPage() {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
 
+  const [viewMode, setViewMode] = useState<"grid" | "table">("grid");
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search, 300);
   const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
+  const [pageSize, setPageSize] = useState(12);
 
-  const [filters, setFilters] = useState({ category: "", status: "" });
-  const [draftFilters, setDraftFilters] = useState({ category: "", status: "" });
+  const [categoryFilter, setCategoryFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState("all");
 
   const { data: catData } = useQuery({
     queryKey: ["categories", orgId],
     queryFn: async () => ((await getCategoriesFn({ data: {} })) as any)?.data || [],
   });
-  const categories = catData || [];
+  const categories = Array.isArray(catData) ? catData : [];
 
   const {
     data: servicesData,
@@ -99,430 +89,435 @@ function ServicesPage() {
     isError,
     refetch,
   } = useQuery({
-    queryKey: [
-      "services",
-      orgId,
-      page,
-      pageSize,
-      debouncedSearch,
-      filters.category,
-      filters.status,
-    ],
-    queryFn: async () => {
-      const res = await getServicesListFn({
-        data: {
-          page,
-          pageSize,
-          query: debouncedSearch,
-          categoryId: filters.category,
-          status: filters.status,
-        },
-      });
-      return res.success ? { items: res.data, total: (res as any).total } : { items: [], total: 0 };
-    },
+    queryKey: ["services", orgId],
+    queryFn: async () => ((await getServicesListFn({ data: {} })) as any)?.data || [],
   });
+  const rawServices: any[] = Array.isArray(servicesData) ? servicesData : [];
 
-  const services = servicesData?.items || [];
-  const totalItems = servicesData?.total || 0;
-  const totalPages = Math.ceil(totalItems / pageSize) || 1;
+  const { data: variantsData } = useQuery({
+    queryKey: ["serviceVariants", orgId],
+    queryFn: async () => ((await getAllServiceVariantsFn({ data: {} })) as any)?.data || [],
+  });
+  const allVariants: any[] = Array.isArray(variantsData) ? variantsData : [];
 
-  const [showDelete, setShowDelete] = useState(false);
-  const [activeItem, setActiveItem] = useState<any>(null);
+  const filtered = useMemo(() => {
+    let list = rawServices;
+    if (debouncedSearch) {
+      const lower = debouncedSearch.toLowerCase();
+      list = list.filter((s: any) => s.name?.toLowerCase().includes(lower));
+    }
+    if (categoryFilter !== "all") {
+      list = list.filter((s: any) => s.category === categoryFilter);
+    }
+    if (statusFilter !== "all") {
+      list = list.filter((s: any) => (s.status || "active") === statusFilter);
+    }
+    return list;
+  }, [rawServices, debouncedSearch, categoryFilter, statusFilter]);
 
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+  const paginatedServices = useMemo(() => {
+    const start = (page - 1) * pageSize;
+    return filtered.slice(start, start + pageSize);
+  }, [filtered, page, pageSize]);
+
+  const totalItems = rawServices.length;
+  const activeCount = useMemo(() => rawServices.filter((s) => (s.status || "active") === "active").length, [rawServices]);
+  const categoriesCount = categories.length;
+
+  const [deleteId, setDeleteId] = useState<string | null>(null);
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => await deleteServiceItemFn({ data: { id } }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["services"] });
-      toast.success("Service deleted");
-      setShowDelete(false);
-      setActiveItem(null);
+      queryClient.invalidateQueries({ queryKey: ["services", orgId] });
+      toast.success("Service deleted successfully");
+      setDeleteId(null);
     },
+    onError: () => toast.error("Failed to delete service"),
   });
 
-  const handleEdit = (item: any) => {
-    navigate({ to: `/services/${item.id}` });
-  };
-
-  const handleExport = async () => {
-    try {
-      const variantsRes = await getAllServiceVariantsFn();
-      const allVariants = variantsRes?.success ? variantsRes.data : [];
-
-      const exportData: any[] = [];
-
-      services.forEach((s: any) => {
-        const catName = categories.find((c: any) => c.id === s.category)?.name || "General";
-        const baseRow = {
-          Name: s.name,
-          Category: catName,
-          BasePrice: s.price,
-          BaseCost: s.cost || "0",
-          BaseDuration: s.duration || "",
-        };
-
-        if (s.hasVariants) {
-          const serviceVariants = allVariants.filter((v: any) => v.serviceId === s.id);
-          if (serviceVariants.length > 0) {
-            serviceVariants.forEach((v: any) => {
-              const row: any = {
-                ...baseRow,
-                VariantName: v.name,
-                VariantPrice: v.price || baseRow.BasePrice,
-                VariantCost: v.cost || baseRow.BaseCost,
-                VariantDuration: v.duration || baseRow.BaseDuration,
-              };
-
-              if (v.attributes && v.attributes.length > 0) {
-                v.attributes.forEach((attr: any, index: number) => {
-                  if (index < 2) {
-                    row[`Option${index + 1}Name`] = attr.name;
-                    row[`Option${index + 1}Value`] = attr.value;
-                  }
-                });
-              }
-              exportData.push(row);
-            });
-          } else {
-            exportData.push(baseRow);
-          }
-        } else {
-          exportData.push(baseRow);
-        }
+  const handleExport = () => {
+    const exportData: any[] = [];
+    filtered.forEach((s: any) => {
+      const catName = categories.find((c: any) => c.id === s.category)?.name || "General";
+      exportData.push({
+        Name: s.name,
+        Category: catName,
+        Price: s.price,
+        Cost: s.cost || "0",
+        Duration: s.duration || "30",
+        Status: s.status || "active",
       });
+    });
 
-      exportToCSV(
-        exportData,
-        [
-          { key: "Name", label: "Name" },
-          { key: "Category", label: "Category" },
-          { key: "BasePrice", label: "Base Price" },
-          { key: "BaseCost", label: "Base Cost" },
-          { key: "BaseDuration", label: "Base Duration (min)" },
-          { key: "VariantName", label: "Variant Name" },
-          { key: "VariantPrice", label: "Variant Price" },
-          { key: "VariantCost", label: "Variant Cost" },
-          { key: "VariantDuration", label: "Variant Duration (min)" },
-          { key: "Option1Name", label: "Option1 Name" },
-          { key: "Option1Value", label: "Option1 Value" },
-          { key: "Option2Name", label: "Option2 Name" },
-          { key: "Option2Value", label: "Option2 Value" },
-        ],
-        "services-with-variants",
-      );
-    } catch (e) {
-      toast.error("Failed to export services");
-      console.error(e);
-    }
-  };
-
-  const handleImport = async (file: File) => {
-    try {
-      const data = await parseCSV(file);
-      if (data.length === 0) {
-        toast.error("No data found in the CSV");
-        return;
-      }
-
-      const groupedData: Record<string, any[]> = {};
-      data.forEach((row) => {
-        if (row["Name"]) {
-          if (!groupedData[row["Name"]]) {
-            groupedData[row["Name"]] = [];
-          }
-          groupedData[row["Name"]].push(row);
-        }
-      });
-
-      let count = 0;
-      for (const [name, rows] of Object.entries(groupedData)) {
-        const firstRow = rows[0];
-        const hasVariants = rows.length > 1 || !!firstRow["VariantName"];
-
-        const variantsToCreate = hasVariants
-          ? rows.map((row) => {
-              const attributes: { name: string; value: string }[] = [];
-              for (let i = 1; i <= 2; i++) {
-                if (row[`Option${i}Name`] && row[`Option${i}Value`]) {
-                  attributes.push({
-                    name: row[`Option${i}Name`],
-                    value: row[`Option${i}Value`],
-                  });
-                }
-              }
-              return {
-                name: row["VariantName"] || "Default",
-                price: parseFloat(row["VariantPrice"] || row["BasePrice"] || "0"),
-                cost: parseFloat(row["VariantCost"] || row["BaseCost"] || "0"),
-                duration: parseInt(row["VariantDuration"] || row["BaseDuration"] || "30"),
-                attributes,
-              };
-            })
-          : [];
-
-        await createServiceItemFn({
-          data: {
-            id: uuidv4(),
-            name: name,
-            category:
-              categories.find(
-                (c: any) => c.name.toLowerCase() === (firstRow["Category"] || "").toLowerCase(),
-              )?.id ||
-              categories[0]?.id ||
-              "General",
-            price: parseFloat(firstRow["BasePrice"] || firstRow["Price"] || "0"),
-            cost: parseFloat(firstRow["BaseCost"] || firstRow["Cost"] || "0"),
-            duration: parseInt(firstRow["BaseDuration"] || firstRow["Duration (min)"] || "30"),
-            hasVariants,
-            variants: variantsToCreate,
-            status: "active",
-          },
-        });
-        count++;
-      }
-
-      queryClient.invalidateQueries({ queryKey: ["services"] });
-      toast.success(`Successfully imported ${count} services`);
-    } catch (error) {
-      toast.error("Failed to parse CSV file");
-    }
+    exportToCSV(
+      exportData,
+      [
+        { key: "Name", label: "Service Name" },
+        { key: "Category", label: "Category" },
+        { key: "Price", label: "Price" },
+        { key: "Cost", label: "Cost" },
+        { key: "Duration", label: "Duration (min)" },
+        { key: "Status", label: "Status" },
+      ],
+      "services-catalog"
+    );
   };
 
   return (
-    <div>
-      <DataPage
-        title="Services"
-        description="Manage your billable services and durations"
-        searchPlaceholder="Search services by name or SKU..."
-        searchValue={search}
-        onSearchChange={setSearch}
-        hideToolbar={services.length === 0}
-        onExport={handleExport}
-        onImport={handleImport}
-        primaryAction={{
-          label: "Add Service",
-          icon: Plus,
-          onClick: () => navigate({ to: "/services/new" }),
-        }}
-        filtersContent={({ close }) => (
-          <div className="flex flex-col h-full gap-4">
-            <div className="space-y-2">
-              <Label>Category</Label>
-              <SearchableSelect
-                value={draftFilters.category}
-                onChange={(v) => setDraftFilters({ ...draftFilters, category: v })}
-                options={[
-                  { value: "", label: "All Categories" },
-                  ...categories.map((c: any) => ({ value: c.id, label: c.name })),
-                ]}
-                placeholder="Select category..."
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Status</Label>
-              <Select
-                value={draftFilters.status}
-                onValueChange={(v) => setDraftFilters({ ...draftFilters, status: v })}
+    <div className="page-container space-y-6">
+      {/* Standard PageHeader */}
+      <PageHeader
+        title="Services & Appointment Items"
+        description="Configure billable services, session durations, multi-tier pricing variants, and staff commission rules."
+        actions={
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleExport}
+              className="gap-1.5"
+            >
+              <Download className="size-4" /> Export CSV
+            </Button>
+            <Button
+              size="sm"
+              onClick={() => navigate({ to: "/services/new" })}
+              className="gap-1.5"
+            >
+              <Plus className="size-4" /> Add Service
+            </Button>
+          </div>
+        }
+      />
+
+      {/* Standard StatCard Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <StatCard
+          label="Total Services"
+          value={String(totalItems)}
+          hint="Registered billable offerings"
+          icon={Wrench}
+          accent="primary"
+        />
+        <StatCard
+          label="Service Categories"
+          value={String(categoriesCount)}
+          hint="Active classifications"
+          icon={Layers}
+          accent="info"
+        />
+        <StatCard
+          label="Active Offerings"
+          value={String(activeCount)}
+          hint="Available in POS & Booking"
+          icon={CheckCircle2}
+          accent="success"
+        />
+        <StatCard
+          label="Multi-Tier Variants"
+          value={`${allVariants.length} Variants`}
+          hint="Tiered pricing options"
+          icon={DollarSign}
+          accent="warning"
+        />
+      </div>
+
+      {/* Main Section */}
+      <div className="space-y-4">
+        {/* Controls Toolbar */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="relative w-full sm:w-80">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+            <Input
+              placeholder="Search services..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-9 h-9 text-sm rounded-lg"
+            />
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+              <SelectTrigger className="h-9 w-36 text-xs rounded-lg">
+                <SelectValue placeholder="All Categories" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Categories</SelectItem>
+                {categories.map((c: any) => (
+                  <SelectItem key={c.id} value={c.id}>
+                    {c.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="h-9 w-32 text-xs rounded-lg">
+                <SelectValue placeholder="Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Status</SelectItem>
+                <SelectItem value="active">Active</SelectItem>
+                <SelectItem value="inactive">Inactive</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <div className="inline-flex rounded-lg border border-border/80 bg-muted/30 p-0.5 shadow-sm">
+              <button
+                type="button"
+                onClick={() => setViewMode("grid")}
+                className={`grid size-8 place-items-center rounded-md transition-all ${
+                  viewMode === "grid"
+                    ? "bg-card text-foreground shadow-sm font-bold"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+                title="Grid View"
               >
-                <SelectTrigger>
-                  <SelectValue placeholder="All Status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Status</SelectItem>
-                  <SelectItem value="active">Active</SelectItem>
-                  <SelectItem value="inactive">Inactive</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="mt-auto border-t pt-4 flex gap-2">
-              <Button
-                variant="outline"
-                className="w-full"
-                onClick={() => {
-                  setDraftFilters({ category: "", status: "" });
-                  setFilters({ category: "", status: "" });
-                  setPage(1);
-                  close();
-                }}
+                <LayoutGrid className="size-4" />
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewMode("table")}
+                className={`grid size-8 place-items-center rounded-md transition-all ${
+                  viewMode === "table"
+                    ? "bg-card text-foreground shadow-sm font-bold"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+                title="Table View"
               >
-                Clear
-              </Button>
-              <Button
-                className="w-full"
-                onClick={() => {
-                  setFilters(draftFilters);
-                  setPage(1);
-                  close();
-                }}
-              >
-                Apply
-              </Button>
+                <TableIcon className="size-4" />
+              </button>
             </div>
           </div>
-        )}
-        onResetFilters={() => {
-          setDraftFilters({ category: "", status: "" });
-          setFilters({ category: "", status: "" });
-          setPage(1);
-        }}
-        activeFilterCount={
-          (filters.category ? 1 : 0) + (filters.status && filters.status !== "all" ? 1 : 0)
-        }
-      >
-        <div className="mt-4 md:mt-6">
-          {isLoading ? (
-            <TableSkeleton rows={5} columns={6} />
-          ) : isError ? (
-            <ErrorState
-              title="Failed to load services"
-              description="There was an error fetching the services. Please try again."
-              onRetry={() => refetch()}
-            />
-          ) : (
-            <div className="rounded-xl border border-border/80 bg-card shadow-soft overflow-hidden">
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="px-4 py-3 font-semibold text-muted-foreground w-12">#</TableHead>
-                      <TableHead className="px-4 py-3 font-semibold text-muted-foreground">Name</TableHead>
-                      <TableHead className="px-4 py-3 font-semibold text-muted-foreground">Category</TableHead>
-                      <TableHead className="px-4 py-3 font-semibold text-muted-foreground text-right">
-                        Price
-                      </TableHead>
-                      <TableHead className="px-4 py-3 font-semibold text-muted-foreground text-center">
-                        Duration
-                      </TableHead>
-                      <TableHead className="px-4 py-3 font-semibold text-muted-foreground text-center">
-                        Status
-                      </TableHead>
-                      <TableHead className="px-4 py-3 font-semibold text-muted-foreground text-right">
-                        Actions
-                      </TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody className="divide-y divide-border">
-                    {services.length === 0 ? (
-                      <TableRow>
-                        <TableCell colSpan={7} className="h-64 text-center">
-                          <EmptyState
-                            icon={List}
-                            title="No Services Found"
-                            description={
-                              search || filters.category
-                                ? "No services match your current filters."
-                                : "Get started by creating your first service."
-                            }
-                            actionLabel={!search && !filters.category ? "Add Service" : undefined}
-                            onAction={
-                              !search && !filters.category ? () => navigate({ to: "/services/new" }) : undefined
-                            }
-                            className="border-none bg-transparent my-0 py-8 shadow-none"
-                          />
-                        </TableCell>
-                      </TableRow>
-                    ) : (
-                      services.map((item: any, i: number) => {
-                        const catName =
-                          categories.find((c: any) => c.id === item.category)?.name || item.category;
-                        return (
-                          <TableRow key={item.id} className="hover:bg-muted/20">
-                            <TableCell className="px-4 py-3 text-muted-foreground">
-                              {(page - 1) * pageSize + i + 1}
-                            </TableCell>
-                            <TableCell className="px-4 py-3">
-                              <div className="font-semibold">{item.name}</div>
-                            </TableCell>
-                            <TableCell className="px-4 py-3 text-muted-foreground">{catName}</TableCell>
-                            <TableCell className="px-4 py-3 text-right">
-                              <div className="font-bold">{formatCurrency(Number(item.price))}</div>
-                              {Number(item.cost) > 0 && (
-                                <div className="text-[10px] text-muted-foreground">
-                                  Cost: {formatCurrency(Number(item.cost))}
-                                </div>
-                              )}
-                            </TableCell>
-                            <TableCell className="px-4 py-3 text-center">
-                              {item.duration ? `${item.duration} min` : "-"}
-                            </TableCell>
-                            <TableCell className="px-4 py-3 text-center">
-                              <Badge variant={item.status === "active" ? "default" : "secondary"}>
-                                {item.status}
-                              </Badge>
-                            </TableCell>
-                            <TableCell className="px-4 py-3 text-right">
-                              <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                  <Button variant="ghost" size="icon" className="size-8">
-                                    <MoreHorizontal className="size-4" />
-                                  </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end" className="w-36">
-                                  <DropdownMenuItem onClick={() => handleEdit(item)}>
-                                    <Pencil className="mr-2 size-4" /> Edit
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem
-                                    className="text-destructive focus:bg-destructive/10 focus:text-destructive"
-                                    onClick={() => {
-                                      setActiveItem(item);
-                                      setShowDelete(true);
-                                    }}
-                                  >
-                                    <Trash2 className="mr-2 size-4" /> Delete
-                                  </DropdownMenuItem>
-                                </DropdownMenuContent>
-                              </DropdownMenu>
-                            </TableCell>
-                          </TableRow>
-                        );
-                      })
-                    )}
-                  </TableBody>
-                </Table>
-              </div>
+        </div>
 
-              {services.length > 0 && (
+        {/* Content View */}
+        {isLoading ? (
+          viewMode === "grid" ? (
+            <CardGridSkeleton cards={8} />
+          ) : (
+            <TableSkeleton columns={5} rows={6} />
+          )
+        ) : isError ? (
+          <ErrorState onRetry={refetch} />
+        ) : filtered.length === 0 ? (
+          <EmptyState
+            icon={Wrench}
+            title="No services found"
+            description={
+              search ? "Try adjusting your search criteria." : "You haven't created any service items yet."
+            }
+            actionLabel="Add Service"
+            onAction={() => navigate({ to: "/services/new" })}
+          />
+        ) : viewMode === "grid" ? (
+          /* Grid View */
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+              {paginatedServices.map((s: any) => {
+                const catObj = categories.find((c: any) => c.id === s.category);
+                const sVariants = allVariants.filter((v) => v.serviceId === s.id);
+
+                return (
+                  <div
+                    key={s.id}
+                    className="rounded-2xl border border-border/80 bg-card p-5 shadow-soft flex flex-col justify-between space-y-4 hover:border-border transition-all group"
+                  >
+                    <div className="space-y-3">
+                      <div className="flex items-start justify-between">
+                        <div className="grid size-11 place-items-center rounded-xl bg-primary/10 text-primary font-bold text-base">
+                          <Wrench className="size-5" />
+                        </div>
+                        <Badge variant="outline" className="text-xs font-semibold">
+                          <Clock className="size-3 mr-1 text-muted-foreground" />
+                          {s.duration || "30"} mins
+                        </Badge>
+                      </div>
+
+                      <div>
+                        <span className="text-[10px] font-bold text-primary block">
+                          {catObj?.name || "General Service"}
+                        </span>
+                        <h3
+                          onClick={() => navigate({ to: `/services/${s.id}` })}
+                          className="font-bold text-base text-foreground group-hover:text-primary transition-colors cursor-pointer truncate mt-0.5"
+                        >
+                          {s.name}
+                        </h3>
+                        {sVariants.length > 0 && (
+                          <p className="text-xs text-muted-foreground mt-0.5">
+                            {sVariants.length} pricing variants
+                          </p>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="pt-3 border-t border-border/60 flex items-center justify-between">
+                      <div>
+                        <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground block">
+                          Base Price
+                        </span>
+                        <span className="text-base font-bold text-foreground">
+                          {formatCurrency(s.price || 0)}
+                        </span>
+                      </div>
+
+                      <div className="flex items-center gap-1">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => navigate({ to: `/services/${s.id}` })}
+                          className="h-8 text-xs font-semibold"
+                        >
+                          <Pencil className="size-3.5 mr-1" /> Edit
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setDeleteId(s.id)}
+                          className="h-8 text-xs text-muted-foreground hover:text-destructive"
+                        >
+                          <Trash2 className="size-3.5" />
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            {filtered.length > 0 && (
+              <div className="rounded-xl border border-border/80 bg-card p-3 shadow-soft">
                 <PaginationControls
                   currentPage={page}
                   totalPages={totalPages}
-                  onPageChange={setPage}
                   pageSize={pageSize}
+                  totalItems={filtered.length}
+                  onPageChange={setPage}
                   onPageSizeChange={setPageSize}
-                  totalItems={totalItems}
                 />
-              )}
-            </div>
-          )}
-        </div>
+              </div>
+            )}
+          </div>
+        ) : (
+          /* Table View */
+          <div className="overflow-hidden rounded-xl border border-border/80 bg-card shadow-soft">
+            <div className="table-desktop overflow-x-auto">
+              <Table className="min-w-[700px]">
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Service Name</TableHead>
+                    <TableHead>Category</TableHead>
+                    <TableHead>Duration</TableHead>
+                    <TableHead className="text-right">Base Price</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {paginatedServices.map((s: any) => {
+                    const catObj = categories.find((c: any) => c.id === s.category);
 
-        <AlertDialog open={showDelete} onOpenChange={setShowDelete}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Delete Service</AlertDialogTitle>
-              <AlertDialogDescription>
-                Are you sure you want to delete{" "}
-                <span className="font-bold">{activeItem?.name}</span>? This action cannot be undone.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel disabled={isSubmitting}>Cancel</AlertDialogCancel>
-              <AlertDialogAction
-                className="bg-destructive hover:bg-destructive/90"
-                onClick={(e) => {
-                  e.preventDefault();
-                  setIsSubmitting(true);
-                  deleteMutation.mutate(activeItem?.id);
-                }}
-                disabled={isSubmitting}
-              >
-                {isSubmitting ? <Loader2 className="mr-2 size-4 animate-spin" /> : null}
-                Delete
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
-      </DataPage>
+                    return (
+                      <TableRow key={s.id} className="hover:bg-muted/30 transition-colors">
+                        <TableCell>
+                          <div
+                            onClick={() => navigate({ to: `/services/${s.id}` })}
+                            className="font-semibold text-foreground hover:text-primary cursor-pointer transition-colors"
+                          >
+                            {s.name}
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-xs">
+                          {catObj?.name || "General"}
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className="text-xs">
+                            <Clock className="size-3 mr-1 text-muted-foreground" />
+                            {s.duration || "30"} min
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right font-bold text-foreground">
+                          {formatCurrency(s.price || 0)}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex items-center justify-end gap-1">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => navigate({ to: `/services/${s.id}` })}
+                              className="h-8 text-xs font-semibold"
+                            >
+                              <Pencil className="size-3.5 mr-1" /> Edit
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setDeleteId(s.id)}
+                              className="h-8 text-xs text-muted-foreground hover:text-destructive"
+                            >
+                              <Trash2 className="size-3.5" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </div>
+            {filtered.length > 0 && (
+              <div className="border-t border-border/60 p-3">
+                <PaginationControls
+                  currentPage={page}
+                  totalPages={totalPages}
+                  pageSize={pageSize}
+                  totalItems={filtered.length}
+                  onPageChange={setPage}
+                  onPageSizeChange={setPageSize}
+                />
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Delete Confirmation */}
+      <Dialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
+        <DialogContent className="max-w-md rounded-2xl p-6 border border-border shadow-soft bg-card">
+          <DialogHeader className="space-y-2 text-left">
+            <div className="flex items-center gap-3">
+              <div className="grid size-10 place-items-center rounded-xl bg-destructive/10 text-destructive shrink-0">
+                <Trash2 className="size-5" />
+              </div>
+              <div>
+                <DialogTitle className="text-lg font-bold text-foreground">
+                  Delete Service Offering
+                </DialogTitle>
+                <DialogDescription className="text-xs text-muted-foreground mt-0.5">
+                  Are you sure you want to delete this service? Historical appointments will retain their records.
+                </DialogDescription>
+              </div>
+            </div>
+          </DialogHeader>
+          <DialogFooter className="mt-4 flex flex-row items-center justify-end gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setDeleteId(null)}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              onClick={() => deleteId && deleteMutation.mutate(deleteId)}
+            >
+              Delete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
