@@ -383,7 +383,7 @@ export function AppHeader() {
           onClick={() => {
             window.dispatchEvent(new CustomEvent("open-ai-copilot"));
           }}
-          tooltip="AI Copilot Assistant (Ctrl+K)"
+          tooltip="AI Copilot Assistant (Ctrl+J)"
           aria-label="Open AI Copilot"
           className="text-primary hover:bg-primary/10"
         >

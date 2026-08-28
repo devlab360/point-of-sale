@@ -168,6 +168,65 @@ function PosScreen() {
   // Global Keyboard Shortcuts
   useEffect(() => {
     const handleKeyboardShortcuts = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        // 1. Close virtual keyboard if open
+        if (state.keyboardOpen) {
+          e.preventDefault();
+          state.setKeyboardOpen(false);
+          return;
+        }
+
+        // 2. Close any open POS dialogs / modals
+        let closedModal = false;
+        if (state.showCustomerSearch) {
+          state.setShowCustomerSearch(false);
+          closedModal = true;
+        }
+        if (state.showAddCustomer) {
+          state.setShowAddCustomer(false);
+          closedModal = true;
+        }
+        if (state.showHeld) {
+          state.setShowHeld(false);
+          closedModal = true;
+        }
+        if (state.showCoupon) {
+          state.setShowCoupon(false);
+          closedModal = true;
+        }
+        if (state.confirmCheckout) {
+          state.setConfirmCheckout(false);
+          closedModal = true;
+        }
+        if (state.saleComplete) {
+          state.setSaleComplete(null);
+          closedModal = true;
+        }
+        if (state.showShortcutsHelp) {
+          state.setShowShortcutsHelp(false);
+          closedModal = true;
+        }
+        if (state.showAddProduct) {
+          state.setShowAddProduct(false);
+          closedModal = true;
+        }
+        if (state.showAddService) {
+          state.setShowAddService(false);
+          closedModal = true;
+        }
+
+        // 3. Blur focused inputs
+        if (document.activeElement instanceof HTMLElement) {
+          document.activeElement.blur();
+        }
+
+        if (closedModal) {
+          e.preventDefault();
+          e.stopPropagation();
+        }
+        return;
+      }
+
       if (e.key === "F1") {
         e.preventDefault();
         const searchInput = document.querySelector<HTMLInputElement>(
@@ -204,8 +263,8 @@ function PosScreen() {
         setShowShortcutsHelp(true);
       }
     };
-    window.addEventListener("keydown", handleKeyboardShortcuts);
-    return () => window.removeEventListener("keydown", handleKeyboardShortcuts);
+    window.addEventListener("keydown", handleKeyboardShortcuts, true);
+    return () => window.removeEventListener("keydown", handleKeyboardShortcuts, true);
   }, [
     lines,
     holdInvoice,
@@ -213,6 +272,7 @@ function PosScreen() {
     setPayment,
     setConfirmCheckout,
     setShowShortcutsHelp,
+    state,
   ]);
 
   // Resizing Drawer

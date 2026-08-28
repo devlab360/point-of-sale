@@ -46,6 +46,20 @@ export function ProductGrid({ state }: { state: any }) {
     variant?: any;
   } | null>(null);
 
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        if (selectedModifierProduct) {
+          setSelectedModifierProduct(null);
+        } else if (selectedVariantProduct) {
+          setSelectedVariantProduct(null);
+        }
+      }
+    };
+    window.addEventListener("keydown", handleEscape, true);
+    return () => window.removeEventListener("keydown", handleEscape, true);
+  }, [selectedModifierProduct, selectedVariantProduct]);
+
   const parentRef = useRef<HTMLDivElement>(null);
   const [columns, setColumns] = useState(2);
 
