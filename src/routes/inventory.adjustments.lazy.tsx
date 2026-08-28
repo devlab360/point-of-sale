@@ -157,8 +157,11 @@ function AdjustmentsPage() {
         setProductId("");
         setQty("1");
         setNotes("");
-        queryClient.invalidateQueries({ queryKey: ["inventoryAdjustments", orgId] });
-        queryClient.invalidateQueries({ queryKey: ["products", orgId] });
+        queryClient.invalidateQueries({ queryKey: ["inventoryAdjustments"] });
+        queryClient.invalidateQueries({ queryKey: ["products"] });
+        queryClient.invalidateQueries({ queryKey: ["posItems"] });
+        queryClient.invalidateQueries({ queryKey: ["posBootstrap"] });
+        queryClient.invalidateQueries({ queryKey: ["inventoryMovements"] });
       } else {
         throw new Error(res?.error || "Failed to log adjustment");
       }

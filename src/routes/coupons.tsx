@@ -134,7 +134,7 @@ function CouponsPage() {
     clearAll: clearCouponAll,
   } = useFormValidation({
     code: { required: "Promo coupon code is required", minLength: { value: 3, message: "At least 3 chars" } },
-    value: { required: "Discount value is required", min: { value: 0.01, message: "Must be > 0" } },
+    value: { required: "Discount value is required", positive: "Must be > 0" },
   });
 
   const totalCoupons = rawCoupons.length;
@@ -725,8 +725,8 @@ function CouponsPage() {
                 <div className="space-y-1.5">
                   <Label className="text-xs font-semibold">Expiry Date (Optional)</Label>
                   <DatePicker
-                    value={expiresDate}
-                    onChange={setExpiresDate}
+                    date={expiresDate}
+                    onDateChange={(d) => setExpiresDate(d ? d.toISOString().split("T")[0] : "")}
                     placeholder="Select expiration date"
                   />
                 </div>

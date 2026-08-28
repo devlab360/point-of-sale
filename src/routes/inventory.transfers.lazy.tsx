@@ -182,8 +182,11 @@ function TransfersPage() {
         setTransferQty("1");
         setTotalAmount("0");
         setPaidAmount("0");
-        queryClient.invalidateQueries({ queryKey: ["inventoryTransfers", orgId] });
-        queryClient.invalidateQueries({ queryKey: ["products", orgId] });
+        queryClient.invalidateQueries({ queryKey: ["inventoryTransfers"] });
+        queryClient.invalidateQueries({ queryKey: ["products"] });
+        queryClient.invalidateQueries({ queryKey: ["posItems"] });
+        queryClient.invalidateQueries({ queryKey: ["posBootstrap"] });
+        queryClient.invalidateQueries({ queryKey: ["inventoryMovements"] });
       } else {
         throw new Error(res?.error || "Transfer failed");
       }

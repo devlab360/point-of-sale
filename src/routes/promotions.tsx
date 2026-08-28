@@ -679,8 +679,9 @@ function PromotionsPage() {
                   <div className="space-y-1.5">
                     <Label className="text-xs font-semibold">Start Date *</Label>
                     <DatePicker
-                      value={startDate}
-                      onChange={(val) => {
+                      date={startDate}
+                      onDateChange={(d) => {
+                        const val = d ? d.toISOString().split("T")[0] : "";
                         setStartDate(val);
                         clearPromoError("startDate");
                       }}
@@ -692,8 +693,9 @@ function PromotionsPage() {
                   <div className="space-y-1.5">
                     <Label className="text-xs font-semibold">End Date *</Label>
                     <DatePicker
-                      value={endDate}
-                      onChange={(val) => {
+                      date={endDate}
+                      onDateChange={(d) => {
+                        const val = d ? d.toISOString().split("T")[0] : "";
                         setEndDate(val);
                         clearPromoError("endDate");
                       }}

@@ -186,8 +186,8 @@ function ExpensesPage() {
     },
     amount: {
       required: "Amount is required",
-      numeric: "Amount must be a number",
-      custom: (val) => (parseFloat(val) <= 0 ? "Amount must be greater than 0" : null),
+      positive: "Amount must be greater than 0",
+      custom: (val) => (parseFloat(val) <= 0 ? "Amount must be greater than 0" : undefined),
     },
   });
 
@@ -229,7 +229,6 @@ function ExpensesPage() {
               description,
               amount: parseFloat(amount),
               status: expenseStatus,
-              paymentMethod,
             },
           },
         });
@@ -248,7 +247,6 @@ function ExpensesPage() {
               description,
               amount: parseFloat(amount),
               status: expenseStatus,
-              paymentMethod,
             },
           },
         });

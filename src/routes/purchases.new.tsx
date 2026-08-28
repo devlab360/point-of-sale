@@ -211,7 +211,7 @@ function NewPurchasePage() {
           queryClient.invalidateQueries({ queryKey: ["purchases"] });
           navigate({ to: "/purchases" });
         } else {
-          toast.error(res?.error || "Failed to update purchase order");
+          toast.error((res as any)?.error || "Failed to update purchase order");
         }
       } else {
         const res = await createPurchaseFn({ data: purchaseData });
@@ -221,7 +221,7 @@ function NewPurchasePage() {
           queryClient.invalidateQueries({ queryKey: ["products"] });
           navigate({ to: "/purchases" });
         } else {
-          toast.error(res?.error || "Failed to record purchase order");
+          toast.error((res as any)?.error || "Failed to record purchase order");
         }
       }
     } catch (err: any) {
@@ -243,11 +243,11 @@ function NewPurchasePage() {
       try {
         const base64 = (reader.result as string).split(",")[1];
         const res = await parseInvoiceFn({
-          data: { imageBase64: base64, mimeType: file.type },
+          data: { fileBase64: base64, mimeType: file.type },
         });
 
         if (!res?.success || !res.data) {
-          throw new Error(res?.error || "Failed to extract invoice data");
+          throw new Error((res as any)?.error || "Failed to extract invoice data");
         }
 
         const data = res.data;

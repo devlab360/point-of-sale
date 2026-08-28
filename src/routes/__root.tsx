@@ -16,7 +16,7 @@ import { BottomNav } from "@/components/layout/BottomNav";
 import { APP_GROUPS, hasPermissionForRoute } from "@/lib/menu-config";
 import { AppHeader } from "@/components/layout/AppHeader";
 
-import { Toaster } from "sonner";
+import { Toaster, toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { AdminAuthProvider } from "@/contexts/AdminAuthContext";
@@ -37,6 +37,9 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 
+import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { AlertTriangle, RefreshCw, Home, Copy, Check, Terminal, RotateCcw } from "lucide-react";
+
 function NotFoundComponent() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
@@ -55,38 +58,110 @@ function NotFoundComponent() {
 }
 
 function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
-  console.error(error);
   const router = useRouter();
+  const [showDetails, setShowDetails] = useState(false);
+  const [copied, setCopied] = useState(false);
+
   useEffect(() => {
+    console.error("[Root ErrorComponent]", error);
     reportLovableError(error, { boundary: "tanstack_root_error_component" });
   }, [error]);
+
+  const handleCopy = () => {
+    const text = `Error: ${error?.message || "Unknown error"}\n\nStack:\n${error?.stack || ""}`;
+    navigator.clipboard.writeText(text);
+    setCopied(true);
+    toast.success("Error stack trace copied");
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleClearCacheAndReset = () => {
+    try {
+      sessionStorage.clear();
+      localStorage.removeItem("query-cache");
+      toast.info("Clearing cache and reloading...");
+      setTimeout(() => {
+        window.location.href = "/";
+      }, 500);
+    } catch {
+      window.location.href = "/";
+    }
+  };
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4">
-      <div className="max-w-md text-center">
-        <h1 className="text-xl font-semibold tracking-tight text-foreground">
-          Something went wrong
-        </h1>
-        <p className="mt-2 text-sm text-muted-foreground">
-          {error?.message || "The page didn't load. You can try again or head back home."}
-        </p>
-        {error?.stack && (
-          <pre className="mt-4 p-3 text-xs bg-muted/80 text-destructive rounded-xl text-left overflow-auto max-h-48 border border-destructive/20 font-mono">
-            {error.stack}
-          </pre>
-        )}
-        <div className="mt-6 flex flex-wrap justify-center gap-2">
+    <div className="flex min-h-screen items-center justify-center bg-background px-4 py-8">
+      <div className="max-w-lg w-full text-center p-6 sm:p-8 rounded-3xl border border-destructive/25 bg-card shadow-card space-y-4">
+        <div className="mx-auto flex size-14 items-center justify-center rounded-2xl bg-destructive/15 text-destructive shadow-sm">
+          <AlertTriangle className="size-7" strokeWidth={2} />
+        </div>
+
+        <div>
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
+            Something went wrong
+          </h1>
+          <p className="mt-2 text-xs sm:text-sm text-muted-foreground leading-relaxed">
+            {error?.message || "The application encountered an unexpected error while loading this page."}
+          </p>
+        </div>
+
+        <div className="flex flex-wrap justify-center gap-2 pt-2">
           <Button
             onClick={() => {
               router.invalidate();
               reset();
             }}
+            className="gap-1.5 font-semibold shadow-sm"
           >
-            Try again
+            <RefreshCw className="size-4" /> Try Again
           </Button>
-          <Button asChild variant="outline">
-            <a href="/">Go home</a>
+          <Button asChild variant="outline" className="gap-1.5">
+            <a href="/">
+              <Home className="size-4" /> Go Home
+            </a>
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setShowDetails(!showDetails)}
+            className="text-xs text-muted-foreground hover:text-foreground gap-1"
+          >
+            <Terminal className="size-3.5" />
+            {showDetails ? "Hide Stack" : "View Stack"}
           </Button>
         </div>
+
+        {showDetails && (
+          <div className="text-left bg-muted/40 border border-border/80 rounded-xl p-3.5 space-y-2 mt-4">
+            <div className="flex items-center justify-between">
+              <span className="font-mono text-xs font-bold text-destructive truncate">
+                {error?.name || "Error"}
+              </span>
+              <button
+                type="button"
+                onClick={handleCopy}
+                className="text-[11px] font-semibold text-muted-foreground hover:text-foreground inline-flex items-center gap-1"
+              >
+                {copied ? <Check className="size-3 text-success" /> : <Copy className="size-3" />}
+                {copied ? "Copied" : "Copy"}
+              </button>
+            </div>
+            {error?.stack && (
+              <pre className="text-[10px] sm:text-[11px] font-mono text-muted-foreground overflow-x-auto max-h-40 p-2 rounded bg-background/80 border whitespace-pre-wrap">
+                {error.stack}
+              </pre>
+            )}
+            <div className="pt-2 flex items-center justify-end">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleClearCacheAndReset}
+                className="h-7 text-xs text-destructive border-destructive/30 hover:bg-destructive/10"
+              >
+                <RotateCcw className="size-3 mr-1" /> Clear Storage & Reload
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -184,6 +259,38 @@ function RootComponent() {
         })
         .catch((err) => console.error("PWA registration error:", err));
     }
+
+    // Global listener for unhandled asynchronous promise rejections
+    const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
+      console.error("[Global Unhandled Rejection]", event.reason);
+      try {
+        reportLovableError(
+          event.reason instanceof Error ? event.reason : new Error(String(event.reason || "Unhandled Promise Rejection")),
+          { boundary: "window_unhandled_rejection" }
+        );
+      } catch {
+        // Silently ignore
+      }
+    };
+
+    // Global listener for runtime script errors
+    const handleWindowError = (event: ErrorEvent) => {
+      console.error("[Global Window Error]", event.error || event.message);
+      if (event.error) {
+        try {
+          reportLovableError(event.error, { boundary: "window_onerror" });
+        } catch {
+          // Silently ignore
+        }
+      }
+    };
+
+    window.addEventListener("unhandledrejection", handleUnhandledRejection);
+    window.addEventListener("error", handleWindowError);
+    return () => {
+      window.removeEventListener("unhandledrejection", handleUnhandledRejection);
+      window.removeEventListener("error", handleWindowError);
+    };
   }, []);
 
   return (
@@ -291,7 +398,9 @@ function AppLayout() {
   if (isPublicRoute) {
     return (
       <>
-        <Outlet />
+        <ErrorBoundary scopeName="public_outlet">
+          <Outlet />
+        </ErrorBoundary>
         <Toaster
           position="top-right"
           toastOptions={{
@@ -510,7 +619,9 @@ function AppLayout() {
               </div>
             ) : (
               <div className="page-enter">
-                <Outlet />
+                <ErrorBoundary scopeName="main_dashboard_outlet">
+                  <Outlet />
+                </ErrorBoundary>
               </div>
             )}
           </main>

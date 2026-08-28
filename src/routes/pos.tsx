@@ -369,9 +369,15 @@ function PosScreen() {
 
       if (!res?.success) throw new Error(res?.error || "Sale failed");
 
+      queryClient.invalidateQueries({ queryKey: ["posItems"] });
+      queryClient.invalidateQueries({ queryKey: ["posBootstrap"] });
       queryClient.invalidateQueries({ queryKey: ["products"] });
+      queryClient.invalidateQueries({ queryKey: ["sales"] });
       queryClient.invalidateQueries({ queryKey: ["customers"] });
       queryClient.invalidateQueries({ queryKey: ["coupons"] });
+      queryClient.invalidateQueries({ queryKey: ["inventoryMovements"] });
+      queryClient.invalidateQueries({ queryKey: ["inventoryBatches"] });
+      queryClient.invalidateQueries({ queryKey: ["heldInvoices"] });
 
       // Automation: Send WhatsApp Receipt if customer is registered and has phone
       if (activeCustomer.id !== "walkin" && activeCustomer.phone) {

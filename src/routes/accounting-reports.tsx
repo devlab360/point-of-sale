@@ -5,7 +5,8 @@ import { getAccountsFn, getVouchersFn } from "@/api/finance";
 import { getSalesFn } from "@/api/sales";
 import { getExpensesFn } from "@/api/expenses";
 import { getPurchasesFn } from "@/api/purchases";
-import { DataPage } from "@/components/layout/DataPage";
+import { PageHeader } from "@/components/layout/PageHeader";
+import { ErrorState } from "@/components/ui/error-state";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import {
@@ -197,29 +198,25 @@ function AccountingReportsPage() {
 
   if (accountsError) {
     return (
-      <DataPage
-        title="Financial Accounting Reports"
-        description="Generate Trial Balance, Balance Sheet, and Profit & Loss Statements."
-        hideToolbar
-      >
-        <div className="text-destructive flex flex-col items-center justify-center p-12 bg-card rounded-2xl border">
-          <AlertCircle className="size-10 mb-3 text-destructive" />
-          <h3 className="font-bold text-base">Error loading financial accounting data</h3>
-          <p className="text-xs text-muted-foreground mt-1">Please ensure database connections are active and retry.</p>
-          <Button onClick={() => refetchAccounts()} className="mt-4 font-bold text-xs" size="sm">
-            Retry Loading
-          </Button>
-        </div>
-      </DataPage>
+      <div className="page-container space-y-6">
+        <PageHeader
+          title="Financial Accounting Reports"
+          description="Generate Trial Balance, Balance Sheet, and Profit & Loss Statements."
+        />
+        <ErrorState
+          title="Failed to load accounting data"
+          description="Could not retrieve account ledgers and journal vouchers. Please retry."
+          onRetry={() => refetchAccounts()}
+        />
+      </div>
     );
   }
 
   return (
-    <div className="space-y-6 h-full flex flex-col">
-      <DataPage
+    <div className="page-container space-y-6">
+      <PageHeader
         title="Financial Accounting Reports"
         description="Double-entry Trial Balance, Balance Sheet, Income Statement, and General Ledgers."
-        hideToolbar
         actions={
           <div className="flex items-center gap-2">
             <Button
@@ -240,7 +237,7 @@ function AccountingReportsPage() {
             </Button>
           </div>
         }
-      >
+      />
         {isLoading ? (
           <div className="flex h-60 items-center justify-center">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -745,7 +742,6 @@ function AccountingReportsPage() {
             </Tabs>
           </div>
         )}
-      </DataPage>
     </div>
   );
 }

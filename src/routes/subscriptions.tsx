@@ -681,8 +681,9 @@ function SubscriptionsPage() {
                     Next Renewal Date <span className="text-destructive">*</span>
                   </Label>
                   <DatePicker
-                    value={nextBillingDate}
-                    onChange={(val) => {
+                    date={nextBillingDate}
+                    onDateChange={(d) => {
+                      const val = d ? d.toISOString().split("T")[0] : "";
                       setNextBillingDate(val);
                       clearSubError("nextBillingDate");
                     }}

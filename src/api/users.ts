@@ -220,10 +220,11 @@ export const createInvitationFn = createServerFn({ method: "POST" })
       invitation: z
         .object({
           id: z.string().optional(),
-          token: z.string(),
+          token: z.string().optional(),
+          email: z.string().optional(),
           role: z.string(),
           permissions: z.array(z.string()).optional(),
-          expiresAt: z.string(),
+          expiresAt: z.string().optional(),
         })
         .passthrough(),
     }),
@@ -231,14 +232,20 @@ export const createInvitationFn = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     try {
       const session = await requireAdmin();
+      const token = data.invitation.token || uuidv4();
+      const expiresAt = data.invitation.expiresAt || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
 
       const inserted = await db
         .insert(schema.invitations)
         .values({
           id: data.invitation.id || uuidv4(),
-          ...data.invitation,
+          token,
+          role: data.invitation.role,
+          email: data.invitation.email,
+          permissions: data.invitation.permissions || [],
+          expiresAt,
           organizationId: session.orgId,
-        })
+        } as any)
         .returning();
       return { success: true, data: inserted[0] };
     } catch (e) {
