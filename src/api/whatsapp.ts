@@ -39,7 +39,7 @@ export const sendWhatsAppTextFn = createServerFn({ method: "POST" })
     z.object({
       phone: z.string(),
       text: z.string(),
-    })
+    }),
   )
   .handler(async ({ data }) => {
     try {
@@ -76,7 +76,11 @@ export const sendWhatsAppTextFn = createServerFn({ method: "POST" })
         console.error("[WA API Error]", resData);
         const errorMsg = resData.error?.message || "Failed to send WhatsApp message";
         const errorDetails = resData.error?.error_user_msg || resData.error?.type || "";
-        return { success: false as const, code: res.status, error: `WhatsApp API Error: ${errorMsg} ${errorDetails}` };
+        return {
+          success: false as const,
+          code: res.status,
+          error: `WhatsApp API Error: ${errorMsg} ${errorDetails}`,
+        };
       }
 
       return { success: true as const, data: resData };
@@ -97,7 +101,7 @@ export const sendWhatsAppDocumentFn = createServerFn({ method: "POST" })
       documentUrl: z.string().url(),
       filename: z.string(),
       caption: z.string().optional(),
-    })
+    }),
   )
   .handler(async ({ data }) => {
     try {
@@ -130,7 +134,11 @@ export const sendWhatsAppDocumentFn = createServerFn({ method: "POST" })
       if (!res.ok) {
         console.error("[WA API Error]", resData);
         const errorMsg = resData.error?.message || "Failed to send WhatsApp document";
-        return { success: false as const, code: res.status, error: `WhatsApp API Error: ${errorMsg}` };
+        return {
+          success: false as const,
+          code: res.status,
+          error: `WhatsApp API Error: ${errorMsg}`,
+        };
       }
 
       return { success: true as const, data: resData };

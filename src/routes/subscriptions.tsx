@@ -1,22 +1,34 @@
 import { useState, useMemo, useEffect } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { format } from "date-fns";
-import { DataPage } from "@/components/layout/DataPage";
-import { EmptyState } from "@/components/ui/empty-state";
-import { PaginationControls } from "@/components/ui/pagination-controls";
-import { SearchableSelect } from "@/components/ui/searchable-select";
 import { DatePicker } from "@/components/ui/date-picker";
 import { useDebounce } from "@/hooks/useDebounce";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useAppFormatter } from "@/hooks/useAppFormatter";
 import { Label } from "@/components/ui/label";
+import { PageHeader } from "@/components/layout/PageHeader";
+import { StatCard } from "@/components/layout/StatCard";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+  SheetFooter,
+} from "@/components/ui/sheet";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
 import {
@@ -40,87 +52,76 @@ import {
   CheckCircle2,
   PauseCircle,
   Trash2,
-  ShieldCheck,
   MoreVertical,
   Loader2,
   Repeat,
   Plus,
+  Search,
+  Clock,
+  LayoutGrid,
+  Table as TableIcon,
+  DollarSign,
+  PlayCircle,
+  User,
 } from "lucide-react";
 import { PhoneInput } from "@/components/ui/phone-input";
-import { v4 as uuidv4 } from "uuid";
 import { toast } from "sonner";
 import { PersistStore } from "@/lib/session-store";
-import React from "react";
 import { useFormValidation } from "@/hooks/useFormValidation";
 import { FieldError } from "@/components/ui/field-error";
+import { EmptyState } from "@/components/ui/empty-state";
+import { CardGridSkeleton } from "@/components/skeletons/CardGridSkeleton";
+import { TableSkeleton } from "@/components/skeletons/TableSkeleton";
+import { ErrorState } from "@/components/ui/error-state";
+import { usePreferences } from "@/contexts/PreferencesContext";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { PaginationControls } from "@/components/ui/pagination-controls";
 
 export const Route = createFileRoute("/subscriptions")({
-  head: () => ({ meta: [{ title: "Subscriptions & Recurring Billing · NexisPOS" }] }),
+  head: () => ({ meta: [{ title: "Subscriptions & Recurring Billing · OneDesk360" }] }),
   component: SubscriptionsPage,
 });
 
 function SubscriptionsPage() {
+  const { formatDate } = usePreferences();
   const { formatCurrency } = useCurrency();
-  const { formatAppDate } = useAppFormatter();
   const orgId = PersistStore.getOrgId() || "default";
   const queryClient = useQueryClient();
 
-  const { data: rawSubsData } = useQuery({
-    queryKey: ["subscriptions", orgId],
-    queryFn: async () => ((await getSubscriptionsFn({ data: {} })) as any)?.data || [],
-  });
-  const rawSubs = rawSubsData || [];
-
-  const [isAddOpen, setIsAddOpen] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [viewMode, setViewMode] = useState<"grid" | "table">("grid");
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search, 300);
+  const [cycleFilter, setCycleFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState("all");
   const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
+  const pageSize = 12;
 
-  // Form State
+  // Drawer / Dialog states
+  const [isAddOpen, setIsAddOpen] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
+
+  // Form Fields
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
   const [planName, setPlanName] = useState("");
-  const [billingCycle, setBillingCycle] = useState<"monthly" | "weekly" | "yearly">("monthly");
   const [amount, setAmount] = useState("");
+  const [billingCycle, setBillingCycle] = useState<"weekly" | "monthly" | "yearly">("monthly");
   const [nextBillingDate, setNextBillingDate] = useState("");
 
-  const [filters, setFilters] = useState({ status: "" });
-  const [draftFilters, setDraftFilters] = useState({ status: "" });
-  const activeFilterCount = filters.status ? 1 : 0;
-
-  const handleResetFilters = () => {
-    setFilters({ status: "" });
-    setDraftFilters({ status: "" });
-  };
-
-  const filteredSubs = useMemo(() => {
-    let filtered = rawSubs;
-    if (debouncedSearch) {
-      const lower = debouncedSearch.toLowerCase();
-      filtered = filtered.filter(
-        (s) =>
-          s.subscriptionNo.toLowerCase().includes(lower) ||
-          s.customerName.toLowerCase().includes(lower) ||
-          s.planName.toLowerCase().includes(lower),
-      );
-    }
-    if (filters.status) {
-      filtered = filtered.filter((s) => s.status === filters.status);
-    }
-    return [...filtered].reverse();
-  }, [rawSubs, debouncedSearch, filters.status]);
-
-  const totalPages = Math.ceil(filteredSubs.length / pageSize);
-  const paginated = useMemo(() => {
-    const start = (page - 1) * pageSize;
-    return filteredSubs.slice(start, start + pageSize);
-  }, [filteredSubs, page, pageSize]);
-
-  useEffect(() => {
-    setPage(1);
-  }, [debouncedSearch, filters]);
+  const {
+    data: subscriptionsData,
+    isLoading: isSubsLoading,
+    isError: isSubsError,
+    refetch: refetchSubs,
+  } = useQuery({
+    queryKey: ["subscriptions", orgId],
+    queryFn: async () => {
+      const res = (await getSubscriptionsFn({ data: {} })) as any;
+      return Array.isArray(res?.data) ? res.data : [];
+    },
+  });
+  const subscriptions = subscriptionsData || [];
 
   const {
     errors: subErrors,
@@ -129,394 +130,624 @@ function SubscriptionsPage() {
     clearAll: clearSubAll,
   } = useFormValidation({
     customerName: { required: "Customer name is required" },
-    planName: { required: "Plan / Service name is required" },
-    amount: {
-      required: "Recurring amount is required",
-      positive: "Amount must be a positive number",
-    },
+    planName: { required: "Subscription plan name is required" },
+    amount: { required: "Plan rate amount is required" },
+    nextBillingDate: { required: "Next renewal billing date is required" },
   });
 
-  const handleCreateSub = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const totalMembers = subscriptions.length;
+  const activeSubs = useMemo(() => subscriptions.filter((s: any) => s.status === "active").length, [subscriptions]);
+  const mrrValue = useMemo(() => {
+    return subscriptions
+      .filter((s: any) => s.status === "active")
+      .reduce((acc: number, s: any) => {
+        const amt = Number(s.amount) || 0;
+        if (s.billingCycle === "yearly") return acc + amt / 12;
+        if (s.billingCycle === "weekly") return acc + amt * 4.33;
+        return acc + amt;
+      }, 0);
+  }, [subscriptions]);
+  const pausedSubs = useMemo(() => subscriptions.filter((s: any) => s.status === "paused").length, [subscriptions]);
 
-    const isValid = validateSub({ customerName, planName, amount });
+  const filteredSubs = useMemo(() => {
+    let list = Array.isArray(subscriptions) ? subscriptions : [];
+    if (debouncedSearch) {
+      const lower = debouncedSearch.toLowerCase();
+      list = list.filter(
+        (s: any) =>
+          s.customerName?.toLowerCase().includes(lower) ||
+          s.planName?.toLowerCase().includes(lower) ||
+          s.customerPhone?.includes(lower)
+      );
+    }
+    if (cycleFilter !== "all") {
+      list = list.filter((s: any) => s.billingCycle === cycleFilter);
+    }
+    if (statusFilter !== "all") {
+      list = list.filter((s: any) => s.status === statusFilter);
+    }
+    return [...list].reverse();
+  }, [subscriptions, debouncedSearch, cycleFilter, statusFilter]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredSubs.length / pageSize));
+  const paginatedSubs = useMemo(() => {
+    const start = (page - 1) * pageSize;
+    return filteredSubs.slice(start, start + pageSize);
+  }, [filteredSubs, page, pageSize]);
+
+  const handleSave = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const isValid = validateSub({
+      customerName: customerName.trim(),
+      planName: planName.trim(),
+      amount: amount.trim(),
+      nextBillingDate,
+    });
     if (!isValid) return;
 
-    setIsSubmitting(true);
-    await new Promise((resolve) => setTimeout(resolve, 500));
+    setIsSaving(true);
     try {
-      const subNo = `SUB-${Date.now().toString().slice(-6)}`;
-      const res = await createSubscriptionFn({
+      const res = (await createSubscriptionFn({
         data: {
           subscription: {
-            subscriptionNo: subNo,
-            customerName,
-            customerPhone,
-            planName,
+            customerName: customerName.trim(),
+            customerPhone: customerPhone.trim() || null,
+            planName: planName.trim(),
+            amount: Number(amount),
             billingCycle,
-            amount: parseFloat(amount) || 0,
-            nextBillingDate: nextBillingDate || new Date().toISOString().split("T")[0],
             status: "active",
+            nextBillingDate,
+            startDate: new Date().toISOString().split("T")[0],
           },
         },
-      });
+      })) as any;
 
       if (res?.success) {
-        toast.success(`Subscription ${subNo} created successfully!`);
+        queryClient.invalidateQueries({ queryKey: ["subscriptions", orgId] });
+        toast.success(`Subscription created for ${customerName}`);
         setIsAddOpen(false);
         setCustomerName("");
+        setCustomerPhone("");
         setPlanName("");
         setAmount("");
+        setBillingCycle("monthly");
+        setNextBillingDate("");
         clearSubAll();
-        queryClient.invalidateQueries({ queryKey: ["subscriptions"] });
-      } else throw new Error(res?.error || "Failed to create subscription");
+      } else {
+        throw new Error(res?.error || "Failed to create subscription");
+      }
     } catch (err: any) {
       toast.error(err?.message || "Failed to create subscription");
     } finally {
-      setIsSubmitting(false);
+      setIsSaving(false);
     }
   };
 
-  const updateStatus = async (id: string, status: any) => {
+  const updateStatus = async (id: string, newStatus: string) => {
     try {
-      const res = await updateSubscriptionFn({ data: { id, updates: { status } } });
+      const res = (await updateSubscriptionFn({ data: { id, updates: { status: newStatus as any } } })) as any;
       if (res?.success) {
-        toast.success(`Subscription ${status}`);
-        queryClient.invalidateQueries({ queryKey: ["subscriptions"] });
+        queryClient.invalidateQueries({ queryKey: ["subscriptions", orgId] });
+        toast.success(`Subscription status updated to ${newStatus}`);
       } else throw new Error(res?.error);
-    } catch (err) {
-      toast.error("Failed to update status");
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to update subscription");
     }
   };
 
   const deleteSub = async (id: string) => {
     try {
-      const res = await deleteSubscriptionFn({ data: { id } });
+      const res = (await deleteSubscriptionFn({ data: { id } })) as any;
       if (res?.success) {
-        toast.success("Subscription deleted");
-        queryClient.invalidateQueries({ queryKey: ["subscriptions"] });
+        queryClient.invalidateQueries({ queryKey: ["subscriptions", orgId] });
+        toast.success("Subscription removed");
+        setDeleteId(null);
       } else throw new Error(res?.error);
-    } catch (err) {
-      toast.error("Failed to delete subscription");
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to delete subscription");
     }
   };
 
   return (
-    <div className="space-y-6">
-      <DataPage
-        title="Subscriptions & Recurring Billing (সাবস্ক্রিপশন ও বিলিং)"
-        description="Auto-billing for ISP internet, Gym memberships, Milk/Water supply, and SaaS billing."
-        primaryAction={{ label: "Create Subscription", onClick: () => setIsAddOpen(true) }}
-        searchPlaceholder="Search by subscription #, customer, or plan..."
-        searchValue={search}
-        onSearchChange={setSearch}
-        hideToolbar={rawSubs.length === 0}
-        onResetFilters={handleResetFilters}
-        activeFilterCount={activeFilterCount}
-        filtersContent={({ close }) => (
-          <div className="space-y-4 flex flex-col h-full min-h-[50vh]">
-            <div className="flex-1 space-y-4">
-              <div className="space-y-2">
-                <Label>Status</Label>
-                <SearchableSelect
-                  options={[
-                    { value: "", label: "All Statuses" },
-                    { value: "active", label: "Active" },
-                    { value: "paused", label: "Paused" },
-                    { value: "cancelled", label: "Cancelled" },
-                  ]}
-                  value={draftFilters.status}
-                  onChange={(val) => setDraftFilters((prev) => ({ ...prev, status: val }))}
-                  placeholder="Filter by Status"
-                />
-              </div>
-            </div>
-            <div className="pt-4 mt-auto">
-              <Button
-                className="w-full font-bold shadow-soft"
-                onClick={() => {
-                  setFilters(draftFilters);
-                  close();
-                }}
+    <div className="page-container space-y-6">
+      {/* Standard PageHeader */}
+      <PageHeader
+        title="Subscriptions & Recurring Billing"
+        description="Manage recurring membership plans, auto-renewing cycles, MRR cash flow, and automated customer dues."
+        actions={
+          <Button
+            size="sm"
+            onClick={() => {
+              clearSubAll();
+              setIsAddOpen(true);
+            }}
+            className="gap-1.5"
+          >
+            <Plus className="size-4" /> Add Subscription
+          </Button>
+        }
+      />
+
+      {/* Standard StatCard Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <StatCard
+          label="Total Subscribers"
+          value={String(totalMembers)}
+          hint="Recurring accounts"
+          icon={Repeat}
+          accent="primary"
+        />
+        <StatCard
+          label="Monthly Run Rate (MRR)"
+          value={formatCurrency(mrrValue)}
+          hint="Estimated monthly billing"
+          icon={DollarSign}
+          accent="success"
+        />
+        <StatCard
+          label="Active & Billing"
+          value={String(activeSubs)}
+          hint="Active renewals"
+          icon={CheckCircle2}
+          accent="info"
+        />
+        <StatCard
+          label="Paused / Suspended"
+          value={String(pausedSubs)}
+          hint="Temporary on hold"
+          icon={PauseCircle}
+          accent="warning"
+        />
+      </div>
+
+      {/* Main Section */}
+      <div className="space-y-4">
+        {/* Controls Toolbar */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="relative w-full sm:w-80">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+            <Input
+              placeholder="Search customer, plan, or phone..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-9 h-9 text-sm rounded-lg"
+            />
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            <Select value={cycleFilter} onValueChange={setCycleFilter}>
+              <SelectTrigger className="h-9 w-36 text-xs rounded-lg">
+                <SelectValue placeholder="All Cycles" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Cycles</SelectItem>
+                <SelectItem value="weekly">Weekly</SelectItem>
+                <SelectItem value="monthly">Monthly</SelectItem>
+                <SelectItem value="yearly">Yearly</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="h-9 w-32 text-xs rounded-lg">
+                <SelectValue placeholder="Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Status</SelectItem>
+                <SelectItem value="active">Active</SelectItem>
+                <SelectItem value="paused">Paused</SelectItem>
+                <SelectItem value="cancelled">Cancelled</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <div className="inline-flex rounded-lg border border-border/80 bg-muted/30 p-0.5 shadow-sm">
+              <button
+                type="button"
+                onClick={() => setViewMode("grid")}
+                className={`grid size-8 place-items-center rounded-md transition-all ${
+                  viewMode === "grid"
+                    ? "bg-card text-foreground shadow-sm font-bold"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+                title="Grid View"
               >
-                Apply Filters
-              </Button>
+                <LayoutGrid className="size-4" />
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewMode("table")}
+                className={`grid size-8 place-items-center rounded-md transition-all ${
+                  viewMode === "table"
+                    ? "bg-card text-foreground shadow-sm font-bold"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+                title="Table View"
+              >
+                <TableIcon className="size-4" />
+              </button>
             </div>
           </div>
-        )}
-      >
-        {filteredSubs.length === 0 ? (
+        </div>
+
+        {/* Content View */}
+        {isSubsLoading ? (
+          viewMode === "grid" ? (
+            <CardGridSkeleton cards={8} />
+          ) : (
+            <TableSkeleton columns={6} rows={6} />
+          )
+        ) : isSubsError ? (
+          <ErrorState onRetry={refetchSubs} />
+        ) : filteredSubs.length === 0 ? (
           <EmptyState
             icon={Repeat}
             title="No subscriptions found"
             description={
-              search
-                ? "Try adjusting your search query."
-                : "Create your first recurring subscription to automate billing."
+              search ? "Try adjusting your search criteria." : "You haven't enrolled any recurring customer subscriptions yet."
             }
+            actionLabel="Add Subscription"
+            onAction={() => {
+              clearSubAll();
+              setIsAddOpen(true);
+            }}
           />
-        ) : (
+        ) : viewMode === "grid" ? (
+          /* Grid View */
           <div className="space-y-4">
-            <div className="overflow-hidden rounded-2xl border border-border/80 bg-card shadow-card">
-              {/* Desktop Table */}
-              <div className="table-desktop overflow-x-auto hidden md:block">
-                <table className="w-full text-left text-sm min-w-[900px]">
-                  <thead className="border-b border-border/80 bg-muted/40 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
-                    <tr>
-                      <th className="px-5 py-3 whitespace-nowrap">Subscription #</th>
-                      <th className="px-5 py-3 whitespace-nowrap">Customer</th>
-                      <th className="px-5 py-3 whitespace-nowrap">Plan Name</th>
-                      <th className="px-5 py-3 whitespace-nowrap">Billing Cycle</th>
-                      <th className="px-5 py-3 text-right whitespace-nowrap">Recurring Rate</th>
-                      <th className="px-5 py-3 whitespace-nowrap">Next Renewal</th>
-                      <th className="px-5 py-3 whitespace-nowrap">Status</th>
-                      <th className="px-5 py-3 text-right whitespace-nowrap">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-border/60">
-                    {paginated.map((s) => (
-                      <tr key={s.id} className="hover:bg-muted/30 transition-colors">
-                        <td className="px-5 py-3 font-mono font-bold text-primary whitespace-nowrap">
-                          {s.subscriptionNo}
-                        </td>
-                        <td className="px-5 py-3 font-bold text-foreground whitespace-nowrap text-xs sm:text-sm">
-                          {s.customerName}
-                        </td>
-                        <td className="px-5 py-3 font-medium text-foreground whitespace-nowrap text-xs">{s.planName}</td>
-                        <td className="px-5 py-3 text-xs uppercase font-mono whitespace-nowrap">
-                          <Badge variant="outline" className="text-[10px] font-bold">
-                            {s.billingCycle}
-                          </Badge>
-                        </td>
-                        <td className="number px-5 py-3 text-right font-black text-foreground whitespace-nowrap text-sm">
-                          {formatCurrency(s.amount)}
-                        </td>
-                        <td className="px-5 py-3 text-xs text-muted-foreground whitespace-nowrap font-medium">
-                          {s.nextBillingDate ? formatAppDate(s.nextBillingDate) : "-"}
-                        </td>
-                        <td className="px-5 py-3 whitespace-nowrap">
-                          {s.status === "active" ? (
-                            <Badge className="bg-success/12 text-success border-success/25 text-[10px] font-bold">
-                              Active
-                            </Badge>
-                          ) : s.status === "paused" ? (
-                            <Badge className="bg-warning/15 text-warning-foreground border-warning/25 text-[10px] font-bold">
-                              Paused
-                            </Badge>
-                          ) : (
-                            <Badge variant="outline" className="text-[10px] font-bold">Cancelled</Badge>
-                          )}
-                        </td>
-                        <td className="px-5 py-3 text-right whitespace-nowrap">
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="icon" className="size-8 rounded-lg">
-                                <MoreVertical className="size-4 text-muted-foreground" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="rounded-xl">
-                              {s.status === "active" ? (
-                                <DropdownMenuItem onClick={() => updateStatus(s.id, "paused")} className="text-xs font-semibold">
-                                  <PauseCircle className="mr-2 size-3.5 text-warning" /> Pause Plan
-                                </DropdownMenuItem>
-                              ) : (
-                                <DropdownMenuItem onClick={() => updateStatus(s.id, "active")} className="text-xs font-bold text-success">
-                                  <CheckCircle2 className="mr-2 size-3.5" /> Resume Plan
-                                </DropdownMenuItem>
-                              )}
-                              <DropdownMenuItem
-                                className="text-destructive text-xs font-semibold"
-                                onClick={() => deleteSub(s.id)}
-                              >
-                                <Trash2 className="mr-2 size-3.5" /> Cancel Subscription
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+              {paginatedSubs.map((s: any) => {
+                const isActive = s.status === "active";
 
-              {/* Mobile Card Feed (< 768px) */}
-              <div className="table-mobile-cards p-3 space-y-2.5 md:hidden">
-                {paginated.map((s) => (
+                return (
                   <div
                     key={s.id}
-                    className="flex items-center justify-between rounded-xl border border-border/80 bg-card p-3 shadow-sm card-interactive"
+                    className="rounded-2xl border border-border/80 bg-card p-5 shadow-soft flex flex-col justify-between space-y-4 hover:border-border transition-all group"
                   >
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2">
-                        <span className="font-mono text-xs font-bold text-primary">{s.subscriptionNo}</span>
+                    <div className="space-y-3">
+                      <div className="flex items-start justify-between">
                         <Badge
-                          className={`text-[9px] font-bold py-0 ${
-                            s.status === "active" ? "bg-success/12 text-success" :
-                            s.status === "paused" ? "bg-warning/15 text-warning-foreground" : "bg-muted text-muted-foreground"
+                          variant="outline"
+                          className="font-bold text-xs capitalize bg-primary/10 text-primary border-primary/20"
+                        >
+                          {s.billingCycle} Plan
+                        </Badge>
+                        <Badge
+                          variant="outline"
+                          className={`text-[10px] font-bold uppercase ${
+                            isActive
+                              ? "bg-success/15 text-success border-success/30"
+                              : "bg-muted text-muted-foreground border-border"
                           }`}
                         >
                           {s.status}
                         </Badge>
                       </div>
-                      <div className="font-bold text-xs sm:text-sm text-foreground mt-0.5 truncate">{s.customerName}</div>
-                      <p className="text-[11px] text-muted-foreground truncate">{s.planName} • {s.billingCycle}</p>
+
+                      <div>
+                        <h3 className="font-bold text-base text-foreground group-hover:text-primary transition-colors truncate">
+                          {s.planName}
+                        </h3>
+                        <p className="text-xs text-muted-foreground mt-0.5 truncate">
+                          {s.customerName} {s.customerPhone ? `· ${s.customerPhone}` : ""}
+                        </p>
+                      </div>
+
+                      <div className="p-3 rounded-xl bg-muted/40 border border-border/50 flex items-center justify-between">
+                        <span className="text-xs text-muted-foreground">Rate</span>
+                        <span className="text-base font-bold text-foreground">
+                          {formatCurrency(s.amount)} / {s.billingCycle}
+                        </span>
+                      </div>
+
+                      <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                        <Calendar className="size-3.5 shrink-0" />
+                        <span>Next renewal: {formatDate(s.nextBillingDate)}</span>
+                      </div>
                     </div>
 
-                    <div className="text-right shrink-0 pl-2">
-                      <div className="number text-sm font-black text-foreground">{formatCurrency(s.amount)}</div>
-                      <span className="text-[10px] text-muted-foreground mt-0.5 block">
-                        Renews {s.nextBillingDate ? formatAppDate(s.nextBillingDate) : "-"}
-                      </span>
+                    <div className="pt-3 border-t border-border/60 flex items-center justify-between">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => updateStatus(s.id, s.status === "active" ? "paused" : "active")}
+                        className="h-8 text-xs font-semibold"
+                      >
+                        {s.status === "active" ? "Pause" : "Resume"}
+                      </Button>
+
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setDeleteId(s.id)}
+                        className="h-8 text-xs text-muted-foreground hover:text-destructive"
+                      >
+                        <Trash2 className="size-3.5" />
+                      </Button>
                     </div>
                   </div>
-                ))}
-              </div>
-
-              <div className="border-t border-border/60 p-2 sm:p-3">
+                );
+              })}
+            </div>
+            {filteredSubs.length > 0 && (
+              <div className="rounded-xl border border-border/80 bg-card p-3 shadow-soft">
                 <PaginationControls
                   currentPage={page}
                   totalPages={totalPages}
                   pageSize={pageSize}
-                  onPageChange={setPage}
-                  onPageSizeChange={setPageSize}
                   totalItems={filteredSubs.length}
+                  onPageChange={setPage}
+                  onPageSizeChange={() => {}}
                 />
               </div>
+            )}
+          </div>
+        ) : (
+          /* Table View */
+          <div className="overflow-hidden rounded-xl border border-border/80 bg-card shadow-soft">
+            <div className="table-desktop overflow-x-auto">
+              <Table className="min-w-[750px]">
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Customer</TableHead>
+                    <TableHead>Membership Plan</TableHead>
+                    <TableHead>Billing Cycle</TableHead>
+                    <TableHead>Rate</TableHead>
+                    <TableHead>Next Billing Date</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {paginatedSubs.map((s: any) => {
+                    const isActive = s.status === "active";
+
+                    return (
+                      <TableRow key={s.id} className="hover:bg-muted/30 transition-colors">
+                        <TableCell>
+                          <span className="font-semibold text-foreground">{s.customerName}</span>
+                          {s.customerPhone && <div className="text-xs text-muted-foreground">{s.customerPhone}</div>}
+                        </TableCell>
+                        <TableCell className="font-medium text-foreground">
+                          {s.planName}
+                        </TableCell>
+                        <TableCell className="capitalize text-xs">
+                          {s.billingCycle}
+                        </TableCell>
+                        <TableCell className="font-bold text-foreground">
+                          {formatCurrency(s.amount)}
+                        </TableCell>
+                        <TableCell className="text-xs text-muted-foreground">
+                          {formatDate(s.nextBillingDate)}
+                        </TableCell>
+                        <TableCell>
+                          <Badge
+                            variant="outline"
+                            className={`text-[10px] font-bold uppercase ${
+                              isActive
+                                ? "bg-success/15 text-success border-success/30"
+                                : "bg-muted text-muted-foreground border-border"
+                            }`}
+                          >
+                            {s.status}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex items-center justify-end gap-1">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => updateStatus(s.id, s.status === "active" ? "paused" : "active")}
+                              className="h-8 text-xs font-semibold"
+                            >
+                              {s.status === "active" ? "Pause" : "Resume"}
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setDeleteId(s.id)}
+                              className="h-8 text-xs text-muted-foreground hover:text-destructive"
+                            >
+                              <Trash2 className="size-3.5" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
             </div>
+            {filteredSubs.length > 0 && (
+              <div className="border-t border-border/60 p-3">
+                <PaginationControls
+                  currentPage={page}
+                  totalPages={totalPages}
+                  pageSize={pageSize}
+                  totalItems={filteredSubs.length}
+                  onPageChange={setPage}
+                  onPageSizeChange={() => {}}
+                />
+              </div>
+            )}
           </div>
         )}
-      </DataPage>
+      </div>
 
-      {/* Create Subscription Modal */}
-      <Dialog
-        open={isAddOpen}
-        onOpenChange={(open) => {
-          if (!open) {
-            setIsAddOpen(false);
-            clearSubAll();
-          }
-        }}
-      >
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Repeat className="size-5 text-primary" />
-              <span>Create Subscription Plan</span>
-            </DialogTitle>
-          </DialogHeader>
-          <form noValidate onSubmit={handleCreateSub} className="space-y-4 pt-2">
-            <div className="space-y-1.5">
-              <Label>
-                Customer Name <span className="text-destructive">*</span>
-              </Label>
-              <Input
-                placeholder="e.g. Customer Name"
-                value={customerName}
-                onChange={(e) => {
-                  setCustomerName(e.target.value);
-                  clearSubError("customerName");
-                }}
-                className={
-                  subErrors.customerName ? "border-destructive focus-visible:ring-destructive" : ""
-                }
-              />
-              <FieldError message={subErrors.customerName} />
-            </div>
-            <div className="space-y-1.5">
-              <Label>Phone Number</Label>
-              <PhoneInput
-                placeholder="e.g. 1711000000"
-                value={customerPhone}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                  setCustomerPhone(e.target.value);
-                  clearSubError("customerPhone");
-                }}
-                className={
-                  subErrors.customerPhone ? "border-destructive focus-visible:ring-destructive" : ""
-                }
-              />
-              <FieldError message={subErrors.customerPhone} />
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-1.5">
-                <Label>
-                  Plan / Service Name <span className="text-destructive">*</span>
-                </Label>
-                <Input
-                  placeholder="e.g. Plan / Service Name"
-                  value={planName}
-                  onChange={(e) => {
-                    setPlanName(e.target.value);
-                    clearSubError("planName");
-                  }}
-                  className={
-                    subErrors.planName ? "border-destructive focus-visible:ring-destructive" : ""
-                  }
-                />
-                <FieldError message={subErrors.planName} />
-              </div>
-              <div className="space-y-1.5">
-                <Label>Billing Cycle</Label>
-                <SearchableSelect
-                  options={[
-                    { value: "monthly", label: "Monthly" },
-                    { value: "weekly", label: "Weekly" },
-                    { value: "yearly", label: "Yearly" },
-                  ]}
-                  value={billingCycle}
-                  onChange={(val) => setBillingCycle(val as any)}
-                  placeholder="Select Billing Cycle"
-                />
-              </div>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-1.5">
-                <Label>
-                  Recurring Amount <span className="text-destructive">*</span>
-                </Label>
-                <Input
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  placeholder="0.00"
-                  value={amount}
-                  onChange={(e) => {
-                    setAmount(e.target.value);
-                    clearSubError("amount");
-                  }}
-                  className={
-                    subErrors.amount ? "border-destructive focus-visible:ring-destructive" : ""
-                  }
-                />
-                <FieldError message={subErrors.amount} />
-              </div>
-              <div className="space-y-1.5">
-                <Label>Next Billing Date</Label>
-                <div className="mt-1">
-                  <DatePicker
-                    date={nextBillingDate ? new Date(nextBillingDate) : undefined}
-                    onDateChange={(d) => setNextBillingDate(d ? d.toISOString().split("T")[0] : "")}
+      {/* Drawer */}
+      <Sheet open={isAddOpen} onOpenChange={setIsAddOpen}>
+        <SheetContent
+          side="right"
+          className="w-full sm:max-w-lg p-0 flex flex-col h-full bg-background border-l border-border"
+        >
+          <div className="flex flex-col h-full overflow-hidden">
+            <SheetHeader className="bg-muted/40 p-5 border-b pr-12 text-left shrink-0">
+              <SheetTitle className="text-xl font-bold text-foreground">
+                Add Subscription Plan
+              </SheetTitle>
+              <SheetDescription className="text-xs text-muted-foreground mt-0.5">
+                Enroll customers in recurring membership and automated renewal contracts.
+              </SheetDescription>
+            </SheetHeader>
+
+            <form onSubmit={handleSave} className="flex-1 flex flex-col justify-between overflow-hidden">
+              <div className="flex-1 overflow-y-auto p-5 space-y-4">
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="sub-cust" className="text-xs font-semibold">
+                      Customer Name <span className="text-destructive">*</span>
+                    </Label>
+                    <Input
+                      id="sub-cust"
+                      value={customerName}
+                      onChange={(e) => {
+                        setCustomerName(e.target.value);
+                        clearSubError("customerName");
+                      }}
+                      placeholder="e.g. Rachel Green"
+                      className={subErrors.customerName ? "border-destructive" : ""}
+                    />
+                    <FieldError message={subErrors.customerName} />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label htmlFor="sub-phone" className="text-xs font-semibold">Phone Number</Label>
+                    <Input
+                      id="sub-phone"
+                      type="tel"
+                      value={customerPhone}
+                      onChange={(e) => setCustomerPhone(e.target.value)}
+                      placeholder="e.g. +1 555-0199"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label htmlFor="sub-plan" className="text-xs font-semibold">
+                    Subscription Plan Name <span className="text-destructive">*</span>
+                  </Label>
+                  <Input
+                    id="sub-plan"
+                    value={planName}
+                    onChange={(e) => {
+                      setPlanName(e.target.value);
+                      clearSubError("planName");
+                    }}
+                    placeholder="e.g. VIP Gym Pass, Software Pro License"
+                    className={subErrors.planName ? "border-destructive" : ""}
                   />
+                  <FieldError message={subErrors.planName} />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="sub-amt" className="text-xs font-semibold">
+                      Billing Amount ($) <span className="text-destructive">*</span>
+                    </Label>
+                    <Input
+                      id="sub-amt"
+                      type="number"
+                      step="0.01"
+                      min="0.01"
+                      value={amount}
+                      onChange={(e) => {
+                        setAmount(e.target.value);
+                        clearSubError("amount");
+                      }}
+                      placeholder="0.00"
+                      className={subErrors.amount ? "border-destructive" : ""}
+                    />
+                    <FieldError message={subErrors.amount} />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-semibold">Billing Frequency</Label>
+                    <Select
+                      value={billingCycle}
+                      onValueChange={(val: any) => setBillingCycle(val)}
+                    >
+                      <SelectTrigger className="h-9 text-xs">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="weekly">Weekly Cycle</SelectItem>
+                        <SelectItem value="monthly">Monthly Cycle</SelectItem>
+                        <SelectItem value="yearly">Yearly / Annual Cycle</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-semibold">
+                    Next Renewal Date <span className="text-destructive">*</span>
+                  </Label>
+                  <DatePicker
+                    value={nextBillingDate}
+                    onChange={(val) => {
+                      setNextBillingDate(val);
+                      clearSubError("nextBillingDate");
+                    }}
+                    placeholder="Select next renewal billing date"
+                  />
+                  <FieldError message={subErrors.nextBillingDate} />
                 </div>
               </div>
+
+              <SheetFooter className="p-4 border-t border-border/60 bg-muted/20 flex flex-row items-center justify-end gap-2 shrink-0">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setIsAddOpen(false)}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={isSaving}
+                  className="font-semibold shadow-sm"
+                >
+                  {isSaving && <Loader2 className="size-4 animate-spin mr-2" />}
+                  Create Subscription
+                </Button>
+              </SheetFooter>
+            </form>
+          </div>
+        </SheetContent>
+      </Sheet>
+
+      {/* Delete Confirmation */}
+      <Dialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
+        <DialogContent className="max-w-md rounded-2xl p-6 border border-border shadow-soft bg-card">
+          <DialogHeader className="space-y-2 text-left">
+            <div className="flex items-center gap-3">
+              <div className="grid size-10 place-items-center rounded-xl bg-destructive/10 text-destructive shrink-0">
+                <Trash2 className="size-5" />
+              </div>
+              <div>
+                <DialogTitle className="text-lg font-bold text-foreground">
+                  Cancel Subscription
+                </DialogTitle>
+                <DialogDescription className="text-xs text-muted-foreground mt-0.5">
+                  Are you sure you want to cancel and remove this subscription contract?
+                </DialogDescription>
+              </div>
             </div>
-            <DialogFooter className="mt-6">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => {
-                  setIsAddOpen(false);
-                  clearSubAll();
-                }}
-              >
-                Cancel
-              </Button>
-              <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting && <Loader2 className="size-4 animate-spin mr-2" />}
-                Create Subscription
-              </Button>
-            </DialogFooter>
-          </form>
+          </DialogHeader>
+          <DialogFooter className="mt-4 flex flex-row items-center justify-end gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setDeleteId(null)}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              onClick={() => deleteId && deleteSub(deleteId)}
+            >
+              Delete
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

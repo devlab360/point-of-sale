@@ -3,7 +3,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Trash2, Plus, GripVertical } from "lucide-react";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 
 export interface ModifierOption {
@@ -67,7 +73,12 @@ export function ModifierManager({ modifiers, onChange }: ModifierManagerProps) {
     onChange(newModifiers);
   };
 
-  const updateOption = (groupIndex: number, optionIndex: number, field: keyof ModifierOption, value: any) => {
+  const updateOption = (
+    groupIndex: number,
+    optionIndex: number,
+    field: keyof ModifierOption,
+    value: any,
+  ) => {
     const newModifiers = [...modifiers];
     newModifiers[groupIndex].options[optionIndex] = {
       ...newModifiers[groupIndex].options[optionIndex],
@@ -90,7 +101,7 @@ export function ModifierManager({ modifiers, onChange }: ModifierManagerProps) {
                   placeholder="e.g. Size, Add-ons"
                 />
               </div>
-              
+
               <div className="space-y-2">
                 <Label>Selection Type</Label>
                 <Select
@@ -130,8 +141,10 @@ export function ModifierManager({ modifiers, onChange }: ModifierManagerProps) {
           </div>
 
           <div className="pl-4 border-l-2 space-y-3">
-            <Label className="text-muted-foreground text-xs uppercase tracking-wider">Options</Label>
-            
+            <Label className="text-muted-foreground text-xs uppercase tracking-wider">
+              Options
+            </Label>
+
             {group.options.map((option, optionIndex) => (
               <div key={optionIndex} className="flex items-center gap-3">
                 <GripVertical className="h-4 w-4 text-muted-foreground cursor-grab" />
@@ -142,7 +155,9 @@ export function ModifierManager({ modifiers, onChange }: ModifierManagerProps) {
                   onChange={(e) => updateOption(groupIndex, optionIndex, "name", e.target.value)}
                 />
                 <div className="w-32 relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">₹</span>
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+                    ₹
+                  </span>
                   <Input
                     className="pl-7"
                     type="number"
@@ -150,7 +165,14 @@ export function ModifierManager({ modifiers, onChange }: ModifierManagerProps) {
                     step="0.01"
                     placeholder="Price"
                     value={option.price}
-                    onChange={(e) => updateOption(groupIndex, optionIndex, "price", parseFloat(e.target.value) || 0)}
+                    onChange={(e) =>
+                      updateOption(
+                        groupIndex,
+                        optionIndex,
+                        "price",
+                        parseFloat(e.target.value) || 0,
+                      )
+                    }
                   />
                 </div>
                 <Button
@@ -177,7 +199,12 @@ export function ModifierManager({ modifiers, onChange }: ModifierManagerProps) {
         </div>
       ))}
 
-      <Button type="button" variant="secondary" onClick={addGroup} className="w-full border-dashed border-2">
+      <Button
+        type="button"
+        variant="secondary"
+        onClick={addGroup}
+        className="w-full border-dashed border-2"
+      >
         <Plus className="h-4 w-4 mr-2" />
         Add Modifier Group
       </Button>

@@ -11,7 +11,7 @@ import { useFormValidation } from "@/hooks/useFormValidation";
 import { FieldError } from "@/components/ui/field-error";
 
 export const Route = createFileRoute("/invite/$token")({
-  head: () => ({ meta: [{ title: "Accept Invitation · NexisPOS SaaS" }] }),
+  head: () => ({ meta: [{ title: "Accept Invitation · OneDesk360 SaaS" }] }),
   component: InvitePage,
 });
 
@@ -31,7 +31,10 @@ function InvitePage() {
   });
 
   const { errors, validate, validateSingleField, clearError } = useFormValidation({
-    name: { required: "Name is required", minLength: { value: 2, message: "Name must be at least 2 characters" } },
+    name: {
+      required: "Name is required",
+      minLength: { value: 2, message: "Name must be at least 2 characters" },
+    },
     email: { required: "Email is required", email: "Valid email is required" },
     password: {
       required: "Password is required",
@@ -183,7 +186,9 @@ function InvitePage() {
                   onChange={handleChange}
                   onBlur={handleBlur}
                   placeholder="john@example.com"
-                  className={errors.email ? "border-destructive focus-visible:ring-destructive" : ""}
+                  className={
+                    errors.email ? "border-destructive focus-visible:ring-destructive" : ""
+                  }
                 />
                 <FieldError message={errors.email} />
               </div>
@@ -195,7 +200,9 @@ function InvitePage() {
                   onChange={handleChange}
                   onBlur={handleBlur}
                   placeholder="••••••••"
-                  className={errors.password ? "border-destructive focus-visible:ring-destructive" : ""}
+                  className={
+                    errors.password ? "border-destructive focus-visible:ring-destructive" : ""
+                  }
                 />
                 <FieldError message={errors.password} />
               </div>

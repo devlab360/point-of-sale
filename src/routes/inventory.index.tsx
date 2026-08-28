@@ -5,9 +5,22 @@ import { useQuery } from "@tanstack/react-query";
 import { getProductsFn } from "@/api/products";
 import { getLocationsFn } from "@/api/locations";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Package, Search, MapPin, AlertCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -47,23 +60,23 @@ function InventoryDashboard() {
         return;
       }
 
-      const batchesData = data.map(row => {
+      const batchesData = data.map((row) => {
         // Find product by SKU or Name to get productId
         // In a real bulk importer you'd do an API search or require ProductId in CSV.
         // For simplicity, we assume ProductId or SKU is provided.
-        const productId = row['ProductId'] || row['product_id'];
+        const productId = row["ProductId"] || row["product_id"];
         if (!productId) {
           throw new Error("Missing ProductId in row");
         }
         return {
           productId: productId,
-          batchNo: row['BatchNo'] || row['batch_no'] || null,
-          quantity: parseFloat(row['Quantity'] || row['qty'] || '0'),
-          purchaseCost: parseFloat(row['Cost'] || row['cost'] || '0'),
-          sellingPrice: row['Price'] || row['price'] || null,
-          mrp: row['MRP'] || row['mrp'] || null,
-          expiryDate: row['ExpiryDate'] || row['expiry_date'] || null,
-          mfgDate: row['MfgDate'] || row['mfg_date'] || null,
+          batchNo: row["BatchNo"] || row["batch_no"] || null,
+          quantity: parseFloat(row["Quantity"] || row["qty"] || "0"),
+          purchaseCost: parseFloat(row["Cost"] || row["cost"] || "0"),
+          sellingPrice: row["Price"] || row["price"] || null,
+          mrp: row["MRP"] || row["mrp"] || null,
+          expiryDate: row["ExpiryDate"] || row["expiry_date"] || null,
+          mfgDate: row["MfgDate"] || row["mfg_date"] || null,
         };
       });
 
@@ -90,17 +103,28 @@ function InventoryDashboard() {
     queryFn: () => getProductsFn({ data: { page: 1, pageSize: 1000, query: search } }),
   });
   const products = productsRes?.data || [];
-  const summary = (productsRes as any)?.summary || { totalStock: 0, totalValue: 0, lowStockCount: 0 };
+  const summary = (productsRes as any)?.summary || {
+    totalStock: 0,
+    totalValue: 0,
+    lowStockCount: 0,
+  };
 
   return (
     <div className="p-6 space-y-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Multi-Location Inventory</h1>
-          <p className="text-muted-foreground">Manage and track stock across all your stores and warehouses.</p>
+          <p className="text-muted-foreground">
+            Manage and track stock across all your stores and warehouses.
+          </p>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" className="font-bold" onClick={() => document.getElementById('batch-import-input')?.click()}>
+          <Button
+            variant="outline"
+            size="sm"
+            className="font-bold"
+            onClick={() => document.getElementById("batch-import-input")?.click()}
+          >
             Import Batches (CSV)
           </Button>
           <input
@@ -111,7 +135,7 @@ function InventoryDashboard() {
             onChange={(e) => {
               if (e.target.files?.[0]) {
                 handleImportBatches(e.target.files[0]);
-                e.target.value = '';
+                e.target.value = "";
               }
             }}
           />
@@ -140,10 +164,11 @@ function InventoryDashboard() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Low Stock Alerts</CardTitle>
-            <AlertCircle className="h-4 w-4 text-red-500" />
+            <AlertCircle className="h-4 w-4 text-destructive" />
+            
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-red-600">{summary.lowStockCount}</div>
+            <div className="text-2xl font-bold text-destructive">{summary.lowStockCount}</div>
           </CardContent>
         </Card>
       </div>
@@ -170,7 +195,9 @@ function InventoryDashboard() {
                 <SelectContent>
                   <SelectItem value="all">All Locations</SelectItem>
                   {locations.map((loc: any) => (
-                    <SelectItem key={loc.id} value={loc.id}>{loc.name}</SelectItem>
+                    <SelectItem key={loc.id} value={loc.id}>
+                      {loc.name}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -226,10 +253,17 @@ function InventoryDashboard() {
                           <p>{product.name}</p>
                           <div className="flex flex-wrap gap-1 mt-0.5">
                             {product.hasVariants && (
-                              <Badge variant="outline" className="text-[10px] h-4 px-1">Has Variants</Badge>
+                              <Badge variant="outline" className="text-[10px] h-4 px-1">
+                                Has Variants
+                              </Badge>
                             )}
                             {product.hasBatch && (
-                              <Badge variant="outline" className="text-[10px] h-4 px-1 border-primary text-primary bg-primary/5">Batched</Badge>
+                              <Badge
+                                variant="outline"
+                                className="text-[10px] h-4 px-1 border-primary text-primary bg-primary/5"
+                              >
+                                Batched
+                              </Badge>
                             )}
                           </div>
                         </div>
@@ -243,12 +277,15 @@ function InventoryDashboard() {
                           <TableCell key={loc.id} className="text-right text-muted-foreground">
                             {/* In a real implementation, we would map the aggregated stock per location from the API */}
                             {/* For now, we fallback to the global stock for the Main Store if it's the only one */}
-                            {loc.name === "Main Store" ? (product.stock || 0) : 0}
+                            {loc.name === "Main Store" ? product.stock || 0 : 0}
                           </TableCell>
                         ))
                       ) : (
                         <TableCell className="text-right text-muted-foreground">
-                          {locations.find((l: any) => l.id === locationFilter)?.name === "Main Store" ? (product.stock || 0) : 0}
+                          {locations.find((l: any) => l.id === locationFilter)?.name ===
+                          "Main Store"
+                            ? product.stock || 0
+                            : 0}
                         </TableCell>
                       )}
                     </TableRow>

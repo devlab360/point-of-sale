@@ -1,13 +1,12 @@
 import { useState, useMemo, useEffect } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { DataPage } from "@/components/layout/DataPage";
-import { EmptyState } from "@/components/ui/empty-state";
-import { PaginationControls } from "@/components/ui/pagination-controls";
 import { useDebounce } from "@/hooks/useDebounce";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { PageHeader } from "@/components/layout/PageHeader";
+import { StatCard } from "@/components/layout/StatCard";
 import {
   Select,
   SelectContent,
@@ -17,10 +16,19 @@ import {
 } from "@/components/ui/select";
 import { DatePicker } from "@/components/ui/date-picker";
 import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+  SheetFooter,
+} from "@/components/ui/sheet";
+import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
 import {
@@ -30,59 +38,68 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import {
-  Sparkles,
-  Plus,
-  Trash2,
-  Edit2,
-  Search,
-  ArrowUpRight,
-  ArrowDownLeft,
-  Calendar,
-  FileText,
-  CheckCircle2,
-  Star,
-  Loader2,
-  MoreVertical,
   Megaphone,
+  MoreVertical,
+  Edit2,
+  Trash2,
+  Loader2,
+  Plus,
+  Search,
+  Calendar,
+  Percent,
+  Tag,
+  Clock,
+  LayoutGrid,
+  Table as TableIcon,
+  Zap,
+  CheckCircle2,
+  Building2,
 } from "lucide-react";
-import { useCurrency } from "@/lib/currency";
-import { v4 as uuidv4 } from "uuid";
-import { toast } from "sonner";
-import { PersistStore } from "@/lib/session-store";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   getPromotionsFn,
   createPromotionFn,
   updatePromotionFn,
   deletePromotionFn,
 } from "@/api/promotions";
+import { useCurrency } from "@/lib/currency";
+import { toast } from "sonner";
+import { PersistStore } from "@/lib/session-store";
 import { useFormValidation } from "@/hooks/useFormValidation";
 import { FieldError } from "@/components/ui/field-error";
 import { usePreferences } from "@/contexts/PreferencesContext";
 import { CardGridSkeleton } from "@/components/skeletons/CardGridSkeleton";
+import { TableSkeleton } from "@/components/skeletons/TableSkeleton";
 import { ErrorState } from "@/components/ui/error-state";
-import { SearchableSelect } from "@/components/ui/searchable-select";
+import { EmptyState } from "@/components/ui/empty-state";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { PaginationControls } from "@/components/ui/pagination-controls";
 
 export const Route = createFileRoute("/promotions")({
-  head: () => ({ meta: [{ title: "Promotions · NexisPOS" }] }),
+  head: () => ({ meta: [{ title: "Promotions & Discounts · OneDesk360" }] }),
   component: PromotionsPage,
 });
 
 function PromotionsPage() {
-  const { formatDate, formatTime, formatDateTime } = usePreferences();
+  const { formatDate } = usePreferences();
   const { formatCurrency } = useCurrency();
   const orgId = PersistStore.getOrgId() || "default";
   const queryClient = useQueryClient();
+
+  const [viewMode, setViewMode] = useState<"grid" | "table">("grid");
+  const [isAddOpen, setIsAddOpen] = useState(false);
+  const [editItem, setEditItem] = useState<any | null>(null);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+
+  // Form State
+  const [formTitle, setFormTitle] = useState("");
+  const [formType, setFormType] = useState<"percentage" | "fixed" | "bogo" | "storewide">("percentage");
+  const [formValue, setFormValue] = useState("");
+  const [formConditions, setFormConditions] = useState("");
+  const [formStatus, setFormStatus] = useState<"active" | "scheduled" | "expired" | "inactive">("active");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
 
   const {
     data: promotionsData,
@@ -91,61 +108,73 @@ function PromotionsPage() {
     refetch: refetchPromotions,
   } = useQuery({
     queryKey: ["promotions", orgId],
-    queryFn: async () => ((await getPromotionsFn({ data: {} })) as any)?.data || [],
+    queryFn: async () => {
+      const res = (await getPromotionsFn({ data: {} })) as any;
+      return Array.isArray(res?.data) ? res.data : [];
+    },
   });
   const promotions = promotionsData || [];
 
-  const [isAddOpen, setIsAddOpen] = useState(false);
-  const [editItem, setEditItem] = useState<any | null>(null);
-  const [deleteId, setDeleteId] = useState<string | null>(null);
-  const [isSaving, setIsSaving] = useState(false);
-
-  const [startDate, setStartDate] = useState<string>("");
-  const [endDate, setEndDate] = useState<string>("");
-
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search, 300);
+  const [typeFilter, setTypeFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState("all");
   const [page, setPage] = useState(1);
-  const itemsPerPage = 10;
+  const pageSize = 12;
 
-  const [filters, setFilters] = useState({ type: "", status: "" });
-  const [draftFilters, setDraftFilters] = useState({ type: "", status: "" });
-  const activeFilterCount = (filters.type ? 1 : 0) + (filters.status ? 1 : 0);
+  useEffect(() => {
+    if (editItem) {
+      setFormTitle(editItem.title || "");
+      setFormType(editItem.type || "percentage");
+      setFormValue(String(editItem.value || ""));
+      setFormConditions(editItem.conditions || "");
+      setFormStatus(editItem.status || "active");
+      setStartDate(editItem.startDate || "");
+      setEndDate(editItem.endDate || "");
+    } else {
+      setFormTitle("");
+      setFormType("percentage");
+      setFormValue("");
+      setFormConditions("");
+      setFormStatus("active");
+      const today = new Date().toISOString().split("T")[0];
+      const nextMonth = new Date(Date.now() + 30 * 86400000).toISOString().split("T")[0];
+      setStartDate(today);
+      setEndDate(nextMonth);
+    }
+  }, [editItem, isAddOpen]);
 
-  const handleResetFilters = () => {
-    setFilters({ type: "", status: "" });
-    setDraftFilters({ type: "", status: "" });
-  };
+  // KPI metrics
+  const totalCampaigns = promotions.length;
+  const activeCampaigns = useMemo(() => promotions.filter((p: any) => p.status === "active").length, [promotions]);
+  const scheduledCampaigns = useMemo(() => promotions.filter((p: any) => p.status === "scheduled").length, [promotions]);
+  const storewideCount = useMemo(() => promotions.filter((p: any) => p.type === "storewide" || p.type === "percentage").length, [promotions]);
 
   const filteredPromotions = useMemo(() => {
-    let list = promotions;
+    let list = Array.isArray(promotions) ? promotions : [];
     if (debouncedSearch) {
       const lower = debouncedSearch.toLowerCase();
-      list = list.filter((p) => p.title.toLowerCase().includes(lower));
+      list = list.filter(
+        (p: any) =>
+          p.title?.toLowerCase().includes(lower) ||
+          p.conditions?.toLowerCase().includes(lower) ||
+          p.type?.toLowerCase().includes(lower)
+      );
     }
-    if (filters.type) {
-      list = list.filter((p) => p.type === filters.type);
+    if (typeFilter !== "all") {
+      list = list.filter((p: any) => p.type?.toLowerCase() === typeFilter.toLowerCase());
     }
-    if (filters.status) {
-      list = list.filter((p) => p.status === filters.status);
+    if (statusFilter !== "all") {
+      list = list.filter((p: any) => p.status?.toLowerCase() === statusFilter.toLowerCase());
     }
-    return list;
-  }, [promotions, debouncedSearch, filters.type, filters.status]);
+    return [...list].reverse();
+  }, [promotions, debouncedSearch, typeFilter, statusFilter]);
 
-  useEffect(() => {
-    setPage(1);
-  }, [debouncedSearch, filters]);
-
-  useEffect(() => {
-    const maxPage = Math.max(1, Math.ceil(filteredPromotions.length / itemsPerPage));
-    if (page > maxPage) setPage(maxPage);
-  }, [filteredPromotions.length, page]);
-
-  const totalPages = Math.ceil(filteredPromotions.length / itemsPerPage);
-  const paginatedPromotions = filteredPromotions.slice(
-    (page - 1) * itemsPerPage,
-    page * itemsPerPage,
-  );
+  const totalPages = Math.max(1, Math.ceil(filteredPromotions.length / pageSize));
+  const paginatedPromotions = useMemo(() => {
+    const start = (page - 1) * pageSize;
+    return filteredPromotions.slice(start, start + pageSize);
+  }, [filteredPromotions, page, pageSize]);
 
   const {
     errors: promoErrors,
@@ -154,7 +183,7 @@ function PromotionsPage() {
     clearAll: clearPromoAll,
   } = useFormValidation({
     title: { required: "Promotion title is required" },
-    value: { required: "Discount value is required", positive: "Value must be positive" },
+    value: { required: "Discount value is required" },
     conditions: { required: "Conditions are required" },
     startDate: { required: "Start date is required" },
     endDate: { required: "End date is required" },
@@ -162,17 +191,13 @@ function PromotionsPage() {
 
   const handleSave = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const formData = new FormData(e.currentTarget);
     setIsSaving(true);
-    await new Promise((resolve) => setTimeout(resolve, 500));
     try {
-      const title = (formData.get("title") as string)?.trim();
-      const type = formData.get("type") as string;
-      const valueStr = (formData.get("value") as string)?.trim();
-      const conditions = (formData.get("conditions") as string)?.trim();
-      const startDate = formData.get("startDate") as string;
-      const endDate = formData.get("endDate") as string;
-      const status = formData.get("status") as string;
+      const title = formTitle.trim();
+      const type = formType;
+      const valueStr = formValue.trim();
+      const conditions = formConditions.trim();
+      const status = formStatus;
 
       const isValid = validatePromo({ title, value: valueStr, conditions, startDate, endDate });
       if (!isValid) return;
@@ -180,28 +205,28 @@ function PromotionsPage() {
       const value = parseFloat(valueStr);
 
       if (editItem) {
-        const res = await updatePromotionFn({
+        const res = (await updatePromotionFn({
           data: {
             id: editItem.id,
             updates: { title, type, value, conditions, startDate, endDate, status },
           },
-        });
+        })) as any;
         if (res?.success) {
           toast.success("Promotion updated successfully");
           setEditItem(null);
-          queryClient.invalidateQueries({ queryKey: ["promotions"] });
-        } else throw new Error(res?.error);
+          queryClient.invalidateQueries({ queryKey: ["promotions", orgId] });
+        } else throw new Error(res?.error || "Failed to update promotion");
       } else {
-        const res = await createPromotionFn({
+        const res = (await createPromotionFn({
           data: {
             promotion: { title, type, value, conditions, startDate, endDate, status },
           },
-        });
+        })) as any;
         if (res?.success) {
-          toast.success("Promotion added successfully");
+          toast.success("Promotion campaign published successfully");
           setIsAddOpen(false);
-          queryClient.invalidateQueries({ queryKey: ["promotions"] });
-        } else throw new Error(res?.error);
+          queryClient.invalidateQueries({ queryKey: ["promotions", orgId] });
+        } else throw new Error(res?.error || "Failed to create promotion");
       }
       clearPromoAll();
     } catch (error) {
@@ -214,11 +239,11 @@ function PromotionsPage() {
   const handleDelete = async () => {
     if (deleteId) {
       try {
-        const res = await deletePromotionFn({ data: { id: deleteId } });
+        const res = (await deletePromotionFn({ data: { id: deleteId } })) as any;
         if (res?.success) {
           toast.success("Promotion deleted");
           setDeleteId(null);
-          queryClient.invalidateQueries({ queryKey: ["promotions"] });
+          queryClient.invalidateQueries({ queryKey: ["promotions", orgId] });
         } else throw new Error(res?.error);
       } catch (error) {
         toast.error("Failed to delete promotion");
@@ -227,320 +252,534 @@ function PromotionsPage() {
   };
 
   return (
-    <div>
-      <DataPage
-        title="Promotions & Campaigns"
-        description="Automated discount rules, seasonal campaigns, and bundle offers."
-        primaryAction={{ label: "New Campaign", onClick: () => setIsAddOpen(true) }}
-        searchPlaceholder="Search promotions..."
-        searchValue={search}
-        onSearchChange={setSearch}
-        hideToolbar={promotions.length === 0}
-        onResetFilters={handleResetFilters}
-        activeFilterCount={activeFilterCount}
-        filtersContent={({ close }) => (
-          <div className="space-y-4 flex flex-col h-full min-h-[50vh]">
-            <div className="flex-1 space-y-4">
-              <div className="space-y-2">
-                <Label>Status</Label>
-                <SearchableSelect
-                  options={[
-                    { value: "", label: "All Statuses" },
-                    { value: "active", label: "Active" },
-                    { value: "scheduled", label: "Scheduled" },
-                    { value: "ended", label: "Ended" },
-                  ]}
-                  value={draftFilters.status}
-                  onChange={(val) => setDraftFilters((prev) => ({ ...prev, status: val }))}
-                  placeholder="Filter by Status"
-                />
-              </div>
-            </div>
-            <div className="pt-4 mt-auto">
-              <Button
-                className="w-full font-bold shadow-soft"
-                onClick={() => {
-                  setFilters(draftFilters);
-                  close();
-                }}
+    <div className="page-container space-y-6">
+      {/* Standard PageHeader */}
+      <PageHeader
+        title="Promotions & Discount Rules"
+        description="Launch seasonal campaigns, automated discount rules, BOGO bundles, and cart checkout incentives."
+        actions={
+          <Button
+            size="sm"
+            onClick={() => {
+              setEditItem(null);
+              clearPromoAll();
+              setIsAddOpen(true);
+            }}
+            className="gap-1.5"
+          >
+            <Plus className="size-4" /> Create Promotion
+          </Button>
+        }
+      />
+
+      {/* Standard StatCard Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <StatCard
+          label="Total Campaigns"
+          value={String(totalCampaigns)}
+          hint="All configured promo rules"
+          icon={Megaphone}
+          accent="primary"
+        />
+        <StatCard
+          label="Live & Active Deals"
+          value={String(activeCampaigns)}
+          hint="Auto-applied at POS register"
+          icon={Zap}
+          accent="success"
+        />
+        <StatCard
+          label="Scheduled Upcoming"
+          value={String(scheduledCampaigns)}
+          hint="Future launch dates"
+          icon={Clock}
+          accent="info"
+        />
+        <StatCard
+          label="Storewide Rules"
+          value={String(storewideCount)}
+          hint="Cart-wide percentage benefits"
+          icon={Percent}
+          accent="warning"
+        />
+      </div>
+
+      {/* Main Section */}
+      <div className="space-y-4">
+        {/* Controls Toolbar */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="relative w-full sm:w-80">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+            <Input
+              placeholder="Search promotions by title or terms..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-9 h-9 text-sm rounded-lg"
+            />
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            <Select value={typeFilter} onValueChange={setTypeFilter}>
+              <SelectTrigger className="h-9 w-36 text-xs rounded-lg">
+                <SelectValue placeholder="All Scopes" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Scopes</SelectItem>
+                <SelectItem value="percentage">Percentage (%)</SelectItem>
+                <SelectItem value="fixed">Fixed Flat ($)</SelectItem>
+                <SelectItem value="bogo">BOGO Offer</SelectItem>
+                <SelectItem value="storewide">Storewide</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="h-9 w-32 text-xs rounded-lg">
+                <SelectValue placeholder="Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Status</SelectItem>
+                <SelectItem value="active">Active</SelectItem>
+                <SelectItem value="scheduled">Scheduled</SelectItem>
+                <SelectItem value="expired">Expired</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <div className="inline-flex rounded-lg border border-border/80 bg-muted/30 p-0.5 shadow-sm">
+              <button
+                type="button"
+                onClick={() => setViewMode("grid")}
+                className={`grid size-8 place-items-center rounded-md transition-all ${
+                  viewMode === "grid"
+                    ? "bg-card text-foreground shadow-sm font-bold"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+                title="Grid View"
               >
-                Apply Filters
-              </Button>
+                <LayoutGrid className="size-4" />
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewMode("table")}
+                className={`grid size-8 place-items-center rounded-md transition-all ${
+                  viewMode === "table"
+                    ? "bg-card text-foreground shadow-sm font-bold"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+                title="Table View"
+              >
+                <TableIcon className="size-4" />
+              </button>
             </div>
           </div>
-        )}
-      >
+        </div>
+
+        {/* Content View */}
         {isPromotionsLoading ? (
-          <CardGridSkeleton cards={6} columns="grid-cols-1 md:grid-cols-2" />
+          viewMode === "grid" ? (
+            <CardGridSkeleton cards={8} />
+          ) : (
+            <TableSkeleton columns={6} rows={6} />
+          )
         ) : isPromotionsError ? (
           <ErrorState onRetry={refetchPromotions} />
         ) : filteredPromotions.length === 0 ? (
           <EmptyState
             icon={Megaphone}
             title="No promotions found"
-            description={search ? "Try adjusting your search query." : "No promotional campaigns created yet."}
-            actionLabel="New Campaign"
+            description={
+              search ? "Try adjusting your search criteria." : "You haven't launched any promotional campaigns yet."
+            }
+            actionLabel="Create Promotion"
             onAction={() => {
               setEditItem(null);
-              setStartDate("");
-              setEndDate("");
+              clearPromoAll();
               setIsAddOpen(true);
             }}
           />
-        ) : (
+        ) : viewMode === "grid" ? (
+          /* Grid View */
           <div className="space-y-4">
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              {paginatedPromotions.map((p) => (
-                <div
-                  key={p.id}
-                  className="relative rounded-2xl border border-border/80 bg-card p-5 shadow-card card-interactive flex flex-col justify-between"
-                >
-                  <div>
-                    <div className="flex items-start justify-between pr-10">
-                      <div className="flex items-center gap-3">
-                        <div className="grid size-10 place-items-center rounded-xl bg-primary/10 text-primary border border-primary/20">
-                          <Sparkles className="size-5" />
-                        </div>
-                        <div>
-                          <h3 className="font-bold text-sm sm:text-base text-foreground">{p.title}</h3>
-                          <p className="text-[11px] text-muted-foreground capitalize font-medium">Type: {p.type}</p>
-                        </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+              {paginatedPromotions.map((p: any) => {
+                const isActive = p.status === "active";
+                const isPercent = p.type === "percentage" || p.type === "storewide";
+
+                return (
+                  <div
+                    key={p.id}
+                    className="rounded-2xl border border-border/80 bg-card p-5 shadow-soft flex flex-col justify-between space-y-4 hover:border-border transition-all group"
+                  >
+                    <div className="space-y-3">
+                      <div className="flex items-start justify-between">
+                        <Badge
+                          variant="outline"
+                          className="font-bold text-xs capitalize bg-primary/10 text-primary border-primary/20"
+                        >
+                          {p.type}
+                        </Badge>
+                        <Badge
+                          variant="outline"
+                          className={`text-[10px] font-bold uppercase ${
+                            isActive
+                              ? "bg-success/15 text-success border-success/30"
+                              : "bg-muted text-muted-foreground border-border"
+                          }`}
+                        >
+                          {p.status}
+                        </Badge>
+                      </div>
+
+                      <div>
+                        <h3 className="font-bold text-base text-foreground group-hover:text-primary transition-colors truncate">
+                          {p.title}
+                        </h3>
+                        <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                          {p.conditions}
+                        </p>
+                      </div>
+
+                      <div className="p-3 rounded-xl bg-muted/40 border border-border/50 flex items-center justify-between">
+                        <span className="text-xs text-muted-foreground">Benefit</span>
+                        <span className="text-base font-bold text-foreground">
+                          {p.type === "bogo" ? "Buy 1 Get 1 Free" : isPercent ? `${p.value}% OFF` : `${formatCurrency(p.value)} FLAT`}
+                        </span>
+                      </div>
+
+                      <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                        <Calendar className="size-3.5 shrink-0" />
+                        <span className="truncate">{formatDate(p.startDate)} – {formatDate(p.endDate)}</span>
                       </div>
                     </div>
 
-                    <div className="absolute right-4 top-4 flex items-center gap-2">
-                      <Badge
-                        className={
-                          p.status === "active"
-                            ? "bg-success/12 text-success hover:bg-success/20 border-success/20 text-[10px] font-bold"
-                            : "bg-info/12 text-info hover:bg-info/20 border-info/20 text-[10px] font-bold"
-                        }
+                    <div className="pt-3 border-t border-border/60 flex items-center justify-end gap-1">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          setEditItem(p);
+                          clearPromoAll();
+                          setIsAddOpen(true);
+                        }}
+                        className="h-8 text-xs font-semibold"
                       >
-                        {p.status}
-                      </Badge>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="size-8 rounded-lg">
-                            <MoreVertical className="size-4 text-muted-foreground" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="rounded-xl">
-                          <DropdownMenuItem onClick={() => setEditItem(p)} className="text-xs font-semibold">
-                            <Edit2 className="mr-2 size-3.5" /> Edit Campaign
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            className="text-destructive text-xs font-semibold"
-                            onClick={() => setDeleteId(p.id)}
-                          >
-                            <Trash2 className="mr-2 size-3.5" /> Delete
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </div>
-
-                    <div className="mt-4 rounded-xl bg-primary/10 border border-primary/20 px-3.5 py-2.5 text-xs font-bold text-primary flex items-center justify-between">
-                      <span>{p.type === "percentage" ? `${p.value}% OFF` : `${formatCurrency(p.value)} OFF`}</span>
-                      <span className="text-[11px] text-foreground font-semibold truncate max-w-[200px]">{p.conditions}</span>
+                        <Edit2 className="size-3.5 mr-1" /> Edit
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setDeleteId(p.id)}
+                        className="h-8 text-xs text-muted-foreground hover:text-destructive"
+                      >
+                        <Trash2 className="size-3.5" />
+                      </Button>
                     </div>
                   </div>
-
-                  <div className="mt-4 pt-3 border-t border-border/60 text-[11px] text-muted-foreground flex items-center justify-between">
-                    <span className="flex items-center gap-1.5">
-                      <Calendar className="size-3.5 text-muted-foreground/60" />
-                      {formatDate(p.startDate)} → {formatDate(p.endDate)}
-                    </span>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
-            <PaginationControls
-              currentPage={page}
-              totalPages={totalPages}
-              onPageChange={setPage}
-              totalItems={filteredPromotions.length}
-            />
+            {filteredPromotions.length > 0 && (
+              <div className="rounded-xl border border-border/80 bg-card p-3 shadow-soft">
+                <PaginationControls
+                  currentPage={page}
+                  totalPages={totalPages}
+                  pageSize={pageSize}
+                  totalItems={filteredPromotions.length}
+                  onPageChange={setPage}
+                  onPageSizeChange={() => {}}
+                />
+              </div>
+            )}
+          </div>
+        ) : (
+          /* Table View */
+          <div className="overflow-hidden rounded-xl border border-border/80 bg-card shadow-soft">
+            <div className="table-desktop overflow-x-auto">
+              <Table className="min-w-[750px]">
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Campaign Title</TableHead>
+                    <TableHead>Scope</TableHead>
+                    <TableHead>Benefit</TableHead>
+                    <TableHead>Validity Period</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {paginatedPromotions.map((p: any) => {
+                    const isActive = p.status === "active";
+                    const isPercent = p.type === "percentage" || p.type === "storewide";
+
+                    return (
+                      <TableRow key={p.id} className="hover:bg-muted/30 transition-colors">
+                        <TableCell>
+                          <span className="font-semibold text-foreground">{p.title}</span>
+                          <div className="text-xs text-muted-foreground truncate max-w-xs">{p.conditions}</div>
+                        </TableCell>
+                        <TableCell className="capitalize text-xs font-medium">
+                          {p.type}
+                        </TableCell>
+                        <TableCell className="font-bold text-foreground">
+                          {p.type === "bogo" ? "BOGO" : isPercent ? `${p.value}% OFF` : `${formatCurrency(p.value)} FLAT`}
+                        </TableCell>
+                        <TableCell className="text-xs text-muted-foreground">
+                          {formatDate(p.startDate)} – {formatDate(p.endDate)}
+                        </TableCell>
+                        <TableCell>
+                          <Badge
+                            variant="outline"
+                            className={`text-[10px] font-bold uppercase ${
+                              isActive
+                                ? "bg-success/15 text-success border-success/30"
+                                : "bg-muted text-muted-foreground border-border"
+                            }`}
+                          >
+                            {p.status}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex items-center justify-end gap-1">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                setEditItem(p);
+                                clearPromoAll();
+                                setIsAddOpen(true);
+                              }}
+                              className="h-8 text-xs font-semibold"
+                            >
+                              <Edit2 className="size-3.5 mr-1" /> Edit
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setDeleteId(p.id)}
+                              className="h-8 text-xs text-muted-foreground hover:text-destructive"
+                            >
+                              <Trash2 className="size-3.5" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </div>
+            {filteredPromotions.length > 0 && (
+              <div className="border-t border-border/60 p-3">
+                <PaginationControls
+                  currentPage={page}
+                  totalPages={totalPages}
+                  pageSize={pageSize}
+                  totalItems={filteredPromotions.length}
+                  onPageChange={setPage}
+                  onPageSizeChange={() => {}}
+                />
+              </div>
+            )}
           </div>
         )}
-      </DataPage>
+      </div>
 
-      <Dialog
-        open={isAddOpen || !!editItem}
-        onOpenChange={(open) => {
-          if (!open) {
-            setIsAddOpen(false);
-            setEditItem(null);
-            clearPromoAll();
-          }
-        }}
-      >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{editItem ? "Edit Promotion" : "Add Promotion"}</DialogTitle>
+      {/* Drawer */}
+      <Sheet open={isAddOpen} onOpenChange={setIsAddOpen}>
+        <SheetContent
+          side="right"
+          className="w-full sm:max-w-lg p-0 flex flex-col h-full bg-background border-l border-border"
+        >
+          <div className="flex flex-col h-full overflow-hidden">
+            <SheetHeader className="bg-muted/40 p-5 border-b pr-12 text-left shrink-0">
+              <SheetTitle className="text-xl font-bold text-foreground">
+                {editItem ? "Edit Promotion Campaign" : "Create New Promotion"}
+              </SheetTitle>
+              <SheetDescription className="text-xs text-muted-foreground mt-0.5">
+                Define automatic discount calculations, coupon terms, and seasonal schedules.
+              </SheetDescription>
+            </SheetHeader>
+
+            <form onSubmit={handleSave} className="flex-1 flex flex-col justify-between overflow-hidden">
+              <div className="flex-1 overflow-y-auto p-5 space-y-4">
+                <div className="space-y-1.5">
+                  <Label htmlFor="promo-title" className="text-xs font-semibold">
+                    Promotion Title <span className="text-destructive">*</span>
+                  </Label>
+                  <Input
+                    id="promo-title"
+                    value={formTitle}
+                    onChange={(e) => {
+                      setFormTitle(e.target.value);
+                      clearPromoError("title");
+                    }}
+                    placeholder="e.g. Flash Summer Sale 2026"
+                    className={promoErrors.title ? "border-destructive" : ""}
+                  />
+                  <FieldError message={promoErrors.title} />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-semibold">Promotion Type</Label>
+                    <Select
+                      value={formType}
+                      onValueChange={(val: any) => setFormType(val)}
+                    >
+                      <SelectTrigger className="h-9 text-xs">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="percentage">Percentage (%)</SelectItem>
+                        <SelectItem value="fixed">Fixed Amount ($)</SelectItem>
+                        <SelectItem value="bogo">Buy 1 Get 1 (BOGO)</SelectItem>
+                        <SelectItem value="storewide">Storewide Sale</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label htmlFor="promo-value" className="text-xs font-semibold">
+                      Discount Value {formType === "percentage" ? "(%)" : "($)"} *
+                    </Label>
+                    <Input
+                      id="promo-value"
+                      type="number"
+                      step="0.01"
+                      min="0.01"
+                      value={formValue}
+                      onChange={(e) => {
+                        setFormValue(e.target.value);
+                        clearPromoError("value");
+                      }}
+                      placeholder="e.g. 15"
+                      className={promoErrors.value ? "border-destructive" : ""}
+                    />
+                    <FieldError message={promoErrors.value} />
+                  </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label htmlFor="promo-conditions" className="text-xs font-semibold">
+                    Conditions & Thresholds <span className="text-destructive">*</span>
+                  </Label>
+                  <Input
+                    id="promo-conditions"
+                    value={formConditions}
+                    onChange={(e) => {
+                      setFormConditions(e.target.value);
+                      clearPromoError("conditions");
+                    }}
+                    placeholder="e.g. Min spend $50 across all clothing items"
+                    className={promoErrors.conditions ? "border-destructive" : ""}
+                  />
+                  <FieldError message={promoErrors.conditions} />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-semibold">Start Date *</Label>
+                    <DatePicker
+                      value={startDate}
+                      onChange={(val) => {
+                        setStartDate(val);
+                        clearPromoError("startDate");
+                      }}
+                      placeholder="Start date"
+                    />
+                    <FieldError message={promoErrors.startDate} />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-semibold">End Date *</Label>
+                    <DatePicker
+                      value={endDate}
+                      onChange={(val) => {
+                        setEndDate(val);
+                        clearPromoError("endDate");
+                      }}
+                      placeholder="End date"
+                    />
+                    <FieldError message={promoErrors.endDate} />
+                  </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-semibold">Campaign Status</Label>
+                  <Select
+                    value={formStatus}
+                    onValueChange={(val: any) => setFormStatus(val)}
+                  >
+                    <SelectTrigger className="h-9 text-xs">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="active">Active (Live in Register)</SelectItem>
+                      <SelectItem value="scheduled">Scheduled (Future)</SelectItem>
+                      <SelectItem value="expired">Expired / Ended</SelectItem>
+                      <SelectItem value="inactive">Draft / Paused</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <SheetFooter className="p-4 border-t border-border/60 bg-muted/20 flex flex-row items-center justify-end gap-2 shrink-0">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setIsAddOpen(false)}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={isSaving}
+                  className="font-semibold shadow-sm"
+                >
+                  {isSaving && <Loader2 className="size-4 animate-spin mr-2" />}
+                  {editItem ? "Update Promotion" : "Publish Promotion"}
+                </Button>
+              </SheetFooter>
+            </form>
+          </div>
+        </SheetContent>
+      </Sheet>
+
+      {/* Delete Confirmation */}
+      <Dialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
+        <DialogContent className="max-w-md rounded-2xl p-6 border border-border shadow-soft bg-card">
+          <DialogHeader className="space-y-2 text-left">
+            <div className="flex items-center gap-3">
+              <div className="grid size-10 place-items-center rounded-xl bg-destructive/10 text-destructive shrink-0">
+                <Trash2 className="size-5" />
+              </div>
+              <div>
+                <DialogTitle className="text-lg font-bold text-foreground">
+                  Delete Promotion
+                </DialogTitle>
+                <DialogDescription className="text-xs text-muted-foreground mt-0.5">
+                  Are you sure you want to permanently delete this promotion campaign?
+                </DialogDescription>
+              </div>
+            </div>
           </DialogHeader>
-          <form noValidate onSubmit={handleSave} className="space-y-4">
-            <div className="space-y-1.5">
-              <Label htmlFor="title">
-                Promotion Title <span className="text-destructive">*</span>
-              </Label>
-              <Input
-                id="title"
-                name="title"
-                defaultValue={editItem?.title}
-                placeholder="e.g. Campaign Name"
-                className={
-                  promoErrors.title ? "border-destructive focus-visible:ring-destructive" : ""
-                }
-                onChange={() => clearPromoError("title")}
-              />
-              <FieldError message={promoErrors.title} />
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-1.5">
-                <Label htmlFor="type">Scope Type</Label>
-                <Select name="type" defaultValue={editItem?.type || "storewide"}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="storewide">Storewide</SelectItem>
-                    <SelectItem value="category">Specific Category</SelectItem>
-                    <SelectItem value="product">Specific Product</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="value">
-                  Discount Value (%) <span className="text-destructive">*</span>
-                </Label>
-                <Input
-                  id="value"
-                  name="value"
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  placeholder="e.g. 10.00"
-                  defaultValue={editItem?.value}
-                  className={
-                    promoErrors.value ? "border-destructive focus-visible:ring-destructive" : ""
-                  }
-                  onChange={() => clearPromoError("value")}
-                />
-                <FieldError message={promoErrors.value} />
-              </div>
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="conditions">
-                Conditions <span className="text-destructive">*</span>
-              </Label>
-              <Input
-                id="conditions"
-                name="conditions"
-                defaultValue={editItem?.conditions}
-                placeholder="e.g. Conditions or Rules"
-                className={
-                  promoErrors.conditions ? "border-destructive focus-visible:ring-destructive" : ""
-                }
-                onChange={() => clearPromoError("conditions")}
-              />
-              <FieldError message={promoErrors.conditions} />
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-1.5">
-                <Label htmlFor="startDate">
-                  Start Date <span className="text-destructive">*</span>
-                </Label>
-                <div className="hidden">
-                  <Input
-                    name="startDate"
-                    value={startDate || (editItem ? editItem.startDate : "")}
-                    readOnly
-                  />
-                </div>
-                <DatePicker
-                  name="startDate"
-                  date={startDate || (editItem ? editItem.startDate : "")}
-                  onDateChange={(d) => {
-                    setStartDate(d ? d.toISOString().split("T")[0] : "");
-                    clearPromoError("startDate");
-                  }}
-                />
-                <FieldError message={promoErrors.startDate} />
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="endDate">
-                  End Date <span className="text-destructive">*</span>
-                </Label>
-                <div className="hidden">
-                  <Input
-                    name="endDate"
-                    value={endDate || (editItem ? editItem.endDate : "")}
-                    readOnly
-                  />
-                </div>
-                <DatePicker
-                  name="endDate"
-                  date={endDate || (editItem ? editItem.endDate : "")}
-                  onDateChange={(d) => {
-                    setEndDate(d ? d.toISOString().split("T")[0] : "");
-                    clearPromoError("endDate");
-                  }}
-                />
-                <FieldError message={promoErrors.endDate} />
-              </div>
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="status">Status</Label>
-              <Select name="status" defaultValue={editItem?.status || "active"}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="active">Active</SelectItem>
-                  <SelectItem value="scheduled">Scheduled</SelectItem>
-                  <SelectItem value="expired">Expired</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <DialogFooter className="mt-6">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => {
-                  setIsAddOpen(false);
-                  setEditItem(null);
-                  clearPromoAll();
-                }}
-              >
-                Cancel
-              </Button>
-              <Button type="submit" disabled={isSaving}>
-                {isSaving && <Loader2 className="size-4 animate-spin mr-2" />}
-                Save Promotion
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
-
-      <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete the promotion.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
+          <DialogFooter className="mt-4 flex flex-row items-center justify-end gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setDeleteId(null)}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
               onClick={handleDelete}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               Delete
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

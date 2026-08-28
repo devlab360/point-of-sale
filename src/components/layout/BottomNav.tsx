@@ -1,13 +1,6 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import { useState } from "react";
-import {
-  LayoutDashboard,
-  ScanBarcode,
-  Package,
-  ReceiptText,
-  Grid3x3,
-  X,
-} from "lucide-react";
+import { LayoutDashboard, ScanBarcode, Package, ReceiptText, Grid3x3, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -58,7 +51,7 @@ export function BottomNav() {
         item.to,
         user?.role === "super_admin",
         saasPlan,
-        settings?.businessType
+        settings?.businessType,
       );
       if (!permResult.allowed) return false;
       if (effectiveMenus.includes("all")) return true;
@@ -93,16 +86,16 @@ export function BottomNav() {
               onClick={() => setMoreOpen(false)}
               className={cn(
                 "relative flex flex-1 flex-col items-center gap-0.5 py-2 pt-2.5 text-[10px] font-semibold transition-colors touch-target",
-                active
-                  ? "text-primary"
-                  : "text-muted-foreground active:text-foreground",
+                active ? "text-primary" : "text-muted-foreground active:text-foreground",
               )}
               aria-current={active ? "page" : undefined}
             >
-              <div className={cn(
-                "flex items-center justify-center rounded-xl px-4 py-1 transition-all",
-                active && "bg-primary/12"
-              )}>
+              <div
+                className={cn(
+                  "flex items-center justify-center rounded-xl px-4 py-1 transition-all",
+                  active && "bg-primary/12",
+                )}
+              >
                 <Icon
                   className={cn("size-5", active && "text-primary")}
                   strokeWidth={active ? 2.5 : 2}
@@ -127,10 +120,12 @@ export function BottomNav() {
           )}
           aria-label="More navigation options"
         >
-          <div className={cn(
-            "flex items-center justify-center rounded-xl px-4 py-1 transition-all",
-            (moreOpen || !isOnMainNav) && "bg-primary/12"
-          )}>
+          <div
+            className={cn(
+              "flex items-center justify-center rounded-xl px-4 py-1 transition-all",
+              (moreOpen || !isOnMainNav) && "bg-primary/12",
+            )}
+          >
             <Grid3x3
               className={cn("size-5", (moreOpen || !isOnMainNav) && "text-primary")}
               strokeWidth={moreOpen || !isOnMainNav ? 2.5 : 2}
@@ -181,24 +176,28 @@ export function BottomNav() {
                             : "border-border/50 bg-card text-foreground hover:border-border hover:bg-muted/50",
                         )}
                       >
-                        <div className={cn(
-                          "grid size-10 place-items-center rounded-xl",
-                          active
-                            ? "bg-primary/15 text-primary"
-                            : "bg-muted/60 text-muted-foreground",
-                        )}>
+                        <div
+                          className={cn(
+                            "grid size-10 place-items-center rounded-xl",
+                            active
+                              ? "bg-primary/15 text-primary"
+                              : "bg-muted/60 text-muted-foreground",
+                          )}
+                        >
                           <Icon className="size-5" strokeWidth={active ? 2.5 : 2} />
                         </div>
                         <span className="text-[11px] font-medium leading-tight line-clamp-2">
                           {t(item.tkey) || item.label}
                         </span>
                         {item.badge && (
-                          <span className={cn(
-                            "text-[9px] font-bold uppercase tracking-wider rounded-md px-1.5 py-0.5",
-                            item.badge === "Live"
-                              ? "bg-success/15 text-success"
-                              : "bg-destructive/15 text-destructive",
-                          )}>
+                          <span
+                            className={cn(
+                              "text-[9px] font-bold uppercase tracking-wider rounded-md px-1.5 py-0.5",
+                              item.badge === "Live"
+                                ? "bg-success/15 text-success"
+                                : "bg-destructive/15 text-destructive",
+                            )}
+                          >
                             {item.badge}
                           </span>
                         )}

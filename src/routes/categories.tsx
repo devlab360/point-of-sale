@@ -1,14 +1,23 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Pencil, Tag, Trash2, Plus, LayoutGrid, Loader2 } from "lucide-react";
-import { DataPage } from "@/components/layout/DataPage";
-import { exportToCSV, parseCSV } from "@/lib/csv";
-import { EmptyState } from "@/components/ui/empty-state";
-import { PaginationControls } from "@/components/ui/pagination-controls";
-import { IconPicker } from "@/components/ui/icon-picker";
+import {
+  Pencil,
+  Tag,
+  Trash2,
+  Plus,
+  LayoutGrid,
+  Loader2,
+  Search,
+  Package,
+  Layers,
+  Table as TableIcon,
+  CheckCircle2,
+  Palette,
+} from "lucide-react";
 import * as LucideIcons from "lucide-react";
-
+import { EmptyState } from "@/components/ui/empty-state";
+import { IconPicker } from "@/components/ui/icon-picker";
 import { PersistStore } from "@/lib/session-store";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   getCategoriesFn,
   createCategoryFn,
@@ -17,47 +26,54 @@ import {
 } from "@/api/categories";
 import { getProductsFn } from "@/api/products";
 import { Button } from "@/components/ui/button";
-import { SearchableSelect } from "@/components/ui/searchable-select";
+import { Badge } from "@/components/ui/badge";
+import { PageHeader } from "@/components/layout/PageHeader";
+import { StatCard } from "@/components/layout/StatCard";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+  SheetFooter,
+} from "@/components/ui/sheet";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useState, useMemo, useEffect } from "react";
-import { useLanguage } from "@/contexts/LanguageContext";
-import { TableSkeleton } from "@/components/skeletons/TableSkeleton";
-import { ErrorState } from "@/components/ui/error-state";
+import { useState, useMemo } from "react";
 import { useDebounce } from "@/hooks/useDebounce";
 import { v4 as uuidv4 } from "uuid";
 import { toast } from "sonner";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 import { useFormValidation } from "@/hooks/useFormValidation";
 import { FieldError } from "@/components/ui/field-error";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { PaginationControls } from "@/components/ui/pagination-controls";
+import { TableSkeleton } from "@/components/skeletons/TableSkeleton";
+import { CardGridSkeleton } from "@/components/skeletons/CardGridSkeleton";
+import { ErrorState } from "@/components/ui/error-state";
 
 export const Route = createFileRoute("/categories")({
-  head: () => ({ meta: [{ title: "Categories · NexisPOS" }] }),
+  head: () => ({ meta: [{ title: "Product Categories · OneDesk360" }] }),
   component: CategoriesPage,
 });
+
+const PREDEFINED_COLORS = [
+  { value: "#3b82f6", label: "Blue", bg: "bg-blue-500/15 text-blue-600 border-blue-500/30" },
+  { value: "#10b981", label: "Emerald", bg: "bg-emerald-500/15 text-emerald-600 border-emerald-500/30" },
+  { value: "#f59e0b", label: "Amber", bg: "bg-amber-500/15 text-amber-600 border-amber-500/30" },
+  { value: "#8b5cf6", label: "Purple", bg: "bg-purple-500/15 text-purple-600 border-purple-500/30" },
+  { value: "#ec4899", label: "Pink", bg: "bg-pink-500/15 text-pink-600 border-pink-500/30" },
+  { value: "#14b8a6", label: "Teal", bg: "bg-teal-500/15 text-teal-600 border-teal-500/30" },
+  { value: "#ef4444", label: "Rose", bg: "bg-rose-500/15 text-rose-600 border-rose-500/30" },
+  { value: "#6366f1", label: "Indigo", bg: "bg-indigo-500/15 text-indigo-600 border-indigo-500/30" },
+];
 
 function CategoriesPage() {
   const orgId = PersistStore.getOrgId() || "default";
@@ -72,96 +88,55 @@ function CategoriesPage() {
     queryKey: ["categories", orgId],
     queryFn: async () => ((await getCategoriesFn({ data: {} })) as any)?.data || [],
   });
-  const rawCategories = rawCategoriesData || [];
+  const rawCategories = Array.isArray(rawCategoriesData) ? rawCategoriesData : [];
 
   const { data: productsData } = useQuery({
     queryKey: ["products", orgId],
     queryFn: async () => ((await getProductsFn({ data: {} })) as any)?.data || [],
   });
-  const products = productsData || [];
+  const products = Array.isArray(productsData) ? productsData : [];
 
   const categoriesWithCounts = useMemo(() => {
-    return rawCategories.map((c) => ({
+    return rawCategories.map((c: any) => ({
       ...c,
-      count: products.filter((p) => p.category === c.name || p.category === c.id).length,
+      count: products.filter((p: any) => p.category === c.name || p.category === c.id).length,
     }));
   }, [rawCategories, products]);
 
+  const [viewMode, setViewMode] = useState<"grid" | "table">("grid");
   const [modalOpen, setModalOpen] = useState(false);
   const [editingCat, setEditingCat] = useState<any | null>(null);
   const [isSaving, setIsSaving] = useState(false);
 
   const [name, setName] = useState("");
   const [icon, setIcon] = useState("ShoppingCart");
-  const [color, setColor] = useState("var(--color-primary)");
+  const [color, setColor] = useState("#3b82f6");
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search, 300);
   const [page, setPage] = useState(1);
-  const itemsPerPage = 10;
+  const pageSize = 12;
 
-  const [filters, setFilters] = useState({ usage: "" });
-  const [draftFilters, setDraftFilters] = useState({ usage: "" });
-  const activeFilterCount = filters.usage ? 1 : 0;
+  // KPI Calculations
+  const totalCategories = categoriesWithCounts.length;
+  const inUseCount = useMemo(() => categoriesWithCounts.filter((c) => c.count > 0).length, [categoriesWithCounts]);
+  const totalLinkedProducts = useMemo(() => categoriesWithCounts.reduce((sum, c) => sum + c.count, 0), [categoriesWithCounts]);
 
-  const handleResetFilters = () => {
-    setFilters({ usage: "" });
-    setDraftFilters({ usage: "" });
-  };
-
-  const PREDEFINED_COLORS = [
-    { value: "var(--color-primary)", label: "Primary (Brand)" },
-    { value: "var(--color-info)", label: "Blue (Info)" },
-    { value: "var(--color-success)", label: "Green (Success)" },
-    { value: "var(--color-warning)", label: "Orange (Warning)" },
-    { value: "var(--color-destructive)", label: "Red (Destructive)" },
-    { value: "#8b5cf6", label: "Purple" },
-    { value: "#ec4899", label: "Pink" },
-    { value: "#14b8a6", label: "Teal" },
-  ];
-
-  const categories = useMemo(() => {
-    let filtered = categoriesWithCounts;
+  const filteredCategories = useMemo(() => {
+    let list = categoriesWithCounts;
     if (debouncedSearch) {
       const lower = debouncedSearch.toLowerCase();
-      filtered = filtered.filter((c) => c.name.toLowerCase().includes(lower));
+      list = list.filter((c: any) => c.name?.toLowerCase().includes(lower));
     }
-    if (filters.usage === "in-use") {
-      filtered = filtered.filter((c) => c.count > 0);
-    } else if (filters.usage === "empty") {
-      filtered = filtered.filter((c) => c.count === 0);
-    }
-    return filtered;
-  }, [categoriesWithCounts, debouncedSearch, filters.usage]);
+    return list;
+  }, [categoriesWithCounts, debouncedSearch]);
 
-  useEffect(() => {
-    setPage(1);
-  }, [debouncedSearch, filters]);
-
-  useEffect(() => {
-    const maxPage = Math.max(1, Math.ceil(categories.length / itemsPerPage));
-    if (page > maxPage) setPage(maxPage);
-  }, [categories.length, page]);
-
-  const totalPages = Math.ceil(categories.length / itemsPerPage);
-  const paginatedCategories = categories.slice((page - 1) * itemsPerPage, page * itemsPerPage);
-
-  const openNew = () => {
-    setEditingCat(null);
-    setName("");
-    setIcon("ShoppingCart");
-    setColor("var(--color-primary)");
-    setModalOpen(true);
-  };
-
-  const openEdit = (cat: any) => {
-    setEditingCat(cat);
-    setName(cat.name);
-    setIcon(cat.icon);
-    setColor(cat.color);
-    setModalOpen(true);
-  };
+  const totalPages = Math.ceil(filteredCategories.length / pageSize) || 1;
+  const paginatedCategories = useMemo(() => {
+    const start = (page - 1) * pageSize;
+    return filteredCategories.slice(start, start + pageSize);
+  }, [filteredCategories, page, pageSize]);
 
   const {
     errors: catErrors,
@@ -172,310 +147,473 @@ function CategoriesPage() {
     name: { required: "Category name is required" },
   });
 
-  const save = async (e: React.FormEvent) => {
+  const openNew = () => {
+    setEditingCat(null);
+    setName("");
+    setIcon("ShoppingCart");
+    setColor("#3b82f6");
+    clearCatAll();
+    setModalOpen(true);
+  };
+
+  const openEdit = (cat: any) => {
+    setEditingCat(cat);
+    setName(cat.name || "");
+    setIcon(cat.icon || "ShoppingCart");
+    setColor(cat.color || "#3b82f6");
+    clearCatAll();
+    setModalOpen(true);
+  };
+
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    const isValid = validateCat({ name });
+    const isValid = validateCat({ name: name.trim() });
     if (!isValid) return;
 
     setIsSaving(true);
-    await new Promise((resolve) => setTimeout(resolve, 500));
     try {
       if (editingCat) {
-        const res = await updateCategoryFn({
-          data: { id: editingCat.id, updates: { name, icon, color } },
-        } as any);
+        const res = (await updateCategoryFn({
+          data: {
+            id: editingCat.id,
+            updates: { name: name.trim(), icon, color },
+          },
+        })) as any;
         if (res?.success) {
-          toast.success("Category updated");
-          queryClient.invalidateQueries({ queryKey: ["categories"] });
+          toast.success("Category updated successfully");
+          setModalOpen(false);
+          queryClient.invalidateQueries({ queryKey: ["categories", orgId] });
         } else throw new Error(res?.error);
       } else {
-        const res = await createCategoryFn({
+        const res = (await createCategoryFn({
           data: {
-            category: { id: uuidv4(), organizationId: PersistStore.getOrgId(), name, icon, color },
+            category: {
+              id: uuidv4(),
+              name: name.trim(),
+              icon,
+              color,
+            },
           },
-        } as any);
+        })) as any;
         if (res?.success) {
-          toast.success("Category created");
-          queryClient.invalidateQueries({ queryKey: ["categories"] });
+          toast.success("Category added to catalog");
+          setModalOpen(false);
+          queryClient.invalidateQueries({ queryKey: ["categories", orgId] });
         } else throw new Error(res?.error);
       }
-      setModalOpen(false);
-      clearCatAll();
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "An error occurred");
+    } catch (err: any) {
+      toast.error(err.message || "Failed to save category");
     } finally {
       setIsSaving(false);
     }
   };
 
-  const confirmDelete = async () => {
-    if (!deleteId) return;
-    try {
-      const res = await deleteCategoryFn({ data: { id: deleteId } });
-      if (res?.success) {
-        toast.success("Category deleted");
-        queryClient.invalidateQueries({ queryKey: ["categories"] });
-      } else throw new Error(res?.error);
-    } catch (error) {
-      toast.error("Failed to delete category");
-    } finally {
-      setDeleteId(null);
-    }
-  };
-
-  const handleExport = () => {
-    exportToCSV(rawCategories, [
-      { key: 'name', label: 'Category Name' },
-      { key: 'description', label: 'Description' }
-    ], 'categories');
-  };
-
-  const handleImport = async (file: File) => {
-    try {
-      const data = await parseCSV(file);
-      if (data.length === 0) {
-        toast.error("No data found in the CSV");
-        return;
+  const handleDelete = async () => {
+    if (deleteId) {
+      try {
+        const res = (await deleteCategoryFn({ data: { id: deleteId } })) as any;
+        if (res?.success) {
+          toast.success("Category deleted");
+          setDeleteId(null);
+          queryClient.invalidateQueries({ queryKey: ["categories", orgId] });
+        } else throw new Error(res?.error);
+      } catch (err: any) {
+        toast.error(err.message || "Failed to delete category");
       }
-
-      let count = 0;
-      for (const row of data) {
-        if (row['Category Name']) {
-          await createCategoryFn({ 
-            data: { 
-              category: { 
-                id: uuidv4(), 
-                name: row['Category Name'],
-                description: row['Description'] || '',
-                color: 'bg-primary/10',
-                icon: 'Tag'
-              } 
-            } 
-          });
-          count++;
-        }
-      }
-      
-      queryClient.invalidateQueries({ queryKey: ["categories"] });
-      toast.success(`Successfully imported ${count} categories`);
-    } catch (error) {
-      toast.error("Failed to parse CSV file");
     }
   };
 
   return (
-    <div>
-      <DataPage
-        title="Categories"
-        description="Group products into shoppable sections used across POS, reports, and promotions."
-        primaryAction={{ label: "New Category", onClick: openNew }}
-        searchPlaceholder="Search categories..."
-        searchValue={search}
-        onSearchChange={setSearch}
-        hideToolbar={rawCategories.length === 0}
-        onResetFilters={handleResetFilters}
-        activeFilterCount={activeFilterCount}
-        onExport={handleExport}
-        onImport={handleImport}
-        filtersContent={({ close }) => (
-          <div className="space-y-4 flex flex-col h-full min-h-[50vh]">
-            <div className="flex-1 space-y-4">
-              <div className="space-y-2">
-                <Label>Usage Status</Label>
-                <SearchableSelect
-                  options={[
-                    { value: "", label: "All Categories" },
-                    { value: "in-use", label: "In Use (Has products)" },
-                    { value: "empty", label: "Empty (No products)" },
-                  ]}
-                  value={draftFilters.usage}
-                  onChange={(val) => setDraftFilters((prev) => ({ ...prev, usage: val }))}
-                  placeholder="Filter by Usage"
-                />
-              </div>
-            </div>
-            <div className="pt-4 mt-auto">
-              <Button
-                className="w-full"
-                onClick={() => {
-                  setFilters(draftFilters);
-                  close();
-                }}
-              >
-                Apply Filters
-              </Button>
-            </div>
-          </div>
-        )}
-      >
-        {isCategoriesLoading ? (
-          <TableSkeleton columns={3} rows={6} showHeaderAction={false} showFilters={false} />
-        ) : isCategoriesError ? (
-          <ErrorState onRetry={refetchCategories} />
-        ) : categories.length === 0 ? (
-          <EmptyState
-            icon={LayoutGrid}
-            title="No categories found"
-            description={
-              search ? "Try adjusting your search." : "You haven't created any categories yet."
-            }
-            actionLabel="Add Category"
-            onAction={() => {
-              setEditingCat(null);
-              setName("");
-              setModalOpen(true);
-            }}
-          />
-        ) : (
-          <div className="space-y-4">
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-              {paginatedCategories.map((c) => (
-                <div
-                  key={c.id}
-                  className="group flex items-center gap-4 rounded-xl border border-border bg-card p-4 shadow-soft transition-shadow hover:shadow-elevated"
-                >
-                  <div
-                    className="grid size-12 shrink-0 place-items-center rounded-xl text-2xl"
-                    style={{ background: `color-mix(in oklch, ${c.color} 18%, transparent)` }}
-                  >
-                    {c.icon}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="truncate font-semibold">{c.name}</div>
-                    <div className="text-xs text-muted-foreground">{c.count || 0} products</div>
-                  </div>
-                  <div className="flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="size-8"
-                      onClick={() => openEdit(c)}
-                    >
-                      <Pencil className="size-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="size-8 text-destructive"
-                      onClick={() => setDeleteId(c.id)}
-                    >
-                      <Trash2 className="size-4" />
-                    </Button>
-                  </div>
-                </div>
-              ))}
-            </div>
-            <PaginationControls
-              currentPage={page}
-              totalPages={totalPages}
-              onPageChange={setPage}
-              totalItems={categories.length}
-              className="rounded-xl border"
+    <div className="page-container space-y-6">
+      {/* Standard PageHeader */}
+      <PageHeader
+        title="Product Categories"
+        description="Group inventory items into structured departments and color-coded touch buttons for POS terminal registers."
+        actions={
+          <Button size="sm" onClick={openNew} className="gap-1.5">
+            <Plus className="size-4" /> Add Category
+          </Button>
+        }
+      />
+
+      {/* Standard StatCard Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <StatCard
+          label="Total Categories"
+          value={String(totalCategories)}
+          hint="Taxonomy departments"
+          icon={Layers}
+          accent="primary"
+        />
+        <StatCard
+          label="In-Use Departments"
+          value={String(inUseCount)}
+          hint="Has linked SKUs"
+          icon={CheckCircle2}
+          accent="success"
+        />
+        <StatCard
+          label="Linked Products"
+          value={`${totalLinkedProducts} items`}
+          hint="Assigned in catalog"
+          icon={Package}
+          accent="info"
+        />
+        <StatCard
+          label="POS Quick Tiles"
+          value="100% Configured"
+          hint="Color-coded buttons"
+          icon={Palette}
+          accent="warning"
+        />
+      </div>
+
+      {/* Main Section */}
+      <div className="space-y-4">
+        {/* Controls Toolbar */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="relative w-full sm:w-80">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+            <Input
+              placeholder="Search categories..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-9 h-9 text-sm rounded-lg"
             />
           </div>
-        )}
-      </DataPage>
 
-      <Dialog
-        open={modalOpen}
-        onOpenChange={(open) => {
-          if (!open) {
-            setModalOpen(false);
-            clearCatAll();
-          }
-        }}
-      >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{editingCat ? "Edit Category" : "New Category"}</DialogTitle>
-          </DialogHeader>
-          <form onSubmit={save} noValidate>
-            <div className="grid gap-4 py-4">
-              <div className="grid gap-1.5">
-                <Label htmlFor="name">
-                  Name <span className="text-destructive">*</span>
-                </Label>
-                <Input
-                  id="name"
-                  value={name}
-                  onChange={(e) => {
-                    setName(e.target.value);
-                    clearCatError("name");
-                  }}
-                  placeholder="e.g. Beverages"
-                  className={
-                    catErrors.name ? "border-destructive focus-visible:ring-destructive" : ""
-                  }
+          <div className="inline-flex rounded-lg border border-border/80 bg-muted/30 p-0.5 shadow-sm self-end sm:self-auto">
+            <button
+              type="button"
+              onClick={() => setViewMode("grid")}
+              className={`grid size-8 place-items-center rounded-md transition-all ${
+                viewMode === "grid"
+                  ? "bg-card text-foreground shadow-sm font-bold"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+              title="Grid View"
+            >
+              <LayoutGrid className="size-4" />
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode("table")}
+              className={`grid size-8 place-items-center rounded-md transition-all ${
+                viewMode === "table"
+                  ? "bg-card text-foreground shadow-sm font-bold"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+              title="Table View"
+            >
+              <TableIcon className="size-4" />
+            </button>
+          </div>
+        </div>
+
+        {/* Content View */}
+        {isCategoriesLoading ? (
+          viewMode === "grid" ? (
+            <CardGridSkeleton cards={8} />
+          ) : (
+            <TableSkeleton columns={4} rows={6} />
+          )
+        ) : isCategoriesError ? (
+          <ErrorState onRetry={refetchCategories} />
+        ) : filteredCategories.length === 0 ? (
+          <EmptyState
+            icon={Tag}
+            title="No categories found"
+            description={
+              search ? "Try adjusting your search criteria." : "You haven't created any product categories yet."
+            }
+            actionLabel="Add Category"
+            onAction={openNew}
+          />
+        ) : viewMode === "grid" ? (
+          /* Grid View */
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+              {paginatedCategories.map((c: any) => {
+                const IconComponent = (LucideIcons as any)[c.icon] || Tag;
+
+                return (
+                  <div
+                    key={c.id}
+                    className="rounded-2xl border border-border/80 bg-card p-5 shadow-soft flex flex-col justify-between space-y-4 hover:border-border transition-all group"
+                  >
+                    <div className="space-y-3">
+                      <div className="flex items-start justify-between">
+                        <div
+                          className="grid size-12 place-items-center rounded-xl transition-transform group-hover:scale-105"
+                          style={{
+                            backgroundColor: `${c.color || "#3b82f6"}20`,
+                            color: c.color || "#3b82f6",
+                          }}
+                        >
+                          <IconComponent className="size-6" />
+                        </div>
+                        <Badge variant="outline" className="text-xs font-semibold">
+                          {c.count} {c.count === 1 ? "Product" : "Products"}
+                        </Badge>
+                      </div>
+
+                      <div>
+                        <h3 className="font-bold text-base text-foreground group-hover:text-primary transition-colors truncate">
+                          {c.name}
+                        </h3>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          POS Touch Department
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="pt-3 border-t border-border/60 flex items-center justify-end gap-1">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => openEdit(c)}
+                        className="h-8 text-xs font-semibold"
+                      >
+                        <Pencil className="size-3.5 mr-1" /> Edit
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setDeleteId(c.id)}
+                        className="h-8 text-xs text-muted-foreground hover:text-destructive"
+                      >
+                        <Trash2 className="size-3.5" />
+                      </Button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            {filteredCategories.length > 0 && (
+              <div className="rounded-xl border border-border/80 bg-card p-3 shadow-soft">
+                <PaginationControls
+                  currentPage={page}
+                  totalPages={totalPages}
+                  pageSize={pageSize}
+                  totalItems={filteredCategories.length}
+                  onPageChange={setPage}
+                  onPageSizeChange={() => {}}
                 />
-                <FieldError message={catErrors.name} />
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="grid gap-1.5">
-                  <Label htmlFor="icon">Category Icon</Label>
+            )}
+          </div>
+        ) : (
+          /* Table View */
+          <div className="overflow-hidden rounded-xl border border-border/80 bg-card shadow-soft">
+            <div className="table-desktop overflow-x-auto">
+              <Table className="min-w-[700px]">
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Category Name</TableHead>
+                    <TableHead>POS Color & Icon</TableHead>
+                    <TableHead>Linked Products</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {paginatedCategories.map((c: any) => {
+                    const IconComponent = (LucideIcons as any)[c.icon] || Tag;
+
+                    return (
+                      <TableRow key={c.id} className="hover:bg-muted/30 transition-colors">
+                        <TableCell>
+                          <div className="flex items-center gap-2.5">
+                            <div
+                              className="grid size-8 place-items-center rounded-lg"
+                              style={{
+                                backgroundColor: `${c.color || "#3b82f6"}20`,
+                                color: c.color || "#3b82f6",
+                              }}
+                            >
+                              <IconComponent className="size-4" />
+                            </div>
+                            <span className="font-semibold text-foreground">{c.name}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-1.5">
+                            <span
+                              className="size-3 rounded-full border border-black/10"
+                              style={{ backgroundColor: c.color || "#3b82f6" }}
+                            />
+                            <span className="text-xs font-mono text-muted-foreground">{c.color || "#3b82f6"}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className="text-xs font-semibold">
+                            {c.count} items
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex items-center justify-end gap-1">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => openEdit(c)}
+                              className="h-8 text-xs font-semibold"
+                            >
+                              <Pencil className="size-3.5 mr-1" /> Edit
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setDeleteId(c.id)}
+                              className="h-8 text-xs text-muted-foreground hover:text-destructive"
+                            >
+                              <Trash2 className="size-3.5" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </div>
+            {filteredCategories.length > 0 && (
+              <div className="border-t border-border/60 p-3">
+                <PaginationControls
+                  currentPage={page}
+                  totalPages={totalPages}
+                  pageSize={pageSize}
+                  totalItems={filteredCategories.length}
+                  onPageChange={setPage}
+                  onPageSizeChange={() => {}}
+                />
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Drawer */}
+      <Sheet open={modalOpen} onOpenChange={setModalOpen}>
+        <SheetContent
+          side="right"
+          className="w-full sm:max-w-lg p-0 flex flex-col h-full bg-background border-l border-border"
+        >
+          <div className="flex flex-col h-full overflow-hidden">
+            <SheetHeader className="bg-muted/40 p-5 border-b pr-12 text-left shrink-0">
+              <SheetTitle className="text-xl font-bold text-foreground">
+                {editingCat ? "Edit Category" : "Add New Category"}
+              </SheetTitle>
+              <SheetDescription className="text-xs text-muted-foreground mt-0.5">
+                Configure taxonomy department details and POS register touch styles.
+              </SheetDescription>
+            </SheetHeader>
+
+            <form onSubmit={handleSave} className="flex-1 flex flex-col justify-between overflow-hidden">
+              <div className="flex-1 overflow-y-auto p-5 space-y-4">
+                <div className="space-y-1.5">
+                  <Label htmlFor="category-name" className="text-xs font-semibold">
+                    Category Name <span className="text-destructive">*</span>
+                  </Label>
+                  <Input
+                    id="category-name"
+                    value={name}
+                    onChange={(e) => {
+                      setName(e.target.value);
+                      clearCatError("name");
+                    }}
+                    placeholder="e.g. Beverages, Electronics, Apparel"
+                    className={catErrors.name ? "border-destructive" : ""}
+                  />
+                  <FieldError message={catErrors.name} />
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-semibold">Department Icon</Label>
                   <IconPicker value={icon} onChange={setIcon} />
                 </div>
-                <div className="grid gap-1.5">
-                  <Label htmlFor="color">Theme Color</Label>
-                  <Select value={color} onValueChange={setColor}>
-                    <SelectTrigger id="color">
-                      <SelectValue placeholder="Select a color" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {PREDEFINED_COLORS.map((c) => (
-                        <SelectItem key={c.value} value={c.value}>
-                          <div className="flex items-center gap-2">
-                            <div
-                              className="size-3.5 rounded-full border border-border"
-                              style={{ backgroundColor: c.value }}
-                            />
-                            {c.label}
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-semibold">POS Touch Button Color</Label>
+                  <div className="grid grid-cols-4 gap-2 pt-1">
+                    {PREDEFINED_COLORS.map((c) => (
+                      <button
+                        key={c.value}
+                        type="button"
+                        onClick={() => setColor(c.value)}
+                        className={`flex items-center gap-2 p-2 rounded-xl border text-xs font-semibold transition-all ${
+                          color === c.value
+                            ? "border-primary ring-2 ring-primary/20 bg-primary/5"
+                            : "border-border/60 hover:bg-muted/50"
+                        }`}
+                      >
+                        <span
+                          className="size-4 rounded-full shrink-0 border border-black/10"
+                          style={{ backgroundColor: c.value }}
+                        />
+                        <span className="truncate">{c.label}</span>
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
-            </div>
-            <DialogFooter className="mt-6">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => {
-                  setModalOpen(false);
-                  clearCatAll();
-                }}
-              >
-                Cancel
-              </Button>
-              <Button type="submit" disabled={isSaving}>
-                {isSaving && <Loader2 className="size-4 animate-spin mr-2" />}
-                Save changes
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
 
-      <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete the category.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={confirmDelete}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              <SheetFooter className="p-4 border-t border-border/60 bg-muted/20 flex flex-row items-center justify-end gap-2 shrink-0">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setModalOpen(false)}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={isSaving}
+                  className="font-semibold shadow-sm"
+                >
+                  {isSaving && <Loader2 className="size-4 animate-spin mr-2" />}
+                  {editingCat ? "Update Category" : "Create Category"}
+                </Button>
+              </SheetFooter>
+            </form>
+          </div>
+        </SheetContent>
+      </Sheet>
+
+      {/* Delete Confirmation */}
+      <Dialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
+        <DialogContent className="max-w-md rounded-2xl p-6 border border-border shadow-soft bg-card">
+          <DialogHeader className="space-y-2 text-left">
+            <div className="flex items-center gap-3">
+              <div className="grid size-10 place-items-center rounded-xl bg-destructive/10 text-destructive shrink-0">
+                <Trash2 className="size-5" />
+              </div>
+              <div>
+                <DialogTitle className="text-lg font-bold text-foreground">
+                  Delete Category
+                </DialogTitle>
+                <DialogDescription className="text-xs text-muted-foreground mt-0.5">
+                  Are you sure you want to delete this category? Products assigned to it will remain in your catalog.
+                </DialogDescription>
+              </div>
+            </div>
+          </DialogHeader>
+          <DialogFooter className="mt-4 flex flex-row items-center justify-end gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setDeleteId(null)}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              onClick={handleDelete}
             >
               Delete
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

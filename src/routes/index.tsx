@@ -37,6 +37,14 @@ import { StatCard } from "@/components/layout/StatCard";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
   Dialog,
   DialogContent,
   DialogHeader,
@@ -64,7 +72,7 @@ import { useAppFormatter } from "@/hooks/useAppFormatter";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Dashboard · NexisPOS" },
+      { title: "Dashboard · OneDesk360" },
       {
         name: "description",
         content: "Real-time sales, revenue, low-stock alerts and operational KPIs for your store.",
@@ -80,8 +88,10 @@ function Dashboard() {
   const { user, saasPlan, saasOrg } = useAuth();
   const [isDailyReportOpen, setIsDailyReportOpen] = useState(false);
   const [chartView, setChartView] = useState<"revenue" | "profit">("revenue");
-  const canAccessPos = !saasPlan || !Array.isArray(saasPlan.features) || saasPlan.features.includes("/pos");
-  const canAccessReports = !saasPlan || !Array.isArray(saasPlan.features) || saasPlan.features.includes("/reports");
+  const canAccessPos =
+    !saasPlan || !Array.isArray(saasPlan.features) || saasPlan.features.includes("/pos");
+  const canAccessReports =
+    !saasPlan || !Array.isArray(saasPlan.features) || saasPlan.features.includes("/reports");
   const fmt = (n: number | string) =>
     `${currencySymbol}${(Number(n) || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
@@ -206,8 +216,7 @@ function Dashboard() {
       badgeClass = "bg-success/20 text-success border-success/30 font-bold";
     } else if (score >= 70) {
       grade = "Grade: A (Strong)";
-      badgeClass =
-        "bg-emerald-500/20 text-emerald-600 border-emerald-500/30 font-bold dark:text-emerald-400";
+      badgeClass = "bg-success/20 text-success border-success/30 font-bold";
     } else if (score >= 55) {
       grade = "Grade: B (Average)";
       badgeClass = "bg-info/20 text-info border-info/30 font-bold";
@@ -408,197 +417,46 @@ function Dashboard() {
   ).length;
 
   return (
-    <div className="page-container space-y-6">
-      {/* Header & Quick Action Row */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+    <div className="page-container space-y-8 page-enter">
+      {/* Clean Human-Crafted Page Header */}
+      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between border-b border-border/60 pb-6">
         <div>
-          <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight text-foreground flex items-center gap-2">
-            Welcome back, {userName} <span className="inline-block animate-bounce">👋</span>
-          </h1>
-          <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
-            Real-time performance snapshot for <span className="font-semibold text-foreground">{saasOrg?.name || "your store"}</span> today.
+          <div className="flex items-center gap-2.5">
+            <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-foreground font-display">
+              Overview
+            </h1>
+            <span className="inline-flex items-center rounded-full border border-primary/20 bg-primary/10 px-3 py-0.5 text-xs font-bold text-primary font-display">
+              {saasOrg?.name || "Main Store"}
+            </span>
+          </div>
+          <p className="text-xs sm:text-sm text-muted-foreground mt-1">
+            Real-time sales, revenue, and inventory performance for today.
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center gap-3">
           {canAccessReports && (
-            <>
-              <Button
-                variant="outline"
-                size="sm"
-                className="bg-emerald-500/10 text-emerald-600 border-emerald-500/25 hover:bg-emerald-500/20 font-semibold gap-1.5 shadow-sm text-xs"
-                onClick={() => {
-                  const topItems = topSelling.map((i) => i.name);
-                  sendAutomatedReport(user?.phone || settings?.phone || "", "Daily", {
-                    totalRevenue: todayRevenue,
-                    totalOrders: todayOrders,
-                    topItems,
-                  });
-                }}
-              >
-                <MessageCircle className="size-3.5" /> Send AI WhatsApp Report
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setIsDailyReportOpen(true)}
-                className="text-xs font-semibold gap-1.5 shadow-sm"
-              >
-                <Receipt className="size-3.5" /> Daily Summary
-              </Button>
-            </>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setIsDailyReportOpen(true)}
+              className="text-xs font-bold gap-2 h-10 px-4 rounded-xl border-border/80 shadow-xs"
+            >
+              <Receipt className="size-4" /> Daily Summary
+            </Button>
           )}
           {canAccessPos && (
-            <Button size="sm" asChild className="gap-1.5 font-bold shadow-soft">
+            <Button
+              size="sm"
+              variant="gradient"
+              asChild
+              className="gap-2 font-extrabold h-10 px-5 rounded-xl shadow-md"
+            >
               <Link to="/pos">
                 <ShoppingBag className="size-4" /> Open POS Terminal
               </Link>
             </Button>
           )}
-        </div>
-      </div>
-
-      {/* Quick Setup Checklist for Store Owners (Dismissible) */}
-      {sales.length < 5 && showOnboarding && (
-        <div className="relative overflow-hidden rounded-2xl border border-primary/25 bg-gradient-to-r from-primary/8 via-background to-primary/4 p-4 sm:p-5 shadow-card transition-all">
-          <div className="flex items-start justify-between gap-3">
-            <div className="flex items-center gap-3">
-              <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground font-bold shadow-sm">
-                🚀
-              </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <h3 className="font-bold text-sm sm:text-base text-foreground">
-                    Quick Store Launch Checklist
-                  </h3>
-                  <Badge variant="outline" className="border-primary/40 bg-primary/10 text-primary text-[10px] font-bold">
-                    {completedSetupSteps} of 3 completed
-                  </Badge>
-                </div>
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  Follow these 3 easy steps to start ringing sales like a high-volume retail pro.
-                </p>
-              </div>
-            </div>
-            <button
-              onClick={() => setShowOnboarding(false)}
-              className="text-muted-foreground hover:text-foreground text-xs p-1 rounded-md hover:bg-muted transition-colors"
-              aria-label="Dismiss checklist"
-            >
-              ✕
-            </button>
-          </div>
-
-          <div className="mt-4 grid grid-cols-1 gap-2.5 sm:grid-cols-3">
-            <Link
-              to="/products"
-              className={cn(
-                "group flex items-center justify-between rounded-xl p-3 text-xs border transition-all card-interactive",
-                products.length > 0
-                  ? "bg-success/8 border-success/30 text-success font-semibold"
-                  : "bg-card border-border/80 hover:border-primary/50 text-foreground",
-              )}
-            >
-              <div className="flex items-center gap-2.5 min-w-0">
-                <span
-                  className={cn(
-                    "flex size-5 shrink-0 items-center justify-center rounded-full text-[10px] font-bold",
-                    products.length > 0 ? "bg-success text-white" : "bg-muted text-muted-foreground",
-                  )}
-                >
-                  {products.length > 0 ? "✓" : "1"}
-                </span>
-                <span className="truncate">Add Catalog ({products.length})</span>
-              </div>
-              <ArrowRight className="size-3.5 opacity-50 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all" />
-            </Link>
-
-            <Link
-              to="/customers"
-              className={cn(
-                "group flex items-center justify-between rounded-xl p-3 text-xs border transition-all card-interactive",
-                customers.length > 0
-                  ? "bg-success/8 border-success/30 text-success font-semibold"
-                  : "bg-card border-border/80 hover:border-primary/50 text-foreground",
-              )}
-            >
-              <div className="flex items-center gap-2.5 min-w-0">
-                <span
-                  className={cn(
-                    "flex size-5 shrink-0 items-center justify-center rounded-full text-[10px] font-bold",
-                    customers.length > 0 ? "bg-success text-white" : "bg-muted text-muted-foreground",
-                  )}
-                >
-                  {customers.length > 0 ? "✓" : "2"}
-                </span>
-                <span className="truncate">Add Customers ({customers.length})</span>
-              </div>
-              <ArrowRight className="size-3.5 opacity-50 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all" />
-            </Link>
-
-            <Link
-              to="/pos"
-              className={cn(
-                "group flex items-center justify-between rounded-xl p-3 text-xs border transition-all card-interactive",
-                sales.length > 0
-                  ? "bg-success/8 border-success/30 text-success font-semibold"
-                  : "bg-card border-border/80 hover:border-primary/50 text-foreground",
-              )}
-            >
-              <div className="flex items-center gap-2.5 min-w-0">
-                <span
-                  className={cn(
-                    "flex size-5 shrink-0 items-center justify-center rounded-full text-[10px] font-bold",
-                    sales.length > 0 ? "bg-success text-white" : "bg-muted text-muted-foreground",
-                  )}
-                >
-                  {sales.length > 0 ? "✓" : "3"}
-                </span>
-                <span className="truncate">Ring First POS Sale ({sales.length})</span>
-              </div>
-              <ArrowRight className="size-3.5 opacity-50 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all" />
-            </Link>
-          </div>
-        </div>
-      )}
-
-      {/* AI Business Health Score Card */}
-      <div className="relative overflow-hidden rounded-2xl border border-primary/25 bg-gradient-to-r from-primary/10 via-background to-accent/10 p-4 sm:p-5 shadow-card">
-        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-          <div className="flex items-center gap-3.5 min-w-0">
-            <div className="relative flex size-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-primary to-primary/80 text-primary-foreground font-black text-2xl shadow-elevated">
-              {healthAnalysis.score}
-              <div className="absolute -bottom-1 -right-1 size-4 rounded-full bg-background flex items-center justify-center">
-                <span className="size-2.5 rounded-full bg-success animate-pulse" />
-              </div>
-            </div>
-            <div className="min-w-0">
-              <div className="flex flex-wrap items-center gap-2">
-                <h3 className="font-bold text-sm sm:text-base text-foreground">
-                  AI Business Health Index
-                </h3>
-                <Badge className={cn("text-[10px] px-2 py-0.5", healthAnalysis.badgeClass)}>
-                  {healthAnalysis.grade}
-                </Badge>
-              </div>
-              <p className="text-xs text-muted-foreground mt-0.5 max-w-xl">
-                Calculated across Sales Growth, Profit Margins, Stock Turnover Rate, and Receivables health.
-              </p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2 shrink-0">
-            <Button
-              size="sm"
-              onClick={() => {
-                const btn = document.querySelector("button:has(.animate-pulse)") as HTMLButtonElement;
-                if (btn) btn.click();
-              }}
-              className="w-full sm:w-auto gap-1.5 bg-gradient-to-r from-primary to-accent font-bold shadow-soft hover:opacity-95 text-xs h-9 px-3.5"
-            >
-              <Sparkles className="size-3.5 animate-pulse" /> Ask AI Copilot Insights
-            </Button>
-          </div>
         </div>
       </div>
 
@@ -642,7 +500,9 @@ function Dashboard() {
         <div className="rounded-2xl border border-border/80 bg-card p-4 sm:p-5 shadow-card xl:col-span-2">
           <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
             <div>
-              <h2 className="text-sm sm:text-base font-bold text-foreground">Revenue & Profit Performance</h2>
+              <h2 className="text-sm sm:text-base font-bold text-foreground">
+                Revenue & Profit Performance
+              </h2>
               <p className="text-xs text-muted-foreground">Rolling 12-month trajectory</p>
             </div>
             <div className="flex items-center rounded-lg bg-muted/60 p-0.5 border border-border/50">
@@ -694,7 +554,12 @@ function Dashboard() {
                     />
                   </linearGradient>
                 </defs>
-                <CartesianGrid stroke="var(--color-border)" strokeDasharray="3 3" vertical={false} opacity={0.6} />
+                <CartesianGrid
+                  stroke="var(--color-border)"
+                  strokeDasharray="3 3"
+                  vertical={false}
+                  opacity={0.6}
+                />
                 <XAxis
                   dataKey="m"
                   axisLine={false}
@@ -715,7 +580,10 @@ function Dashboard() {
                     boxShadow: "var(--shadow-card-hover)",
                     fontSize: 12,
                   }}
-                  formatter={(v: number) => [fmt(v), chartView === "revenue" ? "Revenue" : "Net Profit"]}
+                  formatter={(v: number) => [
+                    fmt(v),
+                    chartView === "revenue" ? "Revenue" : "Net Profit",
+                  ]}
                 />
                 <Area
                   type="monotone"
@@ -770,7 +638,10 @@ function Dashboard() {
 
           <ul className="mt-2 space-y-2 max-h-36 overflow-y-auto pr-1">
             {categoryShare.map((c) => (
-              <li key={c.name} className="flex items-center justify-between text-xs py-1 px-2 rounded-lg bg-muted/30">
+              <li
+                key={c.name}
+                className="flex items-center justify-between text-xs py-1 px-2 rounded-lg bg-muted/30"
+              >
                 <div className="flex items-center gap-2 min-w-0">
                   <span className="size-2 rounded-full shrink-0" style={{ background: c.color }} />
                   <span className="truncate text-foreground font-medium">{c.name}</span>
@@ -836,7 +707,12 @@ function Dashboard() {
           <div className="h-60 w-full">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={salesByDay} margin={{ top: 8, right: 8, left: -16, bottom: 0 }}>
-                <CartesianGrid stroke="var(--color-border)" strokeDasharray="3 3" vertical={false} opacity={0.6} />
+                <CartesianGrid
+                  stroke="var(--color-border)"
+                  strokeDasharray="3 3"
+                  vertical={false}
+                  opacity={0.6}
+                />
                 <XAxis
                   dataKey="day"
                   axisLine={false}
@@ -859,7 +735,12 @@ function Dashboard() {
                   }}
                   formatter={(v: number) => [fmt(v), "Sales"]}
                 />
-                <Bar dataKey="sales" fill="var(--color-primary)" radius={[8, 8, 0, 0]} maxBarSize={48} />
+                <Bar
+                  dataKey="sales"
+                  fill="var(--color-primary)"
+                  radius={[8, 8, 0, 0]}
+                  maxBarSize={48}
+                />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -890,7 +771,10 @@ function Dashboard() {
             ) : (
               <ul className="divide-y divide-border/60">
                 {lowStock.map((p) => {
-                  const stockPct = Math.min(100, Math.round(((p.stock || 0) / (p.reorderLevel || 5)) * 100));
+                  const stockPct = Math.min(
+                    100,
+                    Math.round(((p.stock || 0) / (p.reorderLevel || 5)) * 100),
+                  );
                   const isCritical = Number(p.stock) <= Number(p.reorderLevel) / 2;
                   return (
                     <li key={p.id} className="flex items-center gap-3 py-2.5">
@@ -902,9 +786,13 @@ function Dashboard() {
                         )}
                       </div>
                       <div className="min-w-0 flex-1">
-                        <div className="truncate text-xs sm:text-sm font-semibold text-foreground">{p.name}</div>
+                        <div className="truncate text-xs sm:text-sm font-semibold text-foreground">
+                          {p.name}
+                        </div>
                         <div className="flex items-center gap-2 mt-0.5">
-                          <span className="text-[11px] text-muted-foreground font-mono">{p.sku || "No SKU"}</span>
+                          <span className="text-[11px] text-muted-foreground font-mono">
+                            {p.sku || "No SKU"}
+                          </span>
                           <div className="h-1.5 w-16 rounded-full bg-muted overflow-hidden">
                             <div
                               className={cn(
@@ -937,7 +825,12 @@ function Dashboard() {
           </div>
 
           <div className="mt-4 pt-3 border-t border-border/60">
-            <Button asChild variant="outline" size="sm" className="w-full text-xs font-semibold gap-1">
+            <Button
+              asChild
+              variant="outline"
+              size="sm"
+              className="w-full text-xs font-semibold gap-1"
+            >
               <Link to="/inventory">Manage Stock Adjustments</Link>
             </Button>
           </div>
@@ -950,7 +843,9 @@ function Dashboard() {
           <div>
             <div className="flex items-center justify-between px-4 sm:px-5 py-4 border-b border-border/60">
               <div>
-                <h2 className="text-sm sm:text-base font-bold text-foreground">Recent Transactions</h2>
+                <h2 className="text-sm sm:text-base font-bold text-foreground">
+                  Recent Transactions
+                </h2>
                 <p className="text-xs text-muted-foreground">Latest invoices generated</p>
               </div>
               <Link to="/sales" className="text-xs font-semibold text-primary hover:underline">
@@ -960,46 +855,46 @@ function Dashboard() {
 
             {/* Desktop Table View (>= 768px) */}
             <div className="table-desktop overflow-x-auto">
-              <table className="w-full text-left text-sm">
-                <thead>
-                  <tr className="border-b border-border/60 bg-muted/40 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
-                    <th className="px-5 py-3 whitespace-nowrap">Invoice</th>
-                    <th className="px-5 py-3 whitespace-nowrap">Customer</th>
-                    <th className="px-5 py-3 whitespace-nowrap">Payment</th>
-                    <th className="px-5 py-3 whitespace-nowrap">Status</th>
-                    <th className="px-5 py-3 whitespace-nowrap text-right">Amount</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border/60">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Invoice</TableHead>
+                    <TableHead>Customer</TableHead>
+                    <TableHead>Payment</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Amount</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
                   {recentSales.length === 0 ? (
-                    <tr>
-                      <td colSpan={5} className="py-8 text-center text-xs text-muted-foreground">
+                    <TableRow>
+                      <TableCell colSpan={5} className="py-8 text-center text-xs text-muted-foreground">
                         No sales transactions recorded yet today.
-                      </td>
-                    </tr>
+                      </TableCell>
+                    </TableRow>
                   ) : (
                     recentSales.slice(0, 6).map((s) => (
-                      <tr key={s.id} className="hover:bg-muted/40 transition-colors">
-                        <td className="px-5 py-3 font-semibold text-foreground whitespace-nowrap">
+                      <TableRow key={s.id} className="hover:bg-muted/40">
+                        <TableCell className="font-semibold text-foreground whitespace-nowrap">
                           #{s.id.slice(0, 8).toUpperCase()}
-                        </td>
-                        <td className="px-5 py-3 whitespace-nowrap font-medium text-foreground">
+                        </TableCell>
+                        <TableCell className="whitespace-nowrap font-medium text-foreground">
                           {s.customerName || "Walk-in Customer"}
-                        </td>
-                        <td className="px-5 py-3 text-muted-foreground capitalize whitespace-nowrap text-xs">
+                        </TableCell>
+                        <TableCell className="text-muted-foreground capitalize whitespace-nowrap text-xs">
                           {s.paymentMethod || "cash"}
-                        </td>
-                        <td className="px-5 py-3 whitespace-nowrap">
+                        </TableCell>
+                        <TableCell className="whitespace-nowrap">
                           <StatusBadge status={s.status} />
-                        </td>
-                        <td className="number px-5 py-3 text-right font-extrabold text-foreground whitespace-nowrap">
+                        </TableCell>
+                        <TableCell className="number text-right font-extrabold text-foreground whitespace-nowrap">
                           {formatCurrency(s.total)}
-                        </td>
-                      </tr>
+                        </TableCell>
+                      </TableRow>
                     ))
                   )}
-                </tbody>
-              </table>
+                </TableBody>
+              </Table>
             </div>
 
             {/* Mobile Cards View (< 768px) */}
@@ -1016,11 +911,14 @@ function Dashboard() {
                   >
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2">
-                        <span className="font-bold text-xs text-foreground">#{s.id.slice(0, 8).toUpperCase()}</span>
+                        <span className="font-bold text-xs text-foreground">
+                          #{s.id.slice(0, 8).toUpperCase()}
+                        </span>
                         <StatusBadge status={s.status} />
                       </div>
                       <p className="text-xs text-muted-foreground truncate mt-0.5">
-                        {s.customerName || "Walk-in"} · <span className="capitalize">{s.paymentMethod || "Cash"}</span>
+                        {s.customerName || "Walk-in"} ·{" "}
+                        <span className="capitalize">{s.paymentMethod || "Cash"}</span>
                       </p>
                     </div>
                     <div className="number text-right font-extrabold text-foreground text-sm">
@@ -1048,7 +946,9 @@ function Dashboard() {
 
             <ul className="space-y-3">
               {topSelling.length === 0 ? (
-                <li className="py-8 text-center text-xs text-muted-foreground">No sales data yet.</li>
+                <li className="py-8 text-center text-xs text-muted-foreground">
+                  No sales data yet.
+                </li>
               ) : (
                 topSelling.map((p, i) => {
                   const medalColors = [
@@ -1074,7 +974,9 @@ function Dashboard() {
                         )}
                       </div>
                       <div className="min-w-0 flex-1">
-                        <div className="truncate text-xs sm:text-sm font-semibold text-foreground">{p.name}</div>
+                        <div className="truncate text-xs sm:text-sm font-semibold text-foreground">
+                          {p.name}
+                        </div>
                         <div className="text-[11px] text-muted-foreground">
                           {p.sold} units · {formatCurrency(p.sold * (Number(p.price) || 0))}
                         </div>
@@ -1123,11 +1025,11 @@ function Dashboard() {
               </div>
               <div className="text-xl font-black text-success">{fmt(displayProfit)}</div>
             </div>
-            <div className="bg-purple-500/10 border border-purple-500/30 rounded-xl p-3.5 text-center">
+            <div className="bg-primary/8 border border-primary/20 rounded-xl p-3.5 text-center">
               <div className="flex items-center justify-center gap-1.5 text-xs font-semibold text-muted-foreground mb-1">
-                <ShoppingBag className="size-3.5 text-purple-600" /> Transactions
+                <ShoppingBag className="size-3.5 text-primary" /> Transactions
               </div>
-              <div className="text-xl font-black text-purple-600">{displayOrders} Orders</div>
+              <div className="text-xl font-black text-primary">{displayOrders} Orders</div>
             </div>
           </div>
 
@@ -1141,7 +1043,9 @@ function Dashboard() {
                   <span className="grid size-6 place-items-center rounded-lg bg-primary/10 text-xs font-bold text-primary">
                     1
                   </span>
-                  <span className="text-xs sm:text-sm font-semibold truncate">{topSelling[0].name}</span>
+                  <span className="text-xs sm:text-sm font-semibold truncate">
+                    {topSelling[0].name}
+                  </span>
                 </div>
                 <Badge variant="secondary" className="font-mono text-xs font-bold">
                   {topSelling[0].sold} sold
@@ -1153,7 +1057,11 @@ function Dashboard() {
           </div>
 
           <DialogFooter className="mt-4 flex flex-col sm:flex-row gap-2 sm:justify-between">
-            <Button variant="outline" onClick={() => window.print()} className="w-full sm:w-auto text-xs font-semibold">
+            <Button
+              variant="outline"
+              onClick={() => window.print()}
+              className="w-full sm:w-auto text-xs font-semibold"
+            >
               <Printer className="size-4 mr-2" /> Print Summary
             </Button>
             {canAccessReports && (
@@ -1202,4 +1110,3 @@ function Quick({ icon: Icon, label, value }: { icon: typeof Users; label: string
     </div>
   );
 }
-

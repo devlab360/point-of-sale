@@ -27,9 +27,9 @@ function NewProductPage() {
     },
     onMutate: async (newProduct) => {
       await queryClient.cancelQueries({ queryKey: ["products"] });
-      
+
       const previousProducts = queryClient.getQueryData(["products"]);
-      
+
       const optimisticProduct = {
         id: uuidv4(),
         ...newProduct,
@@ -68,16 +68,16 @@ function NewProductPage() {
           await saveBundleComponentsFn({
             data: {
               bundleProductId: res.data.id,
-              components: payload.bundleComponents
-            }
+              components: payload.bundleComponents,
+            },
           });
         }
         if (payload.hasModifiers && payload.modifiers && payload.modifiers.length > 0) {
           await saveProductModifiersFn({
             data: {
               productId: res.data.id,
-              modifiers: payload.modifiers
-            }
+              modifiers: payload.modifiers,
+            },
           });
         }
         // No need to invalidate here as onSettled handles it
@@ -90,10 +90,10 @@ function NewProductPage() {
   });
 
   return (
-    <div className="container mx-auto">
-      <ProductForm 
-        onSubmit={(data) => createMutation.mutate(data)} 
-        isSaving={createMutation.isPending} 
+    <div>
+      <ProductForm
+        onSubmit={(data) => createMutation.mutate(data)}
+        isSaving={createMutation.isPending}
       />
     </div>
   );

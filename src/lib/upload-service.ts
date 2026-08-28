@@ -143,8 +143,7 @@ export async function uploadToVercelBlob(
 
     const blobUpload = uploadFileServerFn({ data: formData }).then((res) => {
       const result = res as any;
-      if (!result || result.error)
-        throw new Error(result?.error || "Unknown server error");
+      if (!result || result.error) throw new Error(result?.error || "Unknown server error");
       return result;
     });
 

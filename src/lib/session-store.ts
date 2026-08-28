@@ -113,4 +113,11 @@ export const PersistStore = {
   removeFlag: (key: string) => {
     if (typeof window !== "undefined") localStorage.removeItem(key);
   },
+
+  clearAll: () => {
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("pos_org_id");
+      localStorage.removeItem("pos_last_synced_at");
+    }
+  },
 };

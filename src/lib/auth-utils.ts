@@ -5,7 +5,9 @@ import * as schema from "@/db/schema";
 import { eq } from "drizzle-orm";
 
 if (process.env.NODE_ENV === "production" && !process.env.JWT_SECRET) {
-  throw new Error("FATAL ERROR: JWT_SECRET environment variable is missing in production. Authentication is disabled to prevent security vulnerabilities.");
+  throw new Error(
+    "FATAL ERROR: JWT_SECRET environment variable is missing in production. Authentication is disabled to prevent security vulnerabilities.",
+  );
 }
 
 const JWT_SECRET = new TextEncoder().encode(
@@ -36,16 +38,26 @@ export async function verifySessionToken(token: string): Promise<SessionPayload 
   }
 }
 
+const userStatusCache = new Map<string, { orgId?: string; timestamp: number }>();
+const CACHE_TTL_MS = 30 * 1000; // 30 seconds cache
+
 export async function requireAuth(): Promise<SessionPayload> {
   const token = getCookie("pos_auth_token");
-  // For backward compatibility during migration, we can also check pos_session_org
-  // but strictly we should only rely on pos_auth_token.
   if (!token) {
     throw new Error("Unauthorized");
   }
   const payload = await verifySessionToken(token);
   if (!payload) {
     throw new Error("Unauthorized");
+  }
+
+  // Check 30-second TTL cache for active user verification to avoid DB connection bottlenecks
+  const cached = userStatusCache.get(payload.userId);
+  if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
+    if (!payload.orgId && cached.orgId) {
+      payload.orgId = cached.orgId;
+    }
+    return payload;
   }
 
   // Active User Verification (Token Revocation Check)
@@ -61,8 +73,14 @@ export async function requireAuth(): Promise<SessionPayload> {
     users[0].status === "inactive" ||
     users[0].status === "pending"
   ) {
+    userStatusCache.delete(payload.userId);
     throw new Error("Unauthorized: Account suspended or deleted");
   }
+
+  userStatusCache.set(payload.userId, {
+    orgId: users[0].organizationId || undefined,
+    timestamp: Date.now(),
+  });
 
   // Auto-heal missing organization ID (for backward compatibility / bug fixes)
   if (!payload.orgId && users[0].organizationId) {
@@ -90,4 +108,3 @@ export async function requireAdmin(): Promise<SessionPayload> {
   }
   return payload;
 }
-

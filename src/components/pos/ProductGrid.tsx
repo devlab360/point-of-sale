@@ -1,6 +1,12 @@
 import { Search, ScanBarcode, Plus, Image as ImageIcon, MapPin, X, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { useState, useRef, useEffect } from "react";
@@ -33,9 +39,12 @@ export function ProductGrid({ state }: { state: any }) {
     queryFn: () => getLocationsFn(),
   });
   const locations = locationsRes?.data || [];
-  
+
   const [selectedVariantProduct, setSelectedVariantProduct] = useState<any>(null);
-  const [selectedModifierProduct, setSelectedModifierProduct] = useState<{product: any, variant?: any} | null>(null);
+  const [selectedModifierProduct, setSelectedModifierProduct] = useState<{
+    product: any;
+    variant?: any;
+  } | null>(null);
 
   const parentRef = useRef<HTMLDivElement>(null);
   const [columns, setColumns] = useState(2);
@@ -45,10 +54,14 @@ export function ProductGrid({ state }: { state: any }) {
     const resizeObserver = new ResizeObserver((entries) => {
       for (let entry of entries) {
         const width = entry.contentRect.width;
-        if (width >= 1536) setColumns(5); // 2xl
-        else if (width >= 1280) setColumns(4); // xl
-        else if (width >= 768) setColumns(3); // md, lg
-        else if (width >= 640) setColumns(3); // sm
+        if (width >= 1536)
+          setColumns(5); // 2xl
+        else if (width >= 1280)
+          setColumns(4); // xl
+        else if (width >= 768)
+          setColumns(3); // md, lg
+        else if (width >= 640)
+          setColumns(3); // sm
         else setColumns(2);
       }
     });
@@ -171,11 +184,11 @@ export function ProductGrid({ state }: { state: any }) {
 
         {/* Store Location Selector - Icon only on mobile, full selector on desktop */}
         <div className="shrink-0">
-          <Select 
-            value={state.selectedLocationId || "default"} 
+          <Select
+            value={state.selectedLocationId || "default"}
             onValueChange={(val) => state.setSelectedLocationId(val === "default" ? null : val)}
           >
-            <SelectTrigger 
+            <SelectTrigger
               className="size-10 p-0 justify-center rounded-xl bg-card border-border/80 text-primary hover:bg-muted/40 transition-colors md:w-[160px] md:h-10 md:px-3 md:justify-between shrink-0 [&>svg:last-child]:hidden md:[&>svg:last-child]:block"
               title="Store / Location Outlet"
             >
@@ -199,7 +212,9 @@ export function ProductGrid({ state }: { state: any }) {
                   <div className="flex flex-col">
                     <span>{loc.name}</span>
                     {loc.type && (
-                      <span className="text-[10px] text-muted-foreground capitalize">({loc.type})</span>
+                      <span className="text-[10px] text-muted-foreground capitalize">
+                        ({loc.type})
+                      </span>
                     )}
                   </div>
                 </SelectItem>
@@ -232,7 +247,9 @@ export function ProductGrid({ state }: { state: any }) {
         {Array.from(
           new Map(categories.map((c: any) => [c.name.trim().toLowerCase(), c])).values(),
         ).map((c: any) => {
-          const count = products.filter((p: any) => p.category === c.name || p.category === c.id).length;
+          const count = products.filter(
+            (p: any) => p.category === c.name || p.category === c.id,
+          ).length;
           return (
             <CatChip
               key={c.id}
@@ -247,10 +264,7 @@ export function ProductGrid({ state }: { state: any }) {
       </div>
 
       {/* Products Grid Feed */}
-      <div 
-        ref={parentRef} 
-        className="flex-1 overflow-y-auto p-3 sm:p-4 relative"
-      >
+      <div ref={parentRef} className="flex-1 overflow-y-auto p-3 sm:p-4 relative">
         {filtered.length === 0 ? (
           <div className="flex h-64 flex-col items-center justify-center text-center text-xs text-muted-foreground">
             <div className="grid size-12 place-items-center rounded-2xl bg-muted/50 mb-2">
@@ -289,9 +303,14 @@ export function ProductGrid({ state }: { state: any }) {
                 >
                   {rowItems.map((p: any) => {
                     const isService = p.referenceType === "SERVICE";
-                    const low = !isService && Number(p.stock) > 0 && Number(p.stock) <= Number(p.reorderLevel);
+                    const low =
+                      !isService &&
+                      Number(p.stock) > 0 &&
+                      Number(p.stock) <= Number(p.reorderLevel);
                     const out = !isService && p.stock <= 0;
-                    const catName = getCategoryName ? getCategoryName(p.category) : p.category || "";
+                    const catName = getCategoryName
+                      ? getCategoryName(p.category)
+                      : p.category || "";
                     const unitName = getUnitName ? getUnitName(p.unit) : p.unit || "";
                     const brandName = getBrandName ? getBrandName(p.brand) : p.brand || "";
                     const subText = [catName, brandName].filter(Boolean).join(" · ") || unitName;
@@ -318,7 +337,9 @@ export function ProductGrid({ state }: { state: any }) {
                       >
                         {/* Thumbnail & Badges */}
                         <div className="relative h-[130px] w-full shrink-0 overflow-hidden bg-muted/40 flex items-center justify-center border-b border-border/50">
-                          {p.image && !p.image.includes("1542838132") && !p.image.includes("unsplash") ? (
+                          {p.image &&
+                          !p.image.includes("1542838132") &&
+                          !p.image.includes("unsplash") ? (
                             <img
                               src={p.image}
                               alt={p.name}
@@ -389,9 +410,9 @@ export function ProductGrid({ state }: { state: any }) {
       </div>
 
       {selectedVariantProduct && (
-        <VariantSelectorModal 
-          product={selectedVariantProduct} 
-          onClose={() => setSelectedVariantProduct(null)} 
+        <VariantSelectorModal
+          product={selectedVariantProduct}
+          onClose={() => setSelectedVariantProduct(null)}
           onSelect={(variant) => {
             if (selectedVariantProduct.hasModifiers) {
               setSelectedModifierProduct({ product: selectedVariantProduct, variant });
@@ -401,7 +422,7 @@ export function ProductGrid({ state }: { state: any }) {
               setSelectedVariantProduct(null);
               toast.success(`Added ${variant.name} to cart`);
             }
-          }} 
+          }}
         />
       )}
 
@@ -452,7 +473,9 @@ function CatChip({
         <span
           className={cn(
             "rounded-full px-1.5 py-0.2 text-[9px] font-bold",
-            active ? "bg-primary-foreground/20 text-primary-foreground" : "bg-muted text-muted-foreground",
+            active
+              ? "bg-primary-foreground/20 text-primary-foreground"
+              : "bg-muted text-muted-foreground",
           )}
         >
           {count}
@@ -461,4 +484,3 @@ function CatChip({
     </button>
   );
 }
-

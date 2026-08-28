@@ -8,9 +8,11 @@ import { requireAuth } from "@/lib/auth-utils";
 
 export const getGlobalSearchFn = createServerFn({ method: "GET" })
   .validator(
-    z.object({
-      query: z.string().min(2),
-    }).passthrough()
+    z
+      .object({
+        query: z.string().min(2),
+      })
+      .passthrough(),
   )
   .handler(async ({ data }) => {
     try {
@@ -28,9 +30,9 @@ export const getGlobalSearchFn = createServerFn({ method: "GET" })
             or(
               ilike(schema.products.name, q),
               ilike(schema.products.sku, q),
-              ilike(schema.products.barcode, q)
-            )
-          )
+              ilike(schema.products.barcode, q),
+            ),
+          ),
         )
         .limit(5);
 
@@ -44,9 +46,9 @@ export const getGlobalSearchFn = createServerFn({ method: "GET" })
             or(
               ilike(schema.customers.name, q),
               ilike(schema.customers.phone, q),
-              ilike(schema.customers.email, q)
-            )
-          )
+              ilike(schema.customers.email, q),
+            ),
+          ),
         )
         .limit(5);
 
@@ -57,11 +59,8 @@ export const getGlobalSearchFn = createServerFn({ method: "GET" })
         .where(
           and(
             eq(schema.sales.organizationId, orgId),
-            or(
-              ilike(schema.sales.id, q),
-              ilike(schema.sales.customerName, q)
-            )
-          )
+            or(ilike(schema.sales.id, q), ilike(schema.sales.customerName, q)),
+          ),
         )
         .orderBy(desc(schema.sales.date))
         .limit(5);
@@ -73,15 +72,12 @@ export const getGlobalSearchFn = createServerFn({ method: "GET" })
         .where(
           and(
             eq(schema.expenses.organizationId, orgId),
-            or(
-              ilike(schema.expenses.category, q),
-              ilike(schema.expenses.description, q)
-            )
-          )
+            or(ilike(schema.expenses.category, q), ilike(schema.expenses.description, q)),
+          ),
         )
         .orderBy(desc(schema.expenses.date))
         .limit(5);
-        
+
       // 5. Search Suppliers (limit 5)
       const suppliers = await db
         .select()
@@ -92,9 +88,9 @@ export const getGlobalSearchFn = createServerFn({ method: "GET" })
             or(
               ilike(schema.suppliers.name, q),
               ilike(schema.suppliers.phone, q),
-              ilike(schema.suppliers.email, q)
-            )
-          )
+              ilike(schema.suppliers.email, q),
+            ),
+          ),
         )
         .limit(5);
 
@@ -105,7 +101,7 @@ export const getGlobalSearchFn = createServerFn({ method: "GET" })
           customers,
           sales,
           expenses,
-          suppliers
+          suppliers,
         },
       };
     } catch (error) {

@@ -2,19 +2,35 @@ import { useState, useMemo, useEffect } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { DataPage } from "@/components/layout/DataPage";
 import { exportToCSV, parseCSV } from "@/lib/csv";
-import { EmptyState } from "@/components/ui/empty-state";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { useDebounce } from "@/hooks/useDebounce";
 import { PersistStore } from "@/lib/session-store";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -22,93 +38,77 @@ import {
   getAccountsFn,
   createAccountFn,
   updateAccountFn,
+  deleteAccountFn,
+  seedDefaultAccountsFn,
   getVouchersFn,
   createVoucherFn,
 } from "@/api/finance";
 import { useCurrency } from "@/lib/currency";
-import { Wallet, Plus, ArrowRightLeft, BookOpen, Layers, Loader2 } from "lucide-react";
-import { v4 as uuidv4 } from "uuid";
+import {
+  Wallet,
+  Plus,
+  ArrowRightLeft,
+  BookOpen,
+  Layers,
+  Loader2,
+  Sparkles,
+  Pencil,
+  Trash2,
+  Eye,
+  History,
+  TrendingUp,
+  TrendingDown,
+  FileSpreadsheet,
+  CheckCircle2,
+} from "lucide-react";
 import { toast } from "sonner";
 import { PaginationControls } from "@/components/ui/pagination-controls";
-import { cn } from "@/lib/utils";
 import { useFormValidation } from "@/hooks/useFormValidation";
 import { FieldError } from "@/components/ui/field-error";
 import { usePreferences } from "@/contexts/PreferencesContext";
 
 export const Route = createFileRoute("/accounts")({
-  head: () => ({ meta: [{ title: "Chart of Accounts & Vouchers · NexisPOS" }] }),
+  head: () => ({ meta: [{ title: "Chart of Accounts & Vouchers · OneDesk360" }] }),
   component: AccountsPage,
 });
 
-const DEFAULT_ACCOUNTS: any[] = [
-  { code: "1001", name: "Cash in Hand", type: "asset", balance: 15000, isSystem: true },
-  { code: "1002", name: "Bank Account (Main)", type: "asset", balance: 45000, isSystem: true },
-  {
-    code: "1003",
-    name: "Accounts Receivable (Customer Due)",
-    type: "asset",
-    balance: 8500,
-    isSystem: true,
-  },
-  { code: "1004", name: "Merchandise Inventory", type: "asset", balance: 32000, isSystem: true },
-  {
-    code: "2001",
-    name: "Accounts Payable (Supplier Due)",
-    type: "liability",
-    balance: 6200,
-    isSystem: true,
-  },
-  {
-    code: "2002",
-    name: "VAT / Sales Tax Payable",
-    type: "liability",
-    balance: 1400,
-    isSystem: true,
-  },
-  { code: "3001", name: "Owner Capital Account", type: "equity", balance: 80000, isSystem: true },
-  { code: "4001", name: "Sales Revenue", type: "income", balance: 94000, isSystem: true },
-  {
-    code: "5001",
-    name: "Rent & Utilities Expense",
-    type: "expense",
-    balance: 4200,
-    isSystem: true,
-  },
-  {
-    code: "5002",
-    name: "Employee Salaries Expense",
-    type: "expense",
-    balance: 6500,
-    isSystem: true,
-  },
-];
-
 function AccountsPage() {
-  const { formatDate, formatTime, formatDateTime } = usePreferences();
+  const { formatDateTime, formatDate } = usePreferences();
   const { formatCurrency } = useCurrency();
   const orgId = PersistStore.getOrgId() || "default";
   const queryClient = useQueryClient();
 
-  const { data: rawAccountsData } = useQuery({
+  const { data: rawAccountsData, isLoading: isAccountsLoading } = useQuery({
     queryKey: ["accounts", orgId],
-    queryFn: async () => ((await getAccountsFn({ data: {} })) as any)?.data || [],
+    queryFn: async () => {
+      const res = (await getAccountsFn({ data: {} })) as any;
+      return Array.isArray(res?.data) ? res.data : [];
+    },
   });
-  const rawAccounts = rawAccountsData || [];
+  const rawAccounts: any[] = Array.isArray(rawAccountsData) ? rawAccountsData : [];
 
-  const { data: vouchersData } = useQuery({
+  const { data: vouchersData, isLoading: isVouchersLoading } = useQuery({
     queryKey: ["vouchers", orgId],
-    queryFn: async () => ((await getVouchersFn({ data: {} })) as any)?.data || [],
+    queryFn: async () => {
+      const res = (await getVouchersFn({ data: {} })) as any;
+      return Array.isArray(res?.data) ? res.data : [];
+    },
   });
-  const rawVouchers = vouchersData || [];
+  const rawVouchers: any[] = Array.isArray(vouchersData) ? vouchersData : [];
 
   const [activeTab, setActiveTab] = useState<"accounts" | "vouchers">("accounts");
   const [isAddAccountOpen, setIsAddAccountOpen] = useState(false);
+  const [editingAccount, setEditingAccount] = useState<any>(null);
+  const [selectedLedgerAccount, setSelectedLedgerAccount] = useState<any>(null);
+  const [deletingAccount, setDeletingAccount] = useState<any>(null);
+
   const [isAddVoucherOpen, setIsAddVoucherOpen] = useState(false);
   const [isSubmittingAccount, setIsSubmittingAccount] = useState(false);
   const [isPostingVoucher, setIsPostingVoucher] = useState(false);
+  const [isSeeding, setIsSeeding] = useState(false);
   const [accountType, setAccountType] = useState("asset");
 
-  // Pagination state
+  // Pagination & Filter State
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search, 300);
   const [page, setPage] = useState(1);
@@ -124,27 +124,27 @@ function AccountsPage() {
   };
 
   const filteredVouchers = useMemo(() => {
-    let filtered = rawVouchers;
+    let filtered = Array.isArray(rawVouchers) ? rawVouchers : [];
     if (debouncedSearch) {
       const lower = debouncedSearch.toLowerCase();
       filtered = filtered.filter(
         (v) =>
-          v.voucherNo.toLowerCase().includes(lower) ||
+          v.voucherNo?.toLowerCase().includes(lower) ||
           v.narration?.toLowerCase().includes(lower) ||
-          v.debitAccountName.toLowerCase().includes(lower) ||
-          v.creditAccountName.toLowerCase().includes(lower),
+          v.debitAccountName?.toLowerCase().includes(lower) ||
+          v.creditAccountName?.toLowerCase().includes(lower),
       );
     }
     if (filters.type) {
       filtered = filtered.filter((v) => v.type === filters.type);
     }
-    return [...filtered].reverse();
+    return Array.isArray(filtered) ? [...filtered].reverse() : [];
   }, [rawVouchers, debouncedSearch, filters.type]);
 
-  const totalPages = Math.ceil(filteredVouchers.length / pageSize);
+  const totalPages = Math.ceil((filteredVouchers?.length || 0) / pageSize) || 1;
   const paginatedVouchers = useMemo(() => {
     const start = (page - 1) * pageSize;
-    return filteredVouchers.slice(start, start + pageSize);
+    return (filteredVouchers || []).slice(start, start + pageSize);
   }, [filteredVouchers, page, pageSize]);
 
   useEffect(() => {
@@ -161,20 +161,25 @@ function AccountsPage() {
   const [narration, setNarration] = useState("");
 
   const accountsByType = useMemo(() => {
+    const list = Array.isArray(rawAccounts) ? rawAccounts : [];
     return {
-      asset: rawAccounts.filter((a) => a.type === "asset"),
-      liability: rawAccounts.filter((a) => a.type === "liability"),
-      equity: rawAccounts.filter((a) => a.type === "equity"),
-      income: rawAccounts.filter((a) => a.type === "income"),
-      expense: rawAccounts.filter((a) => a.type === "expense"),
+      asset: list.filter((a) => a.type?.toLowerCase() === "asset"),
+      liability: list.filter((a) => a.type?.toLowerCase() === "liability"),
+      equity: list.filter((a) => a.type?.toLowerCase() === "equity"),
+      income: list.filter((a) => a.type?.toLowerCase() === "income"),
+      expense: list.filter((a) => a.type?.toLowerCase() === "expense"),
     };
   }, [rawAccounts]);
 
-  const totalAssets = accountsByType.asset.reduce((sum, a) => sum + a.balance, 0);
-  const totalLiabilities = accountsByType.liability.reduce((sum, a) => sum + a.balance, 0);
-  const totalEquity =
-    accountsByType.equity.reduce((sum, a) => sum + a.balance, 0) +
-    (totalAssets - totalLiabilities - accountsByType.equity.reduce((sum, a) => sum + a.balance, 0));
+  const totalAssets = accountsByType.asset.reduce((sum, a) => sum + (Number(a.balance) || 0), 0);
+  const totalLiabilities = accountsByType.liability.reduce(
+    (sum, a) => sum + (Number(a.balance) || 0),
+    0,
+  );
+  const totalEquity = accountsByType.equity.reduce(
+    (sum, a) => sum + (Number(a.balance) || 0),
+    0,
+  );
 
   const {
     errors: accErrors,
@@ -200,12 +205,29 @@ function AccountsPage() {
     },
   });
 
-  const handleCreateAccount = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSeedAccounts = async () => {
+    setIsSeeding(true);
+    try {
+      const res = await seedDefaultAccountsFn({ data: {} });
+      if (res.success) {
+        queryClient.invalidateQueries({ queryKey: ["accounts"] });
+        toast.success(`Seeded Standard Chart of Accounts successfully!`);
+      } else {
+        toast.error("Failed to seed standard accounts: " + res.error);
+      }
+    } catch (err: any) {
+      toast.error("Error seeding accounts");
+    } finally {
+      setIsSeeding(false);
+    }
+  };
+
+  const handleSaveAccount = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
     const code = ((formData.get("code") as string) || "").trim();
     const name = ((formData.get("name") as string) || "").trim();
-    const type = (formData.get("type") as any) || "asset";
+    const type = (formData.get("type") as any) || accountType || "asset";
     const balance = parseFloat(formData.get("balance") as string) || 0;
 
     const isValid = validateAcc({ code, name });
@@ -213,23 +235,54 @@ function AccountsPage() {
 
     setIsSubmittingAccount(true);
     try {
-      await createAccountFn({
-        data: {
-          code,
-          name,
-          type,
-          balance,
-          isSystem: false,
-        },
-      });
+      if (editingAccount) {
+        await updateAccountFn({
+          data: {
+            id: editingAccount.id,
+            code,
+            name,
+            type,
+            balance,
+          },
+        });
+        toast.success(`Account "${name}" updated!`);
+      } else {
+        await createAccountFn({
+          data: {
+            code,
+            name,
+            type,
+            balance,
+            isSystem: false,
+          },
+        });
+        toast.success(`Account "${name}" added to Chart of Accounts!`);
+      }
       queryClient.invalidateQueries({ queryKey: ["accounts"] });
-      toast.success(`Account "${name}" added to Chart of Accounts!`);
       setIsAddAccountOpen(false);
+      setEditingAccount(null);
       clearAccAll();
     } catch (err) {
-      toast.error("Failed to add account");
+      toast.error("Failed to save account");
     } finally {
       setIsSubmittingAccount(false);
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    if (!deletingAccount) return;
+    try {
+      const res = await deleteAccountFn({ data: { id: deletingAccount.id } });
+      if (res.success) {
+        toast.success(`Account "${deletingAccount.name}" deleted.`);
+        queryClient.invalidateQueries({ queryKey: ["accounts"] });
+      } else {
+        toast.error("Failed to delete account: " + res.error);
+      }
+    } catch (err) {
+      toast.error("Error deleting account");
+    } finally {
+      setDeletingAccount(null);
     }
   };
 
@@ -253,26 +306,30 @@ function AccountsPage() {
     setIsPostingVoucher(true);
     try {
       const vNo = `VCH-${Date.now().toString().slice(-6)}`;
-      await createVoucherFn({
+      const res = await createVoucherFn({
         data: {
           voucherNo: vNo,
           date: new Date().toISOString(),
           type: voucherType,
           amount: amt,
           debitAccountId: debitAcc.id,
-          debitAccountName: debitAcc.name,
+          debitAccountName: `[${debitAcc.code}] ${debitAcc.name}`,
           creditAccountId: creditAcc.id,
-          creditAccountName: creditAcc.name,
+          creditAccountName: `[${creditAcc.code}] ${creditAcc.name}`,
           narration,
         },
       });
-      queryClient.invalidateQueries({ queryKey: ["vouchers"] });
-      queryClient.invalidateQueries({ queryKey: ["accounts"] });
-      toast.success(`Voucher ${vNo} posted successfully!`);
-      setIsAddVoucherOpen(false);
-      setVoucherAmount("");
-      setNarration("");
-      clearVchAll();
+      if (res.success) {
+        queryClient.invalidateQueries({ queryKey: ["vouchers"] });
+        queryClient.invalidateQueries({ queryKey: ["accounts"] });
+        toast.success(`Voucher ${vNo} posted successfully!`);
+        setIsAddVoucherOpen(false);
+        setVoucherAmount("");
+        setNarration("");
+        clearVchAll();
+      } else {
+        toast.error("Error: " + res.error);
+      }
     } catch (err) {
       toast.error("Failed to post voucher");
     } finally {
@@ -281,12 +338,16 @@ function AccountsPage() {
   };
 
   const handleExport = () => {
-    exportToCSV(rawAccounts, [
-      { key: 'name', label: 'Name' },
-      { key: 'type', label: 'Type' },
-      { key: 'balance', label: 'Balance' },
-      { key: 'description', label: 'Description' }
-    ], 'accounts');
+    exportToCSV(
+      rawAccounts,
+      [
+        { key: "code", label: "Code" },
+        { key: "name", label: "Name" },
+        { key: "type", label: "Category" },
+        { key: "balance", label: "Balance" },
+      ],
+      "chart-of-accounts",
+    );
   };
 
   const handleImport = async (file: File) => {
@@ -299,23 +360,25 @@ function AccountsPage() {
 
       let count = 0;
       for (const row of data) {
-        if (row['Name']) {
-          await createAccountFn({ 
-            data: { 
-              account: { 
-                id: uuidv4(), 
-                name: row['Name'],
-                type: (row['Type'] as any) || 'asset',
-                balance: parseFloat(row['Balance'] || '0'),
-                description: row['Description'] || '',
-                isDefault: false
-              } 
-            } 
+        const name = row["Name"] || row["name"];
+        const code = row["Code"] || row["code"] || `ACC-${1000 + count}`;
+        const type = (row["Category"] || row["type"] || "asset").toLowerCase();
+        const balance = parseFloat(row["Balance"] || row["balance"] || "0");
+
+        if (name) {
+          await createAccountFn({
+            data: {
+              code,
+              name,
+              type,
+              balance,
+              isSystem: false,
+            },
           });
           count++;
         }
       }
-      
+
       queryClient.invalidateQueries({ queryKey: ["accounts"] });
       toast.success(`Successfully imported ${count} accounts`);
     } catch (error) {
@@ -323,18 +386,61 @@ function AccountsPage() {
     }
   };
 
+  // Account Ledger Transactions
+  const ledgerTransactions = useMemo(() => {
+    if (!selectedLedgerAccount) return [];
+    const accId = selectedLedgerAccount.id;
+    return rawVouchers
+      .filter((v) => v.debitAccountId === accId || v.creditAccountId === accId)
+      .map((v) => {
+        const isDebit = v.debitAccountId === accId;
+        return {
+          ...v,
+          isDebit,
+          debitAmt: isDebit ? Number(v.amount) : 0,
+          creditAmt: !isDebit ? Number(v.amount) : 0,
+        };
+      });
+  }, [selectedLedgerAccount, rawVouchers]);
+
+  const categoryColor = (cat: string) => {
+    switch (cat.toLowerCase()) {
+      case "asset":
+        return "bg-primary/10 text-primary border-primary/20";
+      case "liability":
+        return "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20";
+      case "equity":
+        return "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20";
+      case "income":
+        return "bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border-cyan-500/20";
+      case "expense":
+        return "bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20";
+      default:
+        return "bg-muted text-muted-foreground";
+    }
+  };
+
   return (
     <div className="space-y-6">
       <DataPage
         title="Double-Entry Financial Accounting"
-        description="Manage Chart of Accounts, Journal Vouchers, and Ledger balances."
+        description="Manage Chart of Accounts, General Ledgers, and Double-Entry Journal Vouchers."
         primaryAction={{
           label: activeTab === "accounts" ? "Add Ledger Account" : "Post New Voucher",
-          onClick: () =>
-            activeTab === "accounts" ? setIsAddAccountOpen(true) : setIsAddVoucherOpen(true),
+          onClick: () => {
+            if (activeTab === "accounts") {
+              setEditingAccount(null);
+              setAccountType("asset");
+              setIsAddAccountOpen(true);
+            } else {
+              setIsAddVoucherOpen(true);
+            }
+          },
         }}
-        searchPlaceholder={activeTab === "vouchers" ? "Search vouchers..." : "Search accounts by name..."}
-        searchValue={activeTab === "vouchers" ? search : search}
+        searchPlaceholder={
+          activeTab === "vouchers" ? "Search vouchers..." : "Search accounts by name or code..."
+        }
+        searchValue={search}
         onSearchChange={setSearch}
         hideToolbar={activeTab === "accounts" ? rawAccounts.length === 0 : rawVouchers.length === 0}
         onExport={activeTab === "accounts" ? handleExport : undefined}
@@ -378,178 +484,308 @@ function AccountsPage() {
             : undefined
         }
       >
-        {/* Navigation Tabs */}
-        <div className="flex gap-2 border-b border-border/80 pb-3">
-          <Button
-            variant={activeTab === "accounts" ? "default" : "outline"}
-            size="sm"
-            onClick={() => setActiveTab("accounts")}
-            className="gap-1.5 font-bold shadow-soft rounded-xl"
-          >
-            <Layers className="size-4" /> Chart of Accounts
-          </Button>
-          <Button
-            variant={activeTab === "vouchers" ? "default" : "outline"}
-            size="sm"
-            onClick={() => setActiveTab("vouchers")}
-            className="gap-1.5 font-bold shadow-soft rounded-xl"
-          >
-            <BookOpen className="size-4" /> Journal & Payment Vouchers ({rawVouchers.length})
-          </Button>
+        {/* Navigation Tabs and Quick Actions */}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-border/80 pb-3">
+          <div className="flex gap-2">
+            <Button
+              variant={activeTab === "accounts" ? "default" : "outline"}
+              size="sm"
+              onClick={() => setActiveTab("accounts")}
+              className="gap-1.5 font-bold shadow-soft rounded-xl text-xs h-9"
+            >
+              <Layers className="size-4" /> Chart of Accounts ({rawAccounts.length})
+            </Button>
+            <Button
+              variant={activeTab === "vouchers" ? "default" : "outline"}
+              size="sm"
+              onClick={() => setActiveTab("vouchers")}
+              className="gap-1.5 font-bold shadow-soft rounded-xl text-xs h-9"
+            >
+              <BookOpen className="size-4" /> Journal & Vouchers ({rawVouchers.length})
+            </Button>
+          </div>
+
+          {activeTab === "accounts" && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleSeedAccounts}
+              disabled={isSeeding}
+              className="font-bold text-xs gap-1.5 rounded-xl border-primary/30 text-primary hover:bg-primary/5 h-9"
+            >
+              {isSeeding ? <Loader2 className="size-3.5 animate-spin" /> : <Sparkles className="size-3.5" />}
+              Seed Standard Accounts
+            </Button>
+          )}
         </div>
 
         {activeTab === "accounts" ? (
           <div className="space-y-6">
             {/* KPI Summary Cards */}
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-              <div className="rounded-2xl border border-primary/20 bg-primary/5 p-4 text-center card-interactive shadow-card">
-                <div className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
-                  Total Assets
+              <div className="rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/5 to-card p-5 text-left card-interactive shadow-card">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-black uppercase tracking-wider text-primary">
+                    Total Enterprise Assets
+                  </span>
+                  <TrendingUp className="size-4 text-primary" />
                 </div>
-                <div className="text-2xl font-black text-primary mt-1">
+                <div className="text-2xl font-black text-primary mt-2">
                   {formatCurrency(totalAssets)}
                 </div>
+                <p className="text-[11px] text-muted-foreground mt-1">
+                  Cash, Bank Accounts, Receivables & Stock
+                </p>
               </div>
-              <div className="rounded-2xl border border-destructive/20 bg-destructive/5 p-4 text-center card-interactive shadow-card">
-                <div className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
-                  Total Liabilities
+
+              <div className="rounded-2xl border border-amber-500/20 bg-gradient-to-br from-amber-500/5 to-card p-5 text-left card-interactive shadow-card">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-black uppercase tracking-wider text-amber-600 dark:text-amber-400">
+                    Total Liabilities
+                  </span>
+                  <TrendingDown className="size-4 text-amber-500" />
                 </div>
-                <div className="text-2xl font-black text-destructive mt-1">
+                <div className="text-2xl font-black text-amber-600 dark:text-amber-400 mt-2">
                   {formatCurrency(totalLiabilities)}
                 </div>
+                <p className="text-[11px] text-muted-foreground mt-1">
+                  Accounts Payable, Supplier Dues & Taxes
+                </p>
               </div>
-              <div className="rounded-2xl border border-success/20 bg-success/5 p-4 text-center card-interactive shadow-card">
-                <div className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
-                  Owner's Net Equity
+
+              <div className="rounded-2xl border border-emerald-500/20 bg-gradient-to-br from-emerald-500/5 to-card p-5 text-left card-interactive shadow-card">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-black uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
+                    Owner's Equity
+                  </span>
+                  <CheckCircle2 className="size-4 text-emerald-500" />
                 </div>
-                <div className="text-2xl font-black text-success mt-1">
-                  {formatCurrency(totalEquity)}
+                <div className="text-2xl font-black text-emerald-600 dark:text-emerald-400 mt-2">
+                  {formatCurrency(totalEquity || totalAssets - totalLiabilities)}
                 </div>
+                <p className="text-[11px] text-muted-foreground mt-1">
+                  Net Capital Investment & Retained Earnings
+                </p>
               </div>
             </div>
 
-            {/* Categorized Accounts List */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-              {(["asset", "liability", "equity", "income", "expense"] as const).map((cat) => (
-                <div key={cat} className="rounded-2xl border border-border/80 bg-card p-4 shadow-card">
-                  <div className="flex items-center justify-between border-b border-border/60 pb-2.5 mb-3">
-                    <h3 className="font-bold text-xs uppercase tracking-wider text-primary flex items-center gap-1.5">
-                      <Wallet className="size-4" /> {cat} Accounts
-                    </h3>
-                    <Badge variant="outline" className="text-[10px] font-bold capitalize">
-                      {accountsByType[cat].length} Accounts
-                    </Badge>
-                  </div>
-                  <div className="space-y-2">
-                    {accountsByType[cat].map((acc) => (
-                      <div
-                        key={acc.id}
-                        className="flex items-center justify-between rounded-xl border border-border/60 bg-muted/20 p-2.5 text-xs hover:bg-muted/40 transition-colors"
-                      >
-                        <div>
-                          <span className="font-mono text-muted-foreground mr-2 font-semibold text-[11px]">
-                            [{acc.code}]
+            {/* Empty State with Fast Seed CTA */}
+            {rawAccounts.length === 0 && !isAccountsLoading ? (
+              <div className="rounded-2xl border border-dashed border-border/80 bg-card p-12 text-center shadow-soft flex flex-col items-center justify-center space-y-4">
+                <div className="size-16 rounded-3xl bg-primary/10 text-primary flex items-center justify-center shadow-soft">
+                  <Layers className="size-8" />
+                </div>
+                <div className="max-w-md space-y-1">
+                  <h3 className="text-lg font-black text-foreground">No Chart of Accounts Set Up</h3>
+                  <p className="text-xs text-muted-foreground">
+                    Set up double-entry ledger accounts for Cash, Bank, Sales, Payables, and Expenses, or initialize the standard predefined chart in one click.
+                  </p>
+                </div>
+                <div className="flex flex-wrap gap-3 pt-2">
+                  <Button onClick={handleSeedAccounts} disabled={isSeeding} className="font-bold text-xs shadow-soft">
+                    {isSeeding ? <Loader2 className="size-4 animate-spin mr-2" /> : <Sparkles className="size-4 mr-2" />}
+                    Initialize Standard Chart of Accounts
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setEditingAccount(null);
+                      setIsAddAccountOpen(true);
+                    }}
+                    className="font-bold text-xs"
+                  >
+                    <Plus className="size-4 mr-1.5" /> Create Custom Account
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              /* Categorized Accounts Grid */
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+                {(["asset", "liability", "equity", "income", "expense"] as const).map((cat) => {
+                  const items = accountsByType[cat] || [];
+                  const catTotal = items.reduce((sum, a) => sum + (Number(a.balance) || 0), 0);
+                  return (
+                    <div
+                      key={cat}
+                      className="rounded-2xl border border-border/80 bg-card p-5 shadow-card space-y-3"
+                    >
+                      <div className="flex items-center justify-between border-b border-border/60 pb-3">
+                        <div className="flex items-center gap-2.5">
+                          <Badge variant="outline" className={`capitalize font-black text-xs px-2.5 py-0.5 ${categoryColor(cat)}`}>
+                            {cat} Accounts
+                          </Badge>
+                          <span className="text-xs text-muted-foreground font-semibold">
+                            ({items.length})
                           </span>
-                          <span className="font-bold text-foreground">{acc.name}</span>
                         </div>
-                        <span className="font-mono font-black text-sm text-foreground">
-                          {formatCurrency(acc.balance)}
+                        <span className="text-xs font-mono font-black text-foreground">
+                          Total: {formatCurrency(catTotal)}
                         </span>
                       </div>
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
+
+                      <div className="space-y-2">
+                        {items.map((acc) => (
+                          <div
+                            key={acc.id}
+                            className="flex items-center justify-between rounded-xl border border-border/60 bg-muted/20 hover:bg-muted/40 p-3 text-xs transition-colors group"
+                          >
+                            <div className="flex items-center gap-3 min-w-0 pr-2">
+                              <span className="font-mono text-muted-foreground font-bold text-xs bg-muted px-2 py-0.5 rounded-md shrink-0">
+                                {acc.code}
+                              </span>
+                              <div className="truncate">
+                                <span className="font-bold text-foreground block truncate">{acc.name}</span>
+                                {acc.isSystem && (
+                                  <span className="text-[10px] text-muted-foreground">Standard System Head</span>
+                                )}
+                              </div>
+                            </div>
+
+                            <div className="flex items-center gap-3 shrink-0">
+                              <span className="font-mono font-black text-sm text-foreground">
+                                {formatCurrency(acc.balance)}
+                              </span>
+                              <div className="flex items-center gap-1 opacity-80 group-hover:opacity-100 transition-opacity">
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  className="h-7 w-7 p-0 text-muted-foreground hover:text-primary"
+                                  title="View Account Ledger"
+                                  onClick={() => setSelectedLedgerAccount(acc)}
+                                >
+                                  <History className="size-3.5" />
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground"
+                                  title="Edit Account"
+                                  onClick={() => {
+                                    setEditingAccount(acc);
+                                    setAccountType(acc.type);
+                                    setIsAddAccountOpen(true);
+                                  }}
+                                >
+                                  <Pencil className="size-3.5" />
+                                </Button>
+                                {!acc.isSystem && (
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                                    title="Delete Account"
+                                    onClick={() => setDeletingAccount(acc)}
+                                  >
+                                    <Trash2 className="size-3.5" />
+                                  </Button>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         ) : (
+          /* Vouchers List Tab */
           <div className="space-y-4">
             <div className="overflow-hidden rounded-2xl border border-border/80 bg-card shadow-card">
-              {/* Desktop Table */}
               <div className="table-desktop overflow-x-auto">
-                <table className="w-full text-left text-sm min-w-[750px]">
-                  <thead className="border-b border-border/80 bg-muted/40 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
-                    <tr>
-                      <th className="px-5 py-3 whitespace-nowrap">Voucher #</th>
-                      <th className="px-5 py-3 whitespace-nowrap">Date</th>
-                      <th className="px-5 py-3 whitespace-nowrap">Type</th>
-                      <th className="px-5 py-3 whitespace-nowrap">Debit Account</th>
-                      <th className="px-5 py-3 whitespace-nowrap">Credit Account</th>
-                      <th className="px-5 py-3 text-right whitespace-nowrap">Amount</th>
-                      <th className="px-5 py-3 whitespace-nowrap">Narration</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-border/60">
+                <Table className="min-w-[800px]">
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Voucher #</TableHead>
+                      <TableHead>Date</TableHead>
+                      <TableHead>Type</TableHead>
+                      <TableHead>Debit Account (+)</TableHead>
+                      <TableHead>Credit Account (-)</TableHead>
+                      <TableHead className="text-right">Amount</TableHead>
+                      <TableHead>Narration</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
                     {filteredVouchers.length === 0 ? (
-                      <tr>
-                        <td colSpan={7} className="py-8 text-center text-xs text-muted-foreground">
+                      <TableRow>
+                        <TableCell colSpan={7} className="py-12 text-center text-xs text-muted-foreground">
                           {search || filters.type
                             ? "No vouchers match your search query."
-                            : 'No vouchers posted yet. Click "Post New Voucher" to create journal entries.'}
-                        </td>
-                      </tr>
+                            : 'No journal vouchers posted yet. Click "Post New Voucher" to record transactions.'}
+                        </TableCell>
+                      </TableRow>
                     ) : (
                       paginatedVouchers.map((v) => (
-                        <tr key={v.id} className="hover:bg-muted/30 transition-colors">
-                          <td className="px-5 py-3 font-mono font-bold text-primary whitespace-nowrap">
+                        <TableRow key={v.id}>
+                          <TableCell className="font-mono font-bold text-primary whitespace-nowrap">
                             {v.voucherNo}
-                          </td>
-                          <td className="px-5 py-3 text-xs text-muted-foreground whitespace-nowrap">
+                          </TableCell>
+                          <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
                             {formatDateTime(v.date)}
-                          </td>
-                          <td className="px-5 py-3 font-medium uppercase text-xs whitespace-nowrap">
+                          </TableCell>
+                          <TableCell className="font-medium uppercase text-xs whitespace-nowrap">
                             <Badge variant="outline" className="capitalize text-[10px] font-bold">
                               {v.type}
                             </Badge>
-                          </td>
-                          <td className="px-5 py-3 font-bold text-destructive whitespace-nowrap text-xs">
+                          </TableCell>
+                          <TableCell className="font-bold text-primary whitespace-nowrap text-xs">
                             {v.debitAccountName}
-                          </td>
-                          <td className="px-5 py-3 font-bold text-success whitespace-nowrap text-xs">
+                          </TableCell>
+                          <TableCell className="font-bold text-muted-foreground whitespace-nowrap text-xs">
                             {v.creditAccountName}
-                          </td>
-                          <td className="number px-5 py-3 text-right font-black text-foreground whitespace-nowrap text-sm">
+                          </TableCell>
+                          <TableCell className="number text-right font-black text-foreground whitespace-nowrap text-sm">
                             {formatCurrency(v.amount)}
-                          </td>
-                          <td className="px-5 py-3 text-xs text-muted-foreground truncate max-w-[180px] whitespace-nowrap">
+                          </TableCell>
+                          <TableCell className="text-xs text-muted-foreground truncate max-w-[200px] whitespace-nowrap">
                             {v.narration || "-"}
-                          </td>
-                        </tr>
+                          </TableCell>
+                        </TableRow>
                       ))
                     )}
-                  </tbody>
-                </table>
+                  </TableBody>
+                </Table>
               </div>
 
-              {/* Mobile Card Feed (< 768px) */}
+              {/* Mobile Feed */}
               <div className="table-mobile-cards p-3 space-y-2.5">
                 {filteredVouchers.length === 0 ? (
-                  <p className="text-center py-6 text-xs text-muted-foreground">No vouchers found</p>
+                  <p className="text-center py-6 text-xs text-muted-foreground">
+                    No vouchers found
+                  </p>
                 ) : (
                   paginatedVouchers.map((v) => (
                     <div
                       key={v.id}
-                      className="rounded-xl border border-border/80 bg-card p-3 shadow-sm card-interactive space-y-2"
+                      className="rounded-xl border border-border/80 bg-card p-3.5 shadow-sm space-y-2.5"
                     >
                       <div className="flex items-center justify-between">
-                        <span className="font-mono text-xs font-bold text-primary">{v.voucherNo}</span>
-                        <Badge variant="outline" className="text-[9px] font-bold capitalize py-0">
+                        <span className="font-mono text-xs font-black text-primary">
+                          {v.voucherNo}
+                        </span>
+                        <Badge variant="outline" className="text-[9px] font-bold capitalize">
                           {v.type}
                         </Badge>
                       </div>
-                      <div className="grid grid-cols-2 gap-2 text-[11px] pt-1 border-t border-border/50">
+                      <div className="grid grid-cols-2 gap-2 text-xs pt-1 border-t border-border/50">
                         <div>
-                          <span className="text-muted-foreground block text-[10px]">Debit:</span>
-                          <span className="font-bold text-destructive">{v.debitAccountName}</span>
+                          <span className="text-muted-foreground block text-[10px]">Debit (+):</span>
+                          <span className="font-bold text-primary">{v.debitAccountName}</span>
                         </div>
                         <div>
-                          <span className="text-muted-foreground block text-[10px]">Credit:</span>
-                          <span className="font-bold text-success">{v.creditAccountName}</span>
+                          <span className="text-muted-foreground block text-[10px]">Credit (-):</span>
+                          <span className="font-bold text-muted-foreground">{v.creditAccountName}</span>
                         </div>
                       </div>
                       <div className="flex items-center justify-between pt-1 border-t border-border/50">
-                        <span className="text-[10px] text-muted-foreground">{formatDateTime(v.date)}</span>
-                        <span className="number text-sm font-black text-foreground">{formatCurrency(v.amount)}</span>
+                        <span className="text-[10px] text-muted-foreground">
+                          {formatDateTime(v.date)}
+                        </span>
+                        <span className="number text-sm font-black text-foreground">
+                          {formatCurrency(v.amount)}
+                        </span>
                       </div>
                     </div>
                   ))
@@ -557,7 +793,7 @@ function AccountsPage() {
               </div>
 
               {rawVouchers.length > 0 && (
-                <div className="border-t border-border/60 p-2 sm:p-3">
+                <div className="border-t border-border/60 p-3">
                   <PaginationControls
                     currentPage={page}
                     totalPages={totalPages}
@@ -573,95 +809,196 @@ function AccountsPage() {
         )}
       </DataPage>
 
-      {/* Add Account Dialog */}
-      <Dialog
+      {/* Account Ledger Drawer */}
+      <Sheet
+        open={!!selectedLedgerAccount}
+        onOpenChange={(open) => !open && setSelectedLedgerAccount(null)}
+      >
+        <SheetContent
+          side="right"
+          className="w-full sm:max-w-2xl p-0 flex flex-col h-full bg-background border-l border-border"
+        >
+          <SheetHeader className="bg-muted/60 p-5 border-b pr-12 text-left">
+            <div className="flex items-center justify-between">
+              <SheetTitle className="text-xl font-bold flex items-center gap-2 text-foreground">
+                <History className="size-5 text-primary" />
+                <span>Account Ledger Statement</span>
+              </SheetTitle>
+              <Badge variant="outline" className={`capitalize font-black text-xs ${categoryColor(selectedLedgerAccount?.type || "asset")}`}>
+                {selectedLedgerAccount?.type}
+              </Badge>
+            </div>
+            <div className="flex items-center justify-between mt-2 pt-2 border-t border-border/60">
+              <div>
+                <span className="text-sm font-bold text-foreground block">
+                  [{selectedLedgerAccount?.code}] {selectedLedgerAccount?.name}
+                </span>
+                <span className="text-xs text-muted-foreground">Detailed double-entry ledger history</span>
+              </div>
+              <div className="text-right">
+                <span className="text-[10px] text-muted-foreground uppercase font-bold block">Current Balance</span>
+                <span className="text-lg font-black text-primary">
+                  {formatCurrency(selectedLedgerAccount?.balance || 0)}
+                </span>
+              </div>
+            </div>
+          </SheetHeader>
+
+          <div className="flex-1 overflow-y-auto p-5 space-y-4">
+            {ledgerTransactions.length === 0 ? (
+              <div className="py-16 text-center text-xs text-muted-foreground space-y-2">
+                <FileSpreadsheet className="size-8 mx-auto text-muted-foreground/50" />
+                <p>No journal vouchers recorded against this account yet.</p>
+              </div>
+            ) : (
+              <div className="rounded-xl border border-border/80 overflow-hidden shadow-sm">
+                <Table className="text-xs">
+                  <TableHeader className="bg-muted/50">
+                    <TableRow>
+                      <TableHead>Date / Voucher</TableHead>
+                      <TableHead>Narration</TableHead>
+                      <TableHead className="text-right text-primary">Debit (+)</TableHead>
+                      <TableHead className="text-right text-muted-foreground">Credit (-)</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {ledgerTransactions.map((tx: any) => (
+                      <TableRow key={tx.id}>
+                        <TableCell>
+                          <span className="font-mono font-bold text-primary block">{tx.voucherNo}</span>
+                          <span className="text-[10px] text-muted-foreground">{formatDate(tx.date)}</span>
+                        </TableCell>
+                        <TableCell className="text-muted-foreground">
+                          {tx.narration || `${tx.type.toUpperCase()} Entry`}
+                        </TableCell>
+                        <TableCell className="text-right font-mono font-bold text-primary">
+                          {tx.debitAmt > 0 ? formatCurrency(tx.debitAmt) : "-"}
+                        </TableCell>
+                        <TableCell className="text-right font-mono font-bold text-foreground">
+                          {tx.creditAmt > 0 ? formatCurrency(tx.creditAmt) : "-"}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+          </div>
+        </SheetContent>
+      </Sheet>
+
+      {/* Add / Edit Account Drawer */}
+      <Sheet
         open={isAddAccountOpen}
         onOpenChange={(open) => {
           if (!open) {
             setIsAddAccountOpen(false);
+            setEditingAccount(null);
             clearAccAll();
           }
         }}
       >
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Add Ledger Account</DialogTitle>
-          </DialogHeader>
-          <form noValidate onSubmit={handleCreateAccount} className="space-y-4 pt-2">
-            <div className="grid grid-cols-2 gap-4">
+        <SheetContent
+          side="right"
+          className="w-full sm:max-w-xl p-0 flex flex-col h-full bg-background border-l border-border"
+        >
+          <SheetHeader className="bg-muted/60 p-5 border-b pr-12 text-left">
+            <SheetTitle className="text-xl font-bold flex items-center gap-2 text-foreground">
+              <Wallet className="size-5 text-primary" />
+              <span>{editingAccount ? "Edit Ledger Account" : "Add Ledger Account"}</span>
+            </SheetTitle>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              {editingAccount
+                ? "Update general ledger head code, title, and initial balance."
+                : "Create a new general ledger head in your Chart of Accounts."}
+            </p>
+          </SheetHeader>
+          <form noValidate onSubmit={handleSaveAccount} className="flex flex-col flex-1 overflow-hidden">
+            <div className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <Label htmlFor="code">
+                    Account Code <span className="text-destructive">*</span>
+                  </Label>
+                  <Input
+                    id="code"
+                    name="code"
+                    defaultValue={editingAccount?.code || ""}
+                    placeholder="e.g. 5003"
+                    className={
+                      accErrors.code ? "border-destructive focus-visible:ring-destructive" : ""
+                    }
+                    onChange={() => clearAccError("code")}
+                  />
+                  <FieldError message={accErrors.code} />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="type">Account Category *</Label>
+                  <input type="hidden" name="type" value={accountType} />
+                  <SearchableSelect
+                    options={[
+                      { value: "asset", label: "Asset (Cash, Bank, Receivables)" },
+                      { value: "liability", label: "Liability (Payables, Taxes Due)" },
+                      { value: "equity", label: "Equity (Capital, Retained Earnings)" },
+                      { value: "income", label: "Income (Sales, Fees, Services)" },
+                      { value: "expense", label: "Expense (Rent, Wages, Utilities)" },
+                    ]}
+                    value={accountType}
+                    onChange={(val) => setAccountType(val as any)}
+                    placeholder="Select Category..."
+                  />
+                </div>
+              </div>
               <div className="space-y-1.5">
-                <Label htmlFor="code">
-                  Account Code <span className="text-destructive">*</span>
+                <Label htmlFor="name">
+                  Account Name <span className="text-destructive">*</span>
                 </Label>
                 <Input
-                  id="code"
-                  name="code"
-                  placeholder="e.g. 5003"
+                  id="name"
+                  name="name"
+                  defaultValue={editingAccount?.name || ""}
+                  placeholder="e.g. Marketing & Advertising Expense"
                   className={
-                    accErrors.code ? "border-destructive focus-visible:ring-destructive" : ""
+                    accErrors.name ? "border-destructive focus-visible:ring-destructive" : ""
                   }
-                  onChange={() => clearAccError("code")}
+                  onChange={() => clearAccError("name")}
                 />
-                <FieldError message={accErrors.code} />
+                <FieldError message={accErrors.name} />
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="type">Account Category *</Label>
-                <input type="hidden" name="type" value={accountType} />
-                <SearchableSelect
-                  options={[
-                    { value: "asset", label: "Asset (সম্পদ)" },
-                    { value: "liability", label: "Liability (দায়)" },
-                    { value: "equity", label: "Equity (মূলধন)" },
-                    { value: "income", label: "Income (আয়)" },
-                    { value: "expense", label: "Expense (ব্যয়)" },
-                  ]}
-                  value={accountType}
-                  onChange={(val) => setAccountType(val as any)}
-                  placeholder="Select Category..."
+              <div className="space-y-1.5">
+                <Label htmlFor="balance">Opening Balance ({formatCurrency(0).slice(0, 1)})</Label>
+                <Input
+                  id="balance"
+                  name="balance"
+                  type="number"
+                  step="0.01"
+                  defaultValue={editingAccount?.balance || "0"}
                 />
               </div>
             </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="name">
-                Account Name <span className="text-destructive">*</span>
-              </Label>
-              <Input
-                id="name"
-                name="name"
-                placeholder="e.g. Marketing & Ad Expense"
-                className={
-                  accErrors.name ? "border-destructive focus-visible:ring-destructive" : ""
-                }
-                onChange={() => clearAccError("name")}
-              />
-              <FieldError message={accErrors.name} />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="balance">Opening Balance</Label>
-              <Input id="balance" name="balance" type="number" step="0.01" defaultValue="0" />
-            </div>
-            <DialogFooter className="mt-6">
+            <div className="border-t border-border p-4 bg-card/80 backdrop-blur-sm flex items-center justify-end gap-3 shrink-0">
               <Button
                 type="button"
                 variant="outline"
                 onClick={() => {
                   setIsAddAccountOpen(false);
+                  setEditingAccount(null);
                   clearAccAll();
                 }}
               >
                 Cancel
               </Button>
-              <Button type="submit" disabled={isSubmittingAccount}>
+              <Button type="submit" disabled={isSubmittingAccount} className="min-w-[140px] font-bold">
                 {isSubmittingAccount && <Loader2 className="size-4 animate-spin mr-2" />}
-                Save Account
+                {editingAccount ? "Update Account" : "Save Account"}
               </Button>
-            </DialogFooter>
+            </div>
           </form>
-        </DialogContent>
-      </Dialog>
+        </SheetContent>
+      </Sheet>
 
-      {/* Post Voucher Dialog */}
-      <Dialog
+      {/* Post Voucher Drawer */}
+      <Sheet
         open={isAddVoucherOpen}
         onOpenChange={(open) => {
           if (!open) {
@@ -670,104 +1007,110 @@ function AccountsPage() {
           }
         }}
       >
-        <DialogContent className="sm:max-w-lg">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
+        <SheetContent
+          side="right"
+          className="w-full sm:max-w-xl md:max-w-2xl p-0 flex flex-col h-full bg-background border-l border-border"
+        >
+          <SheetHeader className="bg-muted/60 p-5 border-b pr-12 text-left">
+            <SheetTitle className="text-xl font-bold flex items-center gap-2 text-foreground">
               <ArrowRightLeft className="size-5 text-primary" />
               <span>Post Journal / Payment Voucher</span>
-            </DialogTitle>
-          </DialogHeader>
-          <form noValidate onSubmit={handleCreateVoucher} className="space-y-4 pt-2">
-            <div className="space-y-2">
-              <Label>Voucher Type</Label>
-              <SearchableSelect
-                options={[
-                  { value: "payment", label: "Payment Voucher (Cash Out / Expense Payment)" },
-                  { value: "receipt", label: "Receipt Voucher (Cash In / Customer Collection)" },
-                  { value: "contra", label: "Contra Voucher (Cash to Bank / Bank Transfer)" },
-                  { value: "journal", label: "Journal Voucher (Adjustment Entry)" },
-                ]}
-                value={voucherType}
-                onChange={(val) => setVoucherType(val as any)}
-                placeholder="Select Voucher Type"
-              />
-            </div>
+            </SheetTitle>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Record double-entry debit and credit transactions with automatic ledger balance updating.
+            </p>
+          </SheetHeader>
+          <form noValidate onSubmit={handleCreateVoucher} className="flex flex-col flex-1 overflow-hidden">
+            <div className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-4">
+              <div className="space-y-2">
+                <Label>Voucher Type</Label>
+                <SearchableSelect
+                  options={[
+                    { value: "payment", label: "Payment Voucher (Cash Out / Expense Payment)" },
+                    { value: "receipt", label: "Receipt Voucher (Cash In / Customer Collection)" },
+                    { value: "contra", label: "Contra Voucher (Cash to Bank / Inter-Bank Transfer)" },
+                    { value: "journal", label: "Journal Voucher (Adjustment / Adjustment Entry)" },
+                  ]}
+                  value={voucherType}
+                  onChange={(val) => setVoucherType(val as any)}
+                  placeholder="Select Voucher Type"
+                />
+              </div>
 
-            <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <Label>
+                    Debit Account (+) <span className="text-destructive">*</span>
+                  </Label>
+                  <div className={vchErrors.debitAccId ? "rounded-md border border-destructive" : ""}>
+                    <SearchableSelect
+                      options={rawAccounts.map((a: any) => ({
+                        value: a.id,
+                        label: `[${a.code}] ${a.name}`,
+                      }))}
+                      value={debitAccId}
+                      onChange={(val) => {
+                        setDebitAccId(val);
+                        clearVchError("debitAccId");
+                      }}
+                      placeholder="-- Select Debit Head --"
+                    />
+                  </div>
+                  <FieldError message={vchErrors.debitAccId} />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>
+                    Credit Account (-) <span className="text-destructive">*</span>
+                  </Label>
+                  <div className={vchErrors.creditAccId ? "rounded-md border border-destructive" : ""}>
+                    <SearchableSelect
+                      options={rawAccounts.map((a: any) => ({
+                        value: a.id,
+                        label: `[${a.code}] ${a.name}`,
+                      }))}
+                      value={creditAccId}
+                      onChange={(val) => {
+                        setCreditAccId(val);
+                        clearVchError("creditAccId");
+                      }}
+                      placeholder="-- Select Credit Head --"
+                    />
+                  </div>
+                  <FieldError message={vchErrors.creditAccId} />
+                </div>
+              </div>
+
               <div className="space-y-1.5">
                 <Label>
-                  Debit Account (+) <span className="text-destructive">*</span>
+                  Voucher Amount <span className="text-destructive">*</span>
                 </Label>
-                <div className={vchErrors.debitAccId ? "rounded-md border border-destructive" : ""}>
-                  <SearchableSelect
-                    options={rawAccounts.map((a) => ({
-                      value: a.id,
-                      label: `[${a.code}] ${a.name}`,
-                    }))}
-                    value={debitAccId}
-                    onChange={(val) => {
-                      setDebitAccId(val);
-                      clearVchError("debitAccId");
-                    }}
-                    placeholder="-- Debit Account --"
-                  />
-                </div>
-                <FieldError message={vchErrors.debitAccId} />
+                <Input
+                  type="number"
+                  step="0.01"
+                  value={voucherAmount}
+                  onChange={(e) => {
+                    setVoucherAmount(e.target.value);
+                    clearVchError("voucherAmount");
+                  }}
+                  placeholder="0.00"
+                  className={
+                    vchErrors.voucherAmount ? "border-destructive focus-visible:ring-destructive font-bold text-base" : "font-bold text-base"
+                  }
+                />
+                <FieldError message={vchErrors.voucherAmount} />
               </div>
+
               <div className="space-y-1.5">
-                <Label>
-                  Credit Account (-) <span className="text-destructive">*</span>
-                </Label>
-                <div
-                  className={vchErrors.creditAccId ? "rounded-md border border-destructive" : ""}
-                >
-                  <SearchableSelect
-                    options={rawAccounts.map((a) => ({
-                      value: a.id,
-                      label: `[${a.code}] ${a.name}`,
-                    }))}
-                    value={creditAccId}
-                    onChange={(val) => {
-                      setCreditAccId(val);
-                      clearVchError("creditAccId");
-                    }}
-                    placeholder="-- Credit Account --"
-                  />
-                </div>
-                <FieldError message={vchErrors.creditAccId} />
+                <Label>Narration / Journal Reference</Label>
+                <Input
+                  value={narration}
+                  onChange={(e) => setNarration(e.target.value)}
+                  placeholder="e.g. Monthly facility rent paid via primary bank transfer"
+                />
               </div>
             </div>
 
-            <div className="space-y-1.5">
-              <Label>
-                Voucher Amount <span className="text-destructive">*</span>
-              </Label>
-              <Input
-                type="number"
-                step="0.01"
-                value={voucherAmount}
-                onChange={(e) => {
-                  setVoucherAmount(e.target.value);
-                  clearVchError("voucherAmount");
-                }}
-                placeholder="0.00"
-                className={
-                  vchErrors.voucherAmount ? "border-destructive focus-visible:ring-destructive" : ""
-                }
-              />
-              <FieldError message={vchErrors.voucherAmount} />
-            </div>
-
-            <div className="space-y-1.5">
-              <Label>Narration / Description</Label>
-              <Input
-                value={narration}
-                onChange={(e) => setNarration(e.target.value)}
-                placeholder="e.g. Paid office rent for current month via bank transfer"
-              />
-            </div>
-
-            <DialogFooter className="mt-6">
+            <div className="border-t border-border p-4 bg-card/80 backdrop-blur-sm flex items-center justify-end gap-3 shrink-0">
               <Button
                 type="button"
                 variant="outline"
@@ -778,14 +1121,35 @@ function AccountsPage() {
               >
                 Cancel
               </Button>
-              <Button type="submit" disabled={isPostingVoucher}>
+              <Button type="submit" disabled={isPostingVoucher} className="min-w-[160px] font-bold">
                 {isPostingVoucher && <Loader2 className="size-4 animate-spin mr-2" />}
                 Post Voucher Entry
               </Button>
-            </DialogFooter>
+            </div>
           </form>
-        </DialogContent>
-      </Dialog>
+        </SheetContent>
+      </Sheet>
+
+      {/* Delete Confirmation Modal */}
+      <AlertDialog open={!!deletingAccount} onOpenChange={(open) => !open && setDeletingAccount(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Ledger Account?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete account <strong>[{deletingAccount?.code}] {deletingAccount?.name}</strong>? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteAccount}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90 font-bold"
+            >
+              Delete Account
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

@@ -1,6 +1,5 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, useSearch } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
-import { PageHeader } from "@/components/layout/PageHeader";
 import {
   Plus,
   Trash2,
@@ -10,35 +9,52 @@ import {
   ShoppingBag,
   ArrowLeft,
   CheckCircle2,
-  ShieldAlert,
+  CreditCard,
+  Building2,
+  Calendar,
+  Sparkles,
+  DollarSign,
+  Package,
+  Receipt,
+  ScanLine,
+  AlertCircle,
 } from "lucide-react";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { getSuppliersFn } from "@/api/suppliers";
+import { getSuppliersFn, createSupplierFn } from "@/api/suppliers";
 import { getProductsFn } from "@/api/products";
-import { createPurchaseFn } from "@/api/purchases";
+import { createPurchaseFn, updatePurchaseFn, getPurchaseByIdFn } from "@/api/purchases";
 import { parseInvoiceFn } from "@/api/ai";
 import { useCurrency } from "@/lib/currency";
 import { toast } from "sonner";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { PersistStore } from "@/lib/session-store";
 import { Badge } from "@/components/ui/badge";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { DatePicker } from "@/components/ui/date-picker";
 
 export const Route = createFileRoute("/purchases/new")({
-  head: () => ({ meta: [{ title: "New Purchase Order · NexisPOS" }] }),
-  component: NewPurchase,
+  head: () => ({ meta: [{ title: "Purchase Order · OneDesk360" }] }),
+  validateSearch: (search: Record<string, unknown>): { editId?: string } => ({
+    editId: typeof search.editId === "string" ? search.editId : undefined,
+  }),
+  component: NewPurchasePage,
 });
 
-function NewPurchase() {
-  const { formatCurrency } = useCurrency();
+function NewPurchasePage() {
+  const { formatCurrency, currencySymbol } = useCurrency();
   const navigate = useNavigate();
+  const search = useSearch({ from: "/purchases/new" });
+  const editId = search.editId;
   const orgId = PersistStore.getOrgId() || "default";
   const queryClient = useQueryClient();
 
@@ -54,20 +70,82 @@ function NewPurchase() {
   });
   const products: any[] = productsData || [];
 
+  // Edit existing purchase
+  const { data: existingPurchaseData, isLoading: isExistingLoading } = useQuery({
+    queryKey: ["purchase", editId],
+    queryFn: async () => {
+      if (!editId) return null;
+      return (await getPurchaseByIdFn({ data: { id: editId } }))?.data || null;
+    },
+    enabled: !!editId,
+  });
+
   const [supplierId, setSupplierId] = useState("");
-  const [lines, setLines] = useState<{ productId: string; qty: number; cost: number }[]>([]);
+  const [purchaseDate, setPurchaseDate] = useState(() => new Date().toISOString().split("T")[0]);
+  const [invoiceNo, setInvoiceNo] = useState("");
+  const [paymentMethod, setPaymentMethod] = useState("Bank Transfer");
+  const [lines, setLines] = useState<
+    { productId: string; qty: number; cost: number; batchNo?: string; expiryDate?: string }[]
+  >([{ productId: "", qty: 1, cost: 0 }]);
+  const [amountPaid, setAmountPaid] = useState<number | "">("");
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [amountPaid, setAmountPaid] = useState<number | "">("");
 
-  const subtotal = lines.reduce((sum, l) => sum + (Number(l.qty) || 0) * (Number(l.cost) || 0), 0);
-  const tax = 0; // Tax is configured per-product in settings, not applied globally here
+  // Prepopulate if in edit mode
+  useEffect(() => {
+    if (existingPurchaseData) {
+      setSupplierId(existingPurchaseData.supplierId || "");
+      setInvoiceNo(existingPurchaseData.invoiceNo || "");
+      if (existingPurchaseData.date) {
+        setPurchaseDate(existingPurchaseData.date.split("T")[0]);
+      }
+      if (existingPurchaseData.paymentMethod) {
+        setPaymentMethod(existingPurchaseData.paymentMethod);
+      }
+      if (existingPurchaseData.paid !== undefined) {
+        setAmountPaid(Number(existingPurchaseData.paid));
+      }
+      if (
+        existingPurchaseData.items &&
+        Array.isArray(existingPurchaseData.items) &&
+        existingPurchaseData.items.length > 0
+      ) {
+        setLines(
+          existingPurchaseData.items.map((i: any) => ({
+            productId: i.productId,
+            qty: Number(i.quantity || i.qty || 1),
+            cost: Number(i.cost || 0),
+          })),
+        );
+      }
+    }
+  }, [existingPurchaseData]);
+
+  const subtotal = useMemo(() => {
+    return lines.reduce((sum, l) => sum + (Number(l.qty) || 0) * (Number(l.cost) || 0), 0);
+  }, [lines]);
+
+  const tax = 0;
   const total = subtotal + tax;
+  const paidVal = amountPaid === "" ? total : Number(amountPaid);
+  const dueVal = Math.max(0, total - paidVal);
+
+  const selectedSupplier = useMemo(() => {
+    return suppliers.find((s: any) => s.id === supplierId);
+  }, [suppliers, supplierId]);
 
   const handleAddLine = () => {
     setLines([...lines, { productId: "", qty: 1, cost: 0 }]);
+  };
+
+  const handleRemoveLine = (index: number) => {
+    if (lines.length === 1) {
+      setLines([{ productId: "", qty: 1, cost: 0 }]);
+      return;
+    }
+    setLines(lines.filter((_, i) => i !== index));
   };
 
   const handleUpdateLine = (index: number, field: string, value: any) => {
@@ -84,94 +162,106 @@ function NewPurchase() {
 
   const handleSubmit = async () => {
     if (!supplierId) {
-      return toast.error("Please select a supplier");
+      return toast.error("Please select or enter a supplier");
     }
-    if (lines.length === 0) {
-      return toast.error("Please add at least one line item");
-    }
-    if (lines.some((l) => !l.productId)) {
-      return toast.error("Please select a valid product for all items");
-    }
-    const sup = suppliers.find((s) => s.id === supplierId);
-    if (!sup) {
-      return toast.error("Supplier not found");
+
+    const validLines = lines.filter((l) => l.productId && l.qty > 0);
+    if (validLines.length === 0) {
+      return toast.error("Please add at least one valid product line item with quantity > 0");
     }
 
     setIsSubmitting(true);
     try {
-      const formattedItems = lines.map((l) => {
-        const prod = products.find((p) => p.id === l.productId);
-        return {
-          productId: l.productId,
-          productName: prod?.name || "Product",
-          quantity: Number(l.qty) || 1,
-          cost: Number(l.cost) || 0,
-          batchNo: (l as any).batchNo,
-          expiryDate: (l as any).expiryDate,
-          mrp: (l as any).mrp,
-        };
-      });
+      const supplierName = selectedSupplier?.name || "Supplier";
+      const supplierContact = selectedSupplier?.phone || selectedSupplier?.contact || "";
 
-      const res = await createPurchaseFn({
-        data: {
-          purchase: {
-            supplierId: sup.id,
-            supplier: sup.name,
-            date: new Date().toISOString(),
-            status: "received",
-            subtotal: subtotal,
-            taxAmt: tax,
-            total: total,
-            paid: amountPaid === "" ? total : Number(amountPaid),
-            due: amountPaid === "" ? 0 : total - Number(amountPaid),
+      const purchaseData = {
+        supplierId,
+        supplierName,
+        supplierContact,
+        invoiceNo: invoiceNo.trim() || `PO-${Date.now().toString().slice(-6)}`,
+        date: new Date(purchaseDate).toISOString(),
+        paymentMethod,
+        subtotal: subtotal.toString(),
+        tax: tax.toString(),
+        total: total.toString(),
+        paid: (amountPaid === "" ? total : Number(amountPaid)).toString(),
+        items: validLines.map((l) => {
+          const prod = products.find((p) => p.id === l.productId);
+          return {
+            productId: l.productId,
+            name: prod?.name || "Item",
+            sku: prod?.sku || "",
+            quantity: l.qty,
+            cost: l.cost,
+            total: l.qty * l.cost,
+          };
+        }),
+      };
+
+      if (editId) {
+        const res = await updatePurchaseFn({
+          data: {
+            id: editId,
+            ...purchaseData,
           },
-          items: formattedItems,
-        },
-      });
-
-      if (!res?.success) throw new Error(res?.error || "Failed to submit purchase order");
-
-      queryClient.invalidateQueries({ queryKey: ["purchases"] });
-      queryClient.invalidateQueries({ queryKey: ["products"] });
-      queryClient.invalidateQueries({ queryKey: ["inventoryMovements"] });
-
-      toast.success("Purchase order recorded and stock updated successfully!");
-      navigate({ to: "/purchases" });
-    } catch (e: any) {
-      toast.error(e.message || "Failed to record purchase order");
+        });
+        if (res?.success) {
+          toast.success("Purchase order updated successfully");
+          queryClient.invalidateQueries({ queryKey: ["purchases"] });
+          navigate({ to: "/purchases" });
+        } else {
+          toast.error(res?.error || "Failed to update purchase order");
+        }
+      } else {
+        const res = await createPurchaseFn({ data: purchaseData });
+        if (res?.success) {
+          toast.success("Purchase order recorded and stock updated!");
+          queryClient.invalidateQueries({ queryKey: ["purchases"] });
+          queryClient.invalidateQueries({ queryKey: ["products"] });
+          navigate({ to: "/purchases" });
+        } else {
+          toast.error(res?.error || "Failed to record purchase order");
+        }
+      }
+    } catch (err: any) {
+      toast.error(err.message || "Failed to process purchase order");
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
     setIsAnalyzing(true);
-    toast.loading("Analyzing invoice with AI OCR...", { id: "ocr" });
+    toast.loading("Scanning invoice with Gemini AI...", { id: "ocr" });
 
     const reader = new FileReader();
-    reader.onload = async (event) => {
+    reader.onload = async () => {
       try {
-        const base64Str = (event.target?.result as string).split(',')[1];
+        const base64 = (reader.result as string).split(",")[1];
         const res = await parseInvoiceFn({
-          data: {
-            fileBase64: base64Str,
-            mimeType: file.type,
-          }
+          data: { imageBase64: base64, mimeType: file.type },
         });
 
-        if (!res.success) throw new Error(res.error || "Failed to parse invoice");
+        if (!res?.success || !res.data) {
+          throw new Error(res?.error || "Failed to extract invoice data");
+        }
 
         const data = res.data;
-        
-        // 1. Fuzzy match supplier
+
+        if (data.invoiceNumber && !invoiceNo) {
+          setInvoiceNo(data.invoiceNumber);
+        }
+
         if (data.supplierName) {
           const supplierStr = data.supplierName.toLowerCase();
-          const matchedSupplier = suppliers.find(s => 
-            s.name.toLowerCase().includes(supplierStr) || 
-            supplierStr.includes(s.name.toLowerCase())
+          const matchedSupplier = suppliers.find(
+            (s: any) =>
+              s.name.toLowerCase().includes(supplierStr) ||
+              supplierStr.includes(s.name.toLowerCase()),
           );
           if (matchedSupplier) {
             setSupplierId(matchedSupplier.id);
@@ -180,31 +270,28 @@ function NewPurchase() {
           }
         }
 
-        // 2. Fuzzy match products and populate lines
         if (data.items && data.items.length > 0) {
-          const newLines: { productId: string; qty: number; cost: number }[] = [];
+          const newLines: any[] = [];
           for (const item of data.items) {
-             const prodStr = item.productName.toLowerCase();
-             const matchedProduct = products.find(p => 
-               p.name.toLowerCase().includes(prodStr) || 
-               prodStr.includes(p.name.toLowerCase())
-             );
-             if (matchedProduct) {
-               newLines.push({
-                 productId: matchedProduct.id,
-                 qty: item.quantity || 1,
-                 cost: item.cost || matchedProduct.cost || 0
-               });
-             } else {
-               toast.warning(`Product "${item.productName}" not found in inventory.`);
-             }
+            const prodStr = item.productName?.toLowerCase() || "";
+            const matchedProduct = products.find(
+              (p: any) =>
+                p.name.toLowerCase().includes(prodStr) || prodStr.includes(p.name.toLowerCase()),
+            );
+            if (matchedProduct) {
+              newLines.push({
+                productId: matchedProduct.id,
+                qty: item.quantity || 1,
+                cost: item.cost || matchedProduct.cost || 0,
+              });
+            }
           }
           if (newLines.length > 0) {
             setLines(newLines);
           }
         }
-        
-        toast.success("Invoice data extracted successfully!", { id: "ocr" });
+
+        toast.success("Invoice parsed successfully!", { id: "ocr" });
       } catch (err: any) {
         toast.error(err.message || "Failed to extract invoice data", { id: "ocr" });
       } finally {
@@ -220,363 +307,327 @@ function NewPurchase() {
   };
 
   return (
-    <div className="page-container space-y-5 container mx-auto">
-      {/* Back button & Breadcrumb header */}
-      <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => navigate({ to: "/purchases" })}
-          className="h-8 px-2 text-muted-foreground hover:text-foreground"
-        >
-          <ArrowLeft className="size-4 mr-1" /> Back to Purchases
-        </Button>
+    <div className="page-container space-y-6 pb-24">
+      {/* Top Header Card */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-gradient-to-r from-card to-muted/30 p-5 rounded-2xl border border-border/80 shadow-card">
+        <div>
+          <div className="flex items-center gap-2">
+            <h1 className="text-xl sm:text-2xl font-black tracking-tight text-foreground">
+              {editId ? "Edit Purchase Order" : "New Inbound Purchase Order"}
+            </h1>
+            <Badge variant="outline" className="text-xs font-bold px-2 py-0.5 border-primary/30 text-primary bg-primary/5">
+              {editId ? `Editing ${existingPurchaseData?.invoiceNo || editId}` : "Stock Inflow"}
+            </Badge>
+          </div>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            Receive inbound products, update warehouse valuation, and record vendor payables.
+          </p>
+        </div>
+
+        <div className="flex items-center gap-2.5 flex-wrap">
+          <input
+            type="file"
+            accept="image/*"
+            className="hidden"
+            ref={fileInputRef}
+            onChange={handleFileUpload}
+          />
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={isAnalyzing || isSubmitting}
+            className="font-bold text-xs rounded-xl h-9 border-primary/30 text-primary hover:bg-primary/5"
+          >
+            {isAnalyzing ? (
+              <Loader2 className="size-3.5 mr-1.5 animate-spin" />
+            ) : (
+              <Sparkles className="size-3.5 mr-1.5" />
+            )}
+            AI Invoice Scanner
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => navigate({ to: "/purchases" })}
+            className="font-bold text-xs rounded-xl h-9"
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={handleSubmit}
+            disabled={isSubmitting}
+            className="font-bold text-xs min-w-[140px] rounded-xl h-9 shadow-soft"
+          >
+            {isSubmitting ? (
+              <Loader2 className="size-3.5 mr-1.5 animate-spin" />
+            ) : (
+              <CheckCircle2 className="size-3.5 mr-1.5" />
+            )}
+            {editId ? "Save Changes" : "Submit Order"}
+          </Button>
+        </div>
       </div>
 
-      <PageHeader
-        title="New Purchase Order"
-        description="Receive stock from suppliers, update inventory, and manage purchase bills."
-        actions={
-          <div className="flex flex-wrap items-center gap-2">
-            <input
-              type="file"
-              accept="image/*"
-              className="hidden"
-              ref={fileInputRef}
-              onChange={handleFileUpload}
-            />
-            <Button
-              size="sm"
-              variant="outline"
-              className="bg-primary/5 text-primary hover:bg-primary/10 border-primary/20 font-medium"
-              onClick={() => fileInputRef.current?.click()}
-              disabled={isAnalyzing || isSubmitting}
-            >
-              {isAnalyzing ? (
-                <Loader2 className="size-4 mr-2 animate-spin text-primary" />
-              ) : (
-                <Camera className="size-4 mr-2" />
-              )}
-              Auto-Fill with AI
-            </Button>
-            {/* <Button
-              size="sm"
-              onClick={handleSubmit}
-              disabled={isAnalyzing || isSubmitting}
-              className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold shadow-sm min-w-[130px]"
-            >
-              {isSubmitting ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Saving...
-                </>
-              ) : (
-                <>
-                  <CheckCircle2 className="mr-2 h-4 w-4" />
-                  Submit Order
-                </>
-              )}
-            </Button> */}
-          </div>
-        }
-      />
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+        {/* Left 2 Cols: Supplier & Line Items */}
+        <div className="lg:col-span-2 space-y-6">
+          {/* Supplier & Order Info Card */}
+          <div className="rounded-2xl border border-border/80 bg-card p-5 sm:p-6 shadow-card space-y-4">
+            <div className="flex items-center gap-2.5 pb-3 border-b border-border/60">
+              <Building2 className="size-4 text-primary" />
+              <h3 className="font-bold text-sm text-foreground">Supplier & Purchase Metadata</h3>
+            </div>
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3 items-start">
-        {/* Main Content Form */}
-        <div className="space-y-6 lg:col-span-2">
-          {/* Supplier details card */}
-          <div className="rounded-2xl border border-border bg-card p-5 sm:p-6 shadow-sm relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-bl-full pointer-events-none" />
-            <div className="flex items-center gap-3 mb-4">
-              <div className="p-2.5 rounded-xl bg-primary/10 text-primary">
-                <Truck className="size-5" />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <Label className="text-xs font-bold">
+                  Supplier / Vendor <span className="text-destructive">*</span>
+                </Label>
+                <SearchableSelect
+                  options={suppliers.map((s: any) => ({
+                    value: s.id,
+                    label: s.name,
+                    sublabel: s.phone || s.email || "No contact",
+                  }))}
+                  value={supplierId}
+                  onChange={setSupplierId}
+                  placeholder="Select or search vendor..."
+                  onCreate={async (name) => {
+                    const res = await createSupplierFn({ data: { supplier: { name } } });
+                    if (res?.success) {
+                      queryClient.invalidateQueries({ queryKey: ["suppliers"] });
+                      const newSup = (res as any).data;
+                      if (newSup?.id) setSupplierId(newSup.id);
+                      return name;
+                    }
+                  }}
+                />
               </div>
-              <div>
-                <h3 className="font-bold text-base text-foreground">Supplier & Invoice Details</h3>
-                <p className="text-xs text-muted-foreground">Select the vendor delivering stock</p>
+
+              <div className="space-y-1.5">
+                <Label className="text-xs font-bold">PO / Invoice Reference Number</Label>
+                <Input
+                  placeholder="e.g. INV-9902 or PO-8841"
+                  value={invoiceNo}
+                  onChange={(e) => setInvoiceNo(e.target.value)}
+                  className="h-10 text-xs rounded-xl"
+                />
               </div>
             </div>
 
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 pt-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                  Supplier <span className="text-destructive">*</span>
-                </label>
-                <Select value={supplierId} onValueChange={setSupplierId} disabled={isSubmitting}>
-                  <SelectTrigger className="h-10">
-                    <SelectValue placeholder="Select supplier..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {suppliers.length > 0 ? (
-                      suppliers.map((s: any) => (
-                        <SelectItem key={s.id} value={s.id}>
-                          <div className="flex items-center justify-between w-full gap-2">
-                            <span className="font-medium">{s.name}</span>
-                            {s.company && (
-                              <span className="text-xs text-muted-foreground">({s.company})</span>
-                            )}
-                          </div>
-                        </SelectItem>
-                      ))
-                    ) : (
-                      <div className="p-3 text-xs text-center text-muted-foreground">
-                        No suppliers found. Create one first.
-                      </div>
-                    )}
-                  </SelectContent>
-                </Select>
+                <Label className="text-xs font-bold">
+                  Purchase Order Date <span className="text-destructive">*</span>
+                </Label>
+                <DatePicker
+                  date={purchaseDate}
+                  onDateChange={(d) =>
+                    setPurchaseDate(
+                      d ? d.toISOString().split("T")[0] : new Date().toISOString().split("T")[0],
+                    )
+                  }
+                />
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                  Status
-                </label>
-                <div className="h-10 flex items-center px-3 rounded-md border border-input bg-muted/20 text-sm font-medium">
-                  <Badge
-                    variant="outline"
-                    className="bg-emerald-500/10 text-emerald-600 border-emerald-500/30 gap-1.5"
-                  >
-                    <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                    Received
-                  </Badge>
-                </div>
+                <Label className="text-xs font-bold">Payment Method</Label>
+                <SearchableSelect
+                  options={[
+                    { value: "Bank Transfer", label: "Bank Transfer / RTGS / IMPS" },
+                    { value: "Cash", label: "Cash on Delivery / POS Cash" },
+                    { value: "Mobile Wallet", label: "Mobile Wallet / UPI" },
+                    { value: "Credit / Due", label: "Vendor Credit (Pay Later Khata)" },
+                  ]}
+                  value={paymentMethod}
+                  onChange={setPaymentMethod}
+                  placeholder="Select payment mode"
+                />
               </div>
             </div>
           </div>
 
-          {/* Line Items Card */}
-          <div className="rounded-2xl border border-border bg-card p-5 sm:p-6 shadow-sm">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2.5 rounded-xl bg-primary/10 text-primary">
-                  <ShoppingBag className="size-5" />
-                </div>
+          {/* Line Items Table */}
+          <div className="rounded-2xl border border-border/80 bg-card p-5 sm:p-6 shadow-card space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-border/60">
+              <div className="flex items-center gap-2.5">
+                <ShoppingBag className="size-4 text-primary" />
                 <div>
-                  <h3 className="font-bold text-base text-foreground">Line Items</h3>
-                  <p className="text-xs text-muted-foreground">
-                    Specify incoming product quantities and unit purchase costs
-                  </p>
+                  <h3 className="font-bold text-sm text-foreground">Inbound Stock Items</h3>
+                  <p className="text-[11px] text-muted-foreground">Select products, received quantities, and unit purchase costs.</p>
                 </div>
               </div>
-              <Badge variant="secondary" className="font-semibold">
-                {lines.length} {lines.length === 1 ? "Item" : "Items"}
-              </Badge>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={handleAddLine}
+                className="h-8 text-xs font-bold rounded-xl gap-1.5 border-primary/30 text-primary hover:bg-primary/5"
+              >
+                <Plus className="size-3.5" /> Add Product Row
+              </Button>
             </div>
 
-            {/* Responsive Table / Card Container */}
-            <div className="overflow-x-auto rounded-xl border border-border bg-background/50">
-              <table className="w-full text-left text-sm min-w-[550px]">
-                <thead className="bg-muted/60 text-[11px] font-bold uppercase tracking-wider text-muted-foreground border-b border-border">
-                  <tr>
-                    <th className="px-4 py-3 w-10 text-center">#</th>
-                    <th className="px-4 py-3">Product</th>
-                    <th className="px-4 py-3 w-28 text-right">Qty</th>
-                    <th className="px-4 py-3 w-32 text-right">Unit Cost</th>
-                    <th className="px-4 py-3 w-36 text-right">Total Cost</th>
-                    <th className="px-4 py-3 w-12 text-center"></th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border">
-                  {lines.map((l, i) => {
-                    const prod = products.find((p) => p.id === l.productId);
-                    const showBatch = prod?.hasBatch;
-                    
+            <div className="rounded-xl border border-border/80 overflow-hidden bg-card">
+              <Table>
+                <TableHeader className="bg-muted/40">
+                  <TableRow>
+                    <TableHead className="font-bold text-[11px] uppercase tracking-wider pl-4">
+                      Product SKU / Name
+                    </TableHead>
+                    <TableHead className="font-bold text-[11px] uppercase tracking-wider text-right w-24">
+                      Qty
+                    </TableHead>
+                    <TableHead className="font-bold text-[11px] uppercase tracking-wider text-right w-32">
+                      Unit Cost ({currencySymbol})
+                    </TableHead>
+                    <TableHead className="font-bold text-[11px] uppercase tracking-wider text-right w-32">
+                      Line Total
+                    </TableHead>
+                    <TableHead className="w-10 text-center pr-4"></TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody className="divide-y divide-border/60">
+                  {lines.map((line, idx) => {
+                    const currentProd = products.find((p) => p.id === line.productId);
                     return (
-                      <div key={i} className="contents">
-                        <tr className="hover:bg-muted/30 transition-colors">
-                          <td className="px-4 py-3 text-center text-xs font-semibold text-muted-foreground">
-                            {i + 1}
-                          </td>
-                          <td className="px-4 py-3">
-                            <Select
-                              value={l.productId}
-                              onValueChange={(v) => handleUpdateLine(i, "productId", v)}
-                              disabled={isSubmitting}
-                            >
-                              <SelectTrigger className="h-9 w-full">
-                                <SelectValue placeholder="Choose product..." />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {products.map((p: any) => (
-                                  <SelectItem key={p.id} value={p.id}>
-                                    {p.name} {p.sku ? `(${p.sku})` : ""}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </td>
-                          <td className="px-4 py-3 text-right">
-                            <Input
-                              type="number"
-                              min="1"
-                              required
-                              placeholder="1"
-                              className="h-9 text-right font-medium"
-                              value={l.qty}
-                              onChange={(e) => handleUpdateLine(i, "qty", Number(e.target.value))}
-                              disabled={isSubmitting}
-                            />
-                          </td>
-                          <td className="px-4 py-3 text-right">
-                            <Input
-                              type="number"
-                              min="0"
-                              step="0.01"
-                              required
-                              placeholder="0.00"
-                              className="h-9 text-right font-medium"
-                              value={l.cost}
-                              onChange={(e) => handleUpdateLine(i, "cost", Number(e.target.value))}
-                              disabled={isSubmitting}
-                            />
-                          </td>
-                          <td className="px-4 py-3 text-right font-bold text-foreground">
-                            {formatCurrency((Number(l.qty) || 0) * (Number(l.cost) || 0))}
-                          </td>
-                          <td className="px-4 py-3 text-center">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="size-8 text-destructive hover:text-destructive hover:bg-destructive/10"
-                              onClick={() => setLines(lines.filter((_, idx) => idx !== i))}
-                              disabled={isSubmitting}
-                            >
-                              <Trash2 className="size-4" />
-                            </Button>
-                          </td>
-                        </tr>
-                        {showBatch && (
-                          <tr className="bg-amber-500/5">
-                            <td></td>
-                            <td colSpan={4} className="px-4 py-2 pb-3">
-                              <div className="flex gap-4 items-center">
-                                <div className="flex-1">
-                                  <label className="text-[10px] font-bold uppercase text-amber-600/80 mb-1 block">Batch Number</label>
-                                  <Input 
-                                    className="h-8 text-xs border-amber-500/20 bg-background" 
-                                    placeholder="e.g. BATCH-A01"
-                                    value={(l as any).batchNo || ""}
-                                    onChange={(e) => handleUpdateLine(i, "batchNo", e.target.value)}
-                                  />
-                                </div>
-                                <div className="flex-1">
-                                  <label className="text-[10px] font-bold uppercase text-amber-600/80 mb-1 block">Expiry Date</label>
-                                  <Input 
-                                    type="date" 
-                                    className="h-8 text-xs border-amber-500/20 bg-background" 
-                                    value={(l as any).expiryDate || ""}
-                                    onChange={(e) => handleUpdateLine(i, "expiryDate", e.target.value)}
-                                  />
-                                </div>
-                                <div className="flex-1">
-                                  <label className="text-[10px] font-bold uppercase text-amber-600/80 mb-1 block">MRP</label>
-                                  <Input 
-                                    type="number" step="0.01" 
-                                    className="h-8 text-xs border-amber-500/20 bg-background" 
-                                    placeholder="0.00"
-                                    value={(l as any).mrp || ""}
-                                    onChange={(e) => handleUpdateLine(i, "mrp", e.target.value)}
-                                  />
-                                </div>
-                              </div>
-                            </td>
-                            <td></td>
-                          </tr>
-                        )}
-                      </div>
+                      <TableRow key={idx} className="hover:bg-muted/20">
+                        <TableCell className="min-w-[240px] pl-4 py-3">
+                          <SearchableSelect
+                            options={products.map((p: any) => ({
+                              value: p.id,
+                              label: p.name,
+                              sublabel: `SKU: ${p.sku || "N/A"} · Current Stock: ${p.stock ?? 0}`,
+                            }))}
+                            value={line.productId}
+                            onChange={(val) => handleUpdateLine(idx, "productId", val)}
+                            placeholder="Select product SKU..."
+                          />
+                        </TableCell>
+                        <TableCell className="text-right py-3">
+                          <Input
+                            type="number"
+                            min="1"
+                            value={line.qty}
+                            onChange={(e) =>
+                              handleUpdateLine(idx, "qty", parseInt(e.target.value) || 1)
+                            }
+                            className="h-9 text-right font-bold text-xs rounded-xl"
+                          />
+                        </TableCell>
+                        <TableCell className="text-right py-3">
+                          <Input
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            value={line.cost}
+                            onChange={(e) =>
+                              handleUpdateLine(idx, "cost", parseFloat(e.target.value) || 0)
+                            }
+                            className="h-9 text-right font-bold text-xs rounded-xl"
+                          />
+                        </TableCell>
+                        <TableCell className="text-right font-black text-xs text-foreground whitespace-nowrap py-3">
+                          {formatCurrency((Number(line.qty) || 0) * (Number(line.cost) || 0))}
+                        </TableCell>
+                        <TableCell className="text-center pr-4 py-3">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleRemoveLine(idx)}
+                            className="size-8 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                            title="Remove Line Item"
+                          >
+                            <Trash2 className="size-4" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
                     );
                   })}
-
-                  {lines.length === 0 && (
-                    <tr>
-                      <td colSpan={6} className="py-8 text-center text-muted-foreground">
-                        <div className="flex flex-col items-center gap-2">
-                          <ShoppingBag className="size-8 text-muted-foreground/40" />
-                          <p className="text-sm font-medium">
-                            No items added to purchase order yet.
-                          </p>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="mt-1"
-                            onClick={handleAddLine}
-                          >
-                            <Plus className="size-4 mr-1" /> Add First Item
-                          </Button>
-                        </div>
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
+                </TableBody>
+              </Table>
             </div>
-
-            <Button
-              variant="outline"
-              size="sm"
-              className="mt-4 border-dashed border-primary/30 text-primary hover:bg-primary/5 w-full sm:w-auto font-medium"
-              onClick={handleAddLine}
-              disabled={isSubmitting}
-            >
-              <Plus className="size-4 mr-1" /> Add Line Item
-            </Button>
           </div>
         </div>
 
-        {/* Sidebar Summary Card */}
-        <div className="space-y-6">
-          <div className="rounded-2xl border border-border bg-card p-6 shadow-sm space-y-6 sticky top-6">
-            <div className="flex items-center justify-between border-b border-border pb-4">
-              <h3 className="font-bold text-base text-foreground">Order Summary</h3>
-              <Badge variant="outline" className="bg-primary/5 text-primary border-primary/20">
-                GST (8%)
-              </Badge>
+        {/* Right 1 Col: Summary & Payment Settlement */}
+        <div className="space-y-6 sticky top-6">
+          <div className="rounded-2xl border border-border/80 bg-card p-5 sm:p-6 shadow-card space-y-4">
+            <div className="flex items-center gap-2 pb-3 border-b border-border/60">
+              <Receipt className="size-4 text-primary" />
+              <h3 className="font-bold text-sm text-foreground">Order Settlement Summary</h3>
             </div>
 
-            <div className="space-y-3.5 text-sm">
+            <div className="space-y-3 text-xs">
               <div className="flex justify-between text-muted-foreground">
-                <span>Subtotal ({lines.reduce((s, l) => s + (Number(l.qty) || 0), 0)} units)</span>
-                <span className="font-semibold text-foreground">{formatCurrency(subtotal)}</span>
+                <span>Total Items ({lines.filter((l) => l.productId).length}):</span>
+                <span className="font-bold text-foreground">{formatCurrency(subtotal)}</span>
               </div>
               <div className="flex justify-between text-muted-foreground">
-                <span>Tax (GST 8%)</span>
-                <span className="font-semibold text-foreground">{formatCurrency(tax)}</span>
+                <span>Estimated Taxes:</span>
+                <span className="font-bold text-foreground">{formatCurrency(tax)}</span>
               </div>
 
-              <div className="border-t border-border pt-4 mt-2">
-                <div className="flex justify-between items-baseline">
-                  <span className="font-bold text-base text-foreground">Grand Total</span>
-                  <span className="text-2xl font-black text-emerald-600 tracking-tight">
-                    {formatCurrency(total)}
+              <div className="pt-3 border-t border-border/60 flex justify-between items-center text-sm font-black text-foreground">
+                <span className="uppercase tracking-wider text-xs">Grand Total:</span>
+                <span className="text-xl font-black text-primary">{formatCurrency(total)}</span>
+              </div>
+            </div>
+
+            <div className="pt-3 border-t border-border/60 space-y-3">
+              <div className="flex items-center justify-between">
+                <Label className="text-xs font-bold">Amount Paid ({currencySymbol})</Label>
+                <button
+                  type="button"
+                  onClick={() => setAmountPaid(total)}
+                  className="text-[11px] font-bold text-primary hover:underline"
+                >
+                  Pay in Full
+                </button>
+              </div>
+              <Input
+                type="number"
+                step="0.01"
+                min="0"
+                max={total}
+                placeholder={`Full: ${total.toFixed(2)}`}
+                value={amountPaid}
+                onChange={(e) =>
+                  setAmountPaid(e.target.value === "" ? "" : parseFloat(e.target.value) || 0)
+                }
+                className="font-black text-sm h-10 rounded-xl"
+              />
+
+              <div className="flex justify-between items-center text-xs p-3.5 rounded-xl bg-muted/40 border border-border/60">
+                <div>
+                  <span className="text-muted-foreground font-semibold block text-[11px]">
+                    Vendor Due Balance (Khata):
+                  </span>
+                  <span className="text-[10px] text-muted-foreground">
+                    {dueVal > 0 ? "Payable on credit" : "Fully settled"}
                   </span>
                 </div>
+                <span
+                  className={`font-black text-base font-mono ${
+                    dueVal > 0 ? "text-amber-600 dark:text-amber-400" : "text-success"
+                  }`}
+                >
+                  {formatCurrency(dueVal)}
+                </span>
               </div>
-            </div>
-
-            <div className="bg-muted/40 p-3.5 rounded-xl text-xs text-muted-foreground flex items-start gap-2.5">
-              <CheckCircle2 className="size-4 text-emerald-600 shrink-0 mt-0.5" />
-              <span>
-                Submitting this order will automatically increment product stock levels and log
-                inventory movements.
-              </span>
             </div>
 
             <Button
               onClick={handleSubmit}
-              disabled={isAnalyzing || isSubmitting}
-              className="w-full h-11 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm shadow-md"
+              disabled={isSubmitting}
+              className="w-full font-bold shadow-soft h-11 text-sm rounded-xl mt-2"
             >
               {isSubmitting ? (
-                <>
-                  <Loader2 className="mr-2 size-4 animate-spin" />
-                  Saving Purchase...
-                </>
+                <Loader2 className="size-4 mr-2 animate-spin" />
               ) : (
-                <>
-                  <CheckCircle2 className="mr-2 size-4" />
-                  Submit Order
-                </>
+                <CheckCircle2 className="size-4 mr-2" />
               )}
+              {editId ? "Save Changes" : "Post Inbound Purchase"}
             </Button>
           </div>
         </div>

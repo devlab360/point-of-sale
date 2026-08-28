@@ -23,9 +23,10 @@ import { PaginationControls } from "@/components/ui/pagination-controls";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { useDebounce } from "@/hooks/useDebounce";
 import { Label } from "@/components/ui/label";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 export const Route = createFileRoute("/sales/")({
-  head: () => ({ meta: [{ title: "Sales · NexisPOS" }] }),
+  head: () => ({ meta: [{ title: "Sales · OneDesk360" }] }),
   loader: async ({ context: { queryClient } }) => {
     const orgId = PersistStore.getOrgId();
     if (!orgId) return;
@@ -116,13 +117,17 @@ function SalesPage() {
   }, [debouncedQuery, filters]);
 
   const handleExport = () => {
-    exportToCSV(sales, [
-      { key: 'id', label: 'Invoice No' },
-      { key: 'date', label: 'Date' },
-      { key: 'customerName', label: 'Customer' },
-      { key: 'total', label: 'Total' },
-      { key: 'status', label: 'Status' }
-    ], 'sales');
+    exportToCSV(
+      sales,
+      [
+        { key: "id", label: "Invoice No" },
+        { key: "date", label: "Date" },
+        { key: "customerName", label: "Customer" },
+        { key: "total", label: "Total" },
+        { key: "status", label: "Status" },
+      ],
+      "sales",
+    );
   };
 
   const summaries = useMemo(() => {
@@ -164,9 +169,10 @@ function SalesPage() {
     setViewSale(s);
     setTimeout(() => window.print(), 200);
   };
+  const handlePrintDirect = printReceipt;
 
   return (
-    <div>
+    <>
       <DataPage
         title={t("Sales History") || "Sales History"}
         description={t("manageSales") || "Every transaction across all your registers."}
@@ -178,7 +184,7 @@ function SalesPage() {
         searchPlaceholder={t("searchSales") || "Search by Invoice No..."}
         searchValue={query}
         onSearchChange={setQuery}
-        hideToolbar={sales.length === 0}
+        hideToolbar={false}
         onExport={handleExport}
         onResetFilters={handleResetFilters}
         activeFilterCount={activeFilterCount}
@@ -243,157 +249,181 @@ function SalesPage() {
           </div>
         )}
       >
-        {/* We override the primaryAction onClick to use a Link instead, since DataPage only takes a callback, or we can just keep the button as child. Wait, DataPage's primaryAction just takes onClick. We can just pass the Link inside children, or adapt DataPage. Actually, DataPage primaryAction is fine. */}
         {isSalesLoading ? (
           <TableSkeleton columns={7} rows={6} showHeaderAction={false} showFilters={false} />
         ) : isSalesError ? (
           <ErrorState onRetry={refetchSales} />
-        ) : sales.length === 0 ? (
-          <EmptyState
-            icon={Receipt}
-            title={t("noSalesFound") || "No sales found"}
-            description={
-              debouncedQuery
-                ? t("adjustSearch") || "Try adjusting your search query."
-                : t("noSalesYet") || "No transactions have been recorded yet."
-            }
-            actionLabel="Open POS"
-            onAction={() => void navigate({ to: "/pos" })}
-          />
         ) : (
           <div className="space-y-4">
             {/* Payment Summary Cards */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
-              <div className="rounded-2xl border border-border/80 bg-card p-4 shadow-card flex flex-col gap-1 card-interactive">
+              <div className="rounded-xl border border-border/80 bg-card p-4 shadow-soft flex flex-col gap-1 card-interactive">
                 <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
                   Cash Revenue
                 </span>
-                <span className="text-xl sm:text-2xl font-black text-emerald-600 dark:text-emerald-400">
+                <span className="text-xl sm:text-2xl font-black text-success">
                   {formatCurrency(summaries.cash)}
                 </span>
               </div>
-              <div className="rounded-2xl border border-border/80 bg-card p-4 shadow-card flex flex-col gap-1 card-interactive">
+              <div className="rounded-xl border border-border/80 bg-card p-4 shadow-soft flex flex-col gap-1 card-interactive">
                 <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
                   Card Revenue
                 </span>
-                <span className="text-xl sm:text-2xl font-black text-blue-600 dark:text-blue-400">
+                <span className="text-xl sm:text-2xl font-black text-info">
                   {formatCurrency(summaries.card)}
                 </span>
               </div>
-              <div className="rounded-2xl border border-border/80 bg-card p-4 shadow-card flex flex-col gap-1 card-interactive">
+              <div className="rounded-xl border border-border/80 bg-card p-4 shadow-soft flex flex-col gap-1 card-interactive">
                 <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
                   UPI / Digital
                 </span>
-                <span className="text-xl sm:text-2xl font-black text-indigo-600 dark:text-indigo-400">
+                <span className="text-xl sm:text-2xl font-black text-primary">
                   {formatCurrency(summaries.upi)}
                 </span>
               </div>
-              <div className="rounded-2xl border border-border/80 bg-card p-4 shadow-card flex flex-col gap-1 card-interactive">
+              <div className="rounded-xl border border-border/80 bg-card p-4 shadow-soft flex flex-col gap-1 card-interactive">
                 <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
                   Credit (Due)
                 </span>
-                <span className="text-xl sm:text-2xl font-black text-amber-600 dark:text-amber-400">
+                <span className="text-xl sm:text-2xl font-black text-warning">
                   {formatCurrency(summaries.credit)}
                 </span>
               </div>
             </div>
 
-            <div className="overflow-hidden rounded-2xl border border-border/80 bg-card shadow-card">
+            <div className="overflow-hidden rounded-xl border border-border/80 bg-card shadow-soft">
               {/* Desktop Table View */}
               <div className="table-desktop overflow-x-auto">
-                <table className="w-full text-left text-sm min-w-[850px]">
-                  <thead className="border-b border-border/80 bg-muted/40 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
-                    <tr>
-                      <th className="px-5 py-3 whitespace-nowrap">{t("invoice") || "Invoice"}</th>
-                      <th className="px-5 py-3 whitespace-nowrap">{t("customer") || "Customer"}</th>
-                      <th className="px-5 py-3 whitespace-nowrap">{t("date") || "Timestamp"}</th>
-                      <th className="px-5 py-3 text-right whitespace-nowrap">{t("items") || "Items"}</th>
-                      <th className="px-5 py-3 whitespace-nowrap">{t("payment") || "Payment"}</th>
-                      <th className="px-5 py-3 whitespace-nowrap">{t("sync") || "Sync"}</th>
-                      <th className="px-5 py-3 whitespace-nowrap">{t("status") || "Status"}</th>
-                      <th className="px-5 py-3 text-right whitespace-nowrap">{t("total") || "Total"}</th>
-                      <th className="px-5 py-3 text-right whitespace-nowrap">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-border/60">
-                    {sales.map((s) => (
-                      <tr key={s.id} className="hover:bg-muted/30 transition-colors">
-                        <td className="px-5 py-3 font-mono text-xs font-bold text-primary whitespace-nowrap cursor-pointer hover:underline" onClick={() => setViewSale(s)}>
-                          #{s.id.slice(0, 8).toUpperCase()}
-                        </td>
-                        <td className="px-5 py-3 font-bold text-foreground whitespace-nowrap">{s.customerName || "Walk-in Customer"}</td>
-                        <td className="px-5 py-3 text-muted-foreground whitespace-nowrap text-xs">{formatDateTime(s.date)}</td>
-                        <td className="px-5 py-3 text-right whitespace-nowrap text-xs font-semibold text-muted-foreground">{s.items}</td>
-                        <td className="px-5 py-3 text-muted-foreground capitalize whitespace-nowrap">
-                          {s.paymentMethod === "split" && s.payments && s.payments.length > 0 ? (
-                            <div className="flex flex-col gap-0.5 text-[10px]">
-                              <span className="font-bold text-primary">SPLIT</span>
-                              {s.payments.map((p, i) => (
-                                <span key={i} className="font-semibold text-foreground">
-                                  {p.method.toUpperCase()}: {formatCurrency(p.amount)}
-                                </span>
-                              ))}
-                            </div>
-                          ) : (
-                            <Badge variant="outline" className="font-bold text-[10px] uppercase bg-muted/40">
-                              {s.paymentMethod || "cash"}
+                <Table className="min-w-[850px]">
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>{t("invoice") || "Invoice"}</TableHead>
+                      <TableHead>{t("customer") || "Customer"}</TableHead>
+                      <TableHead>{t("date") || "Timestamp"}</TableHead>
+                      <TableHead className="text-right">
+                        {t("items") || "Items"}
+                      </TableHead>
+                      <TableHead>{t("payment") || "Payment"}</TableHead>
+                      <TableHead>{t("sync") || "Sync"}</TableHead>
+                      <TableHead>{t("status") || "Status"}</TableHead>
+                      <TableHead className="text-right">
+                        {t("total") || "Total"}
+                      </TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {sales.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={9} className="h-64 text-center">
+                          <EmptyState
+                            icon={Receipt}
+                            title={t("noSalesFound") || "No sales found"}
+                            description={
+                              debouncedQuery
+                                ? t("adjustSearch") || "Try adjusting your search query."
+                                : t("noSalesYet") || "No transactions have been recorded yet."
+                            }
+                            actionLabel="Open POS"
+                            onAction={() => void navigate({ to: "/pos" })}
+                            className="border-none bg-transparent my-0 py-8 shadow-none"
+                          />
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      sales.map((s) => (
+                        <TableRow key={s.id}>
+                          <TableCell
+                            className="font-mono text-xs font-semibold text-primary cursor-pointer hover:underline"
+                            onClick={() => setViewSale(s)}
+                          >
+                            #{s.id.slice(0, 8).toUpperCase()}
+                          </TableCell>
+                          <TableCell className="font-semibold text-foreground">
+                            {s.customerName || "Walk-in Customer"}
+                          </TableCell>
+                          <TableCell className="text-muted-foreground text-xs">
+                            {formatDateTime(s.date)}
+                          </TableCell>
+                          <TableCell className="text-right text-xs font-semibold text-muted-foreground">
+                            {s.items}
+                          </TableCell>
+                          <TableCell className="text-muted-foreground capitalize">
+                            {s.paymentMethod === "split" && s.payments && s.payments.length > 0 ? (
+                              <div className="flex flex-col gap-0.5 text-[10px]">
+                                <span className="font-bold text-primary">SPLIT</span>
+                                {s.payments.map((p, i) => (
+                                  <span key={i} className="font-semibold text-foreground">
+                                    {p.method.toUpperCase()}: {formatCurrency(p.amount)}
+                                  </span>
+                                ))}
+                              </div>
+                            ) : (
+                              <Badge
+                                variant="outline"
+                                className="font-bold text-[10px] uppercase bg-muted/40"
+                              >
+                                {s.paymentMethod || "cash"}
+                              </Badge>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            <Badge
+                              variant="outline"
+                              className={cn(
+                                "text-[10px] font-bold",
+                                s.synced
+                                  ? "bg-success/10 text-success border-success/25"
+                                  : "bg-warning/10 text-warning border-warning/25",
+                              )}
+                            >
+                              {s.synced ? "Synced" : "Pending"}
                             </Badge>
-                          )}
-                        </td>
-                        <td className="px-5 py-3 whitespace-nowrap">
-                          <Badge
-                            variant="outline"
-                            className={cn(
-                              "text-[10px] font-bold",
-                              s.synced
-                                ? "bg-success/10 text-success border-success/25"
-                                : "bg-warning/10 text-warning border-warning/25",
-                            )}
-                          >
-                            {s.synced ? "Synced" : "Pending"}
-                          </Badge>
-                        </td>
-                        <td className="px-5 py-3 whitespace-nowrap">
-                          <Badge
-                            className={cn(
-                              "text-[10px] font-bold",
-                              s.status === "completed" && "bg-success/12 text-success hover:bg-success/20 border-success/20",
-                              s.status === "pending" && "bg-warning/15 text-warning-foreground hover:bg-warning/20 border-warning/20",
-                              s.status === "refunded" && "bg-muted text-muted-foreground",
-                            )}
-                          >
-                            {s.status}
-                          </Badge>
-                        </td>
-                        <td className="number px-5 py-3 text-right font-black whitespace-nowrap text-foreground text-sm">
-                          {formatCurrency(s.total)}
-                        </td>
-                        <td className="px-5 py-3 whitespace-nowrap text-right">
-                          <div className="flex justify-end gap-1">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="size-8 rounded-lg"
-                              title="View details"
-                              onClick={() => setViewSale(s)}
+                          </TableCell>
+                          <TableCell>
+                            <Badge
+                              className={cn(
+                                "text-[10px] font-bold",
+                                s.status === "completed" &&
+                                  "bg-success/12 text-success hover:bg-success/20 border-success/20",
+                                s.status === "pending" &&
+                                  "bg-warning/15 text-warning-foreground hover:bg-warning/20 border-warning/20",
+                                s.status === "refunded" && "bg-muted text-muted-foreground",
+                              )}
                             >
-                              <Eye className="size-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="size-8 rounded-lg"
-                              title="Reprint receipt"
-                              onClick={() => printReceipt(s)}
-                            >
-                              <Printer className="size-4" />
-                            </Button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                              {s.status}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="number text-right font-black text-foreground">
+                            {formatCurrency(s.total)}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex items-center justify-end gap-1">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="size-8"
+                                onClick={() => setViewSale(s)}
+                                title="View Receipt"
+                              >
+                                <Eye className="size-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="size-8 text-primary"
+                                onClick={() => handlePrintDirect(s)}
+                                title="Quick Thermal Print"
+                              >
+                                <Printer className="size-4" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
               </div>
 
               {/* Mobile Card Feed (< 768px) */}
@@ -406,8 +436,12 @@ function SalesPage() {
                   >
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2">
-                        <span className="font-mono text-xs font-bold text-primary">#{s.id.slice(0, 8).toUpperCase()}</span>
-                        <span className="text-[10px] text-muted-foreground">{formatDateTime(s.date)}</span>
+                        <span className="font-mono text-xs font-bold text-primary">
+                          #{s.id.slice(0, 8).toUpperCase()}
+                        </span>
+                        <span className="text-[10px] text-muted-foreground">
+                          {formatDateTime(s.date)}
+                        </span>
                       </div>
                       <div className="font-bold text-xs sm:text-sm text-foreground mt-0.5 truncate">
                         {s.customerName || "Walk-in Customer"}
@@ -419,7 +453,9 @@ function SalesPage() {
                         <Badge
                           className={cn(
                             "text-[9px] font-bold py-0",
-                            s.status === "completed" ? "bg-success/12 text-success" : "bg-warning/15 text-warning-foreground",
+                            s.status === "completed"
+                              ? "bg-success/12 text-success"
+                              : "bg-warning/15 text-warning-foreground",
                           )}
                         >
                           {s.status}
@@ -428,7 +464,9 @@ function SalesPage() {
                     </div>
 
                     <div className="text-right shrink-0 pl-2">
-                      <div className="number text-sm font-black text-foreground">{formatCurrency(s.total)}</div>
+                      <div className="number text-sm font-black text-foreground">
+                        {formatCurrency(s.total)}
+                      </div>
                       <Button
                         variant="ghost"
                         size="sm"
@@ -487,11 +525,11 @@ function SalesPage() {
                     variant="outline"
                     className={cn(
                       viewSale.status === "completed" &&
-                      "bg-success/10 text-success hover:bg-success/20 border-success/20",
+                        "bg-success/10 text-success hover:bg-success/20 border-success/20",
                       viewSale.status === "pending" &&
-                      "bg-warning/10 text-warning hover:bg-warning/20 border-warning/20",
+                        "bg-warning/10 text-warning hover:bg-warning/20 border-warning/20",
                       viewSale.status === "cancelled" &&
-                      "bg-destructive/10 text-destructive hover:bg-destructive/20 border-destructive/20",
+                        "bg-destructive/10 text-destructive hover:bg-destructive/20 border-destructive/20",
                     )}
                   >
                     {viewSale.status}
@@ -499,28 +537,30 @@ function SalesPage() {
                 </div>
               </div>
               <div className="rounded-lg border border-border overflow-x-auto">
-                <table className="w-full text-sm min-w-[400px]">
-                  <thead className="bg-muted/50 text-[11px] uppercase tracking-wider text-muted-foreground">
-                    <tr>
-                      <th className="px-3 py-2 text-left whitespace-nowrap">Item</th>
-                      <th className="px-3 py-2 text-right whitespace-nowrap">Qty</th>
-                      <th className="px-3 py-2 text-right whitespace-nowrap">Price</th>
-                      <th className="px-3 py-2 text-right whitespace-nowrap">Total</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-border">
+                <Table className="min-w-[400px]">
+                  <TableHeader className="bg-muted/50 text-[11px] uppercase tracking-wider text-muted-foreground">
+                    <TableRow>
+                      <TableHead className="px-3 py-2 whitespace-nowrap text-left">Item</TableHead>
+                      <TableHead className="px-3 py-2 whitespace-nowrap text-right">Qty</TableHead>
+                      <TableHead className="px-3 py-2 whitespace-nowrap text-right">Price</TableHead>
+                      <TableHead className="px-3 py-2 whitespace-nowrap text-right">Total</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody className="divide-y divide-border">
                     {viewSale.saleItems?.map((item, i) => (
-                      <tr key={i}>
-                        <td className="px-3 py-2 whitespace-nowrap">{item.productName}</td>
-                        <td className="px-3 py-2 text-right whitespace-nowrap">{item.quantity}</td>
-                        <td className="px-3 py-2 text-right whitespace-nowrap">{formatCurrency(item.price)}</td>
-                        <td className="px-3 py-2 text-right font-semibold whitespace-nowrap">
+                      <TableRow key={i}>
+                        <TableCell className="px-3 py-2 whitespace-nowrap">{item.productName}</TableCell>
+                        <TableCell className="px-3 py-2 whitespace-nowrap text-right">{item.quantity}</TableCell>
+                        <TableCell className="px-3 py-2 whitespace-nowrap text-right">
+                          {formatCurrency(item.price)}
+                        </TableCell>
+                        <TableCell className="px-3 py-2 whitespace-nowrap text-right font-semibold">
                           {formatCurrency(item.total)}
-                        </td>
-                      </tr>
+                        </TableCell>
+                      </TableRow>
                     ))}
-                  </tbody>
-                </table>
+                  </TableBody>
+                </Table>
               </div>
               <div className="space-y-1 rounded-lg bg-muted/40 p-3 text-sm">
                 {viewSale.subtotal !== undefined && (
@@ -625,6 +665,6 @@ function SalesPage() {
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 }

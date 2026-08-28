@@ -19,6 +19,7 @@ import { AppHeader } from "@/components/layout/AppHeader";
 import { Toaster } from "sonner";
 import { Button } from "@/components/ui/button";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
+import { AdminAuthProvider } from "@/contexts/AdminAuthContext";
 import { getTrialDaysLeft } from "@/lib/utils";
 import { X } from "lucide-react";
 import { LanguageProvider } from "@/contexts/LanguageContext";
@@ -28,13 +29,13 @@ import { ReportAutomation } from "@/components/automation/ReportAutomation";
 import { DashboardSkeleton } from "@/components/skeletons/DashboardSkeleton";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
-  AlertDialog,
-  AlertDialogContent,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogDescription,
-  AlertDialogFooter,
-} from "@/components/ui/alert-dialog";
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
 
 function NotFoundComponent() {
   return (
@@ -66,8 +67,13 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
           Something went wrong
         </h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          The page didn't load. You can try again or head back home.
+          {error?.message || "The page didn't load. You can try again or head back home."}
         </p>
+        {error?.stack && (
+          <pre className="mt-4 p-3 text-xs bg-muted/80 text-destructive rounded-xl text-left overflow-auto max-h-48 border border-destructive/20 font-mono">
+            {error.stack}
+          </pre>
+        )}
         <div className="mt-6 flex flex-wrap justify-center gap-2">
           <Button
             onClick={() => {
@@ -91,20 +97,20 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "NexisPOS — Advanced Universal POS" },
+      { title: "OneDesk360 — Advanced Universal POS" },
       {
         name: "description",
         content:
           "Premium POS and inventory management for grocery, daily goods, and retail chains.",
       },
-      { property: "og:title", content: "NexisPOS — Advanced Universal POS" },
+      { property: "og:title", content: "OneDesk360 — Advanced Universal POS" },
       {
         property: "og:description",
         content: "Premium POS and inventory management for grocery and retail.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
-      { name: "twitter:title", content: "NexisPOS — Advanced Universal POS" },
+      { name: "twitter:title", content: "OneDesk360 — Advanced Universal POS" },
       {
         name: "description",
         content:
@@ -152,7 +158,7 @@ function RootShell({ children }: { children: ReactNode }) {
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
         <link
-          href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600&family=Plus+Jakarta+Sans:ital,wght@0,300..800;1,300..800&display=swap"
           rel="stylesheet"
         />
         <HeadContent />
@@ -184,10 +190,12 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       <LanguageProvider>
         <AuthProvider>
-          <PreferencesProvider>
-            <ReportAutomation />
-            <AppLayout />
-          </PreferencesProvider>
+          <AdminAuthProvider>
+            <PreferencesProvider>
+              <ReportAutomation />
+              <AppLayout />
+            </PreferencesProvider>
+          </AdminAuthProvider>
         </AuthProvider>
       </LanguageProvider>
     </QueryClientProvider>
@@ -214,7 +222,9 @@ function AppLayout() {
 
   const publicRoutes = ["/login", "/register", "/verify-email"];
   const isPublicRoute =
-    publicRoutes.includes(location.pathname) || location.pathname.startsWith("/invite");
+    publicRoutes.includes(location.pathname) ||
+    location.pathname.startsWith("/invite") ||
+    location.pathname.startsWith("/admin");
 
   useEffect(() => {
     const hash = window.location.hash;
@@ -225,7 +235,7 @@ function AppLayout() {
         setIsGoogleLoggingIn(true);
         // Clear the hash from the URL
         window.history.replaceState(null, "", window.location.pathname + window.location.search);
-        
+
         loginWithGoogleToken(accessToken).finally(() => {
           setIsGoogleLoggingIn(false);
         });
@@ -296,16 +306,22 @@ function AppLayout() {
 
   // Route Security Middleware (SaaS Feature Flags)
   const isSuspended = saasOrg?.status === "suspended";
-  const canAccessAiCopilot = !saasPlan || !Array.isArray(saasPlan.features) || saasPlan.features.includes("ai_copilot");
+  const canAccessAiCopilot =
+    !saasPlan || !Array.isArray(saasPlan.features) || saasPlan.features.includes("ai_copilot");
 
   const isBillingTabOrTrialWarning =
-    location.pathname === "/settings" ||
-    location.pathname === "/profile";
+    location.pathname === "/settings" || location.pathname === "/profile";
 
   let unauthorizedMessage: string | null = null;
 
   if (isAuthenticated) {
-    const permResult = hasPermissionForRoute(user, location.pathname, false, saasPlan, settings?.businessType);
+    const permResult = hasPermissionForRoute(
+      user,
+      location.pathname,
+      false,
+      saasPlan,
+      settings?.businessType,
+    );
     if (!permResult.allowed) {
       unauthorizedMessage =
         permResult.reason || "You do not have permission to access this module.";
@@ -357,10 +373,10 @@ function AppLayout() {
   return (
     <>
       {isAuthenticated && isSuspended && (
-        <AlertDialog open={true}>
-          <AlertDialogContent className="max-w-md pointer-events-auto border-border/50 bg-background/80 backdrop-blur-xl shadow-[0_0_50px_-12px_rgba(255,0,0,0.15)] overflow-hidden rounded-2xl">
-            <div className="absolute inset-0 bg-gradient-to-br from-destructive/10 to-transparent z-[-1]" />
-            <AlertDialogHeader className="relative">
+        <Dialog open={true}>
+          <DialogContent className="max-w-md pointer-events-auto border-border/60 bg-background overflow-hidden rounded-2xl [&>button]:hidden">
+            <div className="absolute inset-0 bg-gradient-to-br from-destructive/5 to-transparent z-[-1]" />
+            <DialogHeader className="relative">
               <div className="mx-auto mb-4 flex size-16 items-center justify-center rounded-2xl bg-destructive/10 border border-destructive/20 shadow-inner">
                 <svg
                   className="size-8 text-destructive drop-shadow-sm"
@@ -376,16 +392,16 @@ function AppLayout() {
                   />
                 </svg>
               </div>
-              <AlertDialogTitle className="text-center text-2xl font-bold tracking-tight">
+              <DialogTitle className="text-center text-2xl font-bold tracking-tight">
                 Account Suspended
-              </AlertDialogTitle>
-              <AlertDialogDescription className="text-center text-sm mt-3 text-foreground/70 leading-relaxed px-2">
+              </DialogTitle>
+              <DialogDescription className="text-center text-sm mt-3 text-foreground/70 leading-relaxed px-2">
                 Your account has been suspended by the administrator. Please contact support for
                 more information.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-          </AlertDialogContent>
-        </AlertDialog>
+              </DialogDescription>
+            </DialogHeader>
+          </DialogContent>
+        </Dialog>
       )}
 
       {isAuthenticated &&
@@ -393,14 +409,14 @@ function AppLayout() {
         location.pathname !== "/settings" &&
         (isTrialExpired ||
           (saasOrg?.status === "trial" && trialDaysLeft > 0 && !isTrialBannerDismissed)) && (
-          <AlertDialog open={true}>
-            <AlertDialogContent className="max-w-md pointer-events-auto border-border/50 bg-background/80 backdrop-blur-xl shadow-[0_0_50px_-12px_rgba(255,0,0,0.15)] overflow-hidden rounded-2xl">
+          <Dialog open={true}>
+            <DialogContent className="max-w-md pointer-events-auto border-border/60 bg-background overflow-hidden rounded-2xl [&>button]:hidden">
               {/* Background decorative glow */}
               <div
-                className={`absolute inset-0 bg-gradient-to-br ${isTrialExpired ? "from-destructive/10" : "from-primary/10"} to-transparent z-[-1]`}
+                className={`absolute inset-0 bg-gradient-to-br ${isTrialExpired ? "from-destructive/5" : "from-primary/5"} to-transparent z-[-1]`}
               />
               <div
-                className={`absolute -top-24 -right-24 size-48 rounded-full ${isTrialExpired ? "bg-destructive/20" : "bg-primary/20"} blur-5xl z-[-1]`}
+                className={`absolute -top-24 -right-24 size-48 rounded-full ${isTrialExpired ? "bg-destructive/10" : "bg-primary/10"} blur-3xl z-[-1]`}
               />
 
               {/* Cancel Button (Only for Active Trial) */}
@@ -413,7 +429,7 @@ function AppLayout() {
                 </button>
               )}
 
-              <AlertDialogHeader className="relative">
+              <DialogHeader className="relative">
                 <div
                   className={`mx-auto mb-4 flex size-16 items-center justify-center rounded-2xl border shadow-inner ${isTrialExpired ? "bg-destructive/10 border-destructive/20" : "bg-primary/10 border-primary/20"}`}
                 >
@@ -440,16 +456,16 @@ function AppLayout() {
                     )}
                   </svg>
                 </div>
-                <AlertDialogTitle className="text-center text-2xl font-bold tracking-tight">
+                <DialogTitle className="text-center text-2xl font-bold tracking-tight">
                   {isTrialExpired ? "Trial Expired" : "Free Trial Active"}
-                </AlertDialogTitle>
-                <AlertDialogDescription className="text-center text-sm mt-3 text-foreground/70 leading-relaxed px-2">
+                </DialogTitle>
+                <DialogDescription className="text-center text-sm mt-3 text-foreground/70 leading-relaxed px-2">
                   {isTrialExpired
                     ? "Your free trial has ended. Please upgrade to a premium plan to unlock your store and continue using all our powerful POS features."
                     : `You have ${trialDaysLeft} days left in your free trial. Upgrade now to avoid any interruption.`}
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter className="sm:justify-center mt-8">
+                </DialogDescription>
+              </DialogHeader>
+              <DialogFooter className="sm:justify-center mt-8">
                 <Button
                   size="lg"
                   onClick={() => {
@@ -462,9 +478,9 @@ function AppLayout() {
                 >
                   {isTrialExpired ? "Unlock My Store" : "Upgrade Now"}
                 </Button>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         )}
 
       <div className="flex h-screen w-full overflow-hidden bg-background text-foreground">
@@ -476,7 +492,7 @@ function AppLayout() {
           <AppHeader />
           <main className="flex-1 overflow-y-auto bg-muted/20 relative bottom-nav-spacer">
             {isAuthenticated &&
-              (isSuspended || (isTrialExpired && location.pathname !== "/settings")) ? (
+            (isSuspended || (isTrialExpired && location.pathname !== "/settings")) ? (
               <div className="flex h-full w-full items-center justify-center opacity-10 select-none pointer-events-none">
                 <svg
                   className="size-32 text-destructive"

@@ -25,16 +25,16 @@ function EditServicePage() {
         if (res?.success && res.data) {
           const service = res.data.find((s: any) => s.id === serviceId);
           if (service) {
-             if (service.hasVariants) {
-                const varRes = await getServiceVariantsFn({ data: serviceId });
-                if (varRes?.success) {
-                   service.variants = varRes.data;
-                }
-             }
-             setInitialData(service);
+            if (service.hasVariants) {
+              const varRes = await getServiceVariantsFn({ data: serviceId });
+              if (varRes?.success) {
+                service.variants = varRes.data;
+              }
+            }
+            setInitialData(service);
           } else {
-             toast.error("Service not found");
-             navigate({ to: "/services" });
+            toast.error("Service not found");
+            navigate({ to: "/services" });
           }
         }
       } catch (e) {
@@ -78,11 +78,11 @@ function EditServicePage() {
   if (!initialData) return null;
 
   return (
-    <div className="container mx-auto">
-      <ServiceForm 
+    <div>
+      <ServiceForm
         initialData={initialData}
-        onSubmit={(data) => updateMutation.mutate(data)} 
-        isSaving={updateMutation.isPending} 
+        onSubmit={(data) => updateMutation.mutate(data)}
+        isSaving={updateMutation.isPending}
       />
     </div>
   );

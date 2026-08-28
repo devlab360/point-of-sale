@@ -3,10 +3,10 @@ import QRCode from "react-qr-code";
 
 const fmt = (val: any): string => (Number(val) || 0).toFixed(2);
 
-function BankDetailsDisplay({ data, className = "" }: { data: string, className?: string }) {
+function BankDetailsDisplay({ data, className = "" }: { data: string; className?: string }) {
   if (!data) return null;
   try {
-    if (data.trim().startsWith('{')) {
+    if (data.trim().startsWith("{")) {
       const b = JSON.parse(data);
       if (!b.bankName && !b.accountNo && !b.ifscCode && !b.holderName) return null;
       return (
@@ -18,11 +18,11 @@ function BankDetailsDisplay({ data, className = "" }: { data: string, className?
         </div>
       );
     }
-  } catch (e) { }
+  } catch (e) {}
   return <div className={`whitespace-pre-wrap ${className}`}>{data}</div>;
 }
 
-export function PosPrintLayouts({ state, preview = false }: { state: any, preview?: boolean }) {
+export function PosPrintLayouts({ state, preview = false }: { state: any; preview?: boolean }) {
   const { printData, printFormat, settings } = state;
   const { currencySymbol } = useCurrency();
 
@@ -61,7 +61,14 @@ export function PosPrintLayouts({ state, preview = false }: { state: any, previe
             </div>
 
             <div className="bg-black text-white text-center font-bold text-[13px] py-1.5 mb-3 uppercase tracking-[0.2em] w-full">
-              {printData.status === "quotation" ? "Quotation / Estimate" : (settings?.enableGST || printData.customerGstin || printData.customerType === "wholesale" || printData.customerType === "corporate" ? "Tax Invoice" : "Receipt")}
+              {printData.status === "quotation"
+                ? "Quotation / Estimate"
+                : settings?.enableGST ||
+                    printData.customerGstin ||
+                    printData.customerType === "wholesale" ||
+                    printData.customerType === "corporate"
+                  ? "Tax Invoice"
+                  : "Receipt"}
             </div>
 
             <div className="flex flex-col justify-start text-[11px] mb-3 pb-3 border-b-2 border-black border-dashed">
@@ -75,10 +82,16 @@ export function PosPrintLayouts({ state, preview = false }: { state: any, previe
               </div>
               <div className="flex flex-col mb-1 border-t border-gray-200 pt-2 mt-1">
                 <span className="font-bold text-gray-600 text-[10px] uppercase">Bill To:</span>
-                <span className="font-black text-[12px] uppercase">{printData.customerObj?.name || printData.customer}</span>
-                {printData.customerObj?.phone || printData.customerPhone ? <span>Phone: {printData.customerObj?.phone || printData.customerPhone}</span> : null}
+                <span className="font-black text-[12px] uppercase">
+                  {printData.customerObj?.name || printData.customer}
+                </span>
+                {printData.customerObj?.phone || printData.customerPhone ? (
+                  <span>Phone: {printData.customerObj?.phone || printData.customerPhone}</span>
+                ) : null}
                 {printData.customerObj?.email && <span>Email: {printData.customerObj.email}</span>}
-                {printData.customerGstin && <span className="font-bold">GSTIN: {printData.customerGstin}</span>}
+                {printData.customerGstin && (
+                  <span className="font-bold">GSTIN: {printData.customerGstin}</span>
+                )}
                 {(printData.customerObj?.address || printData.customerAddress) && (
                   <span className="whitespace-pre-wrap">
                     {printData.customerObj?.address || printData.customerAddress}
@@ -90,8 +103,8 @@ export function PosPrintLayouts({ state, preview = false }: { state: any, previe
               <div className="flex justify-between items-start mt-2">
                 <span className="font-bold text-gray-600">Payment Mode:</span>
                 <span className="font-black uppercase">
-                  {printData.payment === "split" && printData.splitPayments?.length 
-                    ? printData.splitPayments.map((p: any) => p.method).join(" + ") 
+                  {printData.payment === "split" && printData.splitPayments?.length
+                    ? printData.splitPayments.map((p: any) => p.method).join(" + ")
                     : printData.payment}
                 </span>
               </div>
@@ -120,7 +133,12 @@ export function PosPrintLayouts({ state, preview = false }: { state: any, previe
                       )}
                     </td>
                     <td className="py-2 text-center font-semibold">
-                      {Number(l.qty).toString()} {state?.getUnitName ? state.getUnitName(l.product.unit) : (!/^[0-9a-f]{8}-/i.test(l.product.unit || "") ? l.product.unit : "")}
+                      {Number(l.qty).toString()}{" "}
+                      {state?.getUnitName
+                        ? state.getUnitName(l.product.unit)
+                        : !/^[0-9a-f]{8}-/i.test(l.product.unit || "")
+                          ? l.product.unit
+                          : ""}
                     </td>
                     <td className="py-2 text-right font-bold">
                       {currencySymbol}
@@ -232,21 +250,28 @@ export function PosPrintLayouts({ state, preview = false }: { state: any, previe
                   </div>
                 </>
               )}
-              {printData.payment === "split" && printData.splitPayments && printData.splitPayments.length > 0 && (
-                <div className="mt-2 pt-2 border-t border-gray-400 border-dotted text-[11px]">
-                  <div className="font-semibold text-gray-600 mb-1">Split Payment Details:</div>
-                  {printData.splitPayments.map((p: any, i: number) => (
-                    <div key={i} className="flex justify-between">
-                      <span className="uppercase">{p.method}</span>
-                      <span className="font-bold">{currencySymbol}{fmt(p.amount)}</span>
-                    </div>
-                  ))}
-                </div>
-              )}
+              {printData.payment === "split" &&
+                printData.splitPayments &&
+                printData.splitPayments.length > 0 && (
+                  <div className="mt-2 pt-2 border-t border-gray-400 border-dotted text-[11px]">
+                    <div className="font-semibold text-gray-600 mb-1">Split Payment Details:</div>
+                    {printData.splitPayments.map((p: any, i: number) => (
+                      <div key={i} className="flex justify-between">
+                        <span className="uppercase">{p.method}</span>
+                        <span className="font-bold">
+                          {currencySymbol}
+                          {fmt(p.amount)}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
             </div>
 
             <div className="mt-3 text-left">
-              <span className="text-[10px] font-bold text-gray-600 uppercase">Amount in Words:</span>
+              <span className="text-[10px] font-bold text-gray-600 uppercase">
+                Amount in Words:
+              </span>
               <p className="font-bold text-[11px] italic">{printData.amountInWords}</p>
             </div>
 
@@ -263,13 +288,19 @@ export function PosPrintLayouts({ state, preview = false }: { state: any, previe
                       />
                     </div>
                     <p className="text-[10px] font-medium mt-1">UPI: {printData.upiId}</p>
-                    <p className="text-[11px] font-bold mt-0.5">Amount: {currencySymbol}{fmt(printData.total)}</p>
+                    <p className="text-[11px] font-bold mt-0.5">
+                      Amount: {currencySymbol}
+                      {fmt(printData.total)}
+                    </p>
                   </div>
                 )}
                 {printData.bankDetails && (
                   <div className="text-left text-[10px]">
                     <span className="font-bold uppercase underline">Bank Details:</span>
-                    <BankDetailsDisplay data={printData.bankDetails} className="mt-1 font-medium leading-relaxed" />
+                    <BankDetailsDisplay
+                      data={printData.bankDetails}
+                      className="mt-1 font-medium leading-relaxed"
+                    />
                   </div>
                 )}
               </div>
@@ -284,13 +315,17 @@ export function PosPrintLayouts({ state, preview = false }: { state: any, previe
               )}
               {printData.termsAndConditions && (
                 <div className="mt-2 text-[9px] text-gray-700 text-justify font-medium">
-                  <span className="font-bold underline uppercase block mb-0.5 text-center">Terms & Conditions</span>
+                  <span className="font-bold underline uppercase block mb-0.5 text-center">
+                    Terms & Conditions
+                  </span>
                   <p className="whitespace-pre-wrap">{printData.termsAndConditions}</p>
                 </div>
               )}
               {printData.privacyPolicy && (
                 <div className="mt-2 text-[9px] text-gray-700 text-justify font-medium">
-                  <span className="font-bold underline uppercase block mb-0.5 text-center">Privacy Policy</span>
+                  <span className="font-bold underline uppercase block mb-0.5 text-center">
+                    Privacy Policy
+                  </span>
                   <p className="whitespace-pre-wrap">{printData.privacyPolicy}</p>
                 </div>
               )}
@@ -301,7 +336,11 @@ export function PosPrintLayouts({ state, preview = false }: { state: any, previe
 
             <div className="mt-6 pt-6 flex flex-col items-center">
               {settings?.signatureUrl ? (
-                <img src={settings.signatureUrl} alt="Signature" className="h-10 mb-1 object-contain grayscale" />
+                <img
+                  src={settings.signatureUrl}
+                  alt="Signature"
+                  className="h-10 mb-1 object-contain grayscale"
+                />
               ) : (
                 <div className="h-8" />
               )}
@@ -315,14 +354,24 @@ export function PosPrintLayouts({ state, preview = false }: { state: any, previe
 
       {printFormat === "a4" && (
         <div
-          className={`${preview ? "block relative w-full h-full" : "hidden print:block fixed inset-0 z-[100]"
-            } bg-white text-black font-sans text-sm`}
+          className={`${
+            preview ? "block relative w-full h-full" : "hidden print:block fixed inset-0 z-[100]"
+          } bg-white text-black font-sans text-sm`}
         >
-          <div className="max-w-[794px] mx-auto bg-white min-h-[1123px] flex flex-col" style={{ padding: "32px 40px" }}>
-
+          <div
+            className="max-w-[794px] mx-auto bg-white min-h-[1123px] flex flex-col"
+            style={{ padding: "32px 40px" }}
+          >
             {/* ── TOP HEADER BAND ── */}
             <div className="w-full bg-black text-white text-center py-2.5 mb-6 tracking-[0.35em] text-xs font-bold uppercase">
-              {printData.status === "quotation" ? "Quotation / Estimate" : (settings?.enableGST || printData.customerGstin || printData.customerType === "wholesale" || printData.customerType === "corporate" ? "Tax Invoice" : "Invoice")}
+              {printData.status === "quotation"
+                ? "Quotation / Estimate"
+                : settings?.enableGST ||
+                    printData.customerGstin ||
+                    printData.customerType === "wholesale" ||
+                    printData.customerType === "corporate"
+                  ? "Tax Invoice"
+                  : "Invoice"}
             </div>
 
             {/* ── STORE INFO + INVOICE META ── */}
@@ -332,9 +381,15 @@ export function PosPrintLayouts({ state, preview = false }: { state: any, previe
                   <img src={settings.logoUrl} alt="Logo" className="h-16 w-auto object-contain" />
                 )}
                 <div>
-                  <h1 className="text-2xl font-black uppercase tracking-tight leading-tight">{printData.storeName}</h1>
-                  {printData.storeAddress && <div className="text-gray-600 text-xs mt-0.5">{printData.storeAddress}</div>}
-                  {printData.storePhone && <div className="text-gray-600 text-xs">Phone: {printData.storePhone}</div>}
+                  <h1 className="text-2xl font-black uppercase tracking-tight leading-tight">
+                    {printData.storeName}
+                  </h1>
+                  {printData.storeAddress && (
+                    <div className="text-gray-600 text-xs mt-0.5">{printData.storeAddress}</div>
+                  )}
+                  {printData.storePhone && (
+                    <div className="text-gray-600 text-xs">Phone: {printData.storePhone}</div>
+                  )}
                   {settings?.email && <div className="text-gray-600 text-xs">{settings.email}</div>}
                   {settings?.enableGST && settings?.gstin && (
                     <div className="text-xs font-bold mt-1">GSTIN: {settings.gstin}</div>
@@ -351,8 +406,8 @@ export function PosPrintLayouts({ state, preview = false }: { state: any, previe
                     <>
                       <span className="text-gray-500 text-right">Payment:</span>
                       <span className="font-bold text-black text-right uppercase">
-                        {printData.payment === "split" && printData.splitPayments?.length 
-                          ? printData.splitPayments.map((p: any) => p.method).join(" + ") 
+                        {printData.payment === "split" && printData.splitPayments?.length
+                          ? printData.splitPayments.map((p: any) => p.method).join(" + ")
                           : printData.payment}
                       </span>
                     </>
@@ -363,11 +418,23 @@ export function PosPrintLayouts({ state, preview = false }: { state: any, previe
 
             {/* ── BILL TO ── */}
             <div className="mb-5">
-              <div className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-1">Bill To</div>
-              <div className="font-bold text-base text-black mb-1">{printData.customerObj?.name || printData.customer}</div>
-              {printData.customerGstin && <div className="font-bold text-gray-800 text-xs">GSTIN: {printData.customerGstin}</div>}
-              {printData.customerObj?.phone && <div className="text-xs text-gray-600">Phone: {printData.customerObj.phone}</div>}
-              {printData.customerObj?.email && <div className="text-xs text-gray-600">Email: {printData.customerObj.email}</div>}
+              <div className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-1">
+                Bill To
+              </div>
+              <div className="font-bold text-base text-black mb-1">
+                {printData.customerObj?.name || printData.customer}
+              </div>
+              {printData.customerGstin && (
+                <div className="font-bold text-gray-800 text-xs">
+                  GSTIN: {printData.customerGstin}
+                </div>
+              )}
+              {printData.customerObj?.phone && (
+                <div className="text-xs text-gray-600">Phone: {printData.customerObj.phone}</div>
+              )}
+              {printData.customerObj?.email && (
+                <div className="text-xs text-gray-600">Email: {printData.customerObj.email}</div>
+              )}
               {printData.customerObj?.address && (
                 <div className="text-xs text-gray-600">
                   {printData.customerObj.address}
@@ -390,14 +457,25 @@ export function PosPrintLayouts({ state, preview = false }: { state: any, previe
               </thead>
               <tbody>
                 {printData.lines.map((l: any, i: number) => (
-                  <tr key={i} className={`border-b border-gray-100 ${i % 2 === 1 ? "bg-gray-50/40" : ""}`}>
+                  <tr
+                    key={i}
+                    className={`border-b border-gray-100 ${i % 2 === 1 ? "bg-gray-50/40" : ""}`}
+                  >
                     <td className="px-3 py-2 text-gray-400 text-xs">{i + 1}</td>
                     <td className="px-3 py-2 font-medium">{l.product.name}</td>
                     <td className="px-3 py-2 text-center">
-                      {Number(l.qty).toString()} {state?.getUnitName ? state.getUnitName(l.product.unit) : (!/^[0-9a-f]{8}-/i.test(l.product.unit || "") ? l.product.unit : "")}
+                      {Number(l.qty).toString()}{" "}
+                      {state?.getUnitName
+                        ? state.getUnitName(l.product.unit)
+                        : !/^[0-9a-f]{8}-/i.test(l.product.unit || "")
+                          ? l.product.unit
+                          : ""}
                     </td>
                     <td className="px-3 py-2 text-right text-gray-600">{fmt(l.unitPrice)}</td>
-                    <td className="px-3 py-2 text-right font-semibold">{currencySymbol}{fmt(l.total)}</td>
+                    <td className="px-3 py-2 text-right font-semibold">
+                      {currencySymbol}
+                      {fmt(l.total)}
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -410,7 +488,9 @@ export function PosPrintLayouts({ state, preview = false }: { state: any, previe
               <div className="flex-1 flex flex-col gap-4">
                 {printData.upiId && (
                   <div>
-                    <div className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-2">Scan & Pay</div>
+                    <div className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-2">
+                      Scan & Pay
+                    </div>
                     <div className="flex items-start gap-4">
                       <div className="border-2 border-gray-300 p-1.5 rounded shrink-0">
                         <QRCode
@@ -421,21 +501,32 @@ export function PosPrintLayouts({ state, preview = false }: { state: any, previe
                       </div>
                       <div className="text-xs text-gray-600 mt-1">
                         <div className="font-semibold text-black">UPI: {printData.upiId}</div>
-                        <div className="text-gray-500 mt-0.5 text-[10px]">Scan to pay with any UPI app</div>
+                        <div className="text-gray-500 mt-0.5 text-[10px]">
+                          Scan to pay with any UPI app
+                        </div>
                       </div>
                     </div>
                   </div>
                 )}
                 {printData.bankDetails && (
                   <div>
-                    <div className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-1.5">Bank Details</div>
-                    <BankDetailsDisplay data={printData.bankDetails} className="text-xs text-gray-700 leading-5" />
+                    <div className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-1.5">
+                      Bank Details
+                    </div>
+                    <BankDetailsDisplay
+                      data={printData.bankDetails}
+                      className="text-xs text-gray-700 leading-5"
+                    />
                   </div>
                 )}
                 {printData.receiptFooter && (
                   <div>
-                    <div className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-1">Note</div>
-                    <div className="text-xs text-gray-600 whitespace-pre-wrap">{printData.receiptFooter}</div>
+                    <div className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-1">
+                      Note
+                    </div>
+                    <div className="text-xs text-gray-600 whitespace-pre-wrap">
+                      {printData.receiptFooter}
+                    </div>
                   </div>
                 )}
               </div>
@@ -445,12 +536,18 @@ export function PosPrintLayouts({ state, preview = false }: { state: any, previe
                 <div className="space-y-1.5 text-sm">
                   <div className="flex justify-between gap-4">
                     <span className="text-gray-500">Subtotal</span>
-                    <span className="font-semibold">{currencySymbol}{fmt(printData.subtotal)}</span>
+                    <span className="font-semibold">
+                      {currencySymbol}
+                      {fmt(printData.subtotal)}
+                    </span>
                   </div>
                   {printData.discountAmt > 0 && (
                     <div className="flex justify-between gap-4 text-green-700">
                       <span>Discount</span>
-                      <span className="font-semibold">-{currencySymbol}{fmt(printData.discountAmt)}</span>
+                      <span className="font-semibold">
+                        -{currencySymbol}
+                        {fmt(printData.discountAmt)}
+                      </span>
                     </div>
                   )}
                   {settings?.enableGST ? (
@@ -458,19 +555,28 @@ export function PosPrintLayouts({ state, preview = false }: { state: any, previe
                       {printData.cgstAmt > 0 && (
                         <div className="flex justify-between gap-4 text-gray-500">
                           <span>CGST</span>
-                          <span className="font-semibold text-black">{currencySymbol}{fmt(printData.cgstAmt)}</span>
+                          <span className="font-semibold text-black">
+                            {currencySymbol}
+                            {fmt(printData.cgstAmt)}
+                          </span>
                         </div>
                       )}
                       {printData.sgstAmt > 0 && (
                         <div className="flex justify-between gap-4 text-gray-500">
                           <span>SGST</span>
-                          <span className="font-semibold text-black">{currencySymbol}{fmt(printData.sgstAmt)}</span>
+                          <span className="font-semibold text-black">
+                            {currencySymbol}
+                            {fmt(printData.sgstAmt)}
+                          </span>
                         </div>
                       )}
                       {printData.igstAmt > 0 && (
                         <div className="flex justify-between gap-4 text-gray-500">
                           <span>IGST</span>
-                          <span className="font-semibold text-black">{currencySymbol}{fmt(printData.igstAmt)}</span>
+                          <span className="font-semibold text-black">
+                            {currencySymbol}
+                            {fmt(printData.igstAmt)}
+                          </span>
                         </div>
                       )}
                     </>
@@ -478,53 +584,82 @@ export function PosPrintLayouts({ state, preview = false }: { state: any, previe
                     printData.taxAmt > 0 && (
                       <div className="flex justify-between gap-4 text-gray-500">
                         <span>Tax</span>
-                        <span className="font-semibold text-black">{currencySymbol}{fmt(printData.taxAmt)}</span>
+                        <span className="font-semibold text-black">
+                          {currencySymbol}
+                          {fmt(printData.taxAmt)}
+                        </span>
                       </div>
                     )
                   )}
                   <div className="border-t-2 border-black pt-2 mt-1 flex justify-between gap-4 items-baseline">
                     <span className="font-black text-base">Grand Total</span>
-                    <span className="font-black text-xl">{currencySymbol}{fmt(printData.total)}</span>
+                    <span className="font-black text-xl">
+                      {currencySymbol}
+                      {fmt(printData.total)}
+                    </span>
                   </div>
                   {printData.payment === "cash" && printData.cashTendered != null && (
                     <div className="flex justify-between gap-4 mt-1 pt-1 border-t border-dashed border-gray-300">
                       <span className="text-gray-500">Cash Tendered</span>
-                      <span className="font-semibold">{currencySymbol}{fmt(printData.cashTendered)}</span>
+                      <span className="font-semibold">
+                        {currencySymbol}
+                        {fmt(printData.cashTendered)}
+                      </span>
                     </div>
                   )}
                   {printData.payment === "cash" && printData.changeDue != null && (
                     <div className="flex justify-between gap-4">
                       <span className="text-gray-500">Change Due</span>
-                      <span className="font-semibold text-green-700">{currencySymbol}{fmt(printData.changeDue)}</span>
+                      <span className="font-semibold text-green-700">
+                        {currencySymbol}
+                        {fmt(printData.changeDue)}
+                      </span>
                     </div>
                   )}
                   {printData.payment === "credit" && printData.advancePaid != null && (
                     <>
                       <div className="flex justify-between gap-4">
                         <span className="text-gray-500">Advance Paid</span>
-                        <span className="font-semibold">{currencySymbol}{fmt(printData.advancePaid)}</span>
+                        <span className="font-semibold">
+                          {currencySymbol}
+                          {fmt(printData.advancePaid)}
+                        </span>
                       </div>
                       <div className="flex justify-between gap-4">
                         <span className="text-gray-500">Due Amount</span>
-                        <span className="font-semibold text-red-600">{currencySymbol}{fmt(printData.dueAmount)}</span>
+                        <span className="font-semibold text-red-600">
+                          {currencySymbol}
+                          {fmt(printData.dueAmount)}
+                        </span>
                       </div>
                     </>
                   )}
-                  {printData.payment === "split" && printData.splitPayments && printData.splitPayments.length > 0 && (
-                    <div className="flex flex-col gap-1 mt-1 pt-1 border-t border-dashed border-gray-300">
-                      <div className="text-gray-500 text-[11px] font-semibold mb-1">Split Payment Details</div>
-                      {printData.splitPayments.map((p: any, i: number) => (
-                        <div key={i} className="flex justify-between gap-4">
-                          <span className="text-gray-500 uppercase">{p.method}</span>
-                          <span className="font-semibold">{currencySymbol}{fmt(p.amount)}</span>
+                  {printData.payment === "split" &&
+                    printData.splitPayments &&
+                    printData.splitPayments.length > 0 && (
+                      <div className="flex flex-col gap-1 mt-1 pt-1 border-t border-dashed border-gray-300">
+                        <div className="text-gray-500 text-[11px] font-semibold mb-1">
+                          Split Payment Details
                         </div>
-                      ))}
-                    </div>
-                  )}
+                        {printData.splitPayments.map((p: any, i: number) => (
+                          <div key={i} className="flex justify-between gap-4">
+                            <span className="text-gray-500 uppercase">{p.method}</span>
+                            <span className="font-semibold">
+                              {currencySymbol}
+                              {fmt(p.amount)}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   {printData.amountInWords && (
                     <div className="text-right">
-                      <div className="text-[10px] text-gray-400 uppercase tracking-wider mt-1">Amount in Words</div>
-                      <div className="text-[11px] font-semibold italic text-gray-700 leading-tight">{printData.amountInWords}</div>
+                      <div className="text-[10px] text-gray-400 uppercase tracking-wider mt-1">
+                        Amount in Words
+                      </div>
+                      <div className="text-[11px] font-semibold italic text-gray-700 leading-tight">
+                        {printData.amountInWords}
+                      </div>
                     </div>
                   )}
                 </div>
@@ -532,11 +667,17 @@ export function PosPrintLayouts({ state, preview = false }: { state: any, previe
                 {/* Signature */}
                 <div className="mt-10 pt-3 border-t border-dashed border-gray-400 text-center">
                   {settings?.signatureUrl ? (
-                    <img src={settings.signatureUrl} alt="Signature" className="h-12 mx-auto mb-1 object-contain" />
+                    <img
+                      src={settings.signatureUrl}
+                      alt="Signature"
+                      className="h-12 mx-auto mb-1 object-contain"
+                    />
                   ) : (
                     <div className="h-10" />
                   )}
-                  <div className="text-[10px] font-bold uppercase tracking-widest text-gray-500">Authorized Signatory</div>
+                  <div className="text-[10px] font-bold uppercase tracking-widest text-gray-500">
+                    Authorized Signatory
+                  </div>
                 </div>
               </div>
             </div>
@@ -544,20 +685,32 @@ export function PosPrintLayouts({ state, preview = false }: { state: any, previe
             {/* ── DECLARATION ── */}
             {printData.receiptDeclaration && (
               <div className="mt-6 pt-4 border-t border-gray-200">
-                <div className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-1">Declaration</div>
-                <p className="text-[10px] text-gray-600 leading-relaxed whitespace-pre-wrap">{printData.receiptDeclaration}</p>
+                <div className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-1">
+                  Declaration
+                </div>
+                <p className="text-[10px] text-gray-600 leading-relaxed whitespace-pre-wrap">
+                  {printData.receiptDeclaration}
+                </p>
               </div>
             )}
             {printData.termsAndConditions && (
               <div className="mt-4 pt-2">
-                <div className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-1">Terms & Conditions</div>
-                <p className="text-[10px] text-gray-600 leading-relaxed whitespace-pre-wrap">{printData.termsAndConditions}</p>
+                <div className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-1">
+                  Terms & Conditions
+                </div>
+                <p className="text-[10px] text-gray-600 leading-relaxed whitespace-pre-wrap">
+                  {printData.termsAndConditions}
+                </p>
               </div>
             )}
             {printData.privacyPolicy && (
               <div className="mt-4 pt-2">
-                <div className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-1">Privacy Policy</div>
-                <p className="text-[10px] text-gray-600 leading-relaxed whitespace-pre-wrap">{printData.privacyPolicy}</p>
+                <div className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-1">
+                  Privacy Policy
+                </div>
+                <p className="text-[10px] text-gray-600 leading-relaxed whitespace-pre-wrap">
+                  {printData.privacyPolicy}
+                </p>
               </div>
             )}
 
@@ -571,4 +724,3 @@ export function PosPrintLayouts({ state, preview = false }: { state: any, previe
     </>
   );
 }
-

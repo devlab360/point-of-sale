@@ -1,46 +1,12 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import {
   LayoutDashboard,
-  ScanBarcode,
-  Package,
-  Tag,
-  Award,
-  Ruler,
-  Boxes,
-  ArrowLeftRight,
-  ShoppingCart,
-  ReceiptText,
-  Users,
-  Truck,
-  Wallet,
-  BarChart3,
-  Ticket,
-  Gift,
-  Star,
-  Megaphone,
-  UserCog,
-  Settings,
-  Bell,
-  Activity,
-  CircleUser,
-  LifeBuoy,
-  Store,
-  History,
-  PackageMinus,
-  Undo2,
+  LayoutGrid,
   ChevronDown,
   ChevronLeft,
   ChevronRight,
   LogOut,
-  FileText,
-  MessageCircle,
-  BookOpen,
-  Wrench,
-  Repeat,
-  KeyRound,
-  UserCheck,
-  ShieldAlert,
-  CreditCard,
+  Store,
 } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
@@ -50,12 +16,25 @@ import { PersistStore } from "@/lib/session-store";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 
-import { APP_GROUPS, hasPermissionForRoute } from "@/lib/menu-config";
+import { APP_GROUPS, hasPermissionForRoute, MenuItem, SubMenuItem } from "@/lib/menu-config";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { LogoutConfirmDialog } from "./LogoutConfirmDialog";
 
 export function AppSidebar({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
-  const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
+  const [openParents, setOpenParents] = useState<Record<string, boolean>>(() => {
+    // Auto-open parent if a child route is active
+    const initial: Record<string, boolean> = {};
+    APP_GROUPS.forEach((group) => {
+      group.items.forEach((item) => {
+        if (item.children && item.children.some((c) => pathname === c.to || pathname.startsWith(c.to + "/"))) {
+          initial[item.label] = true;
+        }
+      });
+    });
+    return initial;
+  });
+
   const [isMinimized, setIsMinimized] = useState(() => {
     if (typeof window !== "undefined") {
       return localStorage.getItem("sidebarMinimized") === "true";
@@ -69,7 +48,15 @@ export function AppSidebar({ onNavigate }: { onNavigate?: () => void }) {
     localStorage.setItem("sidebarMinimized", String(newState));
   };
 
+  const toggleParent = (label: string) => {
+    setOpenParents((prev) => ({
+      ...prev,
+      [label]: !prev[label],
+    }));
+  };
+
   const { user, logout, saasPlan } = useAuth();
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const { t } = useLanguage();
 
   const orgId = PersistStore.getOrgId() || "default";
@@ -83,291 +70,309 @@ export function AppSidebar({ onNavigate }: { onNavigate?: () => void }) {
     },
   });
   const settings = settingsData || {};
-  const unreadCount = 0; // Notifications to be implemented via server API
-  const initials = (user?.name || "U")
+  const unreadCount = 0;
+  const initials = (settings?.storeName || user?.name || "OD")
     .split(" ")
     .filter(Boolean)
-    .map((n) => n[0])
+    .map((n: string) => n[0])
     .join("")
     .substring(0, 2)
     .toUpperCase();
 
-  const isMobile = useIsMobile();
-
   const { effectiveMenus } = useAuth();
-  let filteredGroups = APP_GROUPS.map((group) => ({
-    ...group,
-    items: group.items.filter((item) => {
-      // Core system routes always accessible
-      if (item.to === "/" || item.to === "/profile" || item.to === "/help") return true;
 
-      // 1. Employee / Role permission check
-      const permResult = hasPermissionForRoute(
-        user,
-        item.to,
-        user?.role === "super_admin",
-        saasPlan,
-        settings?.businessType
+  const isRouteAllowed = (to: string, menuKey?: string) => {
+    if (to === "/" || to === "/profile" || to === "/help") return true;
+    const permResult = hasPermissionForRoute(
+      user,
+      to,
+      user?.role === "super_admin",
+      saasPlan,
+      settings?.businessType,
+    );
+    if (!permResult.allowed) return false;
+    if (effectiveMenus.includes("all")) return true;
+    const cleanRoute = to.replace(/^\//, "");
+    if (effectiveMenus.length > 0) {
+      return (
+        (menuKey && effectiveMenus.includes(menuKey)) ||
+        effectiveMenus.includes(to) ||
+        effectiveMenus.includes(cleanRoute)
       );
-      if (!permResult.allowed) return false;
+    }
+    return true;
+  };
 
-      // 2. Allow access if 'all' is granted (super admin)
-      if (effectiveMenus.includes("all")) return true;
-
-      // 3. Plan / Tenant active menu checks
-      const cleanRoute = item.to.replace(/^\//, "");
-      if (effectiveMenus.length > 0) {
-        return (
-          (item.menuKey && effectiveMenus.includes(item.menuKey)) ||
-          effectiveMenus.includes(item.to) ||
-          effectiveMenus.includes(cleanRoute)
-        );
-      }
-
-      return true;
-    }),
+  const filteredGroups = APP_GROUPS.map((group) => ({
+    ...group,
+    items: group.items
+      .map((item) => {
+        if (item.children) {
+          const allowedChildren = item.children.filter((child) => isRouteAllowed(child.to));
+          if (allowedChildren.length === 0) return null;
+          return {
+            ...item,
+            children: allowedChildren,
+          };
+        }
+        if (!isRouteAllowed(item.to, item.menuKey)) return null;
+        return item;
+      })
+      .filter((item): item is MenuItem => item !== null),
   })).filter((group) => group.items.length > 0);
 
-  const allMenuPaths = filteredGroups.flatMap((g) => g.items.map((i) => i.to));
-
-  const isActive = (to: string) => {
-    if (to === "/") return pathname === "/";
-    if (pathname === to) return true;
-    if (pathname.startsWith(to + "/")) {
-      const moreSpecificMatch = allMenuPaths.some(
-        (other) =>
-          (pathname === other || pathname.startsWith(other + "/")) && other.length > to.length,
-      );
-      return !moreSpecificMatch;
-    }
-    return false;
-  };
+  const isExactActive = (to: string) => pathname === to;
+  const isDashboardActive = pathname === "/";
 
   return (
     <div
       className={cn(
-        "relative flex h-full flex-col bg-sidebar text-sidebar-foreground select-none transition-all duration-300 z-20",
-        isMinimized ? "w-[4.5rem]" : "w-64",
+        "relative flex h-full flex-col bg-card text-sidebar-foreground select-none transition-all duration-300 z-20 border-r border-border/80 shadow-xs",
+        isMinimized ? "w-[4.75rem]" : "w-64",
       )}
     >
+      {/* Minimize Toggle Button */}
       <button
         onClick={toggleMinimize}
         className={cn(
-          "absolute -right-3 top-5 z-50 hidden lg:flex size-6 cursor-pointer items-center justify-center rounded-full border border-border bg-background text-muted-foreground shadow-sm transition-all hover:bg-accent hover:text-foreground hover:scale-110",
+          "absolute -right-3.5 top-6 z-50 hidden lg:flex size-7 cursor-pointer items-center justify-center rounded-full border border-border bg-card text-muted-foreground shadow-sm transition-all hover:bg-accent hover:text-foreground hover:scale-110 active:scale-95",
           isMinimized && "rotate-180",
         )}
       >
-        <ChevronLeft className="size-3.5" strokeWidth={2.5} />
+        <ChevronLeft className="size-4" strokeWidth={2.5} />
       </button>
 
-      <div
+      {/* Brand Header */}
+      <Link
+        to="/"
+        onClick={onNavigate}
+        title={settings?.storeName || "ONEDESK360"}
         className={cn(
-          "flex h-16 shrink-0 items-center gap-3 border-b border-sidebar-border bg-sidebar/80 backdrop-blur-md",
-          isMinimized ? "justify-center px-0" : "px-5",
+          "flex h-20 shrink-0 items-center gap-3 border-b border-border/70 bg-card px-4 cursor-pointer hover:bg-muted/30 transition-colors group",
+          isMinimized && "justify-center px-0",
         )}
       >
-        <div className="grid size-9 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-primary to-primary/80 text-primary-foreground shadow-md shadow-primary/20 ring-2 ring-primary/20 overflow-hidden">
+        <div className="relative grid size-11 shrink-0 place-items-center rounded-lg bg-black text-[#B58D4C] border border-[#B58D4C]/30 shadow-xs overflow-hidden font-serif font-black text-sm tracking-wider group-hover:scale-105 transition-transform">
           {settings?.logoUrl ? (
             <img src={settings.logoUrl} alt="Logo" className="size-full object-cover bg-white" />
           ) : (
-            <Store className="size-5" strokeWidth={2.5} />
+            <span>{initials}</span>
           )}
         </div>
         {!isMinimized && (
           <div className="min-w-0 flex-1">
-            <div className="truncate text-sm font-extrabold tracking-tight text-foreground">
-              NexisPOS
+            <div className="truncate font-serif text-base font-bold tracking-wide text-foreground group-hover:text-primary transition-colors uppercase">
+              <span>{settings?.storeName || "ONEDESK360"}</span>
             </div>
-            <div className="text-[10px] font-semibold uppercase tracking-widest text-primary/80 flex items-center gap-1 min-w-0">
-              <span className="size-1.5 rounded-full bg-success inline-block animate-pulse shrink-0"></span>
-              <span className="truncate">{settings?.storeName || "Main Store"}</span>
+            <div className="text-[10px] font-black uppercase tracking-[0.18em] text-[#B58D4C] mt-0.5">
+              <span>ADMIN DASHBOARD</span>
             </div>
           </div>
         )}
-      </div>
+      </Link>
 
-      <nav className="scrollbar-thin flex-1 overflow-y-auto overflow-x-hidden px-3.5 py-4 space-y-3.5">
+      {/* Main Nav Scroll View */}
+      <nav className="scrollbar-thin flex-1 overflow-y-auto overflow-x-hidden p-3.5 space-y-1">
+        {/* Top-Level Prominent Dashboard Button */}
+        <Link
+          to="/"
+          onClick={onNavigate}
+          title={isMinimized ? "Dashboard" : undefined}
+          className={cn(
+            "flex items-center rounded-xl py-3 text-[14.5px] font-bold transition-all duration-150 shadow-xs",
+            isMinimized ? "justify-center px-0" : "gap-3 px-3.5",
+            isDashboardActive
+              ? "bg-[#B58D4C] text-white shadow-sm"
+              : "bg-muted/30 text-foreground hover:bg-muted/60",
+          )}
+        >
+          <LayoutGrid className={cn("size-5 shrink-0 stroke-[2]", isDashboardActive ? "text-white" : "text-foreground/80")} />
+          {!isMinimized && <span>Dashboard</span>}
+        </Link>
+
+        {/* Category Sections */}
         {filteredGroups.map((group) => {
-          const hasActiveChild = group.items.some((i) => isActive(i.to));
-          // If not explicitly toggled in `collapsed` state, we assume it is closed UNLESS it has an active child.
-          const isClosed =
-            collapsed[group.label] !== undefined ? collapsed[group.label] : !hasActiveChild;
           return (
-            <div key={group.label} className="group/section">
-              <button
-                onClick={() =>
-                  setCollapsed((c) => {
-                    const currentState =
-                      c[group.label] !== undefined ? c[group.label] : !hasActiveChild;
-                    return { ...c, [group.label]: !currentState };
-                  })
-                }
-                title={isMinimized ? t(group.tkey) || group.label : undefined}
-                className={cn(
-                  "flex w-full items-center justify-between rounded-lg py-2 text-xs font-bold uppercase tracking-wider transition-all duration-200",
-                  isMinimized ? "px-0 justify-center" : "px-3",
-                  hasActiveChild
-                    ? "text-primary bg-primary/5"
-                    : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground",
-                )}
-              >
-                <span
-                  className={cn(
-                    "flex items-center min-w-0 flex-1",
-                    isMinimized ? "justify-center w-full" : "gap-1.5",
-                  )}
-                >
-                  <span
-                    className={cn(
-                      "size-1.5 shrink-0 rounded-full transition-colors",
-                      hasActiveChild
-                        ? "bg-primary shadow-[0_0_8px_rgba(var(--primary),0.8)]"
-                        : "bg-transparent group-hover/section:bg-muted-foreground/40",
-                    )}
-                  />
-                  {!isMinimized && (
-                    <span className="truncate text-left">
-                      {t(group.tkey) || group.label}
-                    </span>
-                  )}
-                </span>
-                {!isMinimized && (
-                  <div className="flex items-center gap-1.5 shrink-0">
-                    <span className="text-[10px] font-mono text-muted-foreground/60 px-1.5 py-0.2 rounded bg-sidebar-accent/30">
-                      {group.items.length}
-                    </span>
-                    <ChevronDown
-                      className={cn(
-                        "size-3.5 shrink-0 transition-transform duration-200 text-muted-foreground",
-                        isClosed && "-rotate-90",
-                      )}
-                    />
-                  </div>
-                )}
-              </button>
-              {(!isClosed || isMinimized) && (
-                <div
-                  className={cn(
-                    "mt-1 space-y-1 transition-all",
-                    isMinimized
-                      ? "ml-0 pl-0 border-none"
-                      : "ml-4 pl-3 border-l-[1.5px] border-sidebar-border/60",
-                  )}
-                >
-                  {group.items.map((item) => {
-                    const Icon = item.icon;
-                    const active = isActive(item.to);
-                    return (
-                      <Link
-                        key={item.to}
-                        to={item.to}
-                        onClick={onNavigate}
-                        title={isMinimized ? t(item.tkey) || item.label : undefined}
-                        className={cn(
-                          "group relative flex items-center rounded-lg py-2 text-sm font-medium transition-all duration-200 overflow-hidden",
-                          isMinimized ? "justify-center px-0" : "gap-3 px-3",
-                          active
-                            ? "bg-primary/15 text-primary font-semibold shadow-sm"
-                            : "text-sidebar-foreground/70 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground",
-                        )}
-                      >
-                        <Icon
-                          className={cn(
-                            "size-[18px] shrink-0 transition-colors duration-150",
-                            active
-                              ? "text-primary"
-                              : "text-muted-foreground group-hover:text-foreground",
-                          )}
-                          strokeWidth={active ? 2.5 : 2}
-                        />
-                        {!isMinimized && (
-                          <span className="flex-1 text-left truncate min-w-0">
-                            {t(item.tkey) || item.label}
-                          </span>
-                        )}
-                        {!isMinimized && item.label === "Notifications" && unreadCount > 0 ? (
-                          <span
-                            className={cn(
-                              "rounded-md px-1.5 py-0.5 text-[10px] font-bold shadow-sm",
-                              active
-                                ? "bg-primary text-primary-foreground animate-pulse"
-                                : "bg-destructive text-destructive-foreground animate-bounce",
-                            )}
-                          >
-                            {unreadCount}
-                          </span>
-                        ) : !isMinimized && item.badge ? (
-                          <span
-                            className={cn(
-                              "rounded-md px-1.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wider shadow-sm",
-                              active
-                                ? "bg-primary text-primary-foreground"
-                                : item.badge === "Live"
-                                  ? "bg-success/20 text-success ring-1 ring-success/30 animate-pulse"
-                                  : "bg-destructive/15 text-destructive",
-                            )}
-                          >
-                            {item.badge}
-                          </span>
-                        ) : isMinimized &&
-                          ((item.label === "Notifications" && unreadCount > 0) || item.badge) ? (
-                          <span className="absolute top-1.5 right-1.5 size-2 rounded-full bg-destructive animate-pulse" />
-                        ) : null}
-                      </Link>
-                    );
-                  })}
+            <div key={group.label} className="pt-2.5">
+              {/* Section Header */}
+              {!isMinimized && (
+                <div className="px-3 pb-1 pt-2 text-[11px] font-black uppercase tracking-[0.14em] text-muted-foreground/80">
+                  {t(group.tkey, group.label)}
                 </div>
               )}
+
+              {/* Group Items */}
+              <div className="space-y-0.5 mt-0.5">
+                {group.items.map((item) => {
+                  const Icon = item.icon;
+                  const hasChildren = item.children && item.children.length > 0;
+                  const isChildActive = hasChildren && item.children?.some((c) => isExactActive(c.to));
+                  const isItemActive = isExactActive(item.to);
+                  const isOpen = openParents[item.label] ?? isChildActive;
+
+                  if (hasChildren) {
+                    return (
+                      <div key={item.label} className="space-y-0.5">
+                        <button
+                          type="button"
+                          onClick={() => toggleParent(item.label)}
+                          title={isMinimized ? t(item.tkey, item.label) : undefined}
+                          className={cn(
+                            "flex w-full items-center justify-between rounded-xl py-2.5 text-[14px] font-medium transition-all duration-150 cursor-pointer",
+                            isMinimized ? "justify-center px-0" : "gap-3 px-3",
+                            isChildActive || isOpen
+                              ? "text-foreground font-semibold bg-muted/40"
+                              : "text-foreground/80 hover:bg-muted/40 hover:text-foreground",
+                          )}
+                        >
+                          <div className="flex items-center gap-3 min-w-0">
+                            <Icon className={cn("size-5 shrink-0 stroke-[1.6]", isChildActive ? "text-[#B58D4C]" : "text-foreground/75")} />
+                            {!isMinimized && (
+                              <span className="truncate text-left">{t(item.tkey, item.label)}</span>
+                            )}
+                          </div>
+                          {!isMinimized && (
+                            <ChevronDown
+                              className={cn(
+                                "size-4 shrink-0 text-muted-foreground transition-transform duration-200",
+                                !isOpen && "-rotate-90",
+                              )}
+                            />
+                          )}
+                        </button>
+
+                        {/* Indented Sub-Items with Left Vertical Accent Line */}
+                        {isOpen && !isMinimized && (
+                          <div className="relative ml-5 pl-4 py-1 space-y-1">
+                            <div className="absolute left-0 top-1 bottom-1 w-[2px] bg-[#B58D4C]/40 rounded-full" />
+                            {item.children?.map((child) => {
+                              const active = isExactActive(child.to);
+                              return (
+                                <Link
+                                  key={child.to}
+                                  to={child.to}
+                                  onClick={onNavigate}
+                                  className={cn(
+                                    "block py-1.5 text-[13.5px] transition-colors rounded-md cursor-pointer",
+                                    active
+                                      ? "text-[#B58D4C] font-bold"
+                                      : "text-muted-foreground hover:text-foreground font-medium",
+                                  )}
+                                >
+                                  {t(child.tkey, child.label)}
+                                </Link>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  }
+
+                  // Direct Link Item (no children)
+                  return (
+                    <Link
+                      key={item.to}
+                      to={item.to}
+                      onClick={onNavigate}
+                      title={isMinimized ? t(item.tkey, item.label) : undefined}
+                      className={cn(
+                        "group flex items-center justify-between rounded-xl py-2.5 text-[14px] font-medium transition-all duration-150 cursor-pointer",
+                        isMinimized ? "justify-center px-0" : "gap-3 px-3",
+                        isItemActive
+                          ? "bg-[#B58D4C] text-white font-semibold shadow-xs"
+                          : "text-foreground/80 hover:bg-muted/40 hover:text-foreground",
+                      )}
+                    >
+                      <div className="flex items-center gap-3 min-w-0">
+                        <Icon className={cn("size-5 shrink-0 stroke-[1.6]", isItemActive ? "text-white" : "text-foreground/75")} />
+                        {!isMinimized && (
+                          <span className="truncate text-left">{t(item.tkey, item.label)}</span>
+                        )}
+                      </div>
+                      {!isMinimized && item.badge && (
+                        <span
+                          className={cn(
+                            "rounded-full px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wider",
+                            isItemActive
+                              ? "bg-white/20 text-white"
+                              : item.badge === "Live"
+                                ? "bg-success/15 text-success ring-1 ring-success/30"
+                                : "bg-destructive/10 text-destructive",
+                          )}
+                        >
+                          {item.badge}
+                        </span>
+                      )}
+                    </Link>
+                  );
+                })}
+              </div>
             </div>
           );
         })}
       </nav>
 
-      <div
-        className={cn(
-          "shrink-0 border-t border-sidebar-border/80 bg-sidebar/60 backdrop-blur-sm",
-          isMinimized ? "p-2" : "p-3",
-        )}
-      >
+      {/* User Footer Profile */}
+      <div className="shrink-0 border-t border-border/80 bg-card p-3">
         <div
           className={cn(
-            "flex items-center rounded-xl border border-sidebar-border/60 bg-sidebar-accent/30 shadow-soft transition-colors duration-150 hover:bg-sidebar-accent/60 hover:border-sidebar-border hover:shadow-md",
-            isMinimized ? "flex-col p-1.5 gap-2" : "gap-3 p-2.5",
+            "flex items-center rounded-xl border border-border/80 bg-background/60 p-2.5 shadow-2xs transition-all duration-150 hover:border-primary/30",
+            isMinimized ? "flex-col p-1.5 gap-1.5" : "gap-2.5",
           )}
         >
-          {user?.avatar ? (
-            <img
-              src={user.avatar}
-              alt="Profile"
-              className="size-9 shrink-0 rounded-lg object-cover border border-primary/30 shadow-sm"
-            />
-          ) : (
-            <div className="grid size-9 shrink-0 place-items-center rounded-lg bg-gradient-to-tr from-primary/25 via-primary/10 to-transparent border border-primary/30 text-xs font-extrabold text-primary shadow-sm">
-              {initials}
-            </div>
-          )}
-          {!isMinimized && (
-            <div className="min-w-0 flex-1">
-              <div className="truncate text-xs font-bold text-foreground">
-                {user?.name || "Admin"}
-              </div>
-              <div className="truncate text-[10px] font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1 mt-0.5">
-                <span className="size-1.5 rounded-full bg-success inline-block"></span>
-                {user?.role || "Staff"}
-              </div>
-            </div>
-          )}
-          <button
-            onClick={logout}
+          <Link
+            to="/profile"
+            onClick={onNavigate}
+            title="View Profile"
             className={cn(
-              "grid shrink-0 place-items-center rounded-lg border border-transparent text-muted-foreground hover:border-destructive/30 hover:bg-destructive/15 hover:text-destructive transition-colors duration-150",
-              isMinimized ? "size-9 w-full" : "size-8",
+              "flex items-center min-w-0 flex-1 cursor-pointer transition-opacity hover:opacity-80",
+              isMinimized ? "flex-col gap-1.5" : "gap-2.5",
+            )}
+          >
+            {user?.avatar ? (
+              <img
+                src={user.avatar}
+                alt="Profile"
+                className="size-8 shrink-0 rounded-lg object-cover border border-primary/30 shadow-xs"
+              />
+            ) : (
+              <div className="grid size-8 shrink-0 place-items-center rounded-lg bg-[#B58D4C]/15 border border-[#B58D4C]/30 text-xs font-bold text-[#B58D4C]">
+                {initials}
+              </div>
+            )}
+            {!isMinimized && (
+              <div className="min-w-0 flex-1">
+                <div className="truncate text-xs sm:text-sm font-bold text-foreground">
+                  {user?.name || "Admin"}
+                </div>
+                <div className="truncate text-[10px] sm:text-[11px] font-semibold text-muted-foreground flex items-center gap-1 mt-0.5">
+                  <span className="size-1.5 rounded-full bg-success inline-block"></span>
+                  <span className="capitalize">{user?.role || "Store Owner"}</span>
+                </div>
+              </div>
+            )}
+          </Link>
+          <button
+            type="button"
+            onClick={() => setShowLogoutConfirm(true)}
+            className={cn(
+              "grid shrink-0 place-items-center rounded-lg border border-transparent text-muted-foreground hover:border-destructive/30 hover:bg-destructive/10 hover:text-destructive transition-all duration-150 active:scale-95 cursor-pointer",
+              isMinimized ? "size-8 w-full" : "size-7.5",
             )}
             title="Log out"
           >
             <LogOut className="size-4" />
           </button>
         </div>
+
+        <LogoutConfirmDialog
+          open={showLogoutConfirm}
+          onOpenChange={setShowLogoutConfirm}
+          onConfirm={logout}
+          userName={user?.name}
+          userEmail={user?.email}
+        />
       </div>
     </div>
   );

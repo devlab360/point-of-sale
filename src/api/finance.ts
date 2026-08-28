@@ -14,9 +14,9 @@ import { v4 as uuidv4 } from "uuid";
 export const getExpensesFn = createServerFn({ method: "GET" })
   .validator((data: any) => data)
   .handler(async ({ data }) => {
-    const session = await requireAuth();
-    const orgId = session.orgId;
     try {
+      const session = await requireAuth();
+      const orgId = session.orgId;
       const all = await db
         .select()
         .from(schema.expenses)
@@ -30,9 +30,9 @@ export const getExpensesFn = createServerFn({ method: "GET" })
 export const createExpenseFn = createServerFn({ method: "POST" })
   .validator((data: any) => data)
   .handler(async ({ data }) => {
-    const session = await requireAuth();
-    const orgId = session.orgId;
     try {
+      const session = await requireAuth();
+      const orgId = session.orgId;
       await db.insert(schema.expenses).values({
         id: uuidv4(),
         organizationId: orgId,
@@ -51,9 +51,9 @@ export const createExpenseFn = createServerFn({ method: "POST" })
 export const updateExpenseFn = createServerFn({ method: "POST" })
   .validator((data: any) => data)
   .handler(async ({ data }) => {
-    const session = await requireAuth();
-    const orgId = session.orgId;
     try {
+      const session = await requireAuth();
+      const orgId = session.orgId;
       await db
         .update(schema.expenses)
         .set({
@@ -73,9 +73,9 @@ export const updateExpenseFn = createServerFn({ method: "POST" })
 export const deleteExpenseFn = createServerFn({ method: "POST" })
   .validator((data: any) => data)
   .handler(async ({ data }) => {
-    const session = await requireAuth();
-    const orgId = session.orgId;
     try {
+      const session = await requireAuth();
+      const orgId = session.orgId;
       await db
         .delete(schema.expenses)
         .where(and(eq(schema.expenses.id, data.id), eq(schema.expenses.organizationId, orgId)));
@@ -89,9 +89,9 @@ export const deleteExpenseFn = createServerFn({ method: "POST" })
 export const getAccountsFn = createServerFn({ method: "GET" })
   .validator((data: any) => data)
   .handler(async ({ data }) => {
-    const session = await requireAuth();
-    const orgId = session.orgId;
     try {
+      const session = await requireAuth();
+      const orgId = session.orgId;
       const all = await db
         .select()
         .from(schema.accounts)
@@ -105,9 +105,9 @@ export const getAccountsFn = createServerFn({ method: "GET" })
 export const createAccountFn = createServerFn({ method: "POST" })
   .validator((data: any) => data)
   .handler(async ({ data }) => {
-    const session = await requireAuth();
-    const orgId = session.orgId;
     try {
+      const session = await requireAuth();
+      const orgId = session.orgId;
       await db.insert(schema.accounts).values({
         id: uuidv4(),
         organizationId: orgId,
@@ -126,9 +126,9 @@ export const createAccountFn = createServerFn({ method: "POST" })
 export const updateAccountFn = createServerFn({ method: "POST" })
   .validator((data: any) => data)
   .handler(async ({ data }) => {
-    const session = await requireAuth();
-    const orgId = session.orgId;
     try {
+      const session = await requireAuth();
+      const orgId = session.orgId;
       await db
         .update(schema.accounts)
         .set({
@@ -144,13 +144,80 @@ export const updateAccountFn = createServerFn({ method: "POST" })
     }
   });
 
+export const deleteAccountFn = createServerFn({ method: "POST" })
+  .validator((data: any) => data)
+  .handler(async ({ data }) => {
+    try {
+      const session = await requireAuth();
+      const orgId = session.orgId;
+      await db
+        .delete(schema.accounts)
+        .where(and(eq(schema.accounts.id, data.id), eq(schema.accounts.organizationId, orgId)));
+      return { success: true };
+    } catch (e) {
+      return handleApiError(e);
+    }
+  });
+
+export const seedDefaultAccountsFn = createServerFn({ method: "POST" })
+  .validator((data: any) => data)
+  .handler(async () => {
+    try {
+      const session = await requireAuth();
+      const orgId = session.orgId;
+      const existing = await db
+        .select()
+        .from(schema.accounts)
+        .where(eq(schema.accounts.organizationId, orgId));
+
+      const existingCodes = new Set(existing.map((a) => a.code));
+
+      const standardAccounts = [
+        { code: "1001", name: "Cash on Hand", type: "asset", balance: "0", isSystem: true },
+        { code: "1002", name: "Bank Account (Primary)", type: "asset", balance: "0", isSystem: true },
+        { code: "1003", name: "Accounts Receivable (Customer Due)", type: "asset", balance: "0", isSystem: true },
+        { code: "1004", name: "Merchandise Inventory", type: "asset", balance: "0", isSystem: true },
+        { code: "1005", name: "Undeposited Funds / POS Drawer", type: "asset", balance: "0", isSystem: true },
+        { code: "2001", name: "Accounts Payable (Supplier Due)", type: "liability", balance: "0", isSystem: true },
+        { code: "2002", name: "VAT / Sales Tax Payable", type: "liability", balance: "0", isSystem: true },
+        { code: "2003", name: "GST Output Tax Payable", type: "liability", balance: "0", isSystem: true },
+        { code: "3001", name: "Owner's Equity & Capital", type: "equity", balance: "0", isSystem: true },
+        { code: "3002", name: "Retained Earnings", type: "equity", balance: "0", isSystem: true },
+        { code: "4001", name: "Sales Revenue", type: "income", balance: "0", isSystem: true },
+        { code: "4002", name: "Service & Maintenance Revenue", type: "income", balance: "0", isSystem: true },
+        { code: "4003", name: "Discounts & Allowances Given", type: "income", balance: "0", isSystem: true },
+        { code: "5001", name: "Cost of Goods Sold (COGS)", type: "expense", balance: "0", isSystem: true },
+        { code: "5002", name: "Rent & Store Facility Expense", type: "expense", balance: "0", isSystem: true },
+        { code: "5003", name: "Staff Salaries & Employee Wages", type: "expense", balance: "0", isSystem: true },
+        { code: "5004", name: "Utilities & Electricity Expense", type: "expense", balance: "0", isSystem: true },
+        { code: "5005", name: "Marketing, Advertising & Promotions", type: "expense", balance: "0", isSystem: true },
+      ];
+
+      const toInsert = standardAccounts
+        .filter((acc) => !existingCodes.has(acc.code))
+        .map((acc) => ({
+          id: uuidv4(),
+          organizationId: orgId,
+          ...acc,
+        }));
+
+      if (toInsert.length > 0) {
+        await db.insert(schema.accounts).values(toInsert);
+      }
+
+      return { success: true, count: toInsert.length };
+    } catch (e) {
+      return handleApiError(e);
+    }
+  });
+
 // --- Vouchers ---
 export const getVouchersFn = createServerFn({ method: "GET" })
   .validator((data: any) => data)
   .handler(async ({ data }) => {
-    const session = await requireAuth();
-    const orgId = session.orgId;
     try {
+      const session = await requireAuth();
+      const orgId = session.orgId;
       const all = await db
         .select()
         .from(schema.vouchers)
@@ -164,9 +231,9 @@ export const getVouchersFn = createServerFn({ method: "GET" })
 export const createVoucherFn = createServerFn({ method: "POST" })
   .validator((data: any) => data)
   .handler(async ({ data }) => {
-    const session = await requireAuth();
-    const orgId = session.orgId;
     try {
+      const session = await requireAuth();
+      const orgId = session.orgId;
       await db.transaction(async (tx) => {
         await tx.insert(schema.vouchers).values({
           id: uuidv4(),

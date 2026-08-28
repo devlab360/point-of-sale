@@ -247,34 +247,36 @@ export const updateServiceItemFn = createServerFn({ method: "POST" })
           .update(schema.services)
           .set(payload)
           .where(and(eq(schema.services.id, data.id), eq(schema.services.organizationId, orgId)));
-          
+
         if (data.hasVariants !== undefined) {
-           await tx.delete(schema.serviceVariants).where(eq(schema.serviceVariants.serviceId, data.id));
-           
-           if (data.hasVariants && data.variants && data.variants.length > 0) {
-              for (const variant of data.variants) {
-                const variantId = uuidv4();
-                await tx.insert(schema.serviceVariants).values({
-                  id: variantId,
-                  organizationId: orgId,
-                  serviceId: data.id,
-                  name: variant.name,
-                  price: String(variant.price || 0),
-                  cost: String(variant.cost || 0),
-                  duration: variant.duration ? Number(variant.duration) : null,
-                });
-    
-                if (variant.attributes && variant.attributes.length > 0) {
-                  const attributes = variant.attributes.map((attr: any) => ({
-                    id: uuidv4(),
-                    variantId: variantId,
-                    name: attr.name,
-                    value: String(attr.value),
-                  }));
-                  await tx.insert(schema.serviceVariantAttributes).values(attributes);
-                }
+          await tx
+            .delete(schema.serviceVariants)
+            .where(eq(schema.serviceVariants.serviceId, data.id));
+
+          if (data.hasVariants && data.variants && data.variants.length > 0) {
+            for (const variant of data.variants) {
+              const variantId = uuidv4();
+              await tx.insert(schema.serviceVariants).values({
+                id: variantId,
+                organizationId: orgId,
+                serviceId: data.id,
+                name: variant.name,
+                price: String(variant.price || 0),
+                cost: String(variant.cost || 0),
+                duration: variant.duration ? Number(variant.duration) : null,
+              });
+
+              if (variant.attributes && variant.attributes.length > 0) {
+                const attributes = variant.attributes.map((attr: any) => ({
+                  id: uuidv4(),
+                  variantId: variantId,
+                  name: attr.name,
+                  value: String(attr.value),
+                }));
+                await tx.insert(schema.serviceVariantAttributes).values(attributes);
               }
-           }
+            }
+          }
         }
       });
 
@@ -289,17 +291,17 @@ export const getServiceVariantsFn = createServerFn({ method: "GET" })
   .handler(async ({ data: serviceId }) => {
     try {
       const session = await requireAuth();
-      
+
       const variants = await db
         .select()
         .from(schema.serviceVariants)
         .where(
           and(
             eq(schema.serviceVariants.serviceId, serviceId),
-            eq(schema.serviceVariants.organizationId, session.orgId)
-          )
+            eq(schema.serviceVariants.organizationId, session.orgId),
+          ),
         );
-        
+
       const variantsWithAttributes = await Promise.all(
         variants.map(async (v) => {
           const attributes = await db
@@ -307,9 +309,9 @@ export const getServiceVariantsFn = createServerFn({ method: "GET" })
             .from(schema.serviceVariantAttributes)
             .where(eq(schema.serviceVariantAttributes.variantId, v.id));
           return { ...v, attributes };
-        })
+        }),
       );
-      
+
       return { success: true, data: variantsWithAttributes };
     } catch (e) {
       return handleApiError(e);
@@ -342,16 +344,14 @@ export const getAllServiceVariantsFn = createServerFn({ method: "GET" })
         .select()
         .from(schema.serviceVariants)
         .where(eq(schema.serviceVariants.organizationId, session.orgId));
-        
-      const attributes = await db
-        .select()
-        .from(schema.serviceVariantAttributes);
+
+      const attributes = await db.select().from(schema.serviceVariantAttributes);
 
       const variantsWithAttributes = variants.map((v) => {
-        const vAttrs = attributes.filter(a => a.variantId === v.id);
+        const vAttrs = attributes.filter((a) => a.variantId === v.id);
         return { ...v, attributes: vAttrs };
       });
-      
+
       return { success: true, data: variantsWithAttributes };
     } catch (e) {
       return handleApiError(e);

@@ -41,6 +41,14 @@ import {
 } from "lucide-react";
 import { BusinessCapability, hasCapability } from "./business-templates";
 
+export type SubMenuItem = {
+  to: string;
+  label: string;
+  tkey: string;
+  roles?: string[];
+  badge?: string;
+};
+
 export type MenuItem = {
   menuKey?: string;
   to: string;
@@ -49,212 +57,248 @@ export type MenuItem = {
   icon: any;
   badge?: string;
   roles?: string[];
+  children?: SubMenuItem[];
 };
 export type MenuGroup = { label: string; tkey: string; items: MenuItem[] };
 
 export const APP_GROUPS: MenuGroup[] = [
   {
-    label: "Overview",
-    tkey: "overview",
-    items: [
-      {
-        to: "/", menuKey: "dashboard",
-        label: "Dashboard",
-        tkey: "dashboard",
-        icon: LayoutDashboard,
-      },
-      { to: "/pos", menuKey: "pos", label: "POS Terminal", tkey: "pos", icon: ScanBarcode, badge: "Live" },
-    ],
-  },
-  {
-    label: "Catalog",
+    label: "STORE CATALOG",
     tkey: "catalog",
     items: [
       {
-        to: "/products", menuKey: "products",
+        to: "/products",
+        menuKey: "products",
         label: "Products",
         tkey: "products",
         icon: Package,
         roles: ["admin", "manager"],
+        children: [
+          { to: "/products", label: "Products Catalog", tkey: "productsCatalog" },
+          { to: "/categories", label: "Categories", tkey: "categories" },
+          { to: "/brands", label: "Brands", tkey: "brands" },
+          { to: "/units", label: "Units", tkey: "units" },
+        ],
       },
       {
-        to: "/services", menuKey: "services",
-        label: "Services",
+        to: "/inventory",
+        menuKey: "inventory",
+        label: "Inventory Master",
+        tkey: "inventory",
+        icon: Boxes,
+        roles: ["admin", "manager"],
+        children: [
+          { to: "/inventory", label: "Stock Inventory", tkey: "inventory" },
+          { to: "/inventory/adjustments", label: "Stock Adjustments", tkey: "adjustments" },
+          { to: "/inventory/transfers", label: "Stock Transfers", tkey: "transfers" },
+          { to: "/inventory/history", label: "Stock History", tkey: "stockHistory" },
+        ],
+      },
+      {
+        to: "/pos",
+        menuKey: "pos",
+        label: "POS Terminal",
+        tkey: "pos",
+        icon: ScanBarcode,
+        badge: "Live",
+      },
+      {
+        to: "/services",
+        menuKey: "services",
+        label: "Services Catalog",
         tkey: "services",
         icon: Wrench,
         roles: ["admin", "manager"],
       },
-      {
-        to: "/categories", menuKey: "categories",
-        label: "Categories",
-        tkey: "categories",
-        icon: Tag,
-        roles: ["admin", "manager"],
-      },
-      { to: "/brands", menuKey: "brands", label: "Brands", tkey: "brands", icon: Award, roles: ["admin", "manager"] },
-      { to: "/units", menuKey: "units", label: "Units", tkey: "units", icon: Ruler, roles: ["admin", "manager"] },
     ],
   },
   {
-    label: "Stock",
-    tkey: "stock",
+    label: "SALES & FULFILLMENT",
+    tkey: "salesFulfillment",
     items: [
       {
-        to: "/inventory", menuKey: "inventory",
-        label: "Inventory",
-        tkey: "inventory",
-        icon: Boxes,
-        roles: ["admin", "manager"],
+        to: "/sales",
+        menuKey: "sales",
+        label: "Orders & Invoices",
+        tkey: "salesInvoices",
+        icon: ReceiptText,
       },
       {
-        to: "/inventory/adjustments", menuKey: "adjustments",
-        label: "Adjustments",
-        tkey: "adjustments",
-        icon: PackageMinus,
-        roles: ["admin", "manager"],
-      },
-      {
-        to: "/inventory/transfers", menuKey: "transfers",
-        label: "Transfers",
-        tkey: "transfers",
-        icon: ArrowLeftRight,
-        roles: ["admin", "manager"],
-      },
-      {
-        to: "/inventory/history", menuKey: "history",
-        label: "Stock History",
-        tkey: "stockHistory",
-        icon: History,
-        roles: ["admin", "manager"],
-      },
-    ],
-  },
-  {
-    label: "Trade & B2B",
-    tkey: "tradeB2B",
-    items: [
-      {
-        to: "/purchases", menuKey: "purchases",
-        label: "Purchases",
-        tkey: "purchases",
-        icon: ShoppingCart,
-        roles: ["admin", "manager"],
-      },
-      {
-        to: "/purchases/returns", menuKey: "returns",
-        label: "Purchase Returns",
-        tkey: "purchaseReturns",
-        icon: Undo2,
-        roles: ["admin", "manager"],
-      },
-      { to: "/sales", menuKey: "sales", label: "Sales Invoices", tkey: "salesInvoices", icon: ReceiptText },
-      {
-        to: "/quotations", menuKey: "quotations",
+        to: "/quotations",
+        menuKey: "quotations",
         label: "Quotations",
         tkey: "quotations",
         icon: FileText,
         roles: ["admin", "manager"],
       },
       {
-        to: "/delivery-challans", menuKey: "delivery-challans",
+        to: "/delivery-challans",
+        menuKey: "delivery-challans",
         label: "Delivery Challans",
         tkey: "deliveryChallans",
         icon: Truck,
         roles: ["admin", "manager"],
       },
-      { to: "/sales/returns", menuKey: "returns", label: "Sales Returns", tkey: "salesReturns", icon: Undo2 },
+      {
+        to: "/sales/returns",
+        menuKey: "returns",
+        label: "Payments & Refunds",
+        tkey: "salesReturns",
+        icon: Undo2,
+      },
     ],
   },
   {
-    label: "People",
-    tkey: "people",
+    label: "PURCHASES & VENDORS",
+    tkey: "purchasesVendors",
     items: [
-      { to: "/customers", menuKey: "customers", label: "Customers", tkey: "customers", icon: Users },
       {
-        to: "/suppliers", menuKey: "suppliers",
-        label: "Suppliers",
+        to: "/purchases",
+        menuKey: "purchases",
+        label: "Purchases",
+        tkey: "purchases",
+        icon: ShoppingCart,
+        roles: ["admin", "manager"],
+        children: [
+          { to: "/purchases", label: "Purchase Orders", tkey: "purchases" },
+          { to: "/purchases/returns", label: "Purchase Returns", tkey: "purchaseReturns" },
+        ],
+      },
+      {
+        to: "/suppliers",
+        menuKey: "suppliers",
+        label: "Suppliers Directory",
         tkey: "suppliers",
         icon: Truck,
         roles: ["admin", "manager"],
       },
-      { to: "/users", menuKey: "users", label: "Employees", tkey: "employees", icon: UserCog, roles: ["admin"] },
     ],
   },
   {
-    label: "Finance & Accounts",
-    tkey: "finance",
+    label: "CUSTOMERS & MARKETING",
+    tkey: "customersMarketing",
     items: [
       {
-        to: "/accounts", menuKey: "accounts",
-        label: "Chart of Accounts",
-        tkey: "accounts",
-        icon: BookOpen,
+        to: "/customers",
+        menuKey: "customers",
+        label: "Customers Directory",
+        tkey: "customers",
+        icon: Users,
+      },
+      {
+        to: "/coupons",
+        menuKey: "coupons",
+        label: "Coupons & Discounts",
+        tkey: "coupons",
+        icon: Ticket,
         roles: ["admin", "manager"],
       },
       {
-        to: "/accounting-reports", menuKey: "accounting-reports",
-        label: "Accounting Reports",
-        tkey: "accounting_reports",
-        icon: FileText,
-        roles: ["admin", "manager"],
+        to: "/gift-cards",
+        menuKey: "gift-cards",
+        label: "Gift Cards",
+        tkey: "giftCards",
+        icon: Gift,
       },
       {
-        to: "/expenses", menuKey: "expenses",
+        to: "/loyalty",
+        menuKey: "loyalty",
+        label: "Loyalty & Promotions",
+        tkey: "loyalty",
+        icon: Star,
+        roles: ["admin", "manager"],
+        children: [
+          { to: "/loyalty", label: "Loyalty Program", tkey: "loyalty" },
+          { to: "/promotions", label: "Promotions & Offers", tkey: "promotions" },
+        ],
+      },
+    ],
+  },
+  {
+    label: "FINANCE & ACCOUNTS",
+    tkey: "financeAccounts",
+    items: [
+      {
+        to: "/expenses",
+        menuKey: "expenses",
         label: "Expenses",
         tkey: "expenses",
         icon: Wallet,
         roles: ["admin", "manager"],
       },
       {
-        to: "/reports", menuKey: "reports",
+        to: "/accounts",
+        menuKey: "accounts",
+        label: "Chart of Accounts",
+        tkey: "accounts",
+        icon: BookOpen,
+        roles: ["admin", "manager"],
+      },
+      {
+        to: "/reports",
+        menuKey: "reports",
         label: "Financial Reports",
         tkey: "reports",
         icon: BarChart3,
         roles: ["admin", "manager"],
       },
+      {
+        to: "/accounting-reports",
+        menuKey: "accounting-reports",
+        label: "Accounting Reports",
+        tkey: "accounting_reports",
+        icon: FileText,
+        roles: ["admin", "manager"],
+      },
     ],
   },
   {
-    label: "Services & Verticals",
-    tkey: "services",
+    label: "SERVICES & OPERATIONS",
+    tkey: "servicesOperations",
     items: [
       {
-        to: "/repairs", menuKey: "repairs",
+        to: "/repairs",
+        menuKey: "repairs",
         label: "Repair Job Sheets",
         tkey: "repairs",
         icon: Wrench,
         roles: ["admin", "manager"],
       },
       {
-        to: "/subscriptions", menuKey: "subscriptions",
-        label: "Subscriptions",
-        tkey: "subscriptions",
-        icon: Repeat,
-        roles: ["admin", "manager"],
-      },
-      {
-        to: "/rentals", menuKey: "rentals",
+        to: "/rentals",
+        menuKey: "rentals",
         label: "Equipment Rentals",
         tkey: "rentals",
         icon: KeyRound,
         roles: ["admin", "manager"],
       },
       {
-        to: "/tables", menuKey: "tables",
-        label: "Tables",
+        to: "/subscriptions",
+        menuKey: "subscriptions",
+        label: "Subscriptions",
+        tkey: "subscriptions",
+        icon: Repeat,
+        roles: ["admin", "manager"],
+      },
+      {
+        to: "/tables",
+        menuKey: "tables",
+        label: "Restaurant Tables",
         tkey: "tables",
         icon: Utensils,
         roles: ["admin", "manager", "cashier"],
       },
       {
-        to: "/kitchen", menuKey: "kitchen",
+        to: "/kitchen",
+        menuKey: "kitchen",
         label: "Kitchen (KOT)",
         tkey: "kitchen",
         icon: ChefHat,
         roles: ["admin", "manager", "cashier"],
       },
       {
-        to: "/appointments", menuKey: "appointments",
+        to: "/appointments",
+        menuKey: "appointments",
         label: "Appointments",
         tkey: "appointments",
         icon: CalendarDays,
@@ -263,49 +307,61 @@ export const APP_GROUPS: MenuGroup[] = [
     ],
   },
   {
-    label: "Marketing",
-    tkey: "marketing",
+    label: "ADMINISTRATION",
+    tkey: "administration",
     items: [
       {
-        to: "/coupons", menuKey: "coupons",
-        label: "Coupons",
-        tkey: "coupons",
-        icon: Ticket,
-        roles: ["admin", "manager"],
-      },
-      { to: "/gift-cards", menuKey: "gift-cards", label: "Gift Cards", tkey: "giftCards", icon: Gift },
-      {
-        to: "/loyalty", menuKey: "loyalty",
-        label: "Loyalty",
-        tkey: "loyalty",
-        icon: Star,
-        roles: ["admin", "manager"],
+        to: "/users",
+        menuKey: "users",
+        label: "Staff Users",
+        tkey: "employees",
+        icon: UserCog,
+        roles: ["admin"],
       },
       {
-        to: "/promotions", menuKey: "promotions",
-        label: "Promotions",
-        tkey: "promotions",
-        icon: Megaphone,
-        roles: ["admin", "manager"],
+        to: "/settings",
+        menuKey: "settings",
+        label: "Store Settings",
+        tkey: "settings",
+        icon: Settings,
+        roles: ["admin"],
       },
-    ],
-  },
-  {
-    label: "System",
-    tkey: "system",
-    items: [
-      { to: "/portal", menuKey: "portal", label: "Client Portal", tkey: "clientPortal", icon: UserCheck },
-      { to: "/settings", menuKey: "settings", label: "Settings", tkey: "settings", icon: Settings, roles: ["admin"] },
-      { to: "/notifications", menuKey: "notifications", label: "Notifications", tkey: "notifications", icon: Bell },
       {
-        to: "/activity", menuKey: "activity",
-        label: "Activity Log",
+        to: "/activity",
+        menuKey: "activity",
+        label: "Activity Audit Log",
         tkey: "activityLog",
         icon: Activity,
         roles: ["admin", "manager"],
       },
-      { to: "/profile", menuKey: "profile", label: "Profile", tkey: "profile", icon: CircleUser },
-      { to: "/help", menuKey: "help", label: "Help Center", tkey: "help", icon: LifeBuoy },
+      {
+        to: "/notifications",
+        menuKey: "notifications",
+        label: "Notifications",
+        tkey: "notifications",
+        icon: Bell,
+      },
+      {
+        to: "/portal",
+        menuKey: "portal",
+        label: "Client Portal",
+        tkey: "clientPortal",
+        icon: UserCheck,
+      },
+      {
+        to: "/profile",
+        menuKey: "profile",
+        label: "Profile",
+        tkey: "profile",
+        icon: CircleUser,
+      },
+      {
+        to: "/help",
+        menuKey: "help",
+        label: "Help Center",
+        tkey: "help",
+        icon: LifeBuoy,
+      },
     ],
   },
 ];
@@ -369,8 +425,30 @@ const DEFAULT_ROLE_PERMISSIONS_FALLBACK: Record<string, string[]> = {
     "tables",
     "kitchen",
     "appointments",
+    "quotations",
+    "delivery-challans",
+    "purchases",
+    "suppliers",
+    "accounts",
   ],
-  manager: ["pos", "inventory", "reports", "customers", "expenses", "discounts", "returns", "notifications", "tables", "kitchen", "appointments"],
+  manager: [
+    "pos",
+    "inventory",
+    "reports",
+    "customers",
+    "expenses",
+    "discounts",
+    "returns",
+    "notifications",
+    "tables",
+    "kitchen",
+    "appointments",
+    "quotations",
+    "delivery-challans",
+    "purchases",
+    "suppliers",
+    "accounts",
+  ],
   cashier: ["pos", "customers", "discounts", "tables", "kitchen", "appointments"],
 };
 
@@ -388,8 +466,8 @@ export const ROUTE_CAPABILITY_MAP: Record<string, BusinessCapability[]> = {
   "/purchases": ["PURCHASES"],
   "/purchases/returns": ["PURCHASES"],
   "/sales": ["POS"], // Technically invoicing
-  "/quotations": ["QUOTATIONS"],
-  "/delivery-challans": ["DELIVERY_CHALLANS"],
+  "/quotations": ["QUOTATIONS", "POS", "PRODUCTS", "WHOLESALE"],
+  "/delivery-challans": ["DELIVERY_CHALLANS", "POS", "INVENTORY", "WHOLESALE"],
   "/sales/returns": ["POS"],
   "/customers": ["CUSTOMERS"],
   "/suppliers": ["SUPPLIERS"],
@@ -420,10 +498,10 @@ export function hasPermissionForRoute(
   routePath: string,
   isSuperAdminUser: boolean,
   saasPlan: any,
-  businessType?: string
+  businessType?: string,
 ): { allowed: boolean; reason?: string } {
-  // 1. Super Admin Authorization
-  if (isSuperAdminUser) return { allowed: true };
+  // 1. Super Admin & Organization Admin Authorization
+  if (isSuperAdminUser || user?.role?.toLowerCase() === "admin") return { allowed: true };
   if (routePath.startsWith("/super-admin")) {
     return {
       allowed: false,
@@ -459,7 +537,9 @@ export function hasPermissionForRoute(
   if (routeCapabilities.length > 0) {
     // If a route requires capabilities, the business type MUST have at least one of them
     // (e.g. repairs route needs REPAIRS or JOB_CARDS capability)
-    const hasAnyRequiredCapability = routeCapabilities.some(cap => hasCapability(businessType, cap));
+    const hasAnyRequiredCapability = routeCapabilities.some((cap) =>
+      hasCapability(businessType, cap),
+    );
     if (!hasAnyRequiredCapability) {
       return {
         allowed: false,
@@ -514,7 +594,7 @@ export function hasPermissionForRoute(
       (p) =>
         p === targetPath ||
         p === targetPath.replace(/^\//, "") ||
-        (p.startsWith("/") && (targetPath === p || targetPath.startsWith(p + "/")))
+        (p.startsWith("/") && (targetPath === p || targetPath.startsWith(p + "/"))),
     );
 
     // Legacy group mapping fallback (e.g., "inventory", "reports", "pos")

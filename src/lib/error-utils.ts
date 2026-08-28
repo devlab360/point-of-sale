@@ -1,22 +1,30 @@
 import { ApiResponse } from "@/types/api";
 import { ZodError } from "zod";
+import { AppError, cleanErrorMessage } from "./errors/errors";
 
 export function handleApiError(
   e: unknown,
   customMessage = "An unexpected error occurred.",
 ): ApiResponse {
-  console.error("API Error Object:", e instanceof Error ? e.stack || e.message : e);
-
   if (e instanceof ZodError) {
     const fieldErrors = e.errors.map((err) => ({
       field: err.path.join("."),
       message: err.message,
     }));
+    const primaryMsg = e.errors.map((err) => err.message).join(". ");
     return {
       success: false,
       code: 422,
-      error: "Validation failed. Please check your inputs.",
+      error: primaryMsg || "Validation failed. Please check your inputs.",
       errors: fieldErrors,
+    };
+  }
+
+  if (e instanceof AppError) {
+    return {
+      success: false,
+      code: e.statusCode,
+      error: cleanErrorMessage(e.message),
     };
   }
 
@@ -30,7 +38,10 @@ export function handleApiError(
     if (e.message === "Not found") {
       return { success: false, code: 404, error: e.message };
     }
-    // Check for PostgreSQL constraint violations (works for Drizzle + Neon)
+
+    console.error("API Error:", e.stack || e.message);
+
+    // Check for PostgreSQL / SQLite constraint violations
     const cause = (e as any).cause || {};
     const errorCode = (e as any).code || cause.code;
     const errorDetail = (e as any).detail || cause.detail || "";
@@ -38,15 +49,24 @@ export function handleApiError(
     const errorString = (errorMessage + " " + errorDetail).toLowerCase();
 
     // Foreign key violation
-    if (errorCode === "23503" || errorString.includes("foreign key") || errorString.includes("violates foreign key constraint")) {
-      return { success: false, code: 409, error: "Invalid reference. Please select a valid option from the list." };
+    if (
+      errorCode === "23503" ||
+      errorString.includes("foreign key") ||
+      errorString.includes("violates foreign key constraint")
+    ) {
+      return {
+        success: false,
+        code: 409,
+        error: "Invalid reference. Please select a valid option from the list.",
+      };
     }
 
     // Unique constraint violation
     if (
       errorCode === "23505" ||
       errorString.includes("unique constraint") ||
-      errorString.includes("duplicate key")
+      errorString.includes("duplicate key") ||
+      errorString.includes("unique constraint failed")
     ) {
       if (errorString.includes("sku_idx") || errorString.includes("sku")) {
         return { success: false, code: 409, error: "A product with this SKU already exists." };
@@ -69,11 +89,22 @@ export function handleApiError(
       }
       return { success: false, code: 409, error: "A record with these details already exists." };
     }
-    if (process.env.NODE_ENV === "development") {
-      const errorMsg = (e as any).detail ? `${e.message} - ${(e as any).detail}` : e.message;
-      return { success: false, code: 500, error: errorMsg };
+
+    const cleaned = cleanErrorMessage(e.message);
+    if (cleaned && cleaned !== "Error" && cleaned !== "[object Object]") {
+      return { success: false, code: 500, error: cleaned };
     }
+
     return { success: false, code: 500, error: customMessage };
+  }
+
+  if (typeof e === "string") {
+    return { success: false, code: 500, error: cleanErrorMessage(e) };
+  }
+
+  if (e && typeof e === "object" && ("error" in e || "message" in e)) {
+    const msg = (e as any).error || (e as any).message;
+    return { success: false, code: (e as any).code || 500, error: cleanErrorMessage(msg) };
   }
 
   return { success: false, code: 500, error: customMessage };

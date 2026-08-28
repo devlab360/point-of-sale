@@ -47,6 +47,11 @@ import {
   Printer,
   MessageCircle,
   Loader2,
+  Banknote,
+  CreditCard,
+  Smartphone,
+  Receipt,
+  Users,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 // Use queryClient from state
@@ -156,8 +161,8 @@ export function PosDialogs({
   const { data: customerSearchResults } = useQuery({
     queryKey: ["customerSearch", orgId, debouncedCustomerQuery],
     queryFn: async () => {
-      const res = await getCustomersFn({ 
-        data: { query: debouncedCustomerQuery, pageSize: 15 } 
+      const res = await getCustomersFn({
+        data: { query: debouncedCustomerQuery, pageSize: 15 },
       });
       return (res as any)?.data || [];
     },
@@ -391,33 +396,33 @@ export function PosDialogs({
               <span className="font-medium">Walk-in Customer</span>
             </button>
             {displayCustomers.map((c: any) => (
-                <button
-                  key={c.id}
-                  className={cn(
-                    "flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm hover:bg-muted",
-                    activeCustomer.id === c.id && "bg-primary/10",
-                  )}
-                  onClick={() => {
-                    setSelectedCustomer(c);
-                    setShowCustomerSearch(false);
-                    setCustomerQuery("");
-                  }}
-                >
-                  <div className="grid size-8 place-items-center rounded-full bg-gradient-to-br from-primary to-info text-xs font-bold text-white">
-                    {c.name
-                      .split(" ")
-                      .map((n: any) => n[0])
-                      .join("")
-                      .slice(0, 2)}
+              <button
+                key={c.id}
+                className={cn(
+                  "flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm hover:bg-muted",
+                  activeCustomer.id === c.id && "bg-primary/10",
+                )}
+                onClick={() => {
+                  setSelectedCustomer(c);
+                  setShowCustomerSearch(false);
+                  setCustomerQuery("");
+                }}
+              >
+                <div className="grid size-8 place-items-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
+                  {c.name
+                    .split(" ")
+                    .map((n: any) => n[0])
+                    .join("")
+                    .slice(0, 2)}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="font-semibold truncate">{c.name}</div>
+                  <div className="text-xs text-muted-foreground">
+                    {c.phone} · {c.loyaltyPoints} pts
                   </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="font-semibold truncate">{c.name}</div>
-                    <div className="text-xs text-muted-foreground">
-                      {c.phone} · {c.loyaltyPoints} pts
-                    </div>
-                  </div>
-                </button>
-              ))}
+                </div>
+              </button>
+            ))}
           </div>
         </DialogContent>
       </Dialog>
@@ -504,11 +509,25 @@ export function PosDialogs({
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label>Retail Price *</Label>
-                    <Input name="price" type="number" step="0.01" min="0" placeholder="0.00" required />
+                    <Input
+                      name="price"
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      placeholder="0.00"
+                      required
+                    />
                   </div>
                   <div className="space-y-2">
                     <Label>Cost Price *</Label>
-                    <Input name="cost" type="number" step="0.01" min="0" placeholder="0.00" required />
+                    <Input
+                      name="cost"
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      placeholder="0.00"
+                      required
+                    />
                   </div>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -519,7 +538,11 @@ export function PosDialogs({
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
                       <Label>Barcode / SKU</Label>
-                      <button type="button" onClick={generateBarcode} className="text-[10px] font-medium text-primary hover:underline focus:outline-none">
+                      <button
+                        type="button"
+                        onClick={generateBarcode}
+                        className="text-[10px] font-medium text-primary hover:underline focus:outline-none"
+                      >
                         Generate
                       </button>
                     </div>
@@ -572,7 +595,8 @@ export function PosDialogs({
                     Cancel
                   </Button>
                   <Button type="submit" disabled={isAddingProduct}>
-                    {isAddingProduct && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Save Product
+                    {isAddingProduct && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Save
+                    Product
                   </Button>
                 </DialogFooter>
               </form>
@@ -597,12 +621,25 @@ export function PosDialogs({
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label>Price *</Label>
-                    <Input name="price" type="number" step="0.01" min="0" placeholder="0.00" required />
+                    <Input
+                      name="price"
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      placeholder="0.00"
+                      required
+                    />
                   </div>
                   <div className="space-y-2">
                     <Label>Duration</Label>
                     <div className="flex gap-2">
-                      <Input name="duration" type="number" min="0" placeholder="e.g. 30" className="flex-1" />
+                      <Input
+                        name="duration"
+                        type="number"
+                        min="0"
+                        placeholder="e.g. 30"
+                        className="flex-1"
+                      />
                       <Select name="durationUnit" defaultValue="mins">
                         <SelectTrigger className="w-[120px]">
                           <SelectValue />
@@ -638,7 +675,8 @@ export function PosDialogs({
                     Cancel
                   </Button>
                   <Button type="submit" disabled={isAddingService}>
-                    {isAddingService && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Save Service
+                    {isAddingService && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Save
+                    Service
                   </Button>
                 </DialogFooter>
               </form>
@@ -692,8 +730,8 @@ export function PosDialogs({
                   <Button size="sm" onClick={() => onResumeInvoice(h)}>
                     Resume
                   </Button>
-                  <Button 
-                    size="sm" 
+                  <Button
+                    size="sm"
                     variant="secondary"
                     onClick={() => {
                       setShowHeld(false);
@@ -745,24 +783,60 @@ export function PosDialogs({
           if (!isCompletingSale) setConfirmCheckout(open);
         }}
       >
-        <AlertDialogContent>
+        <AlertDialogContent className="rounded-2xl max-w-sm">
           <AlertDialogHeader>
-            <AlertDialogTitle>Confirm Payment</AlertDialogTitle>
-            <AlertDialogDescription>
-              Collect <strong>{formatCurrency(total)}</strong> via{" "}
-              <strong>{payment.toUpperCase()}</strong>.{" "}
-              {changeDue > 0 && (
-                <>
-                  Change: <strong>{formatCurrency(changeDue)}</strong>
-                </>
+            <AlertDialogTitle className="text-base font-bold text-center">
+              Confirm & Print Bill
+            </AlertDialogTitle>
+            <div className="pt-2 text-center space-y-3">
+              <div className="bg-primary/10 border border-primary/20 rounded-2xl p-4">
+                <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider block">
+                  Total Bill Amount
+                </span>
+                <span className="number text-3xl font-black text-primary block mt-0.5">
+                  {formatCurrency(total)}
+                </span>
+                <div className="mt-2 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-card border border-border/80 text-xs font-extrabold capitalize text-foreground shadow-xs">
+                  {payment === "cash" && <Banknote className="size-3.5 text-success" />}
+                  {payment === "card" && <CreditCard className="size-3.5 text-info" />}
+                  {payment === "upi" && <Smartphone className="size-3.5 text-primary" />}
+                  {payment === "credit" && <Receipt className="size-3.5 text-warning" />}
+                  {payment === "split" && <Users className="size-3.5 text-secondary" />}
+                  <span>Payment: {payment === "credit" ? "Udhaar / Khata" : payment.toUpperCase()}</span>
+                </div>
+              </div>
+
+              {payment === "cash" && changeDue > 0 && (
+                <div className="bg-success/15 border border-success/30 rounded-xl p-3 text-center">
+                  <span className="text-xs font-bold text-success block">
+                    Wapas / Return Change to Customer:
+                  </span>
+                  <span className="number text-2xl font-black text-success block mt-0.5">
+                    {formatCurrency(changeDue)}
+                  </span>
+                </div>
               )}
-            </AlertDialogDescription>
-            
-            {(settings?.businessType === "PHARMACY" || state.lines.some((l:any) => l.product.metadata?.prescriptionRequired)) && (
-              <div className="mt-4 pt-4 border-t">
-                <label className="text-xs font-semibold block mb-1.5 text-primary">Prescription Reference (Optional)</label>
-                <Input 
-                  placeholder="e.g. Rx-12345 / Dr. Smith"
+
+              {payment === "credit" && (parseFloat(cashTendered) || 0) > 0 && (
+                <div className="bg-warning/15 border border-warning/30 rounded-xl p-2.5 text-center">
+                  <span className="text-xs font-bold text-warning-foreground block">
+                    Remaining Udhaar:
+                  </span>
+                  <span className="number text-lg font-black text-warning-foreground block mt-0.5">
+                    {formatCurrency(Math.max(0, total - (parseFloat(cashTendered) || 0)))}
+                  </span>
+                </div>
+              )}
+            </div>
+
+            {(settings?.businessType === "PHARMACY" ||
+              state.lines.some((l: any) => l.product.metadata?.prescriptionRequired)) && (
+              <div className="mt-4 pt-3 border-t">
+                <label className="text-xs font-semibold block mb-1 text-primary text-left">
+                  Prescription Reference (Optional)
+                </label>
+                <Input
+                  placeholder="e.g. Rx-12345"
                   value={state.prescriptionRef}
                   onChange={(e) => state.setPrescriptionRef(e.target.value)}
                   className="h-9"
@@ -770,20 +844,25 @@ export function PosDialogs({
               </div>
             )}
           </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={isCompletingSale}>Cancel</AlertDialogCancel>
+          <AlertDialogFooter className="grid grid-cols-2 gap-2 sm:space-x-0 mt-2">
+            <AlertDialogCancel
+              disabled={isCompletingSale}
+              className="rounded-xl text-xs font-semibold h-11"
+            >
+              Cancel
+            </AlertDialogCancel>
             <Button
               onClick={() => onCheckout()}
               disabled={isCompletingSale}
-              className="bg-emerald-600 hover:bg-emerald-700 text-white font-medium"
+              className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold rounded-xl h-11 text-xs sm:text-sm shadow-soft"
             >
               {isCompletingSale ? (
                 <>
                   <Loader2 className="mr-2 size-4 animate-spin" />
-                  Generating..
+                  Printing...
                 </>
               ) : (
-                "Confirm & Print"
+                "Print Bill ✓"
               )}
             </Button>
           </AlertDialogFooter>
@@ -877,7 +956,7 @@ export function PosDialogs({
         onChange={handleKeyboardChange}
       />
       {/* Split Check Modal */}
-      <SplitCheckModal 
+      <SplitCheckModal
         open={!!splittingInvoice}
         onOpenChange={(open) => !open && setSplittingInvoice(null)}
         invoice={splittingInvoice}
@@ -890,7 +969,7 @@ export function PosDialogs({
               data: {
                 originalInvoiceId: splittingInvoice.id,
                 newInvoices: splits,
-              }
+              },
             });
             toast.success("Check split successfully");
             setSplittingInvoice(null);

@@ -101,7 +101,9 @@ export const createSalesReturnFn = createServerFn({ method: "POST" })
             if (item.batchId) {
               await tx
                 .update(schema.inventoryBatches)
-                .set({ quantityRemaining: sql`${schema.inventoryBatches.quantityRemaining} + ${item.quantity}` })
+                .set({
+                  quantityRemaining: sql`${schema.inventoryBatches.quantityRemaining} + ${item.quantity}`,
+                })
                 .where(
                   and(
                     eq(schema.inventoryBatches.id, item.batchId),
@@ -191,8 +193,8 @@ export const createPurchaseReturnFn = createServerFn({ method: "POST" })
         supplier: data.returnData.supplier,
         reason: data.returnData.reason,
         items: (data.returnData.items || []).map((i: any) => ({
-           ...i,
-           batchId: i.batchId || null
+          ...i,
+          batchId: i.batchId || null,
         })),
         total: data.returnData.total?.toString() || "0",
         status: data.returnData.status || "approved",
@@ -238,7 +240,9 @@ export const createPurchaseReturnFn = createServerFn({ method: "POST" })
             if (item.batchId) {
               await tx
                 .update(schema.inventoryBatches)
-                .set({ quantityRemaining: sql`GREATEST(0, ${schema.inventoryBatches.quantityRemaining} - ${item.quantity})` })
+                .set({
+                  quantityRemaining: sql`GREATEST(0, ${schema.inventoryBatches.quantityRemaining} - ${item.quantity})`,
+                })
                 .where(
                   and(
                     eq(schema.inventoryBatches.id, item.batchId),

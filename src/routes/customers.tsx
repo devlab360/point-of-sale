@@ -27,6 +27,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -67,7 +68,7 @@ import { useFormValidation } from "@/hooks/useFormValidation";
 import { FieldError } from "@/components/ui/field-error";
 
 export const Route = createFileRoute("/customers")({
-  head: () => ({ meta: [{ title: "Customers · NexisPOS" }] }),
+  head: () => ({ meta: [{ title: "Customers · OneDesk360" }] }),
   component: CustomersPage,
 });
 
@@ -292,14 +293,18 @@ function CustomersPage() {
   };
 
   const handleExport = () => {
-    exportToCSV(customers, [
-      { key: 'name', label: 'Name' },
-      { key: 'email', label: 'Email' },
-      { key: 'phone', label: 'Phone' },
-      { key: 'address', label: 'Address' },
-      { key: 'type', label: 'Type' },
-      { key: 'points', label: 'Points' }
-    ], 'customers');
+    exportToCSV(
+      customers,
+      [
+        { key: "name", label: "Name" },
+        { key: "email", label: "Email" },
+        { key: "phone", label: "Phone" },
+        { key: "address", label: "Address" },
+        { key: "type", label: "Type" },
+        { key: "points", label: "Points" },
+      ],
+      "customers",
+    );
   };
 
   const handleImport = async (file: File) => {
@@ -312,24 +317,24 @@ function CustomersPage() {
 
       let count = 0;
       for (const row of data) {
-        if (row['Name']) {
-          await createCustomerFn({ 
-            data: { 
-              customer: { 
-                id: uuidv4(), 
-                name: row['Name'],
-                email: row['Email'] || '',
-                phone: row['Phone'] || '',
-                address: row['Address'] || '',
-                type: (row['Type'] as any) || 'retail',
-                points: parseInt(row['Points'] || '0')
-              } 
-            } 
+        if (row["Name"]) {
+          await createCustomerFn({
+            data: {
+              customer: {
+                id: uuidv4(),
+                name: row["Name"],
+                email: row["Email"] || "",
+                phone: row["Phone"] || "",
+                address: row["Address"] || "",
+                type: (row["Type"] as any) || "retail",
+                points: parseInt(row["Points"] || "0"),
+              },
+            },
           });
           count++;
         }
       }
-      
+
       queryClient.invalidateQueries({ queryKey: ["customers"] });
       toast.success(`Successfully imported ${count} customers`);
     } catch (error) {
@@ -352,7 +357,7 @@ function CustomersPage() {
         searchPlaceholder={t("searchCustomers") || "Search by name, email, or phone..."}
         searchValue={search}
         onSearchChange={setSearch}
-        hideToolbar={customers.length === 0}
+        hideToolbar={false}
         onExport={handleExport}
         onImport={handleImport}
         onResetFilters={handleResetFilters}
@@ -365,10 +370,8 @@ function CustomersPage() {
                 <SearchableSelect
                   options={[
                     { value: "", label: "All Types" },
-                    { value: "retail", label: "Retail" },
-                    { value: "wholesale", label: "Wholesale" },
-                    { value: "dealer", label: "Dealer" },
-                    { value: "distributor", label: "Distributor" },
+                    { value: "Retail", label: "Retail" },
+                    { value: "Wholesale", label: "Wholesale" },
                   ]}
                   value={draftFilters.type}
                   onChange={(val) => setDraftFilters((prev) => ({ ...prev, type: val }))}
@@ -376,7 +379,7 @@ function CustomersPage() {
                 />
               </div>
               <div className="space-y-2">
-                <Label>Status</Label>
+                <Label>Account Status</Label>
                 <SearchableSelect
                   options={[
                     { value: "", label: "All Statuses" },
@@ -391,7 +394,7 @@ function CustomersPage() {
             </div>
             <div className="pt-4 mt-auto">
               <Button
-                className="w-full font-bold shadow-soft"
+                className="w-full"
                 onClick={() => {
                   setFilters(draftFilters);
                   close();
@@ -407,215 +410,247 @@ function CustomersPage() {
           <TableSkeleton columns={9} rows={6} showHeaderAction={false} showFilters={false} />
         ) : isCustomersError ? (
           <ErrorState onRetry={refetchCustomers} />
-        ) : customers.length === 0 ? (
-          <EmptyState
-            icon={Users}
-            title={t("noCustomersFound") || "No customers found"}
-            description={
-              search
-                ? t("adjustSearch") || "Try adjusting your search query."
-                : t("noCustomersYet") || "You haven't added any customers yet."
-            }
-            actionLabel="Add Customer"
-            onAction={() => {
-              setEditItem(null);
-              setIsAddOpen(true);
-            }}
-          />
         ) : (
           <div className="space-y-4">
-            <div className="overflow-hidden rounded-2xl border border-border/80 bg-card shadow-card">
+            <div className="overflow-hidden rounded-xl border border-border/80 bg-card shadow-soft">
               {/* Desktop Table View */}
               <div className="table-desktop overflow-x-auto">
-                <table className="w-full text-left text-sm min-w-[1000px]">
-                  <thead className="border-b border-border/80 bg-muted/40 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
-                    <tr>
-                      <th className="px-5 py-3 whitespace-nowrap">{t("customer") || "Customer"}</th>
-                      <th className="px-5 py-3 whitespace-nowrap">{t("contact") || "Contact"}</th>
-                      <th className="px-5 py-3 text-right whitespace-nowrap">{t("visits") || "Visits"}</th>
-                      <th className="px-5 py-3 text-right whitespace-nowrap">{t("lifetime") || "Lifetime Spent"}</th>
-                      <th className="px-5 py-3 text-right whitespace-nowrap">{t("points") || "Points"}</th>
-                      <th className="px-5 py-3 text-right whitespace-nowrap">{t("credit") || "Due Credit"}</th>
-                      <th className="px-5 py-3 text-right whitespace-nowrap">{t("wallet") || "Wallet"}</th>
-                      <th className="px-5 py-3 whitespace-nowrap">{t("tier") || "Tier"}</th>
-                      <th className="px-5 py-3 text-right whitespace-nowrap">{t("actions") || "Actions"}</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-border/60">
-                    {customers.map((c: any) => (
-                      <tr key={c.id} className="hover:bg-muted/30 transition-colors">
-                        <td className="px-5 py-3 whitespace-nowrap">
-                          <div className="flex items-center gap-3">
-                            <div className="grid size-10 place-items-center rounded-xl bg-gradient-to-br from-primary/20 to-primary/5 text-xs font-black text-primary border border-primary/20">
-                              {c.name
-                                .split(" ")
-                                .map((n: string) => n[0])
-                                .join("")
-                                .slice(0, 2)
-                                .toUpperCase()}
-                            </div>
-                            <span className="font-bold text-foreground hover:text-primary transition-colors cursor-pointer" onClick={() => setLedgerCustomer(c)}>
-                              {c.name}
-                            </span>
-                          </div>
-                        </td>
-                        <td className="px-5 py-3 whitespace-nowrap">
-                          <div className="flex flex-col gap-0.5 text-xs text-muted-foreground font-medium">
-                            {c.email && (
-                              <span className="flex items-center gap-1.5">
-                                <Mail className="size-3 text-muted-foreground/60" /> {c.email}
-                              </span>
-                            )}
-                            <span className="flex items-center gap-1.5">
-                              <Phone className="size-3 text-muted-foreground/60" /> {c.phone}
-                            </span>
-                          </div>
-                        </td>
-                        <td className="number px-5 py-3 text-right whitespace-nowrap font-medium text-xs">
-                          {c.visits}
-                        </td>
-                        <td className="number px-5 py-3 text-right font-black whitespace-nowrap text-foreground">
-                          {formatCurrency(c.totalSpent)}
-                        </td>
-                        <td className="number px-5 py-3 text-right whitespace-nowrap font-bold text-xs text-muted-foreground">
-                          {c.loyaltyPoints.toLocaleString()}
-                        </td>
-                        <td
-                          className={`number px-5 py-3 text-right whitespace-nowrap font-black ${c.credit > 0 ? "text-destructive" : "text-muted-foreground"}`}
-                        >
-                          {formatCurrency(c.credit)}
-                        </td>
-                        <td className="number px-5 py-3 text-right font-black text-success whitespace-nowrap">
-                          {formatCurrency(c.walletBalance || 0)}
-                        </td>
-                        <td className="px-5 py-3 whitespace-nowrap">
-                          <div className="flex flex-col gap-1 items-start">
-                            {c.type === "wholesale" ? (
-                              <Badge className="bg-primary/15 text-primary border-primary/25 text-[10px] font-bold">
-                                Wholesale
-                              </Badge>
-                            ) : c.type === "dealer" ? (
-                              <Badge className="bg-warning/15 text-warning-foreground border-warning/25 text-[10px] font-bold">
-                                Dealer
-                              </Badge>
-                            ) : c.type === "corporate" ? (
-                              <Badge className="bg-info/15 text-info border-info/25 text-[10px] font-bold">
-                                Corporate
-                              </Badge>
-                            ) : (
-                              <Badge variant="outline" className="text-muted-foreground text-[10px] font-semibold">
-                                Retail
-                              </Badge>
-                            )}
-                            {c.status === "vip" ? (
-                              <span className="text-[10px] font-extrabold text-warning">★ VIP</span>
-                            ) : null}
-                          </div>
-                        </td>
-                        <td className="px-5 py-3 text-right whitespace-nowrap">
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="icon" className="size-8 rounded-lg">
-                                <MoreVertical className="size-4 text-muted-foreground" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="rounded-xl">
-                              <DropdownMenuItem onClick={() => setEditItem(c)} className="text-xs font-semibold">
-                                <Edit2 className="mr-2 size-3.5" /> Edit Details
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => setLedgerCustomer(c)} className="text-xs font-bold text-primary">
-                                <Users className="mr-2 size-3.5" /> Customer Ledger (Khata)
-                              </DropdownMenuItem>
-                              {c.credit > 0 && (
-                                <DropdownMenuItem
-                                  onClick={() => {
-                                    setSettleItem(c);
-                                    setSettleAmount(c.credit.toString());
-                                  }}
-                                  className="text-xs font-bold text-success"
-                                >
-                                  <Star className="mr-2 size-3.5" /> Settle Due Balance
-                                </DropdownMenuItem>
-                              )}
-                              <DropdownMenuItem
-                                className="text-destructive text-xs font-semibold"
-                                onClick={() => setDeleteId(c.id)}
+                <Table className="min-w-[1000px]">
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>{t("customer") || "Customer Name"}</TableHead>
+                      <TableHead>{t("contact") || "Mobile Phone"}</TableHead>
+                      <TableHead className="text-right">{t("visits") || "Visits"}</TableHead>
+                      <TableHead className="text-right">{t("spent") || "Total Purchases"}</TableHead>
+                      <TableHead className="text-right">{t("points") || "Points"}</TableHead>
+                      <TableHead className="text-right text-destructive font-bold">{t("credit") || "Udhaar (Due)"}</TableHead>
+                      <TableHead className="text-right text-success font-bold">{t("wallet") || "Jama / Advance"}</TableHead>
+                      <TableHead>{t("tier") || "Category"}</TableHead>
+                      <TableHead className="text-right">{t("actions") || "Actions"}</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {customers.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={9} className="h-64 text-center">
+                          <EmptyState
+                            icon={Users}
+                            title={t("noCustomersFound") || "No customers found"}
+                            description={
+                              search
+                                ? t("adjustSearch") || "Try adjusting your search query."
+                                : t("noCustomersYet") || "You haven't added any customers yet."
+                            }
+                            actionLabel="Add Customer"
+                            onAction={() => {
+                              setEditItem(null);
+                              setIsAddOpen(true);
+                            }}
+                            className="border-none bg-transparent my-0 py-8 shadow-none"
+                          />
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      customers.map((c: any) => (
+                        <TableRow key={c.id}>
+                          <TableCell className="whitespace-nowrap">
+                            <div className="flex items-center gap-3">
+                              <div className="grid size-10 place-items-center rounded-xl bg-primary/10 text-xs font-semibold text-primary border border-primary/20">
+                                {c.name
+                                  .split(" ")
+                                  .map((n: string) => n[0])
+                                  .join("")
+                                  .slice(0, 2)
+                                  .toUpperCase()}
+                              </div>
+                              <span
+                                className="font-bold text-foreground hover:text-primary transition-colors cursor-pointer"
+                                onClick={() => setLedgerCustomer(c)}
                               >
-                                <Trash2 className="mr-2 size-3.5" /> Delete
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                                {c.name}
+                              </span>
+                            </div>
+                          </TableCell>
+                          <TableCell className="whitespace-nowrap">
+                            <div className="text-sm font-medium">{c.phone}</div>
+                            {c.email && (
+                              <div className="text-xs text-muted-foreground">{c.email}</div>
+                            )}
+                          </TableCell>
+                          <TableCell className="number text-right font-medium">{c.visits || 0}</TableCell>
+                          <TableCell className="number text-right font-semibold">
+                            {formatCurrency(c.totalSpent || 0)}
+                          </TableCell>
+                          <TableCell className="number text-right font-semibold text-primary">
+                            {(c.loyaltyPoints ?? c.points ?? 0).toLocaleString()} pts
+                          </TableCell>
+                          <TableCell className="number text-right font-bold text-destructive">
+                            {c.credit > 0 ? formatCurrency(c.credit) : "—"}
+                          </TableCell>
+                          <TableCell className="number text-right font-semibold text-success">
+                            {c.walletBalance > 0 ? formatCurrency(c.walletBalance) : "—"}
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-2">
+                              {c.type === "Wholesale" ? (
+                                <Badge
+                                  variant="outline"
+                                  className="bg-primary/10 text-primary border-primary/20 text-[10px] font-semibold"
+                                >
+                                  Wholesale
+                                </Badge>
+                              ) : (
+                                <Badge
+                                  variant="outline"
+                                  className="text-muted-foreground text-[10px] font-semibold"
+                                >
+                                  Retail
+                                </Badge>
+                              )}
+                              {c.status === "vip" ? (
+                                <span className="text-[10px] font-extrabold text-warning">★ VIP</span>
+                              ) : null}
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-right whitespace-nowrap">
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon" className="size-8 rounded-lg">
+                                  <MoreVertical className="size-4 text-muted-foreground" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end" className="rounded-xl">
+                                <DropdownMenuItem
+                                  onClick={() => setEditItem(c)}
+                                  className="text-xs font-semibold"
+                                >
+                                  <Edit2 className="mr-2 size-3.5" /> Edit Details
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  onClick={() => setLedgerCustomer(c)}
+                                  className="text-xs font-bold text-primary"
+                                >
+                                  <Users className="mr-2 size-3.5" /> Customer Ledger (Khata)
+                                </DropdownMenuItem>
+                                {c.credit > 0 && (
+                                  <DropdownMenuItem
+                                    onClick={() => {
+                                      setSettleItem(c);
+                                      setSettleAmount(c.credit.toString());
+                                    }}
+                                    className="text-xs font-bold text-success"
+                                  >
+                                    <Star className="mr-2 size-3.5" /> Settle Due Balance
+                                  </DropdownMenuItem>
+                                )}
+                                <DropdownMenuItem
+                                  className="text-destructive text-xs font-semibold"
+                                  onClick={() => setDeleteId(c.id)}
+                                >
+                                  <Trash2 className="mr-2 size-3.5" /> Delete
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
               </div>
 
               {/* Mobile Card Feed (< 768px) */}
               <div className="table-mobile-cards p-3 space-y-2.5">
-                {customers.map((c: any) => (
-                  <div
-                    key={c.id}
-                    className="flex items-center justify-between rounded-xl border border-border/80 bg-card p-3 shadow-sm card-interactive"
-                    onClick={() => setLedgerCustomer(c)}
-                  >
-                    <div className="flex items-center gap-3 min-w-0 flex-1">
-                      <div className="grid size-11 shrink-0 place-items-center rounded-xl bg-primary/10 text-xs font-black text-primary border border-primary/20">
-                        {c.name
-                          .split(" ")
-                          .map((n: string) => n[0])
-                          .join("")
-                          .slice(0, 2)
-                          .toUpperCase()}
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-1.5">
-                          <span className="font-bold text-xs sm:text-sm text-foreground truncate">{c.name}</span>
-                          {c.status === "vip" && <span className="text-[10px] text-warning font-black">★</span>}
+                {customers.length === 0 ? (
+                  <EmptyState
+                    icon={Users}
+                    title={t("noCustomersFound") || "No customers found"}
+                    description={
+                      search
+                        ? t("adjustSearch") || "Try adjusting your search query."
+                        : t("noCustomersYet") || "You haven't added any customers yet."
+                    }
+                    actionLabel="Add Customer"
+                    onAction={() => {
+                      setEditItem(null);
+                      setIsAddOpen(true);
+                    }}
+                    className="border-none bg-transparent my-0 py-6 shadow-none"
+                  />
+                ) : (
+                  customers.map((c: any) => (
+                    <div
+                      key={c.id}
+                      className="flex items-center justify-between rounded-xl border border-border/80 bg-card p-3 shadow-sm card-interactive"
+                      onClick={() => setLedgerCustomer(c)}
+                    >
+                      <div className="flex items-center gap-3 min-w-0 flex-1">
+                        <div className="grid size-11 shrink-0 place-items-center rounded-xl bg-primary/10 text-xs font-black text-primary border border-primary/20">
+                          {c.name
+                            .split(" ")
+                            .map((n: string) => n[0])
+                            .join("")
+                            .slice(0, 2)
+                            .toUpperCase()}
                         </div>
-                        <p className="text-[11px] text-muted-foreground">{c.phone}</p>
-                        <div className="flex items-center gap-1.5 mt-1">
-                          <Badge variant="outline" className="text-[9px] font-bold py-0 capitalize">
-                            {c.type || "Retail"}
-                          </Badge>
-                          {c.credit > 0 && (
-                            <span className="text-[9px] font-black text-destructive bg-destructive/10 px-1.5 py-0.2 rounded-md">
-                              Due: {formatCurrency(c.credit)}
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-1.5">
+                            <span className="font-bold text-xs sm:text-sm text-foreground truncate">
+                              {c.name}
                             </span>
-                          )}
+                            {c.status === "vip" && (
+                              <span className="text-[10px] text-warning font-black">★</span>
+                            )}
+                          </div>
+                          <p className="text-[11px] text-muted-foreground">{c.phone}</p>
+                          <div className="flex items-center gap-1.5 mt-1">
+                            <Badge variant="outline" className="text-[9px] font-bold py-0 capitalize">
+                              {c.type || "Retail"}
+                            </Badge>
+                            <span className="text-[10px] font-bold text-primary bg-primary/10 px-1.5 py-0.5 rounded border border-primary/20">
+                              {(c.loyaltyPoints ?? 0).toLocaleString()} pts
+                            </span>
+                            {c.credit > 0 && (
+                              <span className="text-[10px] font-black text-destructive bg-destructive/10 px-2 py-0.5 rounded-md border border-destructive/20">
+                                Udhaar: {formatCurrency(c.credit)}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="text-right shrink-0 pl-2">
+                        <div className="number text-xs font-black text-foreground">
+                          {formatCurrency(c.totalSpent)}
+                        </div>
+                        <div className="text-[10px] text-muted-foreground mt-0.5">
+                          {c.visits} visits
                         </div>
                       </div>
                     </div>
-
-                    <div className="text-right shrink-0 pl-2">
-                      <div className="number text-xs font-black text-foreground">
-                        {formatCurrency(c.totalSpent)}
-                      </div>
-                      <div className="text-[10px] text-muted-foreground mt-0.5">
-                        {c.visits} visits
-                      </div>
-                    </div>
-                  </div>
-                ))}
+                  ))
+                )}
               </div>
 
-              <div className="border-t border-border/60 p-2 sm:p-3">
-                <PaginationControls
-                  currentPage={page}
-                  totalPages={totalPages}
-                  pageSize={pageSize}
-                  totalItems={customers.length}
-                  onPageChange={setPage}
-                  onPageSizeChange={setPageSize}
-                />
-              </div>
+              {customers.length > 0 && (
+                <div className="border-t border-border/60 p-2 sm:p-3">
+                  <PaginationControls
+                    currentPage={page}
+                    totalPages={totalPages}
+                    pageSize={pageSize}
+                    totalItems={customers.length}
+                    onPageChange={setPage}
+                    onPageSizeChange={setPageSize}
+                  />
+                </div>
+              )}
             </div>
           </div>
         )}
       </DataPage>
 
-      <Dialog
+      {/* Add / Edit Customer Drawer */}
+      <Sheet
         open={isAddOpen || !!editItem}
         onOpenChange={(open) => {
           if (!open) {
@@ -625,148 +660,163 @@ function CustomersPage() {
           }
         }}
       >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{editItem ? "Edit Customer" : "Add Customer"}</DialogTitle>
-          </DialogHeader>
-          <form id="customer-form" noValidate onSubmit={handleSave} className="space-y-4">
-            <div className="space-y-1.5">
-              <Label htmlFor="name">
-                Full Name <span className="text-destructive">*</span>
-              </Label>
-              <Input
-                id="name"
-                name="name"
-                placeholder="e.g. Customer Name"
-                defaultValue={editItem?.name || ""}
-                className={
-                  custErrors.name ? "border-destructive focus-visible:ring-destructive" : ""
-                }
-                onChange={() => clearCustError("name")}
-              />
-              <FieldError message={custErrors.name} />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
+        <SheetContent
+          side="right"
+          className="w-full sm:max-w-xl md:max-w-2xl p-0 flex flex-col h-full bg-background border-l border-border"
+        >
+          <SheetHeader className="bg-muted/60 p-5 border-b pr-12 text-left">
+            <SheetTitle className="text-xl font-bold text-foreground">
+              {editItem ? "Edit Customer Profile" : "Add New Customer"}
+            </SheetTitle>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Manage client details, credit limits, khata balance, and contact information.
+            </p>
+          </SheetHeader>
+          <form
+            id="customer-form"
+            noValidate
+            onSubmit={handleSave}
+            className="flex flex-col flex-1 overflow-hidden"
+          >
+            <div className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-4">
               <div className="space-y-1.5">
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="name">
+                  Full Name <span className="text-destructive">*</span>
+                </Label>
                 <Input
-                  id="email"
-                  name="email"
-                  type="email"
-                  placeholder="e.g. email@example.com"
-                  defaultValue={editItem?.email || ""}
+                  id="name"
+                  name="name"
+                  placeholder="e.g. Customer Name"
+                  defaultValue={editItem?.name || ""}
                   className={
-                    custErrors.email ? "border-destructive focus-visible:ring-destructive" : ""
+                    custErrors.name ? "border-destructive focus-visible:ring-destructive" : ""
                   }
-                  onChange={() => clearCustError("email")}
+                  onChange={() => clearCustError("name")}
                 />
-                <FieldError message={custErrors.email} />
+                <FieldError message={custErrors.name} />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <Label htmlFor="email">Email</Label>
+                  <Input
+                    id="email"
+                    name="email"
+                    type="email"
+                    placeholder="e.g. email@example.com"
+                    defaultValue={editItem?.email || ""}
+                    className={
+                      custErrors.email ? "border-destructive focus-visible:ring-destructive" : ""
+                    }
+                    onChange={() => clearCustError("email")}
+                  />
+                  <FieldError message={custErrors.email} />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="phone">Phone</Label>
+                  <PhoneInput
+                    id="phone"
+                    name="phone"
+                    type="tel"
+                    placeholder="e.g. 1700 000000"
+                    defaultValue={editItem?.phone || ""}
+                    className={
+                      custErrors.phone ? "border-destructive focus-visible:ring-destructive" : ""
+                    }
+                    onChange={() => clearCustError("phone")}
+                  />
+                  <FieldError message={custErrors.phone} />
+                </div>
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="phone">Phone</Label>
-                <PhoneInput
-                  id="phone"
-                  name="phone"
-                  type="tel"
-                  placeholder="e.g. 1700 000000"
-                  defaultValue={editItem?.phone || ""}
+                <Label htmlFor="address">Address</Label>
+                <Input
+                  id="address"
+                  name="address"
+                  placeholder="e.g. 123 Main St"
+                  defaultValue={editItem?.address || ""}
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <Label htmlFor="city">City</Label>
+                  <Input
+                    id="city"
+                    name="city"
+                    placeholder="e.g. New York"
+                    defaultValue={editItem?.city || ""}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="zipCode">Zip / Postal Code</Label>
+                  <Input
+                    id="zipCode"
+                    name="zipCode"
+                    placeholder="e.g. 10001"
+                    defaultValue={editItem?.zipCode || ""}
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="type">{t("customerType") || "Customer Type"}</Label>
+                  <SearchableSelect
+                    options={[
+                      { value: "retail", label: "Retail (B2C)" },
+                      { value: "wholesale", label: "Wholesale (B2B)" },
+                      { value: "dealer", label: "Dealer" },
+                      { value: "distributor", label: "Distributor" },
+                    ]}
+                    value={editItem?.type || "retail"}
+                    onChange={(val) => {
+                      const input = document.createElement("input");
+                      input.type = "hidden";
+                      input.name = "type";
+                      input.value = val;
+                      document.getElementById("customer-form")?.appendChild(input);
+                      if (editItem) setEditItem({ ...editItem, type: val as any });
+                    }}
+                    placeholder="Select Type"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="status">{t("status") || "Status"}</Label>
+                  <SearchableSelect
+                    options={[
+                      { value: "active", label: "Active" },
+                      { value: "inactive", label: "Inactive" },
+                    ]}
+                    value={editItem?.status || "active"}
+                    onChange={(val) => {
+                      const input = document.createElement("input");
+                      input.type = "hidden";
+                      input.name = "status";
+                      input.value = val;
+                      document.getElementById("customer-form")?.appendChild(input);
+                      if (editItem) setEditItem({ ...editItem, status: val });
+                    }}
+                    placeholder="Select Status"
+                  />
+                </div>
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="creditLimit">Credit Limit ({useCurrency().currencySymbol})</Label>
+                <Input
+                  id="creditLimit"
+                  name="creditLimit"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  placeholder="e.g. 5000"
+                  defaultValue={editItem?.creditLimit || 5000}
                   className={
-                    custErrors.phone ? "border-destructive focus-visible:ring-destructive" : ""
+                    custErrors.creditLimit ? "border-destructive focus-visible:ring-destructive" : ""
                   }
-                  onChange={() => clearCustError("phone")}
+                  onChange={() => clearCustError("creditLimit")}
                 />
-                <FieldError message={custErrors.phone} />
+                <FieldError message={custErrors.creditLimit} />
               </div>
             </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="address">Address</Label>
-              <Input
-                id="address"
-                name="address"
-                placeholder="e.g. 123 Main St"
-                defaultValue={editItem?.address || ""}
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-1.5">
-                <Label htmlFor="city">City</Label>
-                <Input
-                  id="city"
-                  name="city"
-                  placeholder="e.g. New York"
-                  defaultValue={editItem?.city || ""}
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="zipCode">Zip / Postal Code</Label>
-                <Input
-                  id="zipCode"
-                  name="zipCode"
-                  placeholder="e.g. 10001"
-                  defaultValue={editItem?.zipCode || ""}
-                />
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="type">{t("customerType") || "Customer Type"}</Label>
-                <SearchableSelect
-                  options={[
-                    { value: "retail", label: "Retail (B2C)" },
-                    { value: "wholesale", label: "Wholesale (B2B)" },
-                    { value: "dealer", label: "Dealer" },
-                    { value: "distributor", label: "Distributor" },
-                  ]}
-                  value={editItem?.type || "retail"}
-                  onChange={(val) => {
-                    const input = document.createElement("input");
-                    input.type = "hidden";
-                    input.name = "type";
-                    input.value = val;
-                    document.getElementById("customer-form")?.appendChild(input);
-                    if (editItem) setEditItem({ ...editItem, type: val as any });
-                  }}
-                  placeholder="Select Type"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="status">{t("status") || "Status"}</Label>
-                <SearchableSelect
-                  options={[
-                    { value: "active", label: "Active" },
-                    { value: "inactive", label: "Inactive" },
-                  ]}
-                  value={editItem?.status || "active"}
-                  onChange={(val) => {
-                    const input = document.createElement("input");
-                    input.type = "hidden";
-                    input.name = "status";
-                    input.value = val;
-                    document.getElementById("customer-form")?.appendChild(input);
-                    if (editItem) setEditItem({ ...editItem, status: val });
-                  }}
-                  placeholder="Select Status"
-                />
-              </div>
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="creditLimit">Credit Limit ({useCurrency().currencySymbol})</Label>
-              <Input
-                id="creditLimit"
-                name="creditLimit"
-                type="number"
-                min="0"
-                step="0.01"
-                placeholder="e.g. 5000"
-                defaultValue={editItem?.creditLimit || 5000}
-                className={
-                  custErrors.creditLimit ? "border-destructive focus-visible:ring-destructive" : ""
-                }
-                onChange={() => clearCustError("creditLimit")}
-              />
-              <FieldError message={custErrors.creditLimit} />
-            </div>
-            <DialogFooter>
+            <div className="border-t border-border p-4 bg-card/80 backdrop-blur-sm flex items-center justify-end gap-3 shrink-0">
               <Button
                 type="button"
                 variant="outline"
@@ -778,14 +828,14 @@ function CustomersPage() {
               >
                 Cancel
               </Button>
-              <Button type="submit" disabled={isSaving}>
+              <Button type="submit" disabled={isSaving} className="min-w-[140px]">
                 {isSaving && <Loader2 className="size-4 animate-spin mr-2" />}
                 Save Customer
               </Button>
-            </DialogFooter>
+            </div>
           </form>
-        </DialogContent>
-      </Dialog>
+        </SheetContent>
+      </Sheet>
 
       <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
         <AlertDialogContent>
@@ -844,7 +894,7 @@ function CustomersPage() {
       <Sheet open={!!ledgerCustomer} onOpenChange={(open) => !open && setLedgerCustomer(null)}>
         <SheetContent
           side="right"
-          className="w-full sm:max-w-2xl overflow-y-auto p-6 bg-background border-l border-border shadow-elevated"
+          className="w-full sm:max-w-3xl lg:max-w-4xl xl:max-w-5xl overflow-y-auto p-6 bg-background border-l border-border shadow-elevated"
         >
           <SheetHeader className="flex flex-col sm:flex-row items-start justify-between gap-3 border-b pb-4 pr-6 sm:pr-8 text-left">
             <div className="w-full sm:w-auto text-left">
@@ -860,10 +910,10 @@ function CustomersPage() {
                 <Button
                   size="sm"
                   variant="outline"
-                  className="bg-emerald-500/10 text-emerald-600 border-emerald-500/30 hover:bg-emerald-500/20 font-semibold flex-1 sm:flex-none"
+                  className="bg-success/10 text-success border-success/30 hover:bg-success/20 font-semibold flex-1 sm:flex-none"
                   onClick={() =>
                     sendAutomatedDueReminder(
-                      settings?.storeName || "NexisPOS",
+                      settings?.storeName || "OneDesk360",
                       ledgerCustomer.name,
                       ledgerCustomer.phone || "",
                       ledgerCustomer.credit,
@@ -934,31 +984,31 @@ function CustomersPage() {
                 Transaction History Statement
               </h4>
               <div className="overflow-x-auto rounded-xl border border-border shadow-soft">
-                <table className="w-full text-sm min-w-[700px]">
-                  <thead className="bg-muted/50 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                    <tr>
-                      <th className="px-3 py-2.5 text-left whitespace-nowrap">Date</th>
-                      <th className="px-3 py-2.5 text-left whitespace-nowrap">Type</th>
-                      <th className="px-3 py-2.5 text-left whitespace-nowrap">Ref #</th>
-                      <th className="px-3 py-2.5 text-right whitespace-nowrap">Debit (+Due)</th>
-                      <th className="px-3 py-2.5 text-right whitespace-nowrap">Credit (-Paid)</th>
-                      <th className="px-3 py-2.5 text-right whitespace-nowrap">Balance</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-border">
+                <Table className="min-w-[700px]">
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="px-3 py-2.5 text-left">Date</TableHead>
+                      <TableHead className="px-3 py-2.5 text-left">Type</TableHead>
+                      <TableHead className="px-3 py-2.5 text-left">Ref #</TableHead>
+                      <TableHead className="px-3 py-2.5 text-right">Debit (+Due)</TableHead>
+                      <TableHead className="px-3 py-2.5 text-right">Credit (-Paid)</TableHead>
+                      <TableHead className="px-3 py-2.5 text-right">Balance</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
                     {customerLedgerEntries.length === 0 ? (
-                      <tr>
-                        <td colSpan={6} className="py-8 text-center text-xs text-muted-foreground">
+                      <TableRow>
+                        <TableCell colSpan={6} className="py-8 text-center text-xs text-muted-foreground">
                           No transactions recorded in ledger yet.
-                        </td>
-                      </tr>
+                        </TableCell>
+                      </TableRow>
                     ) : (
                       customerLedgerEntries.map((l) => (
-                        <tr key={l.id} className="hover:bg-muted/30">
-                          <td className="px-3 py-2.5 text-xs text-muted-foreground whitespace-nowrap">
+                        <TableRow key={l.id} className="hover:bg-muted/30">
+                          <TableCell className="px-3 py-2.5 text-xs text-muted-foreground whitespace-nowrap">
                             {new Date(l.date).toLocaleString()}
-                          </td>
-                          <td className="px-3 py-2.5 font-medium capitalize whitespace-nowrap">
+                          </TableCell>
+                          <TableCell className="px-3 py-2.5 font-medium capitalize whitespace-nowrap">
                             <span
                               className={cn(
                                 "inline-block rounded px-1.5 py-0.5 text-[10px] font-bold uppercase",
@@ -969,26 +1019,26 @@ function CustomersPage() {
                             >
                               {l.type}
                             </span>
-                          </td>
-                          <td className="px-3 py-2.5 font-mono text-xs whitespace-nowrap">
+                          </TableCell>
+                          <TableCell className="px-3 py-2.5 font-mono text-xs whitespace-nowrap">
                             {l.referenceNo || "-"}
-                          </td>
-                          <td className="px-3 py-2.5 text-right font-semibold text-destructive whitespace-nowrap">
+                          </TableCell>
+                          <TableCell className="px-3 py-2.5 text-right font-semibold text-destructive whitespace-nowrap">
                             {l.type === "invoice" ? formatCurrency(l.amount) : "-"}
-                          </td>
-                          <td className="px-3 py-2.5 text-right font-semibold text-success whitespace-nowrap">
+                          </TableCell>
+                          <TableCell className="px-3 py-2.5 text-right font-semibold text-success whitespace-nowrap">
                             {l.type === "payment" || l.type === "return"
                               ? formatCurrency(l.amount)
                               : "-"}
-                          </td>
-                          <td className="px-3 py-2.5 text-right font-bold whitespace-nowrap">
+                          </TableCell>
+                          <TableCell className="px-3 py-2.5 text-right font-bold whitespace-nowrap">
                             {formatCurrency(l.balanceAfter)}
-                          </td>
-                        </tr>
+                          </TableCell>
+                        </TableRow>
                       ))
                     )}
-                  </tbody>
-                </table>
+                  </TableBody>
+                </Table>
               </div>
             </div>
           </div>

@@ -7,21 +7,27 @@ import { z } from "zod";
 import { v4 as uuidv4 } from "uuid";
 
 export const submitPaymentProofFn = createServerFn({ method: "POST" })
-  .validator(z.object({
-    planId: z.string().min(1),
-    utrNumber: z.string().min(3),
-    paymentMethod: z.string(),
-    note: z.string().optional(),
-    amount: z.number().optional(),
-    billingCycle: z.enum(["monthly", "yearly", "trial", "custom"]).optional().default("monthly"),
-  }))
+  .validator(
+    z.object({
+      planId: z.string().min(1),
+      utrNumber: z.string().min(3),
+      paymentMethod: z.string(),
+      note: z.string().optional(),
+      amount: z.number().optional(),
+      billingCycle: z.enum(["monthly", "yearly", "trial", "custom"]).optional().default("monthly"),
+    }),
+  )
   .handler(async ({ data }) => {
     try {
       const session = await requireAuth();
       if (!session.orgId) return { success: false as const, error: "Unauthorized: No Org ID" };
 
       // Validate plan exists
-      const plan = await db.select().from(schema.saasPlans).where(eq(schema.saasPlans.id, data.planId)).limit(1);
+      const plan = await db
+        .select()
+        .from(schema.saasPlans)
+        .where(eq(schema.saasPlans.id, data.planId))
+        .limit(1);
       if (!plan.length) return { success: false as const, error: "Selected plan does not exist" };
 
       const paymentId = uuidv4();

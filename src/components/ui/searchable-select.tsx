@@ -46,7 +46,9 @@ export function SearchableSelect({
   const listRef = useRef<HTMLDivElement>(null);
 
   const selectedOption = useMemo(
-    () => options.find((opt) => opt.value === value) || (createdOption?.value === value ? createdOption : undefined),
+    () =>
+      options.find((opt) => opt.value === value) ||
+      (createdOption?.value === value ? createdOption : undefined),
     [options, value, createdOption],
   );
 
@@ -95,7 +97,9 @@ export function SearchableSelect({
         >
           <div className="flex items-center gap-2 flex-1 min-w-0">
             {selectedOption?.icon}
-            <span className="truncate block">{selectedOption ? selectedOption.label : placeholder}</span>
+            <span className="truncate block">
+              {selectedOption ? selectedOption.label : placeholder}
+            </span>
           </div>
 
           <div className="flex items-center gap-1 ml-auto shrink-0 opacity-70">
@@ -118,13 +122,18 @@ export function SearchableSelect({
         </Button>
       </PopoverTrigger>
 
-      <PopoverContent className="w-[--radix-popover-trigger-width] p-0 shadow-elevated border border-border bg-popover text-popover-foreground z-50">
+      <PopoverContent
+        align="start"
+        sideOffset={4}
+        style={{ width: "var(--radix-popover-trigger-width)" }}
+        className="w-[var(--radix-popover-trigger-width)] min-w-[var(--radix-popover-trigger-width)] max-w-[var(--radix-popover-content-available-width)] p-0 shadow-elevated border border-border bg-popover text-popover-foreground z-50 overflow-hidden rounded-xl"
+      >
         {/* Search Input Bar */}
-        <div className="flex items-center border-b border-border px-3 py-2 bg-muted/20">
+        <div className="flex items-center border-b border-border px-3 py-2.5 bg-muted/20 gap-2">
           {isCreating ? (
-            <Loader2 className="size-4 shrink-0 text-muted-foreground mr-2 animate-spin" />
+            <Loader2 className="size-4 shrink-0 text-muted-foreground animate-spin" />
           ) : (
-            <Search className="size-4 shrink-0 text-muted-foreground mr-2" />
+            <Search className="size-4 shrink-0 text-muted-foreground" />
           )}
           <Input
             placeholder={searchPlaceholder}
@@ -135,7 +144,9 @@ export function SearchableSelect({
                 e.preventDefault();
                 if (!query.trim() || isCreating) return;
 
-                const exactMatch = options.find((opt) => opt.label.toLowerCase() === query.trim().toLowerCase());
+                const exactMatch = options.find(
+                  (opt) => opt.label.toLowerCase() === query.trim().toLowerCase(),
+                );
                 if (exactMatch) {
                   onChange(exactMatch.value);
                   setOpen(false);
@@ -159,7 +170,7 @@ export function SearchableSelect({
                 }
               }
             }}
-            className="h-8 border-none bg-transparent p-0 text-xs focus-visible:ring-0 shadow-none"
+            className="h-8 border-none bg-transparent p-0 text-sm focus-visible:ring-0 shadow-none placeholder:text-muted-foreground flex-1"
             autoFocus
             disabled={isCreating}
           />
@@ -167,7 +178,7 @@ export function SearchableSelect({
             <Button
               variant="ghost"
               size="icon"
-              className="size-6 text-muted-foreground hover:text-foreground"
+              className="size-6 text-muted-foreground hover:text-foreground shrink-0 rounded-full"
               onClick={() => setQuery("")}
             >
               <X className="size-3.5" />
@@ -179,10 +190,10 @@ export function SearchableSelect({
         <div
           ref={listRef}
           onScroll={handleScroll}
-          className="max-h-60 overflow-y-auto p-1 text-sm scrollbar-thin"
+          className="max-h-64 overflow-y-auto p-1.5 text-sm scrollbar-thin space-y-0.5"
         >
           {visibleOptions.length === 0 ? (
-            <div className="py-6 text-center text-xs text-muted-foreground">
+            <div className="py-6 text-center text-sm text-muted-foreground">
               {query && onCreate ? "" : "No matching options found."}
             </div>
           ) : (
@@ -197,19 +208,19 @@ export function SearchableSelect({
                     setOpen(false);
                   }}
                   className={cn(
-                    "flex items-center justify-between rounded-md px-2.5 py-2 text-xs cursor-pointer select-none transition-colors",
+                    "flex items-center justify-between rounded-lg px-3 py-2 text-sm cursor-pointer select-none transition-colors",
                     isSelected
-                      ? "bg-primary/10 font-semibold text-primary"
-                      : "hover:bg-muted/60 text-foreground",
+                      ? "bg-primary/10 font-bold text-primary"
+                      : "hover:bg-muted/70 text-foreground",
                     option.disabled && "opacity-50 pointer-events-none",
                   )}
                 >
-                  <div className="flex items-center gap-2 truncate">
+                  <div className="flex items-center gap-2.5 min-w-0 flex-1">
                     {option.icon}
-                    <div className="flex flex-col truncate">
-                      <span className="truncate font-medium">{option.label}</span>
+                    <div className="flex flex-col min-w-0 flex-1">
+                      <span className="truncate text-sm font-semibold">{option.label}</span>
                       {option.sublabel && (
-                        <span className="text-[10px] text-muted-foreground truncate">
+                        <span className="text-xs text-muted-foreground truncate mt-0.5">
                           {option.sublabel}
                         </span>
                       )}
@@ -222,35 +233,46 @@ export function SearchableSelect({
           )}
 
           {visibleCount < filteredOptions.length && (
-            <div className="py-2 text-center text-[10px] text-muted-foreground font-mono">
+            <div className="py-2 text-center text-xs text-muted-foreground font-mono">
               Loading more options ({visibleCount} of {filteredOptions.length})...
             </div>
           )}
 
-          {query.trim() && onCreate && !options.some(opt => opt.label.toLowerCase() === query.trim().toLowerCase()) && (
-            <div 
-              className={cn("px-2.5 py-2 text-xs border-t border-border flex items-center justify-between text-muted-foreground cursor-pointer hover:bg-muted/60 transition-colors mt-1", isCreating && "opacity-50 pointer-events-none")}
-              onClick={async () => {
-                if (isCreating) return;
-                try {
-                  setIsCreating(true);
-                  const newValue = await onCreate(query.trim());
-                  if (newValue) {
-                    setCreatedOption({ value: newValue, label: query.trim() });
-                    onChange(newValue);
-                    setOpen(false);
+          {query.trim() &&
+            onCreate &&
+            !options.some((opt) => opt.label.toLowerCase() === query.trim().toLowerCase()) && (
+              <div
+                className={cn(
+                  "px-3 py-2.5 text-sm border-t border-border flex items-center justify-between text-foreground cursor-pointer hover:bg-primary/10 hover:text-primary transition-colors mt-1 font-medium rounded-lg",
+                  isCreating && "opacity-50 pointer-events-none",
+                )}
+                onClick={async () => {
+                  if (isCreating) return;
+                  try {
+                    setIsCreating(true);
+                    const newValue = await onCreate(query.trim());
+                    if (newValue) {
+                      setCreatedOption({ value: newValue, label: query.trim() });
+                      onChange(newValue);
+                      setOpen(false);
+                    }
+                  } catch (error) {
+                    console.error(error);
+                  } finally {
+                    setIsCreating(false);
                   }
-                } catch (error) {
-                  console.error(error);
-                } finally {
-                  setIsCreating(false);
-                }
-              }}
-            >
-              <span>Create "{query.trim()}"</span>
-              {isCreating ? <Loader2 className="size-3.5 animate-spin" /> : <kbd className="text-[10px] bg-background border px-1.5 py-0.5 rounded-md font-sans">Enter</kbd>}
-            </div>
-          )}
+                }}
+              >
+                <span className="truncate">Add new "{query.trim()}"</span>
+                {isCreating ? (
+                  <Loader2 className="size-4 animate-spin shrink-0 ml-2" />
+                ) : (
+                  <kbd className="text-[11px] bg-muted px-1.5 py-0.5 rounded border border-border font-sans shrink-0 ml-2">
+                    Enter ↵
+                  </kbd>
+                )}
+              </div>
+            )}
         </div>
       </PopoverContent>
     </Popover>

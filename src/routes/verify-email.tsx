@@ -17,7 +17,7 @@ import { useFormValidation } from "@/hooks/useFormValidation";
 import { FieldError } from "@/components/ui/field-error";
 
 export const Route = createFileRoute("/verify-email")({
-  head: () => ({ meta: [{ title: "Email Verification · NexisPOS SaaS" }] }),
+  head: () => ({ meta: [{ title: "Email Verification · OneDesk360 SaaS" }] }),
   component: VerifyEmailPage,
 });
 
@@ -93,7 +93,7 @@ function VerifyEmailPage() {
       console.log("Verify OTP response:", res);
 
       if (res?.success) {
-        toast.success("Email verified successfully! Welcome to NexisPOS.");
+        toast.success("Email verified successfully! Welcome to OneDesk360.");
         // Reload window to update auth state across app
         window.location.href = "/";
       } else {
@@ -111,16 +111,21 @@ function VerifyEmailPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-background via-card/30 to-primary/5 px-4 py-12">
-      <div className="w-full max-w-md overflow-hidden rounded-3xl border border-border/80 bg-card p-6 sm:p-10 shadow-card card-interactive">
+    <div className="flex min-h-screen items-center justify-center bg-background px-4 py-12">
+      <div className="w-full max-w-md overflow-hidden rounded-xl border border-border/80 bg-card p-6 sm:p-10 shadow-elevated">
         <div className="text-center pb-2">
-          <div className="mx-auto mb-4 grid size-14 place-items-center rounded-2xl bg-gradient-to-br from-primary/20 via-primary/10 to-accent/20 text-primary border border-primary/20 shadow-soft">
+          <div className="mx-auto mb-4 grid size-14 place-items-center rounded-xl bg-primary/10 text-primary border border-primary/20">
             <Mail className="size-7" />
           </div>
-          <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-foreground">Verify Your Email</h1>
+          <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-foreground">
+            Verify Your Email
+          </h1>
           <p className="text-xs sm:text-sm text-muted-foreground mt-1.5 font-medium">
             Activate your account and start your{" "}
-            <strong className="text-primary font-black">{trialDays}-Day Full Enterprise Trial</strong>.
+            <strong className="text-primary font-semibold">
+              {trialDays}-Day Full Enterprise Trial
+            </strong>
+            .
           </p>
         </div>
 
@@ -149,7 +154,9 @@ function VerifyEmailPage() {
                 }}
                 maxLength={6}
                 className={`text-center font-mono text-xl tracking-[0.5em] h-13 rounded-2xl ${
-                  otpErrors.otp ? "border-destructive focus-visible:ring-destructive" : "border-primary/40 focus-visible:ring-primary"
+                  otpErrors.otp
+                    ? "border-destructive focus-visible:ring-destructive"
+                    : "border-primary/40 focus-visible:ring-primary"
                 }`}
               />
               <FieldError message={otpErrors.otp} />
@@ -175,7 +182,8 @@ function VerifyEmailPage() {
               disabled={isSending}
               className="h-8 text-xs font-bold text-primary rounded-xl hover:bg-primary/10"
             >
-              <RefreshCw className={`mr-1.5 size-3.5 ${isSending ? "animate-spin" : ""}`} /> Resend Code
+              <RefreshCw className={`mr-1.5 size-3.5 ${isSending ? "animate-spin" : ""}`} /> Resend
+              Code
             </Button>
           </div>
         </div>

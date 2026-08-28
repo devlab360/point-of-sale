@@ -50,6 +50,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return null;
     },
     enabled: !!orgId,
+    staleTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false,
   });
 
   const saasOrg = orgData?.org;
@@ -64,6 +66,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return [];
     },
     enabled: !!user,
+    staleTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false,
   });
 
   const effectiveMenus = menusData || [];
@@ -74,16 +78,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const storedUserId = SessionStore.getAuthUser();
         if (storedUserId) {
           const res = await getCurrentUserFn();
-          if (res.success && res.user) {
+          if (res && res.success && res.user) {
             setUser(res.user);
           } else {
-            SessionStore.removeAuthUser();
+            SessionStore.clearAll();
+            PersistStore.clearAll();
+            localStorage.clear();
+            sessionStorage.clear();
+            setUser(null);
           }
         } else {
-          SessionStore.removeAuthUser();
+          SessionStore.clearAll();
+          setUser(null);
         }
       } catch (error) {
         console.error("Auth check failed:", error);
+        SessionStore.clearAll();
+        setUser(null);
       } finally {
         setIsLoading(false);
       }
@@ -102,9 +113,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setUser(res.user);
           SessionStore.setAuthUser(res.user.id);
           if (res.user.organizationId) {
-            const oId = res.user.organizationId;
-            PersistStore.setOrgId(oId);
-            await refetchOrgData();
+            PersistStore.setOrgId(res.user.organizationId);
+            refetchOrgData();
           }
 
           // Log SaaS Session
@@ -130,8 +140,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     async (email: string, password: string) => {
       try {
         const res = await loginFn({ data: { email, password } });
-        if (!res.success || !res.user) {
+        if (!res.success) {
           toast.error(res.error || "Incorrect email or password");
+          return false;
+        }
+        if (!res.user) {
+          toast.error("Incorrect email or password");
           return false;
         }
 
@@ -139,7 +153,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         SessionStore.setAuthUser(res.user.id);
         if (res.user.organizationId) {
           PersistStore.setOrgId(res.user.organizationId);
-          await refetchOrgData();
+          refetchOrgData();
         }
 
         // Log SaaS Session
@@ -148,7 +162,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         toast.success(res.message || `Welcome back, ${res.user.name}`);
 
-        router.navigate({ to: "/" });
+        if (res.user.role === "super_admin") {
+          router.navigate({ to: "/admin" });
+        } else {
+          router.navigate({ to: "/" });
+        }
 
         return true;
       } catch (error) {
@@ -170,7 +188,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           SessionStore.setAuthUser(res.user.id);
           if (res.user.organizationId) {
             PersistStore.setOrgId(res.user.organizationId);
-            await refetchOrgData();
+            refetchOrgData();
           }
 
           const sessionId = crypto.randomUUID();
@@ -214,7 +232,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           SessionStore.setAuthUser(res.user.id);
           if (res.user.organizationId) {
             PersistStore.setOrgId(res.user.organizationId);
-            await refetchOrgData();
+            refetchOrgData();
           }
 
           const sessionId = crypto.randomUUID();
@@ -287,7 +305,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   );
 
   const logout = useCallback(async () => {
+    try {
+      const { logoutFn } = await import("@/api/auth");
+      await logoutFn({ data: {} });
+    } catch {}
     SessionStore.clearAll();
+    PersistStore.clearAll();
+    localStorage.clear();
+    sessionStorage.clear();
     setUser(null);
     router.navigate({ to: "/login" });
   }, [router]);
@@ -321,7 +346,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.error("User refresh failed:", error);
     }
   }, []);
-
 
   const value = useMemo(
     () => ({

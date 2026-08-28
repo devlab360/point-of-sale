@@ -38,7 +38,7 @@ import { SyncStatus } from "@/components/SyncStatus";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAppFormatter } from "@/hooks/useAppFormatter";
 import { getGlobalSearchFn } from "@/api/search";
-import { getNotificationsFn, markNotificationReadFn } from "@/api/notifications";
+import { getNotificationsFn, markNotificationReadFn, markAllNotificationsReadFn } from "@/api/notifications";
 import { PersistStore } from "@/lib/session-store";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
@@ -46,9 +46,9 @@ import { useLanguage, LANGUAGES } from "@/contexts/LanguageContext";
 import { useCurrency } from "@/lib/currency";
 import { toast } from "sonner";
 import { v4 as uuidv4 } from "uuid";
-import { InstallAppButton } from "@/components/InstallAppButton";
-
 import { useDebounce } from "@/hooks/useDebounce";
+import { InstallAppButton } from "@/components/InstallAppButton";
+import { LogoutConfirmDialog } from "./LogoutConfirmDialog";
 
 function pathToCrumbs(pathname: string) {
   if (pathname === "/") return [{ label: "Dashboard", to: "/" }];
@@ -68,6 +68,7 @@ export function AppHeader() {
   const [theme, setTheme] = useState<Theme>("light");
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const { formatCurrency } = useCurrency();
   const navigate = useNavigate();
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
@@ -188,7 +189,7 @@ export function AppHeader() {
 
   const profile = user || {
     name: "Admin",
-    email: "admin@nexispos.com",
+    email: "admin@OneDesk360.com",
   };
   const initials = (profile.name || "U")
     .split(" ")
@@ -269,7 +270,10 @@ export function AppHeader() {
               {i === crumbs.length - 1 ? (
                 <span className="font-medium text-foreground">{c.label}</span>
               ) : (
-                <Link to={c.to} className="text-muted-foreground hover:text-foreground transition-colors">
+                <Link
+                  to={c.to}
+                  className="text-muted-foreground hover:text-foreground transition-colors"
+                >
                   {c.label}
                 </Link>
               )}
@@ -278,23 +282,23 @@ export function AppHeader() {
         </ol>
       </nav>
 
-      <div className="flex flex-1 items-center justify-end gap-2 md:flex-none">
+      <div className="flex flex-1 items-center justify-end gap-2.5 md:flex-none">
         <div
           onClick={() => setSearchOpen(true)}
-          className="relative hidden md:block cursor-pointer shrink-1 min-w-0"
+          className="relative hidden md:block cursor-pointer shrink-1 min-w-0 group"
         >
-          <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-          <div className="flex items-center h-9 w-48 lg:w-64 xl:w-80 rounded-lg border border-border bg-muted/50 pl-9 pr-2 lg:pr-12 text-sm text-muted-foreground select-none hover:border-ring transition-colors overflow-hidden">
-            <span className="truncate">Search app, products, orders...</span>
+          <Search className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground group-hover:text-primary transition-colors" />
+          <div className="flex items-center h-10 w-48 lg:w-64 xl:w-80 rounded-xl border border-border/80 bg-card/80 backdrop-blur-sm pl-10 pr-3 lg:pr-12 text-xs font-medium text-muted-foreground select-none hover:border-primary/50 hover:bg-card shadow-xs transition-all overflow-hidden">
+            <span className="truncate">Search modules, products, sales...</span>
           </div>
-          <kbd className="pointer-events-none absolute right-2 top-1/2 hidden -translate-y-1/2 items-center gap-1 rounded border border-border bg-background px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground lg:inline-flex">
+          <kbd className="pointer-events-none absolute right-2.5 top-1/2 hidden -translate-y-1/2 items-center gap-1 rounded-lg border border-border/60 bg-muted/60 px-2 py-0.5 text-[10px] font-extrabold text-muted-foreground/80 lg:inline-flex shadow-2xs">
             <Command className="size-3" />K
           </kbd>
         </div>
         <Button
           variant="ghost"
           size="icon"
-          className="md:hidden"
+          className="md:hidden rounded-xl"
           onClick={() => setSearchOpen(true)}
           title="Global Search"
         >
@@ -305,7 +309,7 @@ export function AppHeader() {
         <SyncStatus />
 
         {canAccessPos && (
-          <Button asChild size="sm" className="hidden sm:flex">
+          <Button asChild size="sm" variant="gradient" className="hidden sm:inline-flex shadow-sm">
             <Link to="/pos">
               <Plus className="size-4" /> New Sale
             </Link>
@@ -347,7 +351,8 @@ export function AppHeader() {
           <Moon className="hidden size-5 dark:block" />
         </Button>
 
-        {hasPermissionForRoute(user, "/notifications", user?.role === "super_admin", saasPlan).allowed && (
+        {hasPermissionForRoute(user, "/notifications", user?.role === "super_admin", saasPlan)
+          .allowed && (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon" className="relative" aria-label="Notifications">
@@ -361,8 +366,27 @@ export function AppHeader() {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-80">
               <DropdownMenuLabel className="flex items-center justify-between">
-                <span>Notifications</span>
-                <span className="text-xs font-normal text-muted-foreground">{unread} unread</span>
+                <span className="font-bold text-xs">Notifications</span>
+                {unread > 0 ? (
+                  <button
+                    type="button"
+                    onClick={async (e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      queryClient.setQueryData(["notifications", orgId], (old: any) =>
+                        Array.isArray(old) ? old.map((n) => ({ ...n, read: true })) : old,
+                      );
+                      await markAllNotificationsReadFn({ data: {} });
+                      queryClient.invalidateQueries({ queryKey: ["notifications"] });
+                      toast.success("All notifications marked as read");
+                    }}
+                    className="text-[11px] font-bold text-primary hover:underline cursor-pointer"
+                  >
+                    Mark all read
+                  </button>
+                ) : (
+                  <span className="text-[11px] font-normal text-muted-foreground">All caught up</span>
+                )}
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
               {notifications.slice(0, 5).map((n) => (
@@ -370,6 +394,11 @@ export function AppHeader() {
                   key={n.id}
                   onClick={async () => {
                     if (!n.read) {
+                      queryClient.setQueryData(["notifications", orgId], (old: any) =>
+                        Array.isArray(old)
+                          ? old.map((item) => (item.id === n.id ? { ...item, read: true } : item))
+                          : old,
+                      );
                       await markNotificationReadFn({ data: { id: n.id } });
                       queryClient.invalidateQueries({ queryKey: ["notifications"] });
                     }
@@ -407,7 +436,7 @@ export function AppHeader() {
         )}
 
         <DropdownMenu>
-          <DropdownMenuTrigger className="ml-1 flex size-9 items-center justify-center rounded-full bg-gradient-to-br from-primary to-info text-sm font-bold text-primary-foreground overflow-hidden">
+          <DropdownMenuTrigger className="ml-1 flex size-9 items-center justify-center rounded-full bg-primary text-sm font-semibold text-primary-foreground overflow-hidden">
             {(profile as any).avatar ? (
               <img src={(profile as any).avatar} alt="Profile" className="size-full object-cover" />
             ) : (
@@ -443,13 +472,24 @@ export function AppHeader() {
               </DropdownMenuItem>
             )}
             <DropdownMenuItem
-              onClick={logout}
-              className="text-destructive flex items-center gap-2 font-medium"
+              onSelect={(e) => {
+                e.preventDefault();
+                setShowLogoutConfirm(true);
+              }}
+              className="text-destructive flex items-center gap-2 font-medium cursor-pointer"
             >
               <LogOut className="size-4" /> {t("logout") || "Sign out"}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
+
+        <LogoutConfirmDialog
+          open={showLogoutConfirm}
+          onOpenChange={setShowLogoutConfirm}
+          onConfirm={logout}
+          userName={profile.name}
+          userEmail={profile.email}
+        />
       </div>
 
       <Dialog open={searchOpen} onOpenChange={setSearchOpen}>
@@ -478,7 +518,7 @@ export function AppHeader() {
           <div className="max-h-[60vh] overflow-y-auto p-3 space-y-4 bg-background">
             {!searchQuery.trim() || searchQuery.length < 1 ? (
               <div className="py-8 text-center text-sm text-muted-foreground flex flex-col items-center gap-2">
-                <Command className="size-8 opacity-30 animate-pulse" />
+                <Command className="size-8 opacity-20" />
                 <span>Type to search across pages, products, customers, orders & finances...</span>
               </div>
             ) : searchModules.length === 0 &&
@@ -602,7 +642,8 @@ export function AppHeader() {
                           <div className="font-medium">Order #{o.id}</div>
                           <div className="flex items-center gap-2 text-xs text-muted-foreground font-medium">
                             <span>
-                              {o.customerName || "Walk-in Customer"} · {formatCurrency(o.total || 0)}
+                              {o.customerName || "Walk-in Customer"} ·{" "}
+                              {formatCurrency(o.total || 0)}
                             </span>{" "}
                             <ArrowRight className="size-3.5" />
                           </div>
@@ -668,7 +709,7 @@ export function AppHeader() {
                 {searchExpenses.length > 0 && (
                   <div>
                     <div className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider px-2 mb-1.5 flex items-center gap-1.5">
-                      <Receipt className="size-3.5 text-purple-500" /> Expenses & Accounts (
+                      <Receipt className="size-3.5 text-primary" /> Expenses & Accounts (
                       {searchExpenses.length})
                     </div>
                     <div className="space-y-1">

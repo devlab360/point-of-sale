@@ -29,8 +29,8 @@ export const sendWhatsAppDocument = async (
   caption?: string,
 ) => {
   try {
-    const res = await sendWhatsAppDocumentFn({ 
-      data: { phone, documentUrl, filename, caption } 
+    const res = await sendWhatsAppDocumentFn({
+      data: { phone, documentUrl, filename, caption },
     });
     if (!res || !res.success) {
       console.error("[WA API Error]", res);

@@ -16,7 +16,7 @@ import { ProfileSkeleton } from "@/components/skeletons/ProfileSkeleton";
 import { ErrorState } from "@/components/ui/error-state";
 
 export const Route = createFileRoute("/profile")({
-  head: () => ({ meta: [{ title: "Profile · NexisPOS" }] }),
+  head: () => ({ meta: [{ title: "Profile · OneDesk360" }] }),
   component: ProfilePage,
 });
 
@@ -208,7 +208,9 @@ function ProfilePage() {
                   <FieldError message={profileErrors.phone} />
                 </label>
                 <label className="block">
-                  <span className="mb-1.5 block text-xs font-semibold text-muted-foreground">Role</span>
+                  <span className="mb-1.5 block text-xs font-semibold text-muted-foreground">
+                    Role
+                  </span>
                   <input
                     value={profile.role}
                     onChange={(e) => handleChange("role", e.target.value)}

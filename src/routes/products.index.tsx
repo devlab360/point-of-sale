@@ -1,25 +1,32 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { exportToCSV, parseCSV } from "@/lib/csv";
 import {
-  Grid3x3,
   List,
+  LayoutGrid,
   MoreHorizontal,
   Pencil,
   Plus,
   Trash2,
   PackageSearch,
   Printer,
-  Loader2,
+  Search,
+  Download,
+  Upload,
+  Package,
+  Layers,
+  AlertTriangle,
+  DollarSign,
+  Barcode as BarcodeIcon,
 } from "lucide-react";
-import { FileUpload } from "@/components/ui/file-upload";
-import { VariantManager, Variant } from "@/components/products/VariantManager";
 import { useState, useMemo, useEffect } from "react";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PaginationControls } from "@/components/ui/pagination-controls";
 import { useDebounce } from "@/hooks/useDebounce";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { SearchableSelect } from "@/components/ui/searchable-select";
+import { PageHeader } from "@/components/layout/PageHeader";
+import { StatCard } from "@/components/layout/StatCard";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -31,6 +38,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -42,27 +50,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { DataPage } from "@/components/layout/DataPage";
 import { PersistStore } from "@/lib/session-store";
-import { cn } from "@/lib/utils";
 import { useCurrency } from "@/lib/currency";
-import { DatePicker } from "@/components/ui/date-picker";
 import { v4 as uuidv4 } from "uuid";
 import { toast } from "sonner";
-import { useLanguage } from "@/contexts/LanguageContext";
 import { TableSkeleton } from "@/components/skeletons/TableSkeleton";
 import { CardGridSkeleton } from "@/components/skeletons/CardGridSkeleton";
 import { ErrorState } from "@/components/ui/error-state";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 import Barcode from "react-barcode";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -72,14 +66,13 @@ import {
   deleteProductFn,
   getAllProductVariantsFn,
 } from "@/api/products";
-import { getCategoriesFn, createCategoryFn } from "@/api/categories";
-import { getBrandsFn, createBrandFn } from "@/api/brands";
-import { getUnitsFn, createUnitFn } from "@/api/units";
-import { getSettingsFn } from "@/api/settings";
+import { getCategoriesFn } from "@/api/categories";
+import { getBrandsFn } from "@/api/brands";
+import { getUnitsFn } from "@/api/units";
 
 export const Route = createFileRoute("/products/")({
   head: () => ({
-    meta: [{ title: "Products · NexisPOS" }],
+    meta: [{ title: "Products & SKU Catalog · OneDesk360" }],
   }),
   component: ProductsPage,
 });
@@ -87,22 +80,19 @@ export const Route = createFileRoute("/products/")({
 function ProductsPage() {
   const { saasPlan } = useAuth();
   const { formatCurrency } = useCurrency();
-  const { t } = useLanguage();
   const orgId = PersistStore.getOrgId() || "default";
   const queryClient = useQueryClient();
   const navigate = useNavigate();
 
   const [view, setView] = useState<"grid" | "list">("list");
-
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search, 300);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
 
-  const [filters, setFilters] = useState({ category: "", brand: "", stock: "" });
-  const [draftFilters, setDraftFilters] = useState({ category: "", brand: "", stock: "" });
-  const activeFilterCount =
-    (filters.category ? 1 : 0) + (filters.brand ? 1 : 0) + (filters.stock ? 1 : 0);
+  const [categoryFilter, setCategoryFilter] = useState("all");
+  const [brandFilter, setBrandFilter] = useState("all");
+  const [stockFilter, setStockFilter] = useState("all");
 
   const {
     data: productsResponse,
@@ -110,42 +100,64 @@ function ProductsPage() {
     isError: isProductsError,
     refetch: refetchProducts,
   } = useQuery({
-    queryKey: ["products", orgId, page, pageSize, debouncedSearch, filters.category],
+    queryKey: ["products", orgId, page, pageSize, debouncedSearch, categoryFilter],
     queryFn: async () =>
       ((await getProductsFn({
-        data: { page, pageSize, query: debouncedSearch, categoryId: filters.category },
+        data: {
+          page,
+          pageSize,
+          query: debouncedSearch,
+          categoryId: categoryFilter === "all" ? "" : categoryFilter,
+        },
       })) as any) || {},
   });
 
-  const products = productsResponse?.data || [];
+  const rawProducts = productsResponse?.data || [];
   const totalCount = productsResponse?.total || 0;
   const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
 
-  const handleResetFilters = () => {
-    setFilters({ category: "", brand: "", stock: "" });
-    setDraftFilters({ category: "", brand: "", stock: "" });
-  };
-
-  useEffect(() => {
-    setPage(1);
-  }, [debouncedSearch, filters.category, filters.brand, filters.stock]);
   const { data: categoriesData } = useQuery({
     queryKey: ["categories", orgId],
     queryFn: async () => ((await getCategoriesFn({ data: {} })) as any)?.data || [],
   });
-  const categories = categoriesData || [];
+  const categories = Array.isArray(categoriesData) ? categoriesData : [];
 
   const { data: brandsData } = useQuery({
     queryKey: ["brands", orgId],
     queryFn: async () => ((await getBrandsFn({ data: {} })) as any)?.data || [],
   });
-  const brands = brandsData || [];
+  const brands = Array.isArray(brandsData) ? brandsData : [];
 
   const { data: unitsData } = useQuery({
     queryKey: ["units", orgId],
     queryFn: async () => ((await getUnitsFn({ data: {} })) as any)?.data || [],
   });
-  const units = unitsData || [];
+  const units = Array.isArray(unitsData) ? unitsData : [];
+
+  const products = useMemo(() => {
+    let list = rawProducts;
+    if (brandFilter !== "all") {
+      list = list.filter((p: any) => p.brand === brandFilter);
+    }
+    if (stockFilter === "in_stock") {
+      list = list.filter((p: any) => Number(p.stock) > Number(p.reorderLevel || 0));
+    } else if (stockFilter === "low_stock") {
+      list = list.filter((p: any) => Number(p.stock) <= Number(p.reorderLevel || 0) && Number(p.stock) > 0);
+    } else if (stockFilter === "out_of_stock") {
+      list = list.filter((p: any) => Number(p.stock) <= 0);
+    }
+    return list;
+  }, [rawProducts, brandFilter, stockFilter]);
+
+  const totalSkus = totalCount || products.length;
+  const lowStockCount = useMemo(
+    () => products.filter((p: any) => Number(p.stock) <= Number(p.reorderLevel || 0)).length,
+    [products]
+  );
+  const totalInventoryValue = useMemo(
+    () => products.reduce((sum, p: any) => sum + (Number(p.stock || 0) * Number(p.cost || 0)), 0),
+    [products]
+  );
 
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
@@ -163,14 +175,6 @@ function ProductsPage() {
   }, [isPrinting]);
 
   const openNew = () => {
-    const limitsObj =
-      typeof saasPlan?.limits === "string" ? JSON.parse(saasPlan.limits) : saasPlan?.limits;
-    const maxProducts = Number(limitsObj?.maxProducts || 500);
-    if (maxProducts > 0 && products.length >= maxProducts) {
-      return toast.error(
-        `Plan Limit Reached: Your current plan only allows ${maxProducts} products. Please upgrade to add more.`,
-      );
-    }
     navigate({ to: "/products/new" });
   };
 
@@ -199,390 +203,495 @@ function ProductsPage() {
 
   const handleExport = async () => {
     try {
-      const variantsRes = await getAllProductVariantsFn();
+      const variantsRes = (await getAllProductVariantsFn()) as any;
       const allVariants = variantsRes?.success ? variantsRes.data : [];
 
       const exportData: any[] = [];
-
-      products.forEach(p => {
-        const catName = categories.find(c => c.id === p.category)?.name || 'General';
-        const brandName = brands.find(b => b.id === p.brand)?.name || 'N/A';
-        const baseRow = {
+      products.forEach((p: any) => {
+        const catName = categories.find((c: any) => c.id === p.category)?.name || "General";
+        const brandName = brands.find((b: any) => b.id === p.brand)?.name || "N/A";
+        exportData.push({
           Name: p.name,
+          SKU: p.sku || "",
+          Barcode: p.barcode || "",
           Category: catName,
           Brand: brandName,
-          BasePrice: p.price,
-          BaseCost: p.cost,
+          Price: p.price,
+          Cost: p.cost,
           Stock: p.stock,
           ReorderLevel: p.reorderLevel,
-        };
-
-        if (p.hasVariants) {
-          const productVariants = allVariants.filter((v: any) => v.productId === p.id);
-          if (productVariants.length > 0) {
-            productVariants.forEach((v: any) => {
-              const row: any = {
-                ...baseRow,
-                VariantName: v.name,
-                VariantSKU: v.sku || '',
-                VariantBarcode: v.barcode || '',
-                VariantPrice: v.price || baseRow.BasePrice,
-                VariantCost: v.cost || baseRow.BaseCost,
-              };
-              if (v.attributes && v.attributes.length > 0) {
-                v.attributes.forEach((attr: any, index: number) => {
-                  if (index < 3) {
-                    row[`Option${index + 1}Name`] = attr.name;
-                    row[`Option${index + 1}Value`] = attr.value;
-                  }
-                });
-              }
-              exportData.push(row);
-            });
-          } else {
-            exportData.push(baseRow);
-          }
-        } else {
-          exportData.push({
-            ...baseRow,
-            VariantSKU: p.sku || '',
-            VariantBarcode: p.barcode || ''
-          });
-        }
+        });
       });
 
-      exportToCSV(exportData, [
-        { key: 'Name', label: 'Name' },
-        { key: 'Category', label: 'Category' },
-        { key: 'Brand', label: 'Brand' },
-        { key: 'BasePrice', label: 'Base Price' },
-        { key: 'BaseCost', label: 'Base Cost' },
-        { key: 'Stock', label: 'Stock' },
-        { key: 'ReorderLevel', label: 'Reorder Level' },
-        { key: 'VariantName', label: 'Variant Name' },
-        { key: 'VariantSKU', label: 'Variant SKU' },
-        { key: 'VariantBarcode', label: 'Variant Barcode' },
-        { key: 'VariantPrice', label: 'Variant Price' },
-        { key: 'VariantCost', label: 'Variant Cost' },
-        { key: 'Option1Name', label: 'Option1 Name' },
-        { key: 'Option1Value', label: 'Option1 Value' },
-        { key: 'Option2Name', label: 'Option2 Name' },
-        { key: 'Option2Value', label: 'Option2 Value' },
-        { key: 'Option3Name', label: 'Option3 Name' },
-        { key: 'Option3Value', label: 'Option3 Value' },
-      ], 'products-with-variants');
+      exportToCSV(
+        exportData,
+        [
+          { key: "Name", label: "Product Name" },
+          { key: "SKU", label: "SKU" },
+          { key: "Barcode", label: "Barcode" },
+          { key: "Category", label: "Category" },
+          { key: "Brand", label: "Brand" },
+          { key: "Price", label: "Price" },
+          { key: "Cost", label: "Cost" },
+          { key: "Stock", label: "Stock" },
+          { key: "ReorderLevel", label: "Reorder Level" },
+        ],
+        "products-catalog"
+      );
     } catch (e) {
       toast.error("Failed to export products");
-      console.error(e);
-    }
-  };
-
-  const handleImport = async (file: File) => {
-    try {
-      const data = await parseCSV(file);
-      if (data.length === 0) {
-        toast.error("No data found in the CSV");
-        return;
-      }
-
-      const groupedData: Record<string, any[]> = {};
-      data.forEach(row => {
-        if (row['Name']) {
-          if (!groupedData[row['Name']]) {
-            groupedData[row['Name']] = [];
-          }
-          groupedData[row['Name']].push(row);
-        }
-      });
-
-      let count = 0;
-      for (const [name, rows] of Object.entries(groupedData)) {
-        const firstRow = rows[0];
-        const hasVariants = rows.length > 1 || !!firstRow['VariantName'];
-        
-        const variantsToCreate = hasVariants ? rows.map(row => {
-          const attributes: { name: string; value: string }[] = [];
-          for (let i = 1; i <= 3; i++) {
-            if (row[`Option${i}Name`] && row[`Option${i}Value`]) {
-              attributes.push({
-                name: row[`Option${i}Name`],
-                value: row[`Option${i}Value`]
-              });
-            }
-          }
-          return {
-            name: row['VariantName'] || 'Default',
-            sku: row['VariantSKU'] || '',
-            barcode: row['VariantBarcode'] || '',
-            price: parseFloat(row['VariantPrice'] || row['BasePrice'] || '0'),
-            cost: parseFloat(row['VariantCost'] || row['BaseCost'] || '0'),
-            attributes
-          };
-        }) : [];
-
-        await createProductFn({
-          data: {
-            product: {
-              id: uuidv4(),
-              name: name,
-              sku: !hasVariants ? (firstRow['VariantSKU'] || firstRow['SKU'] || `SKU-${Math.floor(Math.random() * 100000)}`) : `SKU-${Math.floor(Math.random() * 100000)}`,
-              barcode: !hasVariants ? (firstRow['VariantBarcode'] || firstRow['Barcode'] || '') : '',
-              category: categories.find(c => c.name.toLowerCase() === (firstRow['Category'] || '').toLowerCase())?.id || categories[0]?.id || 'General',
-              brand: brands.find(b => b.name.toLowerCase() === (firstRow['Brand'] || '').toLowerCase())?.id || brands[0]?.id || '',
-              cost: parseFloat(firstRow['BaseCost'] || firstRow['Cost'] || '0'),
-              price: parseFloat(firstRow['BasePrice'] || firstRow['Price'] || '0'),
-              stock: parseInt(firstRow['Stock'] || '0'),
-              reorderLevel: parseInt(firstRow['ReorderLevel'] || firstRow['Reorder Level'] || '0'),
-              hasVariants,
-              variants: variantsToCreate,
-              type: 'standard',
-              unit: 'pcs',
-              status: 'active'
-            }
-          }
-        });
-        count++;
-      }
-
-      queryClient.invalidateQueries({ queryKey: ["products"] });
-      toast.success(`Successfully imported ${count} products`);
-    } catch (error) {
-      toast.error("Failed to parse CSV file");
     }
   };
 
   return (
-    <div>
-      <DataPage
-        title={t("products") || "Products"}
-        description={
-          t("manageCatalog") || "Manage your full SKU catalog, pricing, and stock thresholds."
-        }
-        primaryAction={{ label: t("addProduct") || "Add Product", onClick: openNew }}
-        searchPlaceholder={t("searchProducts") || "Search by name, SKU, or barcode..."}
-        searchValue={search}
-        onSearchChange={setSearch}
-        hideToolbar={products.length === 0}
-        onExport={handleExport}
-        onImport={handleImport}
-        toolbar={
-          <div className="inline-flex rounded-xl border border-border/80 bg-muted/30 p-0.5 shadow-sm">
-            <button
-              type="button"
-              onClick={() => setView("list")}
-              className={cn(
-                "grid size-8 place-items-center rounded-lg transition-all",
-                view === "list" ? "bg-card text-foreground shadow-sm font-bold" : "text-muted-foreground hover:text-foreground",
-              )}
-              aria-label="List view"
+    <div className="page-container space-y-6">
+      {/* Standard PageHeader */}
+      <PageHeader
+        title="Products & Master Catalog"
+        description="Manage your full SKU catalog, tiered pricing rules, and stock reorder thresholds."
+        actions={
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleExport}
+              className="gap-1.5"
             >
-              <List className="size-4" />
-            </button>
-            <button
-              type="button"
-              onClick={() => setView("grid")}
-              className={cn(
-                "grid size-8 place-items-center rounded-lg transition-all",
-                view === "grid" ? "bg-card text-foreground shadow-sm font-bold" : "text-muted-foreground hover:text-foreground",
-              )}
-              aria-label="Grid view"
-            >
-              <Grid3x3 className="size-4" />
-            </button>
+              <Download className="size-4" /> Export CSV
+            </Button>
+            <Button size="sm" onClick={openNew} className="gap-1.5">
+              <Plus className="size-4" /> Add Product
+            </Button>
           </div>
         }
-        onResetFilters={handleResetFilters}
-        activeFilterCount={activeFilterCount}
-        filtersContent={({ close }) => (
-          <div className="space-y-4 flex flex-col h-full min-h-[50vh]">
-            <div className="flex-1 space-y-4">
-              <div className="space-y-2">
-                <Label>Category</Label>
-                <SearchableSelect
-                  options={[
-                    { value: "", label: "All Categories" },
-                    ...categories.map((c) => ({ value: c.id, label: c.name })),
-                  ]}
-                  value={draftFilters.category}
-                  onChange={(val) => setDraftFilters((prev) => ({ ...prev, category: val }))}
-                  placeholder="Filter by Category"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Brand</Label>
-                <SearchableSelect
-                  options={[
-                    { value: "", label: "All Brands" },
-                    ...brands.map((b) => ({ value: b.id, label: b.name })),
-                  ]}
-                  value={draftFilters.brand}
-                  onChange={(val) => setDraftFilters((prev) => ({ ...prev, brand: val }))}
-                  placeholder="Filter by Brand"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Stock Status</Label>
-                <SearchableSelect
-                  options={[
-                    { value: "", label: "All Statuses" },
-                    { value: "in-stock", label: "In Stock" },
-                    { value: "low-stock", label: "Low Stock" },
-                    { value: "out-of-stock", label: "Out of Stock" },
-                  ]}
-                  value={draftFilters.stock}
-                  onChange={(val) => setDraftFilters((prev) => ({ ...prev, stock: val }))}
-                  placeholder="Filter by Stock"
-                />
-              </div>
-            </div>
-            <div className="pt-4 mt-auto">
-              <Button
-                className="w-full font-bold shadow-soft"
-                onClick={() => {
-                  setFilters(draftFilters);
-                  close();
-                }}
+      />
+
+      {/* Standard StatCard Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <StatCard
+          label="Total Catalog SKUs"
+          value={String(totalSkus)}
+          hint="Active items in system"
+          icon={Package}
+          accent="primary"
+        />
+        <StatCard
+          label="Low Stock Warnings"
+          value={`${lowStockCount} items`}
+          hint="Below reorder threshold"
+          icon={AlertTriangle}
+          accent="warning"
+        />
+        <StatCard
+          label="Inventory Asset Value"
+          value={formatCurrency(totalInventoryValue)}
+          hint="Holding cost valuation"
+          icon={DollarSign}
+          accent="success"
+        />
+        <StatCard
+          label="Active Departments"
+          value={`${categories.length} Categories`}
+          hint="Product classifications"
+          icon={Layers}
+          accent="info"
+        />
+      </div>
+
+      {/* Main Directory Area */}
+      <div className="space-y-4">
+        {/* Controls Toolbar */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="relative w-full sm:w-80">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+            <Input
+              placeholder="Search by name, SKU, or barcode..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-9 h-9 text-sm rounded-lg"
+            />
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+              <SelectTrigger className="h-9 w-36 text-xs rounded-lg">
+                <SelectValue placeholder="All Categories" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Categories</SelectItem>
+                {categories.map((c: any) => (
+                  <SelectItem key={c.id} value={c.id}>
+                    {c.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <Select value={stockFilter} onValueChange={setStockFilter}>
+              <SelectTrigger className="h-9 w-32 text-xs rounded-lg">
+                <SelectValue placeholder="Stock Level" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Stock</SelectItem>
+                <SelectItem value="in_stock">In Stock</SelectItem>
+                <SelectItem value="low_stock">Low Stock Alert</SelectItem>
+                <SelectItem value="out_of_stock">Out of Stock</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <div className="inline-flex rounded-lg border border-border/80 bg-muted/30 p-0.5 shadow-sm">
+              <button
+                type="button"
+                onClick={() => setView("list")}
+                className={`grid size-8 place-items-center rounded-md transition-all ${
+                  view === "list"
+                    ? "bg-card text-foreground shadow-sm font-bold"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+                title="Table View"
               >
-                Apply Filters
-              </Button>
+                <List className="size-4" />
+              </button>
+              <button
+                type="button"
+                onClick={() => setView("grid")}
+                className={`grid size-8 place-items-center rounded-md transition-all ${
+                  view === "grid"
+                    ? "bg-card text-foreground shadow-sm font-bold"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+                title="Grid View"
+              >
+                <LayoutGrid className="size-4" />
+              </button>
             </div>
           </div>
-        )}
-      >
+        </div>
+
+        {/* Content View */}
         {isProductsLoading ? (
-          view === "list" ? (
-            <TableSkeleton columns={7} rows={6} showHeaderAction={false} showFilters={false} />
-          ) : (
+          view === "grid" ? (
             <CardGridSkeleton cards={8} />
+          ) : (
+            <TableSkeleton columns={7} rows={6} />
           )
         ) : isProductsError ? (
           <ErrorState onRetry={refetchProducts} />
         ) : products.length === 0 ? (
           <EmptyState
             icon={PackageSearch}
-            title={t("noProductsFound") || "No products found"}
+            title="No products found"
             description={
-              search
-                ? t("adjustSearch") || "Try adjusting your search query or reset filters."
-                : t("noProductsYet") || "You haven't added any products to your catalog yet."
+              search ? "Try adjusting your search criteria." : "You haven't added any products to your catalog yet."
             }
             actionLabel="Add Product"
             onAction={openNew}
           />
-        ) : (
+        ) : view === "grid" ? (
+          /* Grid View */
           <div className="space-y-4">
-            {view === "list" ? (
-              <div className="overflow-hidden rounded-2xl border border-border/80 bg-card shadow-card">
-                <TableView
-                  products={products}
-                  categories={categories}
-                  brands={brands}
-                  units={units}
-                  onEdit={handleEdit}
-                  onDelete={setDeleteId}
-                  onPrint={(p) => {
-                    setPrintProduct(p);
-                    setPrintCount(1);
-                  }}
-                />
-                {products.length > 0 && (
-                  <div className="border-t border-border/60 p-2 sm:p-3">
-                    <PaginationControls
-                      currentPage={page}
-                      totalPages={totalPages}
-                      pageSize={pageSize}
-                      onPageChange={setPage}
-                      onPageSizeChange={setPageSize}
-                      totalItems={products.length}
-                    />
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
+              {products.map((p: any) => {
+                const catObj = categories.find((c: any) => c.id === p.category);
+                const brandObj = brands.find((b: any) => b.id === p.brand);
+                const unitObj = units.find((u: any) => u.id === p.unit);
+                const isLow = Number(p.stock) <= Number(p.reorderLevel || 0);
+
+                return (
+                  <div
+                    key={p.id}
+                    className="rounded-2xl border border-border/80 bg-card p-4 shadow-soft flex flex-col justify-between space-y-3 hover:border-border transition-all group"
+                  >
+                    <div className="space-y-2.5">
+                      <div className="relative aspect-video w-full rounded-xl bg-muted/40 overflow-hidden border border-border/50 grid place-items-center">
+                        {p.image ? (
+                          <img src={p.image} alt="" className="size-full object-cover" />
+                        ) : (
+                          <PackageSearch className="size-8 text-muted-foreground/40" />
+                        )}
+                        <div className="absolute top-2 left-2">
+                          {isLow ? (
+                            <Badge variant="destructive" className="text-[10px] font-bold">
+                              Low Stock ({p.stock})
+                            </Badge>
+                          ) : (
+                            <Badge variant="outline" className="bg-success/15 text-success border-success/30 text-[10px] font-bold">
+                              {p.stock} {unitObj?.short || "pcs"} in stock
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+
+                      <div>
+                        <div className="flex items-center justify-between gap-1">
+                          <span className="font-mono text-[10px] text-muted-foreground font-semibold truncate">
+                            {p.sku || "NO-SKU"}
+                          </span>
+                          <span className="text-[10px] font-bold text-primary truncate">
+                            {catObj?.name || "General"}
+                          </span>
+                        </div>
+                        <h3
+                          onClick={() => handleEdit(p)}
+                          className="font-bold text-sm text-foreground hover:text-primary transition-colors cursor-pointer truncate mt-0.5"
+                        >
+                          {p.name}
+                        </h3>
+                        {brandObj && (
+                          <p className="text-xs text-muted-foreground truncate">{brandObj.name}</p>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="pt-2.5 border-t border-border/60 flex items-center justify-between">
+                      <div>
+                        <span className="text-[10px] font-semibold text-muted-foreground uppercase block">Price</span>
+                        <span className="text-base font-bold text-foreground">{formatCurrency(p.price || 0)}</span>
+                      </div>
+
+                      <div className="flex items-center gap-1">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => {
+                            setPrintProduct(p);
+                            setPrintCount(1);
+                          }}
+                          className="size-7 rounded-lg text-muted-foreground hover:text-foreground"
+                          title="Print Barcode Label"
+                        >
+                          <Printer className="size-3.5" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleEdit(p)}
+                          className="size-7 rounded-lg text-muted-foreground hover:text-foreground"
+                        >
+                          <Pencil className="size-3.5" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => setDeleteId(p.id)}
+                          className="size-7 rounded-lg text-muted-foreground hover:text-destructive"
+                        >
+                          <Trash2 className="size-3.5" />
+                        </Button>
+                      </div>
+                    </div>
                   </div>
-                )}
+                );
+              })}
+            </div>
+            {products.length > 0 && (
+              <div className="rounded-xl border border-border/80 bg-card p-3 shadow-soft">
+                <PaginationControls
+                  currentPage={page}
+                  totalPages={totalPages}
+                  pageSize={pageSize}
+                  totalItems={totalCount}
+                  onPageChange={setPage}
+                  onPageSizeChange={setPageSize}
+                />
               </div>
-            ) : (
-              <>
-                <GridView
-                  products={products}
-                  categories={categories}
-                  brands={brands}
-                  units={units}
-                  onEdit={handleEdit}
-                  onPrint={(p) => {
-                    setPrintProduct(p);
-                    setPrintCount(1);
-                  }}
+            )}
+          </div>
+        ) : (
+          /* Table View */
+          <div className="overflow-hidden rounded-xl border border-border/80 bg-card shadow-soft">
+            <div className="table-desktop overflow-x-auto">
+              <Table className="min-w-[900px]">
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Product Name</TableHead>
+                    <TableHead>SKU / Barcode</TableHead>
+                    <TableHead>Category</TableHead>
+                    <TableHead>Stock Level</TableHead>
+                    <TableHead className="text-right">Retail Price</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {products.map((p: any) => {
+                    const catObj = categories.find((c: any) => c.id === p.category);
+                    const isLow = Number(p.stock) <= Number(p.reorderLevel || 0);
+
+                    return (
+                      <TableRow key={p.id} className="hover:bg-muted/30 transition-colors">
+                        <TableCell>
+                          <div
+                            onClick={() => handleEdit(p)}
+                            className="cursor-pointer hover:text-primary transition-colors flex items-center gap-2.5"
+                          >
+                            <div className="grid size-8 place-items-center rounded-lg bg-muted/60 overflow-hidden shrink-0 border border-border/50">
+                              {p.image ? (
+                                <img src={p.image} alt="" className="size-full object-cover" />
+                              ) : (
+                                <PackageSearch className="size-4 text-muted-foreground/50" />
+                              )}
+                            </div>
+                            <span className="font-semibold text-foreground">{p.name}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell className="font-mono text-xs text-muted-foreground">
+                          {p.sku || "-"}
+                        </TableCell>
+                        <TableCell className="text-xs">
+                          {catObj?.name || "General"}
+                        </TableCell>
+                        <TableCell>
+                          {isLow ? (
+                            <Badge variant="destructive" className="text-[10px] font-bold">
+                              Low: {p.stock}
+                            </Badge>
+                          ) : (
+                            <Badge variant="outline" className="bg-success/15 text-success border-success/30 text-[10px] font-bold">
+                              {p.stock} in stock
+                            </Badge>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-right font-bold text-foreground">
+                          {formatCurrency(p.price || 0)}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex items-center justify-end gap-1">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                setPrintProduct(p);
+                                setPrintCount(1);
+                              }}
+                              className="h-8 text-xs text-muted-foreground hover:text-foreground"
+                            >
+                              <Printer className="size-3.5 mr-1" /> Label
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleEdit(p)}
+                              className="h-8 text-xs"
+                            >
+                              <Pencil className="size-3.5" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setDeleteId(p.id)}
+                              className="h-8 text-xs text-muted-foreground hover:text-destructive"
+                            >
+                              <Trash2 className="size-3.5" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </div>
+            {products.length > 0 && (
+              <div className="border-t border-border/60 p-3">
+                <PaginationControls
+                  currentPage={page}
+                  totalPages={totalPages}
+                  pageSize={pageSize}
+                  totalItems={totalCount}
+                  onPageChange={setPage}
+                  onPageSizeChange={setPageSize}
                 />
-                {products.length > 0 && (
-                  <div className="rounded-2xl border border-border/80 bg-card p-3 shadow-card">
-                    <PaginationControls
-                      currentPage={page}
-                      totalPages={totalPages}
-                      pageSize={pageSize}
-                      onPageChange={setPage}
-                      onPageSizeChange={setPageSize}
-                      totalItems={products.length}
-                    />
-                  </div>
-                )}
-              </>
+              </div>
             )}
           </div>
         )}
-      </DataPage>
+      </div>
 
-      <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
-        <AlertDialogContent className="rounded-2xl">
-          <AlertDialogHeader>
-            <AlertDialogTitle className="font-bold">Delete Product?</AlertDialogTitle>
-            <AlertDialogDescription className="text-xs">
-              This action cannot be undone. This SKU and its history will be removed from your catalog.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel className="rounded-xl text-xs font-semibold">Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={confirmDelete}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90 rounded-xl text-xs font-bold"
+      {/* Delete Confirmation */}
+      <Dialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
+        <DialogContent className="max-w-md rounded-2xl p-6 border border-border shadow-soft bg-card">
+          <DialogHeader className="space-y-2 text-left">
+            <div className="flex items-center gap-3">
+              <div className="grid size-10 place-items-center rounded-xl bg-destructive/10 text-destructive shrink-0">
+                <Trash2 className="size-5" />
+              </div>
+              <div>
+                <DialogTitle className="text-lg font-bold text-foreground">
+                  Delete Product SKU
+                </DialogTitle>
+                <DialogDescription className="text-xs text-muted-foreground mt-0.5">
+                  Are you sure you want to delete this product? All catalog mappings will be removed.
+                </DialogDescription>
+              </div>
+            </div>
+          </DialogHeader>
+          <DialogFooter className="mt-4 flex flex-row items-center justify-end gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setDeleteId(null)}
             >
-              Delete Product
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              onClick={confirmDelete}
+            >
+              Delete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
-      {/* Print Setup Dialog */}
-      <Dialog
-        open={!!printProduct && !isPrinting}
-        onOpenChange={(open) => !open && setPrintProduct(null)}
-      >
-        <DialogContent className="sm:max-w-sm rounded-2xl">
-          <DialogHeader>
-            <DialogTitle className="font-bold flex items-center gap-2">
+      {/* Print Barcode Dialog */}
+      <Dialog open={!!printProduct && !isPrinting} onOpenChange={(open) => !open && setPrintProduct(null)}>
+        <DialogContent className="sm:max-w-sm rounded-2xl p-6 border border-border shadow-soft bg-card">
+          <DialogHeader className="text-left space-y-1">
+            <DialogTitle className="font-bold flex items-center gap-2 text-foreground">
               <Printer className="size-4 text-primary" /> Print Barcode Labels
             </DialogTitle>
+            <DialogDescription className="text-xs text-muted-foreground">
+              Generate ready-to-stick thermal adhesive barcode labels.
+            </DialogDescription>
           </DialogHeader>
+
           <div className="space-y-3.5 py-3">
             <div className="text-xs rounded-xl bg-muted/40 p-3 border border-border/60 space-y-1">
-              <div>Product: <strong className="text-foreground">{printProduct?.name}</strong></div>
-              <div>Barcode: <strong className="font-mono text-foreground">{printProduct?.barcode || printProduct?.sku}</strong></div>
+              <div>
+                Product: <strong className="text-foreground">{printProduct?.name}</strong>
+              </div>
+              <div>
+                Barcode:{" "}
+                <strong className="font-mono text-foreground">
+                  {printProduct?.barcode || printProduct?.sku}
+                </strong>
+              </div>
             </div>
             <div className="space-y-1.5">
-              <Label className="text-xs font-semibold">Number of Labels</Label>
+              <Label className="text-xs font-semibold">Number of Adhesive Labels</Label>
               <Input
                 type="number"
                 min={1}
                 max={100}
                 value={printCount}
                 onChange={(e) => setPrintCount(parseInt(e.target.value) || 1)}
-                className="h-10 rounded-xl"
+                className="h-9 text-xs font-bold"
               />
             </div>
           </div>
-          <DialogFooter className="gap-2 sm:justify-between">
-            <Button variant="outline" onClick={() => setPrintProduct(null)} className="rounded-xl text-xs">
+
+          <DialogFooter className="gap-2 flex flex-row items-center justify-end">
+            <Button
+              variant="outline"
+              onClick={() => setPrintProduct(null)}
+            >
               Cancel
             </Button>
-            <Button onClick={handlePrint} className="rounded-xl text-xs font-bold gap-1.5 shadow-sm">
-              <Printer className="size-4" /> Print Labels
+            <Button
+              onClick={handlePrint}
+            >
+              <Printer className="size-3.5 mr-1" /> Print Labels
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -615,328 +724,3 @@ function ProductsPage() {
     </div>
   );
 }
-
-function TableView({
-  products,
-  categories,
-  brands,
-  units,
-  onEdit,
-  onDelete,
-  onPrint,
-}: {
-  products: any[];
-  categories: any[];
-  brands: any[];
-  units: any[];
-  onEdit: (p: any) => void;
-  onDelete: (id: string) => void;
-  onPrint: (p: any) => void;
-}) {
-  const { formatCurrency } = useCurrency();
-  const { t } = useLanguage();
-
-  return (
-    <>
-      {/* Desktop Table View (>= 768px) */}
-      <div className="table-desktop overflow-x-auto">
-        <table className="w-full text-left text-sm min-w-[900px]">
-          <thead className="border-b border-border/80 bg-muted/40 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
-            <tr>
-              <th className="px-4 py-3 whitespace-nowrap">{t("product") || "Product"}</th>
-              <th className="px-4 py-3 whitespace-nowrap">{t("sku") || "SKU"}</th>
-              <th className="px-4 py-3 whitespace-nowrap">{t("category") || "Category"}</th>
-              <th className="px-4 py-3 text-right whitespace-nowrap">{t("price") || "Price"}</th>
-              <th className="px-4 py-3 text-right whitespace-nowrap">{t("stock") || "Stock"}</th>
-              <th className="px-4 py-3 whitespace-nowrap">{t("status") || "Status"}</th>
-              <th className="px-4 py-3 whitespace-nowrap text-right">Actions</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-border/60">
-            {products.map((p) => {
-              const brandObj = brands.find((b) => b.id === p.brand);
-              const catObj = categories.find((c) => c.id === p.category);
-              const unitObj = units.find((u) => u.id === p.unit);
-              const isLow = Number(p.stock) <= Number(p.reorderLevel);
-
-              return (
-                <tr key={p.id} className="hover:bg-muted/30 transition-colors">
-                  <td className="px-4 py-3 whitespace-nowrap">
-                    <div className="flex items-center gap-3">
-                      <div className="grid size-11 shrink-0 place-items-center rounded-xl bg-muted/60 overflow-hidden border border-border/50">
-                        {p.image ? (
-                          <img src={p.image} alt="" className="size-full object-cover" />
-                        ) : (
-                          <PackageSearch className="size-5 text-muted-foreground/50" />
-                        )}
-                      </div>
-                      <div className="min-w-0">
-                        <div className="font-bold text-foreground hover:text-primary transition-colors cursor-pointer" onClick={() => onEdit(p)}>
-                          {p.name}
-                        </div>
-                        <div className="text-xs text-muted-foreground">
-                          {brandObj?.name || p.brand || "Standard SKU"}
-                        </div>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-4 py-3 font-mono text-xs text-muted-foreground whitespace-nowrap font-medium">
-                    {p.sku || "-"}
-                  </td>
-                  <td className="px-4 py-3 text-muted-foreground whitespace-nowrap text-xs font-medium">
-                    {catObj?.name || p.category || "-"}
-                  </td>
-                  <td className="number px-4 py-3 text-right whitespace-nowrap">
-                    <div className="font-extrabold text-foreground">{formatCurrency(p.price)}</div>
-                    {(p.wholesalePrice > 0 || p.dealerPrice > 0) && (
-                      <div className="flex flex-col items-end gap-0.5 text-[10px] text-muted-foreground mt-0.5">
-                        {p.wholesalePrice > 0 && (
-                          <span className="text-info font-medium">
-                            WS: {formatCurrency(p.wholesalePrice)}
-                          </span>
-                        )}
-                        {p.dealerPrice > 0 && (
-                          <span className="text-warning font-medium">
-                            DLR: {formatCurrency(p.dealerPrice)}
-                          </span>
-                        )}
-                      </div>
-                    )}
-                  </td>
-                  <td className="px-4 py-3 text-right whitespace-nowrap">
-                    <span
-                      className={cn(
-                        "number font-bold text-sm",
-                        isLow ? "text-destructive" : "text-foreground",
-                      )}
-                    >
-                      {p.stock}
-                    </span>
-                    <span className="ml-1 text-xs text-muted-foreground">
-                      {unitObj?.name || p.unit || "units"}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 whitespace-nowrap">
-                    <div className="flex flex-wrap gap-1 items-center">
-                      {isLow ? (
-                        <Badge variant="destructive" className="text-[10px] font-bold">Low stock</Badge>
-                      ) : (
-                        <Badge className="bg-success/12 text-success hover:bg-success/20 border-success/25 text-[10px] font-bold">
-                          In stock
-                        </Badge>
-                      )}
-                      {p.expiryDate && (
-                        <span className="rounded-md bg-muted px-1.5 py-0.5 text-[9px] font-bold text-muted-foreground">
-                          Exp: {p.expiryDate}
-                        </span>
-                      )}
-                      {p.hasSerial && (
-                        <span className="rounded-md bg-primary/10 px-1.5 py-0.5 text-[9px] font-bold text-primary">
-                          IMEI: {p.serials?.length || 0}
-                        </span>
-                      )}
-                    </div>
-                  </td>
-                  <td className="px-4 py-3 text-right whitespace-nowrap">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="size-8 rounded-lg">
-                          <MoreHorizontal className="size-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="rounded-xl">
-                        <DropdownMenuItem onClick={() => onEdit(p)} className="text-xs font-semibold">
-                          <Pencil className="size-3.5 mr-2" /> Edit Product
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => onPrint(p)} className="text-xs font-semibold">
-                          <Printer className="size-3.5 mr-2" /> Print Barcode
-                        </DropdownMenuItem>
-                        <DropdownMenuItem className="text-destructive text-xs font-semibold" onClick={() => onDelete(p.id)}>
-                          <Trash2 className="size-3.5 mr-2" /> Delete
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
-
-      {/* Mobile Card Feed (< 768px) */}
-      <div className="table-mobile-cards p-3 space-y-2.5">
-        {products.map((p) => {
-          const brandObj = brands.find((b) => b.id === p.brand);
-          const catObj = categories.find((c) => c.id === p.category);
-          const isLow = Number(p.stock) <= Number(p.reorderLevel);
-
-          return (
-            <div
-              key={p.id}
-              className="flex items-center justify-between rounded-2xl border border-border/80 bg-card p-3 shadow-card card-interactive"
-              onClick={() => onEdit(p)}
-            >
-              <div className="flex items-center gap-3 min-w-0 flex-1">
-                <div className="grid size-12 shrink-0 place-items-center rounded-xl bg-muted/60 overflow-hidden border border-border/50">
-                  {p.image ? (
-                    <img src={p.image} alt="" className="size-full object-cover" />
-                  ) : (
-                    <PackageSearch className="size-5 text-muted-foreground/50" />
-                  )}
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="font-bold text-xs sm:text-sm text-foreground truncate">{p.name}</div>
-                  <p className="text-[11px] text-muted-foreground truncate">
-                    {p.sku} · {catObj?.name || p.category || "General"}
-                  </p>
-                  <div className="flex items-center gap-2 mt-1">
-                    {isLow ? (
-                      <span className="text-[9px] font-extrabold text-destructive bg-destructive/10 px-1.5 py-0.2 rounded-md">
-                        {p.stock} left
-                      </span>
-                    ) : (
-                      <span className="text-[9px] font-bold text-success bg-success/10 px-1.5 py-0.2 rounded-md">
-                        {p.stock} in stock
-                      </span>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              <div className="text-right shrink-0 pl-2">
-                <div className="number text-sm font-black text-primary">{formatCurrency(p.price)}</div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-7 px-2 text-[11px] font-semibold text-muted-foreground mt-1"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onPrint(p);
-                  }}
-                >
-                  <Printer className="size-3 mr-1" /> Label
-                </Button>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-    </>
-  );
-}
-
-function GridView({
-  products,
-  categories,
-  brands,
-  units,
-  onEdit,
-  onPrint,
-}: {
-  products: any[];
-  categories: any[];
-  brands: any[];
-  units: any[];
-  onEdit: (p: any) => void;
-  onPrint: (p: any) => void;
-}) {
-  const { formatCurrency } = useCurrency();
-
-  return (
-    <div className="grid grid-cols-2 gap-3.5 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-      {products.map((p) => {
-        const categoryName = categories.find((c) => c.id === p.category)?.name || p.category || "-";
-        const unitName = units.find((u) => u.id === p.unit)?.name || p.unit || "";
-        const isLow = Number(p.stock) <= Number(p.reorderLevel);
-
-        return (
-          <div
-            key={p.id}
-            className="group relative flex flex-col overflow-hidden rounded-2xl border border-border/80 bg-card transition-all duration-200 hover:border-primary/50 hover:shadow-card-hover card-interactive"
-          >
-            <div
-              className="aspect-square bg-muted/40 cursor-pointer overflow-hidden relative flex items-center justify-center border-b border-border/50"
-              onClick={() => onEdit(p)}
-            >
-              {p.image ? (
-                <img src={p.image} alt="" className="size-full object-cover transition-transform duration-300 group-hover:scale-105" />
-              ) : (
-                <div className="flex flex-col items-center justify-center text-muted-foreground/30">
-                  <PackageSearch className="size-10" strokeWidth={1.5} />
-                </div>
-              )}
-
-              {/* Status pill overlay */}
-              {isLow && (
-                <span className="absolute left-2 top-2 rounded-full bg-warning/90 px-2 py-0.5 text-[9px] font-extrabold uppercase tracking-wider text-warning-foreground shadow-sm backdrop-blur-sm">
-                  {p.stock} left
-                </span>
-              )}
-
-              {/* Edit overlay */}
-              <div className="absolute inset-x-0 bottom-0 translate-y-full bg-gradient-to-t from-black/80 to-black/60 py-1.5 text-center text-[11px] font-bold text-white backdrop-blur-sm transition-transform duration-200 group-hover:translate-y-0 flex items-center justify-center gap-1 shadow-inner">
-                <Pencil className="size-3.5" /> Edit Product
-              </div>
-            </div>
-            
-            <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
-              <Button
-                variant="secondary"
-                size="icon"
-                className="size-8 rounded-xl shadow-soft bg-background/90 backdrop-blur-sm hover:bg-primary hover:text-primary-foreground transition-colors"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onPrint(p);
-                }}
-                title="Print Barcode"
-              >
-                <Printer className="size-3.5" />
-              </Button>
-            </div>
-
-            <div className="p-3 cursor-pointer flex flex-col justify-between flex-1" onClick={() => onEdit(p)}>
-              <div>
-                <h4 className="text-xs sm:text-sm font-bold text-foreground line-clamp-2 leading-tight" title={p.name}>
-                  {p.name}
-                </h4>
-                <div className="mt-0.5 flex items-center justify-between text-[10px] sm:text-[11px] text-muted-foreground font-medium">
-                  <span className="font-mono bg-muted px-1.5 py-0.5 rounded-md">{p.sku}</span>
-                  <span className="truncate max-w-[50%] text-right">{categoryName}</span>
-                </div>
-              </div>
-
-              <div className="mt-2.5 flex flex-col gap-1 border-t border-border/40 pt-2">
-                <div className="flex items-center justify-between">
-                  <span className="number text-sm sm:text-base font-black text-primary">{formatCurrency(p.price)}</span>
-                  <span
-                    className={cn(
-                      "text-[10px] font-bold px-1.5 py-0.5 rounded-md",
-                      isLow ? "bg-destructive/10 text-destructive" : "bg-muted text-muted-foreground",
-                    )}
-                  >
-                    {p.stock} {unitName || "stock"}
-                  </span>
-                </div>
-
-                {(p.wholesalePrice > 0 || p.dealerPrice > 0) && (
-                  <div className="flex items-center justify-between text-[9px] mt-0.5 font-bold">
-                    <span className="text-info/80">
-                      {p.wholesalePrice > 0 ? `WS: ${formatCurrency(p.wholesalePrice)}` : ""}
-                    </span>
-                    <span className="text-warning/80">
-                      {p.dealerPrice > 0 ? `DLR: ${formatCurrency(p.dealerPrice)}` : ""}
-                    </span>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
-void Link;
-

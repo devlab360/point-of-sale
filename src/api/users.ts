@@ -29,8 +29,17 @@ const UserInputSchema = z
     avatar: z.string().nullable().optional(),
     phone: z.string().nullable().optional(),
     location: z.string().nullable().optional(),
-    commissionRate: z.union([z.string(), z.number()]).transform(v => String(v)).nullable().optional(),
-    monthlyTarget: z.union([z.string(), z.number()]).transform(v => String(v)).nullable().optional(),
+    permissions: z.array(z.string()).optional(),
+    commissionRate: z
+      .union([z.string(), z.number()])
+      .transform((v) => String(v))
+      .nullable()
+      .optional(),
+    monthlyTarget: z
+      .union([z.string(), z.number()])
+      .transform((v) => String(v))
+      .nullable()
+      .optional(),
   })
   .passthrough();
 
@@ -108,7 +117,7 @@ export const createUserFn = createServerFn({ method: "POST" })
         const menusRes = await getEffectiveMenusFn({ data: {} });
         if (menusRes.success && !menusRes.menus.includes("all")) {
           // Keep only permissions that match allowed menus (e.g. products.view -> products)
-          filteredPermissions = filteredPermissions.filter(p => {
+          filteredPermissions = filteredPermissions.filter((p) => {
             const baseModule = p.split(".")[0];
             return menusRes.menus.includes(baseModule);
           });

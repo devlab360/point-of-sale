@@ -19,6 +19,14 @@ import { SearchableSelect } from "@/components/ui/searchable-select";
 import { PaginationControls } from "@/components/ui/pagination-controls";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Label } from "@/components/ui/label";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useCurrency } from "@/lib/currency";
 
@@ -144,24 +152,28 @@ function StockList() {
         searchPlaceholder="Search inventory by name or SKU..."
         searchValue={search}
         onSearchChange={setSearch}
-        hideToolbar={products.length === 0}
+        hideToolbar={false}
         onResetFilters={handleResetFilters}
         activeFilterCount={activeFilterCount}
         onExport={() => {
-          const exportData = filteredProducts.map(p => ({
+          const exportData = filteredProducts.map((p) => ({
             name: p.name,
             sku: p.sku,
             stock: p.stock,
             reorderLevel: p.reorderLevel,
-            value: p.stock * p.cost
+            value: p.stock * p.cost,
           }));
-          exportToCSV(exportData, [
-            { key: 'name', label: 'Product' },
-            { key: 'sku', label: 'SKU' },
-            { key: 'stock', label: 'Stock' },
-            { key: 'reorderLevel', label: 'Reorder' },
-            { key: 'value', label: 'Value' }
-          ], 'inventory');
+          exportToCSV(
+            exportData,
+            [
+              { key: "name", label: "Product" },
+              { key: "sku", label: "SKU" },
+              { key: "stock", label: "Stock" },
+              { key: "reorderLevel", label: "Reorder" },
+              { key: "value", label: "Value" },
+            ],
+            "inventory",
+          );
         }}
         filtersContent={({ close }) => (
           <div className="space-y-4 flex flex-col h-full min-h-[50vh]">
@@ -209,33 +221,47 @@ function StockList() {
         }
       >
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5 mb-6">
-          <div className="rounded-2xl border border-border/80 bg-card p-4 shadow-card flex flex-col justify-between card-interactive">
-            <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Total Stock Count</p>
+          <div className="rounded-xl border border-border/80 bg-card p-4 shadow-soft flex flex-col justify-between card-interactive">
+            <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
+              Total Stock Count
+            </p>
             <div className="mt-2 flex items-baseline gap-1.5">
-              <span className="text-2xl sm:text-3xl font-black text-foreground">{inventorySummary?.totalStock || 0}</span>
+              <span className="text-2xl sm:text-3xl font-black text-foreground">
+                {inventorySummary?.totalStock || 0}
+              </span>
               <span className="text-xs font-semibold text-muted-foreground">units</span>
             </div>
-            <p className="text-xs text-muted-foreground mt-1 font-medium">{products.length} catalog SKUs</p>
+            <p className="text-xs text-muted-foreground mt-1 font-medium">
+              {products.length} catalog SKUs
+            </p>
           </div>
 
-          <div className="rounded-2xl border border-border/80 bg-card p-4 shadow-card flex flex-col justify-between card-interactive">
-            <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Inventory Value (Cost)</p>
+          <div className="rounded-xl border border-border/80 bg-card p-4 shadow-soft flex flex-col justify-between card-interactive">
+            <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
+              Inventory Value (Cost)
+            </p>
             <div className="mt-2 text-2xl sm:text-3xl font-black text-foreground">
               {formatCurrency(inventorySummary?.totalValue || 0)}
             </div>
-            <p className="text-xs text-muted-foreground mt-1 font-medium">Cost valuation invested</p>
+            <p className="text-xs text-muted-foreground mt-1 font-medium">
+              Cost valuation invested
+            </p>
           </div>
 
-          <div className="rounded-2xl border border-border/80 bg-card p-4 shadow-card flex flex-col justify-between card-interactive">
-            <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Retail Valuation</p>
+          <div className="rounded-xl border border-border/80 bg-card p-4 shadow-soft flex flex-col justify-between card-interactive">
+            <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
+              Retail Valuation
+            </p>
             <div className="mt-2 text-2xl sm:text-3xl font-black text-primary">
               {formatCurrency(inventorySummary?.totalRetailValue || 0)}
             </div>
             <p className="text-xs text-muted-foreground mt-1 font-medium">Expected sales revenue</p>
           </div>
 
-          <div className="rounded-2xl border border-border/80 bg-card p-4 shadow-card flex flex-col justify-between card-interactive">
-            <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Stock Alerts</p>
+          <div className="rounded-xl border border-border/80 bg-card p-4 shadow-soft flex flex-col justify-between card-interactive">
+            <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
+              Stock Alerts
+            </p>
             <div className="mt-2 text-2xl sm:text-3xl font-black text-destructive">
               {inventorySummary?.lowStockCount || lowCount}
             </div>
@@ -246,44 +272,49 @@ function StockList() {
           </div>
         </div>
 
-        {filteredProducts.length === 0 ? (
-          <EmptyState
-            icon={PackageSearch}
-            title="No inventory records"
-            description={
-              search || filters.status
-                ? "Try adjusting your search or active filters."
-                : "You don't have any products in your inventory yet."
-            }
-            actionLabel="Add Product"
-            onAction={() => router.navigate({ to: "/products" })}
-          />
-        ) : (
-          <div className="overflow-hidden rounded-2xl border border-border/80 bg-card shadow-card">
-            {/* Desktop Table (>= 768px) */}
-            <div className="table-desktop overflow-x-auto">
-              <table className="w-full text-left text-sm min-w-[800px]">
-                <thead className="border-b border-border/80 bg-muted/40 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
-                  <tr>
-                    <th className="px-5 py-3 whitespace-nowrap">Product</th>
-                    <th className="px-5 py-3 whitespace-nowrap">SKU</th>
-                    <th className="px-5 py-3 text-right whitespace-nowrap">Stock on Hand</th>
-                    <th className="px-5 py-3 text-right whitespace-nowrap">Reorder Point</th>
-                    <th className="px-5 py-3 text-right whitespace-nowrap">Stock Value</th>
-                    <th className="px-5 py-3 whitespace-nowrap">Health Status</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border/60">
-                  {paginatedProducts.map((p) => {
+        <div className="overflow-hidden rounded-xl border border-border/80 bg-card shadow-soft">
+          {/* Desktop Table (>= 768px) */}
+          <div className="table-desktop overflow-x-auto">
+            <Table className="min-w-[800px]">
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Product</TableHead>
+                  <TableHead>SKU</TableHead>
+                  <TableHead className="text-right">Stock on Hand</TableHead>
+                  <TableHead className="text-right">Reorder Point</TableHead>
+                  <TableHead className="text-right">Stock Value</TableHead>
+                  <TableHead>Health Status</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {paginatedProducts.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={6} className="h-64 text-center">
+                      <EmptyState
+                        icon={PackageSearch}
+                        title="No inventory records"
+                        description={
+                          search || filters.status
+                            ? "Try adjusting your search or active filters."
+                            : "You don't have any products in your inventory yet."
+                        }
+                        actionLabel="Add Product"
+                        onAction={() => router.navigate({ to: "/products" })}
+                        className="border-none bg-transparent my-0 py-8 shadow-none"
+                      />
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  paginatedProducts.map((p) => {
                     const low = Number(p.stock) <= Number(p.reorderLevel);
                     const out = p.stock <= 0;
                     return (
-                      <tr
+                      <TableRow
                         key={p.id}
-                        className="hover:bg-muted/30 cursor-pointer transition-colors"
+                        className="cursor-pointer"
                         onClick={() => router.navigate({ to: "/products", search: { edit: p.id } })}
                       >
-                        <td className="px-5 py-3 whitespace-nowrap">
+                        <TableCell className="whitespace-nowrap">
                           <div className="flex items-center gap-3">
                             <div className="grid size-10 shrink-0 place-items-center rounded-xl bg-muted/60 overflow-hidden border border-border/50">
                               {p.image ? (
@@ -292,30 +323,37 @@ function StockList() {
                                 <PackageSearch className="size-5 text-muted-foreground/50" />
                               )}
                             </div>
-                            <span className="font-bold text-foreground hover:text-primary transition-colors">{p.name}</span>
+                            <span className="font-bold text-foreground hover:text-primary transition-colors">
+                              {p.name}
+                            </span>
                           </div>
-                        </td>
-                        <td className="px-5 py-3 font-mono text-xs text-muted-foreground whitespace-nowrap font-medium">
+                        </TableCell>
+                        <TableCell className="font-mono text-xs text-muted-foreground whitespace-nowrap font-medium">
                           {p.sku}
-                        </td>
-                        <td
+                        </TableCell>
+                        <TableCell
                           className={cn(
-                            "number px-5 py-3 text-right font-bold whitespace-nowrap text-sm",
+                            "number text-right font-bold whitespace-nowrap text-sm",
                             low ? "text-destructive" : "text-foreground",
                           )}
                         >
-                          {p.stock} <span className="text-xs font-normal text-muted-foreground">{units.find((u) => u.id === p.unit)?.name || p.unit || "units"}</span>
-                        </td>
-                        <td className="px-5 py-3 text-right text-muted-foreground whitespace-nowrap font-medium text-xs">
+                          {p.stock}{" "}
+                          <span className="text-xs font-normal text-muted-foreground">
+                            {units.find((u) => u.id === p.unit)?.name || p.unit || "units"}
+                          </span>
+                        </TableCell>
+                        <TableCell className="text-right text-muted-foreground whitespace-nowrap font-medium text-xs">
                           {p.reorderLevel}
-                        </td>
-                        <td className="number px-5 py-3 text-right whitespace-nowrap font-bold text-foreground">
+                        </TableCell>
+                        <TableCell className="number text-right whitespace-nowrap font-bold text-foreground">
                           {formatCurrency(p.stock * p.cost)}
-                        </td>
-                        <td className="px-5 py-3 whitespace-nowrap">
+                        </TableCell>
+                        <TableCell className="whitespace-nowrap">
                           <div className="flex gap-1.5 flex-wrap items-center">
                             {isExpired(p.expiryDate) && (
-                              <Badge variant="destructive" className="text-[10px] font-bold">Expired</Badge>
+                              <Badge variant="destructive" className="text-[10px] font-bold">
+                                Expired
+                              </Badge>
                             )}
                             {isExpiringSoon(p.expiryDate) && (
                               <Badge className="bg-warning/15 text-warning-foreground hover:bg-warning/20 text-[10px] font-bold">
@@ -323,7 +361,9 @@ function StockList() {
                               </Badge>
                             )}
                             {out ? (
-                              <Badge variant="destructive" className="text-[10px] font-bold">Out of stock</Badge>
+                              <Badge variant="destructive" className="text-[10px] font-bold">
+                                Out of stock
+                              </Badge>
                             ) : low ? (
                               <Badge className="bg-warning/15 text-warning-foreground hover:bg-warning/20 text-[10px] font-bold">
                                 Low stock
@@ -334,17 +374,32 @@ function StockList() {
                               </Badge>
                             )}
                           </div>
-                        </td>
-                      </tr>
+                        </TableCell>
+                      </TableRow>
                     );
-                  })}
-                </tbody>
-              </table>
-            </div>
+                  })
+                )}
+              </TableBody>
+            </Table>
+          </div>
 
-            {/* Mobile Card Feed (< 768px) */}
-            <div className="table-mobile-cards p-3 space-y-2.5">
-              {paginatedProducts.map((p) => {
+          {/* Mobile Card Feed (< 768px) */}
+          <div className="table-mobile-cards p-3 space-y-2.5">
+            {paginatedProducts.length === 0 ? (
+              <EmptyState
+                icon={PackageSearch}
+                title="No inventory records"
+                description={
+                  search || filters.status
+                    ? "Try adjusting your search or active filters."
+                    : "You don't have any products in your inventory yet."
+                }
+                actionLabel="Add Product"
+                onAction={() => router.navigate({ to: "/products" })}
+                className="border-none bg-transparent my-0 py-6 shadow-none"
+              />
+            ) : (
+              paginatedProducts.map((p) => {
                 const low = Number(p.stock) <= Number(p.reorderLevel);
                 const out = p.stock <= 0;
                 return (
@@ -362,7 +417,9 @@ function StockList() {
                         )}
                       </div>
                       <div className="min-w-0 flex-1">
-                        <div className="font-bold text-xs sm:text-sm text-foreground truncate">{p.name}</div>
+                        <div className="font-bold text-xs sm:text-sm text-foreground truncate">
+                          {p.name}
+                        </div>
                         <p className="text-[11px] text-muted-foreground font-mono">{p.sku}</p>
                         <div className="flex items-center gap-2 mt-1">
                           {out ? (
@@ -385,15 +442,15 @@ function StockList() {
                       <div className="number text-xs font-bold text-foreground">
                         {formatCurrency(p.stock * p.cost)}
                       </div>
-                      <div className="text-[10px] text-muted-foreground mt-0.5">
-                        Valuation
-                      </div>
+                      <div className="text-[10px] text-muted-foreground mt-0.5">Valuation</div>
                     </div>
                   </div>
                 );
-              })}
-            </div>
+              })
+            )}
+          </div>
 
+          {filteredProducts.length > 0 && (
             <div className="border-t border-border/60 p-2 sm:p-3">
               <PaginationControls
                 currentPage={page}
@@ -404,8 +461,8 @@ function StockList() {
                 totalItems={filteredProducts.length}
               />
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </DataPage>
 
       <Dialog open={showForecast} onOpenChange={setShowForecast}>
@@ -417,7 +474,8 @@ function StockList() {
           </DialogHeader>
           <div className="space-y-3 py-3">
             <p className="text-xs text-muted-foreground">
-              Based on historical sales velocity over the last 30 days, these items are projected to run out soon.
+              Based on historical sales velocity over the last 30 days, these items are projected to
+              run out soon.
             </p>
             {forecasts.length === 0 ? (
               <div className="rounded-xl border border-dashed border-border p-6 text-center text-xs text-muted-foreground">
@@ -436,9 +494,7 @@ function StockList() {
                     <div className="text-right flex flex-col items-end gap-1">
                       <Badge
                         variant={f.daysRemaining <= 3 ? "destructive" : "outline"}
-                        className={cn(
-                          f.daysRemaining <= 3 ? "text-destructive" : "text-warning",
-                        )}
+                        className={cn(f.daysRemaining <= 3 ? "text-destructive" : "text-warning")}
                       >
                         {f.daysRemaining === 0
                           ? "Runs out today"

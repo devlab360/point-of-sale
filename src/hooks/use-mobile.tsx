@@ -28,7 +28,7 @@ export function useIsTablet() {
       setIsTablet(w >= MOBILE_BREAKPOINT && w < TABLET_BREAKPOINT);
     };
     const mql = window.matchMedia(
-      `(min-width: ${MOBILE_BREAKPOINT}px) and (max-width: ${TABLET_BREAKPOINT - 1}px)`
+      `(min-width: ${MOBILE_BREAKPOINT}px) and (max-width: ${TABLET_BREAKPOINT - 1}px)`,
     );
     mql.addEventListener("change", check);
     check();
@@ -48,4 +48,3 @@ export function useBreakpoint() {
     isDesktop: !isMobile && !isTablet,
   };
 }
-

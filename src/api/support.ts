@@ -27,7 +27,6 @@ export const getHelpArticlesFn = createServerFn({ method: "GET" })
     }
   });
 
-
 // ==========================================
 // FAQs
 // ==========================================
@@ -36,16 +35,12 @@ export const getFaqsFn = createServerFn({ method: "GET" })
   .validator((data: any) => data)
   .handler(async ({ data }) => {
     try {
-      const faqsList = await db
-        .select()
-        .from(schema.faqs)
-        .orderBy(desc(schema.faqs.createdAt));
+      const faqsList = await db.select().from(schema.faqs).orderBy(desc(schema.faqs.createdAt));
       return { success: true, data: faqsList };
     } catch (e) {
       return handleApiError(e);
     }
   });
-
 
 // ==========================================
 // Support Tickets / Chat
@@ -85,7 +80,6 @@ export const createSupportTicketFn = createServerFn({ method: "POST" })
       return handleApiError(e);
     }
   });
-
 
 // ==========================================
 // Reviews

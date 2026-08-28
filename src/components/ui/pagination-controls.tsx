@@ -55,14 +55,14 @@ export function PaginationControls({
   return (
     <div
       className={cn(
-        "flex flex-col sm:flex-row items-center justify-between border-t border-border px-4 py-3 bg-card",
+        "flex flex-col sm:flex-row items-center justify-between px-3 py-2.5 bg-transparent",
         className,
       )}
     >
-      <div className="text-sm text-muted-foreground mb-4 sm:mb-0">
-        Showing <span className="font-medium text-foreground">{startItem}</span> to{" "}
-        <span className="font-medium text-foreground">{endItem}</span> of{" "}
-        <span className="font-medium text-foreground">{totalItems}</span> results
+      <div className="text-xs text-muted-foreground mb-3 sm:mb-0">
+        Showing <span className="font-semibold text-foreground">{startItem}</span> to{" "}
+        <span className="font-semibold text-foreground">{endItem}</span> of{" "}
+        <span className="font-semibold text-foreground">{totalItems}</span> results
       </div>
 
       <div className="flex items-center space-x-1">

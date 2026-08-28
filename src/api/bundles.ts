@@ -29,12 +29,15 @@ export const getBundleComponentsFn = createServerFn({ method: "GET" })
           productStock: schema.products.stock,
         })
         .from(schema.productBundles)
-        .innerJoin(schema.products, eq(schema.productBundles.componentProductId, schema.products.id))
+        .innerJoin(
+          schema.products,
+          eq(schema.productBundles.componentProductId, schema.products.id),
+        )
         .where(
           and(
             eq(schema.productBundles.bundleProductId, data.productId),
-            eq(schema.productBundles.organizationId, session.orgId)
-          )
+            eq(schema.productBundles.organizationId, session.orgId),
+          ),
         );
       return { success: true, data: components };
     } catch (e) {
@@ -51,10 +54,12 @@ const BundleComponentSchema = z.object({
 
 export const saveBundleComponentsFn = createServerFn({ method: "POST" })
   .validator((data: unknown) =>
-    z.object({
-      bundleProductId: z.string(),
-      components: z.array(BundleComponentSchema),
-    }).parse(data)
+    z
+      .object({
+        bundleProductId: z.string(),
+        components: z.array(BundleComponentSchema),
+      })
+      .parse(data),
   )
   .handler(async ({ data }) => {
     try {
@@ -65,8 +70,8 @@ export const saveBundleComponentsFn = createServerFn({ method: "POST" })
         .where(
           and(
             eq(schema.productBundles.bundleProductId, data.bundleProductId),
-            eq(schema.productBundles.organizationId, session.orgId)
-          )
+            eq(schema.productBundles.organizationId, session.orgId),
+          ),
         );
 
       // Insert new components
@@ -79,7 +84,7 @@ export const saveBundleComponentsFn = createServerFn({ method: "POST" })
             componentProductId: c.componentProductId,
             componentVariantId: c.componentVariantId || null,
             quantity: c.quantity.toString(),
-          }))
+          })),
         );
       }
 
@@ -92,14 +97,16 @@ export const saveBundleComponentsFn = createServerFn({ method: "POST" })
 // ─── Receive FIFO inventory batch ─────────────────────────────────────────────
 export const receiveInventoryBatchFn = createServerFn({ method: "POST" })
   .validator((data: unknown) =>
-    z.object({
-      productId: z.string(),
-      locationId: z.string().optional().nullable(),
-      purchaseCost: z.number().positive(),
-      quantity: z.number().positive(),
-      purchaseOrderId: z.string().optional().nullable(),
-      batchNote: z.string().optional().nullable(),
-    }).parse(data)
+    z
+      .object({
+        productId: z.string(),
+        locationId: z.string().optional().nullable(),
+        purchaseCost: z.number().positive(),
+        quantity: z.number().positive(),
+        purchaseOrderId: z.string().optional().nullable(),
+        batchNote: z.string().optional().nullable(),
+      })
+      .parse(data),
   )
   .handler(async ({ data }) => {
     try {
@@ -134,8 +141,8 @@ export const getInventoryBatchesFn = createServerFn({ method: "GET" })
         .where(
           and(
             eq(schema.inventoryBatches.productId, data.productId),
-            eq(schema.inventoryBatches.organizationId, session.orgId)
-          )
+            eq(schema.inventoryBatches.organizationId, session.orgId),
+          ),
         )
         .orderBy(schema.inventoryBatches.receivedAt); // FIFO order — oldest first
       return { success: true, data: batches };

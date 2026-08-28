@@ -140,7 +140,7 @@ export function AiCopilotDrawer() {
     {
       id: "welcome",
       sender: "ai",
-      text: "Welcome! I am your **NexisPOS AI Copilot**. You can ask questions about your store's profit and loss, due accounts, stock prediction, or business health score.",
+      text: "Welcome! I am your **OneDesk360 AI Copilot**. You can ask questions about your store's profit and loss, due accounts, stock prediction, or business health score.",
       timestamp: formatAppDate(new Date(), "time"),
     },
   ]);
@@ -283,10 +283,10 @@ export function AiCopilotDrawer() {
           side="right"
           className="w-full sm:max-w-xl p-0 flex flex-col h-full bg-background border-l border-border shadow-2xl"
         >
-          <SheetHeader className="p-4 border-b bg-gradient-to-r from-primary/10 via-background to-accent/10">
+          <SheetHeader className="p-4 border-b bg-primary/5">
             <SheetTitle className="flex items-center gap-2 text-primary font-bold">
               <Bot className="size-5" />
-              <span>NexisPOS AI Business Advisor</span>
+              <span>OneDesk360 AI Business Advisor</span>
             </SheetTitle>
             <p className="text-xs text-muted-foreground">
               Natural Language AI Store Intelligence & Analytics

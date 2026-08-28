@@ -1,11 +1,8 @@
-import { handleApiError } from "@/lib/error-utils";
+import { formatErrorResponse } from "@/lib/errors/errors";
 import { createServerFn } from "@tanstack/react-start";
-import { db } from "@/db";
-import * as schema from "@/db/schema";
-import { eq, and, desc, sql, ilike, or, inArray } from "drizzle-orm";
+import { salesService } from "@/services/sales.service";
+import { requireAuth } from "@/lib/auth-utils";
 import { z } from "zod";
-import { requireAuth, requireAdmin } from "@/lib/auth-utils";
-import { v4 as uuidv4 } from "uuid";
 
 export const getSalesFn = createServerFn({ method: "GET" })
   .validator(
@@ -16,96 +13,37 @@ export const getSalesFn = createServerFn({ method: "GET" })
         query: z.string().optional(),
         status: z.string().optional(),
         payment: z.string().optional(),
-        sync: z.string().optional(),
       })
       .passthrough(),
   )
   .handler(async ({ data }) => {
     try {
       const session = await requireAuth();
-      const orgId = session.orgId;
-
-      let conditions = [eq(schema.sales.organizationId, orgId)];
-      if (data.query) {
-        const searchCond = or(
-          ilike(schema.sales.customerName, `%${data.query}%`),
-          // H-3 fix: Also allow searching by invoice/sale ID fragment
-          ilike(schema.sales.id, `%${data.query}%`),
-        );
-        if (searchCond) conditions.push(searchCond);
-      }
-      if (data.status) {
-        conditions.push(eq(schema.sales.status, data.status));
-      }
-      if (data.payment) {
-        conditions.push(eq(schema.sales.paymentMethod, data.payment));
-      }
-
-      const whereClause = and(...conditions);
-
-      const res = await db
-        .select()
-        .from(schema.sales)
-        .where(whereClause)
-        .orderBy(desc(schema.sales.date))
-        .limit(data.pageSize)
-        .offset((data.page - 1) * data.pageSize);
-
-      const totalCountRes = await db
-        .select({ count: sql`count(*)` })
-        .from(schema.sales)
-        .where(whereClause);
-      const totalCount = Number(totalCountRes[0].count);
-
-      // C-1 fix: Fetch and merge saleItems so dashboard charts and top sellers work
-      let salesWithItems = res.map((s) => ({ ...s, saleItems: [] as any[] }));
-      if (res.length > 0) {
-        const saleIds = res.map((s) => s.id);
-        const allItems = await db
-          .select()
-          .from(schema.saleItems)
-          .where(inArray(schema.saleItems.saleId, saleIds));
-        const itemsMap = new Map<string, any[]>();
-        allItems.forEach((item) => {
-          if (!itemsMap.has(item.saleId)) itemsMap.set(item.saleId, []);
-          itemsMap.get(item.saleId)!.push(item);
-        });
-        salesWithItems = res.map((s) => ({ ...s, saleItems: itemsMap.get(s.id) || [] }));
-      }
-
-      return { success: true, data: salesWithItems, total: totalCount };
+      const { sales, totalCount } = await salesService.getSales(session.orgId, data);
+      return { success: true, data: sales, total: totalCount };
     } catch (e) {
-      return handleApiError(e);
+      return formatErrorResponse(e);
     }
   });
 
 export const getSaleItemsFn = createServerFn({ method: "GET" })
-  .validator((data: any) => data)
+  .validator(z.object({ saleId: z.string() }))
   .handler(async ({ data }) => {
     try {
       const session = await requireAuth();
-      // Enforce tenant isolation
-      const sales = await db
-        .select()
-        .from(schema.sales)
-        .where(
-          and(eq(schema.sales.id, data.saleId), eq(schema.sales.organizationId, session.orgId)),
-        )
-        .limit(1);
-      if (!sales.length) return { success: false, error: "Unauthorized or not found" };
-
-      const res = await db
-        .select()
-        .from(schema.saleItems)
-        .where(eq(schema.saleItems.saleId, data.saleId));
-      return { success: true, data: res };
+      const items = await salesService.getSaleItems(session.orgId, data.saleId);
+      const safeItems = items.map((item) => ({
+        ...item,
+        modifiers: (item.modifiers as Record<string, any>) || null,
+      }));
+      return { success: true, data: safeItems };
     } catch (e) {
-      return handleApiError(e);
+      return formatErrorResponse(e);
     }
   });
 
 const SaleItemSchema = z.object({
-  referenceType: z.enum(["PRODUCT", "SERVICE"]).default("PRODUCT"),
+  referenceType: z.enum(["PRODUCT", "SERVICE"]).optional().default("PRODUCT"),
   referenceId: z.string(),
   productId: z.string().optional(),
   productName: z.string(),
@@ -121,8 +59,8 @@ const SaleSchema = z.object({
   customerId: z.string().optional().nullable(),
   customerName: z.string().optional(),
   date: z.string().optional(),
-  status: z.string(),
-  paymentMethod: z.string(),
+  status: z.string().optional().default("completed"),
+  paymentMethod: z.string().optional().default("cash"),
   paid: z.number().optional().nullable(),
   payments: z.array(z.any()).optional().nullable(),
   salesmanName: z.string().optional().nullable(),
@@ -139,6 +77,7 @@ export const createSaleFn = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     try {
       const session = await requireAuth();
+<<<<<<< HEAD
       const saleId = uuidv4();
       let subtotal = 0;
       let totalTax = 0;
@@ -330,47 +269,26 @@ export const createSaleFn = createServerFn({ method: "POST" })
         }
       });
       return { success: true, data: { id: saleId } };
+=======
+      const result = await salesService.createSale(
+        session.orgId,
+        session.userId,
+        session.userName || "Cashier",
+        {
+          customerId: data.sale.customerId,
+          customerName: data.sale.customerName,
+          salesmanName: data.sale.salesmanName,
+          date: data.sale.date,
+          status: data.sale.status,
+          paymentMethod: data.sale.paymentMethod,
+          paid: data.sale.paid,
+          payments: data.sale.payments || undefined,
+          items: data.items,
+        },
+      );
+      return { success: true, ...result, message: "Sale transaction recorded successfully" };
+>>>>>>> 33daaca412d759b2fc7e1f5ea6736a59de467800
     } catch (e) {
-      return handleApiError(e);
-    }
-  });
-
-export const updateSaleFn = createServerFn({ method: "POST" })
-  .validator((data: any) => data)
-  .handler(async ({ data }) => {
-    try {
-      const session = await requireAuth();
-      const { id, ...safeUpdates } = data.updates as any;
-
-      await db
-        .update(schema.sales)
-        .set(safeUpdates)
-        .where(and(eq(schema.sales.id, data.id), eq(schema.sales.organizationId, session.orgId)));
-      return { success: true };
-    } catch (e) {
-      return handleApiError(e);
-    }
-  });
-
-export const deleteSaleFn = createServerFn({ method: "POST" })
-  .validator((data: any) => data)
-  .handler(async ({ data }) => {
-    try {
-      const session = await requireAdmin();
-      await db.transaction(async (tx) => {
-        // Enforce tenant isolation by checking if sale belongs to org first
-        const sales = await tx
-          .select()
-          .from(schema.sales)
-          .where(and(eq(schema.sales.id, data.id), eq(schema.sales.organizationId, session.orgId)))
-          .limit(1);
-        if (!sales.length) throw new Error("Unauthorized");
-
-        await tx.delete(schema.saleItems).where(eq(schema.saleItems.saleId, data.id));
-        await tx.delete(schema.sales).where(eq(schema.sales.id, data.id));
-      });
-      return { success: true };
-    } catch (e) {
-      return handleApiError(e);
+      return formatErrorResponse(e);
     }
   });
