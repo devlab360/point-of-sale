@@ -21,10 +21,7 @@ export const sendWhatsAppText = async (phone: string, text: string) => {
   }
 };
 
-/**
- * Sends a document (PDF or CSV) to a WhatsApp number.
- * Note: The document must be publicly accessible via a URL, or uploaded via Media API first.
- */
+
 export const sendWhatsAppDocument = async (
   phone: string,
   documentUrl: string,
