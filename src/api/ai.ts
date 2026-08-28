@@ -15,21 +15,8 @@ export const askAiCopilotFn = createServerFn({ method: "POST" })
     try {
       await requireAuth();
 
-<<<<<<< HEAD
       const systemPrompt = `You are the NexisPOS AI Business Advisor, an expert retail and business consultant powered by LongCat AI.
 You are assisting a store owner who is using the NexisPOS system.
-=======
-      const apiKey = process.env.VITE_GEMINI_API_KEY || process.env.GEMINI_API_KEY;
-      if (!apiKey) {
-        throw new Error("Gemini API Key is not configured.");
-      }
-
-      const genAI = new GoogleGenerativeAI(apiKey);
-      const model = genAI.getGenerativeModel({ model: "gemini-3.5-flash" });
-
-      const systemPrompt = `You are the OneDesk360 AI Business Advisor, an expert retail and business consultant.
-You are assisting a store owner who is using the OneDesk360 system.
->>>>>>> 33daaca412d759b2fc7e1f5ea6736a59de467800
 
 CRITICAL INSTRUCTIONS:
 1. ALWAYS respond in valid JSON format ONLY. No markdown wrappers around the JSON, no plain text outside the JSON. Just the raw JSON object.
@@ -108,7 +95,8 @@ export const generateAITextFn = createServerFn({ method: "POST" })
 export const parseInvoiceFn = createServerFn({ method: "POST" })
   .validator(
     z.object({
-      fileBase64: z.string(),
+      fileBase64: z.string().optional(),
+      imageBase64: z.string().optional(),
       mimeType: z.string(),
     }),
   )
@@ -138,35 +126,12 @@ Do not wrap it in markdown block quotes (no \`\`\`json). Use exactly these Engli
       const aiResponse = await callAiChat({
         systemPrompt,
         userMessage: "Extract invoice line items and totals from this invoice.",
-        imageBase64: data.fileBase64,
+        imageBase64: data.imageBase64 || data.fileBase64,
         mimeType: data.mimeType,
         temperature: 0.1,
       });
 
-<<<<<<< HEAD
       const parsedData = cleanJsonOutput(aiResponse);
-=======
-      const text = result.response.text();
-      // Try to parse the JSON
-      let parsedData;
-      try {
-        let cleanText = text.trim();
-        if (cleanText.startsWith("\`\`\`json")) {
-          cleanText = cleanText.substring(7);
-        }
-        if (cleanText.startsWith("\`\`\`")) {
-          cleanText = cleanText.substring(3);
-        }
-        if (cleanText.endsWith("\`\`\`")) {
-          cleanText = cleanText.substring(0, cleanText.length - 3);
-        }
-        parsedData = JSON.parse(cleanText.trim());
-      } catch (err) {
-        throw new Error(
-          "Failed to parse AI response into JSON. Raw output: " + text.substring(0, 100),
-        );
-      }
->>>>>>> 33daaca412d759b2fc7e1f5ea6736a59de467800
 
       return {
         success: true as const,

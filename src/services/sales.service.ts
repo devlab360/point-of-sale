@@ -181,7 +181,12 @@ export class SalesService {
             const existingProds = await tx
               .select()
               .from(schema.products)
-              .where(eq(schema.products.id, targetProductId))
+              .where(
+                and(
+                  eq(schema.products.id, targetProductId),
+                  eq(schema.products.organizationId, orgId),
+                ),
+              )
               .limit(1);
 
             if (existingProds.length > 0) {
@@ -190,8 +195,47 @@ export class SalesService {
               await tx
                 .update(schema.products)
                 .set({ stock: newStock.toString() })
-                .where(eq(schema.products.id, targetProductId));
+                .where(
+                  and(
+                    eq(schema.products.id, targetProductId),
+                    eq(schema.products.organizationId, orgId),
+                  ),
+                );
             }
+          }
+        }
+      }
+
+      // Customer Credit Balance Tracking
+      if (input.customerId && input.customerId !== "walkin") {
+        const custRes = await tx
+          .select()
+          .from(schema.customers)
+          .where(
+            and(
+              eq(schema.customers.id, input.customerId),
+              eq(schema.customers.organizationId, orgId),
+            ),
+          )
+          .limit(1);
+
+        if (custRes.length > 0) {
+          const currentCredit = Number(custRes[0].credit || 0);
+          const invoiceTotal = total;
+          const paid = Number(input.paid ?? total);
+          const netChange = invoiceTotal - paid;
+
+          if (netChange !== 0) {
+            const newCredit = currentCredit + netChange;
+            await tx
+              .update(schema.customers)
+              .set({ credit: newCredit.toFixed(2) })
+              .where(
+                and(
+                  eq(schema.customers.id, input.customerId),
+                  eq(schema.customers.organizationId, orgId),
+                ),
+              );
           }
         }
       }

@@ -9,10 +9,6 @@ export default {
   out: "./src/db/migrations",
   dialect: "postgresql",
   dbCredentials: {
-<<<<<<< HEAD
-    url: dbUrl,
-=======
-    url: process.env.DATABASE_URL || "postgres://postgres:@localhost:5432/pos_db",
->>>>>>> 33daaca412d759b2fc7e1f5ea6736a59de467800
+    url: dbUrl || process.env.DATABASE_URL || "postgres://postgres:@localhost:5432/pos_db",
   },
 } satisfies Config;

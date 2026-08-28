@@ -12,11 +12,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { getCategoriesFn, createCategoryFn } from "@/api/categories";
 import { useCurrency } from "@/lib/currency";
 import { VariantManager } from "../products/VariantManager";
-<<<<<<< HEAD
 import { AiProductMagicBar } from "../products/AiProductMagicBar";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, ArrowLeft, Sparkles, Clock, IndianRupee } from "lucide-react";
-=======
 import {
   Select,
   SelectContent,
@@ -35,8 +31,8 @@ import {
   Layers,
   Image as ImageIcon,
   CheckCircle2,
+  Sparkles,
 } from "lucide-react";
->>>>>>> 33daaca412d759b2fc7e1f5ea6736a59de467800
 
 export function ServiceForm({
   initialData,
@@ -183,18 +179,12 @@ export function ServiceForm({
         </div>
       </div>
 
-<<<<<<< HEAD
       {/* 🚀 AI Service Creator Bar */}
       <AiProductMagicBar
         categories={categories}
         onApplyData={handleApplyAiData}
       />
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="md:col-span-2 space-y-6">
-          <div className="rounded-xl border bg-card text-card-foreground shadow-sm p-6 space-y-6">
-            <h2 className="text-lg font-semibold border-b pb-2">Service Information</h2>
-=======
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left Column - Main Details */}
         <div className="lg:col-span-2 space-y-6">
@@ -297,7 +287,6 @@ export function ServiceForm({
                   <FieldError message={errors.cost} />
                 </div>
               </div>
->>>>>>> 33daaca412d759b2fc7e1f5ea6736a59de467800
 
               <div className="grid gap-1.5">
                 <Label className="text-sm font-semibold">

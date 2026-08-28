@@ -23,11 +23,7 @@ import { useCurrency } from "@/lib/currency";
 import { VariantManager } from "./VariantManager";
 import { BundleManager } from "./BundleManager";
 import { ModifierManager } from "./ModifierManager";
-<<<<<<< HEAD
 import { AiProductMagicBar } from "./AiProductMagicBar";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, ArrowLeft, MapPin, Package, IndianRupee, Image as ImageIcon, Tags, FileText, Settings, ShieldCheck, Tag, TrendingUp, Sparkles, RefreshCw } from "lucide-react";
-=======
 import {
   Select,
   SelectContent,
@@ -50,8 +46,8 @@ import {
   Tag,
   Sparkles,
   Barcode as BarcodeIcon,
+  RefreshCw,
 } from "lucide-react";
->>>>>>> 33daaca412d759b2fc7e1f5ea6736a59de467800
 
 export function ProductForm({
   initialData,
@@ -415,11 +411,10 @@ export function ProductForm({
                   <div className="flex items-center gap-2">
                     <span className="text-xs text-muted-foreground font-semibold">Margin:</span>
                     <span
-                      className={`text-xs font-black px-2.5 py-0.5 rounded-full ${
-                        formData.price - formData.cost >= 0
+                      className={`text-xs font-black px-2.5 py-0.5 rounded-full ${formData.price - formData.cost >= 0
                           ? "bg-success/15 text-success border border-success/20"
                           : "bg-destructive/15 text-destructive border border-destructive/20"
-                      }`}
+                        }`}
                     >
                       {(
                         ((formData.price - formData.cost) / (formData.price || 1)) *
@@ -483,23 +478,6 @@ export function ProductForm({
                 </div>
               </div>
 
-<<<<<<< HEAD
-              {/* 💡 Live Margin & Profit Indicator */}
-              <div className="flex flex-wrap items-center justify-between gap-3 p-3.5 rounded-xl bg-gradient-to-r from-emerald-500/10 via-teal-500/5 to-transparent border border-emerald-500/20 text-xs">
-                <div className="flex items-center gap-2">
-                  <TrendingUp className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
-                  <span className="font-semibold text-foreground">Estimated Profit:</span>
-                  <span className={`font-bold ${unitProfit >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-destructive"}`}>
-                    ₹{unitProfit.toFixed(2)} / unit
-                  </span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <span className="bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 font-semibold px-2 py-0.5 rounded-md border border-emerald-500/30">
-                    Margin: {marginPct}%
-                  </span>
-                  <span className="bg-blue-500/15 text-blue-700 dark:text-blue-300 font-semibold px-2 py-0.5 rounded-md border border-blue-500/30">
-                    Markup: {markupPct}%
-=======
               {/* Real-time Profit Preview */}
               <div className="grid grid-cols-2 gap-3 p-3.5 rounded-xl bg-muted/40 border border-border/60 text-xs">
                 <div>
@@ -514,16 +492,11 @@ export function ProductForm({
                     {formData.cost > 0
                       ? `${(((formData.price - formData.cost) / formData.cost) * 100).toFixed(1)}%`
                       : "—"}
->>>>>>> 33daaca412d759b2fc7e1f5ea6736a59de467800
                   </span>
                 </div>
               </div>
 
-<<<<<<< HEAD
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 bg-muted/10 p-4 rounded-lg border border-border/50">
-=======
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-muted/20 p-4 rounded-xl border border-border/50">
->>>>>>> 33daaca412d759b2fc7e1f5ea6736a59de467800
                 <div className="grid gap-1.5">
                   <Label className="text-xs font-bold">Wholesale Price (Optional)</Label>
                   <Input
@@ -891,34 +864,6 @@ export function ProductForm({
             </CardHeader>
             <CardContent className="pt-5 space-y-4">
               <div className="grid gap-1.5">
-<<<<<<< HEAD
-                <Label className="text-sm font-semibold">SKU <span className="text-destructive">*</span></Label>
-                <div className="flex gap-2">
-                  <Input
-                    placeholder="e.g. SKU-001"
-                    value={formData.sku}
-                    onChange={(e) => {
-                      setFormData({ ...formData, sku: e.target.value });
-                      clearProdError("sku");
-                    }}
-                    className={`flex-1 h-10 ${prodErrors.sku ? "border-destructive focus-visible:ring-destructive" : ""}`}
-                  />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => {
-                      const prefix = (formData.name ? formData.name.replace(/[^a-zA-Z]/g, "").substring(0, 3) : "SKU").toUpperCase();
-                      const rand = Math.floor(1000 + Math.random() * 9000);
-                      setFormData({ ...formData, sku: `${prefix}-${rand}` });
-                      clearProdError("sku");
-                    }}
-                    className="h-10 text-xs gap-1 shrink-0"
-                  >
-                    <RefreshCw className="h-3.5 w-3.5" />
-                    Auto
-                  </Button>
-                </div>
-=======
                 <div className="flex items-center justify-between">
                   <Label className="text-xs font-bold">
                     SKU Identifier <span className="text-destructive">*</span>
@@ -926,13 +871,14 @@ export function ProductForm({
                   <button
                     type="button"
                     onClick={() => {
-                      const randSku = `SKU-${Date.now().toString().slice(-6)}`;
-                      setFormData({ ...formData, sku: randSku });
+                      const prefix = (formData.name ? formData.name.replace(/[^a-zA-Z]/g, "").substring(0, 3) : "SKU").toUpperCase();
+                      const rand = Math.floor(1000 + Math.random() * 9000);
+                      setFormData({ ...formData, sku: `${prefix}-${rand}` });
                       clearProdError("sku");
                     }}
-                    className="text-[11px] font-bold text-primary hover:underline"
+                    className="text-[11px] font-bold text-primary hover:underline flex items-center gap-1"
                   >
-                    Auto Generate
+                    <RefreshCw className="h-3 w-3" /> Auto Generate
                   </button>
                 </div>
                 <Input
@@ -944,7 +890,6 @@ export function ProductForm({
                   }}
                   className={`h-10 text-xs rounded-xl font-mono ${prodErrors.sku ? "border-destructive focus-visible:ring-destructive" : ""}`}
                 />
->>>>>>> 33daaca412d759b2fc7e1f5ea6736a59de467800
                 <FieldError message={prodErrors.sku} />
               </div>
               <div className="grid gap-1.5">
