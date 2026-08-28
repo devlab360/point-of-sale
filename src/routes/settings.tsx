@@ -36,11 +36,15 @@ import {
   Database,
   Eye,
   EyeOff,
+  Smartphone,
+  Users,
+  Wallet,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useEffect, useState, useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { getSettingsFn, updateSettingsFn, getAllSaasPlansFn } from "@/api/settings";
+import { DEFAULT_PAYMENT_METHODS, PAYMENT_METHOD_ICONS, type PaymentMethodConfig } from "@/lib/payment-methods";
 import { submitPaymentProofFn } from "@/api/subscription-payments";
 import { updateUserFn } from "@/api/users";
 import {
@@ -64,14 +68,23 @@ import { CheckoutModal } from "@/components/CheckoutModal";
 import { useAuth } from "@/contexts/AuthContext";
 import { PersistStore } from "@/lib/session-store";
 import { useRouter } from "@tanstack/react-router";
-import { getTrialDaysLeft, DEFAULT_PAYMENT_CONFIG } from "@/lib/utils";
+import { cn, getTrialDaysLeft, DEFAULT_PAYMENT_CONFIG } from "@/lib/utils";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+  SheetFooter,
+} from "@/components/ui/sheet";
 import { PosPrintLayouts } from "@/components/pos/PosPrintLayouts";
 import { numberToWords } from "@/lib/number-to-words";
 import { Input, PasswordInput } from "@/components/ui/input";
@@ -339,6 +352,7 @@ function SettingsPage() {
               businessType: settings.businessType,
               timeZone: settings.timeZone,
               dateFormat: settings.dateFormat,
+              config: settings.config,
             },
           },
         });
@@ -480,6 +494,145 @@ function SettingsPage() {
     return JSON.stringify(settings) !== JSON.stringify(dbSettings);
   }, [settings, dbSettings]);
 
+  // Payment Methods Management State & Handlers
+  const [showAddPaymentMethodDialog, setShowAddPaymentMethodDialog] = useState(false);
+  const [editingPaymentMethodId, setEditingPaymentMethodId] = useState<string | null>(null);
+  const [paymentMethodForm, setPaymentMethodForm] = useState<PaymentMethodConfig>({
+    id: "",
+    label: "",
+    icon: "smartphone",
+    type: "digital",
+    enabled: true,
+    notes: "",
+  });
+
+  const paymentMethodsList: PaymentMethodConfig[] = useMemo(() => {
+    const customList = settings.config?.paymentMethods;
+    if (Array.isArray(customList) && customList.length > 0) {
+      return customList;
+    }
+    return DEFAULT_PAYMENT_METHODS;
+  }, [settings.config?.paymentMethods]);
+
+  const handleTogglePaymentMethod = async (id: string, enabled: boolean) => {
+    const currentList = Array.isArray(settings.config?.paymentMethods)
+      ? [...settings.config.paymentMethods]
+      : [...DEFAULT_PAYMENT_METHODS];
+    const idx = currentList.findIndex((m) => m.id === id);
+    if (idx >= 0) {
+      currentList[idx] = { ...currentList[idx], enabled };
+    } else {
+      const def = DEFAULT_PAYMENT_METHODS.find((m) => m.id === id);
+      if (def) currentList.push({ ...def, enabled });
+    }
+    const newConfig = { ...(settings.config || {}), paymentMethods: currentList };
+    handleChange("config", newConfig);
+
+    // Auto-persist to DB
+    const orgId = user?.organizationId || dbSettings?.organizationId || settings.organizationId || PersistStore.getOrgId() || "default";
+    if (orgId) {
+      updateSettingsFn({
+        data: {
+          settings: {
+            ...settings,
+            config: newConfig,
+          },
+        },
+      }).then(() => {
+        queryClient.invalidateQueries({ queryKey: ["settings"] });
+      });
+    }
+  };
+
+  const handleSavePaymentMethod = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!paymentMethodForm.label.trim()) {
+      toast.error("Please enter a payment method name");
+      return;
+    }
+    const currentList = Array.isArray(settings.config?.paymentMethods)
+      ? [...settings.config.paymentMethods]
+      : [...DEFAULT_PAYMENT_METHODS];
+    const generatedId =
+      paymentMethodForm.id ||
+      paymentMethodForm.label.toLowerCase().replace(/[^a-z0-9]+/g, "_");
+
+    if (editingPaymentMethodId) {
+      const idx = currentList.findIndex((m) => m.id === editingPaymentMethodId);
+      if (idx >= 0) {
+        currentList[idx] = {
+          ...currentList[idx],
+          label: paymentMethodForm.label.trim(),
+          icon: paymentMethodForm.icon || "smartphone",
+          type: paymentMethodForm.type || "digital",
+          notes: paymentMethodForm.notes || "",
+          enabled: paymentMethodForm.enabled !== false,
+        };
+      }
+    } else {
+      if (currentList.some((m) => m.id === generatedId)) {
+        toast.error("A payment method with this name already exists");
+        return;
+      }
+      currentList.push({
+        id: generatedId,
+        label: paymentMethodForm.label.trim(),
+        icon: paymentMethodForm.icon || "smartphone",
+        type: paymentMethodForm.type || "digital",
+        enabled: true,
+        isDefault: false,
+        notes: paymentMethodForm.notes || "",
+      });
+    }
+
+    const newConfig = { ...(settings.config || {}), paymentMethods: currentList };
+    handleChange("config", newConfig);
+    setShowAddPaymentMethodDialog(false);
+    setEditingPaymentMethodId(null);
+    toast.success(editingPaymentMethodId ? "Payment method updated" : "Payment method added to checkout");
+
+    // Auto-persist to DB
+    const orgId = user?.organizationId || dbSettings?.organizationId || settings.organizationId || PersistStore.getOrgId() || "default";
+    if (orgId) {
+      updateSettingsFn({
+        data: {
+          settings: {
+            ...settings,
+            config: newConfig,
+          },
+        },
+      }).then(() => {
+        queryClient.invalidateQueries({ queryKey: ["settings"] });
+      });
+    }
+  };
+
+  const handleDeletePaymentMethod = async (id: string) => {
+    const currentList = (
+      Array.isArray(settings.config?.paymentMethods)
+        ? settings.config.paymentMethods
+        : DEFAULT_PAYMENT_METHODS
+    ).filter((m: any) => m.id !== id);
+    const newConfig = { ...(settings.config || {}), paymentMethods: currentList };
+    handleChange("config", newConfig);
+    toast.success("Payment method removed");
+
+    // Auto-persist to DB
+    const orgId = user?.organizationId || dbSettings?.organizationId || settings.organizationId || PersistStore.getOrgId() || "default";
+    if (orgId) {
+      updateSettingsFn({
+        data: {
+          settings: {
+            ...settings,
+            config: newConfig,
+          },
+        },
+      }).then(() => {
+        queryClient.invalidateQueries({ queryKey: ["settings"] });
+      });
+    }
+  };
+
   const navItems = [
     {
       id: "store",
@@ -502,6 +655,13 @@ function SettingsPage() {
       icon: CreditCard,
       badge: isTrialExpired && subscriptionStatus !== "active" ? "Trial Expired" : null,
       badgeVariant: isTrialExpired ? "destructive" : "default",
+    },
+    {
+      id: "paymentMethods",
+      label: "Payment Methods",
+      description: "Default & custom checkout options",
+      icon: Banknote,
+      badge: `${paymentMethodsList.filter((m) => m.enabled !== false).length} Active`,
     },
     {
       id: "tax",
@@ -1199,6 +1359,219 @@ function SettingsPage() {
             </div>
           )}
 
+          {/* TAB: Payment Methods Management */}
+          {activeTab === "paymentMethods" && (
+            <div className="space-y-6 animate-in fade-in duration-200">
+              <SettingsCard
+                icon={Banknote}
+                title="POS Checkout Payment Methods"
+                desc="Configure available payment methods in the checkout terminal. Standard options (Cash, Card, UPI, Split, Credit) are always ready to use, and you can add custom localized options like bKash, Nagad, Bank Wire, or Gift Vouchers."
+                headerRight={
+                  <Button
+                    onClick={() => {
+                      setEditingPaymentMethodId(null);
+                      setPaymentMethodForm({
+                        id: "",
+                        label: "",
+                        icon: "smartphone",
+                        type: "digital",
+                        enabled: true,
+                        notes: "",
+                      });
+                      setShowAddPaymentMethodDialog(true);
+                    }}
+                    size="sm"
+                    className="font-bold text-xs gap-1.5 shadow-soft h-9 cursor-pointer"
+                  >
+                    <Plus className="size-4" /> Add Payment Method
+                  </Button>
+                }
+              >
+                <div className="space-y-6">
+                  {/* Default Standard System Methods */}
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between pb-1 border-b border-border/50">
+                      <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                        <ShieldCheck className="size-3.5 text-primary" />
+                        Standard System Methods
+                      </span>
+                      <span className="text-[11px] text-muted-foreground">
+                        Always included in checkout
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      {paymentMethodsList
+                        .filter((m) => m.isDefault)
+                        .map((method) => {
+                          const Icon = getPaymentMethodIconComponent(method.icon || method.id);
+                          return (
+                            <div
+                              key={method.id}
+                              className={cn(
+                                "flex items-center justify-between p-3.5 rounded-2xl border transition-all bg-card shadow-xs",
+                                method.enabled
+                                  ? "border-border/80 hover:border-primary/40"
+                                  : "opacity-60 bg-muted/20 border-dashed border-border/60",
+                              )}
+                            >
+                              <div className="flex items-center gap-3 min-w-0">
+                                <div className="size-10 rounded-xl bg-primary/10 text-primary border border-primary/20 flex items-center justify-center shrink-0">
+                                  <Icon className="size-5" />
+                                </div>
+                                <div className="min-w-0">
+                                  <div className="flex items-center gap-2">
+                                    <span className="font-bold text-sm text-foreground truncate">
+                                      {method.label}
+                                    </span>
+                                    <Badge
+                                      variant="secondary"
+                                      className="text-[9px] font-mono uppercase bg-muted/80 text-muted-foreground"
+                                    >
+                                      System
+                                    </Badge>
+                                  </div>
+                                  <p className="text-[11px] text-muted-foreground capitalize">
+                                    Type: {method.type || "standard"}
+                                  </p>
+                                </div>
+                              </div>
+
+                              <div className="flex items-center gap-3 shrink-0">
+                                <span
+                                  className={cn(
+                                    "text-[10px] font-bold uppercase px-2 py-0.5 rounded-full border",
+                                    method.enabled
+                                      ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20"
+                                      : "bg-muted text-muted-foreground border-border/60",
+                                  )}
+                                >
+                                  {method.enabled ? "Active" : "Disabled"}
+                                </span>
+                                <span
+                                  onClick={() =>
+                                    handleTogglePaymentMethod(method.id, method.enabled === false)
+                                  }
+                                  className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out ${method.enabled !== false ? "bg-primary" : "bg-muted-foreground/25"}`}
+                                >
+                                  <span
+                                    className={`pointer-events-none inline-block size-5 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out ${method.enabled !== false ? "translate-x-5" : "translate-x-0"}`}
+                                  />
+                                </span>
+                              </div>
+                            </div>
+                          );
+                        })}
+                    </div>
+                  </div>
+
+                  {/* Custom Merchant Payment Methods */}
+                  <div className="space-y-3 pt-2 border-t border-border/60">
+                    <div className="flex items-center justify-between pb-1 border-b border-border/50">
+                      <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                        <Sparkles className="size-3.5 text-primary" />
+                        Custom & Local Payment Methods
+                      </span>
+                      <span className="text-[11px] text-muted-foreground">
+                        {paymentMethodsList.filter((m) => !m.isDefault).length} custom methods added
+                      </span>
+                    </div>
+
+                    {paymentMethodsList.filter((m) => !m.isDefault).length === 0 ? (
+                      <div className="p-8 text-center border border-dashed border-border/80 rounded-2xl bg-muted/10 space-y-2">
+                        <div className="size-12 rounded-2xl bg-primary/10 text-primary border border-primary/20 flex items-center justify-center mx-auto">
+                          <Plus className="size-6" />
+                        </div>
+                        <p className="text-sm font-bold text-foreground">
+                          No custom payment methods added
+                        </p>
+                        <p className="text-xs text-muted-foreground max-w-sm mx-auto">
+                          Need localized methods like bKash, Nagad, Rocket, Bank Wire, or Store Voucher? Click &quot;Add Payment Method&quot; above.
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        {paymentMethodsList
+                          .filter((m) => !m.isDefault)
+                          .map((method) => {
+                            const Icon = getPaymentMethodIconComponent(method.icon || method.id);
+                            return (
+                              <div
+                                key={method.id}
+                                className={cn(
+                                  "flex items-center justify-between p-3.5 rounded-2xl border transition-all bg-card shadow-xs",
+                                  method.enabled
+                                    ? "border-border/80 hover:border-primary/40"
+                                    : "opacity-60 bg-muted/20 border-dashed border-border/60",
+                                )}
+                              >
+                                <div className="flex items-center gap-3 min-w-0">
+                                  <div className="size-10 rounded-xl bg-amber-500/10 text-amber-500 border border-amber-500/20 flex items-center justify-center shrink-0">
+                                    <Icon className="size-5" />
+                                  </div>
+                                  <div className="min-w-0">
+                                    <div className="flex items-center gap-2">
+                                      <span className="font-bold text-sm text-foreground truncate">
+                                        {method.label}
+                                      </span>
+                                      <Badge
+                                        variant="outline"
+                                        className="text-[9px] font-mono uppercase bg-primary/5 text-primary border-primary/20"
+                                      >
+                                        Custom
+                                      </Badge>
+                                    </div>
+                                    <p className="text-[11px] text-muted-foreground truncate">
+                                      {method.notes || `Type: ${method.type || "custom"}`}
+                                    </p>
+                                  </div>
+                                </div>
+
+                                <div className="flex items-center gap-2 shrink-0">
+                                  <span
+                                    onClick={() =>
+                                      handleTogglePaymentMethod(method.id, method.enabled === false)
+                                    }
+                                    className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out ${method.enabled !== false ? "bg-primary" : "bg-muted-foreground/25"}`}
+                                  >
+                                    <span
+                                      className={`pointer-events-none inline-block size-5 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out ${method.enabled !== false ? "translate-x-5" : "translate-x-0"}`}
+                                    />
+                                  </span>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => {
+                                      setEditingPaymentMethodId(method.id);
+                                      setPaymentMethodForm(method);
+                                      setShowAddPaymentMethodDialog(true);
+                                    }}
+                                    className="size-8 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted"
+                                    title="Edit Payment Method"
+                                  >
+                                    <Pencil className="size-3.5" />
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => handleDeletePaymentMethod(method.id)}
+                                    className="size-8 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                                    title="Delete Payment Method"
+                                  >
+                                    <Trash2 className="size-3.5" />
+                                  </Button>
+                                </div>
+                              </div>
+                            );
+                          })}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </SettingsCard>
+            </div>
+          )}
+
           {/* TAB 4: Taxes & Compliance */}
           {activeTab === "tax" && (
             <div className="space-y-6 animate-in fade-in duration-200">
@@ -1869,8 +2242,214 @@ function SettingsPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Add / Edit Custom Payment Method Slide-out Drawer */}
+      <Sheet
+        open={showAddPaymentMethodDialog}
+        onOpenChange={(open) => {
+          setShowAddPaymentMethodDialog(open);
+          if (!open) setEditingPaymentMethodId(null);
+        }}
+      >
+        <SheetContent
+          side="right"
+          className="w-full sm:max-w-xl md:max-w-2xl sm:w-[580px] md:w-[650px] p-6 sm:p-8 flex flex-col justify-between overflow-y-auto"
+        >
+          <div className="space-y-6">
+            <SheetHeader className="text-left pb-4 border-b border-border/60">
+              <div className="flex items-center gap-3">
+                <div className="size-11 rounded-2xl bg-primary/10 text-primary flex items-center justify-center border border-primary/20 shrink-0 shadow-soft">
+                  <Banknote className="size-6" />
+                </div>
+                <div>
+                  <SheetTitle className="font-extrabold text-lg text-foreground">
+                    {editingPaymentMethodId ? "Edit Payment Method" : "Add Custom Payment Method"}
+                  </SheetTitle>
+                  <SheetDescription className="text-xs text-muted-foreground mt-0.5">
+                    Configure a digital wallet, bank transfer, or custom checkout option for your POS terminal.
+                  </SheetDescription>
+                </div>
+              </div>
+            </SheetHeader>
+
+            <form id="payment-method-drawer-form" onSubmit={handleSavePaymentMethod} className="space-y-5 pt-1">
+              {/* Quick Fill Presets (Only when adding new) */}
+              {!editingPaymentMethodId && (
+                <div className="space-y-2 bg-muted/20 p-3.5 rounded-2xl border border-border/60">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground block">
+                    ⚡ Quick Presets (1-Click Fill)
+                  </span>
+                  <div className="flex flex-wrap gap-1.5">
+                    {[
+                      { label: "bKash", icon: "smartphone", type: "digital" },
+                      { label: "Nagad", icon: "smartphone", type: "digital" },
+                      { label: "Rocket", icon: "smartphone", type: "digital" },
+                      { label: "Bank Transfer", icon: "landmark", type: "other" },
+                      { label: "Cheque", icon: "receipt", type: "other" },
+                      { label: "PayPal", icon: "wallet", type: "digital" },
+                      { label: "Zelle", icon: "smartphone", type: "digital" },
+                      { label: "Gift Voucher", icon: "coins", type: "other" },
+                    ].map((preset) => (
+                      <button
+                        key={preset.label}
+                        type="button"
+                        onClick={() =>
+                          setPaymentMethodForm({
+                            ...paymentMethodForm,
+                            label: preset.label,
+                            icon: preset.icon,
+                            type: preset.type as any,
+                          })
+                        }
+                        className="px-3 py-1.5 text-xs font-semibold rounded-xl border border-border/80 bg-background text-foreground hover:border-primary/40 hover:text-primary hover:bg-primary/5 transition-all cursor-pointer shadow-2xs"
+                      >
+                        + {preset.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div className="space-y-1.5">
+                <Label className="text-xs font-bold text-foreground">
+                  Payment Method Name <span className="text-destructive">*</span>
+                </Label>
+                <Input
+                  value={paymentMethodForm.label}
+                  onChange={(e) =>
+                    setPaymentMethodForm({ ...paymentMethodForm, label: e.target.value })
+                  }
+                  placeholder="e.g. bKash Personal, Nagad Merchant, HDFC Wire"
+                  className="font-semibold text-sm h-11 rounded-xl"
+                  required
+                  autoFocus
+                />
+              </div>
+
+              {/* Visual Icon Picker */}
+              <div className="space-y-2">
+                <Label className="text-xs font-bold text-foreground">Select Icon</Label>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  {PAYMENT_METHOD_ICONS.map((opt) => {
+                    const Icon = getPaymentMethodIconComponent(opt.id);
+                    const isSelected = (paymentMethodForm.icon || "smartphone") === opt.id;
+                    return (
+                      <button
+                        key={opt.id}
+                        type="button"
+                        onClick={() =>
+                          setPaymentMethodForm({ ...paymentMethodForm, icon: opt.id })
+                        }
+                        className={cn(
+                          "flex items-center gap-2 p-2.5 rounded-xl border text-left transition-all text-xs font-medium cursor-pointer",
+                          isSelected
+                            ? "border-primary bg-primary/10 text-primary ring-1 ring-primary font-bold shadow-xs"
+                            : "border-border/70 bg-card text-muted-foreground hover:border-border hover:bg-muted/30",
+                        )}
+                      >
+                        <Icon className="size-4 shrink-0 text-primary" />
+                        <span className="truncate text-xs">{opt.label.split(" / ")[0]}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-bold text-foreground">Payment Category</Label>
+                  <select
+                    value={paymentMethodForm.type || "digital"}
+                    onChange={(e) =>
+                      setPaymentMethodForm({
+                        ...paymentMethodForm,
+                        type: e.target.value as any,
+                      })
+                    }
+                    className="h-11 w-full rounded-xl border border-border/80 bg-card px-3 text-xs font-semibold text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary cursor-pointer"
+                  >
+                    <option value="digital">Mobile / Digital Wallet</option>
+                    <option value="cash">Cash / Direct Physical</option>
+                    <option value="card">Card / Terminal Swipe</option>
+                    <option value="credit">Credit / Customer Ledger</option>
+                    <option value="other">Bank Wire / Other Mode</option>
+                  </select>
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-bold text-foreground">Account / Merchant Info (Optional)</Label>
+                  <Input
+                    value={paymentMethodForm.notes || ""}
+                    onChange={(e) =>
+                      setPaymentMethodForm({ ...paymentMethodForm, notes: e.target.value })
+                    }
+                    placeholder="e.g. Wallet No: 017XXXXXXXX / Swift Code"
+                    className="text-xs h-11 rounded-xl"
+                  />
+                </div>
+              </div>
+            </form>
+          </div>
+
+          <SheetFooter className="pt-4 border-t border-border/60 gap-2 sm:gap-0 mt-6 flex flex-row justify-end">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                setShowAddPaymentMethodDialog(false);
+                setEditingPaymentMethodId(null);
+              }}
+              className="text-xs font-semibold h-10 flex-1 sm:flex-initial"
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              form="payment-method-drawer-form"
+              className="font-bold text-xs shadow-soft min-w-[130px] h-10 flex-1 sm:flex-initial"
+            >
+              {editingPaymentMethodId ? "Update Method" : "Add to Checkout"}
+            </Button>
+          </SheetFooter>
+        </SheetContent>
+      </Sheet>
     </div>
   );
+}
+
+function getPaymentMethodIconComponent(iconName?: string) {
+  switch (iconName?.toLowerCase()) {
+    case "banknote":
+    case "cash":
+      return Banknote;
+    case "credit-card":
+    case "card":
+      return CreditCard;
+    case "smartphone":
+    case "upi":
+    case "qr":
+    case "mobile":
+      return Smartphone;
+    case "users":
+    case "split":
+      return Users;
+    case "receipt":
+    case "credit":
+    case "invoice":
+      return Receipt;
+    case "landmark":
+    case "bank":
+      return Landmark;
+    case "wallet":
+      return Wallet;
+    case "qr-code":
+    case "qrcode":
+      return QrCode;
+    case "coins":
+      return Coins;
+    default:
+      return CreditCard;
+  }
 }
 
 function LocationsTab() {

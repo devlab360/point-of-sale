@@ -18,6 +18,10 @@ import {
   ChevronRight,
   ShieldCheck,
   Ban,
+  Landmark,
+  Wallet,
+  QrCode,
+  Coins,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SearchableSelect } from "@/components/ui/searchable-select";
@@ -26,8 +30,9 @@ import { hasCapability } from "@/lib/business-templates";
 import { createKOTFn } from "@/api/restaurant";
 import { toast } from "sonner";
 import { useMutation } from "@tanstack/react-query";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { DEFAULT_PAYMENT_METHODS, type PaymentMethodConfig } from "@/lib/payment-methods";
 
 export function CartPanel({
   state,
@@ -120,6 +125,19 @@ export function CartPanel({
       note: "",
     });
   };
+
+  const paymentMethods: PaymentMethodConfig[] = useMemo(() => {
+    const customList = settings?.config?.paymentMethods;
+    if (Array.isArray(customList) && customList.length > 0) {
+      const activeList = customList.filter((m: any) => m.enabled !== false);
+      if (activeList.length > 0) return activeList;
+    }
+    return DEFAULT_PAYMENT_METHODS;
+  }, [settings?.config?.paymentMethods]);
+
+  const selectedMethod = paymentMethods.find((m) => m.id === payment);
+  const isCashType = payment === "cash" || selectedMethod?.type === "cash";
+  const isCreditType = payment === "credit" || selectedMethod?.type === "credit";
 
   return (
     <aside
@@ -354,90 +372,77 @@ export function CartPanel({
         )}
       </div>
 
-      {/* Compact Checkout Controls & Calculation Footer */}
-      <div className="border-t border-border/80 p-2.5 bg-background/95 backdrop-blur-md shrink-0 space-y-2">
-        {/* Row 1: Inline Discount & Action Buttons */}
-        <div className="flex items-center gap-2">
-          <div className="flex items-center gap-1.5 flex-1 min-w-0">
-            <div className="flex items-center gap-1.5 rounded-lg border border-border/80 bg-muted/20 px-2 h-10 flex-1 min-w-0">
-              <Percent className="size-3.5 text-muted-foreground shrink-0" />
-              <input
-                type="number"
-                min="0"
-                max="100"
-                value={discountInput}
-                onFocus={() => {
-                  setActiveInput("discount");
-                  setKeyboardOpen(true);
-                }}
-                onChange={(e) => {
-                  setDiscountInput(e.target.value);
-                  setDiscountPct(Math.min(100, Math.max(0, parseFloat(e.target.value) || 0)));
-                }}
-                className="w-full bg-transparent text-sm font-bold outline-none placeholder:text-muted-foreground"
-                placeholder="Discount %"
-              />
-            </div>
-
-            <Button
-              variant="outline"
-              className={cn(
-                "h-10 rounded-lg px-3 text-xs font-bold shrink-0",
-                appliedCoupon && "border-success bg-success/10 text-success",
-              )}
-              onClick={() => setShowCoupon(true)}
-            >
-              <Ticket className="size-4 mr-1" />
-              {appliedCoupon ? "Coupon ✓" : "Coupon"}
-            </Button>
-          </div>
-
-          <div className="flex items-center gap-1.5 shrink-0">
-            <Button
-              variant="destructive"
-              size="sm"
-              onClick={() => setShowVoidConfirm(true)}
-              disabled={lines.length === 0}
-              className="h-10 rounded-lg px-2.5 text-xs font-bold"
-              title="Void current bill (clear cart)"
-            >
-              <Ban className="size-3.5 mr-1" /> Void
-            </Button>
-
-            {hasRepairs && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowRepairDialog(true)}
-                className="h-10 rounded-lg px-2.5 text-xs font-semibold"
-                title="Add Repair Ticket"
-              >
-                <Wrench className="size-3.5 mr-1" /> Repair
-              </Button>
-            )}
-
-            {hasKitchen ? (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleSendToKitchen}
-                disabled={sendToKitchen.isPending || lines.length === 0}
-                className="h-10 rounded-lg px-2.5 border-warning/30 bg-warning/10 text-warning hover:bg-warning/20 text-xs font-bold"
-                title="Send to Kitchen (KOT)"
-              >
-                <ChefHat className="size-3.5 mr-1" /> KOT
-              </Button>
+      {/* Bottom Settlement Controls */}
+      <div className="border-t border-border/80 bg-background/95 p-3 space-y-2.5 backdrop-blur-md">
+        {/* Row 1: Fast Shortcuts */}
+        <div className="flex items-center gap-1.5">
+          <Button
+            size="sm"
+            variant="outline"
+            className="h-8 flex-1 rounded-xl text-xs font-bold gap-1 border-dashed hover:border-primary/50 text-muted-foreground hover:text-foreground"
+            onClick={() => setShowCoupon(true)}
+          >
+            <Ticket className="size-3.5 text-primary" />
+            {appliedCoupon ? (
+              <span className="text-primary truncate">{appliedCoupon.code}</span>
             ) : (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={holdInvoice}
-                className="h-10 rounded-lg px-2.5 text-xs font-semibold"
-                title="Hold Order"
-              >
-                <Pause className="size-3.5 mr-1" /> Hold
-              </Button>
+              "Coupon"
             )}
+          </Button>
+
+          <Button
+            size="sm"
+            variant="outline"
+            className="h-8 flex-1 rounded-xl text-xs font-bold gap-1 border-dashed hover:border-destructive/50 text-destructive hover:bg-destructive/10"
+            disabled={lines.length === 0}
+            onClick={() => setShowVoidConfirm(true)}
+          >
+            <Ban className="size-3.5 text-destructive" />
+            <span>Void</span>
+          </Button>
+
+          {hasRepairs && (
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-8 flex-1 rounded-xl text-xs font-bold gap-1 text-muted-foreground hover:text-foreground"
+              onClick={() => setShowRepairDialog(true)}
+            >
+              <Wrench className="size-3.5 text-primary" />
+              <span>Repair</span>
+            </Button>
+          )}
+
+          {hasKitchen && (
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-8 flex-1 rounded-xl text-xs font-bold gap-1 text-amber-500 hover:bg-amber-500/10 border-amber-500/30"
+              disabled={lines.length === 0 || sendToKitchen.isPending}
+              onClick={handleSendToKitchen}
+            >
+              <ChefHat className="size-3.5" />
+              <span>KOT</span>
+            </Button>
+          )}
+
+          {/* Quick Manual Discount Input */}
+          <div className="flex items-center rounded-xl border border-border/80 bg-card px-2 h-8 w-20 shrink-0">
+            <span className="text-xs font-bold text-muted-foreground mr-1">%</span>
+            <input
+              type="number"
+              value={discountInput}
+              onFocus={() => {
+                setActiveInput("discount");
+                setKeyboardOpen(true);
+              }}
+              onChange={(e) => {
+                setDiscountInput(e.target.value);
+                setDiscountPct(parseFloat(e.target.value) || 0);
+              }}
+              placeholder="0"
+              className="w-full bg-transparent text-xs font-bold text-foreground outline-none"
+            />
           </div>
         </div>
 
@@ -466,11 +471,11 @@ export function CartPanel({
         </div>
 
         {/* Row 3: Fast Cash Input (If Cash or Credit Selected) */}
-        {(payment === "cash" || payment === "credit") && (
+        {(isCashType || isCreditType) && (
           <div className="space-y-2 bg-muted/30 p-2.5 rounded-xl border border-border/80">
             <div className="flex items-center gap-2">
               <span className="text-sm font-bold text-foreground capitalize shrink-0 min-w-[92px]">
-                {payment === "credit" ? "Deposit Paid" : "Cash Given"}
+                {isCreditType ? "Deposit Paid" : "Cash Given"}
               </span>
               <input
                 type="number"
@@ -480,10 +485,10 @@ export function CartPanel({
                   setKeyboardOpen(true);
                 }}
                 onChange={(e) => setCashTendered(e.target.value)}
-                placeholder={payment === "credit" ? "0.00" : formatCurrency(total)}
+                placeholder={isCreditType ? "0.00" : formatCurrency(total)}
                 className="h-11 flex-1 rounded-xl border border-border/80 bg-background px-3 text-sm font-mono font-bold outline-none focus:border-primary shadow-xs min-w-0"
               />
-              {payment === "cash" && (
+              {isCashType && (
                 <button
                   type="button"
                   onClick={() => setCashTendered(total.toFixed(2))}
@@ -495,7 +500,7 @@ export function CartPanel({
             </div>
 
             {/* Quick Note Presets for Fast Tap */}
-            {payment === "cash" && total > 0 && (
+            {isCashType && total > 0 && (
               <div className="flex flex-wrap gap-1.5 pt-0.5">
                 {[50, 100, 200, 500, 2000]
                   .filter((note) => note >= total || [50, 100, 200, 500].includes(note))
@@ -519,8 +524,8 @@ export function CartPanel({
               </div>
             )}
 
-            {/* Clear, High-Contrast Return Change Banner */}
-            {payment === "cash" && changeDue > 0 && (
+            {/* Return Change Banner */}
+            {isCashType && changeDue > 0 && (
               <div className="flex items-center justify-between bg-success/15 border border-success/30 px-3 py-2 rounded-xl">
                 <span className="text-sm font-bold text-success">Return Change</span>
                 <span className="number text-lg font-black text-success">
@@ -529,7 +534,7 @@ export function CartPanel({
               </div>
             )}
 
-            {payment === "credit" && (parseFloat(cashTendered) || 0) > 0 && (
+            {isCreditType && (parseFloat(cashTendered) || 0) > 0 && (
               <div className="flex items-center justify-between bg-warning/15 border border-warning/30 px-3 py-2 rounded-xl">
                 <span className="text-sm font-bold text-warning-foreground">Amount Due</span>
                 <span className="number text-base font-black text-warning-foreground">
@@ -540,7 +545,7 @@ export function CartPanel({
           </div>
         )}
 
-        {/* Split Payments Inputs — Compact Inline Input Group */}
+        {/* Split Payments Inputs */}
         {payment === "split" && (
           <div className="space-y-2 bg-muted/20 p-2 rounded-xl border border-border/70">
             <div className="grid grid-cols-3 gap-1.5">
@@ -598,25 +603,25 @@ export function CartPanel({
 
             {/* Split Balance Live Status */}
             {(() => {
-              const entered =
+              const paid =
                 (parseFloat(splitCash) || 0) +
                 (parseFloat(splitCard) || 0) +
                 (parseFloat(splitUpi) || 0);
-              const remaining = total - entered;
+              const remaining = total - paid;
               return (
-                <div className="flex items-center justify-between text-sm font-bold px-1 py-1">
-                  <span className="text-muted-foreground">Entered: {formatCurrency(entered)}</span>
+                <div className="flex items-center justify-between text-[11px] font-bold pt-1 px-1">
+                  <span className="text-muted-foreground">Split Total: {formatCurrency(paid)}</span>
                   <span
                     className={
                       Math.abs(remaining) < 0.01
                         ? "text-success font-black"
                         : remaining > 0
-                          ? "text-warning font-black"
+                          ? "text-warning-foreground font-black"
                           : "text-destructive font-black"
                     }
                   >
                     {Math.abs(remaining) < 0.01
-                      ? "Balanced ✓"
+                      ? "✓ Settled"
                       : remaining > 0
                         ? `Remaining: ${formatCurrency(remaining)}`
                         : `Overpaid: ${formatCurrency(Math.abs(remaining))}`}
@@ -627,39 +632,32 @@ export function CartPanel({
           </div>
         )}
 
-        {/* Row 4: Payment Method Selector Pills */}
-        <div className="grid grid-cols-5 gap-1.5">
-          <PayBtn
-            icon={Banknote}
-            label="Cash"
-            active={payment === "cash"}
-            onClick={() => setPayment("cash")}
-          />
-          <PayBtn
-            icon={CreditCard}
-            label="Card"
-            active={payment === "card"}
-            onClick={() => setPayment("card")}
-          />
-          <PayBtn
-            icon={Smartphone}
-            label="UPI / QR"
-            active={payment === "upi"}
-            onClick={() => setPayment("upi")}
-          />
-          <PayBtn
-            icon={Users}
-            label="Split"
-            active={payment === "split"}
-            onClick={() => setPayment("split")}
-          />
-          <PayBtn
-            icon={Receipt}
-            label="Credit"
-            active={payment === "credit"}
-            onClick={() => setPayment("credit")}
-            title="Sell on credit (Udhaar)"
-          />
+        {/* Row 4: Dynamic Payment Method Selector Pills (Default + Custom) */}
+        <div
+          className={cn(
+            "grid gap-1.5",
+            paymentMethods.length <= 5
+              ? `grid-cols-${Math.min(5, paymentMethods.length)}`
+              : "grid-cols-3 sm:grid-cols-4 md:grid-cols-5",
+          )}
+          style={{
+            gridTemplateColumns:
+              paymentMethods.length <= 5 ? `repeat(${paymentMethods.length}, minmax(0, 1fr))` : undefined,
+          }}
+        >
+          {paymentMethods.map((m) => {
+            const Icon = getPaymentIcon(m.icon || m.id);
+            return (
+              <PayBtn
+                key={m.id}
+                icon={Icon}
+                label={m.label}
+                active={payment === m.id}
+                onClick={() => setPayment(m.id)}
+                title={m.notes || m.label}
+              />
+            );
+          })}
         </div>
 
         {/* Row 5: Action Buttons: Quote, Pay & Print */}
@@ -804,6 +802,41 @@ export function CartPanel({
   );
 }
 
+function getPaymentIcon(iconName?: string) {
+  switch (iconName?.toLowerCase()) {
+    case "banknote":
+    case "cash":
+      return Banknote;
+    case "credit-card":
+    case "card":
+      return CreditCard;
+    case "smartphone":
+    case "upi":
+    case "qr":
+    case "mobile":
+      return Smartphone;
+    case "users":
+    case "split":
+      return Users;
+    case "receipt":
+    case "credit":
+    case "invoice":
+      return Receipt;
+    case "landmark":
+    case "bank":
+      return Landmark;
+    case "wallet":
+      return Wallet;
+    case "qr-code":
+    case "qrcode":
+      return QrCode;
+    case "coins":
+      return Coins;
+    default:
+      return CreditCard;
+  }
+}
+
 function PayBtn({
   icon: Icon,
   label,
@@ -811,7 +844,7 @@ function PayBtn({
   onClick,
   title,
 }: {
-  icon: typeof Banknote;
+  icon: any;
   label: string;
   active: boolean;
   onClick: () => void;
@@ -823,7 +856,7 @@ function PayBtn({
       onClick={onClick}
       title={title}
       className={cn(
-        "flex items-center justify-center gap-1 rounded-xl border h-11 text-xs font-bold transition-all shadow-xs outline-none focus-visible:ring-1 focus-visible:ring-primary w-full px-1",
+        "flex items-center justify-center gap-1 rounded-xl border h-11 text-xs font-bold transition-all shadow-xs outline-none focus-visible:ring-1 focus-visible:ring-primary w-full px-1 cursor-pointer",
         active
           ? "border-primary bg-primary text-primary-foreground font-black shadow-xs"
           : "border-border/80 bg-muted/20 text-muted-foreground hover:border-primary/40 hover:bg-muted hover:text-foreground",
