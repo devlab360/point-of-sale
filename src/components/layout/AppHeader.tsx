@@ -18,6 +18,9 @@ import {
   ShoppingBag,
   Receipt,
   Compass,
+  Maximize,
+  Minimize,
+  Sparkles,
 } from "lucide-react";
 import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
@@ -72,6 +75,22 @@ export function AppHeader() {
   const { formatCurrency } = useCurrency();
   const navigate = useNavigate();
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
+
+  const [isFullscreen, setIsFullscreen] = useState(false);
+
+  useEffect(() => {
+    const handleFsChange = () => setIsFullscreen(!!document.fullscreenElement);
+    document.addEventListener("fullscreenchange", handleFsChange);
+    return () => document.removeEventListener("fullscreenchange", handleFsChange);
+  }, []);
+
+  const toggleFullscreen = () => {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen?.().catch(() => {});
+    } else {
+      document.exitFullscreen?.().catch(() => {});
+    }
+  };
 
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
@@ -345,6 +364,31 @@ export function AppHeader() {
             ))}
           </DropdownMenuContent>
         </DropdownMenu>
+
+        {/* Fullscreen Mode Toggle */}
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={toggleFullscreen}
+          tooltip={isFullscreen ? "Exit Fullscreen (F11)" : "Full Screen (F11)"}
+          aria-label="Toggle Fullscreen"
+        >
+          {isFullscreen ? <Minimize className="size-5" /> : <Maximize className="size-5" />}
+        </Button>
+
+        {/* AI Copilot / Chatbot Launcher */}
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => {
+            window.dispatchEvent(new CustomEvent("open-ai-copilot"));
+          }}
+          tooltip="AI Copilot Assistant (Ctrl+K)"
+          aria-label="Open AI Copilot"
+          className="text-primary hover:bg-primary/10"
+        >
+          <Sparkles className="size-5" />
+        </Button>
 
         <Button
           variant="ghost"

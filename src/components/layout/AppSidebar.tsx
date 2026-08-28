@@ -8,7 +8,7 @@ import {
   LogOut,
   Store,
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
 import { getSettingsFn } from "@/api/settings";
@@ -24,6 +24,8 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 
 export function AppSidebar({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const isPos = pathname === "/pos" || pathname.startsWith("/pos/");
+
   const [openParents, setOpenParents] = useState<Record<string, boolean>>(() => {
     // Auto-open parent if a child route is active
     const initial: Record<string, boolean> = {};
@@ -39,15 +41,30 @@ export function AppSidebar({ onNavigate }: { onNavigate?: () => void }) {
 
   const [isMinimized, setIsMinimized] = useState(() => {
     if (typeof window !== "undefined") {
+      if (window.location.pathname === "/pos" || window.location.pathname.startsWith("/pos/")) {
+        return true;
+      }
       return localStorage.getItem("sidebarMinimized") === "true";
     }
     return false;
   });
 
+  // Automatically collapse sidebar when on POS screen; restore saved preference when leaving POS
+  useEffect(() => {
+    if (isPos) {
+      setIsMinimized(true);
+    } else {
+      const saved = localStorage.getItem("sidebarMinimized");
+      setIsMinimized(saved === "true");
+    }
+  }, [isPos]);
+
   const toggleMinimize = () => {
     const newState = !isMinimized;
     setIsMinimized(newState);
-    localStorage.setItem("sidebarMinimized", String(newState));
+    if (!isPos) {
+      localStorage.setItem("sidebarMinimized", String(newState));
+    }
   };
 
   const toggleParent = (label: string) => {
@@ -134,34 +151,59 @@ export function AppSidebar({ onNavigate }: { onNavigate?: () => void }) {
       )}
     >
       {/* Minimize Toggle Button */}
-      <button
-        onClick={toggleMinimize}
-        className={cn(
-          "absolute -right-3.5 top-6 z-50 hidden lg:flex size-7 cursor-pointer items-center justify-center rounded-full border border-border bg-card text-muted-foreground shadow-sm transition-all hover:bg-accent hover:text-foreground hover:scale-110 active:scale-95",
-          isMinimized && "rotate-180",
-        )}
-      >
-        <ChevronLeft className="size-4" strokeWidth={2.5} />
-      </button>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <button
+            onClick={toggleMinimize}
+            className={cn(
+              "absolute -right-3.5 top-6 z-50 hidden lg:flex size-7 cursor-pointer items-center justify-center rounded-full border border-border bg-card text-muted-foreground shadow-sm transition-all hover:bg-accent hover:text-foreground hover:scale-110 active:scale-95",
+              isMinimized && "rotate-180",
+            )}
+            aria-label={isMinimized ? "Expand Sidebar" : "Collapse Sidebar"}
+          >
+            <ChevronLeft className="size-4" strokeWidth={2.5} />
+          </button>
+        </TooltipTrigger>
+        <TooltipContent side="right" className="font-semibold text-xs">
+          {isMinimized ? "Expand Sidebar" : "Collapse Sidebar"}
+        </TooltipContent>
+      </Tooltip>
 
       {/* Brand Header */}
-      <Link
-        to="/"
-        onClick={onNavigate}
-        title={settings?.storeName || "ONEDESK360"}
-        className={cn(
-          "flex h-20 shrink-0 items-center gap-3 border-b border-border/70 bg-card px-4 cursor-pointer hover:bg-muted/30 transition-colors group",
-          isMinimized && "justify-center px-0",
-        )}
-      >
-        <div className="relative grid size-11 shrink-0 place-items-center rounded-lg bg-black text-[#B58D4C] border border-[#B58D4C]/30 shadow-xs overflow-hidden font-serif font-black text-sm tracking-wider group-hover:scale-105 transition-transform">
-          {settings?.logoUrl ? (
-            <img src={settings.logoUrl} alt="Logo" className="size-full object-cover bg-white" />
-          ) : (
-            <span>{initials}</span>
-          )}
-        </div>
-        {!isMinimized && (
+      {isMinimized ? (
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Link
+              to="/"
+              onClick={onNavigate}
+              className="flex h-20 shrink-0 items-center justify-center border-b border-border/70 bg-card px-0 cursor-pointer hover:bg-muted/30 transition-colors group"
+            >
+              <div className="relative grid size-11 shrink-0 place-items-center rounded-lg bg-black text-[#B58D4C] border border-[#B58D4C]/30 shadow-xs overflow-hidden font-serif font-black text-sm tracking-wider group-hover:scale-105 transition-transform">
+                {settings?.logoUrl ? (
+                  <img src={settings.logoUrl} alt="Logo" className="size-full object-cover bg-white" />
+                ) : (
+                  <span>{initials}</span>
+                )}
+              </div>
+            </Link>
+          </TooltipTrigger>
+          <TooltipContent side="right" className="font-bold text-xs">
+            {settings?.storeName || "ONEDESK360"}
+          </TooltipContent>
+        </Tooltip>
+      ) : (
+        <Link
+          to="/"
+          onClick={onNavigate}
+          className="flex h-20 shrink-0 items-center gap-3 border-b border-border/70 bg-card px-4 cursor-pointer hover:bg-muted/30 transition-colors group"
+        >
+          <div className="relative grid size-11 shrink-0 place-items-center rounded-lg bg-black text-[#B58D4C] border border-[#B58D4C]/30 shadow-xs overflow-hidden font-serif font-black text-sm tracking-wider group-hover:scale-105 transition-transform">
+            {settings?.logoUrl ? (
+              <img src={settings.logoUrl} alt="Logo" className="size-full object-cover bg-white" />
+            ) : (
+              <span>{initials}</span>
+            )}
+          </div>
           <div className="min-w-0 flex-1">
             <div className="truncate font-serif text-base font-bold tracking-wide text-foreground group-hover:text-primary transition-colors uppercase">
               <span>{settings?.storeName || "ONEDESK360"}</span>
@@ -170,27 +212,47 @@ export function AppSidebar({ onNavigate }: { onNavigate?: () => void }) {
               <span>ADMIN DASHBOARD</span>
             </div>
           </div>
-        )}
-      </Link>
+        </Link>
+      )}
 
       {/* Main Nav Scroll View */}
       <nav className="scrollbar-thin flex-1 overflow-y-auto overflow-x-hidden p-3.5 space-y-1">
         {/* Top-Level Prominent Dashboard Button */}
-        <Link
-          to="/"
-          onClick={onNavigate}
-          title={isMinimized ? "Dashboard" : undefined}
-          className={cn(
-            "flex items-center rounded-xl py-3 text-[14.5px] font-bold transition-all duration-150 shadow-xs",
-            isMinimized ? "justify-center px-0" : "gap-3 px-3.5",
-            isDashboardActive
-              ? "bg-[#B58D4C] text-white shadow-sm"
-              : "bg-muted/30 text-foreground hover:bg-muted/60",
-          )}
-        >
-          <LayoutGrid className={cn("size-5 shrink-0 stroke-[2]", isDashboardActive ? "text-white" : "text-foreground/80")} />
-          {!isMinimized && <span>Dashboard</span>}
-        </Link>
+        {isMinimized ? (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Link
+                to="/"
+                onClick={onNavigate}
+                className={cn(
+                  "flex items-center justify-center rounded-xl py-3 text-[14.5px] font-bold transition-all duration-150 shadow-xs px-0",
+                  isDashboardActive
+                    ? "bg-[#B58D4C] text-white shadow-sm"
+                    : "bg-muted/30 text-foreground hover:bg-muted/60",
+                )}
+              >
+                <LayoutGrid className={cn("size-5 shrink-0 stroke-[2]", isDashboardActive ? "text-white" : "text-foreground/80")} />
+              </Link>
+            </TooltipTrigger>
+            <TooltipContent side="right" className="font-bold text-xs">
+              Dashboard
+            </TooltipContent>
+          </Tooltip>
+        ) : (
+          <Link
+            to="/"
+            onClick={onNavigate}
+            className={cn(
+              "flex items-center rounded-xl py-3 text-[14.5px] font-bold transition-all duration-150 shadow-xs gap-3 px-3.5",
+              isDashboardActive
+                ? "bg-[#B58D4C] text-white shadow-sm"
+                : "bg-muted/30 text-foreground hover:bg-muted/60",
+            )}
+          >
+            <LayoutGrid className={cn("size-5 shrink-0 stroke-[2]", isDashboardActive ? "text-white" : "text-foreground/80")} />
+            <span>Dashboard</span>
+          </Link>
+        )}
 
         {/* Category Sections */}
         {filteredGroups.map((group) => {
@@ -213,15 +275,46 @@ export function AppSidebar({ onNavigate }: { onNavigate?: () => void }) {
                   const isOpen = openParents[item.label] ?? isChildActive;
 
                   if (hasChildren) {
+                    if (isMinimized) {
+                      return (
+                        <Tooltip key={item.label}>
+                          <TooltipTrigger asChild>
+                            <button
+                              type="button"
+                              onClick={() => toggleParent(item.label)}
+                              className={cn(
+                                "flex w-full items-center justify-center rounded-xl py-2.5 text-[14px] font-medium transition-all duration-150 cursor-pointer px-0",
+                                isChildActive || isOpen
+                                  ? "text-foreground font-semibold bg-muted/40"
+                                  : "text-foreground/80 hover:bg-muted/40 hover:text-foreground",
+                              )}
+                            >
+                              <Icon className={cn("size-5 shrink-0 stroke-[1.6]", isChildActive ? "text-[#B58D4C]" : "text-foreground/75")} />
+                            </button>
+                          </TooltipTrigger>
+                          <TooltipContent side="right" className="flex flex-col gap-1 py-2 px-3 shadow-xl">
+                            <div className="font-bold text-xs text-background border-b border-background/20 pb-1">
+                              {t(item.tkey, item.label)}
+                            </div>
+                            <div className="flex flex-col gap-0.5 text-[11px] font-normal text-background/90">
+                              {item.children?.map((c) => (
+                                <span key={c.to} className={cn("truncate", isExactActive(c.to) && "font-bold text-[#B58D4C]")}>
+                                  • {t(c.tkey, c.label)}
+                                </span>
+                              ))}
+                            </div>
+                          </TooltipContent>
+                        </Tooltip>
+                      );
+                    }
+
                     return (
                       <div key={item.label} className="space-y-0.5">
                         <button
                           type="button"
                           onClick={() => toggleParent(item.label)}
-                          title={isMinimized ? t(item.tkey, item.label) : undefined}
                           className={cn(
-                            "flex w-full items-center justify-between rounded-xl py-2.5 text-[14px] font-medium transition-all duration-150 cursor-pointer",
-                            isMinimized ? "justify-center px-0" : "gap-3 px-3",
+                            "flex w-full items-center justify-between rounded-xl py-2.5 text-[14px] font-medium transition-all duration-150 cursor-pointer gap-3 px-3",
                             isChildActive || isOpen
                               ? "text-foreground font-semibold bg-muted/40"
                               : "text-foreground/80 hover:bg-muted/40 hover:text-foreground",
@@ -229,22 +322,18 @@ export function AppSidebar({ onNavigate }: { onNavigate?: () => void }) {
                         >
                           <div className="flex items-center gap-3 min-w-0">
                             <Icon className={cn("size-5 shrink-0 stroke-[1.6]", isChildActive ? "text-[#B58D4C]" : "text-foreground/75")} />
-                            {!isMinimized && (
-                              <span className="truncate text-left">{t(item.tkey, item.label)}</span>
-                            )}
+                            <span className="truncate text-left">{t(item.tkey, item.label)}</span>
                           </div>
-                          {!isMinimized && (
-                            <ChevronDown
-                              className={cn(
-                                "size-4 shrink-0 text-muted-foreground transition-transform duration-200",
-                                !isOpen && "-rotate-90",
-                              )}
-                            />
-                          )}
+                          <ChevronDown
+                            className={cn(
+                              "size-4 shrink-0 text-muted-foreground transition-transform duration-200",
+                              !isOpen && "-rotate-90",
+                            )}
+                          />
                         </button>
 
                         {/* Indented Sub-Items with Left Vertical Accent Line */}
-                        {isOpen && !isMinimized && (
+                        {isOpen && (
                           <div className="relative ml-5 pl-4 py-1 space-y-1">
                             <div className="absolute left-0 top-1 bottom-1 w-[2px] bg-[#B58D4C]/40 rounded-full" />
                             {item.children?.map((child) => {
@@ -272,15 +361,44 @@ export function AppSidebar({ onNavigate }: { onNavigate?: () => void }) {
                   }
 
                   // Direct Link Item (no children)
+                  if (isMinimized) {
+                    return (
+                      <Tooltip key={item.to}>
+                        <TooltipTrigger asChild>
+                          <Link
+                            to={item.to}
+                            onClick={onNavigate}
+                            className={cn(
+                              "group flex items-center justify-center rounded-xl py-2.5 text-[14px] font-medium transition-all duration-150 cursor-pointer px-0",
+                              isItemActive
+                                ? "bg-[#B58D4C] text-white font-semibold shadow-xs"
+                                : "text-foreground/80 hover:bg-muted/40 hover:text-foreground",
+                            )}
+                          >
+                            <Icon className={cn("size-5 shrink-0 stroke-[1.6]", isItemActive ? "text-white" : "text-foreground/75")} />
+                          </Link>
+                        </TooltipTrigger>
+                        <TooltipContent side="right" className="font-bold text-xs">
+                          <div className="flex items-center gap-1.5">
+                            <span>{t(item.tkey, item.label)}</span>
+                            {item.badge && (
+                              <span className="rounded-full bg-white/20 px-1.5 py-0.2 text-[9px] font-extrabold uppercase">
+                                {item.badge}
+                              </span>
+                            )}
+                          </div>
+                        </TooltipContent>
+                      </Tooltip>
+                    );
+                  }
+
                   return (
                     <Link
                       key={item.to}
                       to={item.to}
                       onClick={onNavigate}
-                      title={isMinimized ? t(item.tkey, item.label) : undefined}
                       className={cn(
-                        "group flex items-center justify-between rounded-xl py-2.5 text-[14px] font-medium transition-all duration-150 cursor-pointer",
-                        isMinimized ? "justify-center px-0" : "gap-3 px-3",
+                        "group flex items-center justify-between rounded-xl py-2.5 text-[14px] font-medium transition-all duration-150 cursor-pointer gap-3 px-3",
                         isItemActive
                           ? "bg-[#B58D4C] text-white font-semibold shadow-xs"
                           : "text-foreground/80 hover:bg-muted/40 hover:text-foreground",
@@ -288,11 +406,9 @@ export function AppSidebar({ onNavigate }: { onNavigate?: () => void }) {
                     >
                       <div className="flex items-center gap-3 min-w-0">
                         <Icon className={cn("size-5 shrink-0 stroke-[1.6]", isItemActive ? "text-white" : "text-foreground/75")} />
-                        {!isMinimized && (
-                          <span className="truncate text-left">{t(item.tkey, item.label)}</span>
-                        )}
+                        <span className="truncate text-left">{t(item.tkey, item.label)}</span>
                       </div>
-                      {!isMinimized && item.badge && (
+                      {item.badge && (
                         <span
                           className={cn(
                             "rounded-full px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wider",

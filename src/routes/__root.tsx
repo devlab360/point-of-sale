@@ -221,7 +221,9 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
   errorComponent: ErrorComponent,
 });
 
-const themeBootstrap = `(() => {try {const s = localStorage.getItem('theme');const m = window.matchMedia('(prefers-color-scheme: dark)').matches;const t = s === 'light' || s === 'dark' ? s : (m ? 'dark' : 'light');document.documentElement.classList.toggle('dark', t === 'dark');document.documentElement.style.colorScheme = t;} catch(e) {}})();`;
+const themeBootstrap = `(() => {try {const s = localStorage.getItem('theme');const m = window.matchMedia('(prefers-color-scheme: dark)').matches;const t = s === 'light' || s === 'dark' ? s : (m ? 'dark' : 'light');document.documentElement.classList.toggle('dark', t === 'dark');document.documentElement.style.colorScheme = t;} catch(e) {}})();
+window.addEventListener('beforeinstallprompt', function(e) { e.preventDefault(); window.__pwaInstallPrompt = e; window.dispatchEvent(new Event('pwa-prompt-ready')); });
+`;
 
 function RootShell({ children }: { children: ReactNode }) {
   return (
@@ -418,8 +420,7 @@ function AppLayout() {
 
   // Route Security Middleware (SaaS Feature Flags)
   const isSuspended = saasOrg?.status === "suspended";
-  const canAccessAiCopilot =
-    !saasPlan || !Array.isArray(saasPlan.features) || saasPlan.features.includes("ai_copilot");
+  const canAccessAiCopilot = isAuthenticated;
 
   const isBillingTabOrTrialWarning =
     location.pathname === "/settings" || location.pathname === "/profile";

@@ -70,7 +70,7 @@ export function AiCopilotDrawer() {
   });
   const expenses = expensesData || [];
 
-  // Key Shortcut Ctrl + K or Cmd + K
+  // Key Shortcut Ctrl + K or Cmd + K & Custom Event Listener
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
@@ -78,8 +78,14 @@ export function AiCopilotDrawer() {
         setIsOpen((prev) => !prev);
       }
     };
+    const handleOpenAi = () => setIsOpen(true);
+
     window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
+    window.addEventListener("open-ai-copilot", handleOpenAi);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("open-ai-copilot", handleOpenAi);
+    };
   }, []);
 
   // Compute Metrics & Business Health Score (0-100)
