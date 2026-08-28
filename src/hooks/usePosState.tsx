@@ -538,27 +538,64 @@ export function usePosState() {
     }
   }, [startingCash, user, currencySymbol, queryClient]);
 
-  const applyCoupon = useCallback(() => {
-    if (!couponCode.trim()) return toast.error("Enter a coupon code");
-    const code = couponCode.trim().toUpperCase();
-    const found = coupons.find((c: any) => c.code?.toUpperCase() === code && c.status === "active");
+  const applyCoupon = useCallback((couponOrCode?: any) => {
+    let targetCode = "";
+    let targetCoupon: any = null;
+
+    if (typeof couponOrCode === "object" && couponOrCode?.code) {
+      targetCoupon = couponOrCode;
+      targetCode = couponOrCode.code.toUpperCase();
+    } else if (typeof couponOrCode === "string" && couponOrCode.trim()) {
+      targetCode = couponOrCode.trim().toUpperCase();
+    } else if (couponCode.trim()) {
+      targetCode = couponCode.trim().toUpperCase();
+    }
+
+    if (!targetCode) return toast.error("Enter or select a coupon code");
+
+    const found =
+      targetCoupon ||
+      coupons.find(
+        (c: any) => c.code?.toUpperCase() === targetCode && c.status === "active",
+      );
     if (!found) {
       toast.error("Invalid or expired coupon code");
       return;
     }
-    const minOrder = Number(found.minOrder || 0);
-    if (subtotal < minOrder) {
-      toast.error(`Minimum order of ${currencySymbol}${minOrder} required for this coupon`);
+
+    if (found.expires && new Date(found.expires).getTime() < Date.now()) {
+      toast.error("This coupon has expired");
       return;
     }
+
+    if (found.usageLimit && Number(found.used || 0) >= Number(found.usageLimit)) {
+      toast.error("Coupon usage limit reached");
+      return;
+    }
+
+    const minOrder = Number(found.minOrder || 0);
+    if (subtotal < minOrder) {
+      toast.error(
+        `Minimum order of ${currencySymbol}${minOrder} required for this coupon`,
+      );
+      return;
+    }
+
     setAppliedCoupon(found);
+    setCouponCode("");
     setShowCoupon(false);
     toast.success(`Coupon "${found.code}" applied!`);
   }, [couponCode, coupons, subtotal, currencySymbol]);
 
+  const removeCoupon = useCallback(() => {
+    setAppliedCoupon(null);
+    toast.info("Coupon removed");
+  }, []);
+
   return {
     handleOpenRegister,
     applyCoupon,
+    removeCoupon,
     isPosLoading,
     isPosError,
     refetchPos,

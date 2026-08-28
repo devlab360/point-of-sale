@@ -62,6 +62,11 @@ import {
   Building2,
   UserCheck,
   Wallet,
+  Ticket,
+  Tag,
+  Clock,
+  Gift,
+  BadgePercent,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 // Use queryClient from state
@@ -69,6 +74,7 @@ import { createCategoryFn } from "@/api/categories";
 import { createBrandFn } from "@/api/brands";
 import { v4 as uuidv4 } from "uuid";
 import { createCustomerFn, getCustomersFn } from "@/api/customers";
+import { getCouponsFn } from "@/api/coupons";
 import { createProductFn } from "@/api/products";
 import { createServiceItemFn } from "@/api/services";
 import { deleteHeldInvoiceFn, splitHeldInvoiceFn } from "@/api/pos";
@@ -160,6 +166,8 @@ export function PosDialogs({
     setSplitUpi,
     handleOpenRegister,
     applyCoupon,
+    removeCoupon,
+    subtotal,
     categories,
     brands,
     units,
@@ -190,6 +198,42 @@ export function PosDialogs({
     }
     return displayCustomers.filter((c: any) => c.type === customerTypeFilter);
   }, [displayCustomers, customerTypeFilter]);
+
+  const { data: allCouponsRes } = useQuery({
+    queryKey: ["coupons", orgId],
+    queryFn: async () => {
+      const res = await getCouponsFn({});
+      return (res as any)?.data || [];
+    },
+    enabled: showCoupon,
+  });
+
+  const availableCoupons: any[] = allCouponsRes || coupons || [];
+  const [couponSearch, setCouponSearch] = useState("");
+  const [couponFilterTab, setCouponFilterTab] = useState<string>("all");
+
+  const filteredCoupons = React.useMemo(() => {
+    return availableCoupons.filter((c: any) => {
+      if (c.status !== "active") return false;
+      if (couponSearch.trim()) {
+        const q = couponSearch.toLowerCase().trim();
+        const codeMatch = (c.code || "").toLowerCase().includes(q);
+        const descMatch = (c.description || "").toLowerCase().includes(q);
+        if (!codeMatch && !descMatch) return false;
+      }
+      if (couponFilterTab === "percent") {
+        return c.type === "percentage" || c.type === "percent";
+      }
+      if (couponFilterTab === "flat") {
+        return c.type === "fixed" || c.type === "flat" || c.type === "amount";
+      }
+      if (couponFilterTab === "eligible") {
+        const min = Number(c.minOrder || 0);
+        return subtotal >= min;
+      }
+      return true;
+    });
+  }, [availableCoupons, couponSearch, couponFilterTab, subtotal]);
 
   const [newProductCategory, setNewProductCategory] = useState("");
   const [newProductBrand, setNewProductBrand] = useState("");
@@ -1076,23 +1120,248 @@ export function PosDialogs({
         </DialogContent>
       </Dialog>
 
+      {/* Coupon List & Selection Dialog */}
       <Dialog open={showCoupon} onOpenChange={setShowCoupon}>
-        <DialogContent className="sm:max-w-sm">
-          <DialogHeader>
-            <DialogTitle>Apply Coupon</DialogTitle>
-          </DialogHeader>
-          <Input
-            value={couponCode}
-            onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
-            onKeyDown={(e) => e.key === "Enter" && applyCoupon()}
-            autoFocus
-          />
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowCoupon(false)}>
-              Cancel
-            </Button>
-            <Button onClick={applyCoupon}>Apply</Button>
-          </DialogFooter>
+        <DialogContent className="sm:max-w-xl p-0 gap-0 overflow-hidden rounded-2xl border-border/80 shadow-2xl bg-card">
+          {/* Header */}
+          <div className="p-4 sm:p-5 border-b border-border/80 bg-muted/20 flex items-center justify-between">
+            <div className="flex items-center gap-2.5">
+              <div className="size-9 rounded-xl bg-primary/10 border border-primary/20 grid place-items-center text-primary shadow-xs">
+                <Ticket className="size-4.5" />
+              </div>
+              <div>
+                <DialogTitle className="text-base font-bold text-foreground">
+                  Coupons & Offers
+                </DialogTitle>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Select an available coupon or enter a promotional voucher
+                </p>
+              </div>
+            </div>
+
+            {appliedCoupon && (
+              <div className="flex items-center gap-2">
+                <span className="hidden sm:inline-flex items-center gap-1 rounded-lg bg-success/15 border border-success/30 px-2.5 py-1 text-[11px] font-bold text-success">
+                  <Check className="size-3 stroke-[3]" />
+                  {appliedCoupon.code} Applied
+                </span>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => removeCoupon()}
+                  className="h-8 text-xs font-semibold text-destructive border-destructive/30 hover:bg-destructive/10"
+                >
+                  Remove
+                </Button>
+              </div>
+            )}
+          </div>
+
+          {/* Manual Code Input Bar & Filter Tabs */}
+          <div className="p-4 border-b border-border/80 space-y-3 bg-background/50">
+            {/* Manual Code Entry */}
+            <div className="flex gap-2">
+              <div className="relative flex-1">
+                <Tag className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  value={couponCode}
+                  onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                  onKeyDown={(e) => e.key === "Enter" && applyCoupon(couponCode)}
+                  placeholder="Enter coupon or promo code..."
+                  className="h-10 pl-9.5 pr-8 rounded-xl border-border/80 bg-card text-xs sm:text-sm font-mono font-bold tracking-wider uppercase focus-visible:ring-primary/20"
+                  autoFocus
+                />
+                {couponCode && (
+                  <button
+                    type="button"
+                    onClick={() => setCouponCode("")}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 size-5 rounded-full bg-muted text-muted-foreground hover:text-foreground grid place-items-center text-xs"
+                    title="Clear"
+                  >
+                    <X className="size-3" />
+                  </button>
+                )}
+              </div>
+              <Button
+                onClick={() => applyCoupon(couponCode)}
+                disabled={!couponCode.trim()}
+                className="h-10 px-4 rounded-xl font-bold text-xs bg-primary hover:bg-primary/90 text-primary-foreground shadow-xs shrink-0"
+              >
+                Apply Code
+              </Button>
+            </div>
+
+            {/* Quick Filter Tabs */}
+            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar text-xs">
+              {[
+                { id: "all", label: `All Offers (${availableCoupons.length})` },
+                { id: "percent", label: "Percentage %" },
+                { id: "flat", label: "Flat OFF" },
+                { id: "eligible", label: `Eligible for Cart (${currencySymbol}${subtotal.toFixed(2)})` },
+              ].map((tab) => {
+                const isActive = couponFilterTab === tab.id;
+                return (
+                  <button
+                    key={tab.id}
+                    type="button"
+                    onClick={() => setCouponFilterTab(tab.id)}
+                    className={cn(
+                      "px-2.5 py-1 rounded-lg font-semibold whitespace-nowrap transition-all text-xs border",
+                      isActive
+                        ? "bg-primary text-primary-foreground border-primary shadow-xs"
+                        : "bg-muted/40 text-muted-foreground border-border/60 hover:bg-muted hover:text-foreground",
+                    )}
+                  >
+                    {tab.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Coupons List Body */}
+          <div className="max-h-[380px] overflow-y-auto p-3 sm:p-4 space-y-2.5">
+            {filteredCoupons.map((c: any) => {
+              const isApplied = appliedCoupon?.code?.toUpperCase() === c.code?.toUpperCase();
+              const isPercent = c.type === "percentage" || c.type === "percent";
+              const discountValue = parseFloat(c.discount || c.value || "0");
+              const minOrder = parseFloat(c.minOrder || "0");
+              const isEligible = subtotal >= minOrder;
+              const shortAmount = minOrder - subtotal;
+              const expiryFormatted = c.expires
+                ? new Date(c.expires).toLocaleDateString(undefined, {
+                  day: "numeric",
+                  month: "short",
+                  year: "numeric",
+                })
+                : "No expiry";
+
+              return (
+                <div
+                  key={c.id || c.code}
+                  className={cn(
+                    "p-3.5 rounded-2xl border transition-all relative overflow-hidden flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-card",
+                    isApplied
+                      ? "bg-primary/10 border-primary/40 ring-1 ring-primary/20 shadow-xs"
+                      : isEligible
+                        ? "border-border/80 hover:border-primary/40 hover:bg-muted/30"
+                        : "border-border/60 bg-muted/10 opacity-75",
+                  )}
+                >
+                  {/* Left: Badge & Details */}
+                  <div className="flex items-start gap-3 min-w-0 flex-1">
+                    {/* Discount Badge Box */}
+                    <div
+                      className={cn(
+                        "size-12 rounded-xl grid place-items-center font-black text-center shrink-0 border uppercase px-1 leading-none shadow-2xs",
+                        isApplied
+                          ? "bg-primary text-primary-foreground border-primary"
+                          : isPercent
+                            ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30"
+                            : "bg-blue-500/15 text-blue-600 dark:text-blue-400 border-blue-500/30",
+                      )}
+                    >
+                      <span className="text-xs font-black">
+                        {isPercent ? `${discountValue}%` : `${currencySymbol}${discountValue}`}
+                      </span>
+                      <span className="text-[8px] font-bold opacity-80 mt-0.5">OFF</span>
+                    </div>
+
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-mono font-black text-sm text-foreground bg-muted border border-border px-2 py-0.5 rounded-md tracking-wider">
+                          {c.code}
+                        </span>
+                        {isApplied && (
+                          <span className="rounded-md bg-success/15 border border-success/30 px-1.5 py-0.5 text-[10px] font-bold text-success inline-flex items-center gap-1">
+                            <Check className="size-3 stroke-[3]" /> Applied
+                          </span>
+                        )}
+                      </div>
+
+                      {c.description && (
+                        <p className="text-xs text-foreground/80 font-medium mt-1 truncate">
+                          {c.description}
+                        </p>
+                      )}
+
+                      <div className="flex items-center gap-3 text-[11px] text-muted-foreground mt-1.5 flex-wrap">
+                        {minOrder > 0 && (
+                          <span className="font-semibold text-foreground/70">
+                            Min Order: {currencySymbol}{minOrder}
+                          </span>
+                        )}
+                        <span className="inline-flex items-center gap-1">
+                          <Clock className="size-3 text-muted-foreground" />
+                          {expiryFormatted}
+                        </span>
+                      </div>
+
+                      {/* Eligibility Notice */}
+                      <div className="mt-1.5">
+                        {minOrder > 0 && !isEligible ? (
+                          <span className="text-[10px] font-bold text-amber-600 dark:text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded-md inline-block">
+                            Add {currencySymbol}{shortAmount.toFixed(2)} more to unlock
+                          </span>
+                        ) : (
+                          <span className="text-[10px] font-semibold text-success bg-success/10 border border-success/20 px-2 py-0.5 rounded-md inline-block">
+                            ✓ Eligible on current cart ({currencySymbol}{subtotal.toFixed(2)})
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Right: Apply / Remove Action */}
+                  <div className="flex sm:flex-col items-center sm:items-end justify-between gap-2 shrink-0 border-t sm:border-t-0 pt-2 sm:pt-0">
+                    {isApplied ? (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => removeCoupon()}
+                        className="h-8.5 px-3 text-xs font-semibold text-destructive border-destructive/30 hover:bg-destructive/10 rounded-xl"
+                      >
+                        Remove
+                      </Button>
+                    ) : (
+                      <Button
+                        size="sm"
+                        onClick={() => applyCoupon(c)}
+                        disabled={!isEligible}
+                        className={cn(
+                          "h-8.5 px-3.5 text-xs font-bold rounded-xl shadow-xs",
+                          isEligible
+                            ? "bg-primary hover:bg-primary/90 text-primary-foreground"
+                            : "opacity-50 cursor-not-allowed",
+                        )}
+                      >
+                        {isEligible ? "Apply Coupon" : "Min Order Not Met"}
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+
+            {/* Empty State */}
+            {filteredCoupons.length === 0 && (
+              <div className="py-8 text-center bg-muted/20 rounded-2xl border border-dashed border-border p-6 space-y-3">
+                <div className="size-12 rounded-2xl bg-muted grid place-items-center mx-auto text-muted-foreground">
+                  <Ticket className="size-6" />
+                </div>
+                <div>
+                  <h4 className="font-bold text-sm text-foreground">
+                    No coupons available
+                  </h4>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    {couponSearch
+                      ? `No coupon matching "${couponSearch}"`
+                      : "No active offers found. You can still type a promotional code above."}
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
         </DialogContent>
       </Dialog>
 
@@ -1150,18 +1419,18 @@ export function PosDialogs({
 
             {(settings?.businessType === "PHARMACY" ||
               state.lines.some((l: any) => l.product.metadata?.prescriptionRequired)) && (
-              <div className="mt-4 pt-3 border-t">
-                <label className="text-xs font-semibold block mb-1 text-primary text-left">
-                  Prescription Reference (Optional)
-                </label>
-                <Input
-                  placeholder="e.g. Rx-12345"
-                  value={state.prescriptionRef}
-                  onChange={(e) => state.setPrescriptionRef(e.target.value)}
-                  className="h-9"
-                />
-              </div>
-            )}
+                <div className="mt-4 pt-3 border-t">
+                  <label className="text-xs font-semibold block mb-1 text-primary text-left">
+                    Prescription Reference (Optional)
+                  </label>
+                  <Input
+                    placeholder="e.g. Rx-12345"
+                    value={state.prescriptionRef}
+                    onChange={(e) => state.setPrescriptionRef(e.target.value)}
+                    className="h-9"
+                  />
+                </div>
+              )}
           </AlertDialogHeader>
           <AlertDialogFooter className="grid grid-cols-2 gap-2 sm:space-x-0 mt-2">
             <AlertDialogCancel
@@ -1259,6 +1528,8 @@ export function PosDialogs({
         isOpen={keyboardOpen}
         onClose={() => setKeyboardOpen(false)}
         inputName={activeInput || "default"}
+        isNumeric={true}
+        layoutName="numpad"
         inputValue={
           activeInput === "discount"
             ? discountInput
