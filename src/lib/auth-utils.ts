@@ -92,7 +92,7 @@ export async function requireAuth(): Promise<SessionPayload> {
 
 export async function requireAdmin(): Promise<SessionPayload> {
   const payload = await requireAuth();
-  if (payload.role !== "admin") {
+  if (payload.role !== "admin" && payload.role !== "super_admin") {
     // Fallback check in case the token was issued before roles were added to it
     if (!payload.role) {
       const users = await db
@@ -100,11 +100,38 @@ export async function requireAdmin(): Promise<SessionPayload> {
         .from(schema.users)
         .where(eq(schema.users.id, payload.userId))
         .limit(1);
-      if (users.length && users[0].role === "admin") {
-        return { ...payload, role: "admin" };
+      if (users.length && (users[0].role === "admin" || users[0].role === "super_admin")) {
+        return { ...payload, role: users[0].role };
       }
     }
     throw new Error("Unauthorized: Admin access required");
   }
   return payload;
 }
+
+export async function requirePermission(permissionKey: string): Promise<SessionPayload> {
+  const payload = await requireAuth();
+  if (payload.role === "admin" || payload.role === "super_admin") {
+    return payload;
+  }
+  const users = await db
+    .select()
+    .from(schema.users)
+    .where(eq(schema.users.id, payload.userId))
+    .limit(1);
+
+  if (users.length === 0) throw new Error("Unauthorized");
+  const user = users[0];
+  const userPerms: string[] = Array.isArray(user.permissions) ? (user.permissions as string[]) : [];
+
+  if (
+    userPerms.includes("all") ||
+    userPerms.includes(permissionKey) ||
+    userPerms.includes(`/${permissionKey}`) ||
+    userPerms.includes(permissionKey.replace(/^\//, ""))
+  ) {
+    return payload;
+  }
+  throw new Error(`Unauthorized: Missing permission for '${permissionKey}'`);
+}
+

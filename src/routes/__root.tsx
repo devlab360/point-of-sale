@@ -425,7 +425,7 @@ function AppLayout() {
     const permResult = hasPermissionForRoute(
       user,
       location.pathname,
-      false,
+      user?.role?.toLowerCase() === "super_admin",
       saasPlan,
       settings?.businessType,
     );

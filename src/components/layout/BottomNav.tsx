@@ -76,7 +76,16 @@ export function BottomNav() {
         role="navigation"
         aria-label="Main navigation"
       >
-        {NAV_ITEMS.map((item) => {
+        {NAV_ITEMS.filter((item) => {
+          if (item.to === "/") return true;
+          return hasPermissionForRoute(
+            user,
+            item.to,
+            user?.role === "super_admin",
+            saasPlan,
+            settings?.businessType,
+          ).allowed;
+        }).map((item) => {
           const Icon = item.icon;
           const active = isActive(item.to);
           return (
