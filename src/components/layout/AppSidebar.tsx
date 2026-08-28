@@ -19,6 +19,8 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { APP_GROUPS, hasPermissionForRoute, MenuItem, SubMenuItem } from "@/lib/menu-config";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { LogoutConfirmDialog } from "./LogoutConfirmDialog";
+import { Button } from "@/components/ui/button";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 export function AppSidebar({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
@@ -321,49 +323,56 @@ export function AppSidebar({ onNavigate }: { onNavigate?: () => void }) {
             isMinimized ? "flex-col p-1.5 gap-1.5" : "gap-2.5",
           )}
         >
-          <Link
-            to="/profile"
-            onClick={onNavigate}
-            title="View Profile"
-            className={cn(
-              "flex items-center min-w-0 flex-1 cursor-pointer transition-opacity hover:opacity-80",
-              isMinimized ? "flex-col gap-1.5" : "gap-2.5",
-            )}
-          >
-            {user?.avatar ? (
-              <img
-                src={user.avatar}
-                alt="Profile"
-                className="size-8 shrink-0 rounded-lg object-cover border border-primary/30 shadow-xs"
-              />
-            ) : (
-              <div className="grid size-8 shrink-0 place-items-center rounded-lg bg-[#B58D4C]/15 border border-[#B58D4C]/30 text-xs font-bold text-[#B58D4C]">
-                {initials}
-              </div>
-            )}
-            {!isMinimized && (
-              <div className="min-w-0 flex-1">
-                <div className="truncate text-xs sm:text-sm font-bold text-foreground">
-                  {user?.name || "Admin"}
-                </div>
-                <div className="truncate text-[10px] sm:text-[11px] font-semibold text-muted-foreground flex items-center gap-1 mt-0.5">
-                  <span className="size-1.5 rounded-full bg-success inline-block"></span>
-                  <span className="capitalize">{user?.role || "Store Owner"}</span>
-                </div>
-              </div>
-            )}
-          </Link>
-          <button
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Link
+                to="/profile"
+                onClick={onNavigate}
+                className={cn(
+                  "flex items-center min-w-0 flex-1 cursor-pointer transition-opacity hover:opacity-80",
+                  isMinimized ? "flex-col gap-1.5" : "gap-2.5",
+                )}
+              >
+                {user?.avatar ? (
+                  <img
+                    src={user.avatar}
+                    alt="Profile"
+                    className="size-8 shrink-0 rounded-lg object-cover border border-primary/30 shadow-xs"
+                  />
+                ) : (
+                  <div className="grid size-8 shrink-0 place-items-center rounded-lg bg-[#B58D4C]/15 border border-[#B58D4C]/30 text-xs font-bold text-[#B58D4C]">
+                    {initials}
+                  </div>
+                )}
+                {!isMinimized && (
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate text-xs sm:text-sm font-bold text-foreground">
+                      {user?.name || "Admin"}
+                    </div>
+                    <div className="truncate text-[10px] sm:text-[11px] font-semibold text-muted-foreground flex items-center gap-1 mt-0.5">
+                      <span className="size-1.5 rounded-full bg-success inline-block"></span>
+                      <span className="capitalize">{user?.role || "Store Owner"}</span>
+                    </div>
+                  </div>
+                )}
+              </Link>
+            </TooltipTrigger>
+            <TooltipContent side="right">View Profile</TooltipContent>
+          </Tooltip>
+
+          <Button
             type="button"
+            variant="ghost"
+            size="icon"
             onClick={() => setShowLogoutConfirm(true)}
             className={cn(
-              "grid shrink-0 place-items-center rounded-lg border border-transparent text-muted-foreground hover:border-destructive/30 hover:bg-destructive/10 hover:text-destructive transition-all duration-150 active:scale-95 cursor-pointer",
+              "shrink-0 text-muted-foreground hover:border-destructive/30 hover:bg-destructive/10 hover:text-destructive",
               isMinimized ? "size-8 w-full" : "size-7.5",
             )}
-            title="Log out"
+            tooltip="Log out"
           >
             <LogOut className="size-4" />
-          </button>
+          </Button>
         </div>
 
         <LogoutConfirmDialog

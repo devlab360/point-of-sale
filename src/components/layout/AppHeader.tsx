@@ -346,7 +346,13 @@ export function AppHeader() {
           </DropdownMenuContent>
         </DropdownMenu>
 
-        <Button variant="ghost" size="icon" onClick={toggleTheme} aria-label="Toggle theme">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={toggleTheme}
+          tooltip="Toggle Dark / Light Theme"
+          aria-label="Toggle theme"
+        >
           <Sun className="size-5 dark:hidden" />
           <Moon className="hidden size-5 dark:block" />
         </Button>
@@ -355,7 +361,13 @@ export function AppHeader() {
           .allowed && (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="relative" aria-label="Notifications">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="relative"
+                tooltip="Notifications"
+                aria-label="Notifications"
+              >
                 <Bell className="size-5" />
                 {unread > 0 && (
                   <span className="absolute right-1.5 top-1.5 grid size-4 place-items-center rounded-full bg-destructive text-[9px] font-bold text-destructive-foreground">

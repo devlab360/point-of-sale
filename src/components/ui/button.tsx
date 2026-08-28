@@ -1,6 +1,7 @@
 import * as React from "react";
 import { Slot } from "@radix-ui/react-slot";
 import { cva, type VariantProps } from "class-variance-authority";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 import { cn } from "@/lib/utils";
 
@@ -37,16 +38,54 @@ const buttonVariants = cva(
 );
 
 export interface ButtonProps
-  extends React.ButtonHTMLAttributes<HTMLButtonElement>, VariantProps<typeof buttonVariants> {
+  extends React.ButtonHTMLAttributes<HTMLButtonElement>,
+    VariantProps<typeof buttonVariants> {
   asChild?: boolean;
+  tooltip?: React.ReactNode;
+  tooltipSide?: "top" | "bottom" | "left" | "right";
+  disableTooltip?: boolean;
 }
 
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant, size, asChild = false, ...props }, ref) => {
+  (
+    {
+      className,
+      variant,
+      size,
+      asChild = false,
+      title,
+      tooltip,
+      tooltipSide = "top",
+      disableTooltip = false,
+      "aria-label": ariaLabel,
+      ...props
+    },
+    ref,
+  ) => {
     const Comp = asChild ? Slot : "button";
-    return (
-      <Comp className={cn(buttonVariants({ variant, size, className }))} ref={ref} {...props} />
+    const tooltipText = tooltip || title;
+
+    const buttonNode = (
+      <Comp
+        className={cn(buttonVariants({ variant, size, className }))}
+        ref={ref}
+        aria-label={ariaLabel || (typeof tooltipText === "string" ? tooltipText : undefined)}
+        {...props}
+      />
     );
+
+    if (tooltipText && !asChild && !disableTooltip) {
+      return (
+        <Tooltip>
+          <TooltipTrigger asChild>{buttonNode}</TooltipTrigger>
+          <TooltipContent side={tooltipSide}>
+            {tooltipText}
+          </TooltipContent>
+        </Tooltip>
+      );
+    }
+
+    return buttonNode;
   },
 );
 Button.displayName = "Button";

@@ -24,6 +24,7 @@ import { getTrialDaysLeft } from "@/lib/utils";
 import { X } from "lucide-react";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { PreferencesProvider } from "@/contexts/PreferencesContext";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import { AiCopilotDrawer } from "@/components/ai/AiCopilotDrawer";
 import { ReportAutomation } from "@/components/automation/ReportAutomation";
 import { DashboardSkeleton } from "@/components/skeletons/DashboardSkeleton";
@@ -299,8 +300,10 @@ function RootComponent() {
         <AuthProvider>
           <AdminAuthProvider>
             <PreferencesProvider>
-              <ReportAutomation />
-              <AppLayout />
+              <TooltipProvider delayDuration={120}>
+                <ReportAutomation />
+                <AppLayout />
+              </TooltipProvider>
             </PreferencesProvider>
           </AdminAuthProvider>
         </AuthProvider>
