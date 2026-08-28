@@ -163,41 +163,63 @@ function Dashboard() {
     refetchExpenses();
   };
 
-  const userName = user?.name || "Admin";
+  const activeSales = useMemo(
+    () =>
+      sales.filter(
+        (s: any) =>
+          s &&
+          s.status !== "void" &&
+          s.status !== "cancelled" &&
+          s.status !== "quotation" &&
+          s.status !== "draft",
+      ),
+    [sales],
+  );
+
+  const productsMap = useMemo(() => {
+    const map = new Map<string, any>();
+    products.forEach((p: any) => map.set(p.id, p));
+    return map;
+  }, [products]);
 
   const healthAnalysis = useMemo(() => {
-    const totalSalesRev = sales.reduce((sum, s) => sum + (Number(s.total) || 0), 0);
-    const totalExp = expenses.reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
+    const totalSalesRev = activeSales.reduce((sum, s: any) => sum + (Number(s.total) || 0), 0);
+    const totalExp = expenses.reduce((sum, e: any) => sum + (Number(e.amount) || 0), 0);
 
     let totalCogs = 0;
-    sales.forEach((s) => {
-      s.saleItems?.forEach((i) => {
-        const prod = products.find((p) => p.id === i.productId);
-        if (prod) totalCogs += (prod.cost || 0) * i.quantity;
-      });
+    activeSales.forEach((s: any) => {
+      const items = s.saleItems || s.items || [];
+      if (Array.isArray(items)) {
+        items.forEach((i: any) => {
+          const prod = productsMap.get(i.productId || i.id);
+          const unitCost = Number(i.cost ?? prod?.cost) || 0;
+          const qty = Number(i.quantity ?? i.qty) || 1;
+          totalCogs += unitCost * qty;
+        });
+      }
     });
     const netProfit = totalSalesRev - totalCogs - totalExp;
     const profitMargin = totalSalesRev > 0 ? (netProfit / totalSalesRev) * 100 : 0;
 
     // Dead Stock Calculation
     const soldProductIds = new Set(
-      sales.flatMap((s) => s.saleItems?.map((i) => i.productId) || []),
+      activeSales.flatMap((s: any) => (s.saleItems || s.items || []).map((i: any) => i.productId || i.id).filter(Boolean)),
     );
-    const deadStockItems = products.filter((p) => (p.stock || 0) > 0 && !soldProductIds.has(p.id));
-    const totalStockValue = products.reduce((sum, p) => sum + (p.stock || 0) * (p.cost || 0), 0);
+    const deadStockItems = products.filter((p: any) => (Number(p.stock) || 0) > 0 && !soldProductIds.has(p.id));
+    const totalStockValue = products.reduce((sum: number, p: any) => sum + (Number(p.stock) || 0) * (Number(p.cost) || 0), 0);
     const deadStockValue = deadStockItems.reduce(
-      (sum, p) => sum + (p.stock || 0) * (p.cost || 0),
+      (sum: number, p: any) => sum + (Number(p.stock) || 0) * (Number(p.cost) || 0),
       0,
     );
 
     // Due Collection Health
-    const totalDue = customers.reduce((sum, c) => sum + (c.credit || 0), 0);
+    const totalDue = customers.reduce((sum: number, c: any) => sum + (Number(c.credit || c.due || c.balance) || 0), 0);
     const overDueRatio = totalSalesRev > 0 ? (totalDue / totalSalesRev) * 100 : 0;
 
     // Score Calculation out of 100
-    let score = products.length > 0 || sales.length > 0 ? 50 : 30;
-    if (sales.length >= 5) score += 15;
-    else if (sales.length > 0) score += 10;
+    let score = products.length > 0 || activeSales.length > 0 ? 50 : 30;
+    if (activeSales.length >= 5) score += 15;
+    else if (activeSales.length > 0) score += 10;
 
     if (netProfit > 0) score += 10;
     if (profitMargin >= 15) score += 10;
@@ -229,31 +251,35 @@ function Dashboard() {
     }
 
     return { score, grade, badgeClass };
-  }, [sales, products, customers, expenses]);
+  }, [activeSales, products, customers, expenses, productsMap]);
 
-  const lowStock = products.filter((p) => Number(p.stock) <= Number(p.reorderLevel)).slice(0, 5);
+  const lowStock = products.filter((p: any) => Number(p.stock) <= Number(p.reorderLevel)).slice(0, 5);
 
   const productSalesMap = new Map<string, number>();
-  sales.forEach((sale) => {
-    if (sale.saleItems) {
-      sale.saleItems.forEach((item) => {
-        productSalesMap.set(
-          item.productId,
-          (productSalesMap.get(item.productId) || 0) + Number(item.quantity || 1),
-        );
+  activeSales.forEach((sale: any) => {
+    const items = sale.saleItems || sale.items || [];
+    if (Array.isArray(items)) {
+      items.forEach((item: any) => {
+        const pId = item.productId || item.id;
+        if (pId) {
+          productSalesMap.set(
+            pId,
+            (productSalesMap.get(pId) || 0) + Number(item.quantity || item.qty || 1),
+          );
+        }
       });
     }
   });
 
   const topSelling = [...products]
-    .map((p) => ({ ...p, sold: productSalesMap.get(p.id) || 0 }))
+    .map((p: any) => ({ ...p, sold: productSalesMap.get(p.id) || 0 }))
     .sort((a, b) => b.sold - a.sold)
     .slice(0, 5);
 
-  const recentSales = [...sales].reverse().slice(0, 5);
+  const recentSales = [...activeSales].reverse().slice(0, 5);
 
   const todayDateStr = formatAppDate(new Date(), "date", "yyyy-MM-dd");
-  const todaySales = sales.filter(
+  const todaySales = activeSales.filter(
     (s: any) => s.date && formatAppDate(s.date, "date", "yyyy-MM-dd") === todayDateStr,
   );
   const todayRevenue = todaySales.reduce((sum: number, s: any) => sum + (Number(s.total) || 0), 0);
@@ -262,10 +288,13 @@ function Dashboard() {
   let todayProfit = 0;
   todaySales.forEach((s: any) => {
     let cogs = 0;
-    if (Array.isArray(s.saleItems)) {
-      s.saleItems.forEach((i: any) => {
-        const prod = products.find((p: any) => p.id === i.productId);
-        if (prod) cogs += (Number(prod.cost) || 0) * (i.quantity || 1);
+    const items = s.saleItems || s.items || [];
+    if (Array.isArray(items)) {
+      items.forEach((i: any) => {
+        const prod = productsMap.get(i.productId || i.id);
+        const unitCost = Number(i.cost ?? prod?.cost) || 0;
+        const qty = Number(i.quantity ?? i.qty) || 1;
+        cogs += unitCost * qty;
       });
     }
     const saleTotal = Number(s.total) || 0;
@@ -282,7 +311,7 @@ function Dashboard() {
   const yesterdayDate = new Date();
   yesterdayDate.setDate(yesterdayDate.getDate() - 1);
   const yesterdayDateStr = formatAppDate(yesterdayDate, "date", "yyyy-MM-dd");
-  const yesterdaySales = sales.filter(
+  const yesterdaySales = activeSales.filter(
     (s: any) => s.date && formatAppDate(s.date, "date", "yyyy-MM-dd") === yesterdayDateStr,
   );
   const yesterdayRevenue = yesterdaySales.reduce(
@@ -294,10 +323,13 @@ function Dashboard() {
   let yesterdayProfit = 0;
   yesterdaySales.forEach((s: any) => {
     let cogs = 0;
-    if (Array.isArray(s.saleItems)) {
-      s.saleItems.forEach((i: any) => {
-        const prod = products.find((p: any) => p.id === i.productId);
-        if (prod) cogs += (Number(prod.cost) || 0) * (i.quantity || 1);
+    const items = s.saleItems || s.items || [];
+    if (Array.isArray(items)) {
+      items.forEach((i: any) => {
+        const prod = productsMap.get(i.productId || i.id);
+        const unitCost = Number(i.cost ?? prod?.cost) || 0;
+        const qty = Number(i.quantity ?? i.qty) || 1;
+        cogs += unitCost * qty;
       });
     }
     const saleTotal = Number(s.total) || 0;

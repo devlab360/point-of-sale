@@ -131,15 +131,46 @@ function ReportsPage() {
   const [searchCategory, setSearchCategory] = useState("");
 
   // Aggregations
-  const totalRevenue = useMemo(() => sales.reduce((acc, s) => acc + (Number(s.total) || 0), 0), [sales]);
+  const activeSales = useMemo(
+    () =>
+      sales.filter(
+        (s: any) =>
+          s &&
+          s.status !== "void" &&
+          s.status !== "cancelled" &&
+          s.status !== "quotation" &&
+          s.status !== "draft",
+      ),
+    [sales],
+  );
+
+  const productsMap = useMemo(() => {
+    const map = new Map<string, any>();
+    products.forEach((p: any) => map.set(p.id, p));
+    return map;
+  }, [products]);
+
+  const totalRevenue = useMemo(
+    () => activeSales.reduce((acc, s) => acc + (Number(s.total) || 0), 0),
+    [activeSales],
+  );
+
   const totalCOGS = useMemo(() => {
-    return sales.reduce((acc, s) => {
-      const cost = Array.isArray(s.items)
-        ? s.items.reduce((c: number, item: any) => c + (Number(item.cost) || 0) * (Number(item.quantity) || 1), 0)
-        : (Number(s.total) || 0) * 0.65;
-      return acc + cost;
+    return activeSales.reduce((acc, s) => {
+      const items = s.saleItems || s.items || [];
+      if (Array.isArray(items) && items.length > 0) {
+        const saleCost = items.reduce((c: number, item: any) => {
+          const prod = productsMap.get(item.productId || item.id);
+          const unitCost = Number(item.cost ?? prod?.cost) || 0;
+          const qty = Number(item.quantity ?? item.qty) || 1;
+          return c + unitCost * qty;
+        }, 0);
+        return acc + saleCost;
+      }
+      return acc;
     }, 0);
-  }, [sales]);
+  }, [activeSales, productsMap]);
+
   const grossProfit = totalRevenue - totalCOGS;
   const totalExpenses = useMemo(() => expenses.reduce((acc, e) => acc + (Number(e.amount) || 0), 0), [expenses]);
   const netIncome = grossProfit - totalExpenses;

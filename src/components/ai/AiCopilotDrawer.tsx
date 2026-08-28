@@ -438,7 +438,16 @@ export function AiCopilotDrawer() {
 
   // Compute Metrics & Business Health Score (0-100)
   const healthAnalysis = useMemo(() => {
-    const totalSalesRev = sales.reduce(
+    const activeSales = sales.filter(
+      (s: any) =>
+        s &&
+        s.status !== "void" &&
+        s.status !== "cancelled" &&
+        s.status !== "quotation" &&
+        s.status !== "draft",
+    );
+
+    const totalSalesRev = activeSales.reduce(
       (sum, s: any) => sum + safeNum(s?.total ?? s?.grandTotal ?? s?.finalAmount),
       0,
     );
@@ -448,7 +457,7 @@ export function AiCopilotDrawer() {
     );
 
     let totalCogs = 0;
-    sales.forEach((s: any) => {
+    activeSales.forEach((s: any) => {
       const items = s?.saleItems || s?.items || [];
       if (Array.isArray(items)) {
         items.forEach((i: any) => {
@@ -465,7 +474,7 @@ export function AiCopilotDrawer() {
 
     // Dead Stock Calculation (Unsold products with positive stock)
     const soldProductIds = new Set(
-      sales.flatMap((s: any) =>
+      activeSales.flatMap((s: any) =>
         (s?.saleItems || s?.items || [])
           .map((i: any) => i?.productId || i?.id)
           .filter(Boolean),

@@ -160,31 +160,42 @@ function SalesPage() {
       card = 0,
       upi = 0,
       credit = 0;
-    sales.forEach((s) => {
-      if (s.status === "refunded" || s.status === "quotation") return; // Ignore refunded/quotes in total collected
-      if (s.payments && s.payments.length > 0) {
+    sales.forEach((s: any) => {
+      if (
+        !s ||
+        s.status === "refunded" ||
+        s.status === "quotation" ||
+        s.status === "void" ||
+        s.status === "cancelled" ||
+        s.status === "draft"
+      )
+        return; // Ignore refunded, quotes, voided and cancelled in total collected
+
+      if (Array.isArray(s.payments) && s.payments.length > 0) {
         s.payments.forEach((p: any) => {
-          if (p.method === "cash") cash += p.amount;
-          else if (p.method === "card") card += p.amount;
+          const amt = Number(p.amount) || 0;
+          if (p.method === "cash") cash += amt;
+          else if (p.method === "card") card += amt;
           else if (
             p.method === "upi" ||
             p.method === "online" ||
             p.method === "mobile" ||
             p.method === "wallet"
           )
-            upi += p.amount;
-          else if (p.method === "credit") credit += p.amount;
+            upi += amt;
+          else if (p.method === "credit") credit += amt;
         });
       } else {
-        if (s.paymentMethod === "cash") cash += s.total;
-        else if (s.paymentMethod === "card") card += s.total;
-        else if (s.paymentMethod === "credit") credit += s.total;
+        const tot = Number(s.total) || 0;
+        if (s.paymentMethod === "cash") cash += tot;
+        else if (s.paymentMethod === "card") card += tot;
+        else if (s.paymentMethod === "credit") credit += tot;
         else if (
           s.paymentMethod === "upi" ||
           s.paymentMethod === "wallet" ||
           s.paymentMethod === "mobile"
         )
-          upi += s.total;
+          upi += tot;
       }
     });
     return { cash, card, upi, credit, total: cash + card + upi + credit };
