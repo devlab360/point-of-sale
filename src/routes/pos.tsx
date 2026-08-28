@@ -3,7 +3,13 @@ import { useEffect, useRef, useCallback } from "react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { v4 as uuidv4 } from "uuid";
-import { updateShiftFn, completePosSaleFn, getPosItemsFn } from "@/api/pos";
+import {
+  updateShiftFn,
+  completePosSaleFn,
+  getPosItemsFn,
+  getHeldInvoicesFn,
+} from "@/api/pos";
+import { getCategoriesFn } from "@/api/categories";
 import { getProductsFn } from "@/api/products";
 import { getPosBootstrapFn } from "@/api/bootstrap";
 import { PersistStore } from "@/lib/session-store";
@@ -35,9 +41,6 @@ export const Route = createFileRoute("/pos")({
   loader: async ({ context: { queryClient } }) => {
     const orgId = PersistStore.getOrgId();
     if (!orgId) return;
-
-    const { getCategoriesFn } = await import("@/api/categories");
-    const { getHeldInvoicesFn } = await import("@/api/pos");
 
     // Parallel prefetch critical POS data with matching query keys
     await Promise.all([
@@ -687,7 +690,7 @@ function PosScreen() {
       </div>
 
       {/* Main Responsive Split Layout */}
-      <div className="print:hidden flex h-[calc(100vh-6.5rem)] md:h-[calc(100vh-4rem)] flex-col md:flex-row overflow-hidden relative">
+      <div className="print:hidden flex h-[calc(100dvh-7.5rem)] md:h-[calc(100vh-4rem)] flex-col md:flex-row overflow-hidden relative">
         <ProductGrid state={state} />
 
         {/* Resizable Divider Handle for Desktop */}
@@ -701,10 +704,10 @@ function PosScreen() {
 
         {/* Floating Mobile Cart Summary Pill (Shown when looking at Catalog on mobile with items in cart) */}
         {mobileTab === "products" && cartItemCount > 0 && (
-          <div className="fixed bottom-16 inset-x-3 z-30 md:hidden animate-in fade-in slide-in-from-bottom-4 duration-200">
+          <div className="fixed bottom-4 inset-x-3 z-30 md:hidden animate-in fade-in slide-in-from-bottom-4 duration-200">
             <button
               onClick={() => setMobileTab("cart")}
-              className="w-full flex items-center justify-between bg-primary text-primary-foreground rounded-2xl p-4 shadow-elevated font-bold text-sm"
+              className="w-full flex items-center justify-between bg-primary text-primary-foreground rounded-2xl p-4 shadow-elevated font-bold text-sm active:scale-[0.98] transition-transform cursor-pointer"
             >
               <div className="flex items-center gap-2.5">
                 <span className="grid size-7 place-items-center rounded-full bg-primary-foreground/20 text-xs font-black">

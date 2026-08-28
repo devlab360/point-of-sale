@@ -5,85 +5,8 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1785225705023,
-      "tag": "0000_add_logo_url_to_settings",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "7",
-      "when": 1785772712372,
-      "tag": "0001_clear_drax",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1785835450636,
-      "tag": "0002_true_steel_serpent",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "7",
-      "when": 1785905450278,
-      "tag": "0003_silky_grim_reaper",
-      "breakpoints": true
-    },
-    {
-      "idx": 4,
-      "version": "7",
-      "when": 1786524155576,
-      "tag": "0004_shocking_manta",
-      "breakpoints": true
-    },
-    {
-      "idx": 5,
-      "version": "7",
-      "when": 1786785056859,
-      "tag": "0005_bumpy_chronomancer",
-      "breakpoints": true
-    },
-    {
-      "idx": 6,
-      "version": "7",
-      "when": 1787059389899,
-      "tag": "0006_lying_mentor",
-      "breakpoints": true
-    },
-    {
-      "idx": 7,
-      "version": "7",
-      "when": 1787306173406,
-      "tag": "0007_loud_beyonder",
-      "breakpoints": true
-    },
-    {
-      "idx": 8,
-      "version": "7",
-      "when": 1787429412825,
-      "tag": "0008_fantastic_blockbuster",
-      "breakpoints": true
-    },
-    {
-      "idx": 9,
-      "version": "7",
-      "when": 1787589506661,
-      "tag": "0009_lame_sister_grimm",
-      "breakpoints": true
-    },
-    {
-      "idx": 10,
-      "version": "7",
-      "when": 1787589702991,
-      "tag": "0010_vengeful_zeigeist",
-      "breakpoints": true
-    },
-    {
-      "idx": 11,
-      "version": "7",
-      "when": 1787900185128,
-      "tag": "0011_dizzy_daimon_hellstrom",
+      "when": 1787926132413,
+      "tag": "0000_tiresome_shotgun",
       "breakpoints": true
     }
   ]

@@ -101,29 +101,29 @@ export function ProductGrid({ state }: { state: any }) {
       )}
     >
       {/* Top Controls: Search, Barcode, Store Location, Add Product */}
-      <div className="grid grid-cols-2 md:flex gap-2 border-b border-border/80 bg-background/95 p-2.5 sm:p-3 backdrop-blur-md">
-        {/* Product Search — full row on mobile */}
-        <div className="relative col-span-2 md:flex-[3] min-w-0">
-          <Search className="pointer-events-none absolute left-3 top-1/2 size-5 -translate-y-1/2 text-muted-foreground" />
+      <div className="flex flex-wrap md:flex-nowrap items-center gap-2 border-b border-border/80 bg-background/95 p-2 sm:p-3 backdrop-blur-md shrink-0">
+        {/* Product Search */}
+        <div className="relative flex-1 min-w-[130px] md:flex-[3]">
+          <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search products..."
-            className="h-12 w-full rounded-xl border border-border/80 bg-card pl-10 pr-9 text-sm font-medium transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 placeholder:text-muted-foreground"
+            className="h-11 w-full rounded-xl border border-border/80 bg-card pl-9 pr-8 text-xs sm:text-sm font-medium transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 placeholder:text-muted-foreground"
           />
           {query && (
             <button
               onClick={() => setQuery("")}
-              className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 text-muted-foreground hover:text-foreground rounded-full"
+              className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-muted-foreground hover:text-foreground rounded-full cursor-pointer"
             >
-              <X className="size-4" />
+              <X className="size-3.5" />
             </button>
           )}
         </div>
 
         {/* Barcode Scanner — desktop full input */}
         <div className="relative hidden md:flex md:flex-[2] shrink-0">
-          <ScanBarcode className="pointer-events-none absolute left-3 top-1/2 size-5 -translate-y-1/2 text-primary" />
+          <ScanBarcode className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-primary" />
           <input
             placeholder="Scan Barcode..."
             onKeyDown={(e) => {
@@ -145,21 +145,21 @@ export function ProductGrid({ state }: { state: any }) {
                 e.currentTarget.value = "";
               }
             }}
-            className="h-12 w-full rounded-xl border border-primary/30 bg-primary/8 pl-10 pr-3 font-mono text-sm text-foreground placeholder:text-primary/70 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 font-semibold"
+            className="h-11 w-full rounded-xl border border-primary/30 bg-primary/8 pl-9 pr-3 font-mono text-xs text-foreground placeholder:text-primary/70 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 font-semibold"
           />
         </div>
 
-        {/* Barcode Scanner — mobile full button */}
-        <div className="md:hidden">
+        {/* Barcode Scanner — mobile compact icon button */}
+        <div className="md:hidden shrink-0">
           <Popover>
             <PopoverTrigger asChild>
               <Button
                 variant="outline"
-                className="h-12 w-full rounded-xl border-border/80 bg-card text-muted-foreground hover:text-primary hover:bg-muted/40 gap-2"
+                size="icon"
+                className="h-11 w-11 rounded-xl border-border/80 bg-card text-foreground hover:text-primary hover:bg-muted/40 shrink-0 cursor-pointer"
                 title="Scan Barcode"
               >
                 <ScanBarcode className="size-4 text-primary" />
-                <span className="text-xs font-semibold">Scan Barcode</span>
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-72 p-3" align="end">
@@ -190,7 +190,7 @@ export function ProductGrid({ state }: { state: any }) {
                       e.currentTarget.value = "";
                     }
                   }}
-                  className="h-12 w-full rounded-lg border border-primary/30 bg-primary/5 px-3 font-mono text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 font-semibold"
+                  className="h-11 w-full rounded-lg border border-primary/30 bg-primary/5 px-3 font-mono text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 font-semibold"
                 />
               </div>
             </PopoverContent>
@@ -200,11 +200,11 @@ export function ProductGrid({ state }: { state: any }) {
         {/* Add Product Button */}
         <Button
           onClick={() => state.setShowAddProduct(true)}
-          className="h-12 shrink-0 rounded-xl font-bold shadow-sm gap-1.5 px-3.5"
+          className="h-11 shrink-0 rounded-xl font-bold shadow-sm gap-1 px-2.5 sm:px-3.5 cursor-pointer"
           title="Add Product"
         >
           <Plus className="size-4" />
-          <span className="text-xs">Add Product</span>
+          <span className="text-xs hidden sm:inline">Add Product</span>
         </Button>
 
         {/* Store Location Selector */}
@@ -213,11 +213,11 @@ export function ProductGrid({ state }: { state: any }) {
           onValueChange={(val) => state.setSelectedLocationId(val === "default" ? null : val)}
         >
           <SelectTrigger
-            className="h-12 rounded-xl bg-card border-border/80 text-foreground hover:bg-muted/40 transition-colors md:w-auto md:min-w-[140px] px-3 gap-2 col-span-2 shrink-0 cursor-pointer"
+            className="h-11 rounded-xl bg-card border-border/80 text-foreground hover:bg-muted/40 transition-colors w-auto max-w-[130px] sm:max-w-[160px] md:min-w-[140px] px-2.5 gap-1.5 shrink-0 cursor-pointer text-xs"
             title="Store / Location Outlet"
           >
-            <div className="flex items-center gap-2 min-w-0">
-              <MapPin className="size-4 text-primary shrink-0" />
+            <div className="flex items-center gap-1.5 min-w-0">
+              <MapPin className="size-3.5 text-primary shrink-0" />
               <span className="truncate text-xs font-semibold">
                 <SelectValue placeholder="Main Outlet" />
               </span>
@@ -354,14 +354,15 @@ export function ProductGrid({ state }: { state: any }) {
                         >
                           {/* Thumbnail & Badges */}
                           <div className="relative h-[150px] w-full shrink-0 overflow-hidden bg-muted/40 flex items-center justify-center border-b border-border/50">
-                            {p.image &&
-                            !p.image.includes("1542838132") &&
-                            !p.image.includes("unsplash") ? (
+                            {p.image && !p.image.includes("1542838132") ? (
                               <img
                                 src={p.image}
                                 alt={p.name}
                                 loading="lazy"
                                 className="size-full object-cover transition-transform duration-300 group-hover:scale-105"
+                                onError={(e) => {
+                                  e.currentTarget.style.display = "none";
+                                }}
                               />
                             ) : (
                               <div className="flex flex-col items-center justify-center text-muted-foreground/30">

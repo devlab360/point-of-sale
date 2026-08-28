@@ -8,7 +8,16 @@ import {
 import { toast } from "sonner";
 import { useRouter } from "@tanstack/react-router";
 import { SessionStore, PersistStore } from "@/lib/session-store";
-import { loginFn, getOrgDataFn, verifyUserEmailFn, getCurrentUserFn } from "@/api/auth";
+import {
+  loginFn,
+  getOrgDataFn,
+  verifyUserEmailFn,
+  getCurrentUserFn,
+  loginWithOtpFn,
+  loginWithGoogleFn,
+  loginWithFirebasePhoneFn,
+  logoutFn,
+} from "@/api/auth";
 import { getEffectiveMenusFn } from "@/api/subscriptions";
 import { useQuery, useMutation } from "@tanstack/react-query";
 
@@ -106,7 +115,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const loginWithOtp = useCallback(
     async (email: string, otp: string) => {
       try {
-        const { loginWithOtpFn } = await import("@/api/auth");
         const res = await loginWithOtpFn({ data: { email, otp } });
 
         if (res.success && res.user) {
@@ -180,7 +188,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const loginWithGoogleToken = useCallback(
     async (accessToken: string) => {
       try {
-        const { loginWithGoogleFn } = await import("@/api/auth");
         const res = await loginWithGoogleFn({ data: { accessToken } });
 
         if (res.success && res.user) {
@@ -224,7 +231,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const loginWithFirebasePhone = useCallback(
     async (idToken: string) => {
       try {
-        const { loginWithFirebasePhoneFn } = await import("@/api/auth");
         const res = await loginWithFirebasePhoneFn({ data: { idToken } });
 
         if (res.success && res.user) {
@@ -306,7 +312,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const logout = useCallback(async () => {
     try {
-      const { logoutFn } = await import("@/api/auth");
       await logoutFn({ data: {} });
     } catch {}
     SessionStore.clearAll();

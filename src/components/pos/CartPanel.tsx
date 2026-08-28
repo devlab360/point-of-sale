@@ -636,14 +636,12 @@ export function CartPanel({
         <div
           className={cn(
             "grid gap-1.5",
-            paymentMethods.length <= 5
-              ? `grid-cols-${Math.min(5, paymentMethods.length)}`
-              : "grid-cols-3 sm:grid-cols-4 md:grid-cols-5",
+            paymentMethods.length <= 3
+              ? `grid-cols-${paymentMethods.length}`
+              : paymentMethods.length <= 4
+                ? "grid-cols-2 sm:grid-cols-4"
+                : "grid-cols-3 sm:grid-cols-5",
           )}
-          style={{
-            gridTemplateColumns:
-              paymentMethods.length <= 5 ? `repeat(${paymentMethods.length}, minmax(0, 1fr))` : undefined,
-          }}
         >
           {paymentMethods.map((m) => {
             const Icon = getPaymentIcon(m.icon || m.id);
@@ -856,14 +854,14 @@ function PayBtn({
       onClick={onClick}
       title={title}
       className={cn(
-        "flex items-center justify-center gap-1 rounded-xl border h-11 text-xs font-bold transition-all shadow-xs outline-none focus-visible:ring-1 focus-visible:ring-primary w-full px-1 cursor-pointer",
+        "flex items-center justify-center gap-1.5 rounded-xl border h-11 text-xs font-bold transition-all shadow-xs outline-none focus-visible:ring-1 focus-visible:ring-primary w-full px-2 py-1 select-none active:scale-[0.97] touch-manipulation cursor-pointer",
         active
-          ? "border-primary bg-primary text-primary-foreground font-black shadow-xs"
+          ? "border-primary bg-primary text-primary-foreground font-black shadow-soft"
           : "border-border/80 bg-muted/20 text-muted-foreground hover:border-primary/40 hover:bg-muted hover:text-foreground",
       )}
     >
       <Icon className="size-4 shrink-0" />
-      <span className="truncate leading-none">{label}</span>
+      <span className="truncate leading-none text-[11px] sm:text-xs">{label}</span>
     </button>
   );
 }
