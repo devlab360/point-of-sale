@@ -510,6 +510,30 @@ export function usePosState() {
     }
   }, [cart, activeCustomer, discountPct, payment, orgId, queryClient]);
 
+  const voidCart = useCallback(() => {
+    setCart([]);
+    setDiscountPct(0);
+    setDiscountInput("0");
+    setAppliedCoupon(null);
+    setCashTendered("");
+    setSplitCash("");
+    setSplitCard("");
+    setSplitUpi("");
+    setSelectedTableId("");
+    setPrescriptionRef("");
+  }, [
+    setCart,
+    setDiscountPct,
+    setDiscountInput,
+    setAppliedCoupon,
+    setCashTendered,
+    setSplitCash,
+    setSplitCard,
+    setSplitUpi,
+    setSelectedTableId,
+    setPrescriptionRef,
+  ]);
+
   const handleOpenRegister = useCallback(async () => {
     const cash = parseFloat(startingCash) || 0;
     if (cash < 0) return toast.error("Starting cash must be a positive number");
@@ -714,6 +738,7 @@ export function usePosState() {
     refetchHeld,
     refetchShifts,
     holdInvoice,
+    voidCart,
     formatDate,
     formatTime,
     formatDateTime,

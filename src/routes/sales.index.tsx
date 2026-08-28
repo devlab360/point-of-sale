@@ -10,10 +10,11 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useCurrency } from "@/lib/currency";
 import { cn } from "@/lib/utils";
-import { Eye, Printer, Plus, Search, Receipt } from "lucide-react";
+import { Eye, Printer, Plus, Search, Receipt, Ban, Loader2 } from "lucide-react";
 import { useState, useMemo, useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getSalesFn } from "@/api/sales";
+import { voidPosSaleFn } from "@/api/pos";
 import { getSettingsFn } from "@/api/settings";
 import { useAuth } from "@/contexts/AuthContext";
 import { usePreferences } from "@/contexts/PreferencesContext";
@@ -23,6 +24,7 @@ import { PaginationControls } from "@/components/ui/pagination-controls";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { useDebounce } from "@/hooks/useDebounce";
 import { Label } from "@/components/ui/label";
+import { toast } from "sonner";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 export const Route = createFileRoute("/sales/")({
@@ -60,6 +62,26 @@ function SalesPage() {
   const [draftFilters, setDraftFilters] = useState({ status: "", payment: "", sync: "" });
   const activeFilterCount =
     (filters.status ? 1 : 0) + (filters.payment ? 1 : 0) + (filters.sync ? 1 : 0);
+
+  const queryClient = useQueryClient();
+  const canVoid = ["admin", "manager", "store_admin", "super_admin"].includes(user?.role);
+  const [voidTarget, setVoidTarget] = useState<any | null>(null);
+  const [voidReason, setVoidReason] = useState("");
+
+  const voidMutation = useMutation({
+    mutationFn: (data: { saleId: string; reason: string }) => voidPosSaleFn({ data }),
+    onSuccess: (res: any) => {
+      if (res?.success) {
+        toast.success(res.message || "Bill voided and stock restored.");
+        queryClient.invalidateQueries({ queryKey: ["sales", orgId] });
+        setVoidTarget(null);
+        setVoidReason("");
+      } else {
+        toast.error(res?.error || "Failed to void bill");
+      }
+    },
+    onError: () => toast.error("Failed to void bill"),
+  });
 
   const {
     data: salesResponse,
@@ -417,6 +439,20 @@ function SalesPage() {
                               >
                                 <Printer className="size-4" />
                               </Button>
+                              {canVoid && s.status === "completed" && !s.metadata?.voided && (
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="size-8 text-destructive hover:text-destructive"
+                                  onClick={() => {
+                                    setVoidTarget(s);
+                                    setVoidReason("");
+                                  }}
+                                  title="Void this bill"
+                                >
+                                  <Ban className="size-4" />
+                                </Button>
+                              )}
                             </div>
                           </TableCell>
                         </TableRow>
@@ -665,6 +701,61 @@ function SalesPage() {
           </div>
         </div>
       )}
+
+      {/* Void Completed Bill Confirmation */}
+      <Dialog
+        open={!!voidTarget}
+        onOpenChange={(o) => {
+          if (!o && !voidMutation.isPending) setVoidTarget(null);
+        }}
+      >
+        <DialogContent className="sm:max-w-sm rounded-2xl">
+          <DialogHeader>
+            <DialogTitle className="font-bold flex items-center gap-2">
+              <Ban className="size-5 text-destructive" /> Void This Bill?
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <p className="text-sm text-muted-foreground">
+              This will mark bill{" "}
+              <span className="font-mono font-bold text-foreground">
+                #{voidTarget?.id.slice(0, 8).toUpperCase()}
+              </span>{" "}
+              for {voidTarget?.customerName} ({formatCurrency(voidTarget?.total)}) as voided and
+              restore the stock. This action cannot be undone.
+            </p>
+            <div className="space-y-1.5">
+              <Label className="text-xs font-bold">Reason (required)</Label>
+              <Input
+                value={voidReason}
+                onChange={(e) => setVoidReason(e.target.value)}
+                placeholder="e.g. Wrong items, customer returned"
+              />
+            </div>
+          </div>
+          <div className="flex justify-end gap-2 pt-2">
+            <Button
+              variant="outline"
+              onClick={() => setVoidTarget(null)}
+              disabled={voidMutation.isPending}
+              className="rounded-xl h-10 px-4 text-xs font-semibold"
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              disabled={voidMutation.isPending || !voidReason.trim()}
+              onClick={() =>
+                voidMutation.mutate({ saleId: voidTarget.id, reason: voidReason.trim() })
+              }
+              className="rounded-xl h-10 px-4 text-xs font-bold"
+            >
+              {voidMutation.isPending && <Loader2 className="size-4 mr-1 animate-spin" />}
+              Void Bill
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

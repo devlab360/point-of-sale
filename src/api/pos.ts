@@ -830,3 +830,264 @@ export const completePosSaleFn = createServerFn({ method: "POST" })
       return handleApiError(e);
     }
   });
+
+const VoidSaleInput = z.object({
+  saleId: z.string(),
+  reason: z.string().optional().default(""),
+});
+
+export const voidPosSaleFn = createServerFn({ method: "POST" })
+  .validator(VoidSaleInput)
+  .handler(async ({ data }) => {
+    try {
+      const session = await requireAuth();
+      const orgId = session.orgId;
+
+      if (session.role !== "admin" && session.role !== "manager") {
+        return { success: false, error: "Unauthorized: Only Admins or Managers can void bills." };
+      }
+
+      const saleRes = await db
+        .select()
+        .from(schema.sales)
+        .where(and(eq(schema.sales.id, data.saleId), eq(schema.sales.organizationId, orgId)))
+        .limit(1);
+      if (saleRes.length === 0) {
+        return { success: false, error: "Sale not found." };
+      }
+      const sale = saleRes[0];
+      if (sale.status === "voided") {
+        return { success: false, error: "This bill is already voided." };
+      }
+      if (sale.status === "quotation") {
+        return { success: false, error: "Quotations cannot be voided from here." };
+      }
+
+      const saleItems = await db
+        .select()
+        .from(schema.saleItems)
+        .where(eq(schema.saleItems.saleId, data.saleId));
+
+      const productIds = saleItems
+        .filter((i) => i.referenceType === "PRODUCT" && i.productId)
+        .map((i) => i.productId as string);
+
+      await db.transaction(async (tx) => {
+        const productRows = productIds.length
+          ? await tx
+              .select()
+              .from(schema.products)
+              .where(
+                and(inArray(schema.products.id, productIds), eq(schema.products.organizationId, orgId)),
+              )
+          : [];
+
+        const productNameMap = new Map<string, string>();
+        for (const p of productRows) productNameMap.set(p.id, p.name);
+
+        const bundles = productIds.length
+          ? await tx
+              .select()
+              .from(schema.productBundles)
+              .where(
+                and(
+                  inArray(schema.productBundles.bundleProductId, productIds),
+                  eq(schema.productBundles.organizationId, orgId),
+                ),
+              )
+          : [];
+        const bundleMap = new Map<string, any[]>();
+        for (const b of bundles) {
+          if (!bundleMap.has(b.bundleProductId)) bundleMap.set(b.bundleProductId, []);
+          bundleMap.get(b.bundleProductId)!.push(b);
+        }
+
+        const inventoryRows = productIds.length
+          ? await tx
+              .select()
+              .from(schema.productInventory)
+              .where(
+                and(
+                  inArray(schema.productInventory.productId, productIds),
+                  eq(schema.productInventory.organizationId, orgId),
+                ),
+              )
+          : [];
+        const invByProduct = new Map<string, any[]>();
+        for (const r of inventoryRows) {
+          if (!invByProduct.has(r.productId)) invByProduct.set(r.productId, []);
+          invByProduct.get(r.productId)!.push(r);
+        }
+
+        const stockAdjust: { productId: string; amount: number }[] = [];
+        const movements: any[] = [];
+
+        for (const item of saleItems) {
+          if (item.referenceType !== "PRODUCT" || !item.productId) continue;
+          const qty = Number(item.quantity) || 0;
+          if (qty <= 0) continue;
+          const product = productRows.find((p) => p.id === item.productId);
+
+          if (product?.isBundle) {
+            const comps = bundleMap.get(item.productId) || [];
+            if (comps.length === 0) {
+              stockAdjust.push({ productId: item.productId, amount: qty });
+            } else {
+              for (const comp of comps) {
+                const compQty = Number(comp.quantity) * qty;
+                stockAdjust.push({ productId: comp.componentProductId, amount: compQty });
+                movements.push({
+                  organizationId: orgId,
+                  productId: comp.componentProductId,
+                  productName: `Bundle component of ${productNameMap.get(item.productId) || item.productName || ""}`,
+                  action: "void",
+                  quantity: `+${compQty}`,
+                });
+              }
+            }
+          } else {
+            stockAdjust.push({ productId: item.productId, amount: qty });
+            movements.push({
+              organizationId: orgId,
+              productId: item.productId,
+              productName: item.productName || productNameMap.get(item.productId) || "",
+              action: "void",
+              quantity: `+${qty}`,
+            });
+          }
+        }
+
+        for (const adj of stockAdjust) {
+          const prodRow = productRows.find((p) => p.id === adj.productId);
+          if (prodRow) {
+            const newStock = (Number(prodRow.stock || 0) + adj.amount).toFixed(3);
+            await tx
+              .update(schema.products)
+              .set({ stock: newStock })
+              .where(and(eq(schema.products.id, adj.productId), eq(schema.products.organizationId, orgId)));
+          }
+          const rows = invByProduct.get(adj.productId) || [];
+          for (const invRow of rows) {
+            const newStock = (Number(invRow.stock || 0) + adj.amount).toFixed(3);
+            await tx
+              .update(schema.productInventory)
+              .set({ stock: newStock })
+              .where(
+                and(
+                  eq(schema.productInventory.productId, adj.productId),
+                  eq(schema.productInventory.locationId, invRow.locationId),
+                  eq(schema.productInventory.organizationId, orgId),
+                ),
+              );
+          }
+        }
+
+        if (movements.length > 0) {
+          await tx.insert(schema.inventoryMovements).values(movements);
+        }
+
+        const consumptions = await tx
+          .select()
+          .from(schema.inventoryBatchConsumptions)
+          .where(eq(schema.inventoryBatchConsumptions.saleId, data.saleId));
+        for (const c of consumptions) {
+          const batch = await tx
+            .select()
+            .from(schema.inventoryBatches)
+            .where(eq(schema.inventoryBatches.id, c.batchId))
+            .limit(1);
+          if (batch.length > 0) {
+            const newRemaining = (
+              Number(batch[0].quantityRemaining || 0) + Number(c.quantityConsumed || 0)
+            ).toFixed(3);
+            await tx
+              .update(schema.inventoryBatches)
+              .set({ quantityRemaining: newRemaining })
+              .where(eq(schema.inventoryBatches.id, c.batchId));
+          }
+          await tx
+            .delete(schema.inventoryBatchConsumptions)
+            .where(eq(schema.inventoryBatchConsumptions.id, c.id));
+        }
+
+        if (sale.customerId) {
+          const custRes = await tx
+            .select()
+            .from(schema.customers)
+            .where(eq(schema.customers.id, sale.customerId))
+            .limit(1);
+          if (custRes.length > 0) {
+            const c = custRes[0];
+            const total = Number(sale.total || 0);
+            const newTotalSpent = Math.max(0, Number(c.totalSpent || 0) - total);
+            const newCredit =
+              sale.paymentMethod === "credit"
+                ? Math.min(Number(c.credit || 0), Math.max(0, Number(c.credit || 0) - total))
+                : Number(c.credit || 0);
+            await tx
+              .update(schema.customers)
+              .set({
+                totalSpent: newTotalSpent.toFixed(2),
+                visits: Math.max(0, (c.visits || 0) - 1),
+                loyaltyPoints: Math.max(0, (c.loyaltyPoints || 0) - Math.floor(total / 10)),
+                credit: newCredit.toFixed(2),
+              })
+              .where(eq(schema.customers.id, sale.customerId));
+
+            await tx.insert(schema.customerLedgers).values({
+              id: uuidv4(),
+              organizationId: orgId,
+              customerId: sale.customerId,
+              date: new Date().toISOString(),
+              type: "void",
+              amount: `-${total.toFixed(2)}`,
+              balanceAfter: newCredit.toFixed(2),
+              referenceNo: sale.id.slice(0, 8).toUpperCase(),
+              note: `Voided invoice #${sale.id.slice(0, 8).toUpperCase()}${
+                data.reason ? ` (${data.reason})` : ""
+              }`,
+            });
+          }
+        }
+
+        const meta = {
+          ...(sale.metadata || {}),
+          voided: true,
+          voidedAt: new Date().toISOString(),
+          voidedBy: session.userName || session.userId,
+          voidReason: data.reason || "",
+        };
+        await tx
+          .update(schema.sales)
+          .set({ status: "voided", metadata: meta })
+          .where(eq(schema.sales.id, data.saleId));
+
+        const cashierName = session.userName || session.userId || "Cashier";
+        const totalAmt = Number(sale.total || 0);
+        await tx.insert(schema.activityLog).values({
+          id: uuidv4(),
+          organizationId: orgId,
+          user: cashierName,
+          action: "POS Sale Voided",
+          details: `Invoice #${sale.id.slice(0, 8).toUpperCase()} for ${sale.customerName} - Amount: ${totalAmt.toFixed(2)} voided${
+            data.reason ? ` (${data.reason})` : ""
+          }`,
+          timestamp: new Date().toISOString(),
+          type: "sale",
+        });
+        await tx.insert(schema.notifications).values({
+          id: uuidv4(),
+          organizationId: orgId,
+          title: "POS Sale Voided",
+          description: `Bill #${sale.id.slice(0, 8).toUpperCase()} of ${totalAmt.toFixed(2)} voided by ${cashierName}`,
+          type: "sale",
+          timestamp: new Date().toISOString(),
+          read: false,
+        });
+      });
+
+      return { success: true, message: "Bill voided and stock restored." };
+    } catch (e) {
+      return handleApiError(e);
+    }
+  });

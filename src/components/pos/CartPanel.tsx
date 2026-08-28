@@ -17,6 +17,7 @@ import {
   FileText,
   ChevronRight,
   ShieldCheck,
+  Ban,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SearchableSelect } from "@/components/ui/searchable-select";
@@ -31,9 +32,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 export function CartPanel({
   state,
   onCheckout,
+  onPrintBill,
 }: {
   state: any;
   onCheckout?: (isQuotation?: boolean) => void;
+  onPrintBill?: () => void;
 }) {
   const {
     mobileTab,
@@ -54,6 +57,7 @@ export function CartPanel({
     setShowCoupon,
     appliedCoupon,
     holdInvoice,
+    voidCart,
     subtotal,
     discountAmt,
     settings,
@@ -83,6 +87,7 @@ export function CartPanel({
   const hasRepairs = hasCapability(settings?.businessType, "REPAIRS");
 
   const [showRepairDialog, setShowRepairDialog] = useState(false);
+  const [showVoidConfirm, setShowVoidConfirm] = useState(false);
 
   const sendToKitchen = useMutation({
     mutationFn: (data: any) => createKOTFn({ data }),
@@ -388,6 +393,17 @@ export function CartPanel({
           </div>
 
           <div className="flex items-center gap-1.5 shrink-0">
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={() => setShowVoidConfirm(true)}
+              disabled={lines.length === 0}
+              className="h-10 rounded-lg px-2.5 text-xs font-bold"
+              title="Void current bill (clear cart)"
+            >
+              <Ban className="size-3.5 mr-1" /> Void
+            </Button>
+
             {hasRepairs && (
               <Button
                 variant="outline"
@@ -688,7 +704,8 @@ export function CartPanel({
             variant="outline"
             className="h-12 w-12 rounded-xl shrink-0"
             aria-label="Print"
-            onClick={() => window.print()}
+            disabled={lines.length === 0}
+            onClick={onPrintBill}
           >
             <Printer className="size-5" />
           </Button>
@@ -743,6 +760,43 @@ export function CartPanel({
                 })}
               </div>
             )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Void Current Bill Confirmation */}
+      <Dialog open={showVoidConfirm} onOpenChange={setShowVoidConfirm}>
+        <DialogContent className="sm:max-w-sm rounded-2xl">
+          <DialogHeader>
+            <DialogTitle className="font-bold flex items-center gap-2">
+              <Ban className="size-5 text-destructive" /> Void This Bill?
+            </DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            This will clear the current cart and remove all {lines.length}{" "}
+            {lines.length === 1 ? "item" : "items"} from this bill. This action cannot be undone.
+          </p>
+          <div className="flex justify-end gap-2 pt-2">
+            <Button
+              variant="outline"
+              onClick={() => setShowVoidConfirm(false)}
+              className="rounded-xl h-10 px-4 text-xs font-semibold"
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => {
+                voidCart();
+                setActiveInput(null);
+                setKeyboardOpen(false);
+                setShowVoidConfirm(false);
+                toast.success("Bill voided");
+              }}
+              className="rounded-xl h-10 px-4 text-xs font-bold"
+            >
+              Void Bill
+            </Button>
           </div>
         </DialogContent>
       </Dialog>

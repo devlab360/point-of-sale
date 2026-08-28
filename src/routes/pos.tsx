@@ -16,6 +16,7 @@ import { PosPrintLayouts } from "@/components/pos/PosPrintLayouts";
 import { sendAutomatedReceipt } from "@/lib/automation/receipt-bot";
 import { numberToWords } from "@/lib/number-to-words";
 import { sendAutomatedLowStockAlert } from "@/lib/automation/inventory-bot";
+import { printReceiptIframe } from "@/lib/printIframe";
 
 import { POSSkeleton } from "@/components/skeletons/POSSkeleton";
 import { ErrorState } from "@/components/ui/error-state";
@@ -479,7 +480,7 @@ function PosScreen() {
         state.setPrintFormat("thermal");
         requestAnimationFrame(() => {
           requestAnimationFrame(() => {
-            window.print();
+            printReceiptIframe();
           });
         });
       }
@@ -500,6 +501,53 @@ function PosScreen() {
     } finally {
       state.setIsCompletingSale(false);
     }
+  };
+
+  const handlePrintBill = () => {
+    if (lines.length === 0) return toast.error("Cart is empty");
+
+    const totalVal = total;
+    const printObj = {
+      id: "PREVIEW",
+      storeName: state.settings?.storeName,
+      storeAddress: state.settings?.address,
+      storePhone: state.settings?.phone,
+      receiptHeader: state.settings?.headerNote,
+      receiptFooter: state.settings?.footerNote,
+      receiptDeclaration: state.settings?.receiptDeclaration,
+      termsAndConditions: state.settings?.termsAndConditions,
+      privacyPolicy: state.settings?.privacyPolicy,
+      bankDetails: state.settings?.bankDetails,
+      upiId: state.settings?.upiId,
+      customer: activeCustomer.name,
+      customerObj: activeCustomer,
+      customerType: activeCustomer.type,
+      customerGstin: activeCustomer.gstin,
+      customerStateCode: activeCustomer.stateCode,
+      amountInWords: numberToWords(totalVal),
+      date: state.formatDateTime(new Date()),
+      lines,
+      subtotal,
+      discountAmt,
+      taxAmt: state.taxAmt,
+      cgstAmt: state.totalCgst,
+      sgstAmt: state.totalSgst,
+      igstAmt: state.totalIgst,
+      total: totalVal,
+      payment: (payment as string) === "unpaid" ? "cash" : payment,
+      status: "draft",
+      changeDue: payment === "cash" ? (changeDue > 0 ? changeDue : 0) : null,
+      cashTendered:
+        payment === "cash" ? (state.cashTendered ? parseFloat(state.cashTendered) : totalVal) : null,
+    };
+
+    state.setPrintFormat("thermal");
+    setPrintData(printObj);
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        printReceiptIframe();
+      });
+    });
   };
 
   const resumeInvoice = async (held: any) => {
@@ -589,7 +637,7 @@ function PosScreen() {
           title="Drag to resize cart panel"
         />
 
-        <CartPanel state={state} onCheckout={handleCheckout} />
+        <CartPanel state={state} onCheckout={handleCheckout} onPrintBill={handlePrintBill} />
 
         {/* Floating Mobile Cart Summary Pill (Shown when looking at Catalog on mobile with items in cart) */}
         {mobileTab === "products" && cartItemCount > 0 && (

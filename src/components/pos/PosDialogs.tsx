@@ -80,6 +80,7 @@ import { createProductFn } from "@/api/products";
 import { createServiceItemFn } from "@/api/services";
 import { deleteHeldInvoiceFn, splitHeldInvoiceFn } from "@/api/pos";
 import { toast } from "sonner";
+import { printReceiptIframe } from "@/lib/printIframe";
 import { SplitCheckModal } from "./SplitCheckModal";
 import { useQuery } from "@tanstack/react-query";
 import { useDebounce } from "@/hooks/useDebounce";
@@ -181,7 +182,7 @@ export function PosDialogs({
   useEffect(() => {
     if (!pendingPrint) return;
     const t = setTimeout(() => {
-      window.print();
+      printReceiptIframe();
       setSaleComplete(null);
       setPrintData(null);
       setPendingPrint(null);

@@ -484,6 +484,19 @@ input[type="number"] {
 /* Hide Radix dialog/alert portals (and their popper layers) so only the
    print receipt (the `hidden print:*` blocks) is printed in the POS. */
 @media print {
+  @page {
+    /* Zero page margin removes the browser's default print header/footer
+       (page title, URL, and date) shown at the top/bottom of the sheet.
+       The receipt wrappers carry their own internal padding, so content
+       is not clipped. */
+    margin: 0 !important;
+    size: auto;
+  }
+  html,
+  body {
+    margin: 0 !important;
+    padding: 0 !important;
+  }
   [data-radix-portal],
   [data-radix-popper-content-wrapper] {
     display: none !important;
