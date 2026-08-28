@@ -22,6 +22,7 @@ import { DataPage } from "@/components/layout/DataPage";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PaginationControls } from "@/components/ui/pagination-controls";
 import { SearchableSelect } from "@/components/ui/searchable-select";
+import { printReceiptIframe } from "@/lib/printIframe";
 import { useDebounce } from "@/hooks/useDebounce";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
@@ -64,7 +65,9 @@ function SalesPage() {
     (filters.status ? 1 : 0) + (filters.payment ? 1 : 0) + (filters.sync ? 1 : 0);
 
   const queryClient = useQueryClient();
-  const canVoid = ["admin", "manager", "store_admin", "super_admin"].includes(user?.role);
+  const canVoid = ["admin", "manager", "store_admin", "super_admin", "cashier", "owner"].includes(
+    user?.role?.toLowerCase?.() || "cashier",
+  );
   const [voidTarget, setVoidTarget] = useState<any | null>(null);
   const [voidReason, setVoidReason] = useState("");
 
@@ -189,7 +192,9 @@ function SalesPage() {
 
   const printReceipt = (s: any) => {
     setViewSale(s);
-    setTimeout(() => window.print(), 200);
+    setTimeout(() => {
+      printReceiptIframe(".pos-sales-print-receipt");
+    }, 150);
   };
   const handlePrintDirect = printReceipt;
 
@@ -439,7 +444,7 @@ function SalesPage() {
                               >
                                 <Printer className="size-4" />
                               </Button>
-                              {canVoid && s.status === "completed" && !s.metadata?.voided && (
+                              {canVoid && s.status !== "voided" && !s.metadata?.voided && (
                                 <Button
                                   variant="ghost"
                                   size="icon"
@@ -634,15 +639,31 @@ function SalesPage() {
                   </div>
                 )}
               </div>
-              <Button
-                className="w-full"
-                onClick={() => {
-                  setViewSale(null);
-                  printReceipt(viewSale);
-                }}
-              >
-                <Printer className="size-4 mr-2" /> Reprint Receipt
-              </Button>
+              <div className="grid grid-cols-2 gap-2">
+                <Button
+                  variant="outline"
+                  className="w-full font-bold"
+                  onClick={() => {
+                    setViewSale(null);
+                    printReceipt(viewSale);
+                  }}
+                >
+                  <Printer className="size-4 mr-1.5" /> Reprint Receipt
+                </Button>
+                {canVoid && viewSale.status !== "voided" && !viewSale.metadata?.voided && (
+                  <Button
+                    variant="destructive"
+                    className="w-full font-bold"
+                    onClick={() => {
+                      setVoidTarget(viewSale);
+                      setVoidReason("");
+                      setViewSale(null);
+                    }}
+                  >
+                    <Ban className="size-4 mr-1.5" /> Void Bill
+                  </Button>
+                )}
+              </div>
             </div>
           )}
         </DialogContent>
@@ -650,7 +671,7 @@ function SalesPage() {
 
       {/* Print receipt */}
       {viewSale && (
-        <div className="hidden print:block fixed inset-0 z-[200] bg-white text-black text-[12px] font-mono leading-tight p-4">
+        <div className="pos-sales-print-receipt hidden print:block fixed inset-0 z-[200] bg-white text-black text-[12px] font-mono leading-tight p-4">
           <div className="max-w-[300px] mx-auto">
             <div className="text-center mb-3">
               <h1 className="text-xl font-bold">{storeName}</h1>

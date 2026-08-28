@@ -65,8 +65,8 @@ import {
   Ticket,
   Tag,
   Clock,
-  Gift,
   BadgePercent,
+  Ban,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 // Use queryClient from state
@@ -78,7 +78,7 @@ import { createCustomerFn, getCustomersFn } from "@/api/customers";
 import { getCouponsFn } from "@/api/coupons";
 import { createProductFn } from "@/api/products";
 import { createServiceItemFn } from "@/api/services";
-import { deleteHeldInvoiceFn, splitHeldInvoiceFn } from "@/api/pos";
+import { deleteHeldInvoiceFn, splitHeldInvoiceFn, voidPosSaleFn } from "@/api/pos";
 import { toast } from "sonner";
 import { printReceiptIframe } from "@/lib/printIframe";
 import { SplitCheckModal } from "./SplitCheckModal";
@@ -182,7 +182,8 @@ export function PosDialogs({
   useEffect(() => {
     if (!pendingPrint) return;
     const t = setTimeout(() => {
-      printReceiptIframe();
+      const selector = pendingPrint === "a4" ? ".pos-print-a4" : ".pos-print-thermal";
+      printReceiptIframe(selector);
       setSaleComplete(null);
       setPrintData(null);
       setPendingPrint(null);
@@ -1176,16 +1177,18 @@ export function PosDialogs({
                     </Button>
                     <Button
                       size="sm"
-                      variant="ghost"
+                      variant="outline"
                       onClick={async () => {
+                        const ok = window.confirm(`Are you sure you want to void held bill for ${h.customerName || "Walk-in"}?`);
+                        if (!ok) return;
                         await deleteHeldInvoiceFn({ data: { id: h.id } });
                         refetchHeld();
-                        toast.success("Held invoice removed");
+                        toast.success("Held bill voided");
                       }}
-                      className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive"
-                      title="Delete held bill"
+                      className="h-8 text-xs font-semibold text-destructive border-destructive/30 hover:bg-destructive/10"
+                      title="Void held bill"
                     >
-                      <Trash2 className="size-4" />
+                      <Ban className="size-3.5 mr-1" /> Void
                     </Button>
                   </div>
                 </div>
@@ -1574,6 +1577,41 @@ export function PosDialogs({
                 <MessageCircle className="mr-2 size-4" /> WhatsApp
               </Button>
             )}
+
+            <Button
+              variant="destructive"
+              onClick={async () => {
+                if (!saleComplete?.id) return;
+                const billId = String(saleComplete.id);
+                const ok = window.confirm(
+                  `Are you sure you want to VOID bill #${billId.slice(0, 8).toUpperCase()}?\nThis will restore product stock immediately.`,
+                );
+                if (!ok) return;
+                try {
+                  const res = await voidPosSaleFn({
+                    data: {
+                      saleId: billId,
+                      reason: "Voided directly from POS terminal",
+                    },
+                  });
+                  if (res?.success) {
+                    toast.success("Bill voided and inventory restored.");
+                    setSaleComplete(null);
+                    setPrintData(null);
+                    queryClient.invalidateQueries({ queryKey: ["posBootstrap"] });
+                    queryClient.invalidateQueries({ queryKey: ["sales"] });
+                    queryClient.invalidateQueries({ queryKey: ["products"] });
+                  } else {
+                    toast.error(res?.error || "Failed to void sale");
+                  }
+                } catch (e: any) {
+                  toast.error(e.message || "Failed to void sale");
+                }
+              }}
+              className="font-bold border border-destructive/30 mt-1"
+            >
+              <Ban className="mr-2 size-4" /> Void This Sale
+            </Button>
           </div>
         </DialogContent>
       </Dialog>

@@ -481,49 +481,110 @@ input[type="number"] {
   -moz-appearance: textfield;
 }
 
-/* Hide Radix dialog/alert portals (and their popper layers) so only the
-   print receipt (the `hidden print:*` blocks) is printed in the POS. */
+/* =========================================================================
+   PRINT STYLES: Strip browser headers/footers, app navigation, sidebars & modals
+   so ONLY the clean receipt / invoice is printed.
+   ========================================================================= */
+@page {
+  size: auto;
+  margin: 0mm !important;
+}
+
 @media print {
   @page {
-    /* Zero page margin removes the browser's default print header/footer
-       (page title, URL, and date) shown at the top/bottom of the sheet.
-       The receipt wrappers carry their own internal padding, so content
-       is not clipped. */
-    margin: 0 !important;
     size: auto;
+    margin: 0mm !important;
   }
+
   html,
   body {
     margin: 0 !important;
     padding: 0 !important;
+    background: #fff !important;
+    color: #000 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
   }
+
+  /* 1. Completely hide application navigation, headers, sidebars, bottom nav, and floating tools */
+  aside,
+  header,
+  nav,
+  .app-header,
+  .app-sidebar,
+  .bottom-nav,
+  .bottom-nav-spacer,
+  [role="banner"],
+  [role="navigation"],
+  [data-sonner-toaster],
+  .sonner-toaster,
+  .no-print,
+  .print\:hidden {
+    display: none !important;
+  }
+
+  /* 2. Hide dialog portals and dropdowns during print */
   [data-radix-portal],
   [data-radix-popper-content-wrapper] {
     display: none !important;
   }
-  body {
-    background: #fff !important;
+
+  /* 3. In POS: hide product catalog, cart panel, action buttons when printing receipt */
+  .pos-catalog,
+  .pos-cart,
+  .pos-header,
+  .pos-screen-layout {
+    display: none !important;
   }
 
-  /* Bulletproof reveal of the printable receipt. The receipt wrappers start as
-     `hidden` (display:none) and rely on Tailwind's `print:*` variant, which can
-     be fragile depending on utility ordering. Force them visible with
-     `!important` and neutralize the fixed/inset positioning so the receipt
-     flows normally across the printed page. */
+  /* 4. Display thermal receipt cleanly and centered */
   .pos-print-thermal {
     display: flex !important;
-  }
-  .pos-print-a4 {
-    display: block !important;
-  }
-  .pos-print-thermal,
-  .pos-print-a4 {
+    justify-content: center !important;
+    align-items: flex-start !important;
     position: static !important;
     inset: auto !important;
     width: 100% !important;
     max-width: none !important;
     background: #fff !important;
+    color: #000 !important;
     box-shadow: none !important;
     overflow: visible !important;
+    padding: 0 !important;
+    margin: 0 auto !important;
+  }
+
+  .pos-print-thermal > div {
+    width: 80mm !important;
+    max-width: 100% !important;
+    padding: 3mm 2mm !important;
+    margin: 0 auto !important;
+  }
+
+  /* 5. Display A4 invoice cleanly */
+  .pos-print-a4 {
+    display: block !important;
+    position: static !important;
+    inset: auto !important;
+    width: 100% !important;
+    max-width: none !important;
+    background: #fff !important;
+    color: #000 !important;
+    box-shadow: none !important;
+    overflow: visible !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  /* 6. Sales history receipt container */
+  .pos-sales-print-receipt {
+    display: block !important;
+    position: static !important;
+    inset: auto !important;
+    width: 100% !important;
+    max-width: 80mm !important;
+    margin: 0 auto !important;
+    background: #fff !important;
+    color: #000 !important;
   }
 }

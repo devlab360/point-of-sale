@@ -843,8 +843,9 @@ export const voidPosSaleFn = createServerFn({ method: "POST" })
       const session = await requireAuth();
       const orgId = session.orgId;
 
-      if (session.role !== "admin" && session.role !== "manager") {
-        return { success: false, error: "Unauthorized: Only Admins or Managers can void bills." };
+      const validRoles = ["admin", "manager", "store_admin", "super_admin", "cashier", "owner"];
+      if (session.role && !validRoles.includes(session.role.toLowerCase())) {
+        return { success: false, error: "Unauthorized: You do not have permission to void bills." };
       }
 
       const saleRes = await db
@@ -858,9 +859,6 @@ export const voidPosSaleFn = createServerFn({ method: "POST" })
       const sale = saleRes[0];
       if (sale.status === "voided") {
         return { success: false, error: "This bill is already voided." };
-      }
-      if (sale.status === "quotation") {
-        return { success: false, error: "Quotations cannot be voided from here." };
       }
 
       const saleItems = await db
