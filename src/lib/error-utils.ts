@@ -39,7 +39,9 @@ export function handleApiError(
       return { success: false, code: 404, error: e.message };
     }
 
-    console.error("API Error:", e.stack || e.message);
+    if (process.env.NODE_ENV !== "production") {
+      console.error("API Error:", e.stack || e.message);
+    }
 
     // Check for PostgreSQL / SQLite constraint violations
     const cause = (e as any).cause || {};

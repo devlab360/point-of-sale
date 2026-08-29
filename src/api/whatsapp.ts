@@ -60,7 +60,7 @@ export const sendWhatsAppTextFn = createServerFn({ method: "POST" })
       const resData = await res.json();
 
       if (!res.ok) {
-        console.error("[WA API Error]", resData);
+        if (process.env.NODE_ENV !== "production") console.error("[WA API Error]", resData);
         const errorMsg = resData.error?.message || "Failed to send WhatsApp message";
         const errorDetails = resData.error?.error_user_msg || resData.error?.type || "";
         return {
@@ -72,7 +72,7 @@ export const sendWhatsAppTextFn = createServerFn({ method: "POST" })
 
       return { success: true as const, data: resData };
     } catch (error: any) {
-      console.error("[sendWhatsAppTextFn]", error);
+      if (process.env.NODE_ENV !== "production") console.error("[sendWhatsAppTextFn]", error);
       // If it's our own thrown error (like Missing token), return it directly so user can debug
       if (error.message?.includes("Missing WA_")) {
         return { success: false as const, code: 500, error: error.message };
@@ -119,7 +119,7 @@ export const sendWhatsAppDocumentFn = createServerFn({ method: "POST" })
       const resData = await res.json();
 
       if (!res.ok) {
-        console.error("[WA API Error]", resData);
+        if (process.env.NODE_ENV !== "production") console.error("[WA API Error]", resData);
         const errorMsg = resData.error?.message || "Failed to send WhatsApp document";
         return {
           success: false as const,
