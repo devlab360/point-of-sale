@@ -1,4 +1,5 @@
 import { useCurrency } from "@/lib/currency";
+import { usePreferences } from "@/contexts/PreferencesContext";
 import QRCode from "react-qr-code";
 
 const fmt = (val: any): string => (Number(val) || 0).toFixed(2);
@@ -25,9 +26,21 @@ function BankDetailsDisplay({ data, className = "" }: { data: string; className?
 export function PosPrintLayouts({ state, preview = false }: { state: any; preview?: boolean }) {
   const { printData, printFormat, settings } = state;
   const { currencySymbol: hookCurrencySymbol } = useCurrency();
+  const { formatDateTime } = usePreferences();
   const currencySymbol = settings?.currencySymbol || hookCurrencySymbol || "$";
 
   if (!printData) return null;
+
+  const formattedDate = (() => {
+    if (!printData.date) return "";
+    try {
+      const d = new Date(printData.date);
+      if (!isNaN(d.getTime())) {
+        return formatDateTime(d);
+      }
+    } catch {}
+    return String(printData.date);
+  })();
 
   return (
     <>
@@ -79,7 +92,7 @@ export function PosPrintLayouts({ state, preview = false }: { state: any; previe
               </div>
               <div className="flex justify-between items-start mb-2">
                 <span className="font-bold text-gray-600">Date:</span>
-                <span className="font-black text-right">{printData.date}</span>
+                <span className="font-black text-right">{formattedDate}</span>
               </div>
               <div className="flex flex-col mb-1 border-t border-gray-200 pt-2 mt-1">
                 <span className="font-bold text-gray-600 text-[10px] uppercase">Bill To:</span>
@@ -404,7 +417,7 @@ export function PosPrintLayouts({ state, preview = false }: { state: any; previe
                   <span className="text-gray-500 text-right">Invoice No:</span>
                   <span className="font-bold text-black text-right">{printData.id}</span>
                   <span className="text-gray-500 text-right">Date:</span>
-                  <span className="font-bold text-black text-right">{printData.date}</span>
+                  <span className="font-bold text-black text-right">{formattedDate}</span>
                   {printData.payment && (
                     <>
                       <span className="text-gray-500 text-right">Payment:</span>
