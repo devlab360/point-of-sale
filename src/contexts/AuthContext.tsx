@@ -84,25 +84,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        const storedUserId = SessionStore.getAuthUser();
-        if (storedUserId) {
-          const res = await getCurrentUserFn();
-          if (res && res.success && res.user) {
-            setUser(res.user);
-          } else {
-            SessionStore.clearAll();
-            PersistStore.clearAll();
-            localStorage.clear();
-            sessionStorage.clear();
-            setUser(null);
+        const res = await getCurrentUserFn();
+        if (res && res.success && res.user) {
+          setUser(res.user);
+          SessionStore.setAuthUser(res.user.id);
+          if (res.user.organizationId) {
+            PersistStore.setOrgId(res.user.organizationId);
           }
         } else {
           SessionStore.clearAll();
+          PersistStore.clearAll();
           setUser(null);
         }
       } catch (error) {
-        console.error("Auth check failed:", error);
         SessionStore.clearAll();
+        PersistStore.clearAll();
         setUser(null);
       } finally {
         setIsLoading(false);

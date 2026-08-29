@@ -3,7 +3,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireAuth } from "@/lib/auth-utils";
 import { db } from "@/db";
 import * as schema from "@/db/schema";
-import { eq, and } from "drizzle-orm";
+import { eq, and, inArray } from "drizzle-orm";
 import { v4 as uuidv4 } from "uuid";
 
 export {
@@ -345,7 +345,15 @@ export const getAllServiceVariantsFn = createServerFn({ method: "GET" })
         .from(schema.serviceVariants)
         .where(eq(schema.serviceVariants.organizationId, session.orgId));
 
-      const attributes = await db.select().from(schema.serviceVariantAttributes);
+      if (variants.length === 0) {
+        return { success: true, data: [] };
+      }
+
+      const variantIds = variants.map((v) => v.id);
+      const attributes = await db
+        .select()
+        .from(schema.serviceVariantAttributes)
+        .where(inArray(schema.serviceVariantAttributes.variantId, variantIds));
 
       const variantsWithAttributes = variants.map((v) => {
         const vAttrs = attributes.filter((a) => a.variantId === v.id);

@@ -1,4 +1,4 @@
-import { getCookie } from "@tanstack/react-start/server";
+import { getCookie, deleteCookie } from "@tanstack/react-start/server";
 import { SignJWT, jwtVerify } from "jose";
 import { db } from "@/db";
 import * as schema from "@/db/schema";
@@ -39,7 +39,11 @@ export async function verifySessionToken(token: string): Promise<SessionPayload 
 }
 
 const userStatusCache = new Map<string, { orgId?: string; timestamp: number }>();
-const CACHE_TTL_MS = 30 * 1000; // 30 seconds cache
+const CACHE_TTL_MS = 15 * 1000; // 15 seconds cache
+
+export function invalidateUserSessionCache(userId: string) {
+  userStatusCache.delete(userId);
+}
 
 export async function requireAuth(): Promise<SessionPayload> {
   const token = getCookie("pos_auth_token");
@@ -48,10 +52,14 @@ export async function requireAuth(): Promise<SessionPayload> {
   }
   const payload = await verifySessionToken(token);
   if (!payload) {
-    throw new Error("Unauthorized");
+    try {
+      deleteCookie("pos_auth_token", { path: "/" });
+      deleteCookie("pos_session_org", { path: "/" });
+    } catch {}
+    throw new Error("Unauthorized: Invalid session token");
   }
 
-  // Check 30-second TTL cache for active user verification to avoid DB connection bottlenecks
+  // Check 15-second TTL cache for active user verification
   const cached = userStatusCache.get(payload.userId);
   if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
     if (!payload.orgId && cached.orgId) {
@@ -60,7 +68,7 @@ export async function requireAuth(): Promise<SessionPayload> {
     return payload;
   }
 
-  // Active User Verification (Token Revocation Check)
+  // Active User Verification (Token Revocation Check from Database)
   const users = await db
     .select()
     .from(schema.users)
@@ -74,6 +82,10 @@ export async function requireAuth(): Promise<SessionPayload> {
     users[0].status === "pending"
   ) {
     userStatusCache.delete(payload.userId);
+    try {
+      deleteCookie("pos_auth_token", { path: "/" });
+      deleteCookie("pos_session_org", { path: "/" });
+    } catch {}
     throw new Error("Unauthorized: Account suspended or deleted");
   }
 

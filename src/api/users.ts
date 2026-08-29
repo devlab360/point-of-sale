@@ -4,7 +4,7 @@ import { db } from "@/db";
 import * as schema from "@/db/schema";
 import { eq, and } from "drizzle-orm";
 import { z } from "zod";
-import { requireAuth, requireAdmin } from "@/lib/auth-utils";
+import { requireAuth, requireAdmin, invalidateUserSessionCache } from "@/lib/auth-utils";
 import bcrypt from "bcryptjs";
 import { v4 as uuidv4 } from "uuid";
 import { assertUserLimit } from "@/lib/plan-limits";
@@ -195,6 +195,7 @@ export const updateUserFn = createServerFn({ method: "POST" })
         .update(schema.users)
         .set(updateData)
         .where(and(eq(schema.users.id, data.id), eq(schema.users.organizationId, session.orgId)));
+      invalidateUserSessionCache(data.id);
       return { success: true, message: "User updated successfully" };
     } catch (e) {
       return handleApiError(e);
@@ -214,6 +215,7 @@ export const deleteUserFn = createServerFn({ method: "POST" })
       await db
         .delete(schema.users)
         .where(and(eq(schema.users.id, data.id), eq(schema.users.organizationId, session.orgId)));
+      invalidateUserSessionCache(data.id);
       return { success: true, message: "User deleted successfully" };
     } catch (e) {
       return handleApiError(e);

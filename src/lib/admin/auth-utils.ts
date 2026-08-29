@@ -1,4 +1,4 @@
-import { getCookie } from "@tanstack/react-start/server";
+import { getCookie, deleteCookie } from "@tanstack/react-start/server";
 import { db } from "@/db";
 import * as schema from "@/db/schema";
 import { eq, and } from "drizzle-orm";
@@ -34,6 +34,9 @@ export async function requireSuperAdminSession(): Promise<{ userId: string; sess
   const token = getCookie(SA_COOKIE);
   if (!token) throw new Error("Unauthorized: No super admin session cookie");
   const payload = await verifySaToken(token).catch(() => {
+    try {
+      deleteCookie(SA_COOKIE, { path: "/" });
+    } catch {}
     throw new Error("Unauthorized: Invalid or expired super admin token");
   });
   const sessions = await db
@@ -47,8 +50,23 @@ export async function requireSuperAdminSession(): Promise<{ userId: string; sess
     )
     .limit(1);
   const session = sessions[0];
-  if (!session) throw new Error("Unauthorized: Session not found");
-  if (session.revokedAt) throw new Error("Unauthorized: Session revoked");
-  if (new Date(session.expiresAt) < new Date()) throw new Error("Unauthorized: Session expired");
+  if (!session) {
+    try {
+      deleteCookie(SA_COOKIE, { path: "/" });
+    } catch {}
+    throw new Error("Unauthorized: Session not found");
+  }
+  if (session.revokedAt) {
+    try {
+      deleteCookie(SA_COOKIE, { path: "/" });
+    } catch {}
+    throw new Error("Unauthorized: Session revoked");
+  }
+  if (new Date(session.expiresAt) < new Date()) {
+    try {
+      deleteCookie(SA_COOKIE, { path: "/" });
+    } catch {}
+    throw new Error("Unauthorized: Session expired");
+  }
   return payload;
 }
