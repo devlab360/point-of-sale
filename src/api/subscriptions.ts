@@ -9,8 +9,8 @@ export const getEffectiveMenusFn = createServerFn({ method: "GET" })
   .handler(async () => {
     try {
       const session = await requireAuth();
-      if (session.role === "super_admin" || session.role === "admin") {
-        // Super Admin & Store Organization Admins get full menu access
+      if (session.role === "super_admin") {
+        // Super Admin gets full platform menu access
         return { success: true as const, menus: ["all"] };
       }
       if (!session.orgId) {

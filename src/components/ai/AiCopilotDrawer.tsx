@@ -759,16 +759,16 @@ export function AiCopilotDrawer() {
             cursor: isDragging ? "grabbing" : "grab",
             touchAction: "none",
           }}
-          className="hidden md:block fixed bottom-6 right-6 z-50 group flex items-center gap-2.5 rounded-full bg-gradient-to-r from-[#B58D4C] via-[#CA9E59] to-[#D4AF37] p-3 sm:px-4 sm:py-2.5 text-sm font-bold text-white shadow-xl shadow-[#B58D4C]/25 border border-white/20 hover:shadow-2xl hover:scale-105 active:scale-95 transition-all duration-200"
+          className="hidden md:flex fixed bottom-6 right-6 z-50 group items-center gap-2.5 rounded-full bg-gradient-to-r from-[#B58D4C] via-[#CA9E59] to-[#D4AF37] px-4 py-2 text-xs font-bold text-white shadow-lg shadow-[#B58D4C]/30 border border-white/25 hover:shadow-xl hover:scale-105 active:scale-95 transition-all duration-200 select-none"
           title={`${i18n.advisorTitle} (Ctrl+J)`}
         >
-          <div className="relative grid size-6 place-items-center rounded-full bg-white/20 backdrop-blur-xs">
-            <Sparkles className="size-3.5 text-white animate-pulse" />
+          <div className="relative grid size-5.5 place-items-center rounded-full bg-white/20 backdrop-blur-xs">
+            <Sparkles className="size-3 text-white animate-pulse" />
           </div>
-          <span className="hidden sm:inline tracking-wide font-extrabold text-xs">AI Copilot</span>
+          <span className="hidden sm:inline tracking-wide font-black text-xs">AI Copilot</span>
           <Badge
             variant="secondary"
-            className="hidden sm:inline-flex text-[9px] font-mono font-bold bg-black/20 text-white border-0 px-1.5 py-0"
+            className="hidden sm:inline-flex text-[9px] font-mono font-bold bg-black/25 text-white border-0 px-1.5 py-0.5 rounded-md"
           >
             Ctrl+J
           </Badge>

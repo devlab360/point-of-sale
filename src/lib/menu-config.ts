@@ -368,95 +368,53 @@ export const APP_GROUPS: MenuGroup[] = [
 
 export const PERMISSION_ROUTE_MAP: Record<string, string[]> = {
   pos: ["/pos"],
+  sales: ["/sales"],
+  returns: ["/sales/returns", "/purchases/returns"],
+  quotations: ["/quotations"],
+  "delivery-challans": ["/delivery-challans"],
+  products: ["/products", "/categories", "/brands", "/units"],
   inventory: [
-    "/products",
-    "/services",
-    "/categories",
-    "/brands",
-    "/units",
-    "/suppliers",
-    "/purchases",
-    "/purchases/returns",
     "/inventory",
     "/inventory/adjustments",
     "/inventory/transfers",
     "/inventory/history",
-    "/print-barcodes",
-    "/repairs",
-    "/subscriptions",
-    "/rentals",
-    "/coupons",
-    "/gift-cards",
-    "/loyalty",
-    "/promotions",
-    "/quotations",
-    "/delivery-challans",
   ],
+  services: ["/services"],
+  purchases: ["/purchases", "/purchases/returns"],
+  suppliers: ["/suppliers"],
+  customers: ["/customers", "/portal"],
+  coupons: ["/coupons"],
+  "gift-cards": ["/gift-cards"],
+  loyalty: ["/loyalty"],
+  promotions: ["/promotions"],
+  expenses: ["/expenses"],
+  accounts: ["/accounts"],
+  reports: ["/reports"],
+  "accounting-reports": ["/accounting-reports"],
+  repairs: ["/repairs"],
+  rentals: ["/rentals"],
+  subscriptions: ["/subscriptions"],
   tables: ["/tables"],
   kitchen: ["/kitchen"],
   appointments: ["/appointments"],
-  reports: [
-    "/reports",
-    "/customer-ledger",
-    "/supplier-ledger",
-    "/accounts",
-    "/vouchers",
-    "/day-book",
-    "/activity",
-  ],
-  customers: ["/customers", "/portal"],
-  expenses: ["/expenses"],
-  returns: ["/sales/returns", "/purchases/returns"],
-  settings: ["/settings", "/users", "/locations", "/shifts", "/branches"],
+  users: ["/users"],
+  settings: ["/settings"],
+  activity: ["/activity"],
   notifications: ["/notifications"],
+  ai: ["/profile"],
 };
 
 const DEFAULT_ROLE_PERMISSIONS_FALLBACK: Record<string, string[]> = {
-  admin: [
-    "pos",
-    "inventory",
-    "reports",
-    "customers",
-    "expenses",
-    "discounts",
-    "returns",
-    "settings",
-    "notifications",
-    "tables",
-    "kitchen",
-    "appointments",
-    "quotations",
-    "delivery-challans",
-    "purchases",
-    "suppliers",
-    "accounts",
-  ],
-  manager: [
-    "pos",
-    "inventory",
-    "reports",
-    "customers",
-    "expenses",
-    "discounts",
-    "returns",
-    "notifications",
-    "tables",
-    "kitchen",
-    "appointments",
-    "quotations",
-    "delivery-challans",
-    "purchases",
-    "suppliers",
-    "accounts",
-  ],
-  cashier: ["pos", "customers", "tables", "kitchen", "appointments"],
+  admin: Object.keys(PERMISSION_ROUTE_MAP),
+  manager: Object.keys(PERMISSION_ROUTE_MAP).filter((k) => !["users", "settings"].includes(k)),
+  cashier: ["pos", "customers", "tables", "kitchen", "appointments", "sales", "returns"],
 };
 
 export const ROUTE_CAPABILITY_MAP: Record<string, BusinessCapability[]> = {
   "/pos": ["POS"],
   "/products": ["PRODUCTS"],
   "/services": ["SERVICES"],
-  "/categories": ["PRODUCTS", "SERVICES"], // Often shared
+  "/categories": ["PRODUCTS", "SERVICES"],
   "/brands": ["PRODUCTS"],
   "/units": ["PRODUCTS"],
   "/inventory": ["INVENTORY"],
@@ -465,16 +423,17 @@ export const ROUTE_CAPABILITY_MAP: Record<string, BusinessCapability[]> = {
   "/inventory/history": ["INVENTORY"],
   "/purchases": ["PURCHASES"],
   "/purchases/returns": ["PURCHASES"],
-  "/sales": ["POS"], // Technically invoicing
+  "/sales": ["POS"],
   "/quotations": ["QUOTATIONS", "POS", "PRODUCTS", "WHOLESALE"],
   "/delivery-challans": ["DELIVERY_CHALLANS", "POS", "INVENTORY", "WHOLESALE"],
   "/sales/returns": ["POS"],
   "/customers": ["CUSTOMERS"],
   "/suppliers": ["SUPPLIERS"],
-  "/users": ["STAFF", "SETTINGS"], // Using SETTINGS as fallback for employees management if STAFF isn't there
+  "/users": ["STAFF", "SETTINGS"],
   "/accounts": ["ACCOUNTS"],
   "/expenses": ["EXPENSES"],
   "/reports": ["REPORTS"],
+  "/accounting-reports": ["ACCOUNTS", "REPORTS"],
   "/repairs": ["REPAIRS", "JOB_CARDS", "REPAIR_STATUS"],
   "/subscriptions": ["SUBSCRIPTIONS"],
   "/rentals": ["RENTALS"],
@@ -500,27 +459,35 @@ export function hasPermissionForRoute(
   saasPlan: any,
   businessType?: string,
 ): { allowed: boolean; reason?: string } {
-  // 1. Super Admin & Organization Admin Authorization
-  if (isSuperAdminUser || user?.role?.toLowerCase() === "admin") return { allowed: true };
-  if (routePath.startsWith("/super-admin")) {
+  const userRole = String(user?.role || "").toLowerCase();
+
+  // 1. Root Super Admin Authorization (Global Master Access)
+  if (isSuperAdminUser || userRole === "super_admin") return { allowed: true };
+
+  // Block non-super admins from accessing super admin dashboard
+  if (routePath.startsWith("/super-admin") || routePath.startsWith("/admin")) {
     return {
       allowed: false,
-      reason: "You do not have permission to access the Super Admin dashboard.",
+      reason: "You do not have permission to access the Super Admin governance dashboard.",
     };
   }
 
-  // 2. Core System Routes (Always Available)
-  if (routePath === "/" || routePath === "/profile" || routePath.startsWith("/profile/")) {
+  // 2. Core System Routes (Always Available to Authenticated Users)
+  if (
+    routePath === "/" ||
+    routePath === "/profile" ||
+    routePath.startsWith("/profile/") ||
+    routePath === "/help" ||
+    routePath.startsWith("/help/")
+  ) {
     return { allowed: true };
   }
 
   // 3. Resolve Target Path
   const allItems = APP_GROUPS.flatMap((g) => g.items);
 
-  // First try to find an exact match for the route
+  // Exact match or parent match
   let matchedItem = allItems.find((item) => routePath === item.to);
-
-  // If no exact match (e.g., dynamic routes like /products/123/edit), find the most specific parent
   if (!matchedItem) {
     const parentMatches = allItems.filter((item) => routePath.startsWith(item.to + "/"));
     if (parentMatches.length > 0) {
@@ -531,84 +498,102 @@ export function hasPermissionForRoute(
 
   const targetPath = matchedItem ? matchedItem.to : routePath;
   const label = matchedItem ? matchedItem.label : targetPath;
+  const cleanTarget = targetPath.replace(/^\//, "");
 
-  // 3.5. Business Type Capability Check (Phase 1)
+  // 3.5. Business Type Capability Check
   const routeCapabilities = ROUTE_CAPABILITY_MAP[targetPath] || [];
-  if (routeCapabilities.length > 0) {
-    // If a route requires capabilities, the business type MUST have at least one of them
-    // (e.g. repairs route needs REPAIRS or JOB_CARDS capability)
+  if (routeCapabilities.length > 0 && businessType) {
     const hasAnyRequiredCapability = routeCapabilities.some((cap) =>
       hasCapability(businessType, cap),
     );
     if (!hasAnyRequiredCapability) {
       return {
         allowed: false,
-        reason: `The "${label}" module is not applicable to your business type.`,
+        reason: `The "${label}" module is not applicable to your business type (${businessType}).`,
       };
     }
   }
 
-  // 4. SaaS Plan Authorization
-  if (saasPlan && Array.isArray(saasPlan.features) && saasPlan.features.length > 0) {
-    const requiredFeatureEntry = Object.entries(PERMISSION_ROUTE_MAP).find(([_, paths]) =>
-      paths.some((p) => targetPath === p || targetPath.startsWith(p + "/")),
-    );
-    const legacyFeatureKey = requiredFeatureEntry ? requiredFeatureEntry[0] : null;
+  // 4. SaaS Subscription Plan Authorization (Applies to both Store Admins & Staff)
+  if (saasPlan) {
+    const planFeatures: string[] = Array.isArray(saasPlan.features) ? saasPlan.features : [];
+    const planMenus: string[] = Array.isArray(saasPlan.menus) ? saasPlan.menus : [];
+    const combinedPlanGrants = [...planFeatures, ...planMenus];
 
-    const isAppGroupItem = !!matchedItem;
-    const planAllowsRoute = saasPlan.features.some((feat: string) => {
-      // If it's a distinct sidebar item, it requires an exact match in the features array
-      if (isAppGroupItem) return targetPath === feat;
-      // Otherwise allow dynamic sub-pages (like /products/123) to match their parent prefix
-      return targetPath === feat || targetPath.startsWith(feat + "/");
-    });
+    if (combinedPlanGrants.length > 0 && !combinedPlanGrants.includes("all")) {
+      // Find matching module key in PERMISSION_ROUTE_MAP
+      const requiredModuleEntry = Object.entries(PERMISSION_ROUTE_MAP).find(([_, paths]) =>
+        paths.some((p) => targetPath === p || targetPath.startsWith(p + "/")),
+      );
+      const moduleKey = requiredModuleEntry ? requiredModuleEntry[0] : cleanTarget;
 
-    const planAllowsLegacy = legacyFeatureKey && saasPlan.features.includes(legacyFeatureKey);
+      const planAllowsRoute = combinedPlanGrants.some((grant: string) => {
+        const cleanGrant = grant.replace(/^\//, "");
+        return (
+          grant === targetPath ||
+          grant === cleanTarget ||
+          cleanGrant === moduleKey ||
+          targetPath.startsWith(grant + "/") ||
+          targetPath === `/${cleanGrant}`
+        );
+      });
 
-    if (!planAllowsRoute && !planAllowsLegacy) {
+      if (!planAllowsRoute) {
+        return {
+          allowed: false,
+          reason: `The "${label}" feature is not included in your current subscription plan (${saasPlan.name || "Current Plan"}). Please upgrade your plan in Store Settings to access this module.`,
+        };
+      }
+    }
+  }
+
+  // 5. If user is Store Administrator, they have full access to all plan-allowed features
+  if (userRole === "admin") {
+    return { allowed: true };
+  }
+
+  // 6. Role-Based Authorization on Menu Items
+  if (matchedItem?.roles && matchedItem.roles.length > 0) {
+    if (!matchedItem.roles.includes(userRole)) {
       return {
         allowed: false,
-        reason: `The "${label}" feature is not available on your current plan (${saasPlan.name || "Current Plan"}). Please upgrade your subscription to access this feature.`,
+        reason: `Your assigned role (${userRole}) does not have permission to access ${label}.`,
       };
     }
   }
 
-  // 5. Role-Based Authorization
-  if (matchedItem?.roles && user?.role) {
-    if (!matchedItem.roles.includes(user.role.toLowerCase())) {
-      return {
-        allowed: false,
-        reason: `Your role (${user.role}) does not have access to ${label}.`,
-      };
-    }
+  // 7. User-Specific Granular Employee Permissions
+  const userPerms: string[] = Array.isArray(user?.permissions) && user.permissions.length > 0
+    ? user.permissions
+    : DEFAULT_ROLE_PERMISSIONS_FALLBACK[userRole] || ["pos", "/pos"];
+
+  if (userPerms.includes("all")) {
+    return { allowed: true };
   }
 
-  // 6. User-Specific Employee Permissions Authorization
-  if (user?.role?.toLowerCase() !== "admin") {
-    const userPerms: string[] = Array.isArray(user?.permissions)
-      ? user.permissions
-      : DEFAULT_ROLE_PERMISSIONS_FALLBACK[user?.role?.toLowerCase()] || ["/pos", "pos"];
+  // Find module key
+  const requiredModuleEntry = Object.entries(PERMISSION_ROUTE_MAP).find(([_, paths]) =>
+    paths.some((p) => targetPath === p || targetPath.startsWith(p + "/")),
+  );
+  const moduleKey = requiredModuleEntry ? requiredModuleEntry[0] : cleanTarget;
 
-    // Direct route match (e.g., "/suppliers" or "suppliers" or sub-paths)
-    const hasDirectMatch = userPerms.some(
-      (p) =>
-        p === targetPath ||
-        p === targetPath.replace(/^\//, "") ||
-        (p.startsWith("/") && (targetPath === p || targetPath.startsWith(p + "/"))),
+  const hasEmployeePermission = userPerms.some((p: string) => {
+    const cleanPerm = p.replace(/^\//, "");
+    return (
+      p === targetPath ||
+      p === cleanTarget ||
+      cleanPerm === moduleKey ||
+      cleanPerm === cleanTarget ||
+      targetPath.startsWith(p + "/") ||
+      targetPath === `/${cleanPerm}`
     );
+  });
 
-    // Legacy group mapping fallback (e.g., "inventory", "reports", "pos")
-    const requiredPermEntry = Object.entries(PERMISSION_ROUTE_MAP).find(([_, paths]) =>
-      paths.some((p) => targetPath === p || targetPath.startsWith(p + "/")),
-    );
-    const hasLegacyMatch = requiredPermEntry && userPerms.includes(requiredPermEntry[0]);
-
-    if (!hasDirectMatch && !hasLegacyMatch) {
-      return {
-        allowed: false,
-        reason: `You do not have permission to access "${label}". Contact your store administrator.`,
-      };
-    }
+  if (!hasEmployeePermission) {
+    return {
+      allowed: false,
+      reason: `You do not have permission to access "${label}". Please contact your store administrator for authorization.`,
+    };
   }
 
   return { allowed: true };

@@ -116,10 +116,13 @@ export const createUserFn = createServerFn({ method: "POST" })
       if (filteredPermissions && filteredPermissions.length > 0) {
         const menusRes = await getEffectiveMenusFn({ data: {} });
         if (menusRes.success && !menusRes.menus.includes("all")) {
-          // Keep only permissions that match allowed menus (e.g. products.view -> products)
+          // Keep permissions that match allowed plan menus
           filteredPermissions = filteredPermissions.filter((p) => {
-            const baseModule = p.split(".")[0];
-            return menusRes.menus.includes(baseModule);
+            const cleanP = p.replace(/^\//, "").split("/")[0].split(".")[0];
+            return menusRes.menus.some((m: string) => {
+              const cleanM = m.replace(/^\//, "");
+              return cleanM === cleanP || cleanM === "all" || p === m || p.startsWith(m + "/");
+            });
           });
         }
       }
@@ -175,8 +178,11 @@ export const updateUserFn = createServerFn({ method: "POST" })
         const menusRes = await getEffectiveMenusFn({ data: {} });
         if (menusRes.success && !menusRes.menus.includes("all")) {
           updateData.permissions = updateData.permissions.filter((p: string) => {
-            const baseModule = p.split(".")[0];
-            return menusRes.menus.includes(baseModule);
+            const cleanP = p.replace(/^\//, "").split("/")[0].split(".")[0];
+            return menusRes.menus.some((m: string) => {
+              const cleanM = m.replace(/^\//, "");
+              return cleanM === cleanP || cleanM === "all" || p === m || p.startsWith(m + "/");
+            });
           });
         }
       }

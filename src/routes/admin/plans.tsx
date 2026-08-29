@@ -56,54 +56,14 @@ import {
 } from "lucide-react";
 import { exportToCSV } from "@/lib/export-utils";
 
+import { SYSTEM_MODULES as AVAILABLE_MODULES } from "@/constants";
+
 export const Route = createFileRoute("/admin/plans")({
   head: () => ({ meta: [{ title: "SaaS Plans · Super Admin OneDesk360" }] }),
   component: SuperAdminPlansPage,
 });
 
-export const AVAILABLE_MODULES = [
-  // Core Sales & POS
-  { id: "pos", name: "POS Terminal (Billing)", category: "Sales & POS" },
-  { id: "sales", name: "Sales Invoices & Orders", category: "Sales & POS" },
-  { id: "returns", name: "Sales Returns & Refunds", category: "Sales & POS" },
-  { id: "quotations", name: "Quotations & Estimates", category: "Sales & POS" },
-  { id: "delivery-challans", name: "Delivery Challans", category: "Sales & POS" },
-
-  // Catalog & Stock
-  { id: "products", name: "Product Catalog & Barcodes", category: "Catalog & Stock" },
-  { id: "inventory", name: "Inventory (Adjustments & Transfers)", category: "Catalog & Stock" },
-  { id: "services", name: "Services Catalog", category: "Catalog & Stock" },
-
-  // Purchases & Vendors
-  { id: "purchases", name: "Purchase Orders & Returns", category: "Purchases & Vendors" },
-  { id: "suppliers", name: "Suppliers & Vendors Directory", category: "Purchases & Vendors" },
-
-  // Customers & Marketing
-  { id: "customers", name: "Customers & CRM", category: "Marketing & CRM" },
-  { id: "coupons", name: "Coupons & Discounts", category: "Marketing & CRM" },
-  { id: "gift-cards", name: "Gift Cards Management", category: "Marketing & CRM" },
-  { id: "loyalty", name: "Loyalty Program & Points", category: "Marketing & CRM" },
-  { id: "promotions", name: "Promotions & Deals", category: "Marketing & CRM" },
-  { id: "whatsapp", name: "WhatsApp Notifications", category: "Marketing & CRM" },
-
-  // Finance & Accounting
-  { id: "expenses", name: "Expense Management", category: "Finance & Accounts" },
-  { id: "accounts", name: "Chart of Accounts & Ledger", category: "Finance & Accounts" },
-  { id: "reports", name: "Financial & Sales Analytics", category: "Finance & Accounts" },
-  { id: "accounting-reports", name: "Accounting Reports (P&L, Balance Sheet)", category: "Finance & Accounts" },
-
-  // Specialized Verticals & Services
-  { id: "repairs", name: "Repair Service Job Sheets", category: "Specialized Verticals" },
-  { id: "rentals", name: "Equipment Rentals", category: "Specialized Verticals" },
-  { id: "subscriptions", name: "Recurring Subscriptions", category: "Specialized Verticals" },
-  { id: "tables", name: "Restaurant Tables Management", category: "Specialized Verticals" },
-  { id: "kitchen", name: "Kitchen Order Tickets (KOT)", category: "Specialized Verticals" },
-  { id: "appointments", name: "Appointment Booking", category: "Specialized Verticals" },
-
-  // Administration & Intelligence
-  { id: "users", name: "Staff Users & Role Permissions", category: "Administration & AI" },
-  { id: "ai", name: "AI Copilot Assistant", category: "Administration & AI" },
-];
+export { AVAILABLE_MODULES };
 
 
 const defaultEditingPlan = {

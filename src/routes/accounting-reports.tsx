@@ -39,6 +39,8 @@ import { PersistStore } from "@/lib/session-store";
 import { usePreferences } from "@/contexts/PreferencesContext";
 import { exportToCSV } from "@/lib/csv";
 import { SearchableSelect } from "@/components/ui/searchable-select";
+import { printAccountingStatement } from "@/lib/accounting-print";
+import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/accounting-reports")({
@@ -47,10 +49,12 @@ export const Route = createFileRoute("/accounting-reports")({
 });
 
 function AccountingReportsPage() {
-  const { formatCurrency } = useCurrency();
+  const { formatCurrency, currencySymbol } = useCurrency();
   const { formatDate, formatDateTime } = usePreferences();
+  const { saasOrg, settings } = useAuth();
   const orgId = PersistStore.getOrgId() || "default";
 
+  const [activeTab, setActiveTab] = useState<string>("trial-balance");
   const [dateRange, setDateRange] = useState<"all" | "this_month" | "last_month" | "this_year">("all");
   const [selectedLedgerAccountId, setSelectedLedgerAccountId] = useState<string>("all");
 
@@ -178,6 +182,13 @@ function AccountingReportsPage() {
     return rows;
   }, [filteredVouchers, selectedLedgerAccountId]);
 
+  const datePeriodLabels: Record<string, string> = {
+    all: "All Time",
+    this_month: "This Month",
+    last_month: "Last Month",
+    this_year: "This Year",
+  };
+
   const handleExportTrialBalance = () => {
     exportToCSV(
       trialBalanceData,
@@ -193,7 +204,67 @@ function AccountingReportsPage() {
   };
 
   const handlePrint = () => {
-    window.print();
+    const storeTitle = settings?.storeName || saasOrg?.name || "OneDesk360 Store";
+    const periodStr = datePeriodLabels[dateRange] || "All Time";
+    const currSym = currencySymbol || "₹";
+
+    if (activeTab === "trial-balance") {
+      printAccountingStatement({
+        reportType: "trial-balance",
+        storeName: storeTitle,
+        periodLabel: periodStr,
+        currencySymbol: currSym,
+        data: {
+          accounts: trialBalanceData,
+          totalDebit,
+          totalCredit,
+        },
+      });
+    } else if (activeTab === "balance-sheet") {
+      printAccountingStatement({
+        reportType: "balance-sheet",
+        storeName: storeTitle,
+        periodLabel: periodStr,
+        currencySymbol: currSym,
+        data: {
+          assets,
+          liabilities,
+          equity,
+          totalAssets,
+          totalLiabilities,
+          totalEquity,
+          totalLiabilitiesAndEquity,
+          isBalanced,
+        },
+      });
+    } else if (activeTab === "pnl") {
+      printAccountingStatement({
+        reportType: "pnl",
+        storeName: storeTitle,
+        periodLabel: periodStr,
+        currencySymbol: currSym,
+        data: {
+          grossRevenue,
+          costOfGoodsSold,
+          grossProfit,
+          otherExpenses,
+          totalOtherExpenses,
+          netOperatingProfit,
+          netMarginPct,
+          incomeAccounts,
+        },
+      });
+    } else if (activeTab === "ledger") {
+      printAccountingStatement({
+        reportType: "ledger",
+        storeName: storeTitle,
+        periodLabel: periodStr,
+        currencySymbol: currSym,
+        data: {
+          ledgerRows,
+        },
+      });
+    }
   };
 
   if (accountsError) {
@@ -294,7 +365,7 @@ function AccountingReportsPage() {
             </div>
 
             {/* Financial Statements Tabs */}
-            <Tabs defaultValue="trial-balance" className="w-full">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
                 <TabsList className="bg-muted/60 p-1 rounded-2xl h-auto flex-wrap">
                   <TabsTrigger

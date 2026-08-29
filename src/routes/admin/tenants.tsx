@@ -81,54 +81,12 @@ import {
 } from "lucide-react";
 import { exportToCSV } from "@/lib/export-utils";
 
+import { SYSTEM_MODULES as ALL_SYSTEM_MODULES } from "@/constants";
+
 export const Route = createFileRoute("/admin/tenants")({
   head: () => ({ meta: [{ title: "Tenants & Stores · Super Admin OneDesk360" }] }),
   component: SuperAdminTenantsPage,
 });
-
-const ALL_SYSTEM_MODULES = [
-  // Sales & POS
-  { key: "pos", label: "POS Terminal (Billing)", icon: ScanBarcode, category: "Sales & POS" },
-  { key: "sales", label: "Sales Invoices & Orders", icon: ReceiptText, category: "Sales & POS" },
-  { key: "returns", label: "Sales Returns & Refunds", icon: ReceiptText, category: "Sales & POS" },
-  { key: "quotations", label: "Quotations & Estimates", icon: ReceiptText, category: "Sales & POS" },
-  { key: "delivery-challans", label: "Delivery Challans", icon: Truck, category: "Sales & POS" },
-
-  // Catalog & Inventory
-  { key: "products", label: "Product Catalog & Barcodes", icon: Package, category: "Catalog & Stock" },
-  { key: "inventory", label: "Stock Inventory & Transfers", icon: Boxes, category: "Catalog & Stock" },
-  { key: "services", label: "Services Catalog", icon: Wrench, category: "Catalog & Stock" },
-
-  // Purchases & Vendors
-  { key: "purchases", label: "Purchases & Purchase Orders", icon: ShoppingCart, category: "Procurement" },
-  { key: "suppliers", label: "Suppliers & Vendors Directory", icon: Truck, category: "Procurement" },
-
-  // Customers & Marketing
-  { key: "customers", label: "Customer Directory & CRM", icon: Users, category: "Marketing & CRM" },
-  { key: "coupons", label: "Coupons & Discounts", icon: Star, category: "Marketing & CRM" },
-  { key: "gift-cards", label: "Gift Cards Management", icon: Star, category: "Marketing & CRM" },
-  { key: "loyalty", label: "Loyalty Points & Rewards", icon: Star, category: "Marketing & CRM" },
-  { key: "promotions", label: "Promotions & Deals", icon: Star, category: "Marketing & CRM" },
-  { key: "whatsapp", label: "WhatsApp Marketing & Alerts", icon: MessageCircle, category: "Marketing & CRM" },
-
-  // Finance & Accounts
-  { key: "expenses", label: "Expense Management", icon: Wallet, category: "Finance & Accounts" },
-  { key: "accounts", label: "Chart of Accounts & Ledger", icon: Wallet, category: "Finance & Accounts" },
-  { key: "reports", label: "Financial & Sales Analytics", icon: BarChart3, category: "Finance & Accounts" },
-  { key: "accounting-reports", label: "Accounting Reports (P&L, Balance Sheet)", icon: BarChart3, category: "Finance & Accounts" },
-
-  // Verticals & Services
-  { key: "repairs", label: "Repair Service Job Sheets", icon: Wrench, category: "Specialized Verticals" },
-  { key: "rentals", label: "Equipment & Item Rentals", icon: Boxes, category: "Specialized Verticals" },
-  { key: "subscriptions", label: "Recurring Subscriptions", icon: RefreshCw, category: "Specialized Verticals" },
-  { key: "tables", label: "Restaurant Tables Management", icon: Store, category: "Specialized Verticals" },
-  { key: "kitchen", label: "Kitchen Order Tickets (KOT)", icon: Store, category: "Specialized Verticals" },
-  { key: "appointments", label: "Appointment Booking", icon: Calendar, category: "Specialized Verticals" },
-
-  // Administration & Intelligence
-  { key: "users", label: "Staff Users & Permissions", icon: Users, category: "Administration & AI" },
-  { key: "ai", label: "AI Business Copilot", icon: Sparkles, category: "Administration & AI" },
-];
 
 function SuperAdminTenantsPage() {
   const queryClient = useQueryClient();
