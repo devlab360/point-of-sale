@@ -201,9 +201,13 @@ export function AppHeader() {
 
   const { user, logout, saasPlan, settings } = useAuth();
   const isSuperAdminUser = user?.role === "super_admin";
-  const canAccessPos =
-    !isSuperAdminUser &&
-    (!saasPlan || !Array.isArray(saasPlan.features) || saasPlan.features.includes("/pos"));
+  const { allowed: canAccessPos } = hasPermissionForRoute(
+    user,
+    "/pos",
+    user?.role === "super_admin",
+    saasPlan,
+    settings?.businessType,
+  );
   const { language, setLanguage, t } = useLanguage();
   const activeLanguageObj = LANGUAGES.find((l) => l.code === language) || LANGUAGES[0];
 

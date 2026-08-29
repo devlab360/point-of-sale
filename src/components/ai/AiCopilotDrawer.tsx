@@ -759,7 +759,7 @@ export function AiCopilotDrawer() {
             cursor: isDragging ? "grabbing" : "grab",
             touchAction: "none",
           }}
-          className="fixed bottom-6 right-6 z-50 group flex items-center gap-2.5 rounded-full bg-gradient-to-r from-[#B58D4C] via-[#CA9E59] to-[#D4AF37] p-3 sm:px-4 sm:py-2.5 text-sm font-bold text-white shadow-xl shadow-[#B58D4C]/25 border border-white/20 hover:shadow-2xl hover:scale-105 active:scale-95 transition-all duration-200"
+          className="hidden md:block fixed bottom-6 right-6 z-50 group flex items-center gap-2.5 rounded-full bg-gradient-to-r from-[#B58D4C] via-[#CA9E59] to-[#D4AF37] p-3 sm:px-4 sm:py-2.5 text-sm font-bold text-white shadow-xl shadow-[#B58D4C]/25 border border-white/20 hover:shadow-2xl hover:scale-105 active:scale-95 transition-all duration-200"
           title={`${i18n.advisorTitle} (Ctrl+J)`}
         >
           <div className="relative grid size-6 place-items-center rounded-full bg-white/20 backdrop-blur-xs">
