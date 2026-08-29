@@ -63,8 +63,8 @@ export interface BusinessTemplate {
 export const BUSINESS_TEMPLATES: Record<BusinessType, BusinessTemplate> = {
   UNIVERSAL: {
     type: "UNIVERSAL",
-    label: "Universal",
-    description: "All features enabled. Best for testing or highly complex hybrid businesses.",
+    label: "Universal Retail",
+    description: "Multi-category retail and general department store features.",
     capabilities: [
       "POS",
       "PRODUCTS",
@@ -75,17 +75,8 @@ export const BUSINESS_TEMPLATES: Record<BusinessType, BusinessTemplate> = {
       "CUSTOMERS",
       "BARCODE",
       "VARIANTS",
-      "TABLES",
-      "KITCHEN",
-      "KOT",
-      "MENU",
-      "APPOINTMENTS",
       "STAFF",
       "COMMISSIONS",
-      "JOB_CARDS",
-      "TECHNICIANS",
-      "REPAIR_STATUS",
-      "WARRANTY",
       "LOYALTY",
       "WHOLESALE",
       "CREDIT_SALES",
@@ -103,8 +94,6 @@ export const BUSINESS_TEMPLATES: Record<BusinessType, BusinessTemplate> = {
       "SETTINGS",
       "ACCOUNTS",
       "PROMOTIONS",
-      "BATCH_EXPIRY_TRACKING",
-      "FEFO_ALLOCATION",
     ],
   },
   RETAIL: {
@@ -157,6 +146,8 @@ export const BUSINESS_TEMPLATES: Record<BusinessType, BusinessTemplate> = {
       "PROMOTIONS",
       "QUOTATIONS",
       "DELIVERY_CHALLANS",
+      "BATCH_EXPIRY_TRACKING",
+      "FEFO_ALLOCATION",
     ],
   },
   RESTAURANT: {
@@ -246,6 +237,7 @@ export const BUSINESS_TEMPLATES: Record<BusinessType, BusinessTemplate> = {
       "SETTINGS",
       "ACCOUNTS",
       "JOB_CARDS",
+      "REPAIRS",
       "TECHNICIANS",
       "REPAIR_STATUS",
       "WARRANTY",
@@ -266,6 +258,7 @@ export const BUSINESS_TEMPLATES: Record<BusinessType, BusinessTemplate> = {
       "SETTINGS",
       "ACCOUNTS",
       "JOB_CARDS",
+      "REPAIRS",
       "TECHNICIANS",
       "REPAIR_STATUS",
       "WARRANTY",
@@ -335,13 +328,29 @@ export function hasCapability(
   businessType: BusinessType | string | null | undefined,
   capability: BusinessCapability,
 ): boolean {
-  if (!businessType) return true; // Default to allow all if not set, maintaining backward compatibility
+  if (!businessType) {
+    const coreDefaultCapabilities: BusinessCapability[] = [
+      "POS",
+      "PRODUCTS",
+      "INVENTORY",
+      "PURCHASES",
+      "SUPPLIERS",
+      "CUSTOMERS",
+      "BARCODE",
+      "REPORTS",
+      "SETTINGS",
+      "ACCOUNTS",
+      "EXPENSES",
+    ];
+    return coreDefaultCapabilities.includes(capability);
+  }
 
   const typeStr = businessType.toUpperCase() as BusinessType;
   const template = BUSINESS_TEMPLATES[typeStr];
 
-  // If the template is unknown, fallback to Universal (allow all) to avoid breaking existing users
-  if (!template) return true;
+  if (!template) {
+    return BUSINESS_TEMPLATES.RETAIL.capabilities.includes(capability);
+  }
 
   return template.capabilities.includes(capability);
 }
