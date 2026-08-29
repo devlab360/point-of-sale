@@ -1,6 +1,7 @@
 import { handleApiError } from "@/lib/error-utils";
 import { createServerFn } from "@tanstack/react-start";
 import { requireAuth } from "@/lib/auth-utils";
+import { assertBranchLimit } from "@/lib/plan-limits";
 import { z } from "zod";
 import { v4 as uuidv4 } from "uuid";
 
@@ -40,6 +41,10 @@ export const createLocationFn = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     try {
       const session = await requireAuth();
+
+      // Enforce SaaS plan branch quota limit
+      await assertBranchLimit(session.orgId);
+
       const inserted = await db
         .insert(schema.locations)
         .values({

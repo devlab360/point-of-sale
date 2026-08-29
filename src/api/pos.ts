@@ -1,6 +1,7 @@
 import { handleApiError } from "@/lib/error-utils";
 import { createServerFn } from "@tanstack/react-start";
 import { requireAuth } from "@/lib/auth-utils";
+import { assertInvoiceLimit, assertPlanActive } from "@/lib/plan-limits";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 import { db } from "@/db";
@@ -270,6 +271,12 @@ export const completePosSaleFn = createServerFn({ method: "POST" })
     try {
       const session = await requireAuth();
       const orgId = session.orgId;
+
+      // Enforce SaaS plan validity & monthly invoice quota limit
+      if (data.sale.status !== "quotation") {
+        await assertPlanActive(orgId);
+        await assertInvoiceLimit(orgId);
+      }
 
       let idempotentReturn = false;
       await db.transaction(async (tx) => {

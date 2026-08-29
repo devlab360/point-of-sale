@@ -19,6 +19,7 @@ export interface PlanDTO {
   price?: number;
   monthlyPrice?: number;
   yearlyPrice?: number;
+  perExtraUserPrice?: number;
   currency?: string;
   features?: string[];
   menus?: string[];
@@ -208,6 +209,7 @@ export class AdminService {
     const priceStr = String(dto.price ?? dto.monthlyPrice ?? 0);
     const monthlyPriceStr = dto.monthlyPrice !== undefined ? String(dto.monthlyPrice) : priceStr;
     const yearlyPriceStr = dto.yearlyPrice !== undefined ? String(dto.yearlyPrice) : null;
+    const perExtraUserPriceStr = dto.perExtraUserPrice !== undefined ? String(dto.perExtraUserPrice) : "0";
 
     await db
       .insert(schema.saasPlans)
@@ -218,6 +220,7 @@ export class AdminService {
         price: priceStr,
         monthlyPrice: monthlyPriceStr,
         yearlyPrice: yearlyPriceStr,
+        perExtraUserPrice: perExtraUserPriceStr,
         features: dto.features ?? [],
         menus: dto.menus ?? [],
         limits: dto.limits,
@@ -231,6 +234,7 @@ export class AdminService {
           price: priceStr,
           monthlyPrice: monthlyPriceStr,
           yearlyPrice: yearlyPriceStr,
+          perExtraUserPrice: perExtraUserPriceStr,
           features: dto.features ?? [],
           menus: dto.menus ?? [],
           limits: dto.limits,

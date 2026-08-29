@@ -217,6 +217,7 @@ function SettingsPage() {
     paymentMethod: "UPI / QR Scan",
     note: "",
     billingCycle: "monthly",
+    extraSeats: 0,
   });
   const [isSubmittingPayment, setIsSubmittingPayment] = useState(false);
   const [settings, setSettings] = useState(defaultSettings);
@@ -234,20 +235,38 @@ function SettingsPage() {
     }
     setIsSubmittingPayment(true);
     try {
+      const basePrice =
+        paymentForm.billingCycle === "yearly"
+          ? selectedPlanForUpgrade.yearlyPrice
+            ? Number(selectedPlanForUpgrade.yearlyPrice)
+            : Number(selectedPlanForUpgrade.price) * 12
+          : selectedPlanForUpgrade.monthlyPrice
+            ? Number(selectedPlanForUpgrade.monthlyPrice)
+            : Number(selectedPlanForUpgrade.price);
+
+      const perExtraPrice = Number(selectedPlanForUpgrade.perExtraUserPrice || 0);
+      const extraSeatsTotal =
+        (paymentForm.extraSeats || 0) *
+        perExtraPrice *
+        (paymentForm.billingCycle === "yearly" ? 12 : 1);
+      const totalAmountToPay = basePrice + extraSeatsTotal;
+
+      const fullNote = [
+        paymentForm.note ? paymentForm.note.trim() : null,
+        paymentForm.extraSeats > 0
+          ? `[ExtraSeats:${paymentForm.extraSeats}] Base Users: ${selectedPlanForUpgrade.limits?.maxUsers || 5}, Extra: +${paymentForm.extraSeats} (Total: ${(selectedPlanForUpgrade.limits?.maxUsers || 5) + paymentForm.extraSeats})`
+          : null,
+      ]
+        .filter(Boolean)
+        .join(" | ");
+
       const res = await submitPaymentProofFn({
         data: {
           planId: selectedPlanForUpgrade.id,
           utrNumber: paymentForm.utrNumber,
           paymentMethod: paymentForm.paymentMethod,
-          note: paymentForm.note,
-          amount:
-            paymentForm.billingCycle === "yearly"
-              ? selectedPlanForUpgrade.yearlyPrice
-                ? Number(selectedPlanForUpgrade.yearlyPrice)
-                : Number(selectedPlanForUpgrade.price) * 12
-              : selectedPlanForUpgrade.monthlyPrice
-                ? Number(selectedPlanForUpgrade.monthlyPrice)
-                : Number(selectedPlanForUpgrade.price),
+          note: fullNote,
+          amount: totalAmountToPay,
           billingCycle: paymentForm.billingCycle as any,
         },
       });
@@ -263,6 +282,7 @@ function SettingsPage() {
           paymentMethod: "UPI / QR Scan",
           note: "",
           billingCycle: "monthly",
+          extraSeats: 0,
         });
       } else {
         toast.error("Error: " + res.error);
@@ -1343,6 +1363,7 @@ function SettingsPage() {
                                 paymentMethod: "UPI / QR Scan",
                                 note: "",
                                 billingCycle: "monthly",
+                                extraSeats: 0,
                               });
                             }}
                             className={`w-full mt-6 font-bold text-xs shadow-soft ${isCurrent ? "bg-primary hover:bg-primary/90" : ""}`}
@@ -2177,11 +2198,66 @@ function SettingsPage() {
                 </div>
               </div>
 
+              {/* Additional User Seats Add-on Counter */}
+              {Number(selectedPlanForUpgrade?.perExtraUserPrice || 0) > 0 && (
+                <div className="p-3.5 rounded-2xl border bg-muted/20 space-y-2 text-xs">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <span className="font-bold text-foreground block">Additional Staff User Seats</span>
+                      <span className="text-[11px] text-muted-foreground">
+                        +₹{selectedPlanForUpgrade.perExtraUserPrice}/seat/mo (Base plan includes {selectedPlanForUpgrade.limits?.maxUsers || 5} users)
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        className="size-7 p-0 rounded-lg"
+                        disabled={paymentForm.extraSeats <= 0}
+                        onClick={() => setPaymentForm({ ...paymentForm, extraSeats: Math.max(0, paymentForm.extraSeats - 1) })}
+                      >
+                        -
+                      </Button>
+                      <span className="font-mono font-bold text-sm w-6 text-center">{paymentForm.extraSeats}</span>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        className="size-7 p-0 rounded-lg"
+                        onClick={() => setPaymentForm({ ...paymentForm, extraSeats: paymentForm.extraSeats + 1 })}
+                      >
+                        +
+                      </Button>
+                    </div>
+                  </div>
+                  {paymentForm.extraSeats > 0 && (
+                    <div className="flex justify-between items-center pt-2 border-t border-border/40 text-[11px]">
+                      <span className="text-muted-foreground">Total Staff Capacity:</span>
+                      <span className="font-bold text-primary">
+                        {(selectedPlanForUpgrade.limits?.maxUsers || 5) + paymentForm.extraSeats} Users ({selectedPlanForUpgrade.limits?.maxUsers || 5} included + {paymentForm.extraSeats} extra)
+                      </span>
+                    </div>
+                  )}
+                </div>
+              )}
+
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
-                  <Label className="text-xs font-bold">Amount Paid</Label>
+                  <Label className="text-xs font-bold">Total Amount to Pay</Label>
                   <Input
-                    value={`₹${paymentForm.billingCycle === "yearly" ? selectedPlanForUpgrade?.yearlyPrice || selectedPlanForUpgrade?.price * 12 : selectedPlanForUpgrade?.monthlyPrice || selectedPlanForUpgrade?.price}`}
+                    value={`₹${(
+                      (paymentForm.billingCycle === "yearly"
+                        ? selectedPlanForUpgrade?.yearlyPrice
+                          ? Number(selectedPlanForUpgrade.yearlyPrice)
+                          : Number(selectedPlanForUpgrade?.price || 0) * 12
+                        : selectedPlanForUpgrade?.monthlyPrice
+                          ? Number(selectedPlanForUpgrade.monthlyPrice)
+                          : Number(selectedPlanForUpgrade?.price || 0)) +
+                      (paymentForm.extraSeats || 0) *
+                        Number(selectedPlanForUpgrade?.perExtraUserPrice || 0) *
+                        (paymentForm.billingCycle === "yearly" ? 12 : 1)
+                    ).toLocaleString()}`}
                     disabled
                     className="mt-1 font-mono font-bold bg-muted text-primary"
                   />

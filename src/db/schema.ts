@@ -17,6 +17,7 @@ export const organizations = pgTable("organizations", {
   ownerEmail: text("owner_email").notNull(),
   status: text("status").notNull().default("trial"), // trial, active, suspended
   currentPlanId: text("current_plan_id").notNull().default("basic"),
+  extraUsersQuota: integer("extra_users_quota").default(0), // additional paid user seats
   planExpiryDate: timestamp("plan_expiry_date", { mode: "string" }),
   syncKey: text("sync_key").notNull().default("default-sync-key"), // To authenticate devices
   isOnline: boolean("is_online").notNull().default(true),
@@ -36,6 +37,7 @@ export const saasPlans = pgTable("saas_plans", {
   monthlyPrice: numeric("monthly_price", { precision: 10, scale: 2 }),
   yearlyPrice: numeric("yearly_price", { precision: 10, scale: 2 }),
   customPrice: numeric("custom_price", { precision: 10, scale: 2 }),
+  perExtraUserPrice: numeric("per_extra_user_price", { precision: 10, scale: 2 }).default("0"), // price per extra staff user/mo
   features: jsonb("features").$type<string[]>(), // semantic keys e.g. ['pos','products']
   menus: jsonb("menus").$type<string[]>(), // sidebar menu keys allowed by plan
   limits: jsonb("limits").$type<{

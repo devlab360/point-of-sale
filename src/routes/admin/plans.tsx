@@ -113,6 +113,7 @@ const defaultEditingPlan = {
   price: 0,
   monthlyPrice: 0,
   yearlyPrice: 0,
+  perExtraUserPrice: 199,
   features: ["pos", "products", "inventory", "customers", "sales", "reports"],
   menus: ["pos", "products", "inventory", "sales", "customers", "reports"],
   limits: {
@@ -343,9 +344,16 @@ function SuperAdminPlansPage() {
                         <span className="text-muted-foreground flex items-center gap-1.5">
                           <Users className="size-3.5 text-primary" /> Max Staff Users:
                         </span>
-                        <span className="font-bold text-foreground">
-                          {plan.limits?.maxUsers || "Unlimited"}
-                        </span>
+                        <div className="text-right">
+                          <span className="font-bold text-foreground block">
+                            {plan.limits?.maxUsers || "Unlimited"}
+                          </span>
+                          {Number(plan.perExtraUserPrice) > 0 && (
+                            <span className="text-[10px] text-primary font-semibold block">
+                              +₹{plan.perExtraUserPrice}/mo per extra seat
+                            </span>
+                          )}
+                        </div>
                       </div>
                       <div className="flex justify-between py-1 border-b border-border/40">
                         <span className="text-muted-foreground flex items-center gap-1.5">
@@ -535,6 +543,22 @@ function SuperAdminPlansPage() {
                       value={editingPlan.yearlyPrice || 0}
                       onChange={(e) =>
                         setEditingPlan({ ...editingPlan, yearlyPrice: Number(e.target.value) })
+                      }
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="plan-extra-user">Add-on Price / Extra User (₹/mo)</Label>
+                    <Input
+                      id="plan-extra-user"
+                      type="number"
+                      min={0}
+                      placeholder="e.g. 199"
+                      value={editingPlan.perExtraUserPrice ?? 0}
+                      onChange={(e) =>
+                        setEditingPlan({
+                          ...editingPlan,
+                          perExtraUserPrice: Number(e.target.value),
+                        })
                       }
                     />
                   </div>

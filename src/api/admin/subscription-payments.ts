@@ -77,11 +77,18 @@ export const approvePaymentFn = createServerFn({ method: "POST" })
           })
           .where(eq(schema.subscriptionPayments.id, payment.id));
 
+        let extraSeatsToSet = org.extraUsersQuota || 0;
+        const extraMatch = payment.note?.match(/\[ExtraSeats:(\d+)\]/);
+        if (extraMatch) {
+          extraSeatsToSet = parseInt(extraMatch[1], 10);
+        }
+
         await tx
           .update(schema.organizations)
           .set({
             status: "active",
             currentPlanId: payment.planId,
+            extraUsersQuota: extraSeatsToSet,
             planExpiryDate: newExpiry.toISOString() as any,
           })
           .where(eq(schema.organizations.id, org.id));

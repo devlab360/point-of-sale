@@ -722,16 +722,37 @@ function SuperAdminTenantsPage() {
                         </div>
                       </div>
 
-                      <div className="space-y-1.5">
-                        <Label htmlFor="edit-expiry">Plan Expiry Date</Label>
-                        <Input
-                          id="edit-expiry"
-                          type="date"
-                          value={editingTenant.planExpiryDate || ""}
-                          onChange={(e) =>
-                            setEditingTenant({ ...editingTenant, planExpiryDate: e.target.value })
-                          }
-                        />
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="space-y-1.5">
+                          <Label htmlFor="edit-expiry">Plan Expiry Date</Label>
+                          <Input
+                            id="edit-expiry"
+                            type="date"
+                            value={editingTenant.planExpiryDate || ""}
+                            onChange={(e) =>
+                              setEditingTenant({ ...editingTenant, planExpiryDate: e.target.value })
+                            }
+                          />
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label htmlFor="edit-extra-users">Extra Purchased User Seats</Label>
+                          <Input
+                            id="edit-extra-users"
+                            type="number"
+                            min={0}
+                            placeholder="0"
+                            value={editingTenant.extraUsersQuota ?? 0}
+                            onChange={(e) =>
+                              setEditingTenant({
+                                ...editingTenant,
+                                extraUsersQuota: Number(e.target.value),
+                              })
+                            }
+                          />
+                          <p className="text-[10px] text-muted-foreground">
+                            Additional staff seats granted above the base plan limit.
+                          </p>
+                        </div>
                       </div>
 
                       {/* Quick Extension Buttons */}
@@ -902,6 +923,7 @@ function SuperAdminTenantsPage() {
                         ownerEmail: editingTenant.ownerEmail,
                         status: editingTenant.status,
                         currentPlanId: editingTenant.currentPlanId,
+                        extraUsersQuota: Number(editingTenant.extraUsersQuota || 0),
                         planExpiryDate: editingTenant.planExpiryDate || undefined,
                       });
                     }}

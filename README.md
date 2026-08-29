@@ -1,63 +1,58 @@
-# OneDesk360 — Multi-Business SaaS Point of Sale (POS) System
+# OneDesk360 — Enterprise Cloud POS & Multi-Tenant SaaS Platform
 
-**OneDesk360** is an enterprise-grade, multi-tenant SaaS Point of Sale (POS) and Store Management system built with **TanStack Start**, **React 19**, **Drizzle ORM**, and **PostgreSQL**.
-
----
-
-## 🚀 Key Features
-
-- **Multi-Tenant SaaS Architecture**: Super Admin portal for tenant onboarding, plan lifecycle management, and custom feature menu overrides.
-- **POS Checkout Terminal**: High-performance Point of Sale terminal supporting cash, card, and split payment methods.
-- **Master Product Catalog**: Products, variants, categories, brands, units, barcodes, SKUs, and inventory stock tracking.
-- **Customer CRM & Ledgers**: Khata ledger tracking, credit limits, and customer wallet balances.
-- **Finance & Accounting**: Chart of accounts, expense tracking, daily registers, and financial reporting.
-- **Staff & Role Management**: Granular role-based authorization (Super Admin, Store Admin, Manager, Cashier).
+**OneDesk360** is a full-stack, enterprise-grade, multi-tenant Cloud Point-of-Sale (POS) and Store Resource Planning (ERP) ecosystem built with **TanStack Start**, **React 19**, **Drizzle ORM**, **PostgreSQL**, and **Dexie.js** offline synchronization.
 
 ---
 
-## 🛠️ Tech Stack
+## 🔑 Default Access Credentials
 
-- **Frontend / Framework**: React 19, TanStack Start (SSR & Server Functions), TanStack Router, Vite, TailwindCSS
+| Portal / Role | URL | Email Address | Password | Permissions & Scope |
+| :--- | :--- | :--- | :--- | :--- |
+| 🛡️ **Super Admin Portal** | [`/admin`](http://localhost:8080/admin) | `admin@superadmin.com` | `superadmin_password` | Root multi-tenant governance, pricing plans, tenant store provisioning, manual payment approvals. |
+| 🏪 **Demo Store Owner** | [`/login`](http://localhost:8080/login) | `demo@onedesk360.com` | `password123` | Store administration, inventory, double-entry accounting, staff management, settings. |
+| ⚡ **Demo Cashier** | [`/login`](http://localhost:8080/login) | `cashier@onedesk360.com` | `password123` | High-velocity POS terminal billing, register shifts, and receipt printing. |
+
+---
+
+## 🚀 Key Functional Capabilities (28 Configurable Modules)
+
+- **Sales & POS Billing**: Fast barcode scanner checkout, multi-payment tender (Cash, Card, UPI QR, Split, Khata on account), held shopping carts, 80mm/58mm thermal ESC/POS printing, and cash drawer kick protocols.
+- **Product Catalog & Inventory**: Single and variant matrix SKUs, batch & expiry date tracking, serial numbers, stock transfers, and stock adjustments.
+- **Customer CRM & Loyalty Points**: Customer ledger (Khata), credit limits, tiered loyalty reward points (Bronze, Silver, Gold, Platinum), gift cards, and coupons.
+- **Procurement & Vendors**: Purchase orders (PO), vendor directories, purchase returns, and debit notes.
+- **Financials & Accounting**: Double-entry chart of accounts, expense tracking, daily register shifts, and automated reports (Profit & Loss, Balance Sheet, Trial Balance).
+- **Specialized Industry Verticals**:
+  - *Restaurant & Cafe*: Dining table layout management & Kitchen Order Tickets (KOT).
+  - *Electronics & Repair*: Device IMEI tracking & repair job sheets.
+  - *Equipment Rentals*: Item checkout & deposit security handling.
+  - *Appointments*: Service booking & staff scheduling.
+- **Universal Super Admin Hub**: Executive MRR/ARR velocity dashboard, dynamic SaaS tier configurator, manual bank transfer / UPI QR verification workflow, support ticket triage desk, and broadcast announcements.
+- **Offline-First Resilience**: Local IndexedDB (Dexie.js) caching with automatic background synchronization when internet connectivity resumes.
+
+---
+
+## 🛠️ Technology Stack
+
+- **Frontend & Full-Stack Engine**: React 19, TanStack Start (SSR & Server Functions), TanStack Router, Vite, TailwindCSS
 - **State & Data Fetching**: TanStack Query (React Query v5)
-- **Database Layer**: PostgreSQL (`pos_db`), Drizzle ORM, Drizzle-Kit
-- **Authentication**: JWT Cookie Sessions & Password Hashing (`bcryptjs`)
+- **Database & ORM**: PostgreSQL (`pos_db`), Drizzle ORM, Drizzle-Kit
+- **Offline Storage**: Dexie.js (IndexedDB local client database)
+- **Authentication**: JWT Cookie Sessions & Password Hashing (`bcryptjs` / `Argon2`)
 
 ---
 
 ## 🗄️ Database Commands
 
 ```bash
-# Generate Drizzle migration files
+# 1. Generate Drizzle SQL migration files
 npm run db:generate
 
-# Execute pending database migrations
-npm run db:migrate
-
-# Direct database schema push
+# 2. Push schema changes directly to PostgreSQL
 npm run db:push
 
-# Seed database with Master Data & Demo Store
+# 3. Seed database with master pricing plans, admin accounts & demo store catalog
 npm run db:seed
 ```
-
----
-
-## 🔑 Default Credentials
-
-### 1. Super Admin Portal (`/admin`)
-
-- **Email**: `admin@superadmin.com`
-- **Password**: `superadmin_password`
-
-### 2. Demo Store Owner (`/login`)
-
-- **Email**: `demo@onedesk360.com`
-- **Password**: `password123`
-
-### 3. Demo Cashier Staff (`/login`)
-
-- **Email**: `cashier@onedesk360.com`
-- **Password**: `password123`
 
 ---
 
@@ -67,7 +62,7 @@ npm run db:seed
 # 1. Install dependencies
 npm install
 
-# 2. Push Database Schema & Seed Data
+# 2. Setup Database Schema & Seed Data
 npm run db:push
 npm run db:seed
 
@@ -75,7 +70,17 @@ npm run db:seed
 npm run dev
 ```
 
-App runs live at: **`http://localhost:8080`**
+App runs live at: **`http://localhost:8080`** (or configured Vite port)
+
+---
+
+## 📚 Documentation & Engineering Runbooks
+
+- 📖 **Comprehensive System Overview & Architecture**: [`docs/SYSTEM_OVERVIEW_AND_FUNCTIONALITY.md`](docs/SYSTEM_OVERVIEW_AND_FUNCTIONALITY.md)
+- 🧪 **Complete UAT Test Application Flow**: [`docs/TEST_APPLICATION_FLOW.md`](docs/TEST_APPLICATION_FLOW.md)
+- 🎨 **Design System & UI Tokens**: [`.agents/skills/onedesk360-design-system/SKILL.md`](.agents/skills/onedesk360-design-system/SKILL.md)
+- 💻 **Coding Patterns & Architecture**: [`.agents/skills/onedesk360-coding-patterns/SKILL.md`](.agents/skills/onedesk360-coding-patterns/SKILL.md)
+- ⚙️ **POS Engineering Playbook**: [`.agents/skills/onedesk360-pos/SKILL.md`](.agents/skills/onedesk360-pos/SKILL.md)
 
 ---
 

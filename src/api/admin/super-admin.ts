@@ -31,6 +31,7 @@ export const updateOrganizationFn = createServerFn({ method: "POST" })
       ownerEmail: z.string().email().optional(),
       status: z.string().optional(),
       currentPlanId: z.string().optional(),
+      extraUsersQuota: z.number().optional(),
       planExpiryDate: z.string().optional(),
     }),
   )
@@ -144,6 +145,7 @@ export const createOrUpdatePlanFn = createServerFn({ method: "POST" })
       price: z.number().optional().default(0),
       monthlyPrice: z.number().optional(),
       yearlyPrice: z.number().optional(),
+      perExtraUserPrice: z.number().optional().default(0),
       features: z.array(z.string()).optional().default([]),
       menus: z.array(z.string()).optional().default([]),
       limits: z
