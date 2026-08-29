@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -13,6 +13,10 @@ import {
   Timer,
   Check,
   Flame,
+  Bell,
+  BellOff,
+  BellRing,
+  X,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -30,16 +34,181 @@ export const Route = createFileRoute("/kitchen")({
   component: KitchenPage,
 });
 
+// ─── Web Audio Alert Chime ────────────────────────────────────────────────────
+function playKitchenChime(type: "new" | "ready" = "new") {
+  try {
+    const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+    const notes = type === "new" ? [523, 659, 784, 1047] : [784, 659, 523];
+
+    notes.forEach((freq, i) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.type = "sine";
+      osc.frequency.value = freq;
+      const t = ctx.currentTime + i * 0.18;
+      gain.gain.setValueAtTime(0, t);
+      gain.gain.linearRampToValueAtTime(0.55, t + 0.04);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + 0.28);
+      osc.start(t);
+      osc.stop(t + 0.28);
+    });
+  } catch {
+    // silently ignore if AudioContext not supported
+  }
+}
+
+// ─── Browser Push Notification ────────────────────────────────────────────────
+function sendBrowserNotification(title: string, body: string) {
+  if ("Notification" in window && Notification.permission === "granted") {
+    try {
+      new Notification(title, {
+        body,
+        icon: "/favicon.ico",
+        tag: "kitchen-order",
+        requireInteraction: true,
+      });
+    } catch {
+      // silently ignore
+    }
+  }
+}
+
+// ─── BroadcastChannel key ─────────────────────────────────────────────────────
+export const KOT_CHANNEL = "onedesk360-kot";
+
 function KitchenPage() {
   const queryClient = useQueryClient();
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [notifPermission, setNotifPermission] = useState<NotificationPermission>("default");
+  const [newOrderBanner, setNewOrderBanner] = useState<{ count: number; ids: string[] } | null>(null);
+  const prevKotIdsRef = useRef<Set<string>>(new Set());
+  const bannerTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isFirstLoad = useRef(true);
+
+  // ── Request browser notification permission on mount ─────────────────────
+  useEffect(() => {
+    if ("Notification" in window) {
+      setNotifPermission(Notification.permission);
+      if (Notification.permission === "default") {
+        Notification.requestPermission().then((p) => setNotifPermission(p));
+      }
+    }
+  }, []);
+
+  // ── BroadcastChannel: receive instant messages from POS tab ──────────────
+  useEffect(() => {
+    if (!("BroadcastChannel" in window)) return;
+    const channel = new BroadcastChannel(KOT_CHANNEL);
+    channel.onmessage = (e) => {
+      if (e.data?.type === "NEW_KOT") {
+        // Immediately refetch without waiting for polling interval
+        queryClient.invalidateQueries({ queryKey: ["kots"] });
+      }
+    };
+    return () => channel.close();
+  }, [queryClient]);
 
   const { data, isLoading } = useQuery({
     queryKey: ["kots"],
     queryFn: () => getKOTsFn(),
     refetchInterval: 6000,
   });
+
+  const kots = data?.success && Array.isArray(data.data) ? data.data : [];
+
+  const pendingKots = kots.filter((k: any) => k.status === "pending");
+  const preparingKots = kots.filter((k: any) => k.status === "preparing");
+  const readyKots = kots.filter((k: any) => k.status === "ready");
+  const totalActiveTickets = pendingKots.length + preparingKots.length + readyKots.length;
+
+  // ── Detect incoming new orders and fire notifications ────────────────────
+  const showBanner = useCallback((newIds: string[], allNew: any[]) => {
+    if (bannerTimerRef.current) clearTimeout(bannerTimerRef.current);
+    setNewOrderBanner({ count: newIds.length, ids: newIds });
+    bannerTimerRef.current = setTimeout(() => setNewOrderBanner(null), 8000);
+  }, []);
+
+  useEffect(() => {
+    if (kots.length === 0) return;
+
+    const currentIds = new Set<string>(kots.map((k: any) => k.id));
+    const prev = prevKotIdsRef.current;
+
+    // Find truly new KOTs (not in previous set)
+    const newIds: string[] = [];
+    const newKots: any[] = [];
+    currentIds.forEach((id) => {
+      if (!prev.has(id)) {
+        newIds.push(id);
+        const kot = kots.find((k: any) => k.id === id);
+        if (kot) newKots.push(kot);
+      }
+    });
+
+    prevKotIdsRef.current = currentIds;
+
+    // Skip notification on the very first data load (page open)
+    if (isFirstLoad.current) {
+      isFirstLoad.current = false;
+      return;
+    }
+
+    if (newIds.length > 0) {
+      // 1. Audio chime
+      if (soundEnabled) {
+        playKitchenChime("new");
+      }
+
+      // 2. Browser push notification
+      const tableLabel = newKots[0]?.tableId
+        ? `Table #${newKots[0].tableId.substring(0, 4).toUpperCase()}`
+        : "Takeaway";
+      const itemCount = newKots.reduce(
+        (acc: number, k: any) => acc + (k.items?.length || 0),
+        0,
+      );
+      sendBrowserNotification(
+        `🍽️ New Kitchen Order${newIds.length > 1 ? "s" : ""} (${newIds.length})`,
+        `${tableLabel} — ${itemCount} item${itemCount !== 1 ? "s" : ""} waiting to be prepared`,
+      );
+
+      // 3. In-page banner
+      showBanner(newIds, newKots);
+
+      // 4. Sonner toast as fallback
+      toast.custom(
+        (id) => (
+          <div
+            className="flex items-center gap-3 rounded-2xl border border-destructive/30 bg-card px-4 py-3 shadow-xl cursor-pointer"
+            onClick={() => toast.dismiss(id)}
+          >
+            <div className="size-9 rounded-xl bg-destructive/10 border border-destructive/25 grid place-items-center text-destructive shrink-0">
+              <BellRing className="size-5 animate-bounce" />
+            </div>
+            <div>
+              <p className="text-sm font-bold text-foreground">
+                {newIds.length} New Order{newIds.length > 1 ? "s" : ""} Received!
+              </p>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                {tableLabel} · {itemCount} items ready for preparation
+              </p>
+            </div>
+          </div>
+        ),
+        { duration: 6000 },
+      );
+    }
+  }, [kots, soundEnabled, showBanner]);
+
+  // ── Cleanup banner timer on unmount ──────────────────────────────────────
+  useEffect(() => {
+    return () => {
+      if (bannerTimerRef.current) clearTimeout(bannerTimerRef.current);
+    };
+  }, []);
 
   const updateStatus = useMutation({
     mutationFn: (data: { id: string; status: "pending" | "preparing" | "ready" | "served" }) =>
@@ -67,20 +236,23 @@ function KitchenPage() {
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["kots"] });
     },
-    onSuccess: (res) => {
+    onSuccess: (res, vars) => {
       if (res.success) {
+        if (vars.status === "ready" && soundEnabled) {
+          playKitchenChime("ready");
+        }
         toast.success("Order status updated!");
       }
     },
   });
 
-  const kots = data?.success && Array.isArray(data.data) ? data.data : [];
-
-  const pendingKots = kots.filter((k: any) => k.status === "pending");
-  const preparingKots = kots.filter((k: any) => k.status === "preparing");
-  const readyKots = kots.filter((k: any) => k.status === "ready");
-
-  const totalActiveTickets = pendingKots.length + preparingKots.length + readyKots.length;
+  const advanceStatus = (kot: any) => {
+    let nextStatus: "pending" | "preparing" | "ready" | "served" = "preparing";
+    if (kot.status === "pending") nextStatus = "preparing";
+    else if (kot.status === "preparing") nextStatus = "ready";
+    else if (kot.status === "ready") nextStatus = "served";
+    updateStatus.mutate({ id: kot.id, status: nextStatus });
+  };
 
   const toggleFullscreen = () => {
     if (!document.fullscreenElement) {
@@ -92,13 +264,12 @@ function KitchenPage() {
     }
   };
 
-  const advanceStatus = (kot: any) => {
-    let nextStatus: "pending" | "preparing" | "ready" | "served" = "preparing";
-    if (kot.status === "pending") nextStatus = "preparing";
-    else if (kot.status === "preparing") nextStatus = "ready";
-    else if (kot.status === "ready") nextStatus = "served";
-
-    updateStatus.mutate({ id: kot.id, status: nextStatus });
+  const requestNotifPermission = async () => {
+    if (!("Notification" in window)) return;
+    const p = await Notification.requestPermission();
+    setNotifPermission(p);
+    if (p === "granted") toast.success("Browser notifications enabled for kitchen alerts!");
+    else toast.error("Notification permission denied. Enable via browser settings.");
   };
 
   const renderTicket = (kot: any, stage: "pending" | "preparing" | "ready") => {
@@ -241,12 +412,65 @@ function KitchenPage() {
 
   return (
     <div className="page-container space-y-6">
+      {/* ── Real-time New Order Banner ─────────────────────────── */}
+      <AnimatePresence>
+        {newOrderBanner && (
+          <motion.div
+            initial={{ opacity: 0, y: -20, scale: 0.97 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -16, scale: 0.97 }}
+            transition={{ type: "spring", stiffness: 400, damping: 30 }}
+            className="fixed top-4 left-1/2 -translate-x-1/2 z-50 w-[min(520px,90vw)]"
+          >
+            <div className="flex items-center gap-3 rounded-2xl border border-destructive/40 bg-destructive/5 backdrop-blur-sm px-4 py-3.5 shadow-2xl">
+              <div className="size-10 rounded-xl bg-destructive/15 border border-destructive/30 grid place-items-center text-destructive shrink-0">
+                <BellRing className="size-5 animate-bounce" />
+              </div>
+              <div className="flex-1">
+                <p className="text-sm font-extrabold text-foreground">
+                  🍽️ {newOrderBanner.count} New Kitchen Order{newOrderBanner.count > 1 ? "s" : ""} Received!
+                </p>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  New tickets arrived in the Incoming Orders queue — chef action required.
+                </p>
+              </div>
+              <button
+                onClick={() => setNewOrderBanner(null)}
+                className="size-7 rounded-lg bg-muted hover:bg-muted/80 grid place-items-center text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <X className="size-3.5" />
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Standard PageHeader */}
       <PageHeader
         title="Kitchen Display System (KDS)"
         description="Live synchronized course sequences, order preparation timers, chef notes, and fulfillment pipeline."
         actions={
           <div className="flex items-center gap-2">
+            {/* Notification Permission */}
+            {notifPermission !== "granted" && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={requestNotifPermission}
+                className="gap-1.5 text-xs font-semibold text-warning border-warning/40 hover:bg-warning/10"
+                title="Enable browser notifications for new order alerts"
+              >
+                <BellOff className="size-4" />
+                <span className="hidden sm:inline">Enable Alerts</span>
+              </Button>
+            )}
+            {notifPermission === "granted" && (
+              <div className="hidden sm:flex items-center gap-1.5 text-xs text-success bg-success/10 border border-success/25 px-2.5 py-1 rounded-lg">
+                <Bell className="size-3.5" />
+                Alerts Active
+              </div>
+            )}
+
             <Button
               variant="outline"
               size="sm"

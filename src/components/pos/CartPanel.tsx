@@ -110,6 +110,16 @@ export function CartPanel({
         state.setDiscountInput("0");
         state.setAppliedCoupon(null);
         setSelectedTableId("");
+        // Instantly notify any open Kitchen Display tab via BroadcastChannel
+        try {
+          if ("BroadcastChannel" in window) {
+            const ch = new BroadcastChannel("onedesk360-kot");
+            ch.postMessage({ type: "NEW_KOT", kotId: res.data?.id });
+            ch.close();
+          }
+        } catch {
+          // silently ignore if BroadcastChannel unavailable
+        }
       } else {
         toast.error("Failed to send order to kitchen");
       }
