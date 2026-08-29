@@ -69,6 +69,11 @@ import {
   Clock,
   BadgePercent,
   Ban,
+  Play,
+  Pause,
+  ShoppingBag,
+  FileText,
+  Landmark,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 // Use queryClient from state
@@ -80,7 +85,7 @@ import { createCustomerFn, getCustomersFn } from "@/api/customers";
 import { getCouponsFn } from "@/api/coupons";
 import { createProductFn } from "@/api/products";
 import { createServiceItemFn } from "@/api/services";
-import { deleteHeldInvoiceFn, splitHeldInvoiceFn, voidPosSaleFn } from "@/api/pos";
+import { deleteHeldInvoiceFn, clearAllHeldInvoicesFn, splitHeldInvoiceFn, voidPosSaleFn } from "@/api/pos";
 import { toast } from "sonner";
 import { printReceiptIframe } from "@/lib/printIframe";
 import { SplitCheckModal } from "./SplitCheckModal";
@@ -99,6 +104,9 @@ export function PosDialogs({
   const [splittingInvoice, setSplittingInvoice] = useState<any>(null);
   const [isSplitting, setIsSplitting] = useState(false);
   const [pendingPrint, setPendingPrint] = useState<null | "thermal" | "a4">(null);
+  const [heldSearch, setHeldSearch] = useState("");
+  const [showClearAllHeldConfirm, setShowClearAllHeldConfirm] = useState(false);
+  const [voidingInvoice, setVoidingInvoice] = useState<any>(null);
 
   const {
     showCustomerSearch,
@@ -140,6 +148,7 @@ export function PosDialogs({
     setPrintData,
     setPayment,
     setSelectedCustomer,
+    selectCustomer,
     activeCustomer,
     heldInvoices,
     coupons,
@@ -466,7 +475,7 @@ export function PosDialogs({
     <>
       {/* Modern Redesigned Select Customer Dialog */}
       <Dialog open={showCustomerSearch} onOpenChange={setShowCustomerSearch}>
-        <DialogContent className="sm:max-w-xl p-0 gap-0 overflow-hidden rounded-2xl border-border/80 shadow-2xl bg-card">
+        <DialogContent className="sm:max-w-2xl p-0 gap-0 overflow-hidden rounded-3xl border-border/80 shadow-2xl bg-card">
           {/* Header */}
           <div className="p-4 sm:p-5 border-b border-border/80 bg-muted/20 flex items-center justify-between">
             <div className="flex items-center gap-2.5">
@@ -605,12 +614,18 @@ export function PosDialogs({
               const dueAmount = parseFloat(c.credit || "0");
               const walletBal = parseFloat(c.walletBalance || "0");
 
+              const matchingHeld = heldInvoices.find((h: any) => h.customerId === c.id);
+
               return (
                 <button
                   key={c.id}
                   type="button"
                   onClick={() => {
-                    setSelectedCustomer(c);
+                    if (selectCustomer) {
+                      selectCustomer(c);
+                    } else {
+                      setSelectedCustomer(c);
+                    }
                     setShowCustomerSearch(false);
                     setCustomerQuery("");
                   }}
@@ -618,7 +633,9 @@ export function PosDialogs({
                     "w-full flex items-center justify-between p-3 rounded-xl border transition-all text-left group",
                     isSelected
                       ? "bg-primary/10 border-primary/40 ring-1 ring-primary/20 shadow-xs"
-                      : "bg-card border-border/80 hover:border-primary/40 hover:bg-muted/30",
+                      : matchingHeld
+                        ? "bg-warning/5 border-warning/40 hover:bg-warning/10 shadow-xs"
+                        : "bg-card border-border/80 hover:border-primary/40 hover:bg-muted/30",
                   )}
                 >
                   <div className="flex items-center gap-3 min-w-0 flex-1 mr-2">
@@ -628,11 +645,13 @@ export function PosDialogs({
                         "size-10 rounded-xl grid place-items-center font-bold text-xs shrink-0 border uppercase",
                         isSelected
                           ? "bg-primary text-primary-foreground border-primary"
-                          : c.type === "wholesale"
-                            ? "bg-blue-500/10 text-blue-600 border-blue-500/20"
-                            : c.type === "dealer"
-                              ? "bg-purple-500/10 text-purple-600 border-purple-500/20"
-                              : "bg-muted text-foreground border-border/80",
+                          : matchingHeld
+                            ? "bg-warning/15 text-warning border-warning/30"
+                            : c.type === "wholesale"
+                              ? "bg-blue-500/10 text-blue-600 border-blue-500/20"
+                              : c.type === "dealer"
+                                ? "bg-purple-500/10 text-purple-600 border-purple-500/20"
+                                : "bg-muted text-foreground border-border/80",
                       )}
                     >
                       {c.name
@@ -647,6 +666,13 @@ export function PosDialogs({
                         <span className="font-bold text-sm text-foreground truncate max-w-[200px]">
                           {c.name}
                         </span>
+
+                        {/* Held Order Active Badge */}
+                        {matchingHeld && (
+                          <span className="inline-flex items-center gap-1 rounded-md bg-warning/15 px-1.5 py-0.5 text-[10px] font-extrabold text-warning border border-warning/30 animate-pulse">
+                            <Pause className="size-2.5" /> Held Cart
+                          </span>
+                        )}
 
                         {/* Customer Type Badges */}
                         {c.type === "wholesale" && (
@@ -749,12 +775,28 @@ export function PosDialogs({
               </div>
             )}
           </div>
+
+          {/* Footer */}
+          <div className="p-3.5 sm:p-4 border-t border-border/80 bg-muted/20 flex items-center justify-between text-xs text-muted-foreground">
+            <span className="flex items-center gap-1.5">
+              <span className="size-2 rounded-full bg-primary" />
+              Press <kbd className="font-mono bg-background border px-1.5 py-0.5 rounded text-[10px] font-bold">F2</kbd> to add a new customer quickly.
+            </span>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowCustomerSearch(false)}
+              className="h-8 rounded-xl text-xs font-bold"
+            >
+              Close
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
 
       {/* Modern Quick Add Customer Dialog */}
       <Dialog open={showAddCustomer} onOpenChange={setShowAddCustomer}>
-        <DialogContent className="sm:max-w-xl p-0 gap-0 overflow-hidden rounded-2xl border-border/80 shadow-2xl bg-card">
+        <DialogContent className="sm:max-w-2xl p-0 gap-0 overflow-hidden rounded-3xl border-border/80 shadow-2xl bg-card">
           <div className="p-4 sm:p-5 border-b border-border/80 bg-muted/20 flex items-center gap-2.5">
             <div className="size-9 rounded-xl bg-primary/10 border border-primary/20 grid place-items-center text-primary shadow-xs">
               <User className="size-4.5" />
@@ -855,358 +897,746 @@ export function PosDialogs({
         </DialogContent>
       </Dialog>
 
+      {/* Premium Quick Add Item (Product / Service) Modal */}
       <Dialog open={showAddProduct} onOpenChange={setShowAddProduct}>
-        <DialogContent className="max-w-xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Plus className="size-5 text-primary" />
-              <span>Quick Add Item</span>
-            </DialogTitle>
-          </DialogHeader>
-          <Tabs defaultValue="product" className="w-full mt-2">
-            <TabsList className="grid w-full grid-cols-2 mb-4">
-              <TabsTrigger value="product">Product</TabsTrigger>
-              <TabsTrigger value="service">Service</TabsTrigger>
-            </TabsList>
+        <DialogContent className="sm:max-w-2xl md:max-w-3xl p-0 gap-0 overflow-hidden rounded-3xl border-border/80 shadow-2xl bg-card">
+          {/* Header */}
+          <div className="p-4 sm:p-5 border-b border-border/80 bg-muted/20 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="size-10 rounded-xl bg-primary/10 border border-primary/20 grid place-items-center text-primary shadow-xs">
+                <Plus className="size-5 stroke-[2.5]" />
+              </div>
+              <div>
+                <DialogTitle className="text-base sm:text-lg font-bold text-foreground">
+                  Quick Add Item
+                </DialogTitle>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Create a new product or service to sell immediately from POS
+                </p>
+              </div>
+            </div>
+          </div>
 
-            <TabsContent value="product">
-              <form onSubmit={handleQuickAddProduct} className="space-y-4 pt-2">
-                <div className="space-y-2">
-                  {/* <Label>Product Image</Label> */}
-                  <FileUpload
-                    value={newProductImage}
-                    onChange={setNewProductImage}
-                    folder="products"
-                    accept="image/*"
-                    maxSizeMB={5}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Product Name *</Label>
-                  <Input name="name" placeholder="e.g. Wireless Mouse" required autoFocus />
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>Retail Price *</Label>
-                    <Input
-                      name="price"
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      placeholder="0.00"
-                      required
+          <Tabs defaultValue="product" className="w-full flex flex-col">
+            <div className="px-5 pt-4 pb-0 bg-muted/5 border-b border-border/60">
+              <TabsList className="grid w-full sm:w-64 grid-cols-2 rounded-xl p-1 bg-muted/50 border border-border/60">
+                <TabsTrigger value="product" className="rounded-lg text-xs font-bold">
+                  Product
+                </TabsTrigger>
+                <TabsTrigger value="service" className="rounded-lg text-xs font-bold">
+                  Service
+                </TabsTrigger>
+              </TabsList>
+            </div>
+
+            <TabsContent value="product" className="m-0">
+              <form onSubmit={handleQuickAddProduct} className="flex flex-col">
+                <div className="p-5 space-y-4 max-h-[60vh] overflow-y-auto">
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-bold text-muted-foreground">Product Image</Label>
+                    <FileUpload
+                      value={newProductImage}
+                      onChange={setNewProductImage}
+                      folder="products"
+                      accept="image/*"
+                      maxSizeMB={5}
                     />
                   </div>
-                  <div className="space-y-2">
-                    <Label>Cost Price *</Label>
+
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-bold text-foreground">Product Name *</Label>
                     <Input
-                      name="cost"
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      placeholder="0.00"
+                      name="name"
+                      placeholder="e.g. Wireless Ergonomic Mouse"
+                      className="rounded-xl h-10 text-xs sm:text-sm font-medium border-border/80"
                       required
+                      autoFocus
                     />
                   </div>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>Opening Stock</Label>
-                    <Input name="stock" type="number" min="0" placeholder="0" defaultValue="0" />
-                  </div>
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <Label>Barcode / SKU</Label>
-                      <button
-                        type="button"
-                        onClick={generateBarcode}
-                        className="text-[10px] font-medium text-primary hover:underline focus:outline-none"
-                      >
-                        Generate
-                      </button>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                      <Label className="text-xs font-bold text-foreground">Selling Price ({currencySymbol}) *</Label>
+                      <Input
+                        name="price"
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        placeholder="0.00"
+                        className="rounded-xl h-10 text-xs sm:text-sm font-medium border-border/80"
+                        required
+                      />
                     </div>
-                    <Input
-                      name="barcode"
-                      placeholder="Scan or enter code"
-                      value={newProductBarcode}
-                      onChange={(e) => setNewProductBarcode(e.target.value)}
-                    />
+                    <div className="space-y-1.5">
+                      <Label className="text-xs font-bold text-foreground">Cost Price ({currencySymbol}) *</Label>
+                      <Input
+                        name="cost"
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        placeholder="0.00"
+                        className="rounded-xl h-10 text-xs sm:text-sm font-medium border-border/80"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                      <Label className="text-xs font-bold text-foreground">Opening Stock</Label>
+                      <Input
+                        name="stock"
+                        type="number"
+                        min="0"
+                        placeholder="0"
+                        defaultValue="10"
+                        className="rounded-xl h-10 text-xs sm:text-sm font-medium border-border/80"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <div className="flex items-center justify-between">
+                        <Label className="text-xs font-bold text-foreground">Barcode / SKU</Label>
+                        <button
+                          type="button"
+                          onClick={generateBarcode}
+                          className="text-[11px] font-bold text-primary hover:underline focus:outline-none"
+                        >
+                          Generate Code
+                        </button>
+                      </div>
+                      <Input
+                        name="barcode"
+                        placeholder="Scan or enter code"
+                        value={newProductBarcode}
+                        onChange={(e) => setNewProductBarcode(e.target.value)}
+                        className="rounded-xl h-10 text-xs sm:text-sm font-medium border-border/80"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div className="space-y-1.5">
+                      <Label className="text-xs font-bold text-foreground">Unit *</Label>
+                      <input type="hidden" name="unit" value={newProductUnit} />
+                      <SearchableSelect
+                        value={newProductUnit}
+                        onChange={setNewProductUnit}
+                        options={units.map((u: any) => ({ value: u.id, label: u.name }))}
+                        placeholder="Select Unit"
+                        onCreate={async (name) => {
+                          const res = await createUnitFn({
+                            data: { unit: { name, shortName: name } },
+                          });
+                          if (res?.success) {
+                            queryClient.invalidateQueries({ queryKey: ["units"] });
+                            return res.data?.id;
+                          }
+                        }}
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-xs font-bold text-foreground">Category</Label>
+                      <input type="hidden" name="category" value={newProductCategory} />
+                      <SearchableSelect
+                        value={newProductCategory}
+                        onChange={setNewProductCategory}
+                        options={categories.map((c: any) => ({ value: c.id, label: c.name }))}
+                        placeholder="Select Category"
+                        onCreate={async (name) => {
+                          const res = await createCategoryFn({ data: { category: { name } } });
+                          if (res?.success) {
+                            queryClient.invalidateQueries({ queryKey: ["categories"] });
+                            return res.data?.id;
+                          }
+                        }}
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-xs font-bold text-foreground">Brand</Label>
+                      <input type="hidden" name="brand" value={newProductBrand} />
+                      <SearchableSelect
+                        value={newProductBrand}
+                        onChange={setNewProductBrand}
+                        options={brands.map((b: any) => ({ value: b.id, label: b.name }))}
+                        placeholder="Select Brand"
+                        onCreate={async (name) => {
+                          const res = await createBrandFn({ data: { brand: { name } } });
+                          if (res?.success) {
+                            queryClient.invalidateQueries({ queryKey: ["brands"] });
+                            return res.data?.id;
+                          }
+                        }}
+                      />
+                    </div>
                   </div>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                  <div className="space-y-2">
-                    <Label>Unit *</Label>
-                    <input type="hidden" name="unit" value={newProductUnit} />
-                    <SearchableSelect
-                      value={newProductUnit}
-                      onChange={setNewProductUnit}
-                      options={units.map((u: any) => ({ value: u.id, label: u.name }))}
-                      placeholder="Select Unit"
-                      onCreate={async (name) => {
-                        const res = await createUnitFn({
-                          data: { unit: { name, shortName: name } },
-                        });
-                        if (res?.success) {
-                          queryClient.invalidateQueries({ queryKey: ["units"] });
-                          return res.data?.id;
-                        }
-                      }}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Category</Label>
-                    <input type="hidden" name="category" value={newProductCategory} />
-                    <SearchableSelect
-                      value={newProductCategory}
-                      onChange={setNewProductCategory}
-                      options={categories.map((c: any) => ({ value: c.id, label: c.name }))}
-                      placeholder="Select Category"
-                      onCreate={async (name) => {
-                        const res = await createCategoryFn({ data: { category: { name } } });
-                        if (res?.success) {
-                          queryClient.invalidateQueries({ queryKey: ["categories"] });
-                          return res.data?.id;
-                        }
-                      }}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Brand</Label>
-                    <input type="hidden" name="brand" value={newProductBrand} />
-                    <SearchableSelect
-                      value={newProductBrand}
-                      onChange={setNewProductBrand}
-                      options={brands.map((b: any) => ({ value: b.id, label: b.name }))}
-                      placeholder="Select Brand"
-                      onCreate={async (name) => {
-                        const res = await createBrandFn({ data: { brand: { name } } });
-                        if (res?.success) {
-                          queryClient.invalidateQueries({ queryKey: ["brands"] });
-                          return res.data?.id;
-                        }
-                      }}
-                    />
-                  </div>
-                </div>
-                <DialogFooter>
-                  <Button type="button" variant="outline" onClick={() => setShowAddProduct(false)}>
+
+                <div className="p-4 sm:p-5 border-t border-border/80 bg-muted/20 flex items-center justify-end gap-2 shrink-0">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setShowAddProduct(false)}
+                    className="h-10 px-4 text-xs font-bold rounded-xl"
+                  >
                     Cancel
                   </Button>
-                  <Button type="submit" disabled={isAddingProduct}>
-                    {isAddingProduct && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Save
-                    Product
+                  <Button
+                    type="submit"
+                    disabled={isAddingProduct}
+                    className="h-10 px-5 text-xs font-bold rounded-xl bg-primary text-primary-foreground shadow-md"
+                  >
+                    {isAddingProduct && <Loader2 className="mr-2 size-4 animate-spin" />}
+                    Save & Add to POS
                   </Button>
-                </DialogFooter>
+                </div>
               </form>
             </TabsContent>
 
-            <TabsContent value="service">
-              <form onSubmit={handleQuickAddService} className="space-y-4 pt-2">
-                <div className="space-y-2">
-                  {/* <Label>Service Image</Label> */}
-                  <FileUpload
-                    value={newServiceImage}
-                    onChange={setNewServiceImage}
-                    folder="services"
-                    accept="image/*"
-                    maxSizeMB={5}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Service Name *</Label>
-                  <Input name="name" placeholder="Enter service name" required autoFocus />
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>Price *</Label>
-                    <Input
-                      name="price"
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      placeholder="0.00"
-                      required
+            <TabsContent value="service" className="m-0">
+              <form onSubmit={handleQuickAddService} className="flex flex-col">
+                <div className="p-5 space-y-4 max-h-[60vh] overflow-y-auto">
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-bold text-muted-foreground">Service Image</Label>
+                    <FileUpload
+                      value={newServiceImage}
+                      onChange={setNewServiceImage}
+                      folder="services"
+                      accept="image/*"
+                      maxSizeMB={5}
                     />
                   </div>
-                  <div className="space-y-2">
-                    <Label>Duration</Label>
-                    <div className="flex gap-2">
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-bold text-foreground">Service Name *</Label>
+                    <Input
+                      name="name"
+                      placeholder="e.g. Express Laptop Screen Replacement"
+                      className="rounded-xl h-10 text-xs sm:text-sm font-medium border-border/80"
+                      required
+                      autoFocus
+                    />
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                      <Label className="text-xs font-bold text-foreground">Price ({currencySymbol}) *</Label>
                       <Input
-                        name="duration"
+                        name="price"
                         type="number"
+                        step="0.01"
                         min="0"
-                        placeholder="e.g. 30"
-                        className="flex-1"
+                        placeholder="0.00"
+                        className="rounded-xl h-10 text-xs sm:text-sm font-medium border-border/80"
+                        required
                       />
-                      <Select name="durationUnit" defaultValue="mins">
-                        <SelectTrigger className="w-[120px] h-10 rounded-lg">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="mins">Minutes</SelectItem>
-                          <SelectItem value="hours">Hours</SelectItem>
-                          <SelectItem value="days">Days</SelectItem>
-                        </SelectContent>
-                      </Select>
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-xs font-bold text-foreground">Duration</Label>
+                      <div className="flex gap-2">
+                        <Input
+                          name="duration"
+                          type="number"
+                          min="0"
+                          placeholder="e.g. 45"
+                          className="flex-1 rounded-xl h-10 text-xs sm:text-sm font-medium border-border/80"
+                        />
+                        <Select name="durationUnit" defaultValue="mins">
+                          <SelectTrigger className="w-[120px] h-10 rounded-xl border-border/80">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="mins">Minutes</SelectItem>
+                            <SelectItem value="hours">Hours</SelectItem>
+                            <SelectItem value="days">Days</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                      <Label className="text-xs font-bold text-foreground">Unit *</Label>
+                      <input type="hidden" name="unit" value={newServiceUnit} />
+                      <SearchableSelect
+                        value={newServiceUnit}
+                        onChange={setNewServiceUnit}
+                        options={units.map((u: any) => ({ value: u.id, label: u.name }))}
+                        placeholder="Select Unit"
+                        onCreate={async (name) => {
+                          const res = await createUnitFn({
+                            data: { unit: { name, shortName: name } },
+                          });
+                          if (res?.success) {
+                            queryClient.invalidateQueries({ queryKey: ["units"] });
+                            return res.data?.id;
+                          }
+                        }}
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-xs font-bold text-foreground">Category</Label>
+                      <input type="hidden" name="category" value={newServiceCategory} />
+                      <SearchableSelect
+                        value={newServiceCategory}
+                        onChange={setNewServiceCategory}
+                        options={categories.map((c: any) => ({ value: c.id, label: c.name }))}
+                        placeholder="Select Category"
+                        onCreate={async (name) => {
+                          const res = await createCategoryFn({ data: { category: { name } } });
+                          if (res?.success) {
+                            queryClient.invalidateQueries({ queryKey: ["categories"] });
+                            return res.data?.id;
+                          }
+                        }}
+                      />
                     </div>
                   </div>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>Unit *</Label>
-                    <input type="hidden" name="unit" value={newServiceUnit} />
-                    <SearchableSelect
-                      value={newServiceUnit}
-                      onChange={setNewServiceUnit}
-                      options={units.map((u: any) => ({ value: u.id, label: u.name }))}
-                      placeholder="Select Unit"
-                      onCreate={async (name) => {
-                        const res = await createUnitFn({
-                          data: { unit: { name, shortName: name } },
-                        });
-                        if (res?.success) {
-                          queryClient.invalidateQueries({ queryKey: ["units"] });
-                          return res.data?.id;
-                        }
-                      }}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Category</Label>
-                    <input type="hidden" name="category" value={newServiceCategory} />
-                    <SearchableSelect
-                      value={newServiceCategory}
-                      onChange={setNewServiceCategory}
-                      options={categories.map((c: any) => ({ value: c.id, label: c.name }))}
-                      placeholder="Select Category"
-                      onCreate={async (name) => {
-                        const res = await createCategoryFn({ data: { category: { name } } });
-                        if (res?.success) {
-                          queryClient.invalidateQueries({ queryKey: ["categories"] });
-                          return res.data?.id;
-                        }
-                      }}
-                    />
-                  </div>
-                </div>
-                <DialogFooter>
-                  <Button type="button" variant="outline" onClick={() => setShowAddProduct(false)}>
+
+                <div className="p-4 sm:p-5 border-t border-border/80 bg-muted/20 flex items-center justify-end gap-2 shrink-0">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setShowAddProduct(false)}
+                    className="h-10 px-4 text-xs font-bold rounded-xl"
+                  >
                     Cancel
                   </Button>
-                  <Button type="submit" disabled={isAddingService}>
-                    {isAddingService && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Save
-                    Service
+                  <Button
+                    type="submit"
+                    disabled={isAddingService}
+                    className="h-10 px-5 text-xs font-bold rounded-xl bg-primary text-primary-foreground shadow-md"
+                  >
+                    {isAddingService && <Loader2 className="mr-2 size-4 animate-spin" />}
+                    Save Service
                   </Button>
-                </DialogFooter>
+                </div>
               </form>
             </TabsContent>
           </Tabs>
         </DialogContent>
       </Dialog>
 
+      {/* Premium Keyboard Shortcuts Matrix Modal */}
       <Dialog open={showShortcutsHelp} onOpenChange={setShowShortcutsHelp}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Keyboard className="size-5 text-primary" />
-              <span>Shortcuts</span>
-            </DialogTitle>
-          </DialogHeader>
-          <div className="space-y-2 py-2">
-            {[
-              { key: "F1", desc: "Product Search" },
-              { key: "F2", desc: "Quick Add Customer" },
-              { key: "F8", desc: "Hold Bill" },
-              { key: "F9", desc: "Checkout" },
-            ].map((s) => (
-              <div
-                key={s.key}
-                className="flex justify-between rounded-lg border bg-muted/30 px-3 py-2 text-xs"
-              >
-                <span className="font-medium">{s.desc}</span>
-                <kbd className="rounded bg-muted px-2 py-1 font-mono font-bold shadow-xs border">
-                  {s.key}
-                </kbd>
+        <DialogContent className="sm:max-w-2xl p-0 gap-0 overflow-hidden rounded-3xl border-border/80 shadow-2xl bg-card">
+          {/* Header */}
+          <div className="p-4 sm:p-5 border-b border-border/80 bg-muted/20 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="size-10 rounded-xl bg-primary/10 border border-primary/20 grid place-items-center text-primary shadow-xs">
+                <Keyboard className="size-5" />
               </div>
-            ))}
+              <div>
+                <DialogTitle className="text-base sm:text-lg font-bold text-foreground">
+                  POS Keyboard Shortcuts
+                </DialogTitle>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  High-speed cashier shortcuts for instant queue-busting
+                </p>
+              </div>
+            </div>
+            <span className="rounded-full bg-primary/10 px-2.5 py-1 text-[11px] font-extrabold text-primary border border-primary/20">
+              Pro Mode
+            </span>
+          </div>
+
+          <div className="p-5 grid grid-cols-1 sm:grid-cols-2 gap-4 max-h-[62vh] overflow-y-auto">
+            {/* Column 1: Cart & Catalog */}
+            <div className="space-y-2">
+              <div className="text-[11px] font-black uppercase tracking-wider text-muted-foreground px-1 pb-1">
+                Catalog & Cart Operations
+              </div>
+              {[
+                { key: "F1", desc: "Focus Product Search", badge: "Catalog" },
+                { key: "F2", desc: "Select / Add Customer", badge: "Customer" },
+                { key: "F3", desc: "Manual Discount Input", badge: "Pricing" },
+                { key: "F4", desc: "Hold / Park Active Cart", badge: "Queue" },
+                { key: "F6", desc: "Focus Barcode Scanner", badge: "Scanner" },
+              ].map((s) => (
+                <div
+                  key={s.key}
+                  className="flex justify-between items-center rounded-xl border border-border/80 bg-muted/20 px-3.5 py-2.5 shadow-2xs hover:border-primary/40 transition-colors"
+                >
+                  <span className="text-xs font-semibold text-foreground">{s.desc}</span>
+                  <kbd className="rounded-lg bg-card px-2.5 py-1 font-mono font-extrabold text-xs shadow-xs border border-border/80 text-foreground">
+                    {s.key}
+                  </kbd>
+                </div>
+              ))}
+            </div>
+
+            {/* Column 2: Tendering & Navigation */}
+            <div className="space-y-2">
+              <div className="text-[11px] font-black uppercase tracking-wider text-muted-foreground px-1 pb-1">
+                Tender, Held & Settlement
+              </div>
+              {[
+                { key: "Ctrl + ↵", desc: "Fast Checkout & Settle", badge: "Checkout" },
+                { key: "F5", desc: "Switch Card / UPI Tender", badge: "Payment" },
+                { key: "Alt + H", desc: "View Parked / Held Bills", badge: "Parked" },
+                { key: "Esc", desc: "Close Dialog / Reset Input", badge: "Nav" },
+                { key: "?", desc: "Show Shortcuts Guide", badge: "Help" },
+              ].map((s) => (
+                <div
+                  key={s.key}
+                  className="flex justify-between items-center rounded-xl border border-border/80 bg-muted/20 px-3.5 py-2.5 shadow-2xs hover:border-primary/40 transition-colors"
+                >
+                  <span className="text-xs font-semibold text-foreground">{s.desc}</span>
+                  <kbd className="rounded-lg bg-card px-2.5 py-1 font-mono font-extrabold text-xs shadow-xs border border-border/80 text-foreground">
+                    {s.key}
+                  </kbd>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="p-3.5 sm:p-4 border-t border-border/80 bg-muted/30 flex items-center justify-between text-xs text-muted-foreground">
+            <span>💡 All shortcuts are active globally across the terminal.</span>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowShortcutsHelp(false)}
+              className="h-8 rounded-xl text-xs font-bold"
+            >
+              Got It
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
 
+      {/* Parked / Held Invoices Modal */}
       <Dialog open={showHeld} onOpenChange={setShowHeld}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Held Invoices ({heldInvoices.length})</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-2 max-h-64 overflow-y-auto">
-            {heldInvoices.map((h: any) => {
-              let cartCount = 0;
-              try {
-                const parsed =
-                  typeof h.cart === "string" ? JSON.parse(h.cart || "[]") : h.cart || [];
-                cartCount = Array.isArray(parsed) ? parsed.length : 0;
-              } catch {
-                cartCount = 0;
-              }
-              return (
-                <div
-                  key={h.id}
-                  className="flex justify-between items-center border border-border/80 p-3 rounded-xl bg-card shadow-2xs"
-                >
-                  <div>
-                    <div className="font-bold text-sm text-foreground">
-                      {h.customerName || "Walk-in Customer"}
-                    </div>
-                    <div className="text-xs text-muted-foreground">
-                      {cartCount} {cartCount === 1 ? "item" : "items"}{" "}
-                      {h.discount ? `· ${h.discount}% disc` : ""}
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <Button
-                      size="sm"
-                      onClick={() => onResumeInvoice(h)}
-                      className="h-8 text-xs font-semibold"
-                    >
-                      Resume
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="secondary"
-                      onClick={() => {
-                        setShowHeld(false);
-                        setSplittingInvoice(h);
-                      }}
-                      className="h-8 text-xs"
-                    >
-                      Split
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={async () => {
-                        const ok = window.confirm(`Are you sure you want to void held bill for ${h.customerName || "Walk-in"}?`);
-                        if (!ok) return;
-                        await deleteHeldInvoiceFn({ data: { id: h.id } });
-                        refetchHeld();
-                        toast.success("Held bill voided");
-                      }}
-                      className="h-8 text-xs font-semibold text-destructive border-destructive/30 hover:bg-destructive/10"
-                      title="Void held bill"
-                    >
-                      <Ban className="size-3.5 mr-1" /> Void
-                    </Button>
-                  </div>
+        <DialogContent className="sm:max-w-3xl p-0 gap-0 overflow-hidden rounded-3xl border-border/80 shadow-2xl bg-card">
+          {/* Fixed Header */}
+          <div className="p-4 sm:p-5 border-b border-border/80 bg-muted/20 space-y-3.5">
+            {/* Top Row: Icon, Title & Badge */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="size-10 rounded-2xl bg-warning/10 border border-warning/25 grid place-items-center text-warning shadow-xs shrink-0">
+                  <Pause className="size-5" />
                 </div>
-              );
-            })}
+                <div>
+                  <div className="flex items-center gap-2">
+                    <DialogTitle className="text-base sm:text-lg font-bold text-foreground">
+                      Parked / Held Invoices
+                    </DialogTitle>
+                    <span className="rounded-full bg-warning/15 text-warning font-extrabold text-[11px] px-2.5 py-0.5 border border-warning/25">
+                      {heldInvoices.length} Parked
+                    </span>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    Resume any parked customer cart instantly for zero-queue fast checkout
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Toolbar Row: Search + Clear All */}
+            <div className="flex items-center gap-2 pt-0.5">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground" />
+                <Input
+                  value={heldSearch}
+                  onChange={(e) => setHeldSearch(e.target.value)}
+                  placeholder="Search by customer name or mobile number..."
+                  className="h-9 pl-9 text-xs rounded-xl bg-background border-border/80"
+                />
+              </div>
+
+              {heldInvoices.length > 0 && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setShowClearAllHeldConfirm(true)}
+                  className="h-9 px-3.5 text-xs font-bold text-destructive border-destructive/30 hover:bg-destructive/10 hover:border-destructive rounded-xl shrink-0 gap-1.5"
+                  title="Clear all held invoices"
+                >
+                  <Trash2 className="size-3.5" />
+                  <span>Clear All ({heldInvoices.length})</span>
+                </Button>
+              )}
+            </div>
+          </div>
+
+          {/* List of Held Bills */}
+          <div className="p-4 sm:p-5 space-y-3 max-h-[62vh] overflow-y-auto">
+            {heldInvoices.length === 0 ? (
+              <div className="text-center py-12 px-4 border border-dashed border-border/80 rounded-2xl bg-muted/10">
+                <div className="size-14 rounded-2xl bg-warning/10 border border-warning/20 grid place-items-center text-warning mx-auto mb-3">
+                  <Clock className="size-7" />
+                </div>
+                <h4 className="font-bold text-base text-foreground">No Parked Invoices in Queue</h4>
+                <p className="text-xs text-muted-foreground mt-1 max-w-md mx-auto">
+                  When a customer takes time or needs to grab another item, click{" "}
+                  <span className="font-bold text-foreground">[Hold]</span> or press{" "}
+                  <span className="font-bold text-foreground">F4</span> during checkout to park their
+                  cart and immediately serve the next customer.
+                </p>
+              </div>
+            ) : (
+              heldInvoices
+                .filter((h: any) => {
+                  if (!heldSearch.trim()) return true;
+                  const q = heldSearch.toLowerCase();
+                  const name = (h.customerName || "").toLowerCase();
+                  const phone = (h.customerPhone || h.note || "").toLowerCase();
+                  return name.includes(q) || phone.includes(q);
+                })
+                .map((h: any) => {
+                  let cartItems: any[] = [];
+                  let cartCount = 0;
+                  let cartTotal = 0;
+
+                  try {
+                    const parsed =
+                      typeof h.cart === "string" ? JSON.parse(h.cart || "[]") : h.cart || [];
+                    cartItems = Array.isArray(parsed) ? parsed : [];
+                    cartCount = cartItems.reduce(
+                      (acc: number, item: any) => acc + (Number(item.qty) || 1),
+                      0,
+                    );
+                    cartTotal = cartItems.reduce(
+                      (acc: number, item: any) =>
+                        acc + (Number(item.variantPrice || item.price) || 0) * (Number(item.qty) || 1),
+                      0,
+                    );
+                  } catch {
+                    cartItems = [];
+                    cartCount = 0;
+                    cartTotal = 0;
+                  }
+
+                  const discountValue = Number(h.discount) || 0;
+                  const finalEstimatedTotal =
+                    discountValue > 0
+                      ? cartTotal - (cartTotal * discountValue) / 100
+                      : cartTotal;
+
+                  const customerPhone =
+                    h.customerPhone ||
+                    (h.note?.startsWith("Phone:")
+                      ? h.note.replace("Phone:", "").trim()
+                      : null);
+
+                  const savedTimeStr = h.savedAt
+                    ? new Date(h.savedAt).toLocaleTimeString([], {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })
+                    : "Recently";
+
+                  return (
+                    <div
+                      key={h.id}
+                      className="flex flex-col md:flex-row md:items-center justify-between p-4 rounded-xl border border-border/80 bg-card hover:border-warning/50 hover:shadow-md transition-all gap-4"
+                    >
+                      {/* Customer & Info */}
+                      <div className="space-y-2 flex-1 min-w-0">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <div className="size-8 rounded-lg bg-primary/10 border border-primary/20 grid place-items-center text-primary font-bold text-xs shrink-0">
+                            {(h.customerName || "W")[0].toUpperCase()}
+                          </div>
+                          <span className="font-bold text-base text-foreground truncate">
+                            {h.customerName || "Walk-in Customer"}
+                          </span>
+
+                          {/* Customer Mobile Phone */}
+                          {customerPhone ? (
+                            <span className="inline-flex items-center gap-1 text-xs font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2.5 py-0.5 rounded-full border border-emerald-500/20 shadow-2xs">
+                              <Phone className="size-3" />
+                              {customerPhone}
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-muted-foreground bg-muted/60 px-2 py-0.5 rounded-md border border-border/60">
+                              <User className="size-3" /> Walk-in
+                            </span>
+                          )}
+
+                          {/* Saved Time */}
+                          <span className="inline-flex items-center gap-1 text-xs text-muted-foreground font-medium">
+                            <Clock className="size-3" /> {savedTimeStr}
+                          </span>
+                        </div>
+
+                        {/* Items Preview Chips */}
+                        <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
+                          <span className="inline-flex items-center gap-1 text-xs font-bold text-muted-foreground bg-muted/50 px-2 py-0.5 rounded-md border border-border/50">
+                            <ShoppingBag className="size-3 text-primary" /> {cartCount}{" "}
+                            {cartCount === 1 ? "item" : "items"}
+                          </span>
+
+                          {cartItems.slice(0, 3).map((item: any, idx: number) => (
+                            <span
+                              key={idx}
+                              className="text-[11px] text-foreground bg-muted/30 px-2 py-0.5 rounded-md border border-border/40 truncate max-w-[150px]"
+                            >
+                              {item.qty}x {item.name || item.product?.name || "Item"}
+                            </span>
+                          ))}
+
+                          {cartItems.length > 3 && (
+                            <span className="text-[11px] font-bold text-muted-foreground">
+                              +{cartItems.length - 3} more
+                            </span>
+                          )}
+
+                          {discountValue > 0 && (
+                            <span className="inline-flex items-center gap-0.5 text-xs font-bold text-destructive bg-destructive/10 px-2 py-0.5 rounded-md border border-destructive/20">
+                              <BadgePercent className="size-3" /> {discountValue}% OFF
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Total & Action Buttons */}
+                      <div className="flex items-center justify-between md:justify-end gap-3 pt-2 md:pt-0 border-t md:border-t-0 border-border/60 shrink-0">
+                        {cartTotal > 0 && (
+                          <div className="text-right mr-1">
+                            <div className="text-[10px] uppercase tracking-wider font-extrabold text-muted-foreground">
+                              Est. Total
+                            </div>
+                            <div className="font-extrabold text-base text-foreground number">
+                              {formatCurrency(finalEstimatedTotal)}
+                            </div>
+                          </div>
+                        )}
+
+                        <div className="flex items-center gap-1.5">
+                          <Button
+                            size="sm"
+                            onClick={() => onResumeInvoice(h)}
+                            className="h-9 px-3.5 text-xs font-bold gap-1.5 shadow-sm bg-primary text-primary-foreground hover:bg-primary/90 rounded-xl"
+                          >
+                            <Play className="size-3.5 fill-current" />
+                            Resume Cart
+                          </Button>
+
+                          <Button
+                            size="sm"
+                            variant="secondary"
+                            onClick={() => {
+                              setShowHeld(false);
+                              setSplittingInvoice(h);
+                            }}
+                            className="h-9 px-2.5 text-xs font-semibold rounded-xl"
+                            title="Split Bill"
+                          >
+                            Split
+                          </Button>
+
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => setVoidingInvoice(h)}
+                            className="h-9 px-2.5 text-xs font-semibold text-destructive border-destructive/30 hover:bg-destructive/10 rounded-xl"
+                            title="Void held bill"
+                          >
+                            <Ban className="size-3.5" />
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })
+            )}
+          </div>
+
+          {/* Footer Note */}
+          <div className="p-3.5 sm:p-4 border-t border-border/80 bg-muted/30 flex items-center justify-between text-xs text-muted-foreground">
+            <span className="flex items-center gap-1.5">
+              <span className="size-2 rounded-full bg-emerald-500 animate-pulse" />
+              Tip: Press <kbd className="font-mono bg-background border px-1.5 py-0.5 rounded text-[10px] font-bold">F4</kbd> during billing to park any basket in 0.0s.
+            </span>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowHeld(false)}
+              className="h-8 rounded-xl text-xs font-bold"
+            >
+              Close
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Confirmation Modal: Clear ALL Held Orders */}
+      <AlertDialog open={showClearAllHeldConfirm} onOpenChange={setShowClearAllHeldConfirm}>
+        <AlertDialogContent className="rounded-2xl border-border/80 shadow-2xl max-w-md">
+          <AlertDialogHeader>
+            <div className="size-12 rounded-2xl bg-destructive/10 border border-destructive/25 grid place-items-center text-destructive mb-2">
+              <Trash2 className="size-6" />
+            </div>
+            <AlertDialogTitle className="text-lg font-bold text-foreground">
+              Clear All Parked Invoices?
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-xs text-muted-foreground leading-relaxed">
+              This will permanently delete all <strong className="text-foreground font-bold">{heldInvoices.length}</strong> parked customer invoices from your queue. All unbilled carts will be removed. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="gap-2 sm:gap-2 mt-3">
+            <AlertDialogCancel className="rounded-xl text-xs font-semibold">
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={async () => {
+                try {
+                  await clearAllHeldInvoicesFn();
+                  queryClient.invalidateQueries({ queryKey: ["heldInvoices"] });
+                  setShowHeld(false);
+                  toast.success("All parked invoices cleared successfully");
+                } catch (e: any) {
+                  toast.error(e.message || "Failed to clear parked invoices");
+                }
+              }}
+              className="rounded-xl text-xs font-bold bg-destructive text-destructive-foreground hover:bg-destructive/90 gap-1.5"
+            >
+              <Trash2 className="size-3.5" />
+              Yes, Clear All Orders
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Confirmation Modal: Void Single Held Order */}
+      <AlertDialog open={!!voidingInvoice} onOpenChange={(open) => !open && setVoidingInvoice(null)}>
+        <AlertDialogContent className="rounded-2xl border-border/80 shadow-2xl max-w-md">
+          <AlertDialogHeader>
+            <div className="size-12 rounded-2xl bg-destructive/10 border border-destructive/25 grid place-items-center text-destructive mb-2">
+              <Ban className="size-6" />
+            </div>
+            <AlertDialogTitle className="text-lg font-bold text-foreground">
+              Void Held Invoice?
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-xs text-muted-foreground leading-relaxed">
+              Are you sure you want to void the parked order for <strong className="text-foreground font-bold">{voidingInvoice?.customerName || "Walk-in Customer"}</strong>? The basket items will be permanently removed.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="gap-2 sm:gap-2 mt-3">
+            <AlertDialogCancel className="rounded-xl text-xs font-semibold">
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={async () => {
+                if (!voidingInvoice) return;
+                try {
+                  await deleteHeldInvoiceFn({ data: { id: voidingInvoice.id } });
+                  queryClient.invalidateQueries({ queryKey: ["heldInvoices"] });
+                  setVoidingInvoice(null);
+                  toast.success("Held invoice voided");
+                } catch (e: any) {
+                  toast.error(e.message || "Failed to void held invoice");
+                }
+              }}
+              className="rounded-xl text-xs font-bold bg-destructive text-destructive-foreground hover:bg-destructive/90 gap-1.5"
+            >
+              <Trash2 className="size-3.5" />
+              Void Invoice
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Coupon List & Selection Dialog */}
       <Dialog open={showCoupon} onOpenChange={setShowCoupon}>
-        <DialogContent className="sm:max-w-xl p-0 gap-0 overflow-hidden rounded-2xl border-border/80 shadow-2xl bg-card">
+        <DialogContent className="sm:max-w-2xl p-0 gap-0 overflow-hidden rounded-3xl border-border/80 shadow-2xl bg-card">
           {/* Header */}
           <div className="p-4 sm:p-5 border-b border-border/80 bg-muted/20 flex items-center justify-between">
             <div className="flex items-center gap-2.5">
@@ -1450,79 +1880,109 @@ export function PosDialogs({
               </div>
             )}
           </div>
+
+          {/* Footer */}
+          <div className="p-3.5 sm:p-4 border-t border-border/80 bg-muted/20 flex items-center justify-between text-xs text-muted-foreground">
+            <span className="flex items-center gap-1.5">
+              <span className="size-2 rounded-full bg-primary" />
+              Enter custom voucher or select from verified store offers.
+            </span>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowCoupon(false)}
+              className="h-8 rounded-xl text-xs font-bold"
+            >
+              Close
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
 
+      {/* Confirm & Settle Sale Modal */}
       <AlertDialog
         open={confirmCheckout}
         onOpenChange={(open) => {
           if (!isCompletingSale) setConfirmCheckout(open);
         }}
       >
-        <AlertDialogContent className="rounded-2xl max-w-sm">
-          <AlertDialogHeader>
-            <AlertDialogTitle className="text-base font-bold text-center">
-              Confirm & Print Bill
-            </AlertDialogTitle>
-            <div className="pt-2 text-center space-y-3">
-              <div className="bg-primary/10 border border-primary/20 rounded-2xl p-4">
-                <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider block">
-                  Total Bill Amount
-                </span>
-                <span className="number text-3xl font-black text-primary block mt-0.5">
-                  {formatCurrency(total)}
-                </span>
-                <div className="mt-2 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-card border border-border/80 text-xs font-extrabold capitalize text-foreground shadow-xs">
-                  {payment === "cash" && <Banknote className="size-3.5 text-success" />}
-                  {payment === "card" && <CreditCard className="size-3.5 text-info" />}
-                  {payment === "upi" && <Smartphone className="size-3.5 text-primary" />}
-                  {payment === "credit" && <Receipt className="size-3.5 text-warning" />}
-                  {payment === "split" && <Users className="size-3.5 text-secondary" />}
-                  <span>
-                    Payment: {payment === "credit" ? "Udhaar / Khata" : payment.toUpperCase()}
-                  </span>
-                </div>
-              </div>
-
-              {payment === "cash" && changeDue > 0 && (
-                <div className="bg-success/15 border border-success/30 rounded-xl p-3 text-center">
-                  <span className="text-xs font-bold text-success block">
-                    Wapas / Return Change to Customer:
-                  </span>
-                  <span className="number text-2xl font-black text-success block mt-0.5">
-                    {formatCurrency(changeDue)}
-                  </span>
-                </div>
-              )}
-
-              {payment === "credit" && (parseFloat(cashTendered) || 0) > 0 && (
-                <div className="bg-warning/15 border border-warning/30 rounded-xl p-2.5 text-center">
-                  <span className="text-xs font-bold text-warning-foreground block">
-                    Remaining Udhaar:
-                  </span>
-                  <span className="number text-lg font-black text-warning-foreground block mt-0.5">
-                    {formatCurrency(Math.max(0, total - (parseFloat(cashTendered) || 0)))}
-                  </span>
-                </div>
-              )}
+        <AlertDialogContent className="sm:max-w-md p-0 gap-0 overflow-hidden rounded-3xl border-border/80 shadow-2xl bg-card">
+          {/* Header */}
+          <div className="p-4 sm:p-5 border-b border-border/80 bg-muted/20 flex items-center gap-3">
+            <div className="size-10 rounded-2xl bg-primary/10 border border-primary/20 grid place-items-center text-primary shadow-xs">
+              <Receipt className="size-5" />
             </div>
+            <div>
+              <AlertDialogTitle className="text-base font-bold text-foreground">
+                Confirm & Settle Sale
+              </AlertDialogTitle>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Verify transaction amount before issuing receipt
+              </p>
+            </div>
+          </div>
+
+          {/* Body */}
+          <div className="p-5 space-y-4 max-h-[60vh] overflow-y-auto">
+            <div className="bg-primary/10 border border-primary/20 rounded-2xl p-4 text-center">
+              <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider block">
+                Total Bill Amount
+              </span>
+              <span className="number text-3xl font-black text-primary block mt-0.5">
+                {formatCurrency(total)}
+              </span>
+              <div className="mt-2 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-card border border-border/80 text-xs font-extrabold capitalize text-foreground shadow-xs">
+                {payment === "cash" && <Banknote className="size-3.5 text-success" />}
+                {payment === "card" && <CreditCard className="size-3.5 text-info" />}
+                {payment === "upi" && <Smartphone className="size-3.5 text-primary" />}
+                {payment === "credit" && <Receipt className="size-3.5 text-warning" />}
+                {payment === "split" && <Users className="size-3.5 text-secondary" />}
+                <span>
+                  Payment: {payment === "credit" ? "Udhaar / Khata" : payment.toUpperCase()}
+                </span>
+              </div>
+            </div>
+
+            {payment === "cash" && changeDue > 0 && (
+              <div className="bg-success/15 border border-success/30 rounded-xl p-3 text-center">
+                <span className="text-xs font-bold text-success block">
+                  Wapas / Return Change to Customer:
+                </span>
+                <span className="number text-2xl font-black text-success block mt-0.5">
+                  {formatCurrency(changeDue)}
+                </span>
+              </div>
+            )}
+
+            {payment === "credit" && (parseFloat(cashTendered) || 0) > 0 && (
+              <div className="bg-warning/15 border border-warning/30 rounded-xl p-2.5 text-center">
+                <span className="text-xs font-bold text-warning-foreground block">
+                  Remaining Udhaar:
+                </span>
+                <span className="number text-lg font-black text-warning-foreground block mt-0.5">
+                  {formatCurrency(Math.max(0, total - (parseFloat(cashTendered) || 0)))}
+                </span>
+              </div>
+            )}
 
             {(settings?.businessType === "PHARMACY" ||
               state.lines.some((l: any) => l.product.metadata?.prescriptionRequired)) && (
-              <div className="mt-4 pt-3 border-t">
-                <label className="text-xs font-semibold block mb-1 text-primary text-left">
+              <div className="pt-2 border-t space-y-1.5">
+                <Label className="text-xs font-bold text-foreground">
                   Prescription Reference (Optional)
-                </label>
+                </Label>
                 <Input
                   placeholder="e.g. Rx-12345"
                   value={state.prescriptionRef}
                   onChange={(e) => state.setPrescriptionRef(e.target.value)}
-                  className="h-9"
+                  className="h-10 rounded-xl"
                 />
               </div>
             )}
-          </AlertDialogHeader>
-          <AlertDialogFooter className="grid grid-cols-2 gap-2 sm:space-x-0 mt-2">
+          </div>
+
+          {/* Footer */}
+          <div className="p-4 sm:p-5 border-t border-border/80 bg-muted/20 grid grid-cols-2 gap-2">
             <AlertDialogCancel
               disabled={isCompletingSale}
               className="rounded-xl text-xs font-semibold h-11"
@@ -1532,7 +1992,7 @@ export function PosDialogs({
             <Button
               onClick={() => onCheckout()}
               disabled={isCompletingSale}
-              className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold rounded-xl h-11 text-xs sm:text-sm shadow-soft"
+              className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold rounded-xl h-11 text-xs sm:text-sm shadow-md"
             >
               {isCompletingSale ? (
                 <>
@@ -1543,10 +2003,11 @@ export function PosDialogs({
                 "Print Bill ✓"
               )}
             </Button>
-          </AlertDialogFooter>
+          </div>
         </AlertDialogContent>
       </AlertDialog>
 
+      {/* Luxury Sale Complete & Receipt Hub Modal */}
       <Dialog
         open={!!saleComplete}
         onOpenChange={(open) => {
@@ -1556,88 +2017,196 @@ export function PosDialogs({
           }
         }}
       >
-        <DialogContent className="sm:max-w-sm">
-          <DialogHeader>
-            <DialogTitle>Sale Complete</DialogTitle>
-          </DialogHeader>
-          <div className="flex flex-col gap-3 py-4">
-            <Button
-              onClick={() => {
-                setPrintFormat("thermal");
-                setPendingPrint("thermal");
-              }}
-            >
-              <Printer className="mr-2 size-4" /> Thermal
-            </Button>
-            <Button
-              onClick={() => {
-                setPrintFormat("a4");
-                setPendingPrint("a4");
-              }}
-              variant="outline"
-            >
-              <Printer className="mr-2 size-4" /> A4 Invoice
-            </Button>
+        <DialogContent className="sm:max-w-lg p-0 gap-0 overflow-hidden rounded-3xl border-border/80 shadow-2xl bg-card">
+          {/* Header Banner */}
+          <div className="p-6 text-center bg-gradient-to-b from-emerald-500/10 via-emerald-500/5 to-transparent border-b border-border/80">
+            <div className="size-16 rounded-3xl bg-emerald-500/15 border-2 border-emerald-500/30 text-emerald-600 dark:text-emerald-400 grid place-items-center mx-auto mb-3 shadow-md">
+              <Check className="size-8 stroke-[3]" />
+            </div>
+            <DialogTitle className="text-xl font-black text-foreground tracking-tight">
+              Sale Completed Successfully!
+            </DialogTitle>
+            <p className="text-xs text-muted-foreground mt-1 flex items-center justify-center gap-1.5 font-medium">
+              <span>{saleComplete?.storeName || "Store"}</span>
+              <span>•</span>
+              <span className="font-mono font-bold text-foreground">
+                #{String(saleComplete?.id || "").slice(0, 10).toUpperCase()}
+              </span>
+            </p>
+
+            {/* Total Amount Pill */}
+            <div className="mt-4 p-3.5 rounded-2xl bg-card border border-border/80 shadow-sm flex items-center justify-between">
+              <div className="text-left">
+                <div className="text-[10px] font-extrabold uppercase tracking-wider text-muted-foreground">
+                  Total Paid
+                </div>
+                <div className="text-2xl font-black text-emerald-600 dark:text-emerald-400 number">
+                  {currencySymbol}
+                  {(Number(saleComplete?.total) || 0).toFixed(2)}
+                </div>
+              </div>
+
+              <div className="text-right space-y-1">
+                <span className="inline-flex items-center gap-1 text-xs font-bold text-foreground bg-muted/60 px-2.5 py-1 rounded-lg border border-border/60">
+                  <User className="size-3" /> {saleComplete?.customer || "Walk-in Customer"}
+                </span>
+                <div className="text-[11px] font-semibold text-muted-foreground uppercase">
+                  via {saleComplete?.payment || "Cash"}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Action Hub */}
+          <div className="p-5 space-y-3">
+            <div className="grid grid-cols-2 gap-2.5">
+              <Button
+                onClick={() => {
+                  setPrintFormat("thermal");
+                  setPendingPrint("thermal");
+                }}
+                className="h-11 rounded-xl text-xs font-bold gap-2 bg-primary text-primary-foreground shadow-sm hover:bg-primary/90"
+              >
+                <Printer className="size-4" /> Thermal Print
+              </Button>
+
+              <Button
+                onClick={() => {
+                  setPrintFormat("a4");
+                  setPendingPrint("a4");
+                }}
+                variant="outline"
+                className="h-11 rounded-xl text-xs font-bold gap-2 border-border/80 hover:border-primary/50"
+              >
+                <FileText className="size-4 text-primary" /> A4 Tax Invoice
+              </Button>
+            </div>
+
             {saleComplete?.customer !== "Walk-in Customer" && (
-              <Button onClick={sendWhatsApp} className="bg-[#25D366] text-white">
-                <MessageCircle className="mr-2 size-4" /> WhatsApp
+              <Button
+                onClick={sendWhatsApp}
+                className="w-full h-11 rounded-xl text-xs font-bold gap-2 bg-[#25D366] hover:bg-[#20bd5a] text-white shadow-xs"
+              >
+                <MessageCircle className="size-4 fill-current" /> Send WhatsApp Receipt
               </Button>
             )}
 
-            <Button
-              variant="destructive"
-              onClick={async () => {
-                if (!saleComplete?.id) return;
-                const billId = String(saleComplete.id);
-                const ok = window.confirm(
-                  `Are you sure you want to VOID bill #${billId.slice(0, 8).toUpperCase()}?\nThis will restore product stock immediately.`,
-                );
-                if (!ok) return;
-                try {
-                  const res = await voidPosSaleFn({
-                    data: {
-                      saleId: billId,
-                      reason: "Voided directly from POS terminal",
-                    },
-                  });
-                  if (res?.success) {
-                    toast.success("Bill voided and inventory restored.");
-                    setSaleComplete(null);
-                    setPrintData(null);
-                    queryClient.invalidateQueries({ queryKey: ["posBootstrap"] });
-                    queryClient.invalidateQueries({ queryKey: ["sales"] });
-                    queryClient.invalidateQueries({ queryKey: ["products"] });
-                  } else {
-                    toast.error(res?.error || "Failed to void sale");
+            <div className="flex items-center justify-between pt-2 border-t border-border/60 gap-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={async () => {
+                  if (!saleComplete?.id) return;
+                  const billId = String(saleComplete.id);
+                  const ok = window.confirm(
+                    `Are you sure you want to VOID bill #${billId.slice(0, 8).toUpperCase()}?\nThis will restore product stock immediately.`,
+                  );
+                  if (!ok) return;
+                  try {
+                    const res = await voidPosSaleFn({
+                      data: {
+                        saleId: billId,
+                        reason: "Voided directly from POS terminal",
+                      },
+                    });
+                    if (res?.success) {
+                      toast.success("Bill voided and inventory restored.");
+                      setSaleComplete(null);
+                      setPrintData(null);
+                      queryClient.invalidateQueries({ queryKey: ["posBootstrap"] });
+                      queryClient.invalidateQueries({ queryKey: ["sales"] });
+                      queryClient.invalidateQueries({ queryKey: ["products"] });
+                    } else {
+                      toast.error(res?.error || "Failed to void sale");
+                    }
+                  } catch (e: any) {
+                    toast.error(e.message || "Failed to void sale");
                   }
-                } catch (e: any) {
-                  toast.error(e.message || "Failed to void sale");
-                }
-              }}
-              className="font-bold border border-destructive/30 mt-1"
-            >
-              <Ban className="mr-2 size-4" /> Void This Sale
-            </Button>
+                }}
+                className="h-9 text-xs font-semibold text-destructive hover:bg-destructive/10 rounded-xl"
+              >
+                <Ban className="size-3.5 mr-1" /> Void Sale
+              </Button>
+
+              <Button
+                onClick={() => {
+                  setSaleComplete(null);
+                  setPrintData(null);
+                }}
+                className="h-9 px-5 rounded-xl text-xs font-extrabold"
+              >
+                Next Customer (Esc)
+              </Button>
+            </div>
           </div>
         </DialogContent>
       </Dialog>
 
+      {/* Premium Open Register / Float Balance Modal */}
       <Dialog open={showOpenRegister} onOpenChange={setShowOpenRegister}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Open Register</DialogTitle>
-          </DialogHeader>
-          <Input
-            type="number"
-            value={startingCash}
-            onChange={(e) => setStartingCash(e.target.value)}
-            autoFocus
-          />
-          <DialogFooter>
-            <Button onClick={handleOpenRegister} className="w-full">
-              Open Register
+        <DialogContent className="sm:max-w-md p-0 gap-0 overflow-hidden rounded-3xl border-border/80 shadow-2xl bg-card">
+          <div className="p-5 border-b border-border/80 bg-muted/20 flex items-center gap-3">
+            <div className="size-11 rounded-2xl bg-primary/10 border border-primary/20 grid place-items-center text-primary shadow-xs">
+              <Landmark className="size-5.5" />
+            </div>
+            <div>
+              <DialogTitle className="text-base font-bold text-foreground">
+                Open Shift Register
+              </DialogTitle>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Enter initial cash float balance in drawer to begin billing
+              </p>
+            </div>
+          </div>
+
+          <div className="p-5 space-y-4">
+            <div className="space-y-1.5">
+              <Label className="text-xs font-bold text-foreground">Starting Cash Float ({currencySymbol})</Label>
+              <div className="relative">
+                <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-sm font-extrabold text-muted-foreground">
+                  {currencySymbol}
+                </span>
+                <Input
+                  type="number"
+                  min="0"
+                  step="1"
+                  placeholder="0.00"
+                  value={startingCash}
+                  onChange={(e) => setStartingCash(e.target.value)}
+                  className="pl-8 h-12 text-lg font-black rounded-xl border-border/80 bg-background"
+                  autoFocus
+                />
+              </div>
+            </div>
+
+            {/* Quick Preset Chips */}
+            <div className="space-y-1.5">
+              <span className="text-[11px] font-bold text-muted-foreground">Quick Float Amounts:</span>
+              <div className="flex flex-wrap gap-1.5">
+                {[100, 200, 500, 1000, 2000].map((amt) => (
+                  <Button
+                    key={amt}
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setStartingCash(String(amt))}
+                    className="h-7 text-xs font-bold rounded-lg border-border/80 hover:border-primary hover:bg-primary/5"
+                  >
+                    +{currencySymbol}{amt}
+                  </Button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div className="p-4 border-t border-border/80 bg-muted/20 flex items-center justify-end gap-2">
+            <Button
+              onClick={handleOpenRegister}
+              className="w-full h-11 rounded-xl text-xs font-bold bg-primary text-primary-foreground shadow-md"
+            >
+              Open Register & Start Shift
             </Button>
-          </DialogFooter>
+          </div>
         </DialogContent>
       </Dialog>
 

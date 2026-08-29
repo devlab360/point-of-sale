@@ -107,24 +107,45 @@ export function ModifierSelectionModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[500px] max-h-[80vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>Customize {product.name}</DialogTitle>
-        </DialogHeader>
+      <DialogContent className="sm:max-w-lg p-0 gap-0 overflow-hidden rounded-3xl border-border/80 shadow-2xl bg-card">
+        {/* Header */}
+        <div className="p-4 sm:p-5 border-b border-border/80 bg-muted/20 flex items-center justify-between">
+          <div className="space-y-0.5">
+            <DialogTitle className="text-base sm:text-lg font-bold text-foreground flex items-center gap-2">
+              <span>Customize {product.name}</span>
+            </DialogTitle>
+            <p className="text-xs text-muted-foreground">
+              Select item modifiers, variations, and add-ons
+            </p>
+          </div>
+          <div className="text-right">
+            <div className="text-[10px] font-extrabold uppercase text-muted-foreground">Base Price</div>
+            <div className="text-sm font-black text-foreground number">
+              {formatCurrency(Number(product.price || 0))}
+            </div>
+          </div>
+        </div>
 
         {isLoading ? (
-          <div className="py-12 flex flex-col items-center justify-center text-muted-foreground">
-            <Loader2 className="w-8 h-8 animate-spin mb-4" />
-            <p>Loading modifiers...</p>
+          <div className="py-16 flex flex-col items-center justify-center text-muted-foreground">
+            <Loader2 className="w-8 h-8 animate-spin mb-3 text-primary" />
+            <p className="text-xs font-semibold">Loading options...</p>
           </div>
         ) : (
-          <div className="space-y-6 py-4">
+          <div className="p-5 space-y-5 max-h-[60vh] overflow-y-auto">
             {modifiers.map((group: any) => (
-              <div key={group.id} className="space-y-3 border-b pb-4 last:border-0">
+              <div key={group.id} className="p-4 rounded-2xl border border-border/80 bg-muted/15 space-y-3 shadow-2xs">
                 <div className="flex justify-between items-center">
-                  <Label className="text-base font-semibold">{group.name}</Label>
+                  <div className="flex items-center gap-2">
+                    <Label className="text-xs font-extrabold uppercase tracking-wider text-foreground">
+                      {group.name}
+                    </Label>
+                    <span className="text-[10px] text-muted-foreground">
+                      ({group.selectionType === "single" ? "Choose 1" : "Multiple choices allowed"})
+                    </span>
+                  </div>
                   {group.isRequired && (
-                    <span className="text-xs bg-destructive/10 text-destructive px-2 py-1 rounded">
+                    <span className="text-[10px] font-bold bg-destructive/10 text-destructive px-2 py-0.5 rounded-full border border-destructive/20">
                       Required
                     </span>
                   )}
@@ -137,27 +158,35 @@ export function ModifierSelectionModal({
                   >
                     <div className="space-y-2">
                       {group.options.map((opt: any) => (
-                        <div key={opt.id} className="flex items-center justify-between">
-                          <div className="flex items-center space-x-2">
+                        <label
+                          key={opt.id}
+                          htmlFor={opt.id}
+                          className="flex items-center justify-between p-2.5 rounded-xl border border-border/60 bg-card hover:border-primary/40 cursor-pointer transition-colors"
+                        >
+                          <div className="flex items-center space-x-2.5">
                             <RadioGroupItem value={opt.id} id={opt.id} />
-                            <Label htmlFor={opt.id} className="font-normal cursor-pointer">
+                            <span className="text-xs font-semibold text-foreground">
                               {opt.name}
-                            </Label>
+                            </span>
                           </div>
                           {Number(opt.price) > 0 && (
-                            <span className="text-sm text-muted-foreground">
+                            <span className="text-xs font-bold text-primary number">
                               +{formatCurrency(Number(opt.price))}
                             </span>
                           )}
-                        </div>
+                        </label>
                       ))}
                     </div>
                   </RadioGroup>
                 ) : (
                   <div className="space-y-2">
                     {group.options.map((opt: any) => (
-                      <div key={opt.id} className="flex items-center justify-between">
-                        <div className="flex items-center space-x-2">
+                      <label
+                        key={opt.id}
+                        htmlFor={opt.id}
+                        className="flex items-center justify-between p-2.5 rounded-xl border border-border/60 bg-card hover:border-primary/40 cursor-pointer transition-colors"
+                      >
+                        <div className="flex items-center space-x-2.5">
                           <Checkbox
                             id={opt.id}
                             checked={selected.some(
@@ -167,16 +196,16 @@ export function ModifierSelectionModal({
                               handleToggleMultiple(group, opt, checked as boolean)
                             }
                           />
-                          <Label htmlFor={opt.id} className="font-normal cursor-pointer">
+                          <span className="text-xs font-semibold text-foreground">
                             {opt.name}
-                          </Label>
+                          </span>
                         </div>
                         {Number(opt.price) > 0 && (
-                          <span className="text-sm text-muted-foreground">
+                          <span className="text-xs font-bold text-primary number">
                             +{formatCurrency(Number(opt.price))}
                           </span>
                         )}
-                      </div>
+                      </label>
                     ))}
                   </div>
                 )}
@@ -185,14 +214,23 @@ export function ModifierSelectionModal({
           </div>
         )}
 
-        <DialogFooter>
-          <Button variant="outline" onClick={onClose}>
+        <div className="p-4 sm:p-5 border-t border-border/80 bg-muted/20 flex items-center justify-end gap-2 shrink-0">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={onClose}
+            className="h-10 px-4 text-xs font-bold rounded-xl"
+          >
             Cancel
           </Button>
-          <Button onClick={handleConfirm} disabled={isLoading}>
+          <Button
+            onClick={handleConfirm}
+            disabled={isLoading}
+            className="h-10 px-5 text-xs font-bold rounded-xl bg-primary text-primary-foreground shadow-md"
+          >
             Add to Cart
           </Button>
-        </DialogFooter>
+        </div>
       </DialogContent>
     </Dialog>
   );

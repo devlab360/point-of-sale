@@ -16,7 +16,14 @@ import { getUnitsFn } from "@/api/units";
 import { getBrandsFn } from "@/api/brands";
 import { getSettingsFn } from "@/api/settings";
 import { getCouponsFn } from "@/api/coupons";
-import { getShiftsFn, getHeldInvoicesFn, createHeldInvoiceFn, getPosItemsFn, createShiftFn } from "@/api/pos";
+import {
+  getShiftsFn,
+  getHeldInvoicesFn,
+  createHeldInvoiceFn,
+  deleteHeldInvoiceFn,
+  getPosItemsFn,
+  createShiftFn,
+} from "@/api/pos";
 import { getTablesFn } from "@/api/restaurant";
 import { getRepairsFn } from "@/api/repairs";
 import { getPosBootstrapFn } from "@/api/bootstrap";
@@ -484,6 +491,11 @@ export function usePosState() {
 
   const holdInvoice = useCallback(async () => {
     if (cart.length === 0) return toast.error("Cart is empty");
+    const customerPhone =
+      (activeCustomer as any)?.phone ||
+      (activeCustomer as any)?.mobile ||
+      null;
+
     const res = await createHeldInvoiceFn({
       data: {
         invoice: {
@@ -494,6 +506,7 @@ export function usePosState() {
           cart: JSON.stringify(cart),
           discount: discountPct,
           payment,
+          note: customerPhone ? `Phone: ${customerPhone}` : null,
           savedAt: new Date().toISOString(),
         },
       },
@@ -504,11 +517,28 @@ export function usePosState() {
       setDiscountPct(0);
       setDiscountInput("0");
       setAppliedCoupon(null);
-      toast.success("Invoice held. You can resume it later.");
+      setSelectedCustomer(null); // Reset to Walk-in Customer
+      setCashTendered("");
+      setSplitCash("");
+      setSplitCard("");
+      setSplitUpi("");
+      setSelectedTableId("");
+      setPrescriptionRef("");
+      toast.success("Invoice held. Reset to Walk-in Customer for next sale.");
     } else {
       toast.error(res?.error || "Failed to hold invoice");
     }
-  }, [cart, activeCustomer, discountPct, payment, orgId, queryClient]);
+  }, [
+    cart,
+    activeCustomer,
+    discountPct,
+    payment,
+    orgId,
+    queryClient,
+    setSelectedCustomer,
+    setSelectedTableId,
+    setPrescriptionRef,
+  ]);
 
   const voidCart = useCallback(() => {
     setCart([]);
@@ -533,6 +563,58 @@ export function usePosState() {
     setSelectedTableId,
     setPrescriptionRef,
   ]);
+
+  const selectCustomer = useCallback(
+    (customer: any) => {
+      if (!customer || customer.id === "walkin") {
+        setSelectedCustomer(null);
+        return;
+      }
+
+      // Check if this customer already has an active held invoice
+      const matchingHeld = heldInvoices.find((h: any) => h.customerId === customer.id);
+      if (matchingHeld) {
+        try {
+          const cartData =
+            typeof matchingHeld.cart === "string"
+              ? JSON.parse(matchingHeld.cart || "[]")
+              : matchingHeld.cart || [];
+
+          setCart(cartData);
+          setDiscountPct(Number(matchingHeld.discount) || 0);
+          setDiscountInput(String(matchingHeld.discount || 0));
+          const validPayments: PaymentMode[] = [
+            "cash",
+            "card",
+            "upi",
+            "split",
+            "credit",
+            "wallet",
+          ];
+          if (validPayments.includes(matchingHeld.payment as any)) {
+            setPayment(matchingHeld.payment as any);
+          }
+          setSelectedCustomer(customer);
+
+          if (matchingHeld.id) {
+            deleteHeldInvoiceFn({ data: { id: matchingHeld.id } }).then(() => {
+              queryClient.invalidateQueries({ queryKey: ["heldInvoices"] });
+            });
+          }
+
+          toast.success(
+            `Found active held order for ${customer.name || "Customer"}. Automatically restored cart!`,
+          );
+          return;
+        } catch (err) {
+          console.error("Error auto-loading held invoice:", err);
+        }
+      }
+
+      setSelectedCustomer(customer);
+    },
+    [heldInvoices, queryClient, setSelectedCustomer, setCart, setDiscountPct, setDiscountInput, setPayment],
+  );
 
   const handleOpenRegister = useCallback(async () => {
     const cash = parseFloat(startingCash) || 0;
@@ -659,6 +741,7 @@ export function usePosState() {
     setPayment,
     selectedCustomer,
     setSelectedCustomer,
+    selectCustomer,
     selectedLocationId,
     setSelectedLocationId,
     selectedTableId,

@@ -8,6 +8,7 @@ import {
   completePosSaleFn,
   getPosItemsFn,
   getHeldInvoicesFn,
+  deleteHeldInvoiceFn,
 } from "@/api/pos";
 import { getCategoriesFn } from "@/api/categories";
 import { getProductsFn } from "@/api/products";
@@ -627,8 +628,12 @@ function PosScreen() {
         type: "retail",
       });
     }
+    if (held.id) {
+      await deleteHeldInvoiceFn({ data: { id: held.id } });
+      queryClient.invalidateQueries({ queryKey: ["heldInvoices"] });
+    }
     state.setShowHeld(false);
-    toast.success("Invoice resumed");
+    toast.success(`Resumed bill for ${held.customerName || "Customer"}`);
   };
 
   if (isPosLoading) {

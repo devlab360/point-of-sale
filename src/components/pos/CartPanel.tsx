@@ -405,6 +405,18 @@ export function CartPanel({
           <Button
             size="sm"
             variant="outline"
+            className="h-8 flex-1 rounded-xl text-xs font-bold gap-1 border-dashed hover:border-warning/50 text-warning hover:bg-warning/10"
+            disabled={lines.length === 0}
+            onClick={holdInvoice}
+            title="Park current cart to serve next customer immediately (F4)"
+          >
+            <Pause className="size-3.5 text-warning" />
+            <span>Hold</span>
+          </Button>
+
+          <Button
+            size="sm"
+            variant="outline"
             className="h-8 flex-1 rounded-xl text-xs font-bold gap-1 border-dashed hover:border-destructive/50 text-destructive hover:bg-destructive/10"
             disabled={lines.length === 0}
             onClick={() => setShowVoidConfirm(true)}
@@ -722,71 +734,111 @@ export function CartPanel({
         </div>
       </div>
 
+      {/* Premium Repair Job Ticket Selector Modal */}
       <Dialog open={showRepairDialog} onOpenChange={setShowRepairDialog}>
-        <DialogContent className="sm:max-w-md rounded-2xl">
-          <DialogHeader>
-            <DialogTitle className="font-bold flex items-center gap-2">
-              <Wrench className="size-5 text-primary" /> Select Repair Job Ticket
-            </DialogTitle>
-          </DialogHeader>
-          <div className="space-y-3 py-3 max-h-[60vh] overflow-y-auto">
+        <DialogContent className="sm:max-w-lg md:max-w-xl p-0 gap-0 overflow-hidden rounded-3xl border-border/80 shadow-2xl bg-card">
+          <div className="p-4 sm:p-5 border-b border-border/80 bg-muted/20 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="size-10 rounded-xl bg-primary/10 border border-primary/20 grid place-items-center text-primary shadow-xs">
+                <Wrench className="size-5" />
+              </div>
+              <div>
+                <DialogTitle className="text-base font-bold text-foreground">
+                  Select Repair Job Ticket
+                </DialogTitle>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Attach active repair job sheet to checkout cart
+                </p>
+              </div>
+            </div>
+            <span className="rounded-full bg-primary/10 px-2.5 py-1 text-[11px] font-extrabold text-primary border border-primary/20">
+              {openRepairs.length} Open
+            </span>
+          </div>
+
+          <div className="p-4 sm:p-5 space-y-2.5 max-h-[60vh] overflow-y-auto">
             {openRepairs.length === 0 ? (
-              <div className="text-center p-6 text-muted-foreground text-xs border border-dashed rounded-xl">
-                No active repair job sheets found.
+              <div className="text-center py-10 px-4 text-muted-foreground text-xs border border-dashed border-border/80 rounded-2xl bg-muted/10">
+                <Wrench className="size-8 mx-auto mb-2 opacity-30" />
+                <p className="font-semibold">No active repair tickets pending collection.</p>
               </div>
             ) : (
-              <div className="space-y-2">
-                {openRepairs.map((r: any) => {
-                  const balance = Math.max(0, r.estimatedCost - r.advancePaid);
+              openRepairs.map((r: any) => {
+                const balance = Math.max(0, r.estimatedCost - r.advancePaid);
 
-                  return (
-                    <div
-                      key={r.id}
-                      className="p-3 border rounded-xl cursor-pointer hover:border-primary hover:bg-muted/30 transition-colors flex justify-between items-center"
-                      onClick={() => {
-                        addRepairToCart(r);
-                        setShowRepairDialog(false);
-                      }}
-                    >
-                      <div>
-                        <div className="font-bold text-primary text-xs sm:text-sm">
-                          {r.ticketNo}
-                        </div>
-                        <div className="text-xs font-semibold text-foreground">
-                          {r.customerName}
-                        </div>
-                        <div className="text-[10px] text-muted-foreground">{r.deviceName}</div>
+                return (
+                  <div
+                    key={r.id}
+                    className="p-3.5 border border-border/80 rounded-2xl cursor-pointer hover:border-primary/50 hover:bg-muted/30 transition-all flex justify-between items-center bg-card shadow-2xs group"
+                    onClick={() => {
+                      addRepairToCart(r);
+                      setShowRepairDialog(false);
+                    }}
+                  >
+                    <div className="space-y-0.5">
+                      <div className="font-extrabold text-primary text-xs sm:text-sm group-hover:underline">
+                        {r.ticketNo}
                       </div>
-                      <div className="text-right">
-                        <div className="text-[10px] text-muted-foreground uppercase font-bold">
-                          Balance Due
-                        </div>
-                        <div className="font-extrabold text-sm text-destructive">
-                          {state.formatCurrency(balance)}
-                        </div>
+                      <div className="text-xs font-bold text-foreground">
+                        {r.customerName}
+                      </div>
+                      <div className="text-[11px] text-muted-foreground flex items-center gap-1">
+                        <span>{r.deviceName}</span>
+                        {r.serialNo && <span>• SN: {r.serialNo}</span>}
                       </div>
                     </div>
-                  );
-                })}
-              </div>
+                    <div className="text-right">
+                      <div className="text-[10px] text-muted-foreground uppercase font-extrabold tracking-wider">
+                        Balance Due
+                      </div>
+                      <div className="font-black text-sm text-destructive number">
+                        {state.formatCurrency(balance)}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })
             )}
+          </div>
+
+          <div className="p-3.5 sm:p-4 border-t border-border/80 bg-muted/20 flex items-center justify-between text-xs text-muted-foreground">
+            <span>Select any ticket to transfer directly into the checkout cart.</span>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowRepairDialog(false)}
+              className="h-8 rounded-xl text-xs font-bold"
+            >
+              Close
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
 
-      {/* Void Current Bill Confirmation */}
+      {/* Premium Void Current Bill Confirmation Modal */}
       <Dialog open={showVoidConfirm} onOpenChange={setShowVoidConfirm}>
-        <DialogContent className="sm:max-w-sm rounded-2xl">
-          <DialogHeader>
-            <DialogTitle className="font-bold flex items-center gap-2">
-              <Ban className="size-5 text-destructive" /> Void This Bill?
-            </DialogTitle>
-          </DialogHeader>
-          <p className="text-sm text-muted-foreground">
-            This will clear the current cart and remove all {lines.length}{" "}
-            {lines.length === 1 ? "item" : "items"} from this bill. This action cannot be undone.
-          </p>
-          <div className="flex justify-end gap-2 pt-2">
+        <DialogContent className="sm:max-w-md p-0 gap-0 overflow-hidden rounded-3xl border-border/80 shadow-2xl bg-card">
+          <div className="p-5 border-b border-border/80 bg-muted/20 flex items-center gap-3">
+            <div className="size-11 rounded-2xl bg-destructive/10 border border-destructive/25 grid place-items-center text-destructive shadow-xs">
+              <Ban className="size-5.5" />
+            </div>
+            <div>
+              <DialogTitle className="text-base font-bold text-foreground">
+                Void Active Cart?
+              </DialogTitle>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Clear all items and reset active bill
+              </p>
+            </div>
+          </div>
+
+          <div className="p-5 space-y-2">
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              This will permanently clear all <strong className="text-foreground font-bold">{lines.length} {lines.length === 1 ? "item" : "items"}</strong> from the checkout cart and reset discounts. This action cannot be reversed.
+            </p>
+          </div>
+
+          <div className="p-4 border-t border-border/80 bg-muted/20 flex items-center justify-end gap-2">
             <Button
               variant="outline"
               onClick={() => setShowVoidConfirm(false)}
@@ -801,11 +853,12 @@ export function CartPanel({
                 setActiveInput(null);
                 setKeyboardOpen(false);
                 setShowVoidConfirm(false);
-                toast.success("Bill voided");
+                toast.success("Active cart voided");
               }}
-              className="rounded-xl h-10 px-4 text-xs font-bold"
+              className="rounded-xl h-10 px-4 text-xs font-bold gap-1.5"
             >
-              Void Bill
+              <Ban className="size-3.5" />
+              Yes, Void Cart
             </Button>
           </div>
         </DialogContent>

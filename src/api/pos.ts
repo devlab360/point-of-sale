@@ -6,7 +6,7 @@ import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 import { db } from "@/db";
 import * as schema from "@/db/schema";
-import { eq, and, sql, inArray } from "drizzle-orm";
+import { eq, and, sql, inArray, desc } from "drizzle-orm";
 import { v4 as uuidv4 } from "uuid";
 
 const insertSchema = schema.shifts
@@ -126,7 +126,7 @@ export const updateShiftFn = createServerFn({ method: "POST" })
 export const getHeldInvoicesFn = createServerFn({ method: "GET" })
   .validator((data: unknown) =>
     z
-      .object({})
+      .object({ query: z.string().optional() })
       .optional()
       .parse(data || {}),
   )
@@ -134,9 +134,26 @@ export const getHeldInvoicesFn = createServerFn({ method: "GET" })
     try {
       const session = await requireAuth();
       const res = await db
-        .select()
+        .select({
+          id: schema.heldInvoices.id,
+          organizationId: schema.heldInvoices.organizationId,
+          customerId: schema.heldInvoices.customerId,
+          customerName: schema.heldInvoices.customerName,
+          customerPhone: schema.customers.phone,
+          customerEmail: schema.customers.email,
+          cart: schema.heldInvoices.cart,
+          discount: schema.heldInvoices.discount,
+          payment: schema.heldInvoices.payment,
+          savedAt: schema.heldInvoices.savedAt,
+          note: schema.heldInvoices.note,
+        })
         .from(schema.heldInvoices)
-        .where(eq(schema.heldInvoices.organizationId, session.orgId));
+        .leftJoin(
+          schema.customers,
+          eq(schema.heldInvoices.customerId, schema.customers.id),
+        )
+        .where(eq(schema.heldInvoices.organizationId, session.orgId))
+        .orderBy(desc(schema.heldInvoices.savedAt));
       return { success: true, data: res };
     } catch (e) {
       return handleApiError(e);
@@ -148,6 +165,18 @@ export const createHeldInvoiceFn = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     try {
       const session = await requireAuth();
+      // Prevent duplicate multiple held records for the same customer
+      if (data.invoice.customerId) {
+        await db
+          .delete(schema.heldInvoices)
+          .where(
+            and(
+              eq(schema.heldInvoices.customerId, data.invoice.customerId),
+              eq(schema.heldInvoices.organizationId, session.orgId),
+            ),
+          );
+      }
+
       const res = await db
         .insert(schema.heldInvoices)
         .values({ ...data.invoice, organizationId: session.orgId })
@@ -171,6 +200,19 @@ export const deleteHeldInvoiceFn = createServerFn({ method: "POST" })
             eq(schema.heldInvoices.organizationId, session.orgId),
           ),
         );
+      return { success: true };
+    } catch (e) {
+      return handleApiError(e);
+    }
+  });
+
+export const clearAllHeldInvoicesFn = createServerFn({ method: "POST" })
+  .handler(async () => {
+    try {
+      const session = await requireAuth();
+      await db
+        .delete(schema.heldInvoices)
+        .where(eq(schema.heldInvoices.organizationId, session.orgId));
       return { success: true };
     } catch (e) {
       return handleApiError(e);
