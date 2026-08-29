@@ -100,23 +100,7 @@ import { PhoneInput } from "@/components/ui/phone-input";
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { BUSINESS_TEMPLATES } from "@/lib/business-templates";
-
-const DATE_FORMATS = [
-  { value: "dd MMM yyyy", label: "01 Jan 2024 (dd MMM yyyy)" },
-  { value: "dd-MM-yyyy", label: "01-01-2024 (dd-MM-yyyy)" },
-  { value: "MM/dd/yyyy", label: "01/01/2024 (MM/dd/yyyy)" },
-  { value: "yyyy-MM-dd", label: "2024-01-01 (yyyy-MM-dd)" },
-];
-
-const TIME_ZONES = [
-  { value: "UTC", label: "UTC (Coordinated Universal Time)" },
-  { value: "Asia/Kolkata", label: "Asia/Kolkata (IST)" },
-  { value: "Asia/Dhaka", label: "Asia/Dhaka (BST)" },
-  { value: "Asia/Dubai", label: "Asia/Dubai (GST)" },
-  { value: "America/New_York", label: "America/New_York (EST/EDT)" },
-  { value: "Europe/London", label: "Europe/London (GMT/BST)" },
-  { value: "Australia/Sydney", label: "Australia/Sydney (AEST/AEDT)" },
-];
+import { BUSINESS_TYPE_OPTIONS, DATE_FORMAT_OPTIONS, TIME_ZONE_OPTIONS } from "@/constants";
 
 export const Route = createFileRoute("/settings")({
   head: () => ({ meta: [{ title: "Settings · OneDesk360" }] }),
@@ -983,9 +967,9 @@ function SettingsPage() {
                       <SearchableSelect
                         value={settings.businessType || "UNIVERSAL"}
                         onChange={(val) => handleChange("businessType", val)}
-                        options={Object.values(BUSINESS_TEMPLATES).map((tmpl) => ({
-                          value: tmpl.type,
-                          label: tmpl.label,
+                        options={BUSINESS_TYPE_OPTIONS.map((opt) => ({
+                          value: opt.value,
+                          label: opt.label,
                         }))}
                       />
                     </Field>
@@ -1028,7 +1012,7 @@ function SettingsPage() {
                     <SearchableSelect
                       value={settings.timeZone || "UTC"}
                       onChange={(val) => handleChange("timeZone", val)}
-                      options={TIME_ZONES}
+                      options={TIME_ZONE_OPTIONS}
                       placeholder="Select Time Zone"
                     />
                   </Field>
@@ -1037,7 +1021,7 @@ function SettingsPage() {
                     <SearchableSelect
                       value={settings.dateFormat || "dd MMM yyyy"}
                       onChange={(val) => handleChange("dateFormat", val)}
-                      options={DATE_FORMATS}
+                      options={DATE_FORMAT_OPTIONS}
                     />
                   </Field>
                 </div>

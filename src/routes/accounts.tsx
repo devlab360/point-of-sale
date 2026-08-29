@@ -63,6 +63,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { PaginationControls } from "@/components/ui/pagination-controls";
+import { ACCOUNT_TYPES, VOUCHER_TYPES } from "@/constants";
 import { useFormValidation } from "@/hooks/useFormValidation";
 import { FieldError } from "@/components/ui/field-error";
 import { usePreferences } from "@/contexts/PreferencesContext";
@@ -457,10 +458,7 @@ function AccountsPage() {
                       <SearchableSelect
                         options={[
                           { value: "", label: "All Types" },
-                          { value: "payment", label: "Payment" },
-                          { value: "receipt", label: "Receipt" },
-                          { value: "journal", label: "Journal" },
-                          { value: "contra", label: "Contra" },
+                          ...VOUCHER_TYPES.map((v) => ({ value: v.value, label: v.label.split(" (")[0] })),
                         ]}
                         value={draftFilters.type}
                         onChange={(val) => setDraftFilters((prev) => ({ ...prev, type: val }))}
@@ -936,13 +934,7 @@ function AccountsPage() {
                   <Label htmlFor="type">Account Category *</Label>
                   <input type="hidden" name="type" value={accountType} />
                   <SearchableSelect
-                    options={[
-                      { value: "asset", label: "Asset (Cash, Bank, Receivables)" },
-                      { value: "liability", label: "Liability (Payables, Taxes Due)" },
-                      { value: "equity", label: "Equity (Capital, Retained Earnings)" },
-                      { value: "income", label: "Income (Sales, Fees, Services)" },
-                      { value: "expense", label: "Expense (Rent, Wages, Utilities)" },
-                    ]}
+                    options={ACCOUNT_TYPES.map((a) => ({ value: a.value, label: a.label }))}
                     value={accountType}
                     onChange={(val) => setAccountType(val as any)}
                     placeholder="Select Category..."
@@ -1025,12 +1017,7 @@ function AccountsPage() {
               <div className="space-y-2">
                 <Label>Voucher Type</Label>
                 <SearchableSelect
-                  options={[
-                    { value: "payment", label: "Payment Voucher (Cash Out / Expense Payment)" },
-                    { value: "receipt", label: "Receipt Voucher (Cash In / Customer Collection)" },
-                    { value: "contra", label: "Contra Voucher (Cash to Bank / Inter-Bank Transfer)" },
-                    { value: "journal", label: "Journal Voucher (Adjustment / Adjustment Entry)" },
-                  ]}
+                  options={VOUCHER_TYPES.map((v) => ({ value: v.value, label: v.label }))}
                   value={voucherType}
                   onChange={(val) => setVoucherType(val as any)}
                   placeholder="Select Voucher Type"

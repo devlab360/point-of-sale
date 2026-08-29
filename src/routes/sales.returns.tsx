@@ -38,6 +38,7 @@ import { useCurrency } from "@/lib/currency";
 import { v4 as uuidv4 } from "uuid";
 import { toast } from "sonner";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { RETURN_STATUSES, REFUND_METHODS } from "@/constants";
 import { getSalesReturnsFn, createSalesReturnFn, deleteSalesReturnFn } from "@/api/returns";
 import { getSalesFn } from "@/api/sales";
 import { getProductsFn, updateProductFn } from "@/api/products";
@@ -291,9 +292,7 @@ function SalesReturnsPage() {
                 <SearchableSelect
                   options={[
                     { value: "", label: "All Statuses" },
-                    { value: "approved", label: "Approved" },
-                    { value: "pending", label: "Pending" },
-                    { value: "rejected", label: "Rejected" },
+                    ...RETURN_STATUSES.map((s) => ({ value: s.value, label: s.label })),
                   ]}
                   value={draftFilters.status}
                   onChange={(val) => setDraftFilters((prev) => ({ ...prev, status: val }))}
@@ -519,10 +518,7 @@ function SalesReturnsPage() {
                   <div className="space-y-1.5">
                     <Label>Refund Method</Label>
                     <SearchableSelect
-                      options={[
-                        { value: "cash", label: "Cash / Original Payment Method" },
-                        { value: "wallet", label: "Store Wallet Credit" },
-                      ]}
+                      options={REFUND_METHODS.map((r) => ({ value: r.value, label: r.label }))}
                       value={refundMethod}
                       onChange={(val) => setRefundMethod(val as any)}
                       placeholder="Select Refund Method"

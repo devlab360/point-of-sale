@@ -59,6 +59,7 @@ import {
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getCouponsFn, createCouponFn, updateCouponStatusFn, deleteCouponFn } from "@/api/coupons";
 import { useCurrency } from "@/lib/currency";
+import { DISCOUNT_TYPES, STATUS_OPTIONS } from "@/constants";
 import { toast } from "sonner";
 import { PersistStore } from "@/lib/session-store";
 import { useFormValidation } from "@/hooks/useFormValidation";
@@ -315,8 +316,11 @@ function CouponsPage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Types</SelectItem>
-                <SelectItem value="percentage">Percentage (%)</SelectItem>
-                <SelectItem value="fixed">Fixed Flat ({currencySymbol})</SelectItem>
+                {DISCOUNT_TYPES.map((d) => (
+                  <SelectItem key={d.value} value={d.value}>
+                    {d.label}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
 
@@ -326,9 +330,11 @@ function CouponsPage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="active">Active</SelectItem>
-                <SelectItem value="paused">Paused</SelectItem>
-                <SelectItem value="expired">Expired</SelectItem>
+                {STATUS_OPTIONS.slice(0, 3).map((s) => (
+                  <SelectItem key={s.value} value={s.value}>
+                    {s.label}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
 

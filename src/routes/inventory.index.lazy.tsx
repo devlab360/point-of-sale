@@ -29,6 +29,7 @@ import {
 } from "@/components/ui/table";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useCurrency } from "@/lib/currency";
+import { STOCK_STATUSES } from "@/constants";
 
 export const Route = createLazyFileRoute("/inventory/")({
   component: StockList,
@@ -183,10 +184,7 @@ function StockList() {
                 <SearchableSelect
                   options={[
                     { value: "", label: "All Statuses" },
-                    { value: "in-stock", label: "In Stock" },
-                    { value: "low", label: "Low Stock" },
-                    { value: "out", label: "Out of Stock" },
-                    { value: "expiring", label: "Expiring Soon" },
+                    ...STOCK_STATUSES.map((s) => ({ value: s.value, label: s.label })),
                   ]}
                   value={draftFilters.status}
                   onChange={(val) => setDraftFilters((prev) => ({ ...prev, status: val }))}

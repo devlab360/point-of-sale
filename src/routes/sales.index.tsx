@@ -36,6 +36,7 @@ import { useDebounce } from "@/hooks/useDebounce";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { ORDER_STATUSES, PAYMENT_METHOD_OPTIONS } from "@/constants";
 
 export const Route = createFileRoute("/sales/")({
   head: () => ({ meta: [{ title: "Sales · OneDesk360" }] }),
@@ -311,10 +312,7 @@ function SalesPage() {
                 <SearchableSelect
                   options={[
                     { value: "", label: "All Statuses" },
-                    { value: "completed", label: "Completed" },
-                    { value: "pending", label: "Pending" },
-                    { value: "quotation", label: "Quotation / Estimate" },
-                    { value: "refunded", label: "Refunded" },
+                    ...ORDER_STATUSES.map((s) => ({ value: s.value, label: s.label })),
                   ]}
                   value={draftFilters.status}
                   onChange={(val) => setDraftFilters((prev) => ({ ...prev, status: val }))}
@@ -326,10 +324,7 @@ function SalesPage() {
                 <SearchableSelect
                   options={[
                     { value: "", label: "All Methods" },
-                    { value: "cash", label: "Cash" },
-                    { value: "card", label: "Card" },
-                    { value: "mobile", label: "Mobile Banking" },
-                    { value: "wallet", label: "Wallet" },
+                    ...PAYMENT_METHOD_OPTIONS.map((m) => ({ value: m.value, label: m.label })),
                   ]}
                   value={draftFilters.payment}
                   onChange={(val) => setDraftFilters((prev) => ({ ...prev, payment: val }))}

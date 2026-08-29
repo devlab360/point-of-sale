@@ -25,6 +25,7 @@ import { SearchableSelect } from "@/components/ui/searchable-select";
 import { usePreferences } from "@/contexts/PreferencesContext";
 import { exportToCSV } from "@/lib/csv";
 import { ErrorState } from "@/components/ui/error-state";
+import { AUDIT_EVENT_TYPES } from "@/constants";
 
 export const Route = createFileRoute("/activity")({
   head: () => ({ meta: [{ title: "Store Activity & Audit Log · OneDesk360" }] }),
@@ -165,10 +166,7 @@ function ActivityPage() {
                 <SearchableSelect
                   options={[
                     { value: "", label: "All Audit Events" },
-                    { value: "sale", label: "Sales & Invoicing" },
-                    { value: "inventory", label: "Inventory Adjustments" },
-                    { value: "gift-card", label: "Gift Cards & Vouchers" },
-                    { value: "deletion", label: "Deletions & Tombstones" },
+                    ...AUDIT_EVENT_TYPES.map((a) => ({ value: a.value, label: a.label })),
                   ]}
                   value={draftFilters.type}
                   onChange={(val) => setDraftFilters((prev) => ({ ...prev, type: val }))}

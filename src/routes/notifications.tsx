@@ -29,6 +29,7 @@ import {
 } from "lucide-react";
 import { usePreferences } from "@/contexts/PreferencesContext";
 import { ErrorState } from "@/components/ui/error-state";
+import { NOTIFICATION_TYPE_OPTIONS } from "@/constants";
 
 export const Route = createFileRoute("/notifications")({
   head: () => ({ meta: [{ title: "Notifications & System Alerts · OneDesk360" }] }),
@@ -162,10 +163,7 @@ function NotificationsPage() {
                 <SearchableSelect
                   options={[
                     { value: "", label: "All Notifications" },
-                    { value: "unread", label: "Unread Only" },
-                    { value: "warning", label: "Low Stock & Warnings" },
-                    { value: "success", label: "Payments & Invoices" },
-                    { value: "info", label: "Customer Dues & Khata" },
+                    ...NOTIFICATION_TYPE_OPTIONS.map((n) => ({ value: n.value, label: n.label })),
                   ]}
                   value={draftFilters.type}
                   onChange={(val) => setDraftFilters((prev) => ({ ...prev, type: val }))}

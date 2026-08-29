@@ -58,6 +58,7 @@ import {
   deleteAppointmentFn,
 } from "@/api/appointments";
 import { getCustomersFn, createCustomerFn } from "@/api/customers";
+import { APPOINTMENT_STATUSES } from "@/constants";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { useAppFormatter } from "@/hooks/useAppFormatter";
@@ -264,10 +265,7 @@ function AppointmentsPage() {
                 <SearchableSelect
                   options={[
                     { value: "", label: "All Bookings" },
-                    { value: "scheduled", label: "Scheduled (Upcoming)" },
-                    { value: "in-progress", label: "In Progress" },
-                    { value: "completed", label: "Completed" },
-                    { value: "cancelled", label: "Cancelled" },
+                    ...APPOINTMENT_STATUSES.map((s) => ({ value: s.value, label: s.label })),
                   ]}
                   value={draftFilters.status}
                   onChange={(val) => setDraftFilters((prev) => ({ ...prev, status: val }))}

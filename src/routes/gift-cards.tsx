@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { DatePicker } from "@/components/ui/date-picker";
 import { SearchableSelect } from "@/components/ui/searchable-select";
+import { GIFT_CARD_STATUSES } from "@/constants";
 import {
   Table,
   TableBody,
@@ -384,9 +385,7 @@ function GiftCardsPage() {
                 <SearchableSelect
                   options={[
                     { value: "", label: "All Statuses" },
-                    { value: "active", label: "Active" },
-                    { value: "expired", label: "Expired" },
-                    { value: "used", label: "Used / Empty" },
+                    ...GIFT_CARD_STATUSES.map((g) => ({ value: g.value, label: g.label })),
                   ]}
                   value={draftFilters.status}
                   onChange={(val) => setDraftFilters((prev) => ({ ...prev, status: val }))}
@@ -828,11 +827,7 @@ function GiftCardsPage() {
                 <div className="space-y-1.5">
                   <Label htmlFor="status">Card Status</Label>
                   <SearchableSelect
-                    options={[
-                      { value: "active", label: "Active" },
-                      { value: "expired", label: "Expired" },
-                      { value: "used", label: "Used / Empty" },
-                    ]}
+                    options={GIFT_CARD_STATUSES.map((g) => ({ value: g.value, label: g.label }))}
                     value={editItem?.status || "active"}
                     onChange={() => {}}
                     placeholder="Select Status"

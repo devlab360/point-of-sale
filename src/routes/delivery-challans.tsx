@@ -37,6 +37,7 @@ import { getUnitsFn } from "@/api/units";
 import { createSaleFn } from "@/api/sales";
 import { createInventoryMovementFn } from "@/api/inventory";
 import { useCurrency } from "@/lib/currency";
+import { CHALLAN_STATUSES } from "@/constants";
 import {
   Truck,
   Printer,
@@ -427,8 +428,7 @@ function DeliveryChallansPage() {
                 <SearchableSelect
                   options={[
                     { value: "", label: "All Statuses" },
-                    { value: "dispatched", label: "Dispatched" },
-                    { value: "invoiced", label: "Invoiced" },
+                    ...CHALLAN_STATUSES.map((c) => ({ value: c.value, label: c.label })),
                   ]}
                   value={draftFilters.status}
                   onChange={(val) => setDraftFilters((prev) => ({ ...prev, status: val }))}

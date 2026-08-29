@@ -37,6 +37,7 @@ import { getCustomersFn, createCustomerFn } from "@/api/customers";
 import { getProductsFn, updateProductFn } from "@/api/products";
 import { createSaleFn } from "@/api/sales";
 import { useCurrency } from "@/lib/currency";
+import { QUOTATION_STATUSES } from "@/constants";
 import {
   FileText,
   Printer,
@@ -381,10 +382,7 @@ function QuotationsPage() {
                 <SearchableSelect
                   options={[
                     { value: "", label: "All Statuses" },
-                    { value: "draft", label: "Draft" },
-                    { value: "sent", label: "Sent" },
-                    { value: "converted", label: "Converted to Invoice" },
-                    { value: "expired", label: "Expired" },
+                    ...QUOTATION_STATUSES.map((q) => ({ value: q.value, label: q.label })),
                   ]}
                   value={draftFilters.status}
                   onChange={(val) => setDraftFilters((prev) => ({ ...prev, status: val }))}

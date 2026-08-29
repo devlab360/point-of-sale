@@ -57,6 +57,7 @@ import {
   SheetFooter,
 } from "@/components/ui/sheet";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { CUSTOMER_TYPES, CUSTOMER_STATUSES } from "@/constants";
 
 export const Route = createFileRoute("/loyalty")({
   head: () => ({ meta: [{ title: "Loyalty & Rewards Program — OneDesk360" }] }),
@@ -1468,9 +1469,12 @@ function LoyaltyPage() {
                                 <SelectValue />
                               </SelectTrigger>
                               <SelectContent>
-                                <SelectItem value="active">Active Regular</SelectItem>
+                                {CUSTOMER_STATUSES.map((s) => (
+                                  <SelectItem key={s.value} value={s.value}>
+                                    {s.label}
+                                  </SelectItem>
+                                ))}
                                 <SelectItem value="vip">★ VIP Customer</SelectItem>
-                                <SelectItem value="inactive">Inactive</SelectItem>
                               </SelectContent>
                             </Select>
                           </div>
@@ -1481,8 +1485,11 @@ function LoyaltyPage() {
                                 <SelectValue />
                               </SelectTrigger>
                               <SelectContent>
-                                <SelectItem value="retail">Retail</SelectItem>
-                                <SelectItem value="Wholesale">Wholesale</SelectItem>
+                                {CUSTOMER_TYPES.map((t) => (
+                                  <SelectItem key={t.value} value={t.value}>
+                                    {t.label}
+                                  </SelectItem>
+                                ))}
                               </SelectContent>
                             </Select>
                           </div>

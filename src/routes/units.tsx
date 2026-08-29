@@ -58,22 +58,12 @@ import { TableSkeleton } from "@/components/skeletons/TableSkeleton";
 import { CardGridSkeleton } from "@/components/skeletons/CardGridSkeleton";
 import { ErrorState } from "@/components/ui/error-state";
 
+import { STANDARD_UNIT_PRESETS } from "@/constants";
+
 export const Route = createFileRoute("/units")({
   head: () => ({ meta: [{ title: "Units of Measurement · OneDesk360" }] }),
   component: UnitsPage,
 });
-
-const STANDARD_UNIT_PRESETS = [
-  { name: "Pieces", short: "pcs" },
-  { name: "Kilograms", short: "kg" },
-  { name: "Grams", short: "g" },
-  { name: "Liters", short: "ltr" },
-  { name: "Milliliters", short: "ml" },
-  { name: "Boxes", short: "box" },
-  { name: "Packs", short: "pack" },
-  { name: "Dozens", short: "doz" },
-  { name: "Meters", short: "m" },
-];
 
 function UnitsPage() {
   const orgId = PersistStore.getOrgId() || "default";

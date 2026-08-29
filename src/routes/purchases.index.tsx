@@ -18,6 +18,7 @@ import { ErrorState } from "@/components/ui/error-state";
 import { useDebounce } from "@/hooks/useDebounce";
 import { cn } from "@/lib/utils";
 import { usePreferences } from "@/contexts/PreferencesContext";
+import { PURCHASE_STATUSES } from "@/constants";
 import {
   Eye,
   Plus,
@@ -168,9 +169,7 @@ function PurchasesPage() {
                 <SearchableSelect
                   options={[
                     { value: "", label: "All Statuses" },
-                    { value: "received", label: "Received" },
-                    { value: "partial", label: "Partially Received" },
-                    { value: "pending", label: "Pending" },
+                    ...PURCHASE_STATUSES.map((s) => ({ value: s.value, label: s.label })),
                   ]}
                   value={draftFilters.status}
                   onChange={(val) => setDraftFilters((prev) => ({ ...prev, status: val }))}

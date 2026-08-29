@@ -58,6 +58,7 @@ import {
   Package,
 } from "lucide-react";
 import { exportToCSV } from "@/lib/csv";
+import { RENTAL_STATUSES } from "@/constants";
 import { toast } from "sonner";
 import { PersistStore } from "@/lib/session-store";
 import { useFormValidation } from "@/hooks/useFormValidation";
@@ -290,9 +291,7 @@ function RentalsPage() {
                 <SearchableSelect
                   options={[
                     { value: "", label: "All Rentals" },
-                    { value: "active", label: "Active (Out On Rent)" },
-                    { value: "returned", label: "Returned" },
-                    { value: "overdue", label: "Overdue" },
+                    ...RENTAL_STATUSES.map((s) => ({ value: s.value, label: s.label })),
                   ]}
                   value={draftFilters.status}
                   onChange={(val) => setDraftFilters((prev) => ({ ...prev, status: val }))}

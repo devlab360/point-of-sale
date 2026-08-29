@@ -15,6 +15,9 @@ import {
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { PaginationControls } from "@/components/ui/pagination-controls";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { TableSkeleton } from "@/components/skeletons/TableSkeleton";
+import { ErrorState } from "@/components/ui/error-state";
+import { RETURN_STATUSES } from "@/constants";
 import { EmptyState } from "@/components/ui/empty-state";
 import {
   AlertDialog,
@@ -274,8 +277,7 @@ function PurchaseReturnsPage() {
                 <SearchableSelect
                   options={[
                     { value: "", label: "All Statuses" },
-                    { value: "processed", label: "Processed" },
-                    { value: "pending", label: "Pending" },
+                    ...RETURN_STATUSES.map((s) => ({ value: s.value, label: s.label })),
                   ]}
                   value={draftFilters.status}
                   onChange={(val) => setDraftFilters((prev) => ({ ...prev, status: val }))}

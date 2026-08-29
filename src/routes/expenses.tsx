@@ -58,6 +58,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getExpensesFn, createExpenseFn, updateExpenseFn, deleteExpenseFn } from "@/api/expenses";
 import { TableSkeleton } from "@/components/skeletons/TableSkeleton";
 import { ErrorState } from "@/components/ui/error-state";
+import { EXPENSE_CATEGORIES, PAYMENT_METHOD_OPTIONS, PAYMENT_STATUSES } from "@/constants";
 import { exportToCSV } from "@/lib/csv";
 import { usePreferences } from "@/contexts/PreferencesContext";
 import { FieldError } from "@/components/ui/field-error";
@@ -330,8 +331,7 @@ function ExpensesPage() {
                 <SearchableSelect
                   options={[
                     { value: "", label: "All Statuses" },
-                    { value: "paid", label: "Paid" },
-                    { value: "pending", label: "Pending" },
+                    ...PAYMENT_STATUSES.map((s) => ({ value: s.value, label: s.label })),
                   ]}
                   value={draftFilters.status}
                   onChange={(val) => setDraftFilters((prev) => ({ ...prev, status: val }))}
@@ -642,10 +642,7 @@ function ExpensesPage() {
                 <div className="space-y-1.5">
                   <Label htmlFor="status">Payment Status</Label>
                   <SearchableSelect
-                    options={[
-                      { value: "paid", label: "Paid (Cleared)" },
-                      { value: "pending", label: "Pending (Due / Payable)" },
-                    ]}
+                    options={PAYMENT_STATUSES.map((s) => ({ value: s.value, label: s.label }))}
                     value={expenseStatus}
                     onChange={setExpenseStatus}
                     placeholder="Select Status"
@@ -656,12 +653,7 @@ function ExpensesPage() {
               <div className="space-y-1.5">
                 <Label htmlFor="paymentMethod">Payment Method</Label>
                 <SearchableSelect
-                  options={[
-                    { value: "Cash", label: "Cash in Hand" },
-                    { value: "Bank Transfer", label: "Bank Transfer / Check" },
-                    { value: "Mobile Wallet", label: "Mobile Wallet (UPI / MFS)" },
-                    { value: "Corporate Card", label: "Corporate Card" },
-                  ]}
+                  options={PAYMENT_METHOD_OPTIONS.map((m) => ({ value: m.label, label: m.label }))}
                   value={paymentMethod}
                   onChange={setPaymentMethod}
                   placeholder="Select payment method"

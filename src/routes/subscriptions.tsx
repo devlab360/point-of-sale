@@ -45,6 +45,7 @@ import {
   deleteSubscriptionFn,
 } from "@/api/services";
 import { useCurrency } from "@/lib/currency";
+import { BILLING_CYCLE_OPTIONS, SUBSCRIPTION_STATUSES } from "@/constants";
 import {
   Calendar,
   CreditCard,
@@ -321,9 +322,11 @@ function SubscriptionsPage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Cycles</SelectItem>
-                <SelectItem value="weekly">Weekly</SelectItem>
-                <SelectItem value="monthly">Monthly</SelectItem>
-                <SelectItem value="yearly">Yearly</SelectItem>
+                {BILLING_CYCLE_OPTIONS.map((c) => (
+                  <SelectItem key={c.value} value={c.value}>
+                    {c.label}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
 
@@ -333,9 +336,11 @@ function SubscriptionsPage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="active">Active</SelectItem>
-                <SelectItem value="paused">Paused</SelectItem>
-                <SelectItem value="cancelled">Cancelled</SelectItem>
+                {SUBSCRIPTION_STATUSES.map((s) => (
+                  <SelectItem key={s.value} value={s.value}>
+                    {s.label}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
 

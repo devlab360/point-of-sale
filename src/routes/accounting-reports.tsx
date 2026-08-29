@@ -42,6 +42,7 @@ import { SearchableSelect } from "@/components/ui/searchable-select";
 import { printAccountingStatement } from "@/lib/accounting-print";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
+import { DATE_PERIOD_OPTIONS } from "@/constants";
 
 export const Route = createFileRoute("/accounting-reports")({
   head: () => ({ meta: [{ title: "Accounting Financial Reports · OneDesk360" }] }),
@@ -398,19 +399,12 @@ function AccountingReportsPage() {
                 <div className="flex items-center gap-2">
                   <span className="text-[11px] font-bold text-muted-foreground uppercase hidden sm:inline">Period:</span>
                   <div className="flex bg-muted/60 rounded-xl p-1 border border-border/60">
-                    {(
-                      [
-                        { id: "all", label: "All Time" },
-                        { id: "this_month", label: "This Month" },
-                        { id: "last_month", label: "Last Month" },
-                        { id: "this_year", label: "This Year" },
-                      ] as const
-                    ).map((r) => (
+                    {DATE_PERIOD_OPTIONS.filter((o) => ["all", "this_month", "last_month", "this_year"].includes(o.value)).map((r) => (
                       <button
-                        key={r.id}
+                        key={r.value}
                         type="button"
-                        onClick={() => setDateRange(r.id)}
-                        className={`px-2.5 py-1 text-[11px] font-bold rounded-lg transition-all ${dateRange === r.id ? "bg-card text-primary shadow-soft" : "text-muted-foreground hover:text-foreground"}`}
+                        onClick={() => setDateRange(r.value as any)}
+                        className={`px-2.5 py-1 text-[11px] font-bold rounded-lg transition-all ${dateRange === r.value ? "bg-card text-primary shadow-soft" : "text-muted-foreground hover:text-foreground"}`}
                       >
                         {r.label}
                       </button>

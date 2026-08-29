@@ -66,6 +66,7 @@ import { TableSkeleton } from "@/components/skeletons/TableSkeleton";
 import { ErrorState } from "@/components/ui/error-state";
 import { useFormValidation } from "@/hooks/useFormValidation";
 import { FieldError } from "@/components/ui/field-error";
+import { CUSTOMER_TYPES, CUSTOMER_STATUSES } from "@/constants";
 
 export const Route = createFileRoute("/customers")({
   head: () => ({ meta: [{ title: "Customers · OneDesk360" }] }),
@@ -370,8 +371,7 @@ function CustomersPage() {
                 <SearchableSelect
                   options={[
                     { value: "", label: "All Types" },
-                    { value: "Retail", label: "Retail" },
-                    { value: "Wholesale", label: "Wholesale" },
+                    ...CUSTOMER_TYPES.map((t) => ({ value: t.value, label: t.label })),
                   ]}
                   value={draftFilters.type}
                   onChange={(val) => setDraftFilters((prev) => ({ ...prev, type: val }))}
@@ -383,8 +383,7 @@ function CustomersPage() {
                 <SearchableSelect
                   options={[
                     { value: "", label: "All Statuses" },
-                    { value: "active", label: "Active" },
-                    { value: "inactive", label: "Inactive" },
+                    ...CUSTOMER_STATUSES.map((s) => ({ value: s.value, label: s.label })),
                   ]}
                   value={draftFilters.status}
                   onChange={(val) => setDraftFilters((prev) => ({ ...prev, status: val }))}
@@ -760,12 +759,7 @@ function CustomersPage() {
                 <div className="space-y-2">
                   <Label htmlFor="type">{t("customerType") || "Customer Type"}</Label>
                   <SearchableSelect
-                    options={[
-                      { value: "retail", label: "Retail" },
-                      { value: "wholesale", label: "Wholesale" },
-                      { value: "dealer", label: "Dealer" },
-                      { value: "corporate", label: "Corporate" },
-                    ]}
+                    options={CUSTOMER_TYPES.map((t) => ({ value: t.value, label: t.label }))}
                     value={editItem?.type || "retail"}
                     onChange={(val) => {
                       const input = document.createElement("input");
@@ -781,10 +775,7 @@ function CustomersPage() {
                 <div className="space-y-2">
                   <Label htmlFor="status">{t("status") || "Status"}</Label>
                   <SearchableSelect
-                    options={[
-                      { value: "active", label: "Active" },
-                      { value: "inactive", label: "Inactive" },
-                    ]}
+                    options={CUSTOMER_STATUSES.map((s) => ({ value: s.value, label: s.label }))}
                     value={editItem?.status || "active"}
                     onChange={(val) => {
                       const input = document.createElement("input");

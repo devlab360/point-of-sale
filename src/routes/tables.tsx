@@ -33,6 +33,7 @@ import {
 import { toast } from "sonner";
 import { PersistStore } from "@/lib/session-store";
 import { ErrorState } from "@/components/ui/error-state";
+import { TABLE_STATUSES } from "@/constants";
 
 export const Route = createFileRoute("/tables")({
   head: () => ({ meta: [{ title: "Restaurant Tables & Floor Plan · OneDesk360" }] }),
@@ -156,9 +157,7 @@ function TablesPage() {
                 <SearchableSelect
                   options={[
                     { value: "", label: "All Tables" },
-                    { value: "available", label: "Available (Free)" },
-                    { value: "occupied", label: "Occupied (Dining)" },
-                    { value: "reserved", label: "Reserved" },
+                    ...TABLE_STATUSES.map((s) => ({ value: s.value, label: s.label })),
                   ]}
                   value={draftFilters.status}
                   onChange={(val) => setDraftFilters((prev) => ({ ...prev, status: val }))}

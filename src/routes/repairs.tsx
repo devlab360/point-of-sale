@@ -41,6 +41,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getRepairsFn, createRepairFn, updateRepairStatusFn, deleteRepairFn } from "@/api/repairs";
 import { getCustomersFn } from "@/api/customers";
 import { useCurrency } from "@/lib/currency";
+import { REPAIR_STATUSES } from "@/constants";
 import {
   Wrench,
   Printer,
@@ -411,10 +412,11 @@ function RepairsPage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Statuses</SelectItem>
-                <SelectItem value="pending">Received / Intake</SelectItem>
-                <SelectItem value="in_progress">In Progress / Diagnosing</SelectItem>
-                <SelectItem value="ready">Ready for Pickup</SelectItem>
-                <SelectItem value="delivered">Delivered / Completed</SelectItem>
+                {REPAIR_STATUSES.map((s) => (
+                  <SelectItem key={s.value} value={s.value}>
+                    {s.label}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
 

@@ -41,6 +41,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { DatePicker } from "@/components/ui/date-picker";
+import { PAYMENT_METHOD_OPTIONS } from "@/constants";
 
 export const Route = createFileRoute("/purchases/new")({
   head: () => ({ meta: [{ title: "Purchase Order · OneDesk360" }] }),
@@ -434,12 +435,7 @@ function NewPurchasePage() {
               <div className="space-y-1.5">
                 <Label className="text-xs font-bold">Payment Method</Label>
                 <SearchableSelect
-                  options={[
-                    { value: "Bank Transfer", label: "Bank Transfer / RTGS / IMPS" },
-                    { value: "Cash", label: "Cash on Delivery / POS Cash" },
-                    { value: "Mobile Wallet", label: "Mobile Wallet / UPI" },
-                    { value: "Credit / Due", label: "Vendor Credit (Pay Later Khata)" },
-                  ]}
+                  options={PAYMENT_METHOD_OPTIONS.map((m) => ({ value: m.label, label: m.label }))}
                   value={paymentMethod}
                   onChange={setPaymentMethod}
                   placeholder="Select payment mode"
