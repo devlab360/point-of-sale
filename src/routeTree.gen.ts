@@ -73,6 +73,7 @@ import { Route as AdminPlansRouteImport } from './routes/admin/plans'
 import { Route as AdminPaymentsRouteImport } from './routes/admin/payments'
 import { Route as AdminHelpRouteImport } from './routes/admin/help'
 import { Route as AdminDashboardRouteImport } from './routes/admin/dashboard'
+import { Route as AdminAnnouncementsRouteImport } from './routes/admin/announcements'
 
 const VerifyEmailRoute = VerifyEmailRouteImport.update({
   id: '/verify-email',
@@ -402,6 +403,11 @@ const AdminDashboardRoute = AdminDashboardRouteImport.update({
   path: '/admin/dashboard',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminAnnouncementsRoute = AdminAnnouncementsRouteImport.update({
+  id: '/admin/announcements',
+  path: '/admin/announcements',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -443,6 +449,7 @@ export interface FileRoutesByFullPath {
   '/units': typeof UnitsRoute
   '/users': typeof UsersRoute
   '/verify-email': typeof VerifyEmailRoute
+  '/admin/announcements': typeof AdminAnnouncementsRoute
   '/admin/dashboard': typeof AdminDashboardRoute
   '/admin/help': typeof AdminHelpRoute
   '/admin/payments': typeof AdminPaymentsRoute
@@ -504,6 +511,7 @@ export interface FileRoutesByTo {
   '/units': typeof UnitsRoute
   '/users': typeof UsersRoute
   '/verify-email': typeof VerifyEmailRoute
+  '/admin/announcements': typeof AdminAnnouncementsRoute
   '/admin/dashboard': typeof AdminDashboardRoute
   '/admin/help': typeof AdminHelpRoute
   '/admin/payments': typeof AdminPaymentsRoute
@@ -571,6 +579,7 @@ export interface FileRoutesById {
   '/units': typeof UnitsRoute
   '/users': typeof UsersRoute
   '/verify-email': typeof VerifyEmailRoute
+  '/admin/announcements': typeof AdminAnnouncementsRoute
   '/admin/dashboard': typeof AdminDashboardRoute
   '/admin/help': typeof AdminHelpRoute
   '/admin/payments': typeof AdminPaymentsRoute
@@ -639,6 +648,7 @@ export interface FileRouteTypes {
     | '/units'
     | '/users'
     | '/verify-email'
+    | '/admin/announcements'
     | '/admin/dashboard'
     | '/admin/help'
     | '/admin/payments'
@@ -700,6 +710,7 @@ export interface FileRouteTypes {
     | '/units'
     | '/users'
     | '/verify-email'
+    | '/admin/announcements'
     | '/admin/dashboard'
     | '/admin/help'
     | '/admin/payments'
@@ -766,6 +777,7 @@ export interface FileRouteTypes {
     | '/units'
     | '/users'
     | '/verify-email'
+    | '/admin/announcements'
     | '/admin/dashboard'
     | '/admin/help'
     | '/admin/payments'
@@ -833,6 +845,7 @@ export interface RootRouteChildren {
   UnitsRoute: typeof UnitsRoute
   UsersRoute: typeof UsersRoute
   VerifyEmailRoute: typeof VerifyEmailRoute
+  AdminAnnouncementsRoute: typeof AdminAnnouncementsRoute
   AdminDashboardRoute: typeof AdminDashboardRoute
   AdminHelpRoute: typeof AdminHelpRoute
   AdminPaymentsRoute: typeof AdminPaymentsRoute
@@ -1295,6 +1308,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminDashboardRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/announcements': {
+      id: '/admin/announcements'
+      path: '/admin/announcements'
+      fullPath: '/admin/announcements'
+      preLoaderRoute: typeof AdminAnnouncementsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -1416,6 +1436,7 @@ const rootRouteChildren: RootRouteChildren = {
   UnitsRoute: UnitsRoute,
   UsersRoute: UsersRoute,
   VerifyEmailRoute: VerifyEmailRoute,
+  AdminAnnouncementsRoute: AdminAnnouncementsRoute,
   AdminDashboardRoute: AdminDashboardRoute,
   AdminHelpRoute: AdminHelpRoute,
   AdminPaymentsRoute: AdminPaymentsRoute,

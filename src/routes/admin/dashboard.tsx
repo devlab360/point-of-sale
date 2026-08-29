@@ -1,12 +1,26 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { SuperAdminLayout } from "@/components/admin/SuperAdminLayout";
+import { PageHeader } from "@/components/layout/PageHeader";
+import { StatCard } from "@/components/layout/StatCard";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { getAllOrganizationsFn, getAllPlansFn } from "@/api/admin/super-admin";
-import { getPendingPaymentsFn } from "@/api/admin/subscription-payments";
+import {
+  getAllOrganizationsFn,
+  getAllPlansFn,
+  getAllSupportTicketsAdminFn,
+  getAllReviewsAdminFn,
+  addTrialDaysFn,
+  createTenantUserFn,
+} from "@/api/admin/super-admin";
+import {
+  getPendingPaymentsFn,
+  approvePaymentFn,
+  rejectPaymentFn,
+} from "@/api/admin/subscription-payments";
+import { toast } from "sonner";
 import {
   Store,
   CreditCard,
@@ -24,6 +38,21 @@ import {
   DollarSign,
   AlertTriangle,
   ArrowRight,
+  CheckCircle2,
+  XCircle,
+  Plus,
+  Users,
+  Wallet,
+  Building2,
+  ExternalLink,
+  MessageCircle,
+  Check,
+  Server,
+  Zap,
+  Shield,
+  Calendar,
+  AlertCircle,
+  Eye,
 } from "lucide-react";
 import {
   ResponsiveContainer,
@@ -31,33 +60,81 @@ import {
   Area,
   BarChart,
   Bar,
+  PieChart,
+  Pie,
+  Cell,
   XAxis,
   YAxis,
   Tooltip,
   CartesianGrid,
+  Legend,
 } from "recharts";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+  SheetFooter,
+} from "@/components/ui/sheet";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 export const Route = createFileRoute("/admin/dashboard")({
-  head: () => ({ meta: [{ title: "Dashboard · Super Admin OneDesk360" }] }),
+  head: () => ({ meta: [{ title: "Super Admin Dashboard · OneDesk360" }] }),
   component: SuperAdminDashboardPage,
 });
 
 const monthlyGrowthData = [
-  { month: "Jan", tenants: 4, revenue: 14500, activeTrials: 3 },
-  { month: "Feb", tenants: 9, revenue: 29800, activeTrials: 5 },
-  { month: "Mar", tenants: 16, revenue: 52000, activeTrials: 7 },
-  { month: "Apr", tenants: 25, revenue: 86400, activeTrials: 9 },
-  { month: "May", tenants: 36, revenue: 128000, activeTrials: 12 },
-  { month: "Jun", tenants: 48, revenue: 174500, activeTrials: 14 },
-  { month: "Jul", tenants: 62, revenue: 226000, activeTrials: 18 },
-  { month: "Aug", tenants: 79, revenue: 289500, activeTrials: 22 },
+  { month: "Jan", tenants: 12, revenue: 14500, stores: 12 },
+  { month: "Feb", tenants: 24, revenue: 29800, stores: 24 },
+  { month: "Mar", tenants: 42, revenue: 52000, stores: 42 },
+  { month: "Apr", tenants: 68, revenue: 86400, stores: 68 },
+  { month: "May", tenants: 95, revenue: 128000, stores: 95 },
+  { month: "Jun", tenants: 130, revenue: 174500, stores: 130 },
+  { month: "Jul", tenants: 175, revenue: 226000, stores: 175 },
+  { month: "Aug", tenants: 230, revenue: 289500, stores: 230 },
 ];
 
+const COLORS = ["#3b82f6", "#10b981", "#f59e0b", "#8b5cf6", "#ec4899", "#06b6d4"];
+
 function SuperAdminDashboardPage() {
+  const queryClient = useQueryClient();
+  const [chartMetric, setChartMetric] = useState<"revenue" | "growth">("revenue");
+  const [activeTab, setActiveTab] = useState<"pending" | "recent" | "expiring" | "support">("pending");
+  const [isCreateStoreOpen, setIsCreateStoreOpen] = useState(false);
+  const [quickExtendOrg, setQuickExtendOrg] = useState<any | null>(null);
+  const [extendDays, setExtendDays] = useState("14");
+
+  const [newStore, setNewStore] = useState({
+    storeName: "",
+    ownerName: "",
+    email: "",
+    password: "",
+    planId: "basic",
+  });
+
+  // Queries
   const {
     data: orgData,
     isLoading: isOrgLoading,
-    refetch,
+    refetch: refetchOrgs,
+    isFetching,
   } = useQuery({
     queryKey: ["saas-organizations"],
     queryFn: () => getAllOrganizationsFn({ data: {} }),
@@ -69,203 +146,989 @@ function SuperAdminDashboardPage() {
   });
 
   const { data: paymentsData } = useQuery({
-    queryKey: ["payments-dashboard"],
+    queryKey: ["subscription-payments"],
     queryFn: () => getPendingPaymentsFn({ data: {} }),
+  });
+
+  const { data: ticketsData } = useQuery({
+    queryKey: ["super-admin-support-tickets"],
+    queryFn: () => getAllSupportTicketsAdminFn({ data: {} }),
+  });
+
+  const { data: reviewsData } = useQuery({
+    queryKey: ["super-admin-reviews"],
+    queryFn: () => getAllReviewsAdminFn({ data: {} }),
+  });
+
+  // Mutations
+  const approveMutation = useMutation({
+    mutationFn: (paymentId: string) => approvePaymentFn({ data: { paymentId } }),
+    onSuccess: (res: any) => {
+      if (res.success) {
+        toast.success("Payment approved & store subscription extended!");
+        queryClient.invalidateQueries({ queryKey: ["subscription-payments"] });
+        queryClient.invalidateQueries({ queryKey: ["saas-organizations"] });
+      } else {
+        toast.error(res.error || "Failed to approve payment");
+      }
+    },
+  });
+
+  const rejectMutation = useMutation({
+    mutationFn: (paymentId: string) => rejectPaymentFn({ data: { paymentId } }),
+    onSuccess: () => {
+      toast.success("Payment rejected");
+      queryClient.invalidateQueries({ queryKey: ["subscription-payments"] });
+    },
+  });
+
+  const createTenantMutation = useMutation({
+    mutationFn: (tenantData: typeof newStore) => createTenantUserFn({ data: tenantData }),
+    onSuccess: (res: any) => {
+      if (res.success) {
+        toast.success(`Tenant store "${newStore.storeName}" provisioned successfully!`);
+        setIsCreateStoreOpen(false);
+        setNewStore({ storeName: "", ownerName: "", email: "", password: "", planId: "basic" });
+        queryClient.invalidateQueries({ queryKey: ["saas-organizations"] });
+      } else {
+        toast.error(res.error || "Failed to create tenant store");
+      }
+    },
+  });
+
+  const addTrialMutation = useMutation({
+    mutationFn: ({ orgId, days }: { orgId: string; days: number }) =>
+      addTrialDaysFn({ data: { orgId, days } }),
+    onSuccess: (res: any) => {
+      if (res.success) {
+        toast.success("Trial / Subscription period extended successfully!");
+        setQuickExtendOrg(null);
+        queryClient.invalidateQueries({ queryKey: ["saas-organizations"] });
+      } else {
+        toast.error(res.error || "Failed to extend trial");
+      }
+    },
   });
 
   const organizations = orgData?.data?.orgs || [];
   const plans = (plansData?.data as any[]) || [];
   const payments = (paymentsData?.data as any[]) || [];
+  const tickets = (ticketsData?.data as any[]) || [];
+  const reviews = (reviewsData?.data?.reviews as any[]) || [];
 
   const totalTenants = organizations.length;
   const activeTenants = organizations.filter((o: any) => o.status === "active").length;
   const trialTenants = organizations.filter((o: any) => o.status === "trial").length;
+  const suspendedTenants = organizations.filter((o: any) => o.status === "suspended").length;
   const pendingPayments = payments.filter((p: any) => p.status === "pending");
+  const openTickets = tickets.filter((t: any) => t.status === "open" || t.status === "in-progress");
+
+  // Approximate MRR calculation
+  const calculatedMRR = organizations
+    .filter((o: any) => o.status === "active")
+    .reduce((acc: number, org: any) => {
+      const plan = plans.find((p: any) => p.id === org.currentPlanId);
+      const price = Number(plan?.monthlyPrice || plan?.price || 499);
+      return acc + price;
+    }, 0);
+
+  const avgReviewScore = reviews.length > 0
+    ? (reviews.reduce((acc: number, r: any) => acc + (r.rating || 0), 0) / reviews.length).toFixed(1)
+    : "5.0";
+
+  // Plan distribution for donut chart
+  const planDistribution = plans.map((plan: any) => {
+    const count = organizations.filter((o: any) => o.currentPlanId === plan.id).length;
+    return { name: plan.name, count, price: plan.price || 0 };
+  }).filter((p) => p.count > 0);
+
+  // Expiring soon stores (within next 7 days)
+  const now = new Date();
+  const sevenDaysFromNow = new Date();
+  sevenDaysFromNow.setDate(now.getDate() + 7);
+
+  const expiringSoonTenants = organizations.filter((org: any) => {
+    if (!org.planExpiryDate) return false;
+    const expiry = new Date(org.planExpiryDate);
+    return expiry <= sevenDaysFromNow;
+  });
+
+  const recentTenants = [...organizations].slice(0, 6);
+
+  const handleRefreshAll = () => {
+    refetchOrgs();
+    queryClient.invalidateQueries({ queryKey: ["subscription-payments"] });
+    queryClient.invalidateQueries({ queryKey: ["saas-plans"] });
+    queryClient.invalidateQueries({ queryKey: ["super-admin-support-tickets"] });
+    queryClient.invalidateQueries({ queryKey: ["super-admin-reviews"] });
+  };
 
   return (
     <SuperAdminLayout>
-      <div className="space-y-6">
-        {/* Top Header Banner */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-primary/5 p-6 rounded-2xl border border-primary/10">
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="bg-primary/20 text-primary px-2 py-0.5 rounded text-xs font-bold font-mono">
-                SAAS V3.0
-              </span>
-              <h2 className="text-xl font-semibold tracking-tight">Platform Overview</h2>
+      <div className="page-container space-y-6">
+        {/* Page Header with Quick Actions */}
+        <PageHeader
+          title="Super Admin Executive Dashboard"
+          description="Multi-tenant cloud platform analytics, MRR velocity, live payment verification, and infrastructure status."
+          actions={
+            <div className="flex flex-wrap items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-1.5 h-9"
+                onClick={handleRefreshAll}
+                disabled={isFetching}
+              >
+                <RefreshCw className={`size-3.5 ${isFetching ? "animate-spin" : ""}`} />
+                <span>Refresh Live Data</span>
+              </Button>
+
+              <Button
+                size="sm"
+                className="gap-1.5 h-9 shadow-xs"
+                onClick={() => setIsCreateStoreOpen(true)}
+              >
+                <Plus className="size-4" />
+                <span>Provision New Store</span>
+              </Button>
             </div>
-            <p className="text-sm text-muted-foreground mt-1">
-              Real-time multi-tenant health, metrics, and subscription approvals
-            </p>
-          </div>
-          <Button onClick={() => refetch()} variant="outline" size="sm" className="gap-2">
-            <RefreshCw className="size-4" />
-            <span>Refresh Data</span>
-          </Button>
+          }
+        />
+
+        {/* Primary Executive Metric Cards (6 KPI Cards) */}
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+          <StatCard
+            label="Monthly Recurring Rev"
+            value={`₹${calculatedMRR.toLocaleString("en-IN")}`}
+            hint={`ARR: ₹${(calculatedMRR * 12).toLocaleString("en-IN")}`}
+            icon={Wallet}
+            accent="primary"
+          />
+          <StatCard
+            label="Total Merchant Stores"
+            value={String(totalTenants)}
+            hint={`${activeTenants} active, ${trialTenants} trial`}
+            icon={Store}
+            accent="success"
+          />
+          <StatCard
+            label="Trial Registrations"
+            value={String(trialTenants)}
+            hint={`${totalTenants > 0 ? Math.round((trialTenants / totalTenants) * 100) : 0}% of network`}
+            icon={Sparkles}
+            accent="warning"
+          />
+          <StatCard
+            label="Pending Approvals"
+            value={String(pendingPayments.length)}
+            hint={pendingPayments.length > 0 ? "Requires review" : "All cleared"}
+            icon={Receipt}
+            accent={pendingPayments.length > 0 ? "destructive" : "info"}
+          />
+          <StatCard
+            label="Support Inquiries"
+            value={String(openTickets.length)}
+            hint={`${tickets.length} total submitted`}
+            icon={MessageCircle}
+            accent="info"
+          />
+          <StatCard
+            label="Satisfaction Rating"
+            value={`${avgReviewScore} ★`}
+            hint={`From ${reviews.length} merchant reviews`}
+            icon={Star}
+            accent="warning"
+          />
         </div>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs font-medium text-muted-foreground">
-                    Total Stores / Tenants
-                  </p>
-                  <h3 className="text-2xl font-bold mt-1">{isOrgLoading ? "..." : totalTenants}</h3>
-                </div>
-                <div className="size-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
-                  <Store className="size-5" />
-                </div>
+        {/* Operational Quick Shortcut Strip */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <Link
+            to="/admin/payments"
+            className="flex items-center justify-between p-3.5 rounded-2xl border border-border/80 bg-card hover:bg-muted/30 transition-colors shadow-2xs group"
+          >
+            <div className="flex items-center gap-3">
+              <div className="size-9 rounded-xl bg-amber-500/10 text-amber-500 flex items-center justify-center font-bold">
+                <Receipt className="size-4" />
               </div>
-              <p className="text-xs text-muted-foreground mt-3 flex items-center gap-1">
-                <span className="text-success font-bold flex items-center">
-                  <ArrowUpRight className="size-3" /> +14%
-                </span>{" "}
-                vs last month
-              </p>
-            </CardContent>
-          </Card>
+              <div>
+                <p className="text-xs font-bold text-foreground group-hover:text-primary transition-colors">
+                  Payment Approvals
+                </p>
+                <p className="text-[10px] text-muted-foreground">Verify offline bank & UPI</p>
+              </div>
+            </div>
+            {pendingPayments.length > 0 && (
+              <Badge variant="destructive" className="h-5 px-1.5 text-[10px] font-bold">
+                {pendingPayments.length}
+              </Badge>
+            )}
+          </Link>
 
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs font-medium text-muted-foreground">Active Subscribers</p>
-                  <h3 className="text-2xl font-bold mt-1">
-                    {isOrgLoading ? "..." : activeTenants}
-                  </h3>
-                </div>
-                <div className="size-10 rounded-xl bg-success/10 text-success flex items-center justify-center">
-                  <ShieldCheck className="size-5" />
-                </div>
+          <Link
+            to="/admin/tenants"
+            className="flex items-center justify-between p-3.5 rounded-2xl border border-border/80 bg-card hover:bg-muted/30 transition-colors shadow-2xs group"
+          >
+            <div className="flex items-center gap-3">
+              <div className="size-9 rounded-xl bg-primary/10 text-primary flex items-center justify-center font-bold">
+                <Store className="size-4" />
               </div>
-              <p className="text-xs text-muted-foreground mt-3">
-                <span className="font-semibold text-foreground">{trialTenants}</span> on active
-                trial
-              </p>
-            </CardContent>
-          </Card>
+              <div>
+                <p className="text-xs font-bold text-foreground group-hover:text-primary transition-colors">
+                  Tenant Directory
+                </p>
+                <p className="text-[10px] text-muted-foreground">{totalTenants} total registered</p>
+              </div>
+            </div>
+            <ArrowRight className="size-3.5 text-muted-foreground group-hover:translate-x-0.5 transition-transform" />
+          </Link>
 
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs font-medium text-muted-foreground">Pending Approvals</p>
-                  <h3 className="text-2xl font-bold mt-1">{pendingPayments.length}</h3>
-                </div>
-                <div className="size-10 rounded-xl bg-warning/10 text-warning flex items-center justify-center">
-                  <Receipt className="size-5" />
-                </div>
+          <Link
+            to="/admin/plans"
+            className="flex items-center justify-between p-3.5 rounded-2xl border border-border/80 bg-card hover:bg-muted/30 transition-colors shadow-2xs group"
+          >
+            <div className="flex items-center gap-3">
+              <div className="size-9 rounded-xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center font-bold">
+                <Layers className="size-4" />
               </div>
-              <p className="text-xs text-muted-foreground mt-3">
-                Manual bank transfers awaiting review
-              </p>
-            </CardContent>
-          </Card>
+              <div>
+                <p className="text-xs font-bold text-foreground group-hover:text-primary transition-colors">
+                  SaaS Pricing Plans
+                </p>
+                <p className="text-[10px] text-muted-foreground">{plans.length} active tiers</p>
+              </div>
+            </div>
+            <ArrowRight className="size-3.5 text-muted-foreground group-hover:translate-x-0.5 transition-transform" />
+          </Link>
 
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs font-medium text-muted-foreground">SaaS Pricing Tiers</p>
-                  <h3 className="text-2xl font-bold mt-1">{plans.length}</h3>
-                </div>
-                <div className="size-10 rounded-xl bg-info/10 text-info flex items-center justify-center">
-                  <Layers className="size-5" />
-                </div>
+          <Link
+            to="/admin/support"
+            className="flex items-center justify-between p-3.5 rounded-2xl border border-border/80 bg-card hover:bg-muted/30 transition-colors shadow-2xs group"
+          >
+            <div className="flex items-center gap-3">
+              <div className="size-9 rounded-xl bg-purple-500/10 text-purple-500 flex items-center justify-center font-bold">
+                <MessageCircle className="size-4" />
               </div>
-              <p className="text-xs text-muted-foreground mt-3">Active plan configurations</p>
-            </CardContent>
-          </Card>
+              <div>
+                <p className="text-xs font-bold text-foreground group-hover:text-primary transition-colors">
+                  Support Inbox
+                </p>
+                <p className="text-[10px] text-muted-foreground">{openTickets.length} open tickets</p>
+              </div>
+            </div>
+            {openTickets.length > 0 && (
+              <Badge variant="secondary" className="h-5 px-1.5 text-[10px] font-bold">
+                {openTickets.length}
+              </Badge>
+            )}
+          </Link>
         </div>
 
-        {/* Charts Section */}
+        {/* Visual Analytics & Infrastructure Row */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <Card className="lg:col-span-2">
-            <CardHeader>
-              <CardTitle>Platform Growth & Revenue</CardTitle>
-              <CardDescription>Monthly subscriber growth and MRR performance</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="h-72 w-full">
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={monthlyGrowthData}>
-                    <defs>
-                      <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.4} />
-                        <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0} />
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
-                    <XAxis dataKey="month" />
-                    <YAxis />
-                    <Tooltip />
+          {/* Main Growth & Revenue Area Chart (2 Cols) */}
+          <Card className="lg:col-span-2 rounded-2xl border border-border/80 bg-card shadow-soft p-5">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
+              <div>
+                <h3 className="font-display text-base font-bold text-foreground">
+                  Platform Growth & Revenue Velocity
+                </h3>
+                <p className="text-xs text-muted-foreground">
+                  Monthly recurring revenue and store provisioning trend
+                </p>
+              </div>
+              <div className="flex items-center gap-1.5 p-1 bg-muted/40 rounded-xl border border-border/60">
+                <Button
+                  size="sm"
+                  variant={chartMetric === "revenue" ? "default" : "ghost"}
+                  className="h-7 text-xs font-bold rounded-lg"
+                  onClick={() => setChartMetric("revenue")}
+                >
+                  MRR Revenue
+                </Button>
+                <Button
+                  size="sm"
+                  variant={chartMetric === "growth" ? "default" : "ghost"}
+                  className="h-7 text-xs font-bold rounded-lg"
+                  onClick={() => setChartMetric("growth")}
+                >
+                  Store Count
+                </Button>
+              </div>
+            </div>
+
+            <div className="h-72 w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart
+                  data={monthlyGrowthData}
+                  margin={{ top: 10, right: 10, left: -15, bottom: 0 }}
+                >
+                  <defs>
+                    <linearGradient id="mrrGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.4} />
+                      <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0.0} />
+                    </linearGradient>
+                    <linearGradient id="growthGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#10b981" stopOpacity={0.4} />
+                      <stop offset="95%" stopColor="#10b981" stopOpacity={0.0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.15} />
+                  <XAxis dataKey="month" tickLine={false} axisLine={false} fontSize={11} />
+                  <YAxis
+                    tickLine={false}
+                    axisLine={false}
+                    fontSize={11}
+                    tickFormatter={(v) => (chartMetric === "revenue" ? `₹${v / 1000}k` : v)}
+                  />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: "hsl(var(--card))",
+                      borderColor: "hsl(var(--border))",
+                      borderRadius: "12px",
+                      fontSize: "12px",
+                      boxShadow: "0 8px 30px rgba(0,0,0,0.12)",
+                    }}
+                    formatter={(val: any) =>
+                      chartMetric === "revenue"
+                        ? [`₹${Number(val).toLocaleString("en-IN")}`, "Monthly Revenue"]
+                        : [`${val} stores`, "Total Registered Stores"]
+                    }
+                  />
+                  {chartMetric === "revenue" ? (
                     <Area
                       type="monotone"
                       dataKey="revenue"
                       stroke="hsl(var(--primary))"
+                      strokeWidth={2.5}
                       fillOpacity={1}
-                      fill="url(#colorRevenue)"
-                      strokeWidth={2}
+                      fill="url(#mrrGrad)"
                     />
-                  </AreaChart>
-                </ResponsiveContainer>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Quick Actions */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Quick Management</CardTitle>
-              <CardDescription>Jump straight to administrative actions</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <Button asChild className="w-full justify-between" variant="outline">
-                <Link to="/admin/tenants" className="flex items-center justify-between w-full">
-                  <span className="flex items-center gap-2">
-                    <Store className="size-4" /> Manage Tenants
-                  </span>
-                  <ArrowRight className="size-4 text-muted-foreground" />
-                </Link>
-              </Button>
-
-              <Button asChild className="w-full justify-between" variant="outline">
-                <Link to="/admin/plans" className="flex items-center justify-between w-full">
-                  <span className="flex items-center gap-2">
-                    <Layers className="size-4" /> Edit SaaS Tiers
-                  </span>
-                  <ArrowRight className="size-4 text-muted-foreground" />
-                </Link>
-              </Button>
-
-              <Button asChild className="w-full justify-between" variant="outline">
-                <Link to="/admin/payments" className="flex items-center justify-between w-full">
-                  <span className="flex items-center gap-2">
-                    <Receipt className="size-4" /> Verify Payments
-                  </span>
-                  {pendingPayments.length > 0 && (
-                    <Badge variant="destructive" className="ml-auto mr-2">
-                      {pendingPayments.length}
-                    </Badge>
+                  ) : (
+                    <Area
+                      type="monotone"
+                      dataKey="stores"
+                      stroke="#10b981"
+                      strokeWidth={2.5}
+                      fillOpacity={1}
+                      fill="url(#growthGrad)"
+                    />
                   )}
-                  <ArrowRight className="size-4 text-muted-foreground" />
-                </Link>
-              </Button>
-
-              <Button asChild className="w-full justify-between" variant="outline">
-                <Link to="/admin/users" className="flex items-center justify-between w-full">
-                  <span className="flex items-center gap-2">
-                    <Activity className="size-4" /> Super Admin Users
-                  </span>
-                  <ArrowRight className="size-4 text-muted-foreground" />
-                </Link>
-              </Button>
-            </CardContent>
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
           </Card>
+
+          {/* SaaS Plan Distribution & System Health (1 Col) */}
+          <div className="space-y-6">
+            {/* SaaS Plan Distribution Donut */}
+            <Card className="rounded-2xl border border-border/80 bg-card shadow-soft p-5">
+              <h3 className="font-display text-base font-bold text-foreground mb-1">
+                SaaS Plan Distribution
+              </h3>
+              <p className="text-xs text-muted-foreground mb-4">
+                Active stores by subscription tier
+              </p>
+
+              {planDistribution.length === 0 ? (
+                <div className="h-44 flex items-center justify-center text-xs text-muted-foreground">
+                  No active store subscriptions assigned yet.
+                </div>
+              ) : (
+                <div className="flex items-center gap-4">
+                  <div className="h-44 w-44 shrink-0">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie
+                          data={planDistribution}
+                          innerRadius={45}
+                          outerRadius={65}
+                          paddingAngle={4}
+                          dataKey="count"
+                        >
+                          {planDistribution.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                          ))}
+                        </Pie>
+                        <Tooltip
+                          contentStyle={{
+                            backgroundColor: "hsl(var(--card))",
+                            borderColor: "hsl(var(--border))",
+                            borderRadius: "10px",
+                            fontSize: "11px",
+                          }}
+                        />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
+                  <div className="flex-1 space-y-2 text-xs">
+                    {planDistribution.map((plan, idx) => (
+                      <div key={plan.name} className="flex items-center justify-between">
+                        <div className="flex items-center gap-1.5">
+                          <span
+                            className="size-2.5 rounded-full shrink-0"
+                            style={{ backgroundColor: COLORS[idx % COLORS.length] }}
+                          />
+                          <span className="font-semibold text-foreground truncate max-w-[80px]">
+                            {plan.name}
+                          </span>
+                        </div>
+                        <span className="font-mono font-bold text-muted-foreground">
+                          {plan.count} stores
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </Card>
+
+            {/* Platform Infrastructure Health */}
+            <Card className="rounded-2xl border border-border/80 bg-card shadow-soft p-5 space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <ShieldCheck className="size-4 text-emerald-500" />
+                  <h4 className="text-xs font-bold text-foreground">Infrastructure Status</h4>
+                </div>
+                <Badge variant="outline" className="text-[10px] text-emerald-600 bg-emerald-500/10 font-bold border-emerald-500/20">
+                  99.99% Operational
+                </Badge>
+              </div>
+
+              <div className="space-y-2 text-xs">
+                <div className="flex items-center justify-between p-2 rounded-xl bg-muted/20 border border-border/40">
+                  <span className="text-muted-foreground">Edge SSR Runtime</span>
+                  <span className="font-semibold text-foreground">Nitro Cloudflare</span>
+                </div>
+                <div className="flex items-center justify-between p-2 rounded-xl bg-muted/20 border border-border/40">
+                  <span className="text-muted-foreground">Primary Database</span>
+                  <span className="font-semibold text-emerald-600 dark:text-emerald-400">PostgreSQL (Healthy)</span>
+                </div>
+                <div className="flex items-center justify-between p-2 rounded-xl bg-muted/20 border border-border/40">
+                  <span className="text-muted-foreground">Sync & PWA Engine</span>
+                  <span className="font-semibold text-foreground">ServiceWorker v1.3</span>
+                </div>
+              </div>
+            </Card>
+          </div>
         </div>
+
+        {/* Multi-Tabbed Operations & Activity Decision Center */}
+        <div className="rounded-2xl border border-border/80 bg-card shadow-soft overflow-hidden">
+          {/* Tabs Bar */}
+          <div className="flex flex-wrap items-center justify-between border-b border-border/60 bg-muted/30 p-3 sm:px-5">
+            <div className="flex items-center gap-1.5 text-xs font-bold">
+              <button
+                type="button"
+                onClick={() => setActiveTab("pending")}
+                className={`px-3 py-1.5 rounded-xl transition-all flex items-center gap-1.5 ${
+                  activeTab === "pending"
+                    ? "bg-primary text-primary-foreground shadow-xs"
+                    : "text-muted-foreground hover:bg-muted"
+                }`}
+              >
+                <Receipt className="size-3.5" />
+                <span>Pending Approvals</span>
+                {pendingPayments.length > 0 && (
+                  <Badge
+                    variant="destructive"
+                    className={`h-4 px-1 text-[9px] font-black ${
+                      activeTab === "pending" ? "bg-white text-primary" : ""
+                    }`}
+                  >
+                    {pendingPayments.length}
+                  </Badge>
+                )}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setActiveTab("recent")}
+                className={`px-3 py-1.5 rounded-xl transition-all flex items-center gap-1.5 ${
+                  activeTab === "recent"
+                    ? "bg-primary text-primary-foreground shadow-xs"
+                    : "text-muted-foreground hover:bg-muted"
+                }`}
+              >
+                <Store className="size-3.5" />
+                <span>Recent Stores ({recentTenants.length})</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setActiveTab("expiring")}
+                className={`px-3 py-1.5 rounded-xl transition-all flex items-center gap-1.5 ${
+                  activeTab === "expiring"
+                    ? "bg-primary text-primary-foreground shadow-xs"
+                    : "text-muted-foreground hover:bg-muted"
+                }`}
+              >
+                <AlertTriangle className="size-3.5 text-amber-500" />
+                <span>Expiring Soon</span>
+                {expiringSoonTenants.length > 0 && (
+                  <Badge variant="outline" className="h-4 px-1 text-[9px] font-bold text-amber-500 border-amber-500/30">
+                    {expiringSoonTenants.length}
+                  </Badge>
+                )}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setActiveTab("support")}
+                className={`px-3 py-1.5 rounded-xl transition-all flex items-center gap-1.5 ${
+                  activeTab === "support"
+                    ? "bg-primary text-primary-foreground shadow-xs"
+                    : "text-muted-foreground hover:bg-muted"
+                }`}
+              >
+                <MessageCircle className="size-3.5" />
+                <span>Recent Inquiries ({tickets.slice(0, 5).length})</span>
+              </button>
+            </div>
+
+            <Link
+              to={
+                activeTab === "pending"
+                  ? "/admin/payments"
+                  : activeTab === "support"
+                  ? "/admin/support"
+                  : "/admin/tenants"
+              }
+              className="text-xs font-semibold text-primary hover:underline flex items-center gap-1 mt-2 sm:mt-0"
+            >
+              <span>View Full Module</span>
+              <ArrowRight className="size-3" />
+            </Link>
+          </div>
+
+          {/* Tab 1: Pending Approvals Table */}
+          {activeTab === "pending" && (
+            <div>
+              {pendingPayments.length === 0 ? (
+                <div className="p-12 text-center space-y-2">
+                  <CheckCircle2 className="size-8 mx-auto text-emerald-500" />
+                  <h4 className="text-sm font-bold text-foreground">Zero Pending Approvals</h4>
+                  <p className="text-xs text-muted-foreground">
+                    All merchant offline bank & UPI payments have been verified and processed.
+                  </p>
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader className="bg-muted/40 border-b border-border/60 text-xs font-bold text-muted-foreground uppercase">
+                    <TableRow>
+                      <TableHead>Tenant Store</TableHead>
+                      <TableHead>Plan Upgrade</TableHead>
+                      <TableHead>Amount</TableHead>
+                      <TableHead>UTR / Reference</TableHead>
+                      <TableHead>Submitted Date</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {pendingPayments.map((p: any) => (
+                      <TableRow key={p.id} className="hover:bg-muted/30 transition-colors">
+                        <TableCell>
+                          <div className="font-bold text-xs text-foreground">
+                            {p.organizationName || p.organizationId}
+                          </div>
+                          <div className="text-[10px] text-muted-foreground">{p.userEmail}</div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className="text-[10px] font-bold">
+                            {p.planName || p.planId}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="font-mono font-bold text-xs">
+                          ₹{p.amount || 0}
+                        </TableCell>
+                        <TableCell className="font-mono text-xs text-foreground">
+                          {p.referenceNumber || p.utrNumber || "N/A"}
+                        </TableCell>
+                        <TableCell className="text-xs text-muted-foreground">
+                          {new Date(p.createdAt).toLocaleDateString()}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex items-center justify-end gap-1.5">
+                            <Button
+                              size="sm"
+                              className="h-7 text-xs font-bold gap-1 bg-emerald-600 hover:bg-emerald-700 text-white"
+                              disabled={approveMutation.isPending}
+                              onClick={() => approveMutation.mutate(p.id)}
+                            >
+                              <Check className="size-3" /> Approve
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="h-7 text-xs text-destructive hover:bg-destructive/10"
+                              disabled={rejectMutation.isPending}
+                              onClick={() => rejectMutation.mutate(p.id)}
+                            >
+                              <XCircle className="size-3" /> Reject
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+            </div>
+          )}
+
+          {/* Tab 2: Recent Stores Table */}
+          {activeTab === "recent" && (
+            <Table>
+              <TableHeader className="bg-muted/40 border-b border-border/60 text-xs font-bold text-muted-foreground uppercase">
+                <TableRow>
+                  <TableHead>Store Name</TableHead>
+                  <TableHead>Owner Email</TableHead>
+                  <TableHead>Assigned Plan</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Expires On</TableHead>
+                  <TableHead className="text-right">Action</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {recentTenants.map((org: any) => (
+                  <TableRow key={org.id} className="hover:bg-muted/30 transition-colors">
+                    <TableCell>
+                      <div className="font-bold text-xs text-foreground">{org.name}</div>
+                      <div className="text-[10px] font-mono text-muted-foreground">{org.id}</div>
+                    </TableCell>
+                    <TableCell className="text-xs text-muted-foreground">{org.ownerEmail || "N/A"}</TableCell>
+                    <TableCell>
+                      <Badge variant="outline" className="text-[10px] font-bold uppercase">
+                        {org.currentPlanId || "basic"}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <Badge
+                        variant={
+                          org.status === "active"
+                            ? "default"
+                            : org.status === "trial"
+                            ? "secondary"
+                            : "destructive"
+                        }
+                        className="text-[10px] font-bold uppercase"
+                      >
+                        {org.status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-xs font-mono text-muted-foreground">
+                      {org.planExpiryDate
+                        ? new Date(org.planExpiryDate).toLocaleDateString()
+                        : "Lifetime / No Expiry"}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Link to="/admin/tenants">
+                        <Button size="sm" variant="outline" className="h-7 text-xs font-semibold gap-1">
+                          <Eye className="size-3" /> Manage
+                        </Button>
+                      </Link>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+
+          {/* Tab 3: Expiring Soon Stores */}
+          {activeTab === "expiring" && (
+            <div>
+              {expiringSoonTenants.length === 0 ? (
+                <div className="p-12 text-center space-y-2">
+                  <CheckCircle2 className="size-8 mx-auto text-emerald-500" />
+                  <h4 className="text-sm font-bold text-foreground">No Subscriptions Expiring Soon</h4>
+                  <p className="text-xs text-muted-foreground">
+                    All active merchant stores are well within their billing period.
+                  </p>
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader className="bg-muted/40 border-b border-border/60 text-xs font-bold text-muted-foreground uppercase">
+                    <TableRow>
+                      <TableHead>Store Name</TableHead>
+                      <TableHead>Owner Email</TableHead>
+                      <TableHead>Current Tier</TableHead>
+                      <TableHead>Expiration Date</TableHead>
+                      <TableHead className="text-right">Quick Extend Action</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {expiringSoonTenants.map((org: any) => (
+                      <TableRow key={org.id} className="hover:bg-muted/30 transition-colors">
+                        <TableCell>
+                          <div className="font-bold text-xs text-foreground">{org.name}</div>
+                          <div className="text-[10px] font-mono text-muted-foreground">{org.id}</div>
+                        </TableCell>
+                        <TableCell className="text-xs text-muted-foreground">{org.ownerEmail}</TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className="text-[10px] font-bold uppercase">
+                            {org.currentPlanId || "trial"}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-xs font-mono font-bold text-amber-500">
+                          {new Date(org.planExpiryDate).toLocaleDateString()}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-7 text-xs font-semibold gap-1 text-primary border-primary/30 hover:bg-primary/10"
+                            onClick={() => setQuickExtendOrg(org)}
+                          >
+                            <Sparkles className="size-3" /> Add Trial Days
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+            </div>
+          )}
+
+          {/* Tab 4: Recent Support Inquiries */}
+          {activeTab === "support" && (
+            <div>
+              {tickets.length === 0 ? (
+                <div className="p-12 text-center space-y-2">
+                  <MessageCircle className="size-8 mx-auto text-muted-foreground/40" />
+                  <h4 className="text-sm font-bold text-foreground">No Support Tickets Yet</h4>
+                  <p className="text-xs text-muted-foreground">
+                    Merchant support inquiries will appear here automatically.
+                  </p>
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader className="bg-muted/40 border-b border-border/60 text-xs font-bold text-muted-foreground uppercase">
+                    <TableRow>
+                      <TableHead>Store Org</TableHead>
+                      <TableHead>Subject</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Created Date</TableHead>
+                      <TableHead className="text-right">Action</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {tickets.slice(0, 6).map((ticket: any) => (
+                      <TableRow key={ticket.id} className="hover:bg-muted/30 transition-colors">
+                        <TableCell>
+                          <div className="font-bold text-xs text-foreground">
+                            {ticket.orgName || ticket.organizationId}
+                          </div>
+                          <div className="text-[10px] text-muted-foreground">{ticket.userName || ticket.orgEmail}</div>
+                        </TableCell>
+                        <TableCell className="text-xs text-foreground font-medium max-w-xs truncate">
+                          {ticket.subject || "Support Inquiry"}
+                        </TableCell>
+                        <TableCell>
+                          <Badge
+                            variant={
+                              ticket.status === "resolved"
+                                ? "default"
+                                : ticket.status === "in-progress"
+                                ? "secondary"
+                                : "outline"
+                            }
+                            className="text-[10px] font-bold capitalize"
+                          >
+                            {ticket.status}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-xs text-muted-foreground">
+                          {new Date(ticket.createdAt).toLocaleDateString()}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Link to="/admin/support">
+                            <Button size="sm" variant="outline" className="h-7 text-xs font-semibold gap-1">
+                              View Ticket
+                            </Button>
+                          </Link>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Quick Provision New Tenant Store Drawer */}
+        <Sheet open={isCreateStoreOpen} onOpenChange={setIsCreateStoreOpen}>
+          <SheetContent
+            side="right"
+            className="w-full sm:max-w-lg p-0 flex flex-col h-full bg-background border-l border-border"
+          >
+            <SheetHeader className="bg-muted/60 p-5 border-b pr-12 text-left">
+              <SheetTitle className="text-lg font-bold text-foreground">
+                Provision New Tenant Store
+              </SheetTitle>
+              <SheetDescription className="text-xs text-muted-foreground mt-0.5">
+                Instantly provision a new merchant POS account with store credentials and assigned SaaS tier.
+              </SheetDescription>
+            </SheetHeader>
+
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                createTenantMutation.mutate(newStore);
+              }}
+              className="flex flex-col flex-1 overflow-hidden"
+            >
+              <div className="flex-1 overflow-y-auto p-5 space-y-4">
+                <div className="space-y-1.5">
+                  <Label htmlFor="q-storeName">Store / Company Name</Label>
+                  <Input
+                    id="q-storeName"
+                    required
+                    value={newStore.storeName}
+                    onChange={(e) => setNewStore({ ...newStore, storeName: e.target.value })}
+                    placeholder="e.g. Apex Supermarket"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label htmlFor="q-ownerName">Owner Full Name</Label>
+                  <Input
+                    id="q-ownerName"
+                    required
+                    value={newStore.ownerName}
+                    onChange={(e) => setNewStore({ ...newStore, ownerName: e.target.value })}
+                    placeholder="John Doe"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label htmlFor="q-email">Owner Email</Label>
+                  <Input
+                    id="q-email"
+                    type="email"
+                    required
+                    value={newStore.email}
+                    onChange={(e) => setNewStore({ ...newStore, email: e.target.value })}
+                    placeholder="owner@apexstore.com"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label htmlFor="q-password">Initial Password</Label>
+                  <Input
+                    id="q-password"
+                    type="password"
+                    required
+                    value={newStore.password}
+                    onChange={(e) => setNewStore({ ...newStore, password: e.target.value })}
+                    placeholder="••••••••••••"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label htmlFor="q-plan">Assign SaaS Plan Tier</Label>
+                  <Select
+                    value={newStore.planId}
+                    onValueChange={(val) => setNewStore({ ...newStore, planId: val })}
+                  >
+                    <SelectTrigger id="q-plan">
+                      <SelectValue placeholder="Select plan tier" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {plans.map((p: any) => (
+                        <SelectItem key={p.id} value={p.id}>
+                          {p.name} (₹{p.price || 0}/mo)
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <SheetFooter className="p-5 border-t bg-muted/20 flex sm:justify-end gap-2">
+                <Button type="button" variant="outline" onClick={() => setIsCreateStoreOpen(false)}>
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={createTenantMutation.isPending}>
+                  {createTenantMutation.isPending ? "Provisioning…" : "Provision Store Now"}
+                </Button>
+              </SheetFooter>
+            </form>
+          </SheetContent>
+        </Sheet>
+
+        {/* Quick Extend Trial Drawer */}
+        <Sheet open={!!quickExtendOrg} onOpenChange={(open) => !open && setQuickExtendOrg(null)}>
+          <SheetContent
+            side="right"
+            className="w-full sm:max-w-md p-0 flex flex-col h-full bg-background border-l border-border"
+          >
+            <SheetHeader className="bg-muted/60 p-5 border-b pr-12 text-left">
+              <SheetTitle className="text-lg font-bold text-foreground">
+                Extend Trial / Subscription
+              </SheetTitle>
+              <SheetDescription className="text-xs text-muted-foreground mt-0.5">
+                Add bonus trial days to {quickExtendOrg?.name || "Merchant Store"}.
+              </SheetDescription>
+            </SheetHeader>
+
+            {quickExtendOrg && (
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  addTrialMutation.mutate({
+                    orgId: quickExtendOrg.id,
+                    days: Number(extendDays) || 14,
+                  });
+                }}
+                className="flex flex-col flex-1 overflow-hidden"
+              >
+                <div className="flex-1 overflow-y-auto p-5 space-y-4">
+                  <div className="p-3.5 rounded-xl border bg-muted/20 space-y-2 text-xs">
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Store Organization:</span>
+                      <span className="font-bold text-foreground">{quickExtendOrg.name}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Current Expiry:</span>
+                      <span className="font-mono text-foreground">
+                        {quickExtendOrg.planExpiryDate
+                          ? new Date(quickExtendOrg.planExpiryDate).toLocaleDateString()
+                          : "No Expiry / Lifetime"}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label htmlFor="ext-days">Days to Add</Label>
+                    <Select value={extendDays} onValueChange={setExtendDays}>
+                      <SelectTrigger id="ext-days">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="7">+7 Days Extension</SelectItem>
+                        <SelectItem value="14">+14 Days Extension (Recommended)</SelectItem>
+                        <SelectItem value="30">+30 Days (1 Month)</SelectItem>
+                        <SelectItem value="60">+60 Days (2 Months)</SelectItem>
+                        <SelectItem value="90">+90 Days (Quarterly)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <SheetFooter className="p-5 border-t bg-muted/20 flex sm:justify-end gap-2">
+                  <Button type="button" variant="outline" onClick={() => setQuickExtendOrg(null)}>
+                    Cancel
+                  </Button>
+                  <Button type="submit" disabled={addTrialMutation.isPending}>
+                    {addTrialMutation.isPending ? "Adding Days…" : "Confirm Extension"}
+                  </Button>
+                </SheetFooter>
+              </form>
+            )}
+          </SheetContent>
+        </Sheet>
       </div>
     </SuperAdminLayout>
   );

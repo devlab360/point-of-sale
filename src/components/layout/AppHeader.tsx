@@ -21,6 +21,8 @@ import {
   Maximize,
   Minimize,
   Sparkles,
+  Megaphone,
+  X,
 } from "lucide-react";
 import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
@@ -42,6 +44,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAppFormatter } from "@/hooks/useAppFormatter";
 import { getGlobalSearchFn } from "@/api/search";
 import { getNotificationsFn, markNotificationReadFn, markAllNotificationsReadFn } from "@/api/notifications";
+import { getActiveBroadcastForStoreFn } from "@/api/admin/super-admin";
 import { PersistStore } from "@/lib/session-store";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
@@ -252,10 +255,63 @@ export function AppHeader() {
     toast.success("Register closed. Discrepancy logged. (Stubbed for Phase 4)");
   };
 
+  const [dismissedBroadcastId, setDismissedBroadcastId] = useState<string | null>(() => {
+    if (typeof window !== "undefined") {
+      return sessionStorage.getItem("dismissed_broadcast_id");
+    }
+    return null;
+  });
+
+  const { data: broadcastData } = useQuery({
+    queryKey: ["active-broadcast-announcement", user?.organizationId],
+    queryFn: () => getActiveBroadcastForStoreFn({ data: { orgStatus: (user as any)?.orgStatus } }),
+    staleTime: 60000,
+  });
+
+  const activeBroadcast = broadcastData?.data;
+  const showBroadcast =
+    activeBroadcast &&
+    activeBroadcast.active &&
+    activeBroadcast.id !== dismissedBroadcastId;
+
   return (
-    <header className="sticky top-0 z-30 flex h-14 md:h-16 shrink-0 items-center gap-2 md:gap-3 border-b border-border bg-background/80 px-3 md:px-4 backdrop-blur-xl lg:px-6">
-      {/* Hamburger: hidden on mobile (bottom nav), shown on tablet (md-lg), hidden on desktop (sidebar) */}
-      <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
+    <>
+      {showBroadcast && (
+        <div
+          className={`w-full px-4 py-2 text-xs font-semibold flex items-center justify-between transition-colors ${
+            activeBroadcast.type === "warning"
+              ? "bg-amber-500 text-amber-950 dark:bg-amber-600 dark:text-amber-50"
+              : activeBroadcast.type === "success"
+              ? "bg-emerald-600 text-white"
+              : activeBroadcast.type === "update"
+              ? "bg-purple-600 text-white"
+              : "bg-primary text-primary-foreground"
+          }`}
+        >
+          <div className="flex items-center gap-2 max-w-4xl mx-auto overflow-hidden">
+            <Megaphone className="size-4 shrink-0" />
+            <span className="font-bold shrink-0">{activeBroadcast.title}:</span>
+            <span className="truncate">{activeBroadcast.message}</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              setDismissedBroadcastId(activeBroadcast.id);
+              if (typeof window !== "undefined") {
+                sessionStorage.setItem("dismissed_broadcast_id", activeBroadcast.id);
+              }
+            }}
+            className="p-1 rounded-md hover:bg-black/10 transition-colors ml-2"
+            title="Dismiss Announcement"
+          >
+            <X className="size-3.5" />
+          </button>
+        </div>
+      )}
+
+      <header className="sticky top-0 z-30 flex h-14 md:h-16 shrink-0 items-center gap-2 md:gap-3 border-b border-border bg-background/80 px-3 md:px-4 backdrop-blur-xl lg:px-6">
+        {/* Hamburger: hidden on mobile (bottom nav), shown on tablet (md-lg), hidden on desktop (sidebar) */}
+        <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
         <Button
           variant="ghost"
           size="icon"
@@ -796,5 +852,6 @@ export function AppHeader() {
         </DialogContent>
       </Dialog>
     </header>
+    </>
   );
 }
