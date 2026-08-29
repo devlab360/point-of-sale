@@ -768,45 +768,71 @@ export const completePosSaleFn = createServerFn({ method: "POST" })
           read: false,
         });
 
-        // Customer Ledger & Updates
+        // Customer Ledger, Spending & Loyalty Points Updates
         if (safeSale.status !== "quotation") {
           const customerId =
             data.sale.customerId && data.sale.customerId !== "walkin" ? data.sale.customerId : null;
-          if (data.ledgerEntries && data.ledgerEntries.length > 0 && customerId) {
-            // Re-calculate ledger amount to match secure total
+
+          if (customerId) {
             const custRes = await tx
               .select()
               .from(schema.customers)
-              .where(eq(schema.customers.id, customerId))
+              .where(and(eq(schema.customers.id, customerId), eq(schema.customers.organizationId, orgId)))
               .limit(1);
-            const currentCredit = custRes.length > 0 ? Number(custRes[0].credit || 0) : 0;
-            const newCreditBalance =
-              data.sale.paymentMethod === "credit" ? currentCredit + serverTotal : currentCredit;
-
-            const safeLedgers = data.ledgerEntries
-              .filter((l: any) => l.customerId && l.customerId !== "walkin")
-              .map((l: any) => ({
-                ...l,
-                organizationId: orgId,
-                amount: serverTotal.toString(),
-                balanceAfter: newCreditBalance.toFixed(2),
-              }));
-            if (safeLedgers.length > 0) {
-              await tx.insert(schema.customerLedgers).values(safeLedgers);
-            }
 
             if (custRes.length > 0) {
               const c = custRes[0];
+              const currentCredit = Number(c.credit || 0);
+              const newCreditBalance =
+                data.sale.paymentMethod === "credit" ? currentCredit + serverTotal : currentCredit;
+
+              // Insert customer ledger record if credit payment or ledger entries provided
+              if (data.ledgerEntries && data.ledgerEntries.length > 0) {
+                const safeLedgers = data.ledgerEntries
+                  .filter((l: any) => l.customerId && l.customerId !== "walkin")
+                  .map((l: any) => ({
+                    ...l,
+                    organizationId: orgId,
+                    amount: serverTotal.toString(),
+                    balanceAfter: newCreditBalance.toFixed(2),
+                  }));
+                if (safeLedgers.length > 0) {
+                  await tx.insert(schema.customerLedgers).values(safeLedgers);
+                }
+              }
+
+              // Calculate Loyalty Points (Earned & Redeemed)
+              const redeemedPoints = Number(data.sale.loyaltyPointsRedeemed || 0);
+              const earnedPoints = Number(data.sale.loyaltyPointsEarned != null
+                ? data.sale.loyaltyPointsEarned
+                : Math.floor(serverTotal / 10));
+
+              const currentPoints = Number(c.loyaltyPoints || 0);
+              const updatedPoints = Math.max(0, currentPoints - redeemedPoints + earnedPoints);
+
               await tx
                 .update(schema.customers)
                 .set({
                   totalSpent: String(Number(c.totalSpent || 0) + serverTotal),
                   visits: (c.visits || 0) + 1,
-                  loyaltyPoints: (c.loyaltyPoints || 0) + Math.floor(serverTotal / 10),
+                  loyaltyPoints: updatedPoints,
                   credit:
                     data.sale.paymentMethod === "credit" ? String(newCreditBalance) : c.credit,
                 })
                 .where(eq(schema.customers.id, customerId));
+
+              // Also sync with loyaltyMembers table if member exists
+              if (c.phone) {
+                await tx
+                  .update(schema.loyaltyMembers)
+                  .set({ points: updatedPoints })
+                  .where(
+                    and(
+                      eq(schema.loyaltyMembers.phone, c.phone),
+                      eq(schema.loyaltyMembers.organizationId, orgId),
+                    ),
+                  );
+              }
             }
           }
 

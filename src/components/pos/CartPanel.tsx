@@ -22,6 +22,7 @@ import {
   Wallet,
   QrCode,
   Coins,
+  Star,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SearchableSelect } from "@/components/ui/searchable-select";
@@ -164,6 +165,12 @@ export function CartPanel({
               {activeCustomer.type === "wholesale" && (
                 <span className="rounded bg-primary/15 px-1.5 py-0.5 text-[9px] font-black text-primary uppercase">
                   WH
+                </span>
+              )}
+              {activeCustomer.loyaltyPoints != null && activeCustomer.loyaltyPoints > 0 && (
+                <span className="rounded-lg bg-amber-500/15 border border-amber-500/30 px-1.5 py-0.5 text-[10px] font-bold text-amber-600 dark:text-amber-400 flex items-center gap-0.5">
+                  <Star className="size-3 fill-amber-500 text-amber-500" />
+                  <span>{activeCustomer.loyaltyPoints} pts</span>
                 </span>
               )}
               <ChevronRight className="size-4 text-muted-foreground" />

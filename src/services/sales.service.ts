@@ -195,6 +195,29 @@ export class SalesService {
           }
         }
       }
+
+      // Customer Loyalty & Spending Update
+      if (input.customerId && input.customerId !== "walkin") {
+        const custRes = await tx
+          .select()
+          .from(schema.customers)
+          .where(and(eq(schema.customers.id, input.customerId), eq(schema.customers.organizationId, orgId)))
+          .limit(1);
+
+        if (custRes.length > 0) {
+          const c = custRes[0];
+          const earnedPoints = Math.floor(total / 10);
+          const currentPoints = Number(c.loyaltyPoints || 0);
+          await tx
+            .update(schema.customers)
+            .set({
+              totalSpent: String(Number(c.totalSpent || 0) + total),
+              visits: (c.visits || 0) + 1,
+              loyaltyPoints: currentPoints + earnedPoints,
+            })
+            .where(eq(schema.customers.id, input.customerId));
+        }
+      }
     });
 
     return { saleId, total };
