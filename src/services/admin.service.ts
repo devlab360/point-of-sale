@@ -298,7 +298,7 @@ export class AdminService {
     return adminUsers;
   }
 
-  async createSuperAdminUser(data: { name: string; email: string; password: string }) {
+  async createSuperAdminUser(data: { name: string; email: string; password: string; adminPermissions?: string[] }) {
     const email = data.email.toLowerCase().trim();
     const existing = await db
       .select()
@@ -321,6 +321,10 @@ export class AdminService {
       status: "active",
       pin: hashedPin,
       permissions: ["all"],
+      // null = full access (root); non-empty array = restricted
+      adminPermissions: data.adminPermissions && data.adminPermissions.length > 0
+        ? data.adminPermissions
+        : null,
       joined: new Date().toISOString(),
       lastActive: new Date().toISOString(),
     });
@@ -344,6 +348,30 @@ export class AdminService {
     }
 
     await db.delete(schema.users).where(eq(schema.users.id, userId));
+  }
+
+  async updateSuperAdminUserPermissions(
+    userId: string,
+    adminPermissions: string[] | null,
+  ) {
+    const existing = await db
+      .select()
+      .from(schema.users)
+      .where(and(eq(schema.users.id, userId), eq(schema.users.role, "super_admin")))
+      .limit(1);
+
+    if (!existing.length) {
+      throw new NotFoundError("Super Admin user not found");
+    }
+
+    // Store null = full access; non-empty array = restricted
+    const permsToStore =
+      adminPermissions && adminPermissions.length > 0 ? adminPermissions : null;
+
+    await db
+      .update(schema.users)
+      .set({ adminPermissions: permsToStore })
+      .where(eq(schema.users.id, userId));
   }
 
   async updateSuperAdminProfile(

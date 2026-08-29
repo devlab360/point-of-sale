@@ -50,7 +50,10 @@ import {
   deleteSuperAdminUserFn,
   getSuperAdminSessionsFn,
   revokeSuperAdminSessionFn,
+  updateSuperAdminUserPermissionsFn,
 } from "@/api/admin/super-admin";
+import { SUPER_ADMIN_MODULES } from "@/lib/admin/super-admin-permissions";
+import { Checkbox } from "@/components/ui/checkbox";
 import { exportToCSV } from "@/lib/export-utils";
 
 export const Route = createFileRoute("/admin/users")({
@@ -62,7 +65,13 @@ function SuperAdminUsersPage() {
   const queryClient = useQueryClient();
   const { user: currentUser } = useAdminAuth();
   const [isAddUserModalOpen, setIsAddUserModalOpen] = useState(false);
-  const [newUser, setNewUser] = useState({ name: "", email: "", password: "" });
+  const [newUser, setNewUser] = useState({ name: "", email: "", password: "", adminPermissions: [] as string[] });
+  const [newUserFullAccess, setNewUserFullAccess] = useState(true);
+
+  // Permissions editing state
+  const [editingPermissionsUser, setEditingPermissionsUser] = useState<any>(null);
+  const [editingPerms, setEditingPerms] = useState<string[]>([]);
+  const [editPermFullAccess, setEditPermFullAccess] = useState(true);
 
   const { data: usersData, isLoading: isUsersLoading, refetch: refetchUsers, isFetching: isUsersFetching } = useQuery({
     queryKey: ["super-admin-users"],
@@ -85,13 +94,29 @@ function SuperAdminUsersPage() {
       if (res.success) {
         toast.success("New Super Administrator provisioned!");
         setIsAddUserModalOpen(false);
-        setNewUser({ name: "", email: "", password: "" });
+        setNewUser({ name: "", email: "", password: "", adminPermissions: [] });
+        setNewUserFullAccess(true);
         queryClient.invalidateQueries({ queryKey: ["super-admin-users"] });
       } else {
         toast.error(res.error || "Failed to create user");
       }
     },
     onError: (err: any) => toast.error(err.message || "Failed to create user"),
+  });
+
+  const updatePermissionsMutation = useMutation({
+    mutationFn: (data: { userId: string; adminPermissions: string[] | null }) =>
+      updateSuperAdminUserPermissionsFn({ data }),
+    onSuccess: (res: any) => {
+      if (res.success) {
+        toast.success("Module permissions updated!");
+        setEditingPermissionsUser(null);
+        queryClient.invalidateQueries({ queryKey: ["super-admin-users"] });
+      } else {
+        toast.error(res.error || "Failed to update permissions");
+      }
+    },
+    onError: (err: any) => toast.error(err.message || "Failed to update permissions"),
   });
 
   const deleteUserMutation = useMutation({
@@ -204,7 +229,7 @@ function SuperAdminUsersPage() {
                   <TableHeader className="bg-muted/40 border-b text-xs font-bold text-muted-foreground uppercase">
                     <TableRow>
                       <TableHead className="px-4 py-3.5">Administrator</TableHead>
-                      <TableHead className="px-4 py-3.5">Privilege Level</TableHead>
+                      <TableHead className="px-4 py-3.5">Module Permissions</TableHead>
                       <TableHead className="px-4 py-3.5">Status</TableHead>
                       <TableHead className="px-4 py-3.5">Last Active</TableHead>
                       <TableHead className="px-4 py-3.5">Joined</TableHead>
@@ -236,9 +261,28 @@ function SuperAdminUsersPage() {
                           </TableCell>
 
                           <TableCell className="px-4 py-3.5">
-                            <Badge className="bg-primary/15 text-primary border-primary/30 font-bold uppercase text-[10px]">
-                              Super Admin (Root)
-                            </Badge>
+                            {(() => {
+                              const perms: string[] | null = admin.adminPermissions;
+                              const isFullAccess = !perms || perms.length === 0;
+                              return (
+                                <div className="flex flex-wrap gap-1 max-w-[260px]">
+                                  {isFullAccess ? (
+                                    <Badge className="bg-primary/15 text-primary border-primary/30 font-bold uppercase text-[10px]">
+                                      ⚡ Full Access
+                                    </Badge>
+                                  ) : (
+                                    perms.map((key) => {
+                                      const mod = SUPER_ADMIN_MODULES.find((m) => m.key === key);
+                                      return (
+                                        <Badge key={key} variant="secondary" className="text-[9px] font-semibold uppercase">
+                                          {mod?.label || key}
+                                        </Badge>
+                                      );
+                                    })
+                                  )}
+                                </div>
+                              );
+                            })()}
                           </TableCell>
 
                           <TableCell className="px-4 py-3.5">
@@ -256,21 +300,39 @@ function SuperAdminUsersPage() {
                           </TableCell>
 
                           <TableCell className="px-4 py-3.5 text-right">
-                            {!isSelf && (
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                className="text-destructive hover:bg-destructive/10 h-8 font-semibold"
-                                disabled={deleteUserMutation.isPending}
-                                onClick={() => {
-                                  if (confirm(`Remove administrator "${admin.name}"?`)) {
-                                    deleteUserMutation.mutate(admin.id);
-                                  }
-                                }}
-                              >
-                                <Trash2 className="size-3.5 mr-1" /> Remove
-                              </Button>
-                            )}
+                            <div className="flex items-center gap-1.5 justify-end">
+                              {!isSelf && (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="h-8 font-semibold text-xs gap-1.5"
+                                  onClick={() => {
+                                    const perms: string[] | null = admin.adminPermissions;
+                                    const isFullAccess = !perms || perms.length === 0;
+                                    setEditingPermissionsUser(admin);
+                                    setEditPermFullAccess(isFullAccess);
+                                    setEditingPerms(isFullAccess ? [] : [...perms]);
+                                  }}
+                                >
+                                  <Key className="size-3.5" /> Permissions
+                                </Button>
+                              )}
+                              {!isSelf && (
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  className="text-destructive hover:bg-destructive/10 h-8 font-semibold"
+                                  disabled={deleteUserMutation.isPending}
+                                  onClick={() => {
+                                    if (confirm(`Remove administrator "${admin.name}"?`)) {
+                                      deleteUserMutation.mutate(admin.id);
+                                    }
+                                  }}
+                                >
+                                  <Trash2 className="size-3.5 mr-1" /> Remove
+                                </Button>
+                              )}
+                            </div>
                           </TableCell>
                         </TableRow>
                       );
@@ -385,39 +447,44 @@ function SuperAdminUsersPage() {
             <SheetHeader className="bg-muted/60 p-5 border-b pr-12 text-left">
               <SheetTitle className="text-lg font-bold text-foreground">Add Super Administrator</SheetTitle>
               <SheetDescription className="text-xs text-muted-foreground mt-0.5">
-                Grant full, unrestricted access to manage all multi-tenant stores, SaaS tiers, and payment verifications.
+                Provision a new super admin user and define which platform modules they can access.
               </SheetDescription>
             </SheetHeader>
 
             <form
               onSubmit={(e) => {
                 e.preventDefault();
-                createUserMutation.mutate(newUser);
+                createUserMutation.mutate({
+                  ...newUser,
+                  adminPermissions: newUserFullAccess ? undefined : newUser.adminPermissions,
+                });
               }}
               className="flex flex-col flex-1 overflow-hidden"
             >
-              <div className="flex-1 overflow-y-auto p-5 space-y-4">
-                <div className="space-y-1.5">
-                  <Label htmlFor="admin-name">Full Name</Label>
-                  <Input
-                    id="admin-name"
-                    required
-                    value={newUser.name}
-                    onChange={(e) => setNewUser({ ...newUser, name: e.target.value })}
-                    placeholder="Alex Morgan"
-                  />
-                </div>
+              <div className="flex-1 overflow-y-auto p-5 space-y-5">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="admin-name">Full Name</Label>
+                    <Input
+                      id="admin-name"
+                      required
+                      value={newUser.name}
+                      onChange={(e) => setNewUser({ ...newUser, name: e.target.value })}
+                      placeholder="Alex Morgan"
+                    />
+                  </div>
 
-                <div className="space-y-1.5">
-                  <Label htmlFor="admin-email">Email Address</Label>
-                  <Input
-                    id="admin-email"
-                    type="email"
-                    required
-                    value={newUser.email}
-                    onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
-                    placeholder="alex@superadmin.com"
-                  />
+                  <div className="space-y-1.5">
+                    <Label htmlFor="admin-email">Email Address</Label>
+                    <Input
+                      id="admin-email"
+                      type="email"
+                      required
+                      value={newUser.email}
+                      onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
+                      placeholder="alex@superadmin.com"
+                    />
+                  </div>
                 </div>
 
                 <div className="space-y-1.5">
@@ -431,6 +498,65 @@ function SuperAdminUsersPage() {
                     placeholder="••••••••••••"
                   />
                 </div>
+
+                {/* Module Permissions Checklist */}
+                <div className="p-4 rounded-2xl border border-border/80 bg-muted/20 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className="text-sm font-bold text-foreground">Module Access Permissions</h4>
+                      <p className="text-[11px] text-muted-foreground mt-0.5">
+                        Define which super admin modules this user can access.
+                      </p>
+                    </div>
+                    <label className="flex items-center gap-2 cursor-pointer select-none">
+                      <Checkbox
+                        id="new-full-access"
+                        checked={newUserFullAccess}
+                        onCheckedChange={(v) => setNewUserFullAccess(!!v)}
+                      />
+                      <span className="text-xs font-bold text-primary">Full Access</span>
+                    </label>
+                  </div>
+
+                  {!newUserFullAccess && (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
+                      {SUPER_ADMIN_MODULES.map((mod) => {
+                        const isChecked = newUser.adminPermissions.includes(mod.key);
+                        return (
+                          <label
+                            key={mod.key}
+                            className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-all select-none text-xs ${
+                              isChecked
+                                ? "border-primary/40 bg-primary/5"
+                                : "border-border/70 bg-card hover:bg-muted/30"
+                            }`}
+                          >
+                            <Checkbox
+                              checked={isChecked}
+                              onCheckedChange={(v) => {
+                                setNewUser({
+                                  ...newUser,
+                                  adminPermissions: v
+                                    ? [...newUser.adminPermissions, mod.key]
+                                    : newUser.adminPermissions.filter((k) => k !== mod.key),
+                                });
+                              }}
+                              className="mt-0.5 shrink-0"
+                            />
+                            <div className="min-w-0">
+                              <p className={`font-bold truncate ${isChecked ? "text-primary" : "text-foreground"}`}>
+                                {mod.label}
+                              </p>
+                              <p className="text-[10px] text-muted-foreground leading-relaxed">
+                                {mod.description}
+                              </p>
+                            </div>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
               </div>
 
               <SheetFooter className="p-5 border-t bg-muted/20 flex sm:justify-end gap-2 shrink-0">
@@ -442,6 +568,109 @@ function SuperAdminUsersPage() {
                 </Button>
               </SheetFooter>
             </form>
+          </SheetContent>
+        </Sheet>
+
+        {/* Edit Permissions Drawer */}
+        <Sheet open={!!editingPermissionsUser} onOpenChange={(open) => !open && setEditingPermissionsUser(null)}>
+          <SheetContent
+            side="right"
+            className="w-full sm:max-w-xl p-0 flex flex-col h-full bg-background border-l border-border"
+          >
+            <SheetHeader className="bg-muted/60 p-5 border-b pr-12 text-left">
+              <SheetTitle className="text-lg font-bold text-foreground">
+                Module Permissions — {editingPermissionsUser?.name}
+              </SheetTitle>
+              <SheetDescription className="text-xs text-muted-foreground mt-0.5">
+                Define which super admin panel modules {editingPermissionsUser?.email} can access.
+              </SheetDescription>
+            </SheetHeader>
+
+            <div className="flex-1 overflow-y-auto p-5 space-y-4">
+              <div className="p-4 rounded-2xl border border-border/80 bg-muted/20 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h4 className="text-sm font-bold text-foreground">Access Level</h4>
+                    <p className="text-[11px] text-muted-foreground">
+                      Toggle Full Access to grant all modules, or select specific modules below.
+                    </p>
+                  </div>
+                  <label className="flex items-center gap-2 cursor-pointer select-none">
+                    <Checkbox
+                      id="edit-full-access"
+                      checked={editPermFullAccess}
+                      onCheckedChange={(v) => {
+                        setEditPermFullAccess(!!v);
+                        if (v) setEditingPerms([]);
+                      }}
+                    />
+                    <span className="text-xs font-bold text-primary">Full Access (No Restrictions)</span>
+                  </label>
+                </div>
+
+                {!editPermFullAccess && (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
+                    {SUPER_ADMIN_MODULES.map((mod) => {
+                      const isChecked = editingPerms.includes(mod.key);
+                      return (
+                        <label
+                          key={mod.key}
+                          className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-all select-none text-xs ${
+                            isChecked
+                              ? "border-primary/40 bg-primary/5"
+                              : "border-border/70 bg-card hover:bg-muted/30"
+                          }`}
+                        >
+                          <Checkbox
+                            checked={isChecked}
+                            onCheckedChange={(v) => {
+                              setEditingPerms(v
+                                ? [...editingPerms, mod.key]
+                                : editingPerms.filter((k) => k !== mod.key)
+                              );
+                            }}
+                            className="mt-0.5 shrink-0"
+                          />
+                          <div className="min-w-0">
+                            <p className={`font-bold truncate ${isChecked ? "text-primary" : "text-foreground"}`}>
+                              {mod.label}
+                            </p>
+                            <p className="text-[10px] text-muted-foreground leading-relaxed">
+                              {mod.description}
+                            </p>
+                          </div>
+                        </label>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+              {!editPermFullAccess && editingPerms.length === 0 && (
+                <div className="flex items-center gap-2 p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-xs text-amber-600 dark:text-amber-400">
+                  <ShieldAlert className="size-4 shrink-0" />
+                  <span>No modules selected. The user will effectively have no access.</span>
+                </div>
+              )}
+            </div>
+
+            <SheetFooter className="p-5 border-t bg-muted/20 flex sm:justify-end gap-2 shrink-0">
+              <Button type="button" variant="outline" onClick={() => setEditingPermissionsUser(null)}>
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                disabled={updatePermissionsMutation.isPending}
+                onClick={() => {
+                  updatePermissionsMutation.mutate({
+                    userId: editingPermissionsUser.id,
+                    adminPermissions: editPermFullAccess ? null : editingPerms,
+                  });
+                }}
+              >
+                {updatePermissionsMutation.isPending ? "Saving…" : "Save Permissions"}
+              </Button>
+            </SheetFooter>
           </SheetContent>
         </Sheet>
       </div>

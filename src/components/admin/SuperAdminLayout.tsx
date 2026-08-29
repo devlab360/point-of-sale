@@ -5,6 +5,10 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getPendingPaymentsFn } from "@/api/admin/subscription-payments";
 import { updateSuperAdminProfileAdminFn } from "@/api/admin/super-admin";
 import {
+  SUPER_ADMIN_MODULES,
+  getModuleKeyForRoute,
+} from "@/lib/admin/super-admin-permissions";
+import {
   Shield,
   LayoutGrid,
   Store,
@@ -90,7 +94,7 @@ const MOBILE_NAV_ITEMS = [
 
 export function SuperAdminLayout({ children }: { children: React.ReactNode }) {
   const queryClient = useQueryClient();
-  const { user, logout, isAuthenticated, isLoading } = useAdminAuth();
+  const { user, logout, isAuthenticated, isLoading, hasModuleAccess } = useAdminAuth();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -203,20 +207,23 @@ export function SuperAdminLayout({ children }: { children: React.ReactNode }) {
     });
   };
 
-  const navGroups = [
+  // Build nav groups, filtering items by current user's module permissions
+  const ALL_NAV_GROUPS: Array<{
+    groupTitle: string;
+    items: Array<{
+      label: string;
+      to: string;
+      icon: React.ElementType;
+      moduleKey: string;
+      badge?: string;
+      badgeVariant?: "destructive" | "secondary" | "default" | "outline";
+    }>;
+  }> = [
     {
       groupTitle: "SaaS Platform & Tenants",
       items: [
-        {
-          label: "Tenant Stores & Orgs",
-          to: "/admin/tenants",
-          icon: Store,
-        },
-        {
-          label: "SaaS Plans & Quotas",
-          to: "/admin/plans",
-          icon: Layers,
-        },
+        { label: "Tenant Stores & Orgs", to: "/admin/tenants", icon: Store, moduleKey: "tenants" },
+        { label: "SaaS Plans & Quotas", to: "/admin/plans", icon: Layers, moduleKey: "plans" },
       ],
     },
     {
@@ -226,6 +233,7 @@ export function SuperAdminLayout({ children }: { children: React.ReactNode }) {
           label: "Payment Approvals",
           to: "/admin/payments",
           icon: Receipt,
+          moduleKey: "payments",
           badge: pendingPaymentsCount > 0 ? String(pendingPaymentsCount) : undefined,
           badgeVariant: "destructive" as const,
         },
@@ -234,39 +242,28 @@ export function SuperAdminLayout({ children }: { children: React.ReactNode }) {
     {
       groupTitle: "Help Desk & Feedback",
       items: [
-        {
-          label: "Support Inbox",
-          to: "/admin/support",
-          icon: MessageCircle,
-        },
-        {
-          label: "Merchant Reviews",
-          to: "/admin/reviews",
-          icon: Star,
-        },
-        {
-          label: "Help Center & FAQs",
-          to: "/admin/help",
-          icon: BookOpen,
-        },
-        {
-          label: "Broadcast Notices",
-          to: "/admin/announcements",
-          icon: Megaphone,
-        },
+        { label: "Support Inbox", to: "/admin/support", icon: MessageCircle, moduleKey: "support" },
+        { label: "Merchant Reviews", to: "/admin/reviews", icon: Star, moduleKey: "reviews" },
+        { label: "Help Center & FAQs", to: "/admin/help", icon: BookOpen, moduleKey: "help" },
+        { label: "Broadcast Notices", to: "/admin/announcements", icon: Megaphone, moduleKey: "announcements" },
       ],
     },
     {
       groupTitle: "Platform Personnel",
       items: [
-        {
-          label: "Super Admin Users",
-          to: "/admin/users",
-          icon: Users,
-        },
+        { label: "Super Admin Users", to: "/admin/users", icon: Users, moduleKey: "users" },
       ],
     },
   ];
+
+
+  // Filter groups/items by module permissions
+  const navGroups = ALL_NAV_GROUPS
+    .map((group) => ({
+      ...group,
+      items: group.items.filter((item) => hasModuleAccess(item.moduleKey)),
+    }))
+    .filter((group) => group.items.length > 0);
 
   const crumbs = pathToCrumbs(pathname);
   const initials = user?.name
@@ -658,9 +655,37 @@ export function SuperAdminLayout({ children }: { children: React.ReactNode }) {
               <div className="flex h-[70vh] items-center justify-center">
                 <Loader2 className="size-8 animate-spin text-[#B58D4C]" />
               </div>
-            ) : (
-              children
-            )}
+            ) : (() => {
+              // Route-level access denied guard
+              const moduleKey = getModuleKeyForRoute(pathname);
+              if (moduleKey && !hasModuleAccess(moduleKey)) {
+                const mod = SUPER_ADMIN_MODULES.find((m) => m.key === moduleKey);
+                return (
+                  <div className="flex h-[80vh] flex-col items-center justify-center gap-5 px-6 text-center">
+                    <div className="size-20 rounded-3xl bg-destructive/10 flex items-center justify-center border border-destructive/20">
+                      <Lock className="size-10 text-destructive" />
+                    </div>
+                    <div className="space-y-2">
+                      <h1 className="text-2xl font-black text-foreground">
+                        Access Restricted
+                      </h1>
+                      <p className="text-sm text-muted-foreground max-w-sm">
+                        You do not have permission to access{" "}
+                        <span className="font-semibold text-foreground">{mod?.label || "this module"}</span>.
+                        Contact your Super Admin owner to request access.
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => navigate({ to: "/admin/dashboard" as any })}
+                      className="mt-2 rounded-xl border border-border bg-card px-5 py-2.5 text-sm font-bold text-foreground hover:bg-muted/50 transition-colors"
+                    >
+                      ← Back to Dashboard
+                    </button>
+                  </div>
+                );
+              }
+              return children;
+            })()}
           </div>
         </main>
 

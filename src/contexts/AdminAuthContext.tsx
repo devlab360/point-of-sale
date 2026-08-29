@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from "react";
 import { useRouter } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { loginSuperAdminFn, getSuperAdminSessionFn, logoutSuperAdminFn } from "@/api/admin/auth";
+import { hasSuperAdminModuleAccess } from "@/lib/admin/super-admin-permissions";
 
 export interface SuperAdminUser {
   id: string;
@@ -11,6 +12,7 @@ export interface SuperAdminUser {
   status: string;
   lastActive: string | null;
   organizationId: string | null;
+  adminPermissions: string[] | null; // null = root/full access
 }
 
 interface AdminAuthContextType {
@@ -19,6 +21,8 @@ interface AdminAuthContextType {
   isLoading: boolean;
   loginWithEmail: (email: string, password: string) => Promise<boolean>;
   logout: () => Promise<void>;
+  /** Returns true if the current super admin user can access the given module key */
+  hasModuleAccess: (moduleKey: string) => boolean;
 }
 
 const AdminAuthContext = createContext<AdminAuthContextType | undefined>(undefined);
@@ -80,6 +84,11 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const hasModuleAccess = (moduleKey: string): boolean => {
+    if (!user) return false;
+    return hasSuperAdminModuleAccess(user.adminPermissions, moduleKey);
+  };
+
   return (
     <AdminAuthContext.Provider
       value={{
@@ -88,6 +97,7 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
         isLoading,
         loginWithEmail,
         logout,
+        hasModuleAccess,
       }}
     >
       {children}

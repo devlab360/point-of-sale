@@ -236,6 +236,7 @@ export const createSuperAdminUserFn = createServerFn({ method: "POST" })
       name: z.string().min(2),
       email: z.string().email(),
       password: z.string().min(6),
+      adminPermissions: z.array(z.string()).optional(), // null/omit = full access
     }),
   )
   .handler(async ({ data }) => {
@@ -243,6 +244,26 @@ export const createSuperAdminUserFn = createServerFn({ method: "POST" })
       await requireSuperAdminSession();
       const result = await adminService.createSuperAdminUser(data);
       return { success: true as const, ...result };
+    } catch (e) {
+      return formatErrorResponse(e);
+    }
+  });
+
+export const updateSuperAdminUserPermissionsFn = createServerFn({ method: "POST" })
+  .validator(
+    z.object({
+      userId: z.string(),
+      adminPermissions: z.array(z.string()).nullable(), // null = full access
+    }),
+  )
+  .handler(async ({ data }) => {
+    try {
+      const { userId: currentUserId } = await requireSuperAdminSession();
+      if (currentUserId === data.userId) {
+        return { success: false as const, error: "You cannot modify your own permissions" };
+      }
+      await adminService.updateSuperAdminUserPermissions(data.userId, data.adminPermissions);
+      return { success: true as const };
     } catch (e) {
       return formatErrorResponse(e);
     }

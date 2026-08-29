@@ -173,6 +173,8 @@ export const users = pgTable(
     joined: timestamp("joined", { mode: "string" }),
     pin: text("pin"),
     permissions: jsonb("permissions").$type<string[]>(),
+    // Super Admin module-level access control. null = full access (root), ['tenants','payments'] = restricted
+    adminPermissions: jsonb("admin_permissions").$type<string[]>(),
     commissionRate: numeric("commission_rate", { precision: 5, scale: 2 }),
     monthlyTarget: numeric("monthly_target", { precision: 12, scale: 2 }),
     earnedCommission: numeric("earned_commission", { precision: 12, scale: 2 }),
