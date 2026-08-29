@@ -168,13 +168,25 @@ export function AppHeader() {
   const searchPurchases: any[] = []; // Optionally add purchases to search.ts later
   const searchExpenses = searchResults?.expenses || [];
 
+  const { user, logout, saasPlan, settings } = useAuth();
+  const isSuperAdminUser = user?.role === "super_admin";
+  const { allowed: canAccessPos } = hasPermissionForRoute(
+    user,
+    "/pos",
+    user?.role === "super_admin",
+    saasPlan,
+    settings?.businessType,
+  );
+
   const searchModules = useMemo(() => {
     if (!searchQuery.trim() || searchQuery.length < 1) return [];
     const q = searchQuery.toLowerCase();
     return APP_MODULES.filter(
-      (m) => m.title.toLowerCase().includes(q) || m.category.toLowerCase().includes(q),
+      (m) =>
+        (m.title.toLowerCase().includes(q) || m.category.toLowerCase().includes(q)) &&
+        hasPermissionForRoute(user, m.path, isSuperAdminUser, saasPlan, settings?.businessType).allowed,
     ).slice(0, 6);
-  }, [APP_MODULES, searchQuery]);
+  }, [APP_MODULES, searchQuery, user, isSuperAdminUser, saasPlan, settings?.businessType]);
 
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const crumbs = pathToCrumbs(pathname);
@@ -199,15 +211,6 @@ export function AppHeader() {
 
   const unread = useMemo(() => notifications.filter((n: any) => !n.read).length, [notifications]);
 
-  const { user, logout, saasPlan, settings } = useAuth();
-  const isSuperAdminUser = user?.role === "super_admin";
-  const { allowed: canAccessPos } = hasPermissionForRoute(
-    user,
-    "/pos",
-    user?.role === "super_admin",
-    saasPlan,
-    settings?.businessType,
-  );
   const { language, setLanguage, t } = useLanguage();
   const activeLanguageObj = LANGUAGES.find((l) => l.code === language) || LANGUAGES[0];
 

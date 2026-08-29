@@ -40,9 +40,12 @@ function AdminLoginPage() {
     setLoading(false);
   };
 
-  const handleFillDemo = () => {
+  const handleQuickLogin = async () => {
     setEmail("admin@superadmin.com");
     setPassword("superadmin_password");
+    setLoading(true);
+    await loginWithEmail("admin@superadmin.com", "superadmin_password");
+    setLoading(false);
   };
 
   return (
@@ -159,11 +162,12 @@ function AdminLoginPage() {
           <div className="pt-2 border-t text-center">
             <button
               type="button"
-              onClick={handleFillDemo}
-              className="inline-flex items-center gap-1.5 text-xs text-primary font-semibold hover:underline bg-primary/5 hover:bg-primary/10 px-3 py-1.5 rounded-lg transition-colors"
+              disabled={loading || isLoading}
+              onClick={handleQuickLogin}
+              className="inline-flex items-center gap-1.5 text-xs text-primary font-bold hover:underline bg-primary/10 hover:bg-primary/20 px-3.5 py-2 rounded-xl transition-all shadow-xs active:scale-95"
             >
               <Sparkles className="size-3.5 text-amber-500" />
-              <span>Fill Default Super Admin Credentials</span>
+              <span>⚡ 1-Click Sign In as Super Admin</span>
             </button>
           </div>
         </div>

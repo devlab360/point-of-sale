@@ -127,7 +127,9 @@ export function AppSidebar({ onNavigate }: { onNavigate?: () => void }) {
     items: group.items
       .map((item) => {
         if (item.children) {
-          const allowedChildren = item.children.filter((child) => isRouteAllowed(child.to));
+          const allowedChildren = item.children.filter((child) =>
+            isRouteAllowed(child.to, item.menuKey),
+          );
           if (allowedChildren.length === 0) return null;
           return {
             ...item,

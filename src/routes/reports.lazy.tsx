@@ -57,6 +57,8 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { usePreferences } from "@/contexts/PreferencesContext";
 import { useAppFormatter } from "@/hooks/useAppFormatter";
+import { useAuth } from "@/contexts/AuthContext";
+import { hasCapability } from "@/lib/business-templates";
 import { ReportSkeleton } from "@/components/skeletons/ReportSkeleton";
 import { ErrorState } from "@/components/ui/error-state";
 import { PageHeader } from "@/components/layout/PageHeader";
@@ -88,6 +90,8 @@ function ReportsPage() {
   const { formatDate } = usePreferences();
   const { formatAppDate } = useAppFormatter();
   const { currencySymbol, formatCurrency } = useCurrency();
+  const { settings } = useAuth();
+  const businessType = settings?.businessType;
   const orgId = PersistStore.getOrgId() || "default";
 
   const {
@@ -191,7 +195,7 @@ function ReportsPage() {
     });
   }, [totalRevenue]);
 
-  const reportCategories = [
+  const reportCategories = useMemo(() => [
     {
       title: "Financial & PnL Audits",
       items: [
@@ -216,7 +220,21 @@ function ReportsPage() {
         { id: "gstr3b", title: "GSTR-3B Monthly Net Tax Return", desc: "Consolidated monthly return with net payable tax calculations.", icon: FileText },
       ],
     },
-  ];
+  ], []);
+
+  const filteredReportCategories = useMemo(() => {
+    return reportCategories
+      .map((cat) => {
+        const items = cat.items.filter((item) => {
+          if (item.id === "purchase") return hasCapability(businessType, "PURCHASES");
+          if (item.id === "inventory") return hasCapability(businessType, "INVENTORY");
+          if (item.id === "near-expiry") return hasCapability(businessType, "BATCH_EXPIRY_TRACKING");
+          return true;
+        });
+        return { ...cat, items };
+      })
+      .filter((cat) => cat.items.length > 0);
+  }, [reportCategories, businessType]);
 
   return (
     <div className="page-container space-y-6">
@@ -305,7 +323,7 @@ function ReportsPage() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-          {reportCategories.map((cat, idx) => (
+          {filteredReportCategories.map((cat, idx) => (
             <div key={idx} className="rounded-2xl border border-border/80 bg-card p-5 shadow-soft space-y-3">
               <h4 className="font-bold text-sm text-foreground pb-2 border-b border-border/60">
                 {cat.title}

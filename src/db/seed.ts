@@ -117,76 +117,217 @@ export async function seedDatabase() {
     console.log(` - Super Admin already exists (${adminEmail})`);
   }
 
-  // 3. Seed Demo Tenant Organization & Owner
-  console.log("\n3. Seeding Demo Tenant Organization...");
+  // 3. Seed Demo Tenant Organizations & Industry Logins
+  console.log("\n3. Seeding Demo Tenant Organizations & Industry Logins...");
   const demoOrgId = "demo_flagship_org_1001";
-  const demoOwnerEmail = "demo@onedesk360.com";
+  const hashedDefaultPassword = await bcrypt.hash("password123", 10);
 
-  const existingOrg = await db
-    .select()
-    .from(schema.organizations)
-    .where(eq(schema.organizations.id, demoOrgId))
-    .limit(1);
-
-  if (!existingOrg.length) {
-    await db.insert(schema.organizations).values({
-      id: demoOrgId,
-      name: "OneDesk360 Flagship Store",
-      ownerEmail: demoOwnerEmail,
-      status: "active",
-      currentPlanId: "enterprise",
-      planExpiryDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
-      syncKey: "flagship-sync-key",
-      isOnline: true,
-    });
-    console.log(` - Created Demo Organization: OneDesk360 Flagship Store`);
-  }
-
-  // Ensure Organization Settings
-  const existingSettings = await db
-    .select()
-    .from(schema.settings)
-    .where(eq(schema.settings.organizationId, demoOrgId))
-    .limit(1);
-
-  if (!existingSettings.length) {
-    await db.insert(schema.settings).values({
-      id: uuidv4(),
-      organizationId: demoOrgId,
+  const INDUSTRY_DEMO_ACCOUNTS = [
+    {
+      orgId: "demo_flagship_org_1001",
       storeName: "OneDesk360 Flagship Store",
-      currencySymbol: "$",
-      currencyCode: "USD",
-      taxId: "TAX-99887766",
-      subscriptionStatus: "active",
-      headerNote: "Welcome to OneDesk360 Store",
-      footerNote: "Thank you for shopping with us!",
-    });
-  }
-
-  // Store Owner Account
-  const existingOwner = await db
-    .select()
-    .from(schema.users)
-    .where(eq(schema.users.email, demoOwnerEmail))
-    .limit(1);
-
-  const hashedOwnerPassword = await bcrypt.hash("password123", 10);
-  if (!existingOwner.length) {
-    await db.insert(schema.users).values({
-      id: uuidv4(),
-      organizationId: demoOrgId,
-      name: "Store Owner",
-      email: demoOwnerEmail,
+      businessType: "UNIVERSAL",
+      ownerName: "Store Owner",
+      ownerEmail: "demo@onedesk360.com",
       role: "admin",
-      status: "active",
-      pin: hashedOwnerPassword,
-      permissions: ["all"],
-      joined: new Date().toISOString(),
-    });
-    console.log(` - Created Store Owner (${demoOwnerEmail} / password123)`);
+      headerNote: "Welcome to OneDesk360 Flagship Universal Store",
+    },
+    {
+      orgId: "demo_org_universal",
+      storeName: "OneDesk360 Universal Retail",
+      businessType: "UNIVERSAL",
+      ownerName: "Universal Store Manager",
+      ownerEmail: "universal@onedesk360.com",
+      role: "admin",
+      headerNote: "Welcome to Universal Multi-Category Store",
+    },
+    {
+      orgId: "demo_org_restaurant",
+      storeName: "Bella Vista Bistro & Fine Dining",
+      businessType: "RESTAURANT",
+      ownerName: "Marco Restaurant Owner",
+      ownerEmail: "restaurant@onedesk360.com",
+      role: "admin",
+      headerNote: "Welcome to Bella Vista Bistro - Dine-in & Kitchen KOT",
+    },
+    {
+      orgId: "demo_org_cafe",
+      storeName: "Artisan Roast Coffee & Bakery",
+      businessType: "CAFE",
+      ownerName: "Chloe Cafe Manager",
+      ownerEmail: "cafe@onedesk360.com",
+      role: "admin",
+      headerNote: "Artisan Roast Cafe - Fast Counter Checkout",
+    },
+    {
+      orgId: "demo_org_salon",
+      storeName: "Luxe Glow Salon & Spa",
+      businessType: "SALON",
+      ownerName: "Elena Salon Director",
+      ownerEmail: "salon@onedesk360.com",
+      role: "admin",
+      headerNote: "Luxe Glow Salon - Appointments & Stylists",
+    },
+    {
+      orgId: "demo_org_barber",
+      storeName: "Vintage Razor Barber Club",
+      businessType: "BARBER",
+      ownerName: "Jackson Master Barber",
+      ownerEmail: "barber@onedesk360.com",
+      role: "admin",
+      headerNote: "Vintage Razor - Barber Queuing & Services",
+    },
+    {
+      orgId: "demo_org_repair",
+      storeName: "Precision Electronics & Auto Care",
+      businessType: "REPAIR_CENTER",
+      ownerName: "David Lead Technician",
+      ownerEmail: "repair@onedesk360.com",
+      role: "admin",
+      headerNote: "Precision Repair - Job Sheets & Diagnostics",
+    },
+    {
+      orgId: "demo_org_mobile_repair",
+      storeName: "QuickFix Mobile & Gadget Lab",
+      businessType: "MOBILE_REPAIR",
+      ownerName: "Sam Gadget Specialist",
+      ownerEmail: "mobilerepair@onedesk360.com",
+      role: "admin",
+      headerNote: "QuickFix Mobile - IMEI Tracking & Repairs",
+    },
+    {
+      orgId: "demo_org_retail",
+      storeName: "Urban Vogue Fashion & Apparel",
+      businessType: "RETAIL",
+      ownerName: "Sophia Retail Manager",
+      ownerEmail: "retail@onedesk360.com",
+      role: "admin",
+      headerNote: "Urban Vogue - Apparel, Sizes & Variants",
+    },
+    {
+      orgId: "demo_org_grocery",
+      storeName: "FreshMart Supermarket & Grocery",
+      businessType: "GROCERY",
+      ownerName: "Oliver Supermarket Lead",
+      ownerEmail: "grocery@onedesk360.com",
+      role: "admin",
+      headerNote: "FreshMart - Barcode Checkout & Batch Expiry",
+    },
+    {
+      orgId: "demo_org_wholesale",
+      storeName: "Apex Bulk Wholesale & Distribution",
+      businessType: "WHOLESALE",
+      ownerName: "Vikram Wholesale Director",
+      ownerEmail: "wholesale@onedesk360.com",
+      role: "admin",
+      headerNote: "Apex Wholesale - Quotations & Delivery Challans",
+    },
+    {
+      orgId: "demo_org_pharmacy",
+      storeName: "CarePlus Pharmacy & Healthcare",
+      businessType: "PHARMACY",
+      ownerName: "Dr. Sarah Pharmacist",
+      ownerEmail: "pharmacy@onedesk360.com",
+      role: "admin",
+      headerNote: "CarePlus Pharmacy - Drug Batches & FEFO Expiry",
+    },
+  ];
+
+  for (const acc of INDUSTRY_DEMO_ACCOUNTS) {
+    // 1. Ensure Organization
+    const existingOrg = await db
+      .select()
+      .from(schema.organizations)
+      .where(eq(schema.organizations.id, acc.orgId))
+      .limit(1);
+
+    if (!existingOrg.length) {
+      await db.insert(schema.organizations).values({
+        id: acc.orgId,
+        name: acc.storeName,
+        ownerEmail: acc.ownerEmail,
+        status: "active",
+        currentPlanId: "enterprise",
+        planExpiryDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
+        syncKey: `${acc.orgId}-sync-key`,
+        isOnline: true,
+      });
+      console.log(` - Created Demo Organization: ${acc.storeName} (${acc.businessType})`);
+    } else {
+      await db
+        .update(schema.organizations)
+        .set({ name: acc.storeName, status: "active", currentPlanId: "enterprise" })
+        .where(eq(schema.organizations.id, acc.orgId));
+    }
+
+    // 2. Ensure Organization Settings with specific businessType
+    const existingSettings = await db
+      .select()
+      .from(schema.settings)
+      .where(eq(schema.settings.organizationId, acc.orgId))
+      .limit(1);
+
+    if (!existingSettings.length) {
+      await db.insert(schema.settings).values({
+        id: uuidv4(),
+        organizationId: acc.orgId,
+        storeName: acc.storeName,
+        businessType: acc.businessType,
+        currencySymbol: "$",
+        currencyCode: "USD",
+        taxId: "TAX-99887766",
+        subscriptionStatus: "active",
+        headerNote: acc.headerNote,
+        footerNote: "Thank you for shopping with us!",
+      });
+    } else {
+      await db
+        .update(schema.settings)
+        .set({
+          storeName: acc.storeName,
+          businessType: acc.businessType,
+          headerNote: acc.headerNote,
+          subscriptionStatus: "active",
+        })
+        .where(eq(schema.settings.organizationId, acc.orgId));
+    }
+
+    // 3. Ensure Owner / Admin User
+    const existingUser = await db
+      .select()
+      .from(schema.users)
+      .where(eq(schema.users.email, acc.ownerEmail))
+      .limit(1);
+
+    if (!existingUser.length) {
+      await db.insert(schema.users).values({
+        id: uuidv4(),
+        organizationId: acc.orgId,
+        name: acc.ownerName,
+        email: acc.ownerEmail,
+        role: "admin",
+        status: "active",
+        pin: hashedDefaultPassword,
+        permissions: ["all"],
+        joined: new Date().toISOString(),
+      });
+      console.log(` - Created Industry Login: ${acc.ownerEmail} / password123 [${acc.businessType}]`);
+    } else {
+      await db
+        .update(schema.users)
+        .set({
+          organizationId: acc.orgId,
+          role: "admin",
+          status: "active",
+          pin: hashedDefaultPassword,
+          permissions: ["all"],
+        })
+        .where(eq(schema.users.email, acc.ownerEmail));
+      console.log(` - Verified Industry Login: ${acc.ownerEmail} / password123 [${acc.businessType}]`);
+    }
   }
 
-  // Cashier Account
+  // Also seed dedicated Cashier Staff for Flagship Store
   const cashierEmail = "cashier@onedesk360.com";
   const existingCashier = await db
     .select()
@@ -197,12 +338,12 @@ export async function seedDatabase() {
   if (!existingCashier.length) {
     await db.insert(schema.users).values({
       id: uuidv4(),
-      organizationId: demoOrgId,
+      organizationId: "demo_flagship_org_1001",
       name: "Alex Cashier",
       email: cashierEmail,
       role: "cashier",
       status: "active",
-      pin: hashedOwnerPassword,
+      pin: hashedDefaultPassword,
       permissions: ["pos", "customers", "sales"],
       joined: new Date().toISOString(),
     });
@@ -833,10 +974,11 @@ export async function seedDatabase() {
 
   // 6. Seed Customers CRM Records
   console.log("\n6. Seeding Customer Records...");
+  const defaultOrgId = "demo_flagship_org_1001";
   const demoCustomers = [
     {
       id: uuidv4(),
-      organizationId: demoOrgId,
+      organizationId: defaultOrgId,
       name: "John Doe (VIP Customer)",
       email: "johndoe@example.com",
       phone: "+1 555-0192",
@@ -846,7 +988,7 @@ export async function seedDatabase() {
     },
     {
       id: uuidv4(),
-      organizationId: demoOrgId,
+      organizationId: defaultOrgId,
       name: "Sarah Smith",
       email: "sarah@example.com",
       phone: "+1 555-0843",
@@ -856,7 +998,7 @@ export async function seedDatabase() {
     },
     {
       id: uuidv4(),
-      organizationId: demoOrgId,
+      organizationId: defaultOrgId,
       name: "David Miller",
       email: "david.m@example.com",
       phone: "+1 555-0321",
@@ -876,10 +1018,37 @@ export async function seedDatabase() {
       await db.insert(schema.customers).values(cust);
     }
   }
-  console.log(" - Demo Customers created/verified.");
+  // 7. Seed Restaurant Tables for Dining Orgs
+  console.log("\n7. Seeding Restaurant & Cafe Tables...");
+  const tableOrgs = ["demo_flagship_org_1001", "demo_org_restaurant", "demo_org_cafe"];
+  for (const tOrg of tableOrgs) {
+    const existingTables = await db
+      .select()
+      .from(schema.restaurantTables)
+      .where(eq(schema.restaurantTables.organizationId, tOrg));
+    if (existingTables.length === 0) {
+      const sampleTables = [
+        { name: "Table T-01 (Window)", capacity: 2, status: "available" },
+        { name: "Table T-02 (Central)", capacity: 4, status: "available" },
+        { name: "Table T-03 (Booth)", capacity: 4, status: "available" },
+        { name: "VIP Lounge Table 01", capacity: 8, status: "available" },
+        { name: "Patio Table P-01", capacity: 4, status: "available" },
+      ];
+      for (const t of sampleTables) {
+        await db.insert(schema.restaurantTables).values({
+          id: uuidv4(),
+          organizationId: tOrg,
+          name: t.name,
+          capacity: t.capacity,
+          status: t.status,
+        });
+      }
+      console.log(` - Seeded 5 Restaurant Tables for ${tOrg}`);
+    }
+  }
 
   console.log("\n==========================================");
-  console.log("✅ ONEDESK360 DATABASE SEEDING COMPLETED (36 PRODUCTS WITH IMAGES)");
+  console.log("✅ ONEDESK360 DATABASE SEEDING COMPLETED FOR ALL INDUSTRY TYPES");
   console.log("==========================================");
 }
 

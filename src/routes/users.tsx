@@ -82,6 +82,7 @@ import {
   ALL_SELECTABLE_ROUTES,
   getRoleVisuals,
 } from "@/constants";
+import { hasPermissionForRoute } from "@/lib/menu-config";
 
 export const Route = createFileRoute("/users")({
   head: () => ({ meta: [{ title: "Employees & Access Control · OneDesk360" }] }),
@@ -132,10 +133,28 @@ function RoleSelectCards({ value, onChange }: { value: string; onChange: (v: str
 }
 
 function UsersPage() {
-  const { user: currentUser } = useAuth();
+  const { user: currentUser, saasPlan, settings } = useAuth();
   const { formatCurrency } = useCurrency();
   const orgId = PersistStore.getOrgId() || "default";
   const queryClient = useQueryClient();
+
+  const applicableModules = useMemo(() => {
+    return SYSTEM_MODULES.filter((mod) => {
+      const perm = hasPermissionForRoute(
+        { role: "admin" },
+        mod.defaultRoute,
+        false,
+        saasPlan,
+        settings?.businessType,
+      );
+      return perm.allowed;
+    });
+  }, [saasPlan, settings?.businessType]);
+
+  const applicableRoutes = useMemo(
+    () => applicableModules.map((m) => m.defaultRoute),
+    [applicableModules],
+  );
 
   const [viewMode, setViewMode] = useState<"grid" | "table">("grid");
   const [search, setSearch] = useState("");
@@ -222,12 +241,16 @@ function UsersPage() {
     setEditStatus(u.status || "active");
     setEditCommission(u.commissionRate ? String(u.commissionRate) : "");
     setEditTarget(u.monthlyTarget ? String(u.monthlyTarget) : "");
-    setEditPermissions(Array.isArray(u.permissions) ? u.permissions : DEFAULT_ROLE_PERMISSIONS[u.role || "cashier"] || []);
+    const initialPerms = Array.isArray(u.permissions)
+      ? u.permissions
+      : DEFAULT_ROLE_PERMISSIONS[u.role || "cashier"] || [];
+    setEditPermissions(initialPerms.filter((r) => applicableRoutes.includes(r)));
   };
 
   const handleRoleChangeInEdit = (newRole: string) => {
     setEditRole(newRole);
-    setEditPermissions(DEFAULT_ROLE_PERMISSIONS[newRole] || []);
+    const defaults = DEFAULT_ROLE_PERMISSIONS[newRole] || [];
+    setEditPermissions(defaults.filter((r) => applicableRoutes.includes(r)));
   };
 
   const togglePermission = (routePath: string) => {
@@ -250,7 +273,7 @@ function UsersPage() {
     });
   };
 
-  const handleSelectAllPermissions = () => setEditPermissions([...ALL_SELECTABLE_ROUTES]);
+  const handleSelectAllPermissions = () => setEditPermissions([...applicableRoutes]);
   const handleClearPermissions = () => setEditPermissions([]);
 
   const handleGenerateInvite = async (e: React.FormEvent) => {
@@ -881,7 +904,7 @@ function UsersPage() {
                       </div>
                       <div className="flex items-center gap-2">
                         <span className="text-xs text-primary font-mono font-bold bg-primary/10 px-2.5 py-1 rounded-lg border border-primary/20">
-                          {editPermissions.length} / {ALL_SELECTABLE_ROUTES.length} enabled
+                          {editPermissions.filter((r) => applicableRoutes.includes(r)).length} / {applicableRoutes.length} enabled
                         </span>
                         <Button
                           type="button"
@@ -906,7 +929,7 @@ function UsersPage() {
 
                     <div className="space-y-4">
                       {MODULE_CATEGORIES.map((category) => {
-                        const categoryModules = SYSTEM_MODULES.filter((m) => m.category === category);
+                        const categoryModules = applicableModules.filter((m) => m.category === category);
                         if (categoryModules.length === 0) return null;
 
                         const categoryRoutes = categoryModules.map((m) => m.defaultRoute);
@@ -985,7 +1008,7 @@ function UsersPage() {
                   <div className="text-xs text-muted-foreground font-medium">
                     Applying{" "}
                     <span className="font-bold font-mono text-primary bg-primary/10 px-2 py-0.5 rounded-md border border-primary/20">
-                      {editPermissions.length}
+                      {editPermissions.filter((r) => applicableRoutes.includes(r)).length}
                     </span>{" "}
                     module grants on save.
                   </div>
