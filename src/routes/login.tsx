@@ -242,9 +242,9 @@ function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen w-full flex bg-background overflow-hidden text-foreground">
+    <div className="h-screen max-h-screen w-full flex bg-background overflow-hidden text-foreground">
       {/* Left Showcase Banner - Desktop */}
-      <div className="hidden lg:flex lg:w-1/2 relative bg-primary p-12 flex-col justify-between overflow-hidden">
+      <div className="hidden lg:flex lg:w-1/2 h-full relative bg-primary p-8 xl:p-12 flex-col justify-between overflow-hidden">
         {/* Subtle paper grain / soft radial field instead of orbs */}
         <div className="absolute inset-0 opacity-[0.06] pointer-events-none [background-size:44px_44px] [background-image:linear-gradient(to_right,oklch(0.99 0.005 90/0.4)_1px,transparent_1px),linear-gradient(to_bottom,oklch(0.99 0.005 90/0.4)_1px,transparent_1px)]" />
         <div className="absolute -bottom-48 -left-32 size-[480px] rounded-full bg-foreground/5 blur-3xl pointer-events-none" />
@@ -265,7 +265,7 @@ function LoginPage() {
         </div>
 
         {/* Feature Hero Copy */}
-        <div className="relative z-10 space-y-6 max-w-lg">
+        <div className="relative z-10 space-y-4 xl:space-y-6 max-w-lg">
           <h2 className="font-display text-3xl sm:text-4xl lg:text-[2.75rem] leading-[1.15] font-bold tracking-tight text-primary-foreground">
             The warm, human way to run your shop.
           </h2>
@@ -275,7 +275,7 @@ function LoginPage() {
             friendly place built for how a real store actually works.
           </p>
 
-          <ul className="space-y-3.5 pt-2">
+          <ul className="space-y-3 pt-1">
             {[
               "Multi-branch inventory that just syncs",
               "Customer ledgers your team will actually use",
@@ -309,9 +309,9 @@ function LoginPage() {
 
       {/* Right Authentication Form Pane */}
       <div className="w-full lg:w-1/2 flex items-center justify-center p-6 sm:p-12 md:p-16 relative overflow-y-auto">
-        <div className="w-full max-w-lg xl:max-w-xl space-y-8 py-6">
+        <div className="w-full max-w-lg xl:max-w-xl space-y-6 py-4 my-auto">
           {/* Header Icon & Title */}
-          <div className="space-y-3 text-center lg:text-left">
+          <div className="space-y-2 text-center lg:text-left">
             <div className="inline-flex lg:hidden size-14 items-center justify-center rounded-2xl bg-primary/10 text-primary mb-2">
               <Store className="size-7" />
             </div>
@@ -326,9 +326,9 @@ function LoginPage() {
           </div>
 
           {/* Form Card */}
-          <div className="rounded-2xl border border-border bg-card p-7 sm:p-9 md:p-10 shadow-elevated space-y-6">
+          <div className="rounded-2xl border border-border bg-card p-7 sm:p-9 md:p-10 shadow-elevated space-y-5">
             {mode === "email" ? (
-              <form noValidate onSubmit={handleEmailLogin} className="space-y-5">
+              <form noValidate onSubmit={handleEmailLogin} className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="email" className="text-sm sm:text-base font-bold text-foreground">
                     Email Address
@@ -347,7 +347,7 @@ function LoginPage() {
                   {loginErrors.email && <FieldError message={loginErrors.email} />}
                 </div>
 
-                <div className="space-y-2">
+                <div className="space-y-1.5">
                   <div className="flex items-center justify-between">
                     <Label htmlFor="password" className="text-sm sm:text-base font-bold text-foreground">
                       Password
@@ -376,7 +376,7 @@ function LoginPage() {
                 <Button
                   type="submit"
                   disabled={isLoggingIn}
-                  className="w-full h-12 sm:h-13 rounded-xl font-bold gap-2 text-base sm:text-lg shadow-sm mt-2"
+                  className="w-full h-12 sm:h-13 rounded-xl font-bold gap-2 text-base sm:text-lg shadow-sm mt-1"
                 >
                   {isLoggingIn ? (
                     <>
@@ -392,7 +392,7 @@ function LoginPage() {
                 </Button>
 
                 {/* Development Mode Instant Quick Login Panel */}
-                <div className="pt-3 border-t border-border/80 space-y-3">
+                <div className="pt-2.5 border-t border-border/80 space-y-2">
                   <div className="flex items-center justify-between">
                     <span className="text-[11px] font-black uppercase tracking-wider text-primary flex items-center gap-1.5">
                       <span>⚡</span> 1-Click Dev / Demo Logins
@@ -405,7 +405,7 @@ function LoginPage() {
                     </Link>
                   </div>
 
-                  <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
+                  <div className="space-y-2 max-h-36 sm:max-h-40 overflow-y-auto pr-1">
                     {QUICK_DEMO_GROUPS.map((grp) => (
                       <div key={grp.group} className="space-y-1">
                         <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/80 px-1">
@@ -418,7 +418,7 @@ function LoginPage() {
                               type="button"
                               disabled={isLoggingIn}
                               onClick={() => handleQuickLogin(item.email, item.label)}
-                              className="text-[11px] font-semibold py-1.5 px-2 rounded-lg border border-border/70 bg-muted/25 hover:bg-primary/10 hover:border-primary/40 hover:text-primary transition-all text-left truncate active:scale-95 disabled:opacity-50"
+                              className="text-[11px] font-semibold py-1.5 px-2 rounded-lg border border-border/70 bg-muted/25 hover:bg-primary/10 hover:border-primary/40 hover:text-primary transition-all text-left truncate active:scale-95 disabled:opacity-50 cursor-pointer"
                               title={`Instant 1-Click login as ${item.email}`}
                             >
                               {item.label}
@@ -432,9 +432,9 @@ function LoginPage() {
               </form>
             ) : (
               /* Forgot Password Flow */
-              <div className="space-y-6">
+              <div className="space-y-4">
                 {forgotStep === "request" ? (
-                  <form onSubmit={handleSendResetOtp} className="space-y-5">
+                  <form onSubmit={handleSendResetOtp} className="space-y-4">
                     <div className="space-y-2">
                       <Label htmlFor="resetEmail" className="text-sm sm:text-base font-bold text-foreground">
                         Registered Store Email
@@ -468,7 +468,7 @@ function LoginPage() {
                     </Button>
                   </form>
                 ) : (
-                  <form onSubmit={handleResetPasswordSubmit} className="space-y-5">
+                  <form onSubmit={handleResetPasswordSubmit} className="space-y-4">
                     <div className="space-y-2">
                       <Label htmlFor="otpCode" className="text-sm sm:text-base font-bold text-foreground">
                         6-Digit OTP Code
@@ -522,7 +522,7 @@ function LoginPage() {
                     setMode("email");
                     setForgotStep("request");
                   }}
-                  className="flex items-center justify-center gap-2 w-full text-sm sm:text-base font-bold text-muted-foreground hover:text-foreground pt-2"
+                  className="flex items-center justify-center gap-2 w-full text-sm sm:text-base font-bold text-muted-foreground hover:text-foreground pt-1"
                 >
                   <ArrowLeft className="size-4" />
                   <span>Back to Sign In</span>
@@ -531,7 +531,7 @@ function LoginPage() {
             )}
 
             {/* Link to Register */}
-            <div className="border-t border-border/80 pt-5 text-center">
+            <div className="border-t border-border/80 pt-3 text-center">
               <p className="text-sm sm:text-base text-muted-foreground">
                 Don't have a store account yet?{" "}
                 <Link to="/register" className="font-bold text-primary hover:underline ml-1">
@@ -542,7 +542,7 @@ function LoginPage() {
           </div>
 
           {/* Copyright */}
-          <div className="text-center pt-2">
+          <div className="text-center pt-0.5">
             <p className="text-xs sm:text-sm text-muted-foreground/80 font-medium">
               © {new Date().getFullYear()}{" "}
               <a
