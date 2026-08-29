@@ -449,7 +449,7 @@ const DEFAULT_ROLE_PERMISSIONS_FALLBACK: Record<string, string[]> = {
     "suppliers",
     "accounts",
   ],
-  cashier: ["pos", "customers", "discounts", "tables", "kitchen", "appointments"],
+  cashier: ["pos", "customers", "tables", "kitchen", "appointments"],
 };
 
 export const ROUTE_CAPABILITY_MAP: Record<string, BusinessCapability[]> = {
@@ -612,4 +612,27 @@ export function hasPermissionForRoute(
   }
 
   return { allowed: true };
+}
+
+/**
+ * Check whether a user holds a specific action-level permission.
+ * Admins/super admins bypass; a role may globally imply a permission
+ * (roleDefaults) and a user may be granted the key explicitly in their
+ * permissions array.
+ */
+export function hasPermission(
+  user: any,
+  permissionKey: string,
+  roleDefaults: string[] = [],
+): boolean {
+  if (!user) return false;
+  const role = String(user?.role || "").toLowerCase();
+  if (role === "admin" || role === "super_admin") return true;
+  if (roleDefaults.includes(role)) return true;
+  const userPerms: string[] = Array.isArray(user?.permissions) ? user.permissions : [];
+  const normalizedKey = permissionKey.replace(/^\//, "");
+  return (
+    userPerms.includes("all") ||
+    userPerms.some((p: string) => p.replace(/^\//, "") === normalizedKey)
+  );
 }

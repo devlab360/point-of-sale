@@ -566,7 +566,8 @@ export function AppHeader() {
             <DropdownMenuItem asChild>
               <Link to="/profile">{t("profile") || "Profile"}</Link>
             </DropdownMenuItem>
-            {user?.role === "admin" && (
+            {hasPermissionForRoute(user, "/settings", user?.role === "super_admin", saasPlan)
+              .allowed && (
               <DropdownMenuItem asChild>
                 <Link to="/settings">{t("settings") || "Settings"}</Link>
               </DropdownMenuItem>

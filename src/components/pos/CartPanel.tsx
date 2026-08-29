@@ -28,6 +28,8 @@ import { Button } from "@/components/ui/button";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { cn } from "@/lib/utils";
 import { hasCapability } from "@/lib/business-templates";
+import { hasPermission } from "@/lib/menu-config";
+import { useAuth } from "@/contexts/AuthContext";
 import { createKOTFn } from "@/api/restaurant";
 import { toast } from "sonner";
 import { useMutation } from "@tanstack/react-query";
@@ -91,6 +93,9 @@ export function CartPanel({
   const hasTables = hasCapability(settings?.businessType, "TABLES");
   const hasKitchen = hasCapability(settings?.businessType, "KITCHEN");
   const hasRepairs = hasCapability(settings?.businessType, "REPAIRS");
+
+  const { user } = useAuth();
+  const canDiscount = hasPermission(user, "discounts", ["manager"]);
 
   const [showRepairDialog, setShowRepairDialog] = useState(false);
   const [showVoidConfirm, setShowVoidConfirm] = useState(false);
@@ -434,23 +439,25 @@ export function CartPanel({
           )}
 
           {/* Quick Manual Discount Input */}
-          <div className="flex items-center rounded-xl border border-border/80 bg-card px-2 h-8 w-20 shrink-0">
-            <span className="text-xs font-bold text-muted-foreground mr-1">%</span>
-            <input
-              type="number"
-              value={discountInput}
-              onFocus={() => {
-                setActiveInput("discount");
-                setKeyboardOpen(true);
-              }}
-              onChange={(e) => {
-                setDiscountInput(e.target.value);
-                setDiscountPct(parseFloat(e.target.value) || 0);
-              }}
-              placeholder="0"
-              className="w-full bg-transparent text-xs font-bold text-foreground outline-none"
-            />
-          </div>
+          {canDiscount && (
+            <div className="flex items-center rounded-xl border border-border/80 bg-card px-2 h-8 w-20 shrink-0">
+              <span className="text-xs font-bold text-muted-foreground mr-1">%</span>
+              <input
+                type="number"
+                value={discountInput}
+                onFocus={() => {
+                  setActiveInput("discount");
+                  setKeyboardOpen(true);
+                }}
+                onChange={(e) => {
+                  setDiscountInput(e.target.value);
+                  setDiscountPct(parseFloat(e.target.value) || 0);
+                }}
+                placeholder="0"
+                className="w-full bg-transparent text-xs font-bold text-foreground outline-none"
+              />
+            </div>
+          )}
         </div>
 
         {/* Row 2: Calculation Breakdown */}

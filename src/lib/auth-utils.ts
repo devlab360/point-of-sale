@@ -109,9 +109,15 @@ export async function requireAdmin(): Promise<SessionPayload> {
   return payload;
 }
 
-export async function requirePermission(permissionKey: string): Promise<SessionPayload> {
+export async function requirePermission(
+  permissionKey: string,
+  roleDefaults: string[] = [],
+): Promise<SessionPayload> {
   const payload = await requireAuth();
   if (payload.role === "admin" || payload.role === "super_admin") {
+    return payload;
+  }
+  if (roleDefaults.includes(payload.role?.toLowerCase())) {
     return payload;
   }
   const users = await db

@@ -15,6 +15,7 @@ import { useState, useMemo, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getSalesFn } from "@/api/sales";
 import { voidPosSaleFn } from "@/api/pos";
+import { hasPermissionForRoute } from "@/lib/menu-config";
 import { getSettingsFn } from "@/api/settings";
 import { useAuth } from "@/contexts/AuthContext";
 import { usePreferences } from "@/contexts/PreferencesContext";
@@ -52,7 +53,7 @@ function SalesPage() {
   const { t } = useLanguage();
   const { formatDateTime } = usePreferences();
   const { currencySymbol, formatCurrency } = useCurrency();
-  const { user } = useAuth();
+  const { user, saasPlan } = useAuth();
   const orgId = user?.orgId || "default";
 
   const [query, setQuery] = useState("");
@@ -65,9 +66,12 @@ function SalesPage() {
     (filters.status ? 1 : 0) + (filters.payment ? 1 : 0) + (filters.sync ? 1 : 0);
 
   const queryClient = useQueryClient();
-  const canVoid = ["admin", "manager", "store_admin", "super_admin", "cashier", "owner"].includes(
-    user?.role?.toLowerCase?.() || "cashier",
-  );
+  const canVoid = hasPermissionForRoute(
+    user,
+    "/sales",
+    user?.role === "super_admin",
+    saasPlan,
+  ).allowed;
   const [voidTarget, setVoidTarget] = useState<any | null>(null);
   const [voidReason, setVoidReason] = useState("");
 

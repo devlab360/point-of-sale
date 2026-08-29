@@ -38,6 +38,8 @@ import { Label } from "@/components/ui/label";
 import { PhoneInput } from "@/components/ui/phone-input";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { VirtualKeyboard } from "@/components/ui/virtual-keyboard";
+import { useAuth } from "@/contexts/AuthContext";
+import { hasPermission } from "@/lib/menu-config";
 import {
   User,
   Search,
@@ -176,6 +178,9 @@ export function PosDialogs({
     units,
     settings,
   } = state;
+
+  const { user } = useAuth();
+  const canDiscount = hasPermission(user, "discounts", ["manager"]);
 
   // Reliable manual print: wait until React has committed the chosen print
   // format before opening the print dialog, then clean up the screen state.
@@ -429,6 +434,7 @@ export function PosDialogs({
 
   const handleKeyboardChange = (input: string) => {
     if (activeInput === "discount") {
+      if (!canDiscount) return;
       setDiscountInput(input);
       setDiscountPct(Math.min(100, Math.max(0, parseFloat(input) || 0)));
     } else if (activeInput === "cashTendered") {

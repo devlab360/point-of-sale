@@ -1,6 +1,6 @@
 import { handleApiError } from "@/lib/error-utils";
 import { createServerFn } from "@tanstack/react-start";
-import { requireAuth } from "@/lib/auth-utils";
+import { requireAuth, requirePermission } from "@/lib/auth-utils";
 import { assertInvoiceLimit, assertPlanActive } from "@/lib/plan-limits";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
@@ -461,10 +461,14 @@ export const completePosSaleFn = createServerFn({ method: "POST" })
           const lineSubtotal = unitPrice * item.quantity;
           const lineTax = (lineSubtotal * taxPct) / 100;
           let lineDiscount = Number(item.discountAmt) || 0;
-          if (lineDiscount > 0 && session.role !== "admin" && session.role !== "manager") {
-            throw new Error(
-              "Unauthorized: Only Admins or Managers can apply manual item discounts.",
-            );
+          if (lineDiscount > 0) {
+            try {
+              await requirePermission("discounts", ["manager"]);
+            } catch {
+              throw new Error(
+                "Unauthorized: Only Admins or Managers can apply manual item discounts.",
+              );
+            }
           }
 
           serverSubtotal += lineSubtotal;
@@ -592,10 +596,14 @@ export const completePosSaleFn = createServerFn({ method: "POST" })
 
         // Apply global discount if provided
         const globalDiscount = Number(data.sale.discountAmt) || 0;
-        if (globalDiscount > 0 && session.role !== "admin" && session.role !== "manager") {
-          throw new Error(
-            "Unauthorized: Only Admins or Managers can apply manual global discounts.",
-          );
+        if (globalDiscount > 0) {
+          try {
+            await requirePermission("discounts", ["manager"]);
+          } catch {
+            throw new Error(
+              "Unauthorized: Only Admins or Managers can apply manual global discounts.",
+            );
+          }
         }
         const serverTotal = Math.max(
           0,
@@ -876,8 +884,9 @@ export const voidPosSaleFn = createServerFn({ method: "POST" })
       const session = await requireAuth();
       const orgId = session.orgId;
 
-      const validRoles = ["admin", "manager", "store_admin", "super_admin", "cashier", "owner"];
-      if (session.role && !validRoles.includes(session.role.toLowerCase())) {
+      try {
+        await requirePermission("/sales");
+      } catch {
         return { success: false, error: "Unauthorized: You do not have permission to void bills." };
       }
 

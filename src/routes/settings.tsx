@@ -66,6 +66,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { CheckoutModal } from "@/components/CheckoutModal";
 import { useAuth } from "@/contexts/AuthContext";
+import { hasPermissionForRoute } from "@/lib/menu-config";
 import { PersistStore } from "@/lib/session-store";
 import { useRouter } from "@tanstack/react-router";
 import { cn, getTrialDaysLeft, DEFAULT_PAYMENT_CONFIG } from "@/lib/utils";
@@ -300,11 +301,14 @@ function SettingsPage() {
   const isMobile = useIsMobile();
 
   useEffect(() => {
-    if (user && user.role !== "admin") {
+    if (
+      user &&
+      !hasPermissionForRoute(user, "/settings", user?.role === "super_admin", saasPlan).allowed
+    ) {
       toast.error("Unauthorized. Admin access required.");
       router.navigate({ to: "/" });
     }
-  }, [user, router]);
+  }, [user, router, saasPlan]);
 
   useEffect(() => {
     if (dbSettings) {
