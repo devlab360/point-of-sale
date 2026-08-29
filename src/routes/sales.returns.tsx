@@ -314,34 +314,34 @@ function SalesReturnsPage() {
             </div>
           </div>
         )}
-      >
+      topContent={
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+              <div className="rounded-xl border border-border/80 bg-card p-3 shadow-2xs">
+                <div className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Total Returns</div>
+                <div className="mt-1 text-xl sm:text-2xl font-black text-foreground">{rawReturns.length}</div>
+              </div>
+              <div className="rounded-xl border border-border/80 bg-card p-3 shadow-2xs">
+                <div className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Approved / Refunded</div>
+                <div className="mt-1 text-xl sm:text-2xl font-black text-success">
+                  {rawReturns.filter((r) => r.status === "approved").length}
+                </div>
+              </div>
+              <div className="rounded-xl border border-border/80 bg-card p-3 shadow-2xs">
+                <div className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Stock Restored</div>
+                <div className="mt-1 text-xl sm:text-2xl font-black text-primary">
+                  {rawReturns.filter((r) => r.stockRestored).length}
+                </div>
+              </div>
+              <div className="rounded-xl border border-border/80 bg-card p-3 shadow-2xs">
+                <div className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Total Refund Amount</div>
+                <div className="mt-1 text-xl sm:text-2xl font-black text-destructive truncate">
+                  {formatCurrency(totalRefundAmount)}
+                </div>
+              </div>
+            </div>
+          }
+        >
         <div className="space-y-4">
-          {/* Top Summary Metrics */}
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-            <div className="rounded-xl border border-border/80 bg-card p-3 shadow-2xs">
-              <div className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Total Returns</div>
-              <div className="mt-1 text-xl sm:text-2xl font-black text-foreground">{rawReturns.length}</div>
-            </div>
-            <div className="rounded-xl border border-border/80 bg-card p-3 shadow-2xs">
-              <div className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Approved / Refunded</div>
-              <div className="mt-1 text-xl sm:text-2xl font-black text-success">
-                {rawReturns.filter((r) => r.status === "approved").length}
-              </div>
-            </div>
-            <div className="rounded-xl border border-border/80 bg-card p-3 shadow-2xs">
-              <div className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Stock Restored</div>
-              <div className="mt-1 text-xl sm:text-2xl font-black text-primary">
-                {rawReturns.filter((r) => r.stockRestored).length}
-              </div>
-            </div>
-            <div className="rounded-xl border border-border/80 bg-card p-3 shadow-2xs">
-              <div className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Total Refund Amount</div>
-              <div className="mt-1 text-xl sm:text-2xl font-black text-destructive truncate">
-                {formatCurrency(totalRefundAmount)}
-              </div>
-            </div>
-          </div>
-
           <div className="overflow-hidden rounded-xl border border-border/80 bg-card shadow-soft">
             <div className="overflow-x-auto">
               <Table className="min-w-[700px]">

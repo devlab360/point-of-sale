@@ -47,6 +47,13 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useState, useMemo } from "react";
 import { useDebounce } from "@/hooks/useDebounce";
 import { v4 as uuidv4 } from "uuid";
@@ -115,6 +122,7 @@ function CategoriesPage() {
 
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search, 300);
+  const [usageFilter, setUsageFilter] = useState<"all" | "in_use" | "unused">("all");
   const [page, setPage] = useState(1);
   const pageSize = 12;
 
@@ -129,8 +137,10 @@ function CategoriesPage() {
       const lower = debouncedSearch.toLowerCase();
       list = list.filter((c: any) => c.name?.toLowerCase().includes(lower));
     }
+    if (usageFilter === "in_use") list = list.filter((c: any) => c.count > 0);
+    if (usageFilter === "unused") list = list.filter((c: any) => c.count === 0);
     return list;
-  }, [categoriesWithCounts, debouncedSearch]);
+  }, [categoriesWithCounts, debouncedSearch, usageFilter]);
 
   const totalPages = Math.ceil(filteredCategories.length / pageSize) || 1;
   const paginatedCategories = useMemo(() => {
@@ -282,31 +292,50 @@ function CategoriesPage() {
             />
           </div>
 
-          <div className="inline-flex rounded-lg border border-border/80 bg-muted/30 p-0.5 shadow-sm self-end sm:self-auto">
-            <button
-              type="button"
-              onClick={() => setViewMode("grid")}
-              className={`grid size-8 place-items-center rounded-md transition-all ${
-                viewMode === "grid"
-                  ? "bg-card text-foreground shadow-sm font-bold"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-              title="Grid View"
+          <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 self-end sm:self-auto">
+            <Select
+              value={usageFilter}
+              onValueChange={(v) => {
+                setUsageFilter(v as any);
+                setPage(1);
+              }}
             >
-              <LayoutGrid className="size-4" />
-            </button>
-            <button
-              type="button"
-              onClick={() => setViewMode("table")}
-              className={`grid size-8 place-items-center rounded-md transition-all ${
-                viewMode === "table"
-                  ? "bg-card text-foreground shadow-sm font-bold"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-              title="Table View"
-            >
-              <TableIcon className="size-4" />
-            </button>
+              <SelectTrigger className="h-9 w-44 text-xs rounded-lg">
+                <SelectValue placeholder="Filter by status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Categories ({totalCategories})</SelectItem>
+                <SelectItem value="in_use">In Use ({inUseCount})</SelectItem>
+                <SelectItem value="unused">Unused ({totalCategories - inUseCount})</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <div className="inline-flex rounded-lg border border-border/80 bg-muted/30 p-0.5 shadow-sm">
+              <button
+                type="button"
+                onClick={() => setViewMode("grid")}
+                className={`grid size-8 place-items-center rounded-md transition-all ${
+                  viewMode === "grid"
+                    ? "bg-card text-foreground shadow-sm font-bold"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+                title="Grid View"
+              >
+                <LayoutGrid className="size-4" />
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewMode("table")}
+                className={`grid size-8 place-items-center rounded-md transition-all ${
+                  viewMode === "table"
+                    ? "bg-card text-foreground shadow-sm font-bold"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+                title="Table View"
+              >
+                <TableIcon className="size-4" />
+              </button>
+            </div>
           </div>
         </div>
 

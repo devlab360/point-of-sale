@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { SuperAdminLayout } from "@/components/admin/SuperAdminLayout";
 import { PageHeader } from "@/components/layout/PageHeader";
@@ -54,6 +54,7 @@ import {
   Eye,
   Radio,
   Download,
+  Search,
 } from "lucide-react";
 import { exportToCSV } from "@/lib/export-utils";
 
@@ -125,6 +126,24 @@ function SuperAdminAnnouncementsPage() {
 
   const announcements = (announcementsData?.data as any[]) || [];
   const activeCount = announcements.filter((a: any) => a.active).length;
+
+  const [search, setSearch] = useState("");
+  const [typeFilter, setTypeFilter] = useState<string>("all");
+  const [audienceFilter, setAudienceFilter] = useState<string>("all");
+  const [activeFilter, setActiveFilter] = useState<string>("all");
+
+  const filteredAnnouncements = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return announcements.filter((a: any) => {
+      const matchesSearch =
+        !q || a.title?.toLowerCase().includes(q) || a.message?.toLowerCase().includes(q);
+      const matchesType = typeFilter === "all" || a.type === typeFilter;
+      const matchesAudience = audienceFilter === "all" || a.audience === audienceFilter;
+      const matchesActive =
+        activeFilter === "all" || (activeFilter === "active" ? a.active : !a.active);
+      return matchesSearch && matchesType && matchesAudience && matchesActive;
+    });
+  }, [announcements, search, typeFilter, audienceFilter, activeFilter]);
 
   return (
     <SuperAdminLayout>
@@ -202,6 +221,54 @@ function SuperAdminAnnouncementsPage() {
           />
         </div>
 
+        {/* Filters and Search Bar */}
+        <div className="flex flex-col md:flex-row items-center gap-3 bg-card p-4 rounded-2xl border shadow-xs">
+          <div className="relative flex-1 w-full">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+            <Input
+              placeholder="Search title or message..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-9 bg-background/50"
+            />
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2.5 w-full md:w-auto">
+            <Select value={typeFilter} onValueChange={setTypeFilter}>
+              <SelectTrigger className="w-[130px] bg-background/50 text-xs">
+                <SelectValue placeholder="Type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Types ({announcements.length})</SelectItem>
+                <SelectItem value="info">Info</SelectItem>
+                <SelectItem value="warning">Warning</SelectItem>
+                <SelectItem value="success">Success</SelectItem>
+                <SelectItem value="update">Update</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={audienceFilter} onValueChange={setAudienceFilter}>
+              <SelectTrigger className="w-[130px] bg-background/50 text-xs">
+                <SelectValue placeholder="Audience" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Stores (Active + Trial)</SelectItem>
+                <SelectItem value="trial">Trial Stores</SelectItem>
+                <SelectItem value="active">Active Paid Stores</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={activeFilter} onValueChange={setActiveFilter}>
+              <SelectTrigger className="w-[130px] bg-background/50 text-xs">
+                <SelectValue placeholder="Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All ({announcements.length})</SelectItem>
+                <SelectItem value="active">Live ({activeCount})</SelectItem>
+                <SelectItem value="inactive">Hidden ({announcements.length - activeCount})</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
         {/* Announcements Catalog Table */}
         <div className="rounded-2xl border bg-card shadow-xs overflow-hidden">
           <div className="p-4 border-b bg-muted/20 flex items-center justify-between">
@@ -209,7 +276,7 @@ function SuperAdminAnnouncementsPage() {
               Broadcast Announcements Directory
             </h3>
             <span className="text-xs text-muted-foreground">
-              {announcements.length} records
+              {filteredAnnouncements.length} records
             </span>
           </div>
 
@@ -233,6 +300,14 @@ function SuperAdminAnnouncementsPage() {
                 <span>Create Announcement</span>
               </Button>
             </div>
+          ) : announcements.length > 0 && filteredAnnouncements.length === 0 ? (
+            <div className="p-16 text-center space-y-2">
+              <Search className="size-8 mx-auto text-muted-foreground/40" />
+              <h4 className="font-bold text-sm text-foreground">No announcements match your filters</h4>
+              <p className="text-xs text-muted-foreground">
+                Try adjusting the search terms or clearing the type, audience, and status filters.
+              </p>
+            </div>
           ) : (
             <div className="overflow-x-auto">
               <Table>
@@ -247,7 +322,7 @@ function SuperAdminAnnouncementsPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {announcements.map((item: any) => (
+                  {filteredAnnouncements.map((item: any) => (
                     <TableRow key={item.id} className="hover:bg-muted/30 transition-colors">
                       <TableCell className="px-4 py-3.5 max-w-md">
                         <div className="font-bold text-xs text-foreground flex items-center gap-1.5">

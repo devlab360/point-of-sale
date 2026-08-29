@@ -11,6 +11,7 @@ type Props = {
   description?: string;
   primaryAction?: { label: string; onClick?: () => void; icon?: typeof Plus };
   children: ReactNode;
+  topContent?: ReactNode;
   toolbar?: ReactNode;
   searchPlaceholder?: string;
   searchValue?: string;
@@ -29,6 +30,7 @@ export function DataPage({
   description,
   primaryAction,
   children,
+  topContent,
   toolbar,
   searchPlaceholder = "Search...",
   searchValue,
@@ -86,6 +88,8 @@ export function DataPage({
       {!hideHeader && title && (
         <PageHeader title={title} description={description} actions={actionsContent} />
       )}
+
+      {topContent}
 
       {!hideToolbar && (
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">

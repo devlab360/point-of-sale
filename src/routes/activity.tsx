@@ -189,67 +189,67 @@ function ActivityPage() {
             </div>
           </div>
         )}
-      >
+      topContent={
+            <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+              <div className="rounded-xl border border-border/80 bg-card p-4 sm:p-5 shadow-soft transition-all hover:border-primary/40">
+                <div className="flex items-center justify-between">
+                  <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                    Total Logged Events
+                  </p>
+                  <div className="grid size-8 place-items-center rounded-lg bg-primary/10 text-primary">
+                    <Activity className="size-4" />
+                  </div>
+                </div>
+                <p className="mt-2 text-xl sm:text-2xl font-black text-foreground">
+                  {metrics.total}
+                </p>
+              </div>
+
+              <div className="rounded-xl border border-border/80 bg-card p-4 sm:p-5 shadow-soft transition-all hover:border-blue-500/40">
+                <div className="flex items-center justify-between">
+                  <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                    Today's Events
+                  </p>
+                  <div className="grid size-8 place-items-center rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400">
+                    <Clock className="size-4" />
+                  </div>
+                </div>
+                <p className="mt-2 text-xl sm:text-2xl font-black text-blue-600 dark:text-blue-400">
+                  {metrics.todayCount}
+                </p>
+              </div>
+
+              <div className="rounded-xl border border-border/80 bg-card p-4 sm:p-5 shadow-soft transition-all hover:border-amber-500/40">
+                <div className="flex items-center justify-between">
+                  <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                    Active Operators
+                  </p>
+                  <div className="grid size-8 place-items-center rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400">
+                    <User className="size-4" />
+                  </div>
+                </div>
+                <p className="mt-2 text-xl sm:text-2xl font-black text-amber-600 dark:text-amber-400">
+                  {metrics.uniqueUsers}
+                </p>
+              </div>
+
+              <div className="rounded-xl border border-border/80 bg-card p-4 sm:p-5 shadow-soft transition-all hover:border-destructive/40">
+                <div className="flex items-center justify-between">
+                  <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                    Deletions / Purges
+                  </p>
+                  <div className="grid size-8 place-items-center rounded-lg bg-destructive/10 text-destructive">
+                    <Trash2 className="size-4" />
+                  </div>
+                </div>
+                <p className="mt-2 text-xl sm:text-2xl font-black text-destructive">
+                  {metrics.deletions}
+                </p>
+              </div>
+            </div>
+          }
+        >
         <div className="space-y-6">
-          {/* Top KPI Cards */}
-          <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
-            <div className="rounded-xl border border-border/80 bg-card p-4 sm:p-5 shadow-soft transition-all hover:border-primary/40">
-              <div className="flex items-center justify-between">
-                <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                  Total Logged Events
-                </p>
-                <div className="grid size-8 place-items-center rounded-lg bg-primary/10 text-primary">
-                  <Activity className="size-4" />
-                </div>
-              </div>
-              <p className="mt-2 text-xl sm:text-2xl font-black text-foreground">
-                {metrics.total}
-              </p>
-            </div>
-
-            <div className="rounded-xl border border-border/80 bg-card p-4 sm:p-5 shadow-soft transition-all hover:border-blue-500/40">
-              <div className="flex items-center justify-between">
-                <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                  Today's Events
-                </p>
-                <div className="grid size-8 place-items-center rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400">
-                  <Clock className="size-4" />
-                </div>
-              </div>
-              <p className="mt-2 text-xl sm:text-2xl font-black text-blue-600 dark:text-blue-400">
-                {metrics.todayCount}
-              </p>
-            </div>
-
-            <div className="rounded-xl border border-border/80 bg-card p-4 sm:p-5 shadow-soft transition-all hover:border-amber-500/40">
-              <div className="flex items-center justify-between">
-                <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                  Active Operators
-                </p>
-                <div className="grid size-8 place-items-center rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400">
-                  <User className="size-4" />
-                </div>
-              </div>
-              <p className="mt-2 text-xl sm:text-2xl font-black text-amber-600 dark:text-amber-400">
-                {metrics.uniqueUsers}
-              </p>
-            </div>
-
-            <div className="rounded-xl border border-border/80 bg-card p-4 sm:p-5 shadow-soft transition-all hover:border-destructive/40">
-              <div className="flex items-center justify-between">
-                <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                  Deletions / Purges
-                </p>
-                <div className="grid size-8 place-items-center rounded-lg bg-destructive/10 text-destructive">
-                  <Trash2 className="size-4" />
-                </div>
-              </div>
-              <p className="mt-2 text-xl sm:text-2xl font-black text-destructive">
-                {metrics.deletions}
-              </p>
-            </div>
-          </div>
-
           {/* Audit Timeline Container */}
           <div className="rounded-xl border border-border bg-card shadow-soft overflow-hidden">
             {isLoading ? (

@@ -483,45 +483,7 @@ function AccountsPage() {
               )
             : undefined
         }
-      >
-        {/* Navigation Tabs and Quick Actions */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-border/80 pb-3">
-          <div className="flex gap-2">
-            <Button
-              variant={activeTab === "accounts" ? "default" : "outline"}
-              size="sm"
-              onClick={() => setActiveTab("accounts")}
-              className="gap-1.5 font-bold shadow-soft rounded-xl text-xs h-9"
-            >
-              <Layers className="size-4" /> Chart of Accounts ({rawAccounts.length})
-            </Button>
-            <Button
-              variant={activeTab === "vouchers" ? "default" : "outline"}
-              size="sm"
-              onClick={() => setActiveTab("vouchers")}
-              className="gap-1.5 font-bold shadow-soft rounded-xl text-xs h-9"
-            >
-              <BookOpen className="size-4" /> Journal & Vouchers ({rawVouchers.length})
-            </Button>
-          </div>
-
-          {activeTab === "accounts" && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleSeedAccounts}
-              disabled={isSeeding}
-              className="font-bold text-xs gap-1.5 rounded-xl border-primary/30 text-primary hover:bg-primary/5 h-9"
-            >
-              {isSeeding ? <Loader2 className="size-3.5 animate-spin" /> : <Sparkles className="size-3.5" />}
-              Seed Standard Accounts
-            </Button>
-          )}
-        </div>
-
-        {activeTab === "accounts" ? (
-          <div className="space-y-6">
-            {/* KPI Summary Cards */}
+      topContent={activeTab === "accounts" ? (
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
               <div className="rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/5 to-card p-5 text-left card-interactive shadow-card">
                 <div className="flex items-center justify-between">
@@ -568,7 +530,45 @@ function AccountsPage() {
                 </p>
               </div>
             </div>
+          ) : null}
+        >
+        {/* Navigation Tabs and Quick Actions */}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-border/80 pb-3">
+          <div className="flex gap-2">
+            <Button
+              variant={activeTab === "accounts" ? "default" : "outline"}
+              size="sm"
+              onClick={() => setActiveTab("accounts")}
+              className="gap-1.5 font-bold shadow-soft rounded-xl text-xs h-9"
+            >
+              <Layers className="size-4" /> Chart of Accounts ({rawAccounts.length})
+            </Button>
+            <Button
+              variant={activeTab === "vouchers" ? "default" : "outline"}
+              size="sm"
+              onClick={() => setActiveTab("vouchers")}
+              className="gap-1.5 font-bold shadow-soft rounded-xl text-xs h-9"
+            >
+              <BookOpen className="size-4" /> Journal & Vouchers ({rawVouchers.length})
+            </Button>
+          </div>
 
+          {activeTab === "accounts" && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleSeedAccounts}
+              disabled={isSeeding}
+              className="font-bold text-xs gap-1.5 rounded-xl border-primary/30 text-primary hover:bg-primary/5 h-9"
+            >
+              {isSeeding ? <Loader2 className="size-3.5 animate-spin" /> : <Sparkles className="size-3.5" />}
+              Seed Standard Accounts
+            </Button>
+          )}
+        </div>
+
+        {activeTab === "accounts" ? (
+          <div className="space-y-6">
             {/* Empty State with Fast Seed CTA */}
             {rawAccounts.length === 0 && !isAccountsLoading ? (
               <div className="rounded-2xl border border-dashed border-border/80 bg-card p-12 text-center shadow-soft flex flex-col items-center justify-center space-y-4">

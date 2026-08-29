@@ -137,6 +137,29 @@ function SalesPage() {
   });
   const settings = settingsData || null;
 
+  const { data: salesSummaryResponse } = useQuery({
+    queryKey: ["salesSummary", orgId, debouncedQuery, filters.status, filters.payment, filters.sync],
+    queryFn: async () =>
+      ((await getSalesFn({
+        data: {
+          page: 1,
+          pageSize: 1000,
+          query: debouncedQuery,
+          status: filters.status,
+          payment: filters.payment,
+          sync: filters.sync,
+        },
+      })) as any) || {},
+  });
+  const allSales = salesSummaryResponse?.data || [];
+
+  const totalRevenue = allSales.reduce((sum, s) => sum + (s.total || 0), 0);
+  const pendingCount = allSales.filter((s) => s.status === "pending").length;
+  const refundedAmount = allSales
+    .filter((s) => s.status === "refunded")
+    .reduce((sum, s) => sum + (s.total || 0), 0);
+  const completedCount = allSales.filter((s) => s.status === "completed").length;
+
   // States moved up
 
   const handleResetFilters = () => {
@@ -238,6 +261,48 @@ function SalesPage() {
         onExport={handleExport}
         onResetFilters={handleResetFilters}
         activeFilterCount={activeFilterCount}
+        topContent={
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="rounded-xl border border-border/80 bg-card p-4 shadow-soft flex flex-col gap-1 card-interactive">
+              <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
+                {t("totalTransactions") || "Total Transactions"}
+              </span>
+              <span className="text-xl sm:text-2xl font-black text-foreground">
+                {totalCount}
+              </span>
+              <span className="text-xs font-semibold text-muted-foreground">
+                {completedCount} {t("completed") || "Completed"}
+              </span>
+            </div>
+            <div className="rounded-xl border border-border/80 bg-card p-4 shadow-soft flex flex-col gap-1 card-interactive">
+              <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
+                {t("totalRevenue") || "Total Revenue"}
+              </span>
+              <span className="text-xl sm:text-2xl font-black text-primary">
+                {formatCurrency(totalRevenue)}
+              </span>
+              <span className="text-xs font-semibold text-muted-foreground">
+                {formatCurrency(refundedAmount)} {t("refunded") || "Refunded"}
+              </span>
+            </div>
+            <div className="rounded-xl border border-warning/20 bg-card p-4 shadow-soft flex flex-col gap-1 card-interactive">
+              <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
+                {t("pendingOrders") || "Pending Orders"}
+              </span>
+              <span className="text-xl sm:text-2xl font-black text-warning">
+                {pendingCount}
+              </span>
+            </div>
+            <div className="rounded-xl border border-destructive/20 bg-card p-4 shadow-soft flex flex-col gap-1 card-interactive">
+              <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
+                {t("refundedAmount") || "Refunded Amount"}
+              </span>
+              <span className="text-xl sm:text-2xl font-black text-destructive">
+                {formatCurrency(refundedAmount)}
+              </span>
+            </div>
+          </div>
+        }
         filtersContent={({ close }) => (
           <div className="space-y-4 flex flex-col h-full min-h-[50vh]">
             <div className="flex-1 space-y-4">

@@ -27,6 +27,13 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   Scale,
   Pencil,
   Trash2,
@@ -106,6 +113,7 @@ function UnitsPage() {
 
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search, 300);
+  const [usageFilter, setUsageFilter] = useState<"all" | "in_use" | "unused">("all");
   const [page, setPage] = useState(1);
   const pageSize = 12;
 
@@ -122,8 +130,10 @@ function UnitsPage() {
         (u: any) => u.name?.toLowerCase().includes(lower) || u.short?.toLowerCase().includes(lower)
       );
     }
+    if (usageFilter === "in_use") list = list.filter((u: any) => u.products > 0);
+    if (usageFilter === "unused") list = list.filter((u: any) => u.products === 0);
     return list;
-  }, [unitsWithCounts, debouncedSearch]);
+  }, [unitsWithCounts, debouncedSearch, usageFilter]);
 
   const totalPages = Math.ceil(filteredUnits.length / pageSize) || 1;
   const paginatedUnits = useMemo(() => {
@@ -273,31 +283,50 @@ function UnitsPage() {
             />
           </div>
 
-          <div className="inline-flex rounded-lg border border-border/80 bg-muted/30 p-0.5 shadow-sm self-end sm:self-auto">
-            <button
-              type="button"
-              onClick={() => setViewMode("grid")}
-              className={`grid size-8 place-items-center rounded-md transition-all ${
-                viewMode === "grid"
-                  ? "bg-card text-foreground shadow-sm font-bold"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-              title="Grid View"
+          <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 self-end sm:self-auto">
+            <Select
+              value={usageFilter}
+              onValueChange={(v) => {
+                setUsageFilter(v as any);
+                setPage(1);
+              }}
             >
-              <LayoutGrid className="size-4" />
-            </button>
-            <button
-              type="button"
-              onClick={() => setViewMode("table")}
-              className={`grid size-8 place-items-center rounded-md transition-all ${
-                viewMode === "table"
-                  ? "bg-card text-foreground shadow-sm font-bold"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-              title="Table View"
-            >
-              <TableIcon className="size-4" />
-            </button>
+              <SelectTrigger className="h-9 w-44 text-xs rounded-lg">
+                <SelectValue placeholder="Filter by status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Units ({totalUnits})</SelectItem>
+                <SelectItem value="in_use">In Use ({inUseCount})</SelectItem>
+                <SelectItem value="unused">Unused ({totalUnits - inUseCount})</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <div className="inline-flex rounded-lg border border-border/80 bg-muted/30 p-0.5 shadow-sm">
+              <button
+                type="button"
+                onClick={() => setViewMode("grid")}
+                className={`grid size-8 place-items-center rounded-md transition-all ${
+                  viewMode === "grid"
+                    ? "bg-card text-foreground shadow-sm font-bold"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+                title="Grid View"
+              >
+                <LayoutGrid className="size-4" />
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewMode("table")}
+                className={`grid size-8 place-items-center rounded-md transition-all ${
+                  viewMode === "table"
+                    ? "bg-card text-foreground shadow-sm font-bold"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+                title="Table View"
+              >
+                <TableIcon className="size-4" />
+              </button>
+            </div>
           </div>
         </div>
 

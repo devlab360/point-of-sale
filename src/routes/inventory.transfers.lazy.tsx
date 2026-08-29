@@ -91,6 +91,7 @@ function TransfersPage() {
 
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search, 300);
+  const [paymentFilter, setPaymentFilter] = useState<"all" | "cash" | "bank" | "credit">("all");
   const [page, setPage] = useState(1);
   const pageSize = 12;
   const [isSaving, setIsSaving] = useState(false);
@@ -122,8 +123,9 @@ function TransfersPage() {
           t.id?.toLowerCase().includes(lower)
       );
     }
+    if (paymentFilter !== "all") list = list.filter((t: any) => (t.paymentMethod || "cash") === paymentFilter);
     return [...list].reverse();
-  }, [transfers, debouncedSearch]);
+  }, [transfers, debouncedSearch, paymentFilter]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
   const paginatedTransfers = useMemo(() => {
@@ -256,31 +258,59 @@ function TransfersPage() {
             />
           </div>
 
-          <div className="inline-flex rounded-lg border border-border/80 bg-muted/30 p-0.5 shadow-sm self-end sm:self-auto">
-            <button
-              type="button"
-              onClick={() => setViewMode("grid")}
-              className={`grid size-8 place-items-center rounded-md transition-all ${
-                viewMode === "grid"
-                  ? "bg-card text-foreground shadow-sm font-bold"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-              title="Grid View"
+          <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 self-end sm:self-auto">
+            <Select
+              value={paymentFilter}
+              onValueChange={(v) => {
+                setPaymentFilter(v as any);
+                setPage(1);
+              }}
             >
-              <LayoutGrid className="size-4" />
-            </button>
-            <button
-              type="button"
-              onClick={() => setViewMode("table")}
-              className={`grid size-8 place-items-center rounded-md transition-all ${
-                viewMode === "table"
-                  ? "bg-card text-foreground shadow-sm font-bold"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-              title="Table View"
-            >
-              <TableIcon className="size-4" />
-            </button>
+              <SelectTrigger className="h-9 w-48 text-xs rounded-lg">
+                <SelectValue placeholder="Filter by settlement" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">
+                  All Settlements ({totalTransferCount})
+                </SelectItem>
+                <SelectItem value="cash">
+                  Cash ({transfers.filter((t: any) => (t.paymentMethod || "cash") === "cash").length})
+                </SelectItem>
+                <SelectItem value="bank">
+                  Bank ({transfers.filter((t: any) => (t.paymentMethod || "cash") === "bank").length})
+                </SelectItem>
+                <SelectItem value="credit">
+                  Credit ({transfers.filter((t: any) => (t.paymentMethod || "cash") === "credit").length})
+                </SelectItem>
+              </SelectContent>
+            </Select>
+
+            <div className="inline-flex rounded-lg border border-border/80 bg-muted/30 p-0.5 shadow-sm">
+              <button
+                type="button"
+                onClick={() => setViewMode("grid")}
+                className={`grid size-8 place-items-center rounded-md transition-all ${
+                  viewMode === "grid"
+                    ? "bg-card text-foreground shadow-sm font-bold"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+                title="Grid View"
+              >
+                <LayoutGrid className="size-4" />
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewMode("table")}
+                className={`grid size-8 place-items-center rounded-md transition-all ${
+                  viewMode === "table"
+                    ? "bg-card text-foreground shadow-sm font-bold"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+                title="Table View"
+              >
+                <TableIcon className="size-4" />
+              </button>
+            </div>
           </div>
         </div>
 

@@ -50,6 +50,7 @@ import {
   UserCheck,
   Plus,
   Search,
+  Check,
   CheckCircle2,
   Copy,
   Users,
@@ -63,6 +64,7 @@ import {
   Mail,
   Percent,
   Target,
+  Sparkles,
 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
@@ -118,6 +120,81 @@ function getRoleVisuals(role: string) {
     label: "POS Cashier",
     badge: "bg-success/15 text-success border-success/30",
   };
+}
+
+const PERMISSION_ROUTE_META: Record<string, { group: string; label: string; icon: any }> = (() => {
+  const map: Record<string, { group: string; label: string; icon: any }> = {};
+  for (const group of APP_GROUPS) {
+    for (const item of group.items) {
+      map[item.to] = { group: group.label, label: item.label, icon: item.icon };
+      for (const sub of item.children || []) {
+        map[sub.to] = { group: group.label, label: sub.label, icon: item.icon };
+      }
+    }
+  }
+  map["ai_copilot"] = { group: "ADMINISTRATION", label: "AI Business Copilot", icon: Sparkles };
+  return map;
+})();
+
+const PERMISSION_GROUP_ORDER: string[] = APP_GROUPS.map((g) => g.label);
+
+const ROLE_OPTIONS = [
+  {
+    value: "admin",
+    label: "Administrator",
+    icon: Crown,
+    desc: "Full module access, staff management & store settings.",
+  },
+  {
+    value: "manager",
+    label: "Manager",
+    icon: Briefcase,
+    desc: "Catalog, inventory, sales, purchases, finance & reports.",
+  },
+  {
+    value: "cashier",
+    label: "POS Cashier",
+    icon: CreditCard,
+    desc: "POS billing, customers, tables, kitchen & appointments.",
+  },
+];
+
+function RoleSelectCards({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+      {ROLE_OPTIONS.map((opt) => {
+        const active = value === opt.value;
+        const Icon = opt.icon;
+        return (
+          <button
+            key={opt.value}
+            type="button"
+            onClick={() => onChange(opt.value)}
+            className={`rounded-xl border p-3 text-left transition-all ${
+              active
+                ? "border-primary bg-primary/5 shadow-xs"
+                : "border-border/70 bg-card hover:bg-muted/30"
+            }`}
+          >
+            <div className="flex items-center gap-2">
+              <span
+                className={`grid size-8 place-items-center rounded-lg ${
+                  active ? "bg-primary text-primary-foreground" : "bg-muted/60 text-muted-foreground"
+                }`}
+              >
+                <Icon className="size-4" />
+              </span>
+              <span className={`text-xs font-bold ${active ? "text-primary" : "text-foreground"}`}>
+                {opt.label}
+              </span>
+              {active && <Check className="ml-auto size-4 text-primary" />}
+            </div>
+            <p className="mt-2 text-[11px] leading-snug text-muted-foreground">{opt.desc}</p>
+          </button>
+        );
+      })}
+    </div>
+  );
 }
 
 function UsersPage() {
@@ -224,6 +301,23 @@ function UsersPage() {
       prev.includes(routePath) ? prev.filter((p) => p !== routePath) : [...prev, routePath]
     );
   };
+
+  const togglePermissionGroup = (routes: string[], groupAllOn: boolean) => {
+    setEditPermissions((prev) => {
+      const next = new Set(prev);
+      for (const r of routes) {
+        if (groupAllOn) {
+          next.delete(r);
+        } else {
+          next.add(r);
+        }
+      }
+      return Array.from(next);
+    });
+  };
+
+  const handleSelectAllPermissions = () => setEditPermissions([...allSelectableUserRoutes]);
+  const handleClearPermissions = () => setEditPermissions([]);
 
   const handleGenerateInvite = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -673,118 +767,220 @@ function UsersPage() {
       <Sheet open={!!editItem} onOpenChange={(open) => !open && setEditItem(null)}>
         <SheetContent
           side="right"
-          className="w-full sm:max-w-xl md:max-w-2xl p-0 flex flex-col h-full bg-background border-l border-border"
+          className="w-full sm:max-w-2xl md:max-w-3xl lg:max-w-4xl p-0 flex flex-col h-full bg-background border-l border-border"
         >
           {editItem && (
             <div className="flex flex-col h-full overflow-hidden">
               <SheetHeader className="bg-muted/40 p-5 border-b pr-12 text-left shrink-0">
-                <SheetTitle className="text-xl font-bold text-foreground">
-                  Edit Staff Permissions — {editItem.name}
-                </SheetTitle>
-                <SheetDescription className="text-xs text-muted-foreground mt-0.5">
-                  Configure role assignments, commission structures, and granular route access.
-                </SheetDescription>
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="grid size-10 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary">
+                      <Shield className="size-5" />
+                    </div>
+                    <div className="min-w-0">
+                      <SheetTitle className="text-lg font-bold text-foreground truncate">
+                        Edit Staff Access — {editItem.name}
+                      </SheetTitle>
+                      <SheetDescription className="text-xs text-muted-foreground mt-0.5">
+                        Configure role, commission, sales target, and granular module access for this employee.
+                      </SheetDescription>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <Badge variant="outline" className={`text-[10px] font-bold ${getRoleVisuals(editItem.role).badge}`}>
+                      {getRoleVisuals(editItem.role).label}
+                    </Badge>
+                    <Badge
+                      variant="outline"
+                      className={`text-[10px] font-bold uppercase ${
+                        editItem.status === "active"
+                          ? "bg-success/15 text-success border-success/30"
+                          : "bg-muted text-muted-foreground border-border"
+                      }`}
+                    >
+                      {editItem.status}
+                    </Badge>
+                  </div>
+                </div>
               </SheetHeader>
 
               <form onSubmit={handleSaveEdit} className="flex-1 flex flex-col justify-between overflow-hidden">
-                <div className="flex-1 overflow-y-auto p-5 space-y-4">
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-1.5">
-                      <Label className="text-xs font-semibold">Full Name</Label>
-                      <Input
-                        value={editName}
-                        onChange={(e) => setEditName(e.target.value)}
-                        required
-                      />
+                <div className="flex-1 overflow-y-auto p-5 space-y-5">
+                  {/* Staff Profile */}
+                  <section className="space-y-3">
+                    <p className="text-[11px] font-black uppercase tracking-[0.14em] text-muted-foreground">
+                      Staff Profile
+                    </p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div className="space-y-1.5">
+                        <Label className="text-xs font-semibold">Full Name</Label>
+                        <Input value={editName} onChange={(e) => setEditName(e.target.value)} required />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label className="text-xs font-semibold">Email Address</Label>
+                        <Input value={editEmail} onChange={(e) => setEditEmail(e.target.value)} />
+                      </div>
                     </div>
-                    <div className="space-y-1.5">
-                      <Label className="text-xs font-semibold">Role Tier</Label>
-                      <Select value={editRole} onValueChange={handleRoleChangeInEdit}>
-                        <SelectTrigger className="h-9 text-xs">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="admin">Administrator</SelectItem>
-                          <SelectItem value="manager">Manager</SelectItem>
-                          <SelectItem value="cashier">POS Cashier</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
+                  </section>
 
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-1.5">
-                      <Label className="text-xs font-semibold">Commission Rate (%)</Label>
-                      <Input
-                        type="number"
-                        step="0.1"
-                        min="0"
-                        max="100"
-                        placeholder="e.g. 5"
-                        value={editCommission}
-                        onChange={(e) => setEditCommission(e.target.value)}
-                      />
+                  {/* Role & Sales Terms */}
+                  <section className="space-y-3">
+                    <p className="text-[11px] font-black uppercase tracking-[0.14em] text-muted-foreground">
+                      Role & Sales Terms
+                    </p>
+                    <RoleSelectCards value={editRole} onChange={handleRoleChangeInEdit} />
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      <div className="space-y-1.5">
+                        <Label className="text-xs font-semibold">Commission Rate (%)</Label>
+                        <div className="relative">
+                          <Percent className="absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground" />
+                          <Input
+                            type="number"
+                            step="0.1"
+                            min="0"
+                            max="100"
+                            placeholder="e.g. 5"
+                            value={editCommission}
+                            onChange={(e) => setEditCommission(e.target.value)}
+                            className="pl-9"
+                          />
+                        </div>
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label className="text-xs font-semibold">Monthly Sales Target</Label>
+                        <div className="relative">
+                          <Target className="absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground" />
+                          <Input
+                            type="number"
+                            min="0"
+                            placeholder="e.g. 50000"
+                            value={editTarget}
+                            onChange={(e) => setEditTarget(e.target.value)}
+                            className="pl-9"
+                          />
+                        </div>
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label className="text-xs font-semibold">Account Status</Label>
+                        <Select value={editStatus} onValueChange={setEditStatus}>
+                          <SelectTrigger className="h-9 text-xs">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="active">Active</SelectItem>
+                            <SelectItem value="pending">Pending Approval</SelectItem>
+                            <SelectItem value="inactive">Inactive / Suspended</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
                     </div>
-                    <div className="space-y-1.5">
-                      <Label className="text-xs font-semibold">Account Status</Label>
-                      <Select value={editStatus} onValueChange={setEditStatus}>
-                        <SelectTrigger className="h-9 text-xs">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="active">Active</SelectItem>
-                          <SelectItem value="pending">Pending Approval</SelectItem>
-                          <SelectItem value="inactive">Inactive / Suspended</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
+                  </section>
 
-                  <div className="space-y-2 pt-2 border-t border-border/60">
-                    <div className="flex items-center justify-between">
-                      <Label className="text-xs font-semibold">Granular Route Access</Label>
-                      <span className="text-xs text-muted-foreground">{editPermissions.length} enabled</span>
+                  {/* Module Access */}
+                  <section className="space-y-3 pt-1">
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="text-[11px] font-black uppercase tracking-[0.14em] text-muted-foreground">
+                        Module Access
+                      </p>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-muted-foreground font-medium">
+                          {editPermissions.length} / {allSelectableUserRoutes.length} enabled
+                        </span>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="h-7 text-xs gap-1"
+                          onClick={handleSelectAllPermissions}
+                        >
+                          <Check className="size-3.5" /> Select All
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="h-7 text-xs text-destructive"
+                          onClick={handleClearPermissions}
+                        >
+                          Clear
+                        </Button>
+                      </div>
                     </div>
 
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-60 overflow-y-auto p-2 border rounded-xl bg-muted/20">
-                      {allSelectableUserRoutes.map((route) => {
-                        const isChecked = editPermissions.includes(route);
+                    <div className="space-y-3">
+                      {PERMISSION_GROUP_ORDER.map((groupLabel) => {
+                        const groupRoutes = allSelectableUserRoutes.filter(
+                          (r) => (PERMISSION_ROUTE_META[r]?.group || "OTHER") === groupLabel
+                        );
+                        if (groupRoutes.length === 0) return null;
+                        const groupAllOn = groupRoutes.every((r) => editPermissions.includes(r));
+
                         return (
-                          <label
-                            key={route}
-                            className={`flex items-center gap-2 p-2 rounded-lg border text-xs font-semibold cursor-pointer transition-all ${
-                              isChecked
-                                ? "bg-primary/10 border-primary text-primary"
-                                : "bg-card border-border/60 text-muted-foreground"
-                            }`}
+                          <div
+                            key={groupLabel}
+                            className="rounded-xl border border-border/70 bg-card p-3.5 space-y-2.5"
                           >
-                            <input
-                              type="checkbox"
-                              checked={isChecked}
-                              onChange={() => togglePermission(route)}
-                              className="size-3.5 rounded border-border"
-                            />
-                            <span className="truncate">{route.replace("/", "") || "root"}</span>
-                          </label>
+                            <div className="flex items-center justify-between">
+                              <p className="text-[11px] font-black uppercase tracking-[0.14em] text-muted-foreground">
+                                {groupLabel}
+                              </p>
+                              <button
+                                type="button"
+                                onClick={() => togglePermissionGroup(groupRoutes, groupAllOn)}
+                                className="text-[11px] font-bold text-primary hover:underline"
+                              >
+                                {groupAllOn ? "Deselect All" : "Select All"}
+                              </button>
+                            </div>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                              {groupRoutes.map((route) => {
+                                const meta = PERMISSION_ROUTE_META[route];
+                                const label = meta?.label || route.replace(/^\//, "") || route;
+                                const Icon = meta?.icon || Shield;
+                                const isChecked = editPermissions.includes(route);
+                                return (
+                                  <button
+                                    key={route}
+                                    type="button"
+                                    onClick={() => togglePermission(route)}
+                                    className={`flex items-center gap-2 p-2 rounded-lg border text-xs font-semibold transition-all ${
+                                      isChecked
+                                        ? "bg-primary/10 border-primary text-primary"
+                                        : "bg-muted/20 border-border/60 text-muted-foreground hover:bg-muted/40 hover:text-foreground"
+                                    }`}
+                                  >
+                                    <span
+                                      className={`grid size-6 shrink-0 place-items-center rounded-md ${
+                                        isChecked
+                                          ? "bg-primary text-primary-foreground"
+                                          : "bg-muted/60 text-muted-foreground"
+                                      }`}
+                                    >
+                                      <Icon className="size-3.5" />
+                                    </span>
+                                    <span className="truncate">{label}</span>
+                                    {isChecked && <Check className="ml-auto size-3.5 shrink-0" />}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          </div>
                         );
                       })}
                     </div>
-                  </div>
+                  </section>
                 </div>
 
-                <SheetFooter className="p-4 border-t border-border/60 bg-muted/20 flex flex-row items-center justify-end gap-2 shrink-0">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => setEditItem(null)}
-                  >
+                <SheetFooter className="p-5 border-t border-border/60 bg-muted/20 flex items-center justify-end gap-2 shrink-0">
+                  <div className="text-xs text-muted-foreground mr-auto font-medium">
+                    Applying{" "}
+                    <span className="font-bold text-foreground">{editPermissions.length}</span> module
+                    grants on save.
+                  </div>
+                  <Button type="button" variant="outline" onClick={() => setEditItem(null)}>
                     Cancel
                   </Button>
-                  <Button
-                    type="submit"
-                    disabled={isSaving}
-                    className="font-semibold shadow-sm"
-                  >
+                  <Button type="submit" disabled={isSaving} className="font-semibold shadow-sm">
                     {isSaving && <Loader2 className="size-4 animate-spin mr-2" />}
                     Save Permissions
                   </Button>
@@ -799,39 +995,47 @@ function UsersPage() {
       <Sheet open={isDirectAddOpen} onOpenChange={setIsDirectAddOpen}>
         <SheetContent
           side="right"
-          className="w-full sm:max-w-md p-0 flex flex-col h-full bg-background border-l border-border"
+          className="w-full sm:max-w-xl md:max-w-2xl lg:max-w-3xl p-0 flex flex-col h-full bg-background border-l border-border"
         >
           <div className="flex flex-col h-full overflow-hidden">
             <SheetHeader className="bg-muted/40 p-5 border-b pr-12 text-left shrink-0">
-              <SheetTitle className="text-xl font-bold text-foreground">
-                Register New Employee
-              </SheetTitle>
-              <SheetDescription className="text-xs text-muted-foreground mt-0.5">
-                Create a new user account with login credentials directly.
-              </SheetDescription>
+              <div className="flex items-center gap-3">
+                <div className="grid size-10 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary">
+                  <UserPlus className="size-5" />
+                </div>
+                <div>
+                  <SheetTitle className="text-lg font-bold text-foreground">
+                    Register New Employee
+                  </SheetTitle>
+                  <SheetDescription className="text-xs text-muted-foreground mt-0.5">
+                    Create a new user account with login credentials directly.
+                  </SheetDescription>
+                </div>
+              </div>
             </SheetHeader>
 
             <form onSubmit={handleCreateDirectUser} className="flex-1 flex flex-col justify-between overflow-hidden">
-              <div className="flex-1 overflow-y-auto p-5 space-y-4">
-                <div className="space-y-1.5">
-                  <Label className="text-xs font-semibold">Full Name *</Label>
-                  <Input
-                    value={directName}
-                    onChange={(e) => setDirectName(e.target.value)}
-                    placeholder="e.g. John Doe"
-                    required
-                  />
-                </div>
-
-                <div className="space-y-1.5">
-                  <Label className="text-xs font-semibold">Email Address *</Label>
-                  <Input
-                    type="email"
-                    value={directEmail}
-                    onChange={(e) => setDirectEmail(e.target.value)}
-                    placeholder="e.g. staff@business.com"
-                    required
-                  />
+              <div className="flex-1 overflow-y-auto p-5 space-y-5">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-semibold">Full Name *</Label>
+                    <Input
+                      value={directName}
+                      onChange={(e) => setDirectName(e.target.value)}
+                      placeholder="e.g. John Doe"
+                      required
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-semibold">Email Address *</Label>
+                    <Input
+                      type="email"
+                      value={directEmail}
+                      onChange={(e) => setDirectEmail(e.target.value)}
+                      placeholder="e.g. staff@business.com"
+                      required
+                    />
+                  </div>
                 </div>
 
                 <div className="space-y-1.5">
@@ -845,33 +1049,33 @@ function UsersPage() {
                   />
                 </div>
 
-                <div className="space-y-1.5">
-                  <Label className="text-xs font-semibold">Role</Label>
-                  <Select value={directRole} onValueChange={setDirectRole}>
-                    <SelectTrigger className="h-9 text-xs">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="cashier">POS Cashier</SelectItem>
-                      <SelectItem value="manager">Manager</SelectItem>
-                      <SelectItem value="admin">Administrator</SelectItem>
-                    </SelectContent>
-                  </Select>
+                <div className="space-y-2">
+                  <Label className="text-xs font-semibold">Assigned Role</Label>
+                  <RoleSelectCards value={directRole} onChange={setDirectRole} />
+                </div>
+
+                <div className="rounded-xl border border-border/70 bg-muted/20 p-3.5 text-xs">
+                  <p className="text-[11px] font-black uppercase tracking-[0.14em] text-muted-foreground mb-1">
+                    Default Access Grants
+                  </p>
+                  <p className="leading-relaxed text-muted-foreground">
+                    <span className="font-bold text-foreground">
+                      {getRoleVisuals(directRole).label}:
+                    </span>{" "}
+                    <span className="font-semibold">
+                      {(DEFAULT_ROLE_PERMISSIONS[directRole] || []).length}
+                    </span>{" "}
+                    modules enabled by default. Fine-tune individual access anytime from the Access
+                    drawer after creation.
+                  </p>
                 </div>
               </div>
 
               <SheetFooter className="p-4 border-t border-border/60 bg-muted/20 flex flex-row items-center justify-end gap-2 shrink-0">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setIsDirectAddOpen(false)}
-                >
+                <Button type="button" variant="outline" onClick={() => setIsDirectAddOpen(false)}>
                   Cancel
                 </Button>
-                <Button
-                  type="submit"
-                  disabled={isSaving}
-                >
+                <Button type="submit" disabled={isSaving}>
                   {isSaving && <Loader2 className="size-4 animate-spin mr-2" />}
                   Create Account
                 </Button>
@@ -885,20 +1089,27 @@ function UsersPage() {
       <Sheet open={isInviteOpen} onOpenChange={setIsInviteOpen}>
         <SheetContent
           side="right"
-          className="w-full sm:max-w-md p-0 flex flex-col h-full bg-background border-l border-border"
+          className="w-full sm:max-w-xl md:max-w-2xl lg:max-w-3xl p-0 flex flex-col h-full bg-background border-l border-border"
         >
           <div className="flex flex-col h-full overflow-hidden">
             <SheetHeader className="bg-muted/40 p-5 border-b pr-12 text-left shrink-0">
-              <SheetTitle className="text-xl font-bold text-foreground">
-                Generate Staff Invite Link
-              </SheetTitle>
-              <SheetDescription className="text-xs text-muted-foreground mt-0.5">
-                Send a secure one-click registration link to onboard employees.
-              </SheetDescription>
+              <div className="flex items-center gap-3">
+                <div className="grid size-10 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary">
+                  <Mail className="size-5" />
+                </div>
+                <div>
+                  <SheetTitle className="text-lg font-bold text-foreground">
+                    Generate Staff Invite Link
+                  </SheetTitle>
+                  <SheetDescription className="text-xs text-muted-foreground mt-0.5">
+                    Send a secure one-click registration link to onboard employees.
+                  </SheetDescription>
+                </div>
+              </div>
             </SheetHeader>
 
             <form onSubmit={handleGenerateInvite} className="flex-1 flex flex-col justify-between overflow-hidden">
-              <div className="flex-1 overflow-y-auto p-5 space-y-4">
+              <div className="flex-1 overflow-y-auto p-5 space-y-5">
                 <div className="space-y-1.5">
                   <Label className="text-xs font-semibold">Staff Email Address *</Label>
                   <Input
@@ -910,25 +1121,18 @@ function UsersPage() {
                   />
                 </div>
 
-                <div className="space-y-1.5">
+                <div className="space-y-2">
                   <Label className="text-xs font-semibold">Assigned Role</Label>
-                  <Select value={inviteRole} onValueChange={setInviteRole}>
-                    <SelectTrigger className="h-9 text-xs">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="cashier">POS Cashier</SelectItem>
-                      <SelectItem value="manager">Manager</SelectItem>
-                      <SelectItem value="admin">Administrator</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <RoleSelectCards value={inviteRole} onChange={setInviteRole} />
                 </div>
               </div>
 
-              <SheetFooter className="p-4 border-t border-border/60 bg-muted/20 flex flex-row items-center justify-end gap-2 shrink-0">
+              <SheetFooter className="p-4 border-t border-border/60 bg-muted/20 flex flex-col sm:flex-row sm:items-center justify-end gap-2 shrink-0">
                 {generatedLink ? (
                   <div className="w-full p-3 rounded-xl bg-muted/40 border border-border/60 space-y-2">
-                    <span className="text-xs font-semibold text-foreground block">Onboarding Link:</span>
+                    <span className="text-xs font-semibold text-foreground block">
+                      Onboarding Link:
+                    </span>
                     <div className="flex items-center gap-2">
                       <Input
                         readOnly
@@ -949,6 +1153,15 @@ function UsersPage() {
                         {copiedLink ? "Copied" : "Copy"}
                       </Button>
                     </div>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="text-xs"
+                      onClick={() => setIsInviteOpen(false)}
+                    >
+                      Done
+                    </Button>
                   </div>
                 ) : (
                   <>

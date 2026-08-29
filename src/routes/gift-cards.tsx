@@ -407,67 +407,67 @@ function GiftCardsPage() {
             </div>
           </div>
         )}
-      >
+      topContent={
+            <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+              <div className="rounded-xl border border-border/80 bg-card p-4 sm:p-5 shadow-soft transition-all hover:border-primary/40">
+                <div className="flex items-center justify-between">
+                  <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                    Total Issued
+                  </p>
+                  <div className="grid size-8 place-items-center rounded-lg bg-primary/10 text-primary">
+                    <Gift className="size-4" />
+                  </div>
+                </div>
+                <p className="mt-2 text-xl sm:text-2xl font-black text-foreground">
+                  {metrics.totalCount}
+                </p>
+              </div>
+
+              <div className="rounded-xl border border-border/80 bg-card p-4 sm:p-5 shadow-soft transition-all hover:border-success/40">
+                <div className="flex items-center justify-between">
+                  <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                    Active Cards
+                  </p>
+                  <div className="grid size-8 place-items-center rounded-lg bg-success/15 text-success">
+                    <CheckCircle2 className="size-4" />
+                  </div>
+                </div>
+                <p className="mt-2 text-xl sm:text-2xl font-black text-success">
+                  {metrics.activeCount}
+                </p>
+              </div>
+
+              <div className="rounded-xl border border-border/80 bg-card p-4 sm:p-5 shadow-soft transition-all hover:border-blue-500/40">
+                <div className="flex items-center justify-between">
+                  <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                    Total Issued Value
+                  </p>
+                  <div className="grid size-8 place-items-center rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400">
+                    <CreditCard className="size-4" />
+                  </div>
+                </div>
+                <p className="mt-2 text-xl sm:text-2xl font-black text-foreground">
+                  {formatCurrency(metrics.totalIssued)}
+                </p>
+              </div>
+
+              <div className="rounded-xl border border-border/80 bg-card p-4 sm:p-5 shadow-soft transition-all hover:border-primary/40">
+                <div className="flex items-center justify-between">
+                  <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                    Available Balance
+                  </p>
+                  <div className="grid size-8 place-items-center rounded-lg bg-primary/10 text-primary">
+                    <DollarSign className="size-4" />
+                  </div>
+                </div>
+                <p className="mt-2 text-xl sm:text-2xl font-black text-primary">
+                  {formatCurrency(metrics.totalBalance)}
+                </p>
+              </div>
+            </div>
+          }
+        >
         <div className="space-y-6">
-          {/* KPI Summary Cards */}
-          <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
-            <div className="rounded-xl border border-border/80 bg-card p-4 sm:p-5 shadow-soft transition-all hover:border-primary/40">
-              <div className="flex items-center justify-between">
-                <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                  Total Issued
-                </p>
-                <div className="grid size-8 place-items-center rounded-lg bg-primary/10 text-primary">
-                  <Gift className="size-4" />
-                </div>
-              </div>
-              <p className="mt-2 text-xl sm:text-2xl font-black text-foreground">
-                {metrics.totalCount}
-              </p>
-            </div>
-
-            <div className="rounded-xl border border-border/80 bg-card p-4 sm:p-5 shadow-soft transition-all hover:border-success/40">
-              <div className="flex items-center justify-between">
-                <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                  Active Cards
-                </p>
-                <div className="grid size-8 place-items-center rounded-lg bg-success/15 text-success">
-                  <CheckCircle2 className="size-4" />
-                </div>
-              </div>
-              <p className="mt-2 text-xl sm:text-2xl font-black text-success">
-                {metrics.activeCount}
-              </p>
-            </div>
-
-            <div className="rounded-xl border border-border/80 bg-card p-4 sm:p-5 shadow-soft transition-all hover:border-blue-500/40">
-              <div className="flex items-center justify-between">
-                <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                  Total Issued Value
-                </p>
-                <div className="grid size-8 place-items-center rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400">
-                  <CreditCard className="size-4" />
-                </div>
-              </div>
-              <p className="mt-2 text-xl sm:text-2xl font-black text-foreground">
-                {formatCurrency(metrics.totalIssued)}
-              </p>
-            </div>
-
-            <div className="rounded-xl border border-border/80 bg-card p-4 sm:p-5 shadow-soft transition-all hover:border-primary/40">
-              <div className="flex items-center justify-between">
-                <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                  Available Balance
-                </p>
-                <div className="grid size-8 place-items-center rounded-lg bg-primary/10 text-primary">
-                  <DollarSign className="size-4" />
-                </div>
-              </div>
-              <p className="mt-2 text-xl sm:text-2xl font-black text-primary">
-                {formatCurrency(metrics.totalBalance)}
-              </p>
-            </div>
-          </div>
-
           {/* Table / Card Container */}
           <div className="rounded-xl border border-border bg-card shadow-soft overflow-hidden">
             {isGiftCardsLoading ? (

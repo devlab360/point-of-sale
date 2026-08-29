@@ -80,6 +80,7 @@ function AdjustmentsPage() {
 
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search, 300);
+  const [typeFilter, setTypeFilter] = useState<"all" | "additions" | "deductions">("all");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(12);
   const [isSaving, setIsSaving] = useState(false);
@@ -111,8 +112,10 @@ function AdjustmentsPage() {
           a.reason?.toLowerCase().includes(lower)
       );
     }
+    if (typeFilter === "additions") list = list.filter((a: any) => (a.net || 0) > 0);
+    if (typeFilter === "deductions") list = list.filter((a: any) => (a.net || 0) < 0);
     return [...list].reverse();
-  }, [adjustments, debouncedSearch]);
+  }, [adjustments, debouncedSearch, typeFilter]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
   const paginatedAdjustments = useMemo(() => {
@@ -231,31 +234,50 @@ function AdjustmentsPage() {
             />
           </div>
 
-          <div className="inline-flex rounded-lg border border-border/80 bg-muted/30 p-0.5 shadow-sm self-end sm:self-auto">
-            <button
-              type="button"
-              onClick={() => setViewMode("grid")}
-              className={`grid size-8 place-items-center rounded-md transition-all ${
-                viewMode === "grid"
-                  ? "bg-card text-foreground shadow-sm font-bold"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-              title="Grid View"
+          <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 self-end sm:self-auto">
+            <Select
+              value={typeFilter}
+              onValueChange={(v) => {
+                setTypeFilter(v as any);
+                setPage(1);
+              }}
             >
-              <LayoutGrid className="size-4" />
-            </button>
-            <button
-              type="button"
-              onClick={() => setViewMode("table")}
-              className={`grid size-8 place-items-center rounded-md transition-all ${
-                viewMode === "table"
-                  ? "bg-card text-foreground shadow-sm font-bold"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-              title="Table View"
-            >
-              <TableIcon className="size-4" />
-            </button>
+              <SelectTrigger className="h-9 w-48 text-xs rounded-lg">
+                <SelectValue placeholder="Filter by type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Adjustments ({totalAdjustments})</SelectItem>
+                <SelectItem value="additions">Additions ({totalAdjustments && adjustments.filter((a: any) => (a.net || 0) > 0).length})</SelectItem>
+                <SelectItem value="deductions">Deductions ({totalAdjustments && adjustments.filter((a: any) => (a.net || 0) < 0).length})</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <div className="inline-flex rounded-lg border border-border/80 bg-muted/30 p-0.5 shadow-sm">
+              <button
+                type="button"
+                onClick={() => setViewMode("grid")}
+                className={`grid size-8 place-items-center rounded-md transition-all ${
+                  viewMode === "grid"
+                    ? "bg-card text-foreground shadow-sm font-bold"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+                title="Grid View"
+              >
+                <LayoutGrid className="size-4" />
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewMode("table")}
+                className={`grid size-8 place-items-center rounded-md transition-all ${
+                  viewMode === "table"
+                    ? "bg-card text-foreground shadow-sm font-bold"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+                title="Table View"
+              >
+                <TableIcon className="size-4" />
+              </button>
+            </div>
           </div>
         </div>
 

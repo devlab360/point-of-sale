@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { SuperAdminLayout } from "@/components/admin/SuperAdminLayout";
 import { PageHeader } from "@/components/layout/PageHeader";
@@ -22,9 +22,17 @@ import {
   Download,
   Key,
   ShieldCheck,
+  Search,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -85,6 +93,51 @@ function SuperAdminUsersPage() {
 
   const users = (usersData?.data as any[]) || [];
   const sessions = (sessionsData?.data as any[]) || [];
+
+  const [filterQuery, setFilterQuery] = useState("");
+  const [filterEntity, setFilterEntity] = useState<"admins" | "sessions">("admins");
+  const [adminAccessFilter, setAdminAccessFilter] = useState<"all" | "full" | "restricted">("all");
+  const [sessionStatusFilter, setSessionStatusFilter] = useState<"all" | "live" | "expired" | "revoked">("all");
+
+  const filteredUsers = useMemo(() => {
+    const q = filterEntity === "admins" ? filterQuery.trim().toLowerCase() : "";
+    return users.filter((u: any) => {
+      const matchesSearch =
+        !q || u.name?.toLowerCase().includes(q) || u.email?.toLowerCase().includes(q);
+      const perms: string[] | null = u.adminPermissions;
+      const isFullAccess = !perms || perms.length === 0;
+      const matchesAccess =
+        adminAccessFilter === "all" ||
+        (adminAccessFilter === "full" && isFullAccess) ||
+        (adminAccessFilter === "restricted" && !isFullAccess);
+      return matchesSearch && matchesAccess;
+    });
+  }, [users, filterQuery, filterEntity, adminAccessFilter]);
+
+  const filteredSessions = useMemo(() => {
+    const q = filterEntity === "sessions" ? filterQuery.trim().toLowerCase() : "";
+    return sessions.filter((s: any) => {
+      const matchesSearch =
+        !q ||
+        s.userName?.toLowerCase().includes(q) ||
+        s.userEmail?.toLowerCase().includes(q) ||
+        s.id?.toLowerCase().includes(q);
+      const isRevoked = Boolean(s.revokedAt);
+      const isExpired = new Date(s.expiresAt).getTime() < Date.now();
+      const status = isRevoked ? "revoked" : isExpired ? "expired" : "live";
+      const matchesStatus = sessionStatusFilter === "all" || status === sessionStatusFilter;
+      return matchesSearch && matchesStatus;
+    });
+  }, [sessions, filterQuery, filterEntity, sessionStatusFilter]);
+
+  const liveSessionCount = useMemo(
+    () => sessions.filter((s: any) => !s.revokedAt && new Date(s.expiresAt).getTime() > Date.now()).length,
+    [sessions]
+  );
+  const revokedSessionCount = useMemo(
+    () => sessions.filter((s: any) => Boolean(s.revokedAt)).length,
+    [sessions]
+  );
 
   const activeSessionsCount = sessions.filter((s: any) => !s.revokedAt && new Date(s.expiresAt).getTime() > Date.now()).length;
 
@@ -209,12 +262,70 @@ function SuperAdminUsersPage() {
           />
         </div>
 
-        {/* Super Admin Personnel List */}
+        {/* Filters and Search Bar */}
+        <div className="flex flex-col md:flex-row items-center gap-3 bg-card p-4 rounded-2xl border shadow-xs">
+          <div className="relative flex-1 w-full">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+            <Input
+              placeholder="Search administrator or session..."
+              value={filterQuery}
+              onChange={(e) => setFilterQuery(e.target.value)}
+              className="pl-9 bg-background/50"
+            />
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2.5 w-full md:w-auto">
+            <Select value={filterEntity} onValueChange={(v) => setFilterEntity(v as any)}>
+              <SelectTrigger className="w-[150px] bg-background/50 text-xs">
+                <SelectValue placeholder="Scope" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="admins">Admins</SelectItem>
+                <SelectItem value="sessions">Sessions</SelectItem>
+              </SelectContent>
+            </Select>
+
+            {filterEntity === "admins" && (
+              <Select
+                value={adminAccessFilter}
+                onValueChange={(v) => setAdminAccessFilter(v as any)}
+              >
+                <SelectTrigger className="w-[160px] bg-background/50 text-xs">
+                  <SelectValue placeholder="Access" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Access ({users.length})</SelectItem>
+                  <SelectItem value="full">Full Access ({users.filter((u: any) => !u.adminPermissions || u.adminPermissions.length === 0).length})</SelectItem>
+                  <SelectItem value="restricted">Restricted ({users.filter((u: any) => u.adminPermissions && u.adminPermissions.length > 0).length})</SelectItem>
+                </SelectContent>
+              </Select>
+            )}
+
+            {filterEntity === "sessions" && (
+              <Select
+                value={sessionStatusFilter}
+                onValueChange={(v) => setSessionStatusFilter(v as any)}
+              >
+                <SelectTrigger className="w-[160px] bg-background/50 text-xs">
+                  <SelectValue placeholder="Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Statuses ({sessions.length})</SelectItem>
+                  <SelectItem value="live">Live Valid ({liveSessionCount})</SelectItem>
+                  <SelectItem value="expired">Expired ({sessions.length - liveSessionCount - revokedSessionCount})</SelectItem>
+                  <SelectItem value="revoked">Revoked ({revokedSessionCount})</SelectItem>
+                </SelectContent>
+              </Select>
+            )}
+          </div>
+        </div>
+
+        {/* Super Admin Personnel Table */}
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
               <Shield className="size-4 text-primary" />
-              <span>Platform Administrators ({users.length})</span>
+              <span>Platform Administrators ({filteredUsers.length})</span>
             </h3>
           </div>
 
@@ -222,6 +333,10 @@ function SuperAdminUsersPage() {
             {isUsersLoading ? (
               <div className="flex items-center justify-center p-12">
                 <Loader2 className="size-6 animate-spin text-primary" />
+              </div>
+            ) : filteredUsers.length === 0 ? (
+              <div className="p-8 text-center text-xs text-muted-foreground">
+                No administrators match your filters.
               </div>
             ) : (
               <div className="overflow-x-auto">
@@ -237,7 +352,7 @@ function SuperAdminUsersPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {users.map((admin: any) => {
+                    {filteredUsers.map((admin: any) => {
                       const isSelf = admin.email === currentUser?.email || admin.id === currentUser?.id;
                       return (
                         <TableRow key={admin.id} className="hover:bg-muted/30 transition-colors">
@@ -350,7 +465,7 @@ function SuperAdminUsersPage() {
             <div>
               <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
                 <Laptop className="size-4 text-indigo-500" />
-                <span>Active Server Login Sessions ({sessions.length})</span>
+                <span>Active Server Login Sessions ({filteredSessions.length})</span>
               </h3>
               <p className="text-xs text-muted-foreground">
                 Cryptographically signed 24-hour JWT auth tokens stored in database
@@ -365,6 +480,10 @@ function SuperAdminUsersPage() {
               </div>
             ) : sessions.length === 0 ? (
               <div className="p-8 text-center text-xs text-muted-foreground">No active sessions.</div>
+            ) : filteredSessions.length === 0 ? (
+              <div className="p-8 text-center text-xs text-muted-foreground">
+                No sessions match your search or filter.
+              </div>
             ) : (
               <div className="overflow-x-auto">
                 <Table>
@@ -379,7 +498,7 @@ function SuperAdminUsersPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {sessions.map((sess: any) => {
+                    {filteredSessions.map((sess: any) => {
                       const isRevoked = Boolean(sess.revokedAt);
                       const isExpired = new Date(sess.expiresAt).getTime() < Date.now();
                       return (

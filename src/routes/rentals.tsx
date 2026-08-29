@@ -313,67 +313,67 @@ function RentalsPage() {
             </div>
           </div>
         )}
-      >
+      topContent={
+            <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+              <div className="rounded-xl border border-border/80 bg-card p-4 sm:p-5 shadow-soft transition-all hover:border-primary/40">
+                <div className="flex items-center justify-between">
+                  <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                    Total Bookings
+                  </p>
+                  <div className="grid size-8 place-items-center rounded-lg bg-primary/10 text-primary">
+                    <KeyRound className="size-4" />
+                  </div>
+                </div>
+                <p className="mt-2 text-xl sm:text-2xl font-black text-foreground">
+                  {metrics.totalCount}
+                </p>
+              </div>
+
+              <div className="rounded-xl border border-border/80 bg-card p-4 sm:p-5 shadow-soft transition-all hover:border-emerald-500/40">
+                <div className="flex items-center justify-between">
+                  <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                    Active Rentals
+                  </p>
+                  <div className="grid size-8 place-items-center rounded-lg bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">
+                    <Package className="size-4" />
+                  </div>
+                </div>
+                <p className="mt-2 text-xl sm:text-2xl font-black text-emerald-600 dark:text-emerald-400">
+                  {metrics.activeCount}
+                </p>
+              </div>
+
+              <div className="rounded-xl border border-border/80 bg-card p-4 sm:p-5 shadow-soft transition-all hover:border-blue-500/40">
+                <div className="flex items-center justify-between">
+                  <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                    Daily Rental Revenue
+                  </p>
+                  <div className="grid size-8 place-items-center rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400">
+                    <DollarSign className="size-4" />
+                  </div>
+                </div>
+                <p className="mt-2 text-xl sm:text-2xl font-black text-blue-600 dark:text-blue-400">
+                  {formatCurrency(metrics.totalDailyRevenue)}/day
+                </p>
+              </div>
+
+              <div className="rounded-xl border border-border/80 bg-card p-4 sm:p-5 shadow-soft transition-all hover:border-amber-500/40">
+                <div className="flex items-center justify-between">
+                  <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                    Deposits Held
+                  </p>
+                  <div className="grid size-8 place-items-center rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400">
+                    <ShieldCheck className="size-4" />
+                  </div>
+                </div>
+                <p className="mt-2 text-xl sm:text-2xl font-black text-amber-600 dark:text-amber-400">
+                  {formatCurrency(metrics.totalDeposits)}
+                </p>
+              </div>
+            </div>
+          }
+        >
         <div className="space-y-6">
-          {/* Top KPI Cards */}
-          <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
-            <div className="rounded-xl border border-border/80 bg-card p-4 sm:p-5 shadow-soft transition-all hover:border-primary/40">
-              <div className="flex items-center justify-between">
-                <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                  Total Bookings
-                </p>
-                <div className="grid size-8 place-items-center rounded-lg bg-primary/10 text-primary">
-                  <KeyRound className="size-4" />
-                </div>
-              </div>
-              <p className="mt-2 text-xl sm:text-2xl font-black text-foreground">
-                {metrics.totalCount}
-              </p>
-            </div>
-
-            <div className="rounded-xl border border-border/80 bg-card p-4 sm:p-5 shadow-soft transition-all hover:border-emerald-500/40">
-              <div className="flex items-center justify-between">
-                <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                  Active Rentals
-                </p>
-                <div className="grid size-8 place-items-center rounded-lg bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">
-                  <Package className="size-4" />
-                </div>
-              </div>
-              <p className="mt-2 text-xl sm:text-2xl font-black text-emerald-600 dark:text-emerald-400">
-                {metrics.activeCount}
-              </p>
-            </div>
-
-            <div className="rounded-xl border border-border/80 bg-card p-4 sm:p-5 shadow-soft transition-all hover:border-blue-500/40">
-              <div className="flex items-center justify-between">
-                <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                  Daily Rental Revenue
-                </p>
-                <div className="grid size-8 place-items-center rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400">
-                  <DollarSign className="size-4" />
-                </div>
-              </div>
-              <p className="mt-2 text-xl sm:text-2xl font-black text-blue-600 dark:text-blue-400">
-                {formatCurrency(metrics.totalDailyRevenue)}/day
-              </p>
-            </div>
-
-            <div className="rounded-xl border border-border/80 bg-card p-4 sm:p-5 shadow-soft transition-all hover:border-amber-500/40">
-              <div className="flex items-center justify-between">
-                <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                  Deposits Held
-                </p>
-                <div className="grid size-8 place-items-center rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400">
-                  <ShieldCheck className="size-4" />
-                </div>
-              </div>
-              <p className="mt-2 text-xl sm:text-2xl font-black text-amber-600 dark:text-amber-400">
-                {formatCurrency(metrics.totalDeposits)}
-              </p>
-            </div>
-          </div>
-
           {/* Table Container */}
           <div className="rounded-xl border border-border bg-card shadow-soft overflow-hidden">
             {isLoading ? (

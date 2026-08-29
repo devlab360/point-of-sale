@@ -191,14 +191,7 @@ function PurchasesPage() {
             </div>
           </div>
         )}
-      >
-        {isPurchasesLoading ? (
-          <TableSkeleton columns={7} rows={6} showHeaderAction={false} showFilters={false} />
-        ) : isPurchasesError ? (
-          <ErrorState onRetry={refetchPurchases} />
-        ) : (
-          <div className="space-y-4">
-            {/* KPI Metric Summary Cards */}
+      topContent={
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
               <div className="rounded-xl border border-border/80 bg-card p-4 shadow-soft flex flex-col gap-1 card-interactive">
                 <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
@@ -236,7 +229,14 @@ function PurchasesPage() {
                 </span>
               </div>
             </div>
-
+          }
+        >
+        {isPurchasesLoading ? (
+          <TableSkeleton columns={7} rows={6} showHeaderAction={false} showFilters={false} />
+        ) : isPurchasesError ? (
+          <ErrorState onRetry={refetchPurchases} />
+        ) : (
+          <div className="space-y-4">
             <div className="overflow-hidden rounded-xl border border-border/80 bg-card shadow-soft">
               {/* Desktop Table View */}
               <div className="table-desktop overflow-x-auto">

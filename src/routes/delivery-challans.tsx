@@ -449,34 +449,34 @@ function DeliveryChallansPage() {
             </div>
           </div>
         )}
-      >
+      topContent={
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+              <div className="rounded-xl border border-border/80 bg-card p-3 shadow-2xs">
+                <div className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Total Challans</div>
+                <div className="mt-1 text-xl sm:text-2xl font-black text-foreground">{rawChallans.length}</div>
+              </div>
+              <div className="rounded-xl border border-border/80 bg-card p-3 shadow-2xs">
+                <div className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Invoiced</div>
+                <div className="mt-1 text-xl sm:text-2xl font-black text-success">
+                  {rawChallans.filter((c) => c.status === "invoiced").length}
+                </div>
+              </div>
+              <div className="rounded-xl border border-border/80 bg-card p-3 shadow-2xs">
+                <div className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Dispatched</div>
+                <div className="mt-1 text-xl sm:text-2xl font-black text-primary">
+                  {rawChallans.filter((c) => c.status === "dispatched" || c.status === "delivered").length}
+                </div>
+              </div>
+              <div className="rounded-xl border border-border/80 bg-card p-3 shadow-2xs">
+                <div className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Pending Conversion</div>
+                <div className="mt-1 text-xl sm:text-2xl font-black text-amber-500">
+                  {rawChallans.filter((c) => c.status !== "invoiced").length}
+                </div>
+              </div>
+            </div>
+          }
+        >
         <div className="space-y-4">
-          {/* Top Summary Metrics */}
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-            <div className="rounded-xl border border-border/80 bg-card p-3 shadow-2xs">
-              <div className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Total Challans</div>
-              <div className="mt-1 text-xl sm:text-2xl font-black text-foreground">{rawChallans.length}</div>
-            </div>
-            <div className="rounded-xl border border-border/80 bg-card p-3 shadow-2xs">
-              <div className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Invoiced</div>
-              <div className="mt-1 text-xl sm:text-2xl font-black text-success">
-                {rawChallans.filter((c) => c.status === "invoiced").length}
-              </div>
-            </div>
-            <div className="rounded-xl border border-border/80 bg-card p-3 shadow-2xs">
-              <div className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Dispatched</div>
-              <div className="mt-1 text-xl sm:text-2xl font-black text-primary">
-                {rawChallans.filter((c) => c.status === "dispatched" || c.status === "delivered").length}
-              </div>
-            </div>
-            <div className="rounded-xl border border-border/80 bg-card p-3 shadow-2xs">
-              <div className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Pending Conversion</div>
-              <div className="mt-1 text-xl sm:text-2xl font-black text-amber-500">
-                {rawChallans.filter((c) => c.status !== "invoiced").length}
-              </div>
-            </div>
-          </div>
-
           <div className="overflow-hidden rounded-xl border border-border/80 bg-card shadow-soft">
             {/* Desktop Table View */}
             <div className="table-desktop overflow-x-auto">

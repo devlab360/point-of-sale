@@ -296,47 +296,47 @@ function PurchaseReturnsPage() {
             </div>
           </div>
         )}
-      >
+      topContent={
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
+              <div className="rounded-xl border border-border/80 bg-card p-4 shadow-soft flex flex-col gap-1 card-interactive">
+                <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
+                  Total Returns
+                </span>
+                <span className="text-xl sm:text-2xl font-black text-foreground">
+                  {metrics.totalReturns}
+                </span>
+              </div>
+
+              <div className="rounded-xl border border-border/80 bg-card p-4 shadow-soft flex flex-col gap-1 card-interactive">
+                <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
+                  Returned Value
+                </span>
+                <span className="text-xl sm:text-2xl font-black text-info">
+                  {formatCurrency(metrics.totalValue)}
+                </span>
+              </div>
+
+              <div className="rounded-xl border border-border/80 bg-card p-4 shadow-soft flex flex-col gap-1 card-interactive">
+                <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
+                  Stock Restored
+                </span>
+                <span className="text-xl sm:text-2xl font-black text-success">
+                  {metrics.processedCount}
+                </span>
+              </div>
+
+              <div className="rounded-xl border border-border/80 bg-card p-4 shadow-soft flex flex-col gap-1 card-interactive">
+                <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
+                  Pending Adjustments
+                </span>
+                <span className="text-xl sm:text-2xl font-black text-warning">
+                  {metrics.pendingCount}
+                </span>
+              </div>
+            </div>
+          }
+        >
         <div className="space-y-4">
-          {/* Top KPI Metrics */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
-            <div className="rounded-xl border border-border/80 bg-card p-4 shadow-soft flex flex-col gap-1 card-interactive">
-              <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
-                Total Returns
-              </span>
-              <span className="text-xl sm:text-2xl font-black text-foreground">
-                {metrics.totalReturns}
-              </span>
-            </div>
-
-            <div className="rounded-xl border border-border/80 bg-card p-4 shadow-soft flex flex-col gap-1 card-interactive">
-              <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
-                Returned Value
-              </span>
-              <span className="text-xl sm:text-2xl font-black text-info">
-                {formatCurrency(metrics.totalValue)}
-              </span>
-            </div>
-
-            <div className="rounded-xl border border-border/80 bg-card p-4 shadow-soft flex flex-col gap-1 card-interactive">
-              <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
-                Stock Restored
-              </span>
-              <span className="text-xl sm:text-2xl font-black text-success">
-                {metrics.processedCount}
-              </span>
-            </div>
-
-            <div className="rounded-xl border border-border/80 bg-card p-4 shadow-soft flex flex-col gap-1 card-interactive">
-              <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
-                Pending Adjustments
-              </span>
-              <span className="text-xl sm:text-2xl font-black text-warning">
-                {metrics.pendingCount}
-              </span>
-            </div>
-          </div>
-
           <div className="overflow-hidden rounded-xl border border-border/80 bg-card shadow-soft">
             <div className="table-desktop overflow-x-auto">
               <Table className="min-w-[750px]">

@@ -179,67 +179,67 @@ function TablesPage() {
             </div>
           </div>
         )}
-      >
+      topContent={
+            <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+              <div className="rounded-xl border border-border/80 bg-card p-4 sm:p-5 shadow-soft transition-all hover:border-primary/40">
+                <div className="flex items-center justify-between">
+                  <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                    Total Tables
+                  </p>
+                  <div className="grid size-8 place-items-center rounded-lg bg-primary/10 text-primary">
+                    <Utensils className="size-4" />
+                  </div>
+                </div>
+                <p className="mt-2 text-xl sm:text-2xl font-black text-foreground">
+                  {metrics.total} <span className="text-xs font-normal text-muted-foreground">({metrics.totalCapacity} seats)</span>
+                </p>
+              </div>
+
+              <div className="rounded-xl border border-border/80 bg-card p-4 sm:p-5 shadow-soft transition-all hover:border-success/40">
+                <div className="flex items-center justify-between">
+                  <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                    Available (Free)
+                  </p>
+                  <div className="grid size-8 place-items-center rounded-lg bg-success/15 text-success">
+                    <CheckCircle2 className="size-4" />
+                  </div>
+                </div>
+                <p className="mt-2 text-xl sm:text-2xl font-black text-success">
+                  {metrics.available}
+                </p>
+              </div>
+
+              <div className="rounded-xl border border-border/80 bg-card p-4 sm:p-5 shadow-soft transition-all hover:border-rose-500/40">
+                <div className="flex items-center justify-between">
+                  <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                    Occupied (Dining)
+                  </p>
+                  <div className="grid size-8 place-items-center rounded-lg bg-rose-500/10 text-rose-600 dark:text-rose-400">
+                    <Users className="size-4" />
+                  </div>
+                </div>
+                <p className="mt-2 text-xl sm:text-2xl font-black text-rose-600 dark:text-rose-400">
+                  {metrics.occupied}
+                </p>
+              </div>
+
+              <div className="rounded-xl border border-border/80 bg-card p-4 sm:p-5 shadow-soft transition-all hover:border-amber-500/40">
+                <div className="flex items-center justify-between">
+                  <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                    Reserved
+                  </p>
+                  <div className="grid size-8 place-items-center rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400">
+                    <Clock className="size-4" />
+                  </div>
+                </div>
+                <p className="mt-2 text-xl sm:text-2xl font-black text-amber-600 dark:text-amber-400">
+                  {metrics.reserved}
+                </p>
+              </div>
+            </div>
+          }
+        >
         <div className="space-y-6">
-          {/* Top KPI Cards */}
-          <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
-            <div className="rounded-xl border border-border/80 bg-card p-4 sm:p-5 shadow-soft transition-all hover:border-primary/40">
-              <div className="flex items-center justify-between">
-                <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                  Total Tables
-                </p>
-                <div className="grid size-8 place-items-center rounded-lg bg-primary/10 text-primary">
-                  <Utensils className="size-4" />
-                </div>
-              </div>
-              <p className="mt-2 text-xl sm:text-2xl font-black text-foreground">
-                {metrics.total} <span className="text-xs font-normal text-muted-foreground">({metrics.totalCapacity} seats)</span>
-              </p>
-            </div>
-
-            <div className="rounded-xl border border-border/80 bg-card p-4 sm:p-5 shadow-soft transition-all hover:border-success/40">
-              <div className="flex items-center justify-between">
-                <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                  Available (Free)
-                </p>
-                <div className="grid size-8 place-items-center rounded-lg bg-success/15 text-success">
-                  <CheckCircle2 className="size-4" />
-                </div>
-              </div>
-              <p className="mt-2 text-xl sm:text-2xl font-black text-success">
-                {metrics.available}
-              </p>
-            </div>
-
-            <div className="rounded-xl border border-border/80 bg-card p-4 sm:p-5 shadow-soft transition-all hover:border-rose-500/40">
-              <div className="flex items-center justify-between">
-                <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                  Occupied (Dining)
-                </p>
-                <div className="grid size-8 place-items-center rounded-lg bg-rose-500/10 text-rose-600 dark:text-rose-400">
-                  <Users className="size-4" />
-                </div>
-              </div>
-              <p className="mt-2 text-xl sm:text-2xl font-black text-rose-600 dark:text-rose-400">
-                {metrics.occupied}
-              </p>
-            </div>
-
-            <div className="rounded-xl border border-border/80 bg-card p-4 sm:p-5 shadow-soft transition-all hover:border-amber-500/40">
-              <div className="flex items-center justify-between">
-                <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                  Reserved
-                </p>
-                <div className="grid size-8 place-items-center rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400">
-                  <Clock className="size-4" />
-                </div>
-              </div>
-              <p className="mt-2 text-xl sm:text-2xl font-black text-amber-600 dark:text-amber-400">
-                {metrics.reserved}
-              </p>
-            </div>
-          </div>
-
           {/* Tables Grid Layout */}
           {isLoading ? (
             <CardGridSkeleton cards={8} columns="grid-cols-1 sm:grid-cols-2 lg:grid-cols-4" />
