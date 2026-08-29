@@ -478,6 +478,12 @@ input[type="number"] {
   -moz-appearance: textfield;
 }
 
+/* POS Print layouts: hidden on screen, shown during print */
+.pos-print-only,
+.pos-print-only-flex {
+  display: none !important;
+}
+
 /* ── Print Styles ── */
 @media print {
   /* Hide the app shell (sidebar, header, bottom nav, etc.) */
@@ -524,31 +530,22 @@ input[type="number"] {
     display: none !important;
   }
 
-  /* Show print layout: thermal (print:flex) */
-  .hidden.print\:flex {
-    display: flex !important;
-    visibility: visible !important;
-    position: fixed !important;
-    inset: 0 !important;
-    z-index: 9999 !important;
-    background: white !important;
-    color: black !important;
-  }
-
-  /* Show print layout: A4 (print:block) */
-  .hidden.print\:block {
+  /* === POS PRINT LAYOUTS === */
+  /* Show A4 print layout during print */
+  .pos-print-only {
     display: block !important;
     visibility: visible !important;
-    position: fixed !important;
-    inset: 0 !important;
-    z-index: 9999 !important;
-    background: white !important;
-    color: black !important;
+  }
+
+  /* Show Thermal print layout during print */
+  .pos-print-only-flex {
+    display: flex !important;
+    visibility: visible !important;
   }
 
   /* Ensure all children inside print layouts are visible */
-  .hidden.print\:flex *,
-  .hidden.print\:block * {
+  .pos-print-only *,
+  .pos-print-only-flex * {
     visibility: visible !important;
     color-adjust: exact !important;
     -webkit-print-color-adjust: exact !important;

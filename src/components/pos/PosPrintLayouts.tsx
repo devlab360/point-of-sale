@@ -32,10 +32,11 @@ export function PosPrintLayouts({ state, preview = false }: { state: any; previe
     <>
       {printFormat === "thermal" && (
         <div
+          data-pos-print="thermal"
           className={
             preview
               ? "flex justify-center items-start bg-white text-black text-[12px] font-mono leading-tight border shadow-lg max-h-[600px] overflow-auto scale-90 origin-top"
-              : "hidden print:flex justify-center items-start fixed inset-0 z-[100] bg-white text-black text-[12px] font-mono leading-tight"
+              : "pos-print-only-flex justify-center items-start fixed inset-0 z-[100] bg-white text-black text-[12px] font-mono leading-tight"
           }
         >
           <div className="w-[80mm] p-3 rounded-3xl shrink-0">
@@ -354,8 +355,9 @@ export function PosPrintLayouts({ state, preview = false }: { state: any; previe
 
       {printFormat === "a4" && (
         <div
+          data-pos-print="a4"
           className={`${
-            preview ? "block relative w-full h-full" : "hidden print:block fixed inset-0 z-[100]"
+            preview ? "block relative w-full h-full" : "pos-print-only fixed inset-0 z-[100]"
           } bg-white text-black font-sans text-sm`}
         >
           <div

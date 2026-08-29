@@ -63,6 +63,7 @@ import { createProductFn } from "@/api/products";
 import { createServiceItemFn } from "@/api/services";
 import { deleteHeldInvoiceFn, splitHeldInvoiceFn } from "@/api/pos";
 import { toast } from "sonner";
+import { printThermalReceipt, printA4Invoice } from "@/lib/pos-print";
 import { SplitCheckModal } from "./SplitCheckModal";
 import { useQuery } from "@tanstack/react-query";
 import { useDebounce } from "@/hooks/useDebounce";
@@ -884,32 +885,28 @@ export function PosDialogs({
           <div className="flex flex-col gap-3 py-4">
             <Button
               onClick={() => {
-                setPrintFormat("thermal");
+                const data = saleComplete;
+                const s = settings;
+                const sym = currencySymbol;
                 setSaleComplete(null);
                 setTimeout(() => {
-                  requestAnimationFrame(() => {
-                    requestAnimationFrame(() => {
-                      window.print();
-                      setTimeout(() => setPrintData(null), 1000);
-                    });
-                  });
-                }, 100);
+                  printThermalReceipt(data, s, sym);
+                  setPrintData(null);
+                }, 50);
               }}
             >
               <Printer className="mr-2 size-4" /> Thermal
             </Button>
             <Button
               onClick={() => {
-                setPrintFormat("a4");
+                const data = saleComplete;
+                const s = settings;
+                const sym = currencySymbol;
                 setSaleComplete(null);
                 setTimeout(() => {
-                  requestAnimationFrame(() => {
-                    requestAnimationFrame(() => {
-                      window.print();
-                      setTimeout(() => setPrintData(null), 1000);
-                    });
-                  });
-                }, 100);
+                  printA4Invoice(data, s, sym);
+                  setPrintData(null);
+                }, 50);
               }}
               variant="outline"
             >
