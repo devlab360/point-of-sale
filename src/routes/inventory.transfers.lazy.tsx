@@ -60,7 +60,7 @@ function TransfersPage() {
   const orgId = PersistStore.getOrgId() || "default";
   const queryClient = useQueryClient();
   const { formatAppDate } = useAppFormatter();
-  const { formatCurrency } = useCurrency();
+  const { formatCurrency, currencySymbol } = useCurrency();
 
   const { data: productsData } = useQuery({
     queryKey: ["products", orgId],
@@ -488,7 +488,7 @@ function TransfersPage() {
 
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1.5">
-                    <Label htmlFor="t-total" className="text-xs font-semibold">Transfer Valuation ($)</Label>
+                    <Label htmlFor="t-total" className="text-xs font-semibold">Transfer Valuation ({currencySymbol})</Label>
                     <Input
                       id="t-total"
                       type="number"
@@ -498,7 +498,7 @@ function TransfersPage() {
                     />
                   </div>
                   <div className="space-y-1.5">
-                    <Label htmlFor="t-paid" className="text-xs font-semibold">Settled Amount ($)</Label>
+                    <Label htmlFor="t-paid" className="text-xs font-semibold">Settled Amount ({currencySymbol})</Label>
                     <Input
                       id="t-paid"
                       type="number"

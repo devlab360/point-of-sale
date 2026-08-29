@@ -92,7 +92,7 @@ export const Route = createFileRoute("/suppliers")({
 
 function SuppliersPage() {
   const { formatDate } = usePreferences();
-  const { formatCurrency } = useCurrency();
+  const { formatCurrency, currencySymbol } = useCurrency();
   const orgId = PersistStore.getOrgId() || "default";
   const queryClient = useQueryClient();
 
@@ -787,7 +787,7 @@ function SuppliersPage() {
                             Khata Balance
                           </span>
                           <span className={`text-sm font-bold ${hasDue ? "text-destructive" : "text-success"}`}>
-                            {hasDue ? `Due: ${formatCurrency(Number(s.balance))}` : "Settled ($0.00)"}
+                            {hasDue ? `Due: ${formatCurrency(Number(s.balance))}` : `Settled (${currencySymbol}0.00)`}
                           </span>
                         </div>
                         {s.paymentTerms && (
@@ -1093,7 +1093,7 @@ function SuppliersPage() {
                       </div>
 
                       <div className="space-y-1.5">
-                        <Label htmlFor="creditLimit" className="text-xs font-semibold">Credit Limit ($)</Label>
+                        <Label htmlFor="creditLimit" className="text-xs font-semibold">Credit Limit ({currencySymbol})</Label>
                         <Input
                           id="creditLimit"
                           type="number"
@@ -1105,7 +1105,7 @@ function SuppliersPage() {
                       </div>
 
                       <div className="space-y-1.5">
-                        <Label htmlFor="openingBalance" className="text-xs font-semibold">Opening Due Balance ($)</Label>
+                        <Label htmlFor="openingBalance" className="text-xs font-semibold">Opening Due Balance ({currencySymbol})</Label>
                         <Input
                           id="openingBalance"
                           type="number"

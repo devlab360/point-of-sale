@@ -237,7 +237,7 @@ function LoyaltyPage() {
     queryFn: async () => ((await getSettingsFn({ data: {} })) as any)?.data || {},
   });
 
-  const currencySymbol = settingsData?.currencySymbol || "₹";
+  const currencySymbol = settingsData?.currencySymbol || "$";
 
   const activeTiers: LoyaltyTier[] = useMemo(() => {
     if (

@@ -87,7 +87,7 @@ function generateRandomPromoCode(prefix = "SAVE") {
 
 function CouponsPage() {
   const { formatDate } = usePreferences();
-  const { formatCurrency } = useCurrency();
+  const { formatCurrency, currencySymbol } = useCurrency();
   const orgId = PersistStore.getOrgId() || "default";
   const queryClient = useQueryClient();
 
@@ -316,7 +316,7 @@ function CouponsPage() {
               <SelectContent>
                 <SelectItem value="all">All Types</SelectItem>
                 <SelectItem value="percentage">Percentage (%)</SelectItem>
-                <SelectItem value="fixed">Fixed Flat ($)</SelectItem>
+                <SelectItem value="fixed">Fixed Flat ({currencySymbol})</SelectItem>
               </SelectContent>
             </Select>
 
@@ -671,14 +671,14 @@ function CouponsPage() {
                           : "border-border/60 hover:bg-muted/50 text-muted-foreground"
                       }`}
                     >
-                      Fixed Amount ($ OFF)
+                      Fixed Amount ({currencySymbol} OFF)
                     </button>
                   </div>
                 </div>
 
                 <div className="space-y-1.5">
                   <Label htmlFor="coupon-value" className="text-xs font-semibold">
-                    Discount Value {type === "percentage" ? "(%)" : "($)"} *
+                    Discount Value {type === "percentage" ? "(%)" : `(${currencySymbol})`} *
                   </Label>
                   <Input
                     id="coupon-value"
@@ -699,7 +699,7 @@ function CouponsPage() {
 
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1.5">
-                    <Label htmlFor="coupon-min" className="text-xs font-semibold">Minimum Order ($)</Label>
+                    <Label htmlFor="coupon-min" className="text-xs font-semibold">Minimum Order ({currencySymbol})</Label>
                     <Input
                       id="coupon-min"
                       type="number"

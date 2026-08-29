@@ -1657,13 +1657,13 @@ function SettingsPage() {
                       <div className="flex items-center gap-2">
                         <Sparkles className="size-4 text-primary" />
                         <span className="text-xs font-black text-primary uppercase tracking-wider">
-                          Tax Simulator Sample ($100 Item)
+                          Tax Simulator Sample ({settings.currencySymbol || "$"}100 Item)
                         </span>
                       </div>
                       <p className="text-xs text-muted-foreground font-medium">
                         {settings.pricesIncludeTax
-                          ? `Tax-Inclusive: Shelf Price $100.00 → Base: $${(100 / (1 + (Number(settings.standardRate) || 0) / 100)).toFixed(2)}, Tax (${settings.standardRate}%): $${(100 - 100 / (1 + (Number(settings.standardRate) || 0) / 100)).toFixed(2)}`
-                          : `Tax-Exclusive: Shelf Price $100.00 + Tax (${settings.standardRate}%): $${((100 * (Number(settings.standardRate) || 0)) / 100).toFixed(2)} → Total: $${(100 + (100 * (Number(settings.standardRate) || 0)) / 100).toFixed(2)}`}
+                          ? `Tax-Inclusive: Shelf Price ${settings.currencySymbol || "$"}100.00 → Base: ${settings.currencySymbol || "$"}${(100 / (1 + (Number(settings.standardRate) || 0) / 100)).toFixed(2)}, Tax (${settings.standardRate}%): ${settings.currencySymbol || "$"}${(100 - 100 / (1 + (Number(settings.standardRate) || 0) / 100)).toFixed(2)}`
+                          : `Tax-Exclusive: Shelf Price ${settings.currencySymbol || "$"}100.00 + Tax (${settings.standardRate}%): ${settings.currencySymbol || "$"}${((100 * (Number(settings.standardRate) || 0)) / 100).toFixed(2)} → Total: ${settings.currencySymbol || "$"}${(100 + (100 * (Number(settings.standardRate) || 0)) / 100).toFixed(2)}`}
                       </p>
                     </div>
                     <Badge variant="outline" className="bg-card border-primary/40 text-primary text-xs font-black shrink-0 py-1 px-3">

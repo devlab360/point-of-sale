@@ -110,7 +110,7 @@ function getStatusBadge(status: string) {
 
 function RepairsPage() {
   const { formatDate } = usePreferences();
-  const { formatCurrency } = useCurrency();
+  const { formatCurrency, currencySymbol } = useCurrency();
   const orgId = PersistStore.getOrgId() || "default";
   const queryClient = useQueryClient();
 
@@ -324,9 +324,9 @@ function RepairsPage() {
             <div>${ticket.problemDescription}</div>
           </div>
           <div class="section">
-            <div class="row"><span class="bold">Estimated Cost:</span> <span>${ticket.estimatedCost}</span></div>
-            <div class="row"><span class="bold">Advance Paid:</span> <span>${ticket.advancePaid}</span></div>
-            <div class="row"><span class="bold">Balance Due:</span> <span>${Math.max(0, (ticket.estimatedCost || 0) - (ticket.advancePaid || 0))}</span></div>
+            <div class="row"><span class="bold">Estimated Cost:</span> <span>${currencySymbol}${Number(ticket.estimatedCost || 0).toFixed(2)}</span></div>
+            <div class="row"><span class="bold">Advance Paid:</span> <span>${currencySymbol}${Number(ticket.advancePaid || 0).toFixed(2)}</span></div>
+            <div class="row"><span class="bold">Balance Due:</span> <span>${currencySymbol}${Math.max(0, (Number(ticket.estimatedCost) || 0) - (Number(ticket.advancePaid) || 0)).toFixed(2)}</span></div>
           </div>
           <div class="footer">
             Terms: Backup data before repair. 30 days warranty on replaced parts. Please bring this receipt for device pickup.
@@ -766,7 +766,7 @@ function RepairsPage() {
 
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1.5">
-                    <Label htmlFor="rep-est" className="text-xs font-semibold">Estimated Repair Cost ($)</Label>
+                    <Label htmlFor="rep-est" className="text-xs font-semibold">Estimated Repair Cost ({currencySymbol})</Label>
                     <Input
                       id="rep-est"
                       type="number"
@@ -778,7 +778,7 @@ function RepairsPage() {
                   </div>
 
                   <div className="space-y-1.5">
-                    <Label htmlFor="rep-adv" className="text-xs font-semibold">Advance Deposit Paid ($)</Label>
+                    <Label htmlFor="rep-adv" className="text-xs font-semibold">Advance Deposit Paid ({currencySymbol})</Label>
                     <Input
                       id="rep-adv"
                       type="number"

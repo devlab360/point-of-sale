@@ -84,7 +84,7 @@ export const Route = createFileRoute("/subscriptions")({
 
 function SubscriptionsPage() {
   const { formatDate } = usePreferences();
-  const { formatCurrency } = useCurrency();
+  const { formatCurrency, currencySymbol } = useCurrency();
   const orgId = PersistStore.getOrgId() || "default";
   const queryClient = useQueryClient();
 
@@ -640,7 +640,7 @@ function SubscriptionsPage() {
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1.5">
                     <Label htmlFor="sub-amt" className="text-xs font-semibold">
-                      Billing Amount ($) <span className="text-destructive">*</span>
+                      Billing Amount ({currencySymbol}) <span className="text-destructive">*</span>
                     </Label>
                     <Input
                       id="sub-amt"

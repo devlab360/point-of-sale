@@ -24,7 +24,8 @@ function BankDetailsDisplay({ data, className = "" }: { data: string; className?
 
 export function PosPrintLayouts({ state, preview = false }: { state: any; preview?: boolean }) {
   const { printData, printFormat, settings } = state;
-  const { currencySymbol } = useCurrency();
+  const { currencySymbol: hookCurrencySymbol } = useCurrency();
+  const currencySymbol = settings?.currencySymbol || hookCurrencySymbol || "$";
 
   if (!printData) return null;
 

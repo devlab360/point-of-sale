@@ -72,7 +72,7 @@ export function AppHeader() {
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
-  const { formatCurrency } = useCurrency();
+  const { formatCurrency, currencySymbol } = useCurrency();
   const navigate = useNavigate();
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
 
@@ -235,7 +235,7 @@ export function AppHeader() {
 
     // In a real app, this would open a modal to count cash. For now, auto-close.
     const actualCash = window.prompt(
-      `Closing Register.\nExpected Cash: $${Number(activeShift.expectedCash || 0).toFixed(2)}\nEnter actual cash in drawer:`,
+      `Closing Register.\nExpected Cash: ${currencySymbol}${Number(activeShift.expectedCash || 0).toFixed(2)}\nEnter actual cash in drawer:`,
       activeShift.expectedCash.toString(),
     );
 

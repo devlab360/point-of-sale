@@ -799,7 +799,7 @@ function CustomersPage() {
                 </div>
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="creditLimit">Credit Limit ({useCurrency().currencySymbol})</Label>
+                <Label htmlFor="creditLimit">Credit Limit ({currencySymbol})</Label>
                 <Input
                   id="creditLimit"
                   name="creditLimit"

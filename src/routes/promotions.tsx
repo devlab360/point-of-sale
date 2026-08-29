@@ -82,7 +82,7 @@ export const Route = createFileRoute("/promotions")({
 
 function PromotionsPage() {
   const { formatDate } = usePreferences();
-  const { formatCurrency } = useCurrency();
+  const { formatCurrency, currencySymbol } = useCurrency();
   const orgId = PersistStore.getOrgId() || "default";
   const queryClient = useQueryClient();
 
@@ -326,7 +326,7 @@ function PromotionsPage() {
               <SelectContent>
                 <SelectItem value="all">All Scopes</SelectItem>
                 <SelectItem value="percentage">Percentage (%)</SelectItem>
-                <SelectItem value="fixed">Fixed Flat ($)</SelectItem>
+                <SelectItem value="fixed">Fixed Flat ({currencySymbol})</SelectItem>
                 <SelectItem value="bogo">BOGO Offer</SelectItem>
                 <SelectItem value="storewide">Storewide</SelectItem>
               </SelectContent>
@@ -630,7 +630,7 @@ function PromotionsPage() {
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="percentage">Percentage (%)</SelectItem>
-                        <SelectItem value="fixed">Fixed Amount ($)</SelectItem>
+                        <SelectItem value="fixed">Fixed Amount ({currencySymbol})</SelectItem>
                         <SelectItem value="bogo">Buy 1 Get 1 (BOGO)</SelectItem>
                         <SelectItem value="storewide">Storewide Sale</SelectItem>
                       </SelectContent>
@@ -639,7 +639,7 @@ function PromotionsPage() {
 
                   <div className="space-y-1.5">
                     <Label htmlFor="promo-value" className="text-xs font-semibold">
-                      Discount Value {formType === "percentage" ? "(%)" : "($)"} *
+                      Discount Value {formType === "percentage" ? "(%)" : `(${currencySymbol})`} *
                     </Label>
                     <Input
                       id="promo-value"
@@ -669,7 +669,7 @@ function PromotionsPage() {
                       setFormConditions(e.target.value);
                       clearPromoError("conditions");
                     }}
-                    placeholder="e.g. Min spend $50 across all clothing items"
+                    placeholder={`e.g. Min spend ${currencySymbol}50 across all clothing items`}
                     className={promoErrors.conditions ? "border-destructive" : ""}
                   />
                   <FieldError message={promoErrors.conditions} />

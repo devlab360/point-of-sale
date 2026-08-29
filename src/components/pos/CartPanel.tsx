@@ -517,7 +517,7 @@ export function CartPanel({
                           : "bg-background border-border/80 text-foreground hover:bg-muted/50",
                       )}
                     >
-                      {state.currencySymbol || "₹"}
+                      {state.currencySymbol || "$"}
                       {note}
                     </button>
                   ))}

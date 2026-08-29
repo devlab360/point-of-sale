@@ -59,23 +59,23 @@ export function useAppFormatter() {
    */
   const formatAppCurrency = (amount: number | string | undefined | null) => {
     const val = Number(amount || 0);
-    const symbol = settings.currencySymbol || "₹";
+    const symbol = settings.currencySymbol || "$";
 
     // Check if symbol is actually a currency code for Intl
     if (symbol.length === 3 && symbol.toUpperCase() === symbol) {
       try {
-        return new Intl.NumberFormat("en-IN", {
+        return new Intl.NumberFormat(undefined, {
           style: "currency",
           currency: symbol,
           maximumFractionDigits: 2,
         }).format(val);
       } catch (e) {
-        return `${symbol} ${val.toLocaleString("en-IN", { maximumFractionDigits: 2 })}`;
+        return `${symbol} ${val.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
       }
     }
 
     // Otherwise fallback to symbol prefix
-    return `${symbol} ${val.toLocaleString("en-IN", { maximumFractionDigits: 2 })}`;
+    return `${symbol}${val.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   };
 
   return { formatAppDate, formatAppCurrency, timeZone, dateFormat };

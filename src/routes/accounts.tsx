@@ -74,7 +74,7 @@ export const Route = createFileRoute("/accounts")({
 
 function AccountsPage() {
   const { formatDateTime, formatDate } = usePreferences();
-  const { formatCurrency } = useCurrency();
+  const { formatCurrency, currencySymbol } = useCurrency();
   const orgId = PersistStore.getOrgId() || "default";
   const queryClient = useQueryClient();
 
@@ -966,7 +966,7 @@ function AccountsPage() {
                 <FieldError message={accErrors.name} />
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="balance">Opening Balance ({formatCurrency(0).slice(0, 1)})</Label>
+                <Label htmlFor="balance">Opening Balance ({currencySymbol})</Label>
                 <Input
                   id="balance"
                   name="balance"
