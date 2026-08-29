@@ -29,6 +29,7 @@ import { toast } from "sonner";
 import { useMutation } from "@tanstack/react-query";
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { printThermalReceipt } from "@/lib/pos-print";
 
 export function CartPanel({
   state,
@@ -713,8 +714,26 @@ export function CartPanel({
             size="sm"
             variant="outline"
             className="h-10 w-10 rounded-lg shrink-0 p-0"
-            aria-label="Print"
-            onClick={() => window.print()}
+            aria-label="Print Thermal Estimate"
+            disabled={lines.length === 0}
+            onClick={() => {
+              const currentPrintData = {
+                id: `EST-${Date.now().toString().slice(-6)}`,
+                date: state.formatDateTime(new Date()),
+                customer: activeCustomer.name,
+                customerObj: activeCustomer,
+                customerPhone: activeCustomer.phone,
+                lines,
+                subtotal,
+                discountAmt,
+                taxAmt: state.taxAmt,
+                total,
+                payment,
+                status: "estimate",
+              };
+              printThermalReceipt(currentPrintData, settings, state.currencySymbol);
+            }}
+            title="Print Current Bill / Estimate"
           >
             <Printer className="size-4" />
           </Button>

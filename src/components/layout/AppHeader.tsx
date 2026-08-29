@@ -252,13 +252,20 @@ export function AppHeader() {
         </SheetContent>
       </Sheet>
       {/* Mobile page title or Logo — shown on small screens where breadcrumbs are hidden */}
-      <div className="flex-1 md:hidden flex items-center overflow-hidden">
+      <div className="flex-1 md:hidden flex items-center overflow-hidden gap-2">
         {settings?.storeLogo ? (
           <img src={settings.storeLogo} alt="Store Logo" className="h-7 w-auto object-contain" />
         ) : (
-          <span className="truncate text-sm font-semibold text-foreground">
-            {crumbs[crumbs.length - 1]?.label || "Dashboard"}
-          </span>
+          <div className="flex items-center gap-1.5 min-w-0">
+            <span className="truncate text-sm font-black tracking-tight text-foreground">
+              {pathname === "/pos" ? (settings?.storeName || "POS Terminal") : (crumbs[crumbs.length - 1]?.label || "Dashboard")}
+            </span>
+            {pathname === "/pos" && (
+              <span className="rounded-full bg-primary/10 text-primary px-2 py-0.5 text-[9px] font-extrabold uppercase tracking-wider shrink-0">
+                Live Register
+              </span>
+            )}
+          </div>
         )}
       </div>
 
@@ -282,7 +289,7 @@ export function AppHeader() {
         </ol>
       </nav>
 
-      <div className="flex flex-1 items-center justify-end gap-2.5 md:flex-none">
+      <div className="flex flex-1 items-center justify-end gap-1 sm:gap-2.5 md:flex-none">
         <div
           onClick={() => setSearchOpen(true)}
           className="relative hidden md:block cursor-pointer shrink-1 min-w-0 group"
@@ -295,15 +302,17 @@ export function AppHeader() {
             <Command className="size-3" />K
           </kbd>
         </div>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="md:hidden rounded-xl"
-          onClick={() => setSearchOpen(true)}
-          title="Global Search"
-        >
-          <Search className="size-5" />
-        </Button>
+        {pathname !== "/pos" && (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="md:hidden rounded-xl"
+            onClick={() => setSearchOpen(true)}
+            title="Global Search"
+          >
+            <Search className="size-5" />
+          </Button>
+        )}
 
         <InstallAppButton />
         <SyncStatus />

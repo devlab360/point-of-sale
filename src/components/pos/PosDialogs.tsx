@@ -889,13 +889,11 @@ export function PosDialogs({
                 const s = settings;
                 const sym = currencySymbol;
                 setSaleComplete(null);
-                setTimeout(() => {
-                  printThermalReceipt(data, s, sym);
-                  setPrintData(null);
-                }, 50);
+                setPrintData(null);
+                printThermalReceipt(data, s, sym);
               }}
             >
-              <Printer className="mr-2 size-4" /> Thermal
+              <Printer className="mr-2 size-4" /> Thermal (80mm)
             </Button>
             <Button
               onClick={() => {
@@ -903,10 +901,8 @@ export function PosDialogs({
                 const s = settings;
                 const sym = currencySymbol;
                 setSaleComplete(null);
-                setTimeout(() => {
-                  printA4Invoice(data, s, sym);
-                  setPrintData(null);
-                }, 50);
+                setPrintData(null);
+                printA4Invoice(data, s, sym);
               }}
               variant="outline"
             >

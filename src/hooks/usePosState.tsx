@@ -260,6 +260,15 @@ export function usePosState() {
     ) => {
       const product = allProducts.find((p) => p.id === id);
       if (!product) return;
+
+      const isService = product.referenceType === "SERVICE";
+      const stock = Number(product.stock ?? 0);
+
+      if (!isService && stock <= 0) {
+        toast.error(`Insufficient stock for "${product.name}". Available: ${stock}`);
+        return;
+      }
+
       setCart((c) => {
         const modifiersStr = JSON.stringify(modifiers || []);
         const exists = c.find(
@@ -268,12 +277,13 @@ export function usePosState() {
             l.variantId === variantId &&
             JSON.stringify(l.modifiers || []) === modifiersStr,
         );
-        const isService = product.referenceType === "SERVICE";
 
         if (exists) {
           const newQty = exists.qty + 1;
-          if (!isService && newQty > product.stock) {
-            toast.error(`Only ${product.stock} in stock`);
+          if (!isService && newQty > stock) {
+            toast.error(
+              `Insufficient stock for "${product.name}". Available: ${stock}, Requested: ${newQty}`,
+            );
             return c;
           }
           return c.map((l) =>
@@ -283,10 +293,6 @@ export function usePosState() {
               ? { ...l, qty: newQty }
               : l,
           );
-        }
-        if (!isService && product.stock <= 0) {
-          toast.error(`${product.name} is out of stock`);
-          return c;
         }
         return [...c, { id, qty: 1, variantId, variantName, variantPrice, modifiers }];
       });
@@ -360,8 +366,11 @@ export function usePosState() {
       }
       const product = allProducts.find((p) => p.id === id);
       const isService = product?.referenceType === "SERVICE";
-      if (product && !isService && qty > product.stock) {
-        toast.error(`Only ${product.stock} available`);
+      const stock = Number(product?.stock ?? 0);
+      if (product && !isService && qty > stock) {
+        toast.error(
+          `Insufficient stock for "${product.name}". Available: ${stock}, Requested: ${qty}`,
+        );
         return;
       }
       setCart((c) =>

@@ -43,7 +43,7 @@ function parseBankDetails(data: any, isThermal = false): string {
           ${b.ifscCode ? `<tr><td style="color:#6b7280;padding:2px 8px 2px 0;width:80px;">IFSC Code:</td><td style="font-weight:600;padding:2px 0;color:#111827;">${esc(b.ifscCode)}</td></tr>` : ""}
         </table>
       `;
-    } catch (_) { }
+    } catch (_) {}
   }
   // Plain text fallback
   return `<div style="font-size:${isThermal ? "10px" : "12px"};white-space:pre-wrap;line-height:1.4;">${esc(str)}</div>`;
@@ -64,17 +64,32 @@ function openPrintPopup(html: string, width = 520) {
   win.document.open();
   win.document.write(html);
   win.document.close();
-  setTimeout(() => {
-    win.focus();
-    win.print();
-    setTimeout(() => {
+
+  let printed = false;
+  const triggerPrint = () => {
+    if (printed) return;
+    printed = true;
+    try {
+      win.focus();
+      win.print();
+    } catch (_) {}
+  };
+
+  try {
+    win.onafterprint = () => {
       try {
         win.close();
-      } catch (_) {
-        /* ignore */
-      }
-    }, 2000);
-  }, 700);
+      } catch (_) {}
+    };
+  } catch (_) {}
+
+  // Fast trigger immediately after render
+  if (win.document.readyState === "complete") {
+    setTimeout(triggerPrint, 30);
+  } else {
+    win.onload = triggerPrint;
+    setTimeout(triggerPrint, 60);
+  }
 }
 
 /* ══════════════════════════════════════════════════════════════
@@ -97,8 +112,8 @@ export function printThermalReceipt(
         printData.customerGstin ||
         printData.customerType === "wholesale" ||
         printData.customerType === "corporate"
-        ? "Tax Invoice"
-        : "Receipt";
+      ? "Tax Invoice"
+      : "Receipt";
 
   const paymentLabel =
     printData.payment === "split" && printData.splitPayments?.length
@@ -386,8 +401,8 @@ export function printA4Invoice(
         printData.customerGstin ||
         printData.customerType === "wholesale" ||
         printData.customerType === "corporate"
-        ? "Tax Invoice"
-        : "Invoice";
+      ? "Tax Invoice"
+      : "Invoice";
 
   const paymentLabel =
     printData.payment === "split" && printData.splitPayments?.length
@@ -418,8 +433,8 @@ export function printA4Invoice(
   /* Totals table row helper with fixed width alignment */
   const totalRow = (label: string, value: string, textStyle = "", labelStyle = "") =>
     `<tr>
-      <td style="padding:5px 0;color:#6b7280;font-size:13px;text-align:left;${labelStyle}">${label}</td>
-      <td style="padding:5px 0;text-align:right;font-weight:600;font-size:13px;${textStyle}">${value}</td>
+      <td style="padding:5px 0;color:#6b7280;font-size:13px;text-align:left;white-space:nowrap;${labelStyle}">${label}</td>
+      <td style="padding:5px 0;text-align:right;font-weight:600;font-size:13px;white-space:nowrap;${textStyle}">${value}</td>
     </tr>`;
 
   const bankDetailsHtml = parseBankDetails(printData.bankDetails, false);
@@ -432,12 +447,20 @@ export function printA4Invoice(
   <title>${esc(invoiceLabel)} – ${esc(printData.id)}</title>
   <style>
     *{box-sizing:border-box;margin:0;padding:0;}
-    body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;font-size:13px;background:#fff;color:#111827;line-height:1.4;}
+    body{
+      font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+      font-size:13px;
+      background:#fff;
+      color:#111827;
+      line-height:1.4;
+      -webkit-print-color-adjust:exact !important;
+      print-color-adjust:exact !important;
+    }
     .page{max-width:800px;margin:0 auto;padding:32px 36px;min-height:1120px;display:flex;flex-direction:column;}
     table{width:100%;border-collapse:collapse;}
     @media print{
-      @page{size:A4;margin:10mm 12mm;}
-      body{margin:0;}
+      @page{size:A4;margin:8mm 10mm;}
+      body{margin:0;background:#fff;}
       .page{max-width:100%;padding:0;min-height:auto;}
     }
   </style>
@@ -446,7 +469,7 @@ export function printA4Invoice(
 <div class="page">
 
   <!-- TOP BRANDING HEADER -->
-  <div style="background:#000;color:#fff;text-align:center;padding:10px 16px;letter-spacing:0.35em;font-size:12px;font-weight:800;text-transform:uppercase;margin-bottom:24px;border-radius:2px;">
+  <div style="background:#000;color:#fff;text-align:center;padding:9px 16px;letter-spacing:0.35em;font-size:12px;font-weight:800;text-transform:uppercase;margin-bottom:24px;border-radius:2px;">
     ${esc(invoiceLabel)}
   </div>
 
@@ -469,21 +492,21 @@ export function printA4Invoice(
       </div>
     </div>
 
-    <!-- Right: Invoice Meta (Clean 2-column key-value grid) -->
-    <div style="min-width:240px;flex-shrink:0;">
-      <table style="width:100%;border-collapse:collapse;font-size:13px;">
+    <!-- Right: Invoice Meta (Clean 2-column key-value table without text wrapping) -->
+    <div style="margin-left:auto;flex-shrink:0;">
+      <table style="width:auto;border-collapse:collapse;font-size:13px;margin-left:auto;">
         <tr>
-          <td style="color:#6b7280;padding:3px 8px 3px 0;text-align:right;width:50%;">Invoice No:</td>
-          <td style="font-weight:800;padding:3px 0;text-align:right;color:#000;font-size:14px;font-family:monospace;">${esc(printData.id)}</td>
+          <td style="color:#6b7280;padding:4px 20px 4px 0;text-align:left;white-space:nowrap;font-weight:500;">Invoice No:</td>
+          <td style="font-weight:800;padding:4px 0;text-align:right;color:#000;font-size:14px;font-family:monospace;white-space:nowrap;">${esc(printData.id)}</td>
         </tr>
         <tr>
-          <td style="color:#6b7280;padding:3px 8px 3px 0;text-align:right;">Date:</td>
-          <td style="font-weight:700;padding:3px 0;text-align:right;color:#111827;">${esc(printData.date)}</td>
+          <td style="color:#6b7280;padding:4px 20px 4px 0;text-align:left;white-space:nowrap;font-weight:500;">Date:</td>
+          <td style="font-weight:700;padding:4px 0;text-align:right;color:#111827;white-space:nowrap;">${esc(printData.date)}</td>
         </tr>
         ${printData.payment ? `
         <tr>
-          <td style="color:#6b7280;padding:3px 8px 3px 0;text-align:right;">Payment Mode:</td>
-          <td style="font-weight:700;padding:3px 0;text-align:right;text-transform:uppercase;color:#111827;">${paymentLabel}</td>
+          <td style="color:#6b7280;padding:4px 20px 4px 0;text-align:left;white-space:nowrap;font-weight:500;">Payment Mode:</td>
+          <td style="font-weight:700;padding:4px 0;text-align:right;text-transform:uppercase;color:#111827;white-space:nowrap;">${paymentLabel}</td>
         </tr>` : ""}
       </table>
     </div>
@@ -534,7 +557,7 @@ export function printA4Invoice(
           </div>
           <div>
             <div style="font-size:13px;font-weight:700;color:#111827;">UPI: ${esc(printData.upiId)}</div>
-            <div style="font-size:11px;color:#6b7280;margin-top:2px;">Scan with Google Pay, PhonePe, Paytm or any UPI app</div>
+            <div style="font-size:11px;color:#6b7280;margin-top:2px;">Scan with any UPI app</div>
             <div style="font-size:12px;font-weight:700;color:#000;margin-top:3px;">Amount: ${sym}${fmt(printData.total)}</div>
           </div>
         </div>
@@ -563,15 +586,15 @@ export function printA4Invoice(
         ${totalRow("Subtotal", `${sym}${fmt(printData.subtotal)}`)}
         ${printData.discountAmt > 0 ? totalRow("Discount", `-${sym}${fmt(printData.discountAmt)}`, "color:#16a34a;") : ""}
         ${settings?.enableGST
-      ? [
-        printData.cgstAmt > 0 ? totalRow("CGST", `${sym}${fmt(printData.cgstAmt)}`) : "",
-        printData.sgstAmt > 0 ? totalRow("SGST", `${sym}${fmt(printData.sgstAmt)}`) : "",
-        printData.igstAmt > 0 ? totalRow("IGST", `${sym}${fmt(printData.igstAmt)}`) : "",
-      ].join("")
-      : printData.taxAmt > 0
-        ? totalRow("Tax", `${sym}${fmt(printData.taxAmt)}`)
-        : ""
-    }
+          ? [
+            printData.cgstAmt > 0 ? totalRow("CGST", `${sym}${fmt(printData.cgstAmt)}`) : "",
+            printData.sgstAmt > 0 ? totalRow("SGST", `${sym}${fmt(printData.sgstAmt)}`) : "",
+            printData.igstAmt > 0 ? totalRow("IGST", `${sym}${fmt(printData.igstAmt)}`) : "",
+          ].join("")
+          : printData.taxAmt > 0
+            ? totalRow("Tax", `${sym}${fmt(printData.taxAmt)}`)
+            : ""
+        }
       </table>
 
       <!-- GRAND TOTAL HIGHLIGHT BOX -->
@@ -613,9 +636,9 @@ export function printA4Invoice(
       <!-- SIGNATURE SECTION -->
       <div style="margin-top:28px;padding-top:10px;text-align:center;">
         ${settings?.signatureUrl
-      ? `<img src="${esc(settings.signatureUrl)}" alt="Signature" style="max-height:48px;max-width:160px;object-fit:contain;display:block;margin:0 auto 4px;">`
-      : `<div style="height:36px;"></div>`
-    }
+          ? `<img src="${esc(settings.signatureUrl)}" alt="Signature" style="max-height:48px;max-width:160px;object-fit:contain;display:block;margin:0 auto 4px;">`
+          : `<div style="height:36px;"></div>`
+        }
         <div style="border-top:1px solid #111827;padding-top:4px;display:inline-block;min-width:170px;">
           <span style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:0.1em;color:#111827;">Authorized Signatory</span>
         </div>

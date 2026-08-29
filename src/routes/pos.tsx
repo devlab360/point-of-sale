@@ -46,7 +46,7 @@ export const Route = createFileRoute("/pos")({
       }),
       queryClient.ensureQueryData({
         queryKey: ["posBootstrap", orgId],
-        queryFn: async () => ((await getPosBootstrapFn()) as any)?.data,
+        queryFn: async () => await getPosBootstrapFn(),
       }),
       queryClient.ensureQueryData({
         queryKey: ["categories", orgId],
@@ -138,8 +138,10 @@ function PosScreen() {
           }
 
           if (product) {
-            if (product.stock <= 0) {
-              toast.error(`${product.name} is out of stock`);
+            const stockNum = Number(product.stock ?? 0);
+            const isService = product.referenceType === "SERVICE";
+            if (!isService && stockNum <= 0) {
+              toast.error(`Insufficient stock for "${product.name}". Available: ${stockNum}`);
             } else {
               addToCart(product.id);
               if (scannedBatch) {
@@ -475,9 +477,12 @@ function PosScreen() {
       setSplitCash("");
       setSplitCard("");
       setSplitUpi("");
-      setSelectedCustomer(null);
-
       setConfirmCheckout(false);
+
+      // Invalidate products query immediately to update real-time stock in POS catalog
+      queryClient.invalidateQueries({ queryKey: ["posItems"] });
+      queryClient.invalidateQueries({ queryKey: ["products"] });
+      queryClient.invalidateQueries({ queryKey: ["posBootstrap"] });
     } catch (e: any) {
       toast.error(e.message || "Failed to complete sale.");
     } finally {
@@ -521,44 +526,46 @@ function PosScreen() {
 
   return (
     <>
-      {/* Mobile Top Navigation Tabs */}
-      <div className="md:hidden flex bg-card/95 border-b border-border/80 sticky top-0 z-20 backdrop-blur-md px-3 py-1.5 gap-2">
-        <button
-          type="button"
-          onClick={() => setMobileTab("products")}
-          className={cn(
-            "flex-1 py-2 text-xs font-extrabold text-center rounded-xl transition-all",
-            mobileTab === "products"
-              ? "bg-primary text-primary-foreground shadow-sm"
-              : "bg-muted/40 text-muted-foreground hover:bg-muted hover:text-foreground",
-          )}
-        >
-          Catalog Feed
-        </button>
-        <button
-          type="button"
-          onClick={() => setMobileTab("cart")}
-          className={cn(
-            "flex-1 py-2 text-xs font-extrabold text-center rounded-xl transition-all flex items-center justify-center gap-1.5",
-            mobileTab === "cart"
-              ? "bg-primary text-primary-foreground shadow-sm"
-              : "bg-muted/40 text-muted-foreground hover:bg-muted hover:text-foreground",
-          )}
-        >
-          <span>Order Cart</span>
-          {cartItemCount > 0 && (
-            <span
-              className={cn(
-                "rounded-full px-1.5 py-0.2 text-[10px] font-black",
-                mobileTab === "cart"
-                  ? "bg-primary-foreground/20 text-primary-foreground"
-                  : "bg-primary text-primary-foreground",
-              )}
-            >
-              {cartItemCount}
-            </span>
-          )}
-        </button>
+      {/* Mobile Top iOS-style Segmented Navigation Control */}
+      <div className="md:hidden bg-background/95 border-b border-border/80 sticky top-0 z-20 backdrop-blur-md px-3 py-2">
+        <div className="flex bg-muted/70 p-1 rounded-xl border border-border/50">
+          <button
+            type="button"
+            onClick={() => setMobileTab("products")}
+            className={cn(
+              "flex-1 py-1.5 text-xs font-bold text-center rounded-lg transition-all flex items-center justify-center gap-1.5",
+              mobileTab === "products"
+                ? "bg-card text-foreground shadow-xs"
+                : "text-muted-foreground hover:text-foreground",
+            )}
+          >
+            <span>🛍️ Products</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setMobileTab("cart")}
+            className={cn(
+              "flex-1 py-1.5 text-xs font-bold text-center rounded-lg transition-all flex items-center justify-center gap-1.5",
+              mobileTab === "cart"
+                ? "bg-card text-foreground shadow-xs"
+                : "text-muted-foreground hover:text-foreground",
+            )}
+          >
+            <span>🛒 Order Cart</span>
+            {cartItemCount > 0 && (
+              <span
+                className={cn(
+                  "rounded-full px-1.5 py-0.5 text-[10px] font-black leading-none",
+                  mobileTab === "cart"
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-muted-foreground/20 text-foreground",
+                )}
+              >
+                {cartItemCount}
+              </span>
+            )}
+          </button>
+        </div>
       </div>
 
       {/* Main Responsive Split Layout */}
@@ -574,21 +581,22 @@ function PosScreen() {
 
         <CartPanel state={state} onCheckout={handleCheckout} />
 
-        {/* Floating Mobile Cart Summary Pill (Shown when looking at Catalog on mobile with items in cart) */}
+        {/* Floating Mobile Cart Summary Pill (Cleanly elevated above bottom nav) */}
         {mobileTab === "products" && cartItemCount > 0 && (
-          <div className="fixed bottom-16 inset-x-3 z-30 md:hidden animate-in fade-in slide-in-from-bottom-4 duration-200">
+          <div className="fixed bottom-[74px] inset-x-3 z-30 md:hidden animate-in fade-in slide-in-from-bottom-3 duration-200">
             <button
               onClick={() => setMobileTab("cart")}
-              className="w-full flex items-center justify-between bg-primary text-primary-foreground rounded-2xl p-3.5 shadow-elevated font-bold text-xs"
+              className="w-full flex items-center justify-between bg-primary text-primary-foreground rounded-2xl p-3.5 shadow-xl font-bold text-xs active:scale-[0.98] transition-transform border border-primary/20"
             >
-              <div className="flex items-center gap-2">
-                <span className="grid size-6 place-items-center rounded-full bg-primary-foreground/20 text-[11px] font-black">
+              <div className="flex items-center gap-2.5">
+                <span className="grid size-6 place-items-center rounded-full bg-primary-foreground text-primary text-[11px] font-black shadow-xs">
                   {cartItemCount}
                 </span>
-                <span>View Order & Checkout</span>
+                <span className="font-extrabold tracking-wide">View Cart &amp; Checkout</span>
               </div>
-              <div className="number text-sm font-black tracking-tight">
-                {state.formatCurrency(state.total)} →
+              <div className="number text-sm font-black tracking-tight flex items-center gap-1">
+                <span>{state.formatCurrency(state.total)}</span>
+                <span className="text-base leading-none">→</span>
               </div>
             </button>
           </div>

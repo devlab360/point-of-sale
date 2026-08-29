@@ -117,8 +117,10 @@ export function ProductGrid({ state }: { state: any }) {
                 if (b.length > 2) {
                   const product = products.find((p: any) => p.barcode === b || p.sku === b);
                   if (product) {
-                    if (product.stock <= 0) {
-                      toast.error(`${product.name} is out of stock`);
+                    const stockNum = Number(product.stock ?? 0);
+                    const isService = product.referenceType === "SERVICE";
+                    if (!isService && stockNum <= 0) {
+                      toast.error(`Insufficient stock for "${product.name}". Available: ${stockNum}`);
                     } else {
                       addToCart(product.id);
                       toast.success(`Scanned: ${product.name}`);
@@ -162,8 +164,10 @@ export function ProductGrid({ state }: { state: any }) {
                       if (b.length > 2) {
                         const product = products.find((p: any) => p.barcode === b || p.sku === b);
                         if (product) {
-                          if (product.stock <= 0) {
-                            toast.error(`${product.name} is out of stock`);
+                          const stockNum = Number(product.stock ?? 0);
+                          const isService = product.referenceType === "SERVICE";
+                          if (!isService && stockNum <= 0) {
+                            toast.error(`Insufficient stock for "${product.name}". Available: ${stockNum}`);
                           } else {
                             addToCart(product.id);
                             toast.success(`Scanned: ${product.name}`);
@@ -303,11 +307,13 @@ export function ProductGrid({ state }: { state: any }) {
                 >
                   {rowItems.map((p: any) => {
                     const isService = p.referenceType === "SERVICE";
-                    const low =
-                      !isService &&
-                      Number(p.stock) > 0 &&
-                      Number(p.stock) <= Number(p.reorderLevel);
-                    const out = !isService && p.stock <= 0;
+                    const stockNum = Number(p.stock ?? 0);
+                    const cartLines = (state.cart || []).filter((c: any) => c.id === p.id);
+                    const inCartQty = cartLines.reduce((sum: number, c: any) => sum + Number(c.qty || 0), 0);
+                    const remainingStock = Math.max(0, stockNum - inCartQty);
+                    const out = !isService && stockNum <= 0;
+                    const isCartMax = !isService && stockNum > 0 && inCartQty >= stockNum;
+                    const isLow = !isService && remainingStock > 0 && remainingStock <= Number(p.reorderLevel || 5);
                     const catName = getCategoryName
                       ? getCategoryName(p.category)
                       : p.category || "";
@@ -316,10 +322,21 @@ export function ProductGrid({ state }: { state: any }) {
                     const subText = [catName, brandName].filter(Boolean).join(" · ") || unitName;
 
                     return (
-                      <button
+                      <div
                         key={p.id}
-                        type="button"
                         onClick={() => {
+                          if (out) {
+                            toast.error(
+                              `Insufficient stock for "${p.name}". Available: ${stockNum}`,
+                            );
+                            return;
+                          }
+                          if (isCartMax) {
+                            toast.error(
+                              `Already added all available stock for "${p.name}" (${stockNum} in cart)`,
+                            );
+                            return;
+                          }
                           if (p.hasVariants) {
                             setSelectedVariantProduct(p);
                           } else if (p.hasModifiers) {
@@ -328,15 +345,13 @@ export function ProductGrid({ state }: { state: any }) {
                             addToCart(p.id);
                           }
                         }}
-                        disabled={out}
-                        style={{ height: "100%" }}
                         className={cn(
-                          "group relative flex flex-col overflow-hidden rounded-2xl border border-border/80 bg-card text-left transition-all duration-200 hover:border-primary/50 hover:shadow-card-hover card-interactive focus:outline-none focus:ring-2 focus:ring-primary/20",
-                          out && "opacity-60 cursor-not-allowed",
+                          "group relative flex flex-col overflow-hidden rounded-2xl border border-border/80 bg-card text-left transition-all duration-200 hover:border-primary/50 hover:shadow-md cursor-pointer select-none active:scale-[0.98]",
+                          (out || isCartMax) && "opacity-75",
                         )}
                       >
                         {/* Thumbnail & Badges */}
-                        <div className="relative h-[130px] w-full shrink-0 overflow-hidden bg-muted/40 flex items-center justify-center border-b border-border/50">
+                        <div className="relative h-[115px] sm:h-[135px] w-full shrink-0 overflow-hidden bg-muted/40 flex items-center justify-center border-b border-border/40">
                           {p.image &&
                           !p.image.includes("1542838132") &&
                           !p.image.includes("unsplash") ? (
@@ -348,35 +363,55 @@ export function ProductGrid({ state }: { state: any }) {
                             />
                           ) : (
                             <div className="flex flex-col items-center justify-center text-muted-foreground/30">
-                              <ImageIcon className="size-9" strokeWidth={1.5} />
+                              <ImageIcon className="size-8 sm:size-9" strokeWidth={1.5} />
                             </div>
                           )}
 
                           {/* Stock Status Pills */}
-                          {low && !out && (
-                            <span className="absolute left-2 top-2 rounded-full bg-warning/90 px-2 py-0.5 text-[9px] font-extrabold uppercase tracking-wider text-warning-foreground shadow-sm backdrop-blur-sm">
-                              {p.stock} left
-                            </span>
-                          )}
                           {out && (
-                            <span className="absolute left-2 top-2 rounded-full bg-destructive/90 px-2 py-0.5 text-[9px] font-extrabold uppercase tracking-wider text-white shadow-sm backdrop-blur-sm">
+                            <span className="absolute left-2 top-2 rounded-full bg-destructive/90 text-white px-2 py-0.5 text-[9px] font-extrabold uppercase tracking-wider shadow-sm backdrop-blur-sm">
                               Out of Stock
                             </span>
                           )}
+                          {!out && isCartMax && (
+                            <span className="absolute left-2 top-2 rounded-full bg-primary/90 text-primary-foreground px-2 py-0.5 text-[9px] font-extrabold uppercase tracking-wider shadow-sm backdrop-blur-sm">
+                              {inCartQty} in Cart (Max)
+                            </span>
+                          )}
+                          {!out && !isCartMax && isLow && (
+                            <span className="absolute left-2 top-2 rounded-full bg-amber-500/90 text-white px-2 py-0.5 text-[9px] font-extrabold uppercase tracking-wider shadow-sm backdrop-blur-sm">
+                              {remainingStock % 1 === 0 ? remainingStock : remainingStock.toFixed(2)} left
+                            </span>
+                          )}
                           {isService && (
-                            <span className="absolute left-2 top-2 rounded-full bg-primary/90 px-2 py-0.5 text-[9px] font-extrabold uppercase tracking-wider text-primary-foreground shadow-sm backdrop-blur-sm">
+                            <span className="absolute left-2 top-2 rounded-full bg-primary/90 text-primary-foreground px-2 py-0.5 text-[9px] font-extrabold uppercase tracking-wider shadow-sm backdrop-blur-sm">
                               Service
                             </span>
                           )}
 
-                          {/* Quick Add Overlay on Hover */}
-                          <div className="absolute inset-x-0 bottom-0 translate-y-full bg-gradient-to-t from-primary to-primary/90 py-1.5 text-center text-[11px] font-bold text-primary-foreground backdrop-blur-sm transition-transform duration-200 group-hover:translate-y-0 flex items-center justify-center gap-1 shadow-inner">
-                            <Plus className="size-3.5 stroke-[2.5]" /> Quick Add
-                          </div>
+                          {/* Mobile-Friendly Quick Add Floating Circular Button */}
+                          {!out && !isCartMax && (
+                            <div
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (p.hasVariants) {
+                                  setSelectedVariantProduct(p);
+                                } else if (p.hasModifiers) {
+                                  setSelectedModifierProduct({ product: p });
+                                } else {
+                                  addToCart(p.id);
+                                }
+                              }}
+                              className="absolute right-2 bottom-2 size-7 sm:size-8 rounded-full bg-primary text-primary-foreground shadow-md flex items-center justify-center active:scale-90 transition-transform z-10 hover:bg-primary/90"
+                              title="Add to cart"
+                            >
+                              <Plus className="size-4 stroke-[3]" />
+                            </div>
+                          )}
                         </div>
 
                         {/* Product Details */}
-                        <div className="flex flex-1 flex-col justify-between p-3 min-h-[80px]">
+                        <div className="flex flex-1 flex-col justify-between p-2.5 sm:p-3 min-h-[72px]">
                           <div>
                             <h4 className="line-clamp-2 text-xs sm:text-sm font-bold text-foreground leading-tight">
                               {p.name}
@@ -388,18 +423,18 @@ export function ProductGrid({ state }: { state: any }) {
                             )}
                           </div>
 
-                          <div className="mt-2.5 flex items-center justify-between border-t border-border/40 pt-2 shrink-0">
-                            <span className="number text-sm sm:text-base font-black text-primary">
+                          <div className="mt-2 flex items-center justify-between border-t border-border/40 pt-1.5 shrink-0">
+                            <span className="number text-xs sm:text-sm font-black text-primary">
                               {formatCurrency(p.price)}
                             </span>
                             {p.hasVariants && (
-                              <span className="text-[9px] font-bold rounded-md bg-secondary/80 px-1.5 py-0.5 text-secondary-foreground uppercase tracking-wider">
+                              <span className="text-[9px] font-bold rounded-md bg-secondary px-1.5 py-0.5 text-secondary-foreground uppercase tracking-wider">
                                 Variants
                               </span>
                             )}
                           </div>
                         </div>
-                      </button>
+                      </div>
                     );
                   })}
                 </div>
