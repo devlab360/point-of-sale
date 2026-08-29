@@ -100,7 +100,7 @@ import { PhoneInput } from "@/components/ui/phone-input";
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { BUSINESS_TEMPLATES } from "@/lib/business-templates";
-import { BUSINESS_TYPE_OPTIONS, DATE_FORMAT_OPTIONS, TIME_ZONE_OPTIONS } from "@/constants";
+import { BUSINESS_TYPE_OPTIONS, DATE_FORMAT_OPTIONS, TIME_FORMAT_OPTIONS, TIME_ZONE_OPTIONS } from "@/constants";
 
 export const Route = createFileRoute("/settings")({
   head: () => ({ meta: [{ title: "Settings · OneDesk360" }] }),
@@ -1022,6 +1022,17 @@ function SettingsPage() {
                       value={settings.dateFormat || "dd MMM yyyy"}
                       onChange={(val) => handleChange("dateFormat", val)}
                       options={DATE_FORMAT_OPTIONS}
+                    />
+                  </Field>
+
+                  <Field label="Display Time Format" description="Format used for timestamps across checkout, receipts, and logs.">
+                    <SearchableSelect
+                      value={(settings.config as any)?.timeFormat || settings.timeFormat || "12h"}
+                      onChange={(val) => {
+                        handleChange("timeFormat", val);
+                        handleChange("config", { ...(settings.config || {}), timeFormat: val });
+                      }}
+                      options={TIME_FORMAT_OPTIONS}
                     />
                   </Field>
                 </div>

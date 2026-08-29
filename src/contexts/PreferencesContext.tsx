@@ -8,6 +8,7 @@ import { formatInTimeZone } from "date-fns-tz";
 
 interface PreferencesContextType {
   dateFormat: string;
+  timeFormat: string;
   timeZone: string;
   countryCode: string;
   formatDate: (dateInput: string | Date | number | undefined | null) => string;
@@ -29,13 +30,14 @@ export function PreferencesProvider({ children }: { children: React.ReactNode })
       return null;
     },
     enabled: Boolean(isAuthenticated),
-    staleTime: 10 * 60 * 1000,
+    staleTime: 2 * 60 * 1000,
     refetchOnWindowFocus: false,
   });
 
   const settings = settingsData || {};
 
   const dateFormat = settings.dateFormat || "dd MMM yyyy";
+  const timeFormat = (settings.config as any)?.timeFormat || settings.timeFormat || "12h";
   const timeZone = settings.timeZone || "UTC";
   const countryCode = settings.countryCode || "+91";
 
@@ -49,14 +51,24 @@ export function PreferencesProvider({ children }: { children: React.ReactNode })
         const d = new Date(dateInput);
         if (isNaN(d.getTime())) return String(dateInput);
 
+        const timePattern = timeFormat === "24h" ? "HH:mm" : "hh:mm a";
         let formatStr = dateFormat;
-        if (mode === "time") formatStr = "hh:mm a";
-        else if (mode === "datetime") formatStr = `${dateFormat} hh:mm a`;
+        if (mode === "time") {
+          formatStr = timePattern;
+        } else if (mode === "datetime") {
+          formatStr = `${dateFormat} ${timePattern}`;
+        }
 
         return formatInTimeZone(d, timeZone, formatStr);
       } catch (e) {
-        console.error("Format date error:", e);
-        return "-";
+        // Fallback for custom or non-standard format string
+        try {
+          const d = new Date(dateInput);
+          const fallbackPattern = timeFormat === "24h" ? "HH:mm" : "hh:mm a";
+          return formatInTimeZone(d, "UTC", mode === "time" ? fallbackPattern : `dd MMM yyyy ${fallbackPattern}`);
+        } catch {
+          return String(dateInput || "-");
+        }
       }
     };
 
@@ -65,16 +77,17 @@ export function PreferencesProvider({ children }: { children: React.ReactNode })
       formatTime: (d: any) => formatAppDate(d, "time"),
       formatDateTime: (d: any) => formatAppDate(d, "datetime"),
     };
-  }, [dateFormat, timeZone]);
+  }, [dateFormat, timeFormat, timeZone]);
 
   const value = useMemo(
     () => ({
       dateFormat,
+      timeFormat,
       timeZone,
       countryCode,
       ...formatters,
     }),
-    [dateFormat, timeZone, countryCode, formatters],
+    [dateFormat, timeFormat, timeZone, countryCode, formatters],
   );
 
   return <PreferencesContext.Provider value={value}>{children}</PreferencesContext.Provider>;
