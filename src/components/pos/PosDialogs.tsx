@@ -831,18 +831,18 @@ export function PosDialogs({
 
             {(settings?.businessType === "PHARMACY" ||
               state.lines.some((l: any) => l.product.metadata?.prescriptionRequired)) && (
-              <div className="mt-4 pt-3 border-t">
-                <label className="text-xs font-semibold block mb-1 text-primary text-left">
-                  Prescription Reference (Optional)
-                </label>
-                <Input
-                  placeholder="e.g. Rx-12345"
-                  value={state.prescriptionRef}
-                  onChange={(e) => state.setPrescriptionRef(e.target.value)}
-                  className="h-9"
-                />
-              </div>
-            )}
+                <div className="mt-4 pt-3 border-t">
+                  <label className="text-xs font-semibold block mb-1 text-primary text-left">
+                    Prescription Reference (Optional)
+                  </label>
+                  <Input
+                    placeholder="e.g. Rx-12345"
+                    value={state.prescriptionRef}
+                    onChange={(e) => state.setPrescriptionRef(e.target.value)}
+                    className="h-9"
+                  />
+                </div>
+              )}
           </AlertDialogHeader>
           <AlertDialogFooter className="grid grid-cols-2 gap-2 sm:space-x-0 mt-2">
             <AlertDialogCancel
@@ -887,9 +887,13 @@ export function PosDialogs({
                 setPrintFormat("thermal");
                 setSaleComplete(null);
                 setTimeout(() => {
-                  window.print();
-                  setPrintData(null);
-                }, 300);
+                  requestAnimationFrame(() => {
+                    requestAnimationFrame(() => {
+                      window.print();
+                      setTimeout(() => setPrintData(null), 1000);
+                    });
+                  });
+                }, 100);
               }}
             >
               <Printer className="mr-2 size-4" /> Thermal
@@ -899,9 +903,13 @@ export function PosDialogs({
                 setPrintFormat("a4");
                 setSaleComplete(null);
                 setTimeout(() => {
-                  window.print();
-                  setPrintData(null);
-                }, 300);
+                  requestAnimationFrame(() => {
+                    requestAnimationFrame(() => {
+                      window.print();
+                      setTimeout(() => setPrintData(null), 1000);
+                    });
+                  });
+                }, 100);
               }}
               variant="outline"
             >
