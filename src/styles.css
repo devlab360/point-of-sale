@@ -477,3 +477,87 @@ input[type="number"]::-webkit-inner-spin-button {
 input[type="number"] {
   -moz-appearance: textfield;
 }
+
+/* ── Print Styles ── */
+@media print {
+  /* Hide the app shell (sidebar, header, bottom nav, etc.) */
+  aside,
+  nav,
+  footer,
+  [data-sonner-toaster] {
+    display: none !important;
+  }
+
+  /* Hide all dialogs/modals during print */
+  [role="dialog"],
+  [data-radix-portal],
+  [data-state="open"][role="alertdialog"],
+  .fixed[data-state="open"] {
+    display: none !important;
+  }
+
+  /* Dialog overlays */
+  [data-radix-overlay],
+  [data-state="open"][data-radix-dialog-overlay] {
+    display: none !important;
+  }
+
+  /* The main app layout — hide scrollbars, remove overflow clipping */
+  html, body {
+    background: white !important;
+    color: black !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+    height: auto !important;
+    width: auto !important;
+  }
+
+  /* Remove the app shell's overflow hidden so print content can flow */
+  .flex.h-screen {
+    height: auto !important;
+    overflow: visible !important;
+  }
+
+  /* Hide the header bar */
+  header {
+    display: none !important;
+  }
+
+  /* Show print layout: thermal (print:flex) */
+  .hidden.print\:flex {
+    display: flex !important;
+    visibility: visible !important;
+    position: fixed !important;
+    inset: 0 !important;
+    z-index: 9999 !important;
+    background: white !important;
+    color: black !important;
+  }
+
+  /* Show print layout: A4 (print:block) */
+  .hidden.print\:block {
+    display: block !important;
+    visibility: visible !important;
+    position: fixed !important;
+    inset: 0 !important;
+    z-index: 9999 !important;
+    background: white !important;
+    color: black !important;
+  }
+
+  /* Ensure all children inside print layouts are visible */
+  .hidden.print\:flex *,
+  .hidden.print\:block * {
+    visibility: visible !important;
+    color-adjust: exact !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Reset page margins for clean print */
+  @page {
+    margin: 0;
+    padding: 0;
+  }
+}

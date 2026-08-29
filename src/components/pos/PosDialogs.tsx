@@ -874,7 +874,6 @@ export function PosDialogs({
         onOpenChange={(open) => {
           if (!open) {
             setSaleComplete(null);
-            setPrintData(null);
           }
         }}
       >
@@ -886,11 +885,11 @@ export function PosDialogs({
             <Button
               onClick={() => {
                 setPrintFormat("thermal");
+                setSaleComplete(null);
                 setTimeout(() => {
                   window.print();
-                  setSaleComplete(null);
                   setPrintData(null);
-                }, 150);
+                }, 300);
               }}
             >
               <Printer className="mr-2 size-4" /> Thermal
@@ -898,11 +897,11 @@ export function PosDialogs({
             <Button
               onClick={() => {
                 setPrintFormat("a4");
+                setSaleComplete(null);
                 setTimeout(() => {
                   window.print();
-                  setSaleComplete(null);
                   setPrintData(null);
-                }, 150);
+                }, 300);
               }}
               variant="outline"
             >

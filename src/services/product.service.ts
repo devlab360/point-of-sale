@@ -140,7 +140,21 @@ export class ProductService {
       lowStockCount: Number(summaryRes[0]?.lowStockCount || 0),
     };
 
-    return { products, totalCount, summary };
+    // Clean numeric fields — PostgreSQL numeric(10,3) returns strings like "9.000"
+    // parseFloat strips trailing zeros: "9.000" → 9, "2.500" → 2.5
+    const cleanProducts = products.map((p) => ({
+      ...p,
+      stock: parseFloat(String(p.stock)) || 0,
+      reorderLevel: parseFloat(String(p.reorderLevel)) || 0,
+      price: parseFloat(String(p.price)) || 0,
+      cost: parseFloat(String(p.cost)) || 0,
+      wholesalePrice: p.wholesalePrice ? parseFloat(String(p.wholesalePrice)) : null,
+      dealerPrice: p.dealerPrice ? parseFloat(String(p.dealerPrice)) : null,
+      mrp: p.mrp ? parseFloat(String(p.mrp)) : null,
+      gstRate: p.gstRate ? parseFloat(String(p.gstRate)) : null,
+    }));
+
+    return { products: cleanProducts, totalCount, summary };
   }
 
   async createProduct(orgId: string, input: CreateProductInput) {
@@ -281,6 +295,14 @@ export class ProductService {
 
     return {
       ...product,
+      stock: parseFloat(String(product.stock)) || 0,
+      reorderLevel: parseFloat(String(product.reorderLevel)) || 0,
+      price: parseFloat(String(product.price)) || 0,
+      cost: parseFloat(String(product.cost)) || 0,
+      wholesalePrice: product.wholesalePrice ? parseFloat(String(product.wholesalePrice)) : null,
+      dealerPrice: product.dealerPrice ? parseFloat(String(product.dealerPrice)) : null,
+      mrp: product.mrp ? parseFloat(String(product.mrp)) : null,
+      gstRate: product.gstRate ? parseFloat(String(product.gstRate)) : null,
       variants,
       bundleComponents,
       modifiers,
