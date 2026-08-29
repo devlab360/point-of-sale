@@ -45,13 +45,13 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from "@/components/ui/dialog";
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+  SheetFooter,
+} from "@/components/ui/sheet";
 import { useQuery } from "@tanstack/react-query";
 import { getProductsFn } from "@/api/products";
 import { getSalesFn } from "@/api/sales";
@@ -1029,87 +1029,94 @@ function Dashboard() {
       </div>
 
       {/* Daily Summary Modal */}
-      <Dialog open={isDailyReportOpen} onOpenChange={setIsDailyReportOpen}>
-        <DialogContent className="max-w-xl rounded-2xl">
-          <DialogHeader>
-            <div className="flex items-center gap-2 text-primary font-bold text-xs uppercase tracking-wider mb-1">
-              <Calendar className="size-4" />
-              {formatAppDate(new Date(), "date", "EEEE, MMMM d, yyyy")}
-            </div>
-            <DialogTitle className="text-xl font-extrabold flex items-center gap-2">
-              <Receipt className="size-5 text-primary" /> Today's Performance Snapshot
-            </DialogTitle>
-            <DialogDescription className="text-xs">
-              Real-time summary of sales, profit and volume metrics generated for this shift.
-            </DialogDescription>
-          </DialogHeader>
+      <Sheet open={isDailyReportOpen} onOpenChange={setIsDailyReportOpen}>
+        <SheetContent
+          side="right"
+          className="w-full sm:max-w-xl p-0 flex flex-col h-full bg-background border-l border-border"
+        >
+          <div className="flex flex-col h-full overflow-hidden">
+            <SheetHeader className="bg-muted/40 p-5 border-b pr-12 text-left shrink-0">
+              <div className="flex items-center gap-2 text-primary font-bold text-xs uppercase tracking-wider mb-1">
+                <Calendar className="size-4" />
+                {formatAppDate(new Date(), "date", "EEEE, MMMM d, yyyy")}
+              </div>
+              <SheetTitle className="text-xl font-extrabold flex items-center gap-2">
+                <Receipt className="size-5 text-primary" /> Today's Performance Snapshot
+              </SheetTitle>
+              <SheetDescription className="text-xs text-muted-foreground mt-0.5">
+                Real-time summary of sales, profit and volume metrics generated for this shift.
+              </SheetDescription>
+            </SheetHeader>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 my-3">
-            <div className="bg-primary/8 border border-primary/20 rounded-xl p-3.5 text-center">
-              <div className="flex items-center justify-center gap-1.5 text-xs font-semibold text-muted-foreground mb-1">
-                <DollarSign className="size-3.5 text-primary" /> Total Revenue
-              </div>
-              <div className="text-xl font-black text-primary">{fmt(displayRevenue)}</div>
-            </div>
-            <div className="bg-success/10 border border-success/30 rounded-xl p-3.5 text-center">
-              <div className="flex items-center justify-center gap-1.5 text-xs font-semibold text-muted-foreground mb-1">
-                <TrendingUp className="size-3.5 text-success" /> Est. Net Profit
-              </div>
-              <div className="text-xl font-black text-success">{fmt(displayProfit)}</div>
-            </div>
-            <div className="bg-primary/8 border border-primary/20 rounded-xl p-3.5 text-center">
-              <div className="flex items-center justify-center gap-1.5 text-xs font-semibold text-muted-foreground mb-1">
-                <ShoppingBag className="size-3.5 text-primary" /> Transactions
-              </div>
-              <div className="text-xl font-black text-primary">{displayOrders} Orders</div>
-            </div>
-          </div>
-
-          <div className="bg-muted/40 rounded-xl p-3.5 border border-border/80 space-y-2">
-            <h4 className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
-              Top Selling Product Today
-            </h4>
-            {topSelling.length > 0 ? (
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2.5 min-w-0">
-                  <span className="grid size-6 place-items-center rounded-lg bg-primary/10 text-xs font-bold text-primary">
-                    1
-                  </span>
-                  <span className="text-xs sm:text-sm font-semibold truncate">
-                    {topSelling[0].name}
-                  </span>
+            <div className="flex-1 overflow-y-auto p-5 space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="bg-primary/8 border border-primary/20 rounded-xl p-3.5 text-center">
+                  <div className="flex items-center justify-center gap-1.5 text-xs font-semibold text-muted-foreground mb-1">
+                    <DollarSign className="size-3.5 text-primary" /> Total Revenue
+                  </div>
+                  <div className="text-xl font-black text-primary">{fmt(displayRevenue)}</div>
                 </div>
-                <Badge variant="secondary" className="font-mono text-xs font-bold">
-                  {topSelling[0].sold} sold
-                </Badge>
+                <div className="bg-success/10 border border-success/30 rounded-xl p-3.5 text-center">
+                  <div className="flex items-center justify-center gap-1.5 text-xs font-semibold text-muted-foreground mb-1">
+                    <TrendingUp className="size-3.5 text-success" /> Est. Net Profit
+                  </div>
+                  <div className="text-xl font-black text-success">{fmt(displayProfit)}</div>
+                </div>
+                <div className="bg-primary/8 border border-primary/20 rounded-xl p-3.5 text-center">
+                  <div className="flex items-center justify-center gap-1.5 text-xs font-semibold text-muted-foreground mb-1">
+                    <ShoppingBag className="size-3.5 text-primary" /> Transactions
+                  </div>
+                  <div className="text-xl font-black text-primary">{displayOrders} Orders</div>
+                </div>
               </div>
-            ) : (
-              <p className="text-xs text-muted-foreground">No product sales recorded yet today.</p>
-            )}
-          </div>
 
-          <DialogFooter className="mt-4 flex flex-col sm:flex-row gap-2 sm:justify-between">
-            <Button
-              variant="outline"
-              onClick={() => window.print()}
-              className="w-full sm:w-auto text-xs font-semibold"
-            >
-              <Printer className="size-4 mr-2" /> Print Summary
-            </Button>
-            {canAccessReports && (
+              <div className="bg-muted/40 rounded-xl p-3.5 border border-border/80 space-y-2">
+                <h4 className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                  Top Selling Product Today
+                </h4>
+                {topSelling.length > 0 ? (
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <span className="grid size-6 place-items-center rounded-lg bg-primary/10 text-xs font-bold text-primary">
+                        1
+                      </span>
+                      <span className="text-xs sm:text-sm font-semibold truncate">
+                        {topSelling[0].name}
+                      </span>
+                    </div>
+                    <Badge variant="secondary" className="font-mono text-xs font-bold">
+                      {topSelling[0].sold} sold
+                    </Badge>
+                  </div>
+                ) : (
+                  <p className="text-xs text-muted-foreground">No product sales recorded yet today.</p>
+                )}
+              </div>
+            </div>
+
+            <SheetFooter className="p-4 border-t border-border/60 bg-muted/20 flex flex-row items-center justify-between gap-2 shrink-0">
               <Button
-                asChild
-                className="w-full sm:w-auto bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-xs"
+                variant="outline"
+                onClick={() => window.print()}
+                className="text-xs font-semibold"
               >
-                <Link to="/reports" onClick={() => setIsDailyReportOpen(false)}>
-                  <BarChart3 className="size-4 mr-2" /> Detailed Reports{" "}
-                  <ArrowRight className="size-4 ml-1" />
-                </Link>
+                <Printer className="size-4 mr-2" /> Print Summary
               </Button>
-            )}
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+              {canAccessReports && (
+                <Button
+                  asChild
+                  className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-xs"
+                >
+                  <Link to="/reports" onClick={() => setIsDailyReportOpen(false)}>
+                    <BarChart3 className="size-4 mr-2" /> Detailed Reports{" "}
+                    <ArrowRight className="size-4 ml-1" />
+                  </Link>
+                </Button>
+              )}
+            </SheetFooter>
+          </div>
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }

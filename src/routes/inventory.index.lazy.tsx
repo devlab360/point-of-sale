@@ -11,7 +11,7 @@ import { cn } from "@/lib/utils";
 import { Download, Filter, Brain, PackageSearch } from "lucide-react";
 import { toast } from "sonner";
 import { useState, useMemo, useEffect } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { DataPage } from "@/components/layout/DataPage";
 import { exportToCSV } from "@/lib/csv";
 import { useDebounce } from "@/hooks/useDebounce";
@@ -465,59 +465,65 @@ function StockList() {
         </div>
       </DataPage>
 
-      <Dialog open={showForecast} onOpenChange={setShowForecast}>
-        <DialogContent className="max-w-2xl rounded-2xl">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 font-bold">
-              <Brain className="size-5 text-primary" /> AI Inventory Run-out Forecast
-            </DialogTitle>
-          </DialogHeader>
-          <div className="space-y-3 py-3">
-            <p className="text-xs text-muted-foreground">
-              Based on historical sales velocity over the last 30 days, these items are projected to
-              run out soon.
-            </p>
-            {forecasts.length === 0 ? (
-              <div className="rounded-xl border border-dashed border-border p-6 text-center text-xs text-muted-foreground">
-                No immediate stockout risks detected within the next 14 days!
-              </div>
-            ) : (
-              <div className="divide-y divide-border/60 rounded-xl border border-border/80 bg-muted/20 overflow-hidden">
-                {forecasts.map((f) => (
-                  <div key={f.id} className="flex items-center justify-between p-3">
-                    <div>
-                      <div className="font-bold text-xs sm:text-sm text-foreground">{f.name}</div>
-                      <div className="text-[11px] text-muted-foreground">
-                        Velocity: {f.dailyVelocity.toFixed(1)} units/day · Stock: {f.stock}
+      <Sheet open={showForecast} onOpenChange={setShowForecast}>
+        <SheetContent
+          side="right"
+          className="w-full sm:max-w-lg p-0 flex flex-col h-full bg-background border-l border-border"
+        >
+          <div className="flex flex-col h-full overflow-hidden">
+            <SheetHeader className="bg-muted/40 p-5 border-b pr-12 text-left shrink-0">
+              <SheetTitle className="text-xl font-bold text-foreground flex items-center gap-2">
+                <Brain className="size-5 text-primary" /> AI Inventory Run-out Forecast
+              </SheetTitle>
+              <SheetDescription className="text-xs text-muted-foreground mt-0.5">
+                Based on historical sales velocity over the last 30 days, these items are projected
+                to run out soon.
+              </SheetDescription>
+            </SheetHeader>
+
+            <div className="flex-1 overflow-y-auto p-5">
+              {forecasts.length === 0 ? (
+                <div className="rounded-xl border border-dashed border-border p-6 text-center text-xs text-muted-foreground">
+                  No immediate stockout risks detected within the next 14 days!
+                </div>
+              ) : (
+                <div className="divide-y divide-border/60 rounded-xl border border-border/80 bg-muted/20 overflow-hidden">
+                  {forecasts.map((f) => (
+                    <div key={f.id} className="flex items-center justify-between p-3">
+                      <div>
+                        <div className="font-bold text-xs sm:text-sm text-foreground">{f.name}</div>
+                        <div className="text-[11px] text-muted-foreground">
+                          Velocity: {f.dailyVelocity.toFixed(1)} units/day · Stock: {f.stock}
+                        </div>
+                      </div>
+                      <div className="text-right flex flex-col items-end gap-1">
+                        <Badge
+                          variant={f.daysRemaining <= 3 ? "destructive" : "outline"}
+                          className={cn(f.daysRemaining <= 3 ? "text-destructive" : "text-warning")}
+                        >
+                          {f.daysRemaining === 0
+                            ? "Runs out today"
+                            : `Runs out in ${f.daysRemaining} days`}
+                        </Badge>
+                        <Button
+                          size="sm"
+                          variant="link"
+                          className="h-auto p-0 text-xs"
+                          onClick={() => {
+                            setShowForecast(false);
+                          }}
+                        >
+                          Restock
+                        </Button>
                       </div>
                     </div>
-                    <div className="text-right flex flex-col items-end gap-1">
-                      <Badge
-                        variant={f.daysRemaining <= 3 ? "destructive" : "outline"}
-                        className={cn(f.daysRemaining <= 3 ? "text-destructive" : "text-warning")}
-                      >
-                        {f.daysRemaining === 0
-                          ? "Runs out today"
-                          : `Runs out in ${f.daysRemaining} days`}
-                      </Badge>
-                      <Button
-                        size="sm"
-                        variant="link"
-                        className="h-auto p-0 text-xs"
-                        onClick={() => {
-                          setShowForecast(false);
-                        }}
-                      >
-                        Restock
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
-        </DialogContent>
-      </Dialog>
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }

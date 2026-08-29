@@ -71,14 +71,6 @@ import { PersistStore } from "@/lib/session-store";
 import { useRouter } from "@tanstack/react-router";
 import { cn, getTrialDaysLeft, DEFAULT_PAYMENT_CONFIG } from "@/lib/utils";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from "@/components/ui/dialog";
-import {
   Sheet,
   SheetContent,
   SheetHeader,
@@ -2045,15 +2037,18 @@ function SettingsPage() {
       />
 
       {/* Manual Payment Verification Modal */}
-      <Dialog
+      <Sheet
         open={!!selectedPlanForUpgrade}
         onOpenChange={(open) => !open && setSelectedPlanForUpgrade(null)}
       >
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
+        <SheetContent
+          side="right"
+          className="w-full sm:max-w-2xl p-0 flex flex-col h-full bg-background border-l border-border"
+        >
+          <SheetHeader className="bg-muted/40 p-5 border-b pr-12 text-left shrink-0">
+            <SheetTitle className="flex items-center gap-2">
               <CreditCard className="size-5 text-primary" /> Subscription Payment Verification
-            </DialogTitle>
+            </SheetTitle>
             <p className="text-xs text-muted-foreground">
               Upgrading/renewing <strong>{selectedPlanForUpgrade?.name}</strong> at{" "}
               <strong>
@@ -2064,9 +2059,9 @@ function SettingsPage() {
                 /{paymentForm.billingCycle === "yearly" ? "year" : "month"}
               </strong>
             </p>
-          </DialogHeader>
+          </SheetHeader>
 
-          <div className="space-y-5 py-2">
+          <div className="flex-1 overflow-y-auto p-5 space-y-5">
             <div className="flex gap-4 items-center mb-2">
               <span className="text-xs font-bold">Billing Cycle:</span>
               <div className="flex gap-2">
@@ -2303,7 +2298,7 @@ function SettingsPage() {
             </div>
           </div>
 
-          <DialogFooter className="pt-3 border-t border-border/60">
+          <SheetFooter className="p-4 border-t border-border/60 bg-muted/20 flex flex-row items-center justify-end gap-2 shrink-0">
             <Button
               variant="outline"
               onClick={() => setSelectedPlanForUpgrade(null)}
@@ -2319,9 +2314,9 @@ function SettingsPage() {
               {isSubmittingPayment && <Loader2 className="size-4 animate-spin mr-2" />}
               Submit Payment Proof
             </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          </SheetFooter>
+        </SheetContent>
+      </Sheet>
 
       {/* Add / Edit Custom Payment Method Slide-out Drawer */}
       <Sheet

@@ -795,168 +795,184 @@ function UsersPage() {
         </SheetContent>
       </Sheet>
 
-      {/* Direct Add Employee Dialog */}
-      <Dialog open={isDirectAddOpen} onOpenChange={setIsDirectAddOpen}>
-        <DialogContent className="max-w-md rounded-2xl p-6 border border-border shadow-soft bg-card">
-          <DialogHeader className="text-left space-y-1">
-            <DialogTitle className="text-lg font-bold text-foreground">
-              Register New Employee
-            </DialogTitle>
-            <DialogDescription className="text-xs text-muted-foreground">
-              Create a new user account with login credentials directly.
-            </DialogDescription>
-          </DialogHeader>
+      {/* Direct Add Employee Sheet */}
+      <Sheet open={isDirectAddOpen} onOpenChange={setIsDirectAddOpen}>
+        <SheetContent
+          side="right"
+          className="w-full sm:max-w-md p-0 flex flex-col h-full bg-background border-l border-border"
+        >
+          <div className="flex flex-col h-full overflow-hidden">
+            <SheetHeader className="bg-muted/40 p-5 border-b pr-12 text-left shrink-0">
+              <SheetTitle className="text-xl font-bold text-foreground">
+                Register New Employee
+              </SheetTitle>
+              <SheetDescription className="text-xs text-muted-foreground mt-0.5">
+                Create a new user account with login credentials directly.
+              </SheetDescription>
+            </SheetHeader>
 
-          <form onSubmit={handleCreateDirectUser} className="space-y-3.5 py-2">
-            <div className="space-y-1.5">
-              <Label className="text-xs font-semibold">Full Name *</Label>
-              <Input
-                value={directName}
-                onChange={(e) => setDirectName(e.target.value)}
-                placeholder="e.g. John Doe"
-                required
-              />
-            </div>
-
-            <div className="space-y-1.5">
-              <Label className="text-xs font-semibold">Email Address *</Label>
-              <Input
-                type="email"
-                value={directEmail}
-                onChange={(e) => setDirectEmail(e.target.value)}
-                placeholder="e.g. staff@business.com"
-                required
-              />
-            </div>
-
-            <div className="space-y-1.5">
-              <Label className="text-xs font-semibold">Temporary Password *</Label>
-              <Input
-                type="password"
-                value={directPassword}
-                onChange={(e) => setDirectPassword(e.target.value)}
-                placeholder="Min. 8 characters"
-                required
-              />
-            </div>
-
-            <div className="space-y-1.5">
-              <Label className="text-xs font-semibold">Role</Label>
-              <Select value={directRole} onValueChange={setDirectRole}>
-                <SelectTrigger className="h-9 text-xs">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="cashier">POS Cashier</SelectItem>
-                  <SelectItem value="manager">Manager</SelectItem>
-                  <SelectItem value="admin">Administrator</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <DialogFooter className="gap-2 pt-2">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setIsDirectAddOpen(false)}
-              >
-                Cancel
-              </Button>
-              <Button
-                type="submit"
-                disabled={isSaving}
-              >
-                {isSaving && <Loader2 className="size-4 animate-spin mr-2" />}
-                Create Account
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
-
-      {/* Invite Staff Dialog */}
-      <Dialog open={isInviteOpen} onOpenChange={setIsInviteOpen}>
-        <DialogContent className="max-w-md rounded-2xl p-6 border border-border shadow-soft bg-card">
-          <DialogHeader className="text-left space-y-1">
-            <DialogTitle className="text-lg font-bold text-foreground">
-              Generate Staff Invite Link
-            </DialogTitle>
-            <DialogDescription className="text-xs text-muted-foreground">
-              Send a secure one-click registration link to onboard employees.
-            </DialogDescription>
-          </DialogHeader>
-
-          <form onSubmit={handleGenerateInvite} className="space-y-3.5 py-2">
-            <div className="space-y-1.5">
-              <Label className="text-xs font-semibold">Staff Email Address *</Label>
-              <Input
-                type="email"
-                value={inviteEmail}
-                onChange={(e) => setInviteEmail(e.target.value)}
-                placeholder="e.g. employee@company.com"
-                required
-              />
-            </div>
-
-            <div className="space-y-1.5">
-              <Label className="text-xs font-semibold">Assigned Role</Label>
-              <Select value={inviteRole} onValueChange={setInviteRole}>
-                <SelectTrigger className="h-9 text-xs">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="cashier">POS Cashier</SelectItem>
-                  <SelectItem value="manager">Manager</SelectItem>
-                  <SelectItem value="admin">Administrator</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            {generatedLink ? (
-              <div className="p-3 rounded-xl bg-muted/40 border border-border/60 space-y-2">
-                <span className="text-xs font-semibold text-foreground block">Onboarding Link:</span>
-                <div className="flex items-center gap-2">
+            <form onSubmit={handleCreateDirectUser} className="flex-1 flex flex-col justify-between overflow-hidden">
+              <div className="flex-1 overflow-y-auto p-5 space-y-4">
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-semibold">Full Name *</Label>
                   <Input
-                    readOnly
-                    value={generatedLink}
-                    className="font-mono text-xs h-8 bg-background"
+                    value={directName}
+                    onChange={(e) => setDirectName(e.target.value)}
+                    placeholder="e.g. John Doe"
+                    required
                   />
-                  <Button
-                    type="button"
-                    size="sm"
-                    onClick={() => {
-                      navigator.clipboard.writeText(generatedLink);
-                      setCopiedLink(true);
-                      setTimeout(() => setCopiedLink(false), 2000);
-                      toast.success("Link copied!");
-                    }}
-                    className="h-8 px-3"
-                  >
-                    {copiedLink ? "Copied" : "Copy"}
-                  </Button>
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-semibold">Email Address *</Label>
+                  <Input
+                    type="email"
+                    value={directEmail}
+                    onChange={(e) => setDirectEmail(e.target.value)}
+                    placeholder="e.g. staff@business.com"
+                    required
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-semibold">Temporary Password *</Label>
+                  <Input
+                    type="password"
+                    value={directPassword}
+                    onChange={(e) => setDirectPassword(e.target.value)}
+                    placeholder="Min. 8 characters"
+                    required
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-semibold">Role</Label>
+                  <Select value={directRole} onValueChange={setDirectRole}>
+                    <SelectTrigger className="h-9 text-xs">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="cashier">POS Cashier</SelectItem>
+                      <SelectItem value="manager">Manager</SelectItem>
+                      <SelectItem value="admin">Administrator</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
-            ) : (
-              <DialogFooter className="gap-2 pt-2">
+
+              <SheetFooter className="p-4 border-t border-border/60 bg-muted/20 flex flex-row items-center justify-end gap-2 shrink-0">
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() => setIsInviteOpen(false)}
+                  onClick={() => setIsDirectAddOpen(false)}
                 >
                   Cancel
                 </Button>
                 <Button
                   type="submit"
-                  disabled={isGenerating}
+                  disabled={isSaving}
                 >
-                  {isGenerating && <Loader2 className="size-4 animate-spin mr-2" />}
-                  Generate Link
+                  {isSaving && <Loader2 className="size-4 animate-spin mr-2" />}
+                  Create Account
                 </Button>
-              </DialogFooter>
-            )}
-          </form>
-        </DialogContent>
-      </Dialog>
+              </SheetFooter>
+            </form>
+          </div>
+        </SheetContent>
+      </Sheet>
+
+      {/* Invite Staff Sheet */}
+      <Sheet open={isInviteOpen} onOpenChange={setIsInviteOpen}>
+        <SheetContent
+          side="right"
+          className="w-full sm:max-w-md p-0 flex flex-col h-full bg-background border-l border-border"
+        >
+          <div className="flex flex-col h-full overflow-hidden">
+            <SheetHeader className="bg-muted/40 p-5 border-b pr-12 text-left shrink-0">
+              <SheetTitle className="text-xl font-bold text-foreground">
+                Generate Staff Invite Link
+              </SheetTitle>
+              <SheetDescription className="text-xs text-muted-foreground mt-0.5">
+                Send a secure one-click registration link to onboard employees.
+              </SheetDescription>
+            </SheetHeader>
+
+            <form onSubmit={handleGenerateInvite} className="flex-1 flex flex-col justify-between overflow-hidden">
+              <div className="flex-1 overflow-y-auto p-5 space-y-4">
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-semibold">Staff Email Address *</Label>
+                  <Input
+                    type="email"
+                    value={inviteEmail}
+                    onChange={(e) => setInviteEmail(e.target.value)}
+                    placeholder="e.g. employee@company.com"
+                    required
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-semibold">Assigned Role</Label>
+                  <Select value={inviteRole} onValueChange={setInviteRole}>
+                    <SelectTrigger className="h-9 text-xs">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="cashier">POS Cashier</SelectItem>
+                      <SelectItem value="manager">Manager</SelectItem>
+                      <SelectItem value="admin">Administrator</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <SheetFooter className="p-4 border-t border-border/60 bg-muted/20 flex flex-row items-center justify-end gap-2 shrink-0">
+                {generatedLink ? (
+                  <div className="w-full p-3 rounded-xl bg-muted/40 border border-border/60 space-y-2">
+                    <span className="text-xs font-semibold text-foreground block">Onboarding Link:</span>
+                    <div className="flex items-center gap-2">
+                      <Input
+                        readOnly
+                        value={generatedLink}
+                        className="font-mono text-xs h-8 bg-background"
+                      />
+                      <Button
+                        type="button"
+                        size="sm"
+                        onClick={() => {
+                          navigator.clipboard.writeText(generatedLink);
+                          setCopiedLink(true);
+                          setTimeout(() => setCopiedLink(false), 2000);
+                          toast.success("Link copied!");
+                        }}
+                        className="h-8 px-3"
+                      >
+                        {copiedLink ? "Copied" : "Copy"}
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => setIsInviteOpen(false)}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      type="submit"
+                      disabled={isGenerating}
+                    >
+                      {isGenerating && <Loader2 className="size-4 animate-spin mr-2" />}
+                      Generate Link
+                    </Button>
+                  </>
+                )}
+              </SheetFooter>
+            </form>
+          </div>
+        </SheetContent>
+      </Sheet>
 
       {/* Delete Confirmation */}
       <Dialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>

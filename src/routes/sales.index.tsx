@@ -8,6 +8,14 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+  SheetFooter,
+} from "@/components/ui/sheet";
 import { useCurrency } from "@/lib/currency";
 import { cn } from "@/lib/utils";
 import { Eye, Printer, Plus, Search, Receipt, Ban, Loader2 } from "lucide-react";
@@ -554,135 +562,149 @@ function SalesPage() {
         )}
       </DataPage>
 
-      {/* Sale Detail Dialog */}
-      <Dialog open={!!viewSale} onOpenChange={(open) => !open && setViewSale(null)}>
-        <DialogContent className="sm:max-w-lg">
-          <DialogHeader>
-            <DialogTitle>Invoice #{viewSale?.id.slice(0, 8).toUpperCase()}</DialogTitle>
-          </DialogHeader>
-          {viewSale && (
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-2 text-sm">
-                <div>
-                  <span className="text-muted-foreground">Customer:</span>{" "}
-                  <strong>{viewSale.customerName || "Walk-in"}</strong>
-                </div>
-                <div>
-                  <span className="text-muted-foreground">Date:</span>{" "}
-                  {formatDateTime(viewSale.date)}
-                </div>
-                <div>
-                  <span className="text-muted-foreground">Payment:</span>{" "}
-                  <strong className="capitalize">{viewSale.paymentMethod}</strong>
-                </div>
-                <div>
-                  <span className="text-muted-foreground">Status:</span>{" "}
-                  <Badge
-                    variant="outline"
-                    className={cn(
-                      viewSale.status === "completed" &&
-                        "bg-success/10 text-success hover:bg-success/20 border-success/20",
-                      viewSale.status === "pending" &&
-                        "bg-warning/10 text-warning hover:bg-warning/20 border-warning/20",
-                      viewSale.status === "cancelled" &&
-                        "bg-destructive/10 text-destructive hover:bg-destructive/20 border-destructive/20",
+      {/* Sale Detail Sheet */}
+      <Sheet open={!!viewSale} onOpenChange={(open) => !open && setViewSale(null)}>
+        <SheetContent
+          side="right"
+          className="w-full sm:max-w-lg p-0 flex flex-col h-full bg-background border-l border-border"
+        >
+          <div className="flex flex-col h-full overflow-hidden">
+            <SheetHeader className="bg-muted/40 p-5 border-b pr-12 text-left shrink-0">
+              <SheetTitle className="text-xl font-bold text-foreground">
+                Invoice #{viewSale?.id.slice(0, 8).toUpperCase()}
+              </SheetTitle>
+              <SheetDescription className="text-xs text-muted-foreground mt-0.5">
+                Sale details, line items, and totals.
+              </SheetDescription>
+            </SheetHeader>
+            {viewSale && (
+              <>
+                <div className="flex-1 overflow-y-auto p-5 space-y-4">
+                  <div className="grid grid-cols-2 gap-2 text-sm">
+                    <div>
+                      <span className="text-muted-foreground">Customer:</span>{" "}
+                      <strong>{viewSale.customerName || "Walk-in"}</strong>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">Date:</span>{" "}
+                      {formatDateTime(viewSale.date)}
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">Payment:</span>{" "}
+                      <strong className="capitalize">{viewSale.paymentMethod}</strong>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">Status:</span>{" "}
+                      <Badge
+                        variant="outline"
+                        className={cn(
+                          viewSale.status === "completed" &&
+                            "bg-success/10 text-success hover:bg-success/20 border-success/20",
+                          viewSale.status === "pending" &&
+                            "bg-warning/10 text-warning hover:bg-warning/20 border-warning/20",
+                          viewSale.status === "cancelled" &&
+                            "bg-destructive/10 text-destructive hover:bg-destructive/20 border-destructive/20",
+                        )}
+                      >
+                        {viewSale.status}
+                      </Badge>
+                    </div>
+                  </div>
+                  <div className="rounded-lg border border-border overflow-x-auto">
+                    <Table className="min-w-[400px]">
+                      <TableHeader className="bg-muted/50 text-[11px] uppercase tracking-wider text-muted-foreground">
+                        <TableRow>
+                          <TableHead className="px-3 py-2 whitespace-nowrap text-left">Item</TableHead>
+                          <TableHead className="px-3 py-2 whitespace-nowrap text-right">Qty</TableHead>
+                          <TableHead className="px-3 py-2 whitespace-nowrap text-right">Price</TableHead>
+                          <TableHead className="px-3 py-2 whitespace-nowrap text-right">Total</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody className="divide-y divide-border">
+                        {viewSale.saleItems?.map((item, i) => (
+                          <TableRow key={i}>
+                            <TableCell className="px-3 py-2 whitespace-nowrap">{item.productName}</TableCell>
+                            <TableCell className="px-3 py-2 whitespace-nowrap text-right">{item.quantity}</TableCell>
+                            <TableCell className="px-3 py-2 whitespace-nowrap text-right">
+                              {formatCurrency(item.price)}
+                            </TableCell>
+                            <TableCell className="px-3 py-2 whitespace-nowrap text-right font-semibold">
+                              {formatCurrency(item.total)}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                  <div className="space-y-1 rounded-lg bg-muted/40 p-3 text-sm">
+                    {viewSale.subtotal !== undefined && (
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Subtotal</span>
+                        <span>{formatCurrency(viewSale.subtotal)}</span>
+                      </div>
                     )}
-                  >
-                    {viewSale.status}
-                  </Badge>
+                    {viewSale.discountAmt !== undefined && viewSale.discountAmt > 0 && (
+                      <div className="flex justify-between text-destructive">
+                        <span>Discount</span>
+                        <span>-{formatCurrency(viewSale.discountAmt)}</span>
+                      </div>
+                    )}
+                    {viewSale.taxAmt !== undefined && (
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Tax</span>
+                        <span>{formatCurrency(viewSale.taxAmt)}</span>
+                      </div>
+                    )}
+                    <div className="flex justify-between border-t border-border pt-1 font-bold">
+                      <span>Total</span>
+                      <span>{formatCurrency(viewSale.total)}</span>
+                    </div>
+                    {viewSale.paymentMethod === "cash" && viewSale.cashTendered && (
+                      <div className="flex justify-between text-muted-foreground mt-1 pt-1 border-t border-border">
+                        <span>Cash Tendered</span>
+                        <span>{formatCurrency(parseFloat(viewSale.cashTendered))}</span>
+                      </div>
+                    )}
+                    {viewSale.paymentMethod === "cash" && viewSale.changeDue != null && (
+                      <div className="flex justify-between font-semibold text-success">
+                        <span>Change Due</span>
+                        <span>{formatCurrency(parseFloat(viewSale.changeDue))}</span>
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
-              <div className="rounded-lg border border-border overflow-x-auto">
-                <Table className="min-w-[400px]">
-                  <TableHeader className="bg-muted/50 text-[11px] uppercase tracking-wider text-muted-foreground">
-                    <TableRow>
-                      <TableHead className="px-3 py-2 whitespace-nowrap text-left">Item</TableHead>
-                      <TableHead className="px-3 py-2 whitespace-nowrap text-right">Qty</TableHead>
-                      <TableHead className="px-3 py-2 whitespace-nowrap text-right">Price</TableHead>
-                      <TableHead className="px-3 py-2 whitespace-nowrap text-right">Total</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody className="divide-y divide-border">
-                    {viewSale.saleItems?.map((item, i) => (
-                      <TableRow key={i}>
-                        <TableCell className="px-3 py-2 whitespace-nowrap">{item.productName}</TableCell>
-                        <TableCell className="px-3 py-2 whitespace-nowrap text-right">{item.quantity}</TableCell>
-                        <TableCell className="px-3 py-2 whitespace-nowrap text-right">
-                          {formatCurrency(item.price)}
-                        </TableCell>
-                        <TableCell className="px-3 py-2 whitespace-nowrap text-right font-semibold">
-                          {formatCurrency(item.total)}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-              <div className="space-y-1 rounded-lg bg-muted/40 p-3 text-sm">
-                {viewSale.subtotal !== undefined && (
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Subtotal</span>
-                    <span>{formatCurrency(viewSale.subtotal)}</span>
+                <SheetFooter className="p-4 border-t border-border/60 bg-muted/20 flex flex-row items-center justify-end gap-2 shrink-0">
+                  <div className="grid grid-cols-2 gap-2 w-full">
+                    <Button
+                      variant="outline"
+                      className="w-full font-bold"
+                      onClick={() => {
+                        setViewSale(null);
+                        printReceipt(viewSale);
+                      }}
+                    >
+                      <Printer className="size-4 mr-1.5" /> Reprint Receipt
+                    </Button>
+                    {canVoid && viewSale.status !== "voided" && !viewSale.metadata?.voided && (
+                      <Button
+                        variant="destructive"
+                        className="w-full font-bold"
+                        onClick={() => {
+                          setVoidTarget(viewSale);
+                          setVoidReason("");
+                          setViewSale(null);
+                        }}
+                      >
+                        <Ban className="size-4 mr-1.5" /> Void Bill
+                      </Button>
+                    )}
                   </div>
-                )}
-                {viewSale.discountAmt !== undefined && viewSale.discountAmt > 0 && (
-                  <div className="flex justify-between text-destructive">
-                    <span>Discount</span>
-                    <span>-{formatCurrency(viewSale.discountAmt)}</span>
-                  </div>
-                )}
-                {viewSale.taxAmt !== undefined && (
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Tax</span>
-                    <span>{formatCurrency(viewSale.taxAmt)}</span>
-                  </div>
-                )}
-                <div className="flex justify-between border-t border-border pt-1 font-bold">
-                  <span>Total</span>
-                  <span>{formatCurrency(viewSale.total)}</span>
-                </div>
-                {viewSale.paymentMethod === "cash" && viewSale.cashTendered && (
-                  <div className="flex justify-between text-muted-foreground mt-1 pt-1 border-t border-border">
-                    <span>Cash Tendered</span>
-                    <span>{formatCurrency(parseFloat(viewSale.cashTendered))}</span>
-                  </div>
-                )}
-                {viewSale.paymentMethod === "cash" && viewSale.changeDue != null && (
-                  <div className="flex justify-between font-semibold text-success">
-                    <span>Change Due</span>
-                    <span>{formatCurrency(parseFloat(viewSale.changeDue))}</span>
-                  </div>
-                )}
-              </div>
-              <div className="grid grid-cols-2 gap-2">
-                <Button
-                  variant="outline"
-                  className="w-full font-bold"
-                  onClick={() => {
-                    setViewSale(null);
-                    printReceipt(viewSale);
-                  }}
-                >
-                  <Printer className="size-4 mr-1.5" /> Reprint Receipt
-                </Button>
-                {canVoid && viewSale.status !== "voided" && !viewSale.metadata?.voided && (
-                  <Button
-                    variant="destructive"
-                    className="w-full font-bold"
-                    onClick={() => {
-                      setVoidTarget(viewSale);
-                      setVoidReason("");
-                      setViewSale(null);
-                    }}
-                  >
-                    <Ban className="size-4 mr-1.5" /> Void Bill
-                  </Button>
-                )}
-              </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
+                </SheetFooter>
+              </>
+            )}
+          </div>
+        </SheetContent>
+      </Sheet>
 
       {/* Print receipt */}
       {viewSale && (

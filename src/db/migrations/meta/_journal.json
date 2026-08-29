@@ -8,6 +8,13 @@
       "when": 1787926132413,
       "tag": "0000_tiresome_shotgun",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1787989168819,
+      "tag": "0001_magical_forge",
+      "breakpoints": true
     }
   ]
 }

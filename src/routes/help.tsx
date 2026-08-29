@@ -20,13 +20,13 @@ import {
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { getHelpArticlesFn, getFaqsFn, createSupportTicketFn, createReviewFn } from "@/api/support";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-  DialogDescription,
-} from "@/components/ui/dialog";
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetFooter,
+  SheetDescription,
+} from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -330,156 +330,170 @@ function HelpPage() {
       )}
 
       {/* Support Ticket Modal */}
-      <Dialog open={isChatOpen} onOpenChange={setIsChatOpen}>
-        <DialogContent className="max-w-md rounded-2xl p-6 border border-border shadow-soft bg-card">
-          <DialogHeader className="text-left space-y-1">
-            <DialogTitle className="text-lg font-bold text-foreground">
-              Open Support Ticket
-            </DialogTitle>
-            <DialogDescription className="text-xs text-muted-foreground">
-              Submit your inquiry or issue directly to our technical support team.
-            </DialogDescription>
-          </DialogHeader>
+      <Sheet open={isChatOpen} onOpenChange={setIsChatOpen}>
+        <SheetContent
+          side="right"
+          className="w-full sm:max-w-md p-0 flex flex-col h-full bg-background border-l border-border"
+        >
+          <div className="flex flex-col h-full overflow-hidden">
+            <SheetHeader className="bg-muted/40 p-5 border-b pr-12 text-left shrink-0">
+              <SheetTitle className="text-xl font-bold text-foreground">
+                Open Support Ticket
+              </SheetTitle>
+              <SheetDescription className="text-xs text-muted-foreground mt-0.5">
+                Submit your inquiry or issue directly to our technical support team.
+              </SheetDescription>
+            </SheetHeader>
 
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              if (!chatSubject.trim() || !chatMessage.trim()) return;
-              chatMutation.mutate({
-                subject: chatSubject.trim(),
-                message: chatMessage.trim(),
-                priority: chatPriority,
-              });
-            }}
-            className="space-y-3.5 py-2"
-          >
-            <div className="space-y-1.5">
-              <Label className="text-xs font-semibold">Inquiry Subject *</Label>
-              <Input
-                value={chatSubject}
-                onChange={(e) => setChatSubject(e.target.value)}
-                placeholder="e.g. Receipt printer alignment issue"
-                required
-              />
-            </div>
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                if (!chatSubject.trim() || !chatMessage.trim()) return;
+                chatMutation.mutate({
+                  subject: chatSubject.trim(),
+                  message: chatMessage.trim(),
+                  priority: chatPriority,
+                });
+              }}
+              className="flex-1 flex flex-col justify-between overflow-hidden"
+            >
+              <div className="flex-1 overflow-y-auto p-5 space-y-4">
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-semibold">Inquiry Subject *</Label>
+                  <Input
+                    value={chatSubject}
+                    onChange={(e) => setChatSubject(e.target.value)}
+                    placeholder="e.g. Receipt printer alignment issue"
+                    required
+                  />
+                </div>
 
-            <div className="space-y-1.5">
-              <Label className="text-xs font-semibold">Priority</Label>
-              <select
-                value={chatPriority}
-                onChange={(e) => setChatPriority(e.target.value)}
-                className="w-full h-9 rounded-md border border-input bg-background px-3 text-xs"
-              >
-                <option value="low">Low - General Question</option>
-                <option value="normal">Normal - Operational Inquiry</option>
-                <option value="urgent">Urgent - Register Blocked</option>
-              </select>
-            </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-semibold">Priority</Label>
+                  <select
+                    value={chatPriority}
+                    onChange={(e) => setChatPriority(e.target.value)}
+                    className="w-full h-9 rounded-md border border-input bg-background px-3 text-xs"
+                  >
+                    <option value="low">Low - General Question</option>
+                    <option value="normal">Normal - Operational Inquiry</option>
+                    <option value="urgent">Urgent - Register Blocked</option>
+                  </select>
+                </div>
 
-            <div className="space-y-1.5">
-              <Label className="text-xs font-semibold">Detailed Description *</Label>
-              <Textarea
-                rows={4}
-                value={chatMessage}
-                onChange={(e) => setChatMessage(e.target.value)}
-                placeholder="Describe what happened and any steps to reproduce..."
-                required
-              />
-            </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-semibold">Detailed Description *</Label>
+                  <Textarea
+                    rows={4}
+                    value={chatMessage}
+                    onChange={(e) => setChatMessage(e.target.value)}
+                    placeholder="Describe what happened and any steps to reproduce..."
+                    required
+                  />
+                </div>
+              </div>
 
-            <DialogFooter className="gap-2 pt-2">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setIsChatOpen(false)}
-              >
-                Cancel
-              </Button>
-              <Button
-                type="submit"
-                disabled={chatMutation.isPending}
-              >
-                {chatMutation.isPending && <Loader2 className="size-4 animate-spin mr-2" />}
-                Submit Ticket
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
+              <SheetFooter className="p-4 border-t border-border/60 bg-muted/20 flex flex-row items-center justify-end gap-2 shrink-0">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setIsChatOpen(false)}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={chatMutation.isPending}
+                >
+                  {chatMutation.isPending && <Loader2 className="size-4 animate-spin mr-2" />}
+                  Submit Ticket
+                </Button>
+              </SheetFooter>
+            </form>
+          </div>
+        </SheetContent>
+      </Sheet>
 
       {/* Review Modal */}
-      <Dialog open={isReviewOpen} onOpenChange={setIsReviewOpen}>
-        <DialogContent className="max-w-md rounded-2xl p-6 border border-border shadow-soft bg-card">
-          <DialogHeader className="text-left space-y-1">
-            <DialogTitle className="text-lg font-bold text-foreground">
-              Rate Experience & Feedback
-            </DialogTitle>
-            <DialogDescription className="text-xs text-muted-foreground">
-              Help us enhance your POS and retail workflows with your valuable feedback.
-            </DialogDescription>
-          </DialogHeader>
+      <Sheet open={isReviewOpen} onOpenChange={setIsReviewOpen}>
+        <SheetContent
+          side="right"
+          className="w-full sm:max-w-md p-0 flex flex-col h-full bg-background border-l border-border"
+        >
+          <div className="flex flex-col h-full overflow-hidden">
+            <SheetHeader className="bg-muted/40 p-5 border-b pr-12 text-left shrink-0">
+              <SheetTitle className="text-xl font-bold text-foreground">
+                Rate Experience & Feedback
+              </SheetTitle>
+              <SheetDescription className="text-xs text-muted-foreground mt-0.5">
+                Help us enhance your POS and retail workflows with your valuable feedback.
+              </SheetDescription>
+            </SheetHeader>
 
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              reviewMutation.mutate({
-                rating: reviewRating,
-                comment: reviewComment.trim(),
-              });
-            }}
-            className="space-y-3.5 py-2"
-          >
-            <div className="space-y-1.5">
-              <Label className="text-xs font-semibold">Rating</Label>
-              <div className="flex items-center gap-2">
-                {[1, 2, 3, 4, 5].map((star) => (
-                  <button
-                    key={star}
-                    type="button"
-                    onClick={() => setReviewRating(star)}
-                    className="p-1"
-                  >
-                    <Star
-                      className={`size-6 ${
-                        star <= reviewRating
-                          ? "text-warning fill-warning"
-                          : "text-muted-foreground"
-                      }`}
-                    />
-                  </button>
-                ))}
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                reviewMutation.mutate({
+                  rating: reviewRating,
+                  comment: reviewComment.trim(),
+                });
+              }}
+              className="flex-1 flex flex-col justify-between overflow-hidden"
+            >
+              <div className="flex-1 overflow-y-auto p-5 space-y-4">
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-semibold">Rating</Label>
+                  <div className="flex items-center gap-2">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <button
+                        key={star}
+                        type="button"
+                        onClick={() => setReviewRating(star)}
+                        className="p-1"
+                      >
+                        <Star
+                          className={`size-6 ${
+                            star <= reviewRating
+                              ? "text-warning fill-warning"
+                              : "text-muted-foreground"
+                          }`}
+                        />
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-semibold">Comments & Feedback</Label>
+                  <Textarea
+                    rows={3}
+                    value={reviewComment}
+                    onChange={(e) => setReviewComment(e.target.value)}
+                    placeholder="What features or improvements would you love to see?"
+                  />
+                </div>
               </div>
-            </div>
 
-            <div className="space-y-1.5">
-              <Label className="text-xs font-semibold">Comments & Feedback</Label>
-              <Textarea
-                rows={3}
-                value={reviewComment}
-                onChange={(e) => setReviewComment(e.target.value)}
-                placeholder="What features or improvements would you love to see?"
-              />
-            </div>
-
-            <DialogFooter className="gap-2 pt-2">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setIsReviewOpen(false)}
-              >
-                Cancel
-              </Button>
-              <Button
-                type="submit"
-                disabled={reviewMutation.isPending}
-              >
-                {reviewMutation.isPending && <Loader2 className="size-4 animate-spin mr-2" />}
-                Submit Feedback
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
+              <SheetFooter className="p-4 border-t border-border/60 bg-muted/20 flex flex-row items-center justify-end gap-2 shrink-0">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setIsReviewOpen(false)}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={reviewMutation.isPending}
+                >
+                  {reviewMutation.isPending && <Loader2 className="size-4 animate-spin mr-2" />}
+                  Submit Feedback
+                </Button>
+              </SheetFooter>
+            </form>
+          </div>
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }
