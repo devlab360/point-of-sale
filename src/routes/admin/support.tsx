@@ -332,7 +332,7 @@ function SuperAdminSupportPage() {
         <Sheet open={isDetailModalOpen} onOpenChange={setIsDetailModalOpen}>
           <SheetContent
             side="right"
-            className="w-full sm:max-w-xl p-0 flex flex-col h-full bg-background border-l border-border"
+            className="w-full sm:max-w-2xl md:max-w-3xl lg:max-w-4xl p-0 flex flex-col h-full bg-background border-l border-border"
           >
             <SheetHeader className="bg-muted/60 p-5 border-b pr-12 text-left">
               <SheetTitle className="text-lg font-bold text-foreground">

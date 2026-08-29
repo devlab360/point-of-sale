@@ -356,7 +356,7 @@ function SuperAdminHelpPage() {
         <Sheet open={isArticleModalOpen} onOpenChange={setIsArticleModalOpen}>
           <SheetContent
             side="right"
-            className="w-full sm:max-w-lg p-0 flex flex-col h-full bg-background border-l border-border"
+            className="w-full sm:max-w-2xl md:max-w-3xl lg:max-w-4xl p-0 flex flex-col h-full bg-background border-l border-border"
           >
             <SheetHeader className="bg-muted/60 p-5 border-b pr-12 text-left">
               <SheetTitle className="text-lg font-bold text-foreground">New Help Article or Video</SheetTitle>
@@ -435,7 +435,7 @@ function SuperAdminHelpPage() {
         <Sheet open={isFaqModalOpen} onOpenChange={setIsFaqModalOpen}>
           <SheetContent
             side="right"
-            className="w-full sm:max-w-lg p-0 flex flex-col h-full bg-background border-l border-border"
+            className="w-full sm:max-w-xl md:max-w-2xl lg:max-w-3xl p-0 flex flex-col h-full bg-background border-l border-border"
           >
             <SheetHeader className="bg-muted/60 p-5 border-b pr-12 text-left">
               <SheetTitle className="text-lg font-bold text-foreground">Add New Merchant FAQ</SheetTitle>

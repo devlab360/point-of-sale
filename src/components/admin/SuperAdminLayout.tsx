@@ -601,48 +601,50 @@ export function SuperAdminLayout({ children }: { children: React.ReactNode }) {
                   </div>
                 </button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
-                <DropdownMenuLabel className="font-normal">
-                  <div className="flex flex-col space-y-1">
-                    <p className="text-xs font-bold leading-none">{user?.name || "Super Admin"}</p>
-                    <p className="text-[11px] leading-none text-muted-foreground">
-                      {user?.email || "admin@superadmin.com"}
-                    </p>
+              <DropdownMenuContent align="end" className="w-60">
+                <DropdownMenuLabel className="font-normal p-2.5">
+                  <div className="flex items-center gap-2.5">
+                    <div className="grid size-9 place-items-center rounded-lg bg-[#B58D4C]/15 border border-[#B58D4C]/30 text-xs font-bold text-[#B58D4C] shrink-0">
+                      {initials}
+                    </div>
+                    <div className="flex flex-col space-y-0.5 min-w-0">
+                      <p className="text-xs font-bold leading-tight truncate">{user?.name || "Super Administrator"}</p>
+                      <p className="text-[11px] leading-tight text-muted-foreground truncate">
+                        {user?.email || "admin@superadmin.com"}
+                      </p>
+                      <span className="text-[10px] font-semibold text-[#B58D4C] uppercase tracking-wider mt-0.5">
+                        Root Authority
+                      </span>
+                    </div>
                   </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
                   onClick={() => setIsProfileDrawerOpen(true)}
-                  className="cursor-pointer text-xs font-semibold"
+                  className="cursor-pointer text-xs font-medium py-2"
                 >
-                  <User className="size-3.5 mr-2 text-[#B58D4C]" /> Admin Profile & Password
+                  <User className="size-4 mr-2 text-[#B58D4C]" /> Admin Profile & Password
                 </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link to="/admin/dashboard" className="cursor-pointer text-xs">
-                    <LayoutGrid className="size-3.5 mr-2" /> Dashboard Overview
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link to="/admin/tenants" className="cursor-pointer text-xs">
-                    <Store className="size-3.5 mr-2" /> Tenant Stores & Orgs
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link to="/admin/payments" className="cursor-pointer text-xs">
-                    <Receipt className="size-3.5 mr-2" /> Payment Approvals
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link to="/admin/users" className="cursor-pointer text-xs">
-                    <Users className="size-3.5 mr-2" /> Platform Personnel
-                  </Link>
+                <DropdownMenuItem
+                  onClick={toggleTheme}
+                  className="cursor-pointer text-xs font-medium py-2"
+                >
+                  {theme === "dark" ? (
+                    <>
+                      <Sun className="size-4 mr-2 text-amber-500" /> Switch to Light Mode
+                    </>
+                  ) : (
+                    <>
+                      <Moon className="size-4 mr-2 text-blue-500" /> Switch to Dark Mode
+                    </>
+                  )}
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
                   onClick={() => setShowLogoutConfirm(true)}
-                  className="cursor-pointer text-xs text-destructive focus:text-destructive"
+                  className="cursor-pointer text-xs text-destructive focus:text-destructive py-2 font-medium"
                 >
-                  <LogOut className="size-3.5 mr-2" /> Log out
+                  <LogOut className="size-4 mr-2" /> Log out
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -828,7 +830,7 @@ export function SuperAdminLayout({ children }: { children: React.ReactNode }) {
       <Sheet open={isProfileDrawerOpen} onOpenChange={setIsProfileDrawerOpen}>
         <SheetContent
           side="right"
-          className="w-full sm:max-w-md p-0 flex flex-col h-full bg-background border-l border-border"
+          className="w-full sm:max-w-xl md:max-w-2xl p-0 flex flex-col h-full bg-background border-l border-border"
         >
           <SheetHeader className="bg-muted/60 p-5 border-b pr-12 text-left">
             <SheetTitle className="text-lg font-bold flex items-center gap-2 text-foreground">

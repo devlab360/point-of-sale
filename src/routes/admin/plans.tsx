@@ -61,26 +61,50 @@ export const Route = createFileRoute("/admin/plans")({
   component: SuperAdminPlansPage,
 });
 
-const AVAILABLE_MODULES = [
-  { id: "pos", name: "POS Terminal" },
-  { id: "products", name: "Products & Barcodes" },
-  { id: "inventory", name: "Stock Inventory" },
-  { id: "sales", name: "Sales & Invoicing" },
-  { id: "quotations", name: "Quotations" },
-  { id: "purchases", name: "Purchases & POs" },
-  { id: "suppliers", name: "Suppliers Directory" },
-  { id: "customers", name: "Customers & CRM" },
-  { id: "reports", name: "Analytics & Reports" },
-  { id: "expenses", name: "Expense Tracking" },
-  { id: "loyalty", name: "Loyalty Points" },
-  { id: "promotions", name: "Promotions & Coupons" },
-  { id: "whatsapp", name: "WhatsApp Notifications" },
-  { id: "repairs", name: "Repair Tracking" },
-  { id: "restaurant", name: "Restaurant Tables & KOT" },
-  { id: "appointments", name: "Appointment Booking" },
-  { id: "rentals", name: "Rentals Management" },
-  { id: "ai", name: "AI Assistant" },
+export const AVAILABLE_MODULES = [
+  // Core Sales & POS
+  { id: "pos", name: "POS Terminal (Billing)", category: "Sales & POS" },
+  { id: "sales", name: "Sales Invoices & Orders", category: "Sales & POS" },
+  { id: "returns", name: "Sales Returns & Refunds", category: "Sales & POS" },
+  { id: "quotations", name: "Quotations & Estimates", category: "Sales & POS" },
+  { id: "delivery-challans", name: "Delivery Challans", category: "Sales & POS" },
+
+  // Catalog & Stock
+  { id: "products", name: "Product Catalog & Barcodes", category: "Catalog & Stock" },
+  { id: "inventory", name: "Inventory (Adjustments & Transfers)", category: "Catalog & Stock" },
+  { id: "services", name: "Services Catalog", category: "Catalog & Stock" },
+
+  // Purchases & Vendors
+  { id: "purchases", name: "Purchase Orders & Returns", category: "Purchases & Vendors" },
+  { id: "suppliers", name: "Suppliers & Vendors Directory", category: "Purchases & Vendors" },
+
+  // Customers & Marketing
+  { id: "customers", name: "Customers & CRM", category: "Marketing & CRM" },
+  { id: "coupons", name: "Coupons & Discounts", category: "Marketing & CRM" },
+  { id: "gift-cards", name: "Gift Cards Management", category: "Marketing & CRM" },
+  { id: "loyalty", name: "Loyalty Program & Points", category: "Marketing & CRM" },
+  { id: "promotions", name: "Promotions & Deals", category: "Marketing & CRM" },
+  { id: "whatsapp", name: "WhatsApp Notifications", category: "Marketing & CRM" },
+
+  // Finance & Accounting
+  { id: "expenses", name: "Expense Management", category: "Finance & Accounts" },
+  { id: "accounts", name: "Chart of Accounts & Ledger", category: "Finance & Accounts" },
+  { id: "reports", name: "Financial & Sales Analytics", category: "Finance & Accounts" },
+  { id: "accounting-reports", name: "Accounting Reports (P&L, Balance Sheet)", category: "Finance & Accounts" },
+
+  // Specialized Verticals & Services
+  { id: "repairs", name: "Repair Service Job Sheets", category: "Specialized Verticals" },
+  { id: "rentals", name: "Equipment Rentals", category: "Specialized Verticals" },
+  { id: "subscriptions", name: "Recurring Subscriptions", category: "Specialized Verticals" },
+  { id: "tables", name: "Restaurant Tables Management", category: "Specialized Verticals" },
+  { id: "kitchen", name: "Kitchen Order Tickets (KOT)", category: "Specialized Verticals" },
+  { id: "appointments", name: "Appointment Booking", category: "Specialized Verticals" },
+
+  // Administration & Intelligence
+  { id: "users", name: "Staff Users & Role Permissions", category: "Administration & AI" },
+  { id: "ai", name: "AI Copilot Assistant", category: "Administration & AI" },
 ];
+
 
 const defaultEditingPlan = {
   id: "",
@@ -418,7 +442,7 @@ function SuperAdminPlansPage() {
         <Sheet open={isPlanModalOpen} onOpenChange={setIsPlanModalOpen}>
           <SheetContent
             side="right"
-            className="w-full sm:max-w-xl md:max-w-2xl p-0 flex flex-col h-full bg-background border-l border-border"
+            className="w-full sm:max-w-2xl md:max-w-3xl lg:max-w-4xl p-0 flex flex-col h-full bg-background border-l border-border"
           >
             <SheetHeader className="bg-muted/60 p-5 border-b pr-12 text-left">
               <SheetTitle className="text-lg font-bold flex items-center gap-2 text-foreground">
@@ -590,29 +614,74 @@ function SuperAdminPlansPage() {
                 </div>
 
                 {/* Module Checklist */}
-                <div className="space-y-2">
-                  <Label className="text-xs font-bold text-foreground">Bundled System Features</Label>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                    {AVAILABLE_MODULES.map((mod) => {
-                      const isChecked = editingPlan.features?.includes(mod.id);
-                      return (
-                        <label
-                          key={mod.id}
-                          className={`flex items-center gap-2 p-2 rounded-xl border text-xs cursor-pointer transition-colors ${
-                            isChecked
-                              ? "bg-primary/10 border-primary/40 font-semibold text-foreground"
-                              : "bg-card border-border/70 text-muted-foreground hover:bg-muted/30"
-                          }`}
-                        >
-                          <Checkbox
-                            checked={isChecked}
-                            onCheckedChange={() => handleToggleModule(mod.id)}
-                          />
-                          <span className="truncate">{mod.name}</span>
-                        </label>
-                      );
-                    })}
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <Label className="text-xs font-bold text-foreground">Bundled System Features & Modules</Label>
+                      <p className="text-[11px] text-muted-foreground">
+                        {editingPlan.features?.length || 0} of {AVAILABLE_MODULES.length} modules enabled for this tier
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 px-2 text-[11px] text-primary"
+                        onClick={() =>
+                          setEditingPlan({
+                            ...editingPlan,
+                            features: AVAILABLE_MODULES.map((m) => m.id),
+                          })
+                        }
+                      >
+                        Select All
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 px-2 text-[11px] text-muted-foreground"
+                        onClick={() =>
+                          setEditingPlan({
+                            ...editingPlan,
+                            features: [],
+                          })
+                        }
+                      >
+                        Deselect All
+                      </Button>
+                    </div>
                   </div>
+
+                  {Array.from(new Set(AVAILABLE_MODULES.map((m) => m.category))).map((cat) => (
+                    <div key={cat} className="space-y-1.5 p-3 rounded-2xl border bg-muted/10">
+                      <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground/80">
+                        {cat}
+                      </span>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
+                        {AVAILABLE_MODULES.filter((m) => m.category === cat).map((mod) => {
+                          const isChecked = editingPlan.features?.includes(mod.id);
+                          return (
+                            <label
+                              key={mod.id}
+                              className={`flex items-center gap-2 p-2 rounded-xl border text-xs cursor-pointer transition-colors ${
+                                isChecked
+                                  ? "bg-primary/10 border-primary/40 font-semibold text-foreground"
+                                  : "bg-card border-border/70 text-muted-foreground hover:bg-muted/30"
+                              }`}
+                            >
+                              <Checkbox
+                                checked={isChecked}
+                                onCheckedChange={() => handleToggleModule(mod.id)}
+                              />
+                              <span className="truncate">{mod.name}</span>
+                            </label>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ))}
                 </div>
 
                 {/* Default Trial Toggle */}

@@ -380,7 +380,7 @@ function SuperAdminUsersPage() {
         <Sheet open={isAddUserModalOpen} onOpenChange={setIsAddUserModalOpen}>
           <SheetContent
             side="right"
-            className="w-full sm:max-w-md p-0 flex flex-col h-full bg-background border-l border-border"
+            className="w-full sm:max-w-xl md:max-w-2xl p-0 flex flex-col h-full bg-background border-l border-border"
           >
             <SheetHeader className="bg-muted/60 p-5 border-b pr-12 text-left">
               <SheetTitle className="text-lg font-bold text-foreground">Add Super Administrator</SheetTitle>

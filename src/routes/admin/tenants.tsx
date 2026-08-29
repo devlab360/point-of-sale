@@ -87,27 +87,47 @@ export const Route = createFileRoute("/admin/tenants")({
 });
 
 const ALL_SYSTEM_MODULES = [
-  { key: "pos", label: "POS Terminal", icon: ScanBarcode, category: "Sales" },
-  { key: "products", label: "Product Catalog & Barcodes", icon: Package, category: "Catalog" },
-  { key: "inventory", label: "Stock Inventory & Transfers", icon: Boxes, category: "Catalog" },
-  { key: "services", label: "Services Catalog", icon: Wrench, category: "Catalog" },
-  { key: "sales", label: "Orders, Invoices & Returns", icon: ReceiptText, category: "Sales" },
-  { key: "quotations", label: "Quotations & Estimates", icon: ReceiptText, category: "Sales" },
-  { key: "delivery-challans", label: "Delivery Challans", icon: Truck, category: "Sales" },
+  // Sales & POS
+  { key: "pos", label: "POS Terminal (Billing)", icon: ScanBarcode, category: "Sales & POS" },
+  { key: "sales", label: "Sales Invoices & Orders", icon: ReceiptText, category: "Sales & POS" },
+  { key: "returns", label: "Sales Returns & Refunds", icon: ReceiptText, category: "Sales & POS" },
+  { key: "quotations", label: "Quotations & Estimates", icon: ReceiptText, category: "Sales & POS" },
+  { key: "delivery-challans", label: "Delivery Challans", icon: Truck, category: "Sales & POS" },
+
+  // Catalog & Inventory
+  { key: "products", label: "Product Catalog & Barcodes", icon: Package, category: "Catalog & Stock" },
+  { key: "inventory", label: "Stock Inventory & Transfers", icon: Boxes, category: "Catalog & Stock" },
+  { key: "services", label: "Services Catalog", icon: Wrench, category: "Catalog & Stock" },
+
+  // Purchases & Vendors
   { key: "purchases", label: "Purchases & Purchase Orders", icon: ShoppingCart, category: "Procurement" },
-  { key: "suppliers", label: "Suppliers Directory", icon: Truck, category: "Procurement" },
-  { key: "customers", label: "Customer Directory & CRM", icon: Users, category: "Marketing" },
-  { key: "promotions", label: "Discounts & Promotions", icon: Star, category: "Marketing" },
-  { key: "loyalty", label: "Loyalty Points & Rewards", icon: Star, category: "Marketing" },
-  { key: "whatsapp", label: "WhatsApp Marketing & Receipts", icon: MessageCircle, category: "Marketing" },
-  { key: "repairs", label: "Repair & Service Jobs", icon: Wrench, category: "Verticals" },
-  { key: "restaurant", label: "Restaurant Tables & KOT", icon: Store, category: "Verticals" },
-  { key: "appointments", label: "Appointment Booking", icon: Calendar, category: "Verticals" },
-  { key: "rentals", label: "Equipment & Item Rentals", icon: Boxes, category: "Verticals" },
-  { key: "finance", label: "Cash Register & Accounts", icon: Wallet, category: "Finance" },
-  { key: "expenses", label: "Expense Management", icon: Wallet, category: "Finance" },
-  { key: "reports", label: "Analytics & P&L Reports", icon: BarChart3, category: "Intelligence" },
-  { key: "ai", label: "AI Business Assistant", icon: Sparkles, category: "Intelligence" },
+  { key: "suppliers", label: "Suppliers & Vendors Directory", icon: Truck, category: "Procurement" },
+
+  // Customers & Marketing
+  { key: "customers", label: "Customer Directory & CRM", icon: Users, category: "Marketing & CRM" },
+  { key: "coupons", label: "Coupons & Discounts", icon: Star, category: "Marketing & CRM" },
+  { key: "gift-cards", label: "Gift Cards Management", icon: Star, category: "Marketing & CRM" },
+  { key: "loyalty", label: "Loyalty Points & Rewards", icon: Star, category: "Marketing & CRM" },
+  { key: "promotions", label: "Promotions & Deals", icon: Star, category: "Marketing & CRM" },
+  { key: "whatsapp", label: "WhatsApp Marketing & Alerts", icon: MessageCircle, category: "Marketing & CRM" },
+
+  // Finance & Accounts
+  { key: "expenses", label: "Expense Management", icon: Wallet, category: "Finance & Accounts" },
+  { key: "accounts", label: "Chart of Accounts & Ledger", icon: Wallet, category: "Finance & Accounts" },
+  { key: "reports", label: "Financial & Sales Analytics", icon: BarChart3, category: "Finance & Accounts" },
+  { key: "accounting-reports", label: "Accounting Reports (P&L, Balance Sheet)", icon: BarChart3, category: "Finance & Accounts" },
+
+  // Verticals & Services
+  { key: "repairs", label: "Repair Service Job Sheets", icon: Wrench, category: "Specialized Verticals" },
+  { key: "rentals", label: "Equipment & Item Rentals", icon: Boxes, category: "Specialized Verticals" },
+  { key: "subscriptions", label: "Recurring Subscriptions", icon: RefreshCw, category: "Specialized Verticals" },
+  { key: "tables", label: "Restaurant Tables Management", icon: Store, category: "Specialized Verticals" },
+  { key: "kitchen", label: "Kitchen Order Tickets (KOT)", icon: Store, category: "Specialized Verticals" },
+  { key: "appointments", label: "Appointment Booking", icon: Calendar, category: "Specialized Verticals" },
+
+  // Administration & Intelligence
+  { key: "users", label: "Staff Users & Permissions", icon: Users, category: "Administration & AI" },
+  { key: "ai", label: "AI Business Copilot", icon: Sparkles, category: "Administration & AI" },
 ];
 
 function SuperAdminTenantsPage() {
@@ -540,7 +560,7 @@ function SuperAdminTenantsPage() {
         <Sheet open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
           <SheetContent
             side="right"
-            className="w-full sm:max-w-xl md:max-w-2xl p-0 flex flex-col h-full bg-background border-l border-border"
+            className="w-full sm:max-w-2xl md:max-w-3xl lg:max-w-4xl p-0 flex flex-col h-full bg-background border-l border-border"
           >
             <SheetHeader className="bg-muted/60 p-5 border-b pr-12 text-left">
               <SheetTitle className="text-lg font-bold flex items-center gap-2 text-foreground">
@@ -898,7 +918,7 @@ function SuperAdminTenantsPage() {
         <Sheet open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
           <SheetContent
             side="right"
-            className="w-full sm:max-w-lg p-0 flex flex-col h-full bg-background border-l border-border"
+            className="w-full sm:max-w-xl md:max-w-2xl lg:max-w-3xl p-0 flex flex-col h-full bg-background border-l border-border"
           >
             <SheetHeader className="bg-muted/60 p-5 border-b pr-12 text-left">
               <SheetTitle className="text-lg font-bold text-foreground">
