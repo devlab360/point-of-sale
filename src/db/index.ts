@@ -3,7 +3,7 @@ import postgres from "postgres";
 import * as schema from "./schema";
 
 const connectionString =
-  process.env.DATABASE_URL || process.env.NEON_DB || "postgres://postgres:@localhost:5432/pos_db";
+  process.env.DATABASE_URL || "postgres://postgres:@localhost:5432/pos_db";
 
 const isLocalHost =
   connectionString.includes("localhost") || connectionString.includes("127.0.0.1");
