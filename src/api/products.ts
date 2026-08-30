@@ -81,6 +81,8 @@ const ProductInputSchema = z
     stock: z.number().optional().default(0),
     minStock: z.number().nullable().optional(),
     taxPct: z.string().nullable().optional(),
+    gstRate: z.union([z.string(), z.number()]).nullable().optional(),
+    taxMasterId: z.string().nullable().optional(),
     type: z.string().nullable().optional(),
     hasVariants: z.boolean().nullable().optional(),
     isBundle: z.boolean().nullable().optional(),
@@ -174,6 +176,7 @@ export const createProductFn = createServerFn({ method: "POST" })
         "locationBin",
         "hsnCode",
         "gstRate",
+        "taxMasterId",
         "taxInclusive",
         "mrp",
         "metadata",
@@ -341,6 +344,7 @@ export const updateProductFn = createServerFn({ method: "POST" })
         "locationBin",
         "hsnCode",
         "gstRate",
+        "taxMasterId",
         "taxInclusive",
         "mrp",
         "metadata",
@@ -377,7 +381,12 @@ export const updateProductFn = createServerFn({ method: "POST" })
         // This is a naive implementation: delete all existing variants and recreate them
         await db
           .delete(schema.productVariants)
-          .where(eq(schema.productVariants.productId, data.id));
+          .where(
+            and(
+              eq(schema.productVariants.productId, data.id),
+              eq(schema.productVariants.organizationId, session.orgId),
+            ),
+          );
         const now = Date.now();
         for (const variant of variants) {
           const variantId = variant.id || uuidv4();

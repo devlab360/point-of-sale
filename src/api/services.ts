@@ -251,7 +251,12 @@ export const updateServiceItemFn = createServerFn({ method: "POST" })
         if (data.hasVariants !== undefined) {
           await tx
             .delete(schema.serviceVariants)
-            .where(eq(schema.serviceVariants.serviceId, data.id));
+            .where(
+              and(
+                eq(schema.serviceVariants.serviceId, data.id),
+                eq(schema.serviceVariants.organizationId, orgId),
+              ),
+            );
 
           if (data.hasVariants && data.variants && data.variants.length > 0) {
             for (const variant of data.variants) {

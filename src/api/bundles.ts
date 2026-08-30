@@ -31,7 +31,10 @@ export const getBundleComponentsFn = createServerFn({ method: "GET" })
         .from(schema.productBundles)
         .innerJoin(
           schema.products,
-          eq(schema.productBundles.componentProductId, schema.products.id),
+          and(
+            eq(schema.productBundles.componentProductId, schema.products.id),
+            eq(schema.products.organizationId, session.orgId),
+          ),
         )
         .where(
           and(

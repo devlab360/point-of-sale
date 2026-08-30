@@ -22,11 +22,8 @@ const inMemoryTables: Record<string, any[]> = {
 export const getTablesFn = createServerFn({ method: "GET" })
   .validator((data: any) => data)
   .handler(async () => {
-    let orgId = "default";
-    try {
-      const session = await requireAuth();
-      orgId = session.orgId;
-    } catch {}
+    const session = await requireAuth();
+    const orgId = session.orgId;
 
     try {
       if (schema.restaurantTables) {
@@ -34,12 +31,12 @@ export const getTablesFn = createServerFn({ method: "GET" })
           .select()
           .from(schema.restaurantTables)
           .where(eq(schema.restaurantTables.organizationId, orgId));
-        if (res && res.length > 0) return { success: true, data: res };
+        if (res) return { success: true, data: res };
       }
     } catch (e) {
       console.warn("DB getTables fallback:", e);
     }
-    return { success: true, data: inMemoryTables[orgId] || inMemoryTables["default"] || [] };
+    return { success: true, data: inMemoryTables[orgId] || [] };
   });
 
 export const createTableFn = createServerFn({ method: "POST" })
@@ -51,11 +48,8 @@ export const createTableFn = createServerFn({ method: "POST" })
     }),
   )
   .handler(async ({ data }) => {
-    let orgId = "default";
-    try {
-      const session = await requireAuth();
-      orgId = session.orgId;
-    } catch {}
+    const session = await requireAuth();
+    const orgId = session.orgId;
 
     const id = data.id || uuidv4();
     const newTbl = {
@@ -92,11 +86,8 @@ export const updateTableStatusFn = createServerFn({ method: "POST" })
     }),
   )
   .handler(async ({ data }) => {
-    let orgId = "default";
-    try {
-      const session = await requireAuth();
-      orgId = session.orgId;
-    } catch {}
+    const session = await requireAuth();
+    const orgId = session.orgId;
 
     if (inMemoryTables[orgId]) {
       const tbl = inMemoryTables[orgId].find((t) => t.id === data.id);
@@ -132,11 +123,8 @@ export const updateTableStatusFn = createServerFn({ method: "POST" })
 export const deleteTableFn = createServerFn({ method: "POST" })
   .validator(z.object({ id: z.string() }))
   .handler(async ({ data }) => {
-    let orgId = "default";
-    try {
-      const session = await requireAuth();
-      orgId = session.orgId;
-    } catch {}
+    const session = await requireAuth();
+    const orgId = session.orgId;
 
     if (inMemoryTables[orgId]) {
       inMemoryTables[orgId] = inMemoryTables[orgId].filter((t) => t.id !== data.id);

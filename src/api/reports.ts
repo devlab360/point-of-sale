@@ -122,7 +122,9 @@ export const getProfitabilityReportFn = createServerFn({ method: "GET" })
         const productsInfo = await db
           .select({ id: schema.products.id, name: schema.products.name })
           .from(schema.products)
-          .where(inArray(schema.products.id, productIds));
+          .where(
+            and(inArray(schema.products.id, productIds), eq(schema.products.organizationId, orgId)),
+          );
 
         const nameMap = productsInfo.reduce(
           (acc, p) => ({ ...acc, [p.id]: p.name }),

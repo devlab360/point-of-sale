@@ -1,5 +1,5 @@
 {
-  "id": "87e67b6d-6c5d-4e5a-9145-2b63f62ac33c",
+  "id": "bcfea2f8-ab29-4700-9094-72221acc426b",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -165,97 +165,6 @@
         "activity_log_organization_id_organizations_id_fk": {
           "name": "activity_log_organization_id_organizations_id_fk",
           "tableFrom": "activity_log",
-          "tableTo": "organizations",
-          "columnsFrom": [
-            "organization_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "public.adjustments": {
-      "name": "adjustments",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "text",
-          "primaryKey": true,
-          "notNull": true
-        },
-        "organization_id": {
-          "name": "organization_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "ref": {
-          "name": "ref",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "date": {
-          "name": "date",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "reason": {
-          "name": "reason",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "items": {
-          "name": "items",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "net": {
-          "name": "net",
-          "type": "numeric(12, 2)",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "status": {
-          "name": "status",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        }
-      },
-      "indexes": {
-        "adjustments_org_idx": {
-          "name": "adjustments_org_idx",
-          "columns": [
-            {
-              "expression": "organization_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
-      "foreignKeys": {
-        "adjustments_organization_id_organizations_id_fk": {
-          "name": "adjustments_organization_id_organizations_id_fk",
-          "tableFrom": "adjustments",
           "tableTo": "organizations",
           "columnsFrom": [
             "organization_id"
@@ -2824,6 +2733,13 @@
           "notNull": true,
           "default": "'basic'"
         },
+        "extra_users_quota": {
+          "name": "extra_users_quota",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "default": 0
+        },
         "plan_expiry_date": {
           "name": "plan_expiry_date",
           "type": "timestamp",
@@ -3729,6 +3645,12 @@
           "primaryKey": false,
           "notNull": false
         },
+        "tax_master_id": {
+          "name": "tax_master_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
         "tax_inclusive": {
           "name": "tax_inclusive",
           "type": "boolean",
@@ -3838,6 +3760,19 @@
           "tableTo": "organizations",
           "columnsFrom": [
             "organization_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "products_tax_master_id_tax_masters_id_fk": {
+          "name": "products_tax_master_id_tax_masters_id_fk",
+          "tableFrom": "products",
+          "tableTo": "tax_masters",
+          "columnsFrom": [
+            "tax_master_id"
           ],
           "columnsTo": [
             "id"
@@ -5099,6 +5034,13 @@
           "primaryKey": false,
           "notNull": false
         },
+        "per_extra_user_price": {
+          "name": "per_extra_user_price",
+          "type": "numeric(10, 2)",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "'0'"
+        },
         "features": {
           "name": "features",
           "type": "jsonb",
@@ -5513,107 +5455,6 @@
         "sale_payments_sale_id_sales_id_fk": {
           "name": "sale_payments_sale_id_sales_id_fk",
           "tableFrom": "sale_payments",
-          "tableTo": "sales",
-          "columnsFrom": [
-            "sale_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "public.sale_taxes": {
-      "name": "sale_taxes",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "serial",
-          "primaryKey": true,
-          "notNull": true
-        },
-        "organization_id": {
-          "name": "organization_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "sale_id": {
-          "name": "sale_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "tax_name": {
-          "name": "tax_name",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "amount": {
-          "name": "amount",
-          "type": "numeric(12, 2)",
-          "primaryKey": false,
-          "notNull": true
-        }
-      },
-      "indexes": {
-        "sale_taxes_org_idx": {
-          "name": "sale_taxes_org_idx",
-          "columns": [
-            {
-              "expression": "organization_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "sale_taxes_sale_idx": {
-          "name": "sale_taxes_sale_idx",
-          "columns": [
-            {
-              "expression": "sale_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
-      "foreignKeys": {
-        "sale_taxes_organization_id_organizations_id_fk": {
-          "name": "sale_taxes_organization_id_organizations_id_fk",
-          "tableFrom": "sale_taxes",
-          "tableTo": "organizations",
-          "columnsFrom": [
-            "organization_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        },
-        "sale_taxes_sale_id_sales_id_fk": {
-          "name": "sale_taxes_sale_id_sales_id_fk",
-          "tableFrom": "sale_taxes",
           "tableTo": "sales",
           "columnsFrom": [
             "sale_id"
@@ -6671,6 +6512,12 @@
           "primaryKey": false,
           "notNull": false
         },
+        "default_tax_master_id": {
+          "name": "default_tax_master_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
         "business_type": {
           "name": "business_type",
           "type": "text",
@@ -6736,6 +6583,19 @@
           "tableTo": "organizations",
           "columnsFrom": [
             "organization_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "settings_default_tax_master_id_tax_masters_id_fk": {
+          "name": "settings_default_tax_master_id_tax_masters_id_fk",
+          "tableFrom": "settings",
+          "tableTo": "tax_masters",
+          "columnsFrom": [
+            "default_tax_master_id"
           ],
           "columnsTo": [
             "id"
@@ -7617,8 +7477,8 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.transfers": {
-      "name": "transfers",
+    "public.tax_masters": {
+      "name": "tax_masters",
       "schema": "",
       "columns": {
         "id": {
@@ -7633,40 +7493,82 @@
           "primaryKey": false,
           "notNull": true
         },
-        "ref": {
-          "name": "ref",
+        "name": {
+          "name": "name",
           "type": "text",
           "primaryKey": false,
           "notNull": true
         },
-        "date": {
-          "name": "date",
-          "type": "timestamp",
+        "rate": {
+          "name": "rate",
+          "type": "numeric(5, 2)",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "default": "'0'"
         },
-        "destination": {
-          "name": "destination",
+        "tax_type": {
+          "name": "tax_type",
           "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "default": "'gst'"
         },
-        "items": {
-          "name": "items",
-          "type": "integer",
+        "cgst_rate": {
+          "name": "cgst_rate",
+          "type": "numeric(5, 2)",
           "primaryKey": false,
-          "notNull": true
+          "notNull": false
+        },
+        "sgst_rate": {
+          "name": "sgst_rate",
+          "type": "numeric(5, 2)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "igst_rate": {
+          "name": "igst_rate",
+          "type": "numeric(5, 2)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "is_default": {
+          "name": "is_default",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
         },
         "status": {
           "name": "status",
           "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "default": "'active'"
+        },
+        "description": {
+          "name": "description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
         }
       },
       "indexes": {
-        "transfers_org_idx": {
-          "name": "transfers_org_idx",
+        "tax_masters_org_idx": {
+          "name": "tax_masters_org_idx",
           "columns": [
             {
               "expression": "organization_id",
@@ -7682,9 +7584,9 @@
         }
       },
       "foreignKeys": {
-        "transfers_organization_id_organizations_id_fk": {
-          "name": "transfers_organization_id_organizations_id_fk",
-          "tableFrom": "transfers",
+        "tax_masters_organization_id_organizations_id_fk": {
+          "name": "tax_masters_organization_id_organizations_id_fk",
+          "tableFrom": "tax_masters",
           "tableTo": "organizations",
           "columnsFrom": [
             "organization_id"
@@ -7697,7 +7599,16 @@
         }
       },
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
+      "uniqueConstraints": {
+        "tax_masters_name_org_idx": {
+          "name": "tax_masters_name_org_idx",
+          "nullsNotDistinct": false,
+          "columns": [
+            "name",
+            "organization_id"
+          ]
+        }
+      },
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false
@@ -7856,6 +7767,12 @@
         },
         "permissions": {
           "name": "permissions",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "admin_permissions": {
+          "name": "admin_permissions",
           "type": "jsonb",
           "primaryKey": false,
           "notNull": false

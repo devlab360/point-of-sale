@@ -87,7 +87,7 @@ function AppointmentsPage() {
   });
   const customers = customersData || [];
 
-  const rawAppointments = data?.success ? data.data : [];
+  const rawAppointments = Array.isArray((data as any)?.data) ? (data as any).data : [];
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
@@ -225,7 +225,7 @@ function AppointmentsPage() {
         Phone: a.customerPhone || "-",
         Service: a.serviceName,
         Staff: a.staffName || "-",
-        "Date & Time": a.dateTime ? format(new Date(a.dateTime), "PPpp") : "-",
+        "Date & Time": formatAppDate(a.dateTime, "datetime", "PPpp"),
         Status: a.status,
         Notes: a.notes || "-",
       })),
@@ -426,9 +426,9 @@ function AppointmentsPage() {
                             <TableCell className="text-xs text-muted-foreground whitespace-nowrap font-medium">
                               <div className="flex items-center gap-1.5">
                                 <Clock className="size-3.5 text-primary" />
-                                <span>
-                                  {a.dateTime ? format(new Date(a.dateTime), "PP · p") : "—"}
-                                </span>
+<span>
+                                      {formatAppDate(a.dateTime, "datetime", "PP · p")}
+                                    </span>
                               </div>
                             </TableCell>
                             <TableCell className="text-center whitespace-nowrap">
@@ -552,7 +552,7 @@ function AppointmentsPage() {
                               Time
                             </span>
                             <span className="font-semibold text-foreground">
-                              {a.dateTime ? format(new Date(a.dateTime), "PP · p") : "—"}
+                              {formatAppDate(a.dateTime, "datetime", "PP · p")}
                             </span>
                           </div>
                         </div>
@@ -683,7 +683,7 @@ function AppointmentsPage() {
                     onDateChange={(d) =>
                       setFormData({
                         ...formData,
-                        date: d ? d.toISOString().split("T")[0] : format(new Date(), "yyyy-MM-dd"),
+                        date: d ? format(d, "yyyy-MM-dd") : format(new Date(), "yyyy-MM-dd"),
                       })
                     }
                   />

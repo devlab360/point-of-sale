@@ -90,11 +90,15 @@ export const getReviewsFn = createServerFn({ method: "GET" })
   .handler(async ({ data }) => {
     const session = await requireAuth();
     try {
-      // Super admin sees all
-      const reviewsList = await db
-        .select()
-        .from(schema.reviews)
-        .orderBy(desc(schema.reviews.createdAt));
+      // Super admin sees all; everyone else only sees their own org's reviews
+      const reviewsList =
+        session.role === "super_admin"
+          ? await db.select().from(schema.reviews).orderBy(desc(schema.reviews.createdAt))
+          : await db
+              .select()
+              .from(schema.reviews)
+              .where(eq(schema.reviews.organizationId, session.orgId))
+              .orderBy(desc(schema.reviews.createdAt));
       return { success: true, data: reviewsList };
     } catch (e) {
       return handleApiError(e);

@@ -350,7 +350,7 @@ export const completePosSaleFn = createServerFn({ method: "POST" })
 
         // Fetch Inventory levels for the selected location (fallback to 'Main Store' if not provided)
         const locationId = data.sale.locationId;
-        const [productsList, servicesList, repairsList, inventoryList, bundlesList, batchesList] =
+        const [productsList, servicesList, repairsList, inventoryList, bundlesList, batchesList, taxMastersList] =
           await Promise.all([
             tx
               .select()
@@ -412,6 +412,10 @@ export const completePosSaleFn = createServerFn({ method: "POST" })
                 ),
               )
               .orderBy(schema.inventoryBatches.receivedAt),
+            tx
+              .select()
+              .from(schema.taxMasters)
+              .where(eq(schema.taxMasters.organizationId, orgId)),
           ]);
 
         // If there are bundle components, we need to fetch their inventory and batches too
@@ -451,6 +455,8 @@ export const completePosSaleFn = createServerFn({ method: "POST" })
         const allBatches = [...batchesList, ...componentBatchesList];
 
         const itemsMap = new Map();
+        const taxMasterMap = new Map<string, any>();
+        taxMastersList.forEach((tm) => taxMasterMap.set(tm.id, tm));
         for (const p of productsList) {
           const inv = allInventory.find((i) => i.productId === p.id);
           itemsMap.set(p.id, {
@@ -498,7 +504,10 @@ export const completePosSaleFn = createServerFn({ method: "POST" })
           }
 
           const unitPrice = Number(p.price) || 0;
-          const taxPct = Number((p as any).taxPct || (p as any).gstRate) || 0;
+          const master = p.taxMasterId ? taxMasterMap.get(p.taxMasterId) : undefined;
+          const taxPct = master
+            ? Number(master.rate) || 0
+            : Number((p as any).taxPct || (p as any).gstRate) || 0;
 
           const lineSubtotal = unitPrice * item.quantity;
           const lineTax = (lineSubtotal * taxPct) / 100;
@@ -764,7 +773,12 @@ export const completePosSaleFn = createServerFn({ method: "POST" })
                 await tx
                   .update(schema.inventoryBatches)
                   .set({ quantityRemaining: bu.quantityRemaining })
-                  .where(eq(schema.inventoryBatches.id, bu.id));
+                  .where(
+                    and(
+                      eq(schema.inventoryBatches.id, bu.id),
+                      eq(schema.inventoryBatches.organizationId, orgId),
+                    ),
+                  );
               }
             }
 
@@ -876,7 +890,9 @@ export const completePosSaleFn = createServerFn({ method: "POST" })
                   credit:
                     data.sale.paymentMethod === "credit" ? String(newCreditBalance) : c.credit,
                 })
-                .where(eq(schema.customers.id, customerId));
+                .where(
+                  and(eq(schema.customers.id, customerId), eq(schema.customers.organizationId, orgId)),
+                );
 
               // Also sync with loyaltyMembers table if member exists
               if (c.phone) {
@@ -900,7 +916,12 @@ export const completePosSaleFn = createServerFn({ method: "POST" })
               await tx
                 .update((schema as any).coupons)
                 .set({ used: (coupon.used || 0) + 1 })
-                .where(eq((schema as any).coupons.id, coupon.id));
+                .where(
+                  and(
+                    eq((schema as any).coupons.id, coupon.id),
+                    eq((schema as any).coupons.organizationId, orgId),
+                  ),
+                );
             }
           }
         }
@@ -1076,8 +1097,10 @@ export const voidPosSaleFn = createServerFn({ method: "POST" })
           const batch = await tx
             .select()
             .from(schema.inventoryBatches)
-            .where(eq(schema.inventoryBatches.id, c.batchId))
-            .limit(1);
+.where(
+                and(eq(schema.inventoryBatches.id, c.batchId), eq(schema.inventoryBatches.organizationId, orgId)),
+              )
+              .limit(1);
           if (batch.length > 0) {
             const newRemaining = (
               Number(batch[0].quantityRemaining || 0) + Number(c.quantityConsumed || 0)
@@ -1085,7 +1108,9 @@ export const voidPosSaleFn = createServerFn({ method: "POST" })
             await tx
               .update(schema.inventoryBatches)
               .set({ quantityRemaining: newRemaining })
-              .where(eq(schema.inventoryBatches.id, c.batchId));
+              .where(
+                and(eq(schema.inventoryBatches.id, c.batchId), eq(schema.inventoryBatches.organizationId, orgId)),
+              );
           }
           await tx
             .delete(schema.inventoryBatchConsumptions)

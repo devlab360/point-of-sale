@@ -241,6 +241,31 @@ export const units = pgTable(
   }),
 );
 
+export const taxMasters = pgTable(
+  "tax_masters",
+  {
+    id: text("id").primaryKey(),
+    organizationId: text("organization_id")
+      .notNull()
+      .references(() => organizations.id),
+    name: text("name").notNull(),
+    rate: numeric("rate", { precision: 5, scale: 2 }).notNull().default("0"),
+    taxType: text("tax_type").notNull().default("gst"),
+    cgstRate: numeric("cgst_rate", { precision: 5, scale: 2 }),
+    sgstRate: numeric("sgst_rate", { precision: 5, scale: 2 }),
+    igstRate: numeric("igst_rate", { precision: 5, scale: 2 }),
+    isDefault: boolean("is_default").notNull().default(false),
+    status: text("status").notNull().default("active"),
+    description: text("description"),
+    createdAt: timestamp("created_at", { mode: "string" }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { mode: "string" }).defaultNow().notNull(),
+  },
+  (t) => ({
+    orgIdx: index("tax_masters_org_idx").on(t.organizationId),
+    nameOrgIdx: unique("tax_masters_name_org_idx").on(t.name, t.organizationId),
+  }),
+);
+
 export const suppliers = pgTable(
   "suppliers",
   {
@@ -311,6 +336,7 @@ export const products = pgTable(
     locationBin: text("location_bin"),
     hsnCode: text("hsn_code"),
     gstRate: numeric("gst_rate", { precision: 5, scale: 2 }),
+    taxMasterId: text("tax_master_id").references(() => taxMasters.id),
     taxInclusive: boolean("tax_inclusive").default(false),
     mrp: numeric("mrp", { precision: 10, scale: 2 }),
     metadata: jsonb("metadata").$type<Record<string, any>>(),
@@ -508,25 +534,6 @@ export const salePayments = pgTable(
   }),
 );
 
-export const saleTaxes = pgTable(
-  "sale_taxes",
-  {
-    id: serial("id").primaryKey(),
-    organizationId: text("organization_id")
-      .notNull()
-      .references(() => organizations.id),
-    saleId: text("sale_id")
-      .notNull()
-      .references(() => sales.id, { onDelete: "cascade" }),
-    taxName: text("tax_name").notNull(),
-    amount: numeric("amount", { precision: 12, scale: 2 }).notNull(),
-  },
-  (t) => ({
-    orgIdx: index("sale_taxes_org_idx").on(t.organizationId),
-    saleIdx: index("sale_taxes_sale_idx").on(t.saleId),
-  }),
-);
-
 export const purchases = pgTable(
   "purchases",
   {
@@ -647,6 +654,7 @@ export const settings = pgTable(
     enableGST: boolean("enable_gst").default(false),
     gstin: text("gstin"),
     stateCode: text("state_code"),
+    defaultTaxMasterId: text("default_tax_master_id").references(() => taxMasters.id),
     businessType: text("business_type"),
     config: jsonb("config").$type<Record<string, any>>(),
     expiryWarningDays: integer("expiry_warning_days").default(30),
@@ -656,43 +664,6 @@ export const settings = pgTable(
   },
   (t) => ({
     orgIdx: index("settings_org_idx").on(t.organizationId),
-  }),
-);
-
-export const adjustments = pgTable(
-  "adjustments",
-  {
-    id: text("id").primaryKey(),
-    organizationId: text("organization_id")
-      .notNull()
-      .references(() => organizations.id),
-    ref: text("ref").notNull(),
-    date: timestamp("date", { mode: "string" }).notNull(),
-    reason: text("reason").notNull(),
-    items: integer("items").notNull(),
-    net: numeric("net", { precision: 12, scale: 2 }).notNull(),
-    status: text("status").notNull(),
-  },
-  (t) => ({
-    orgIdx: index("adjustments_org_idx").on(t.organizationId),
-  }),
-);
-
-export const transfers = pgTable(
-  "transfers",
-  {
-    id: text("id").primaryKey(),
-    organizationId: text("organization_id")
-      .notNull()
-      .references(() => organizations.id),
-    ref: text("ref").notNull(),
-    date: timestamp("date", { mode: "string" }).notNull(),
-    destination: text("destination").notNull(),
-    items: integer("items").notNull(),
-    status: text("status").notNull(),
-  },
-  (t) => ({
-    orgIdx: index("transfers_org_idx").on(t.organizationId),
   }),
 );
 

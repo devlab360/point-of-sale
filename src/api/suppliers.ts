@@ -105,7 +105,7 @@ export const updateSupplierFn = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     try {
       const session = await requireAuth();
-      const { id, ...safeUpdates } = data.updates;
+      const { id, organizationId: _omitted, ...safeUpdates } = data.updates;
 
       await db
         .update(schema.suppliers)
@@ -163,7 +163,12 @@ export const getSupplierLedgersFn = createServerFn({ method: "GET" })
       const all = await db
         .select()
         .from(schema.supplierLedgers)
-        .where(eq(schema.supplierLedgers.supplierId, data.supplierId));
+        .where(
+          and(
+            eq(schema.supplierLedgers.supplierId, data.supplierId),
+            eq(schema.supplierLedgers.organizationId, session.orgId),
+          ),
+        );
       return { success: true, data: all };
     } catch (e) {
       return handleApiError(e);

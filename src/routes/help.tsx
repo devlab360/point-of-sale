@@ -16,9 +16,16 @@ import {
   Mail,
   ThumbsUp,
   MessageCircle,
+  ShieldCheck,
+  CheckCircle2,
+  AlertCircle,
+  Wrench,
+  Clock,
+  ArrowRight,
 } from "lucide-react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { getHelpArticlesFn, getFaqsFn, createSupportTicketFn, createReviewFn } from "@/api/support";
+import { getSalesFn } from "@/api/sales";
 import {
   Sheet,
   SheetContent,
@@ -42,9 +49,10 @@ export const Route = createFileRoute("/help")({
 });
 
 function HelpPage() {
-  const [activeTab, setActiveTab] = useState<"docs" | "videos" | "faqs">("docs");
+  const [activeTab, setActiveTab] = useState<"docs" | "videos" | "faqs" | "warranty">("docs");
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [isReviewOpen, setIsReviewOpen] = useState(false);
+  const [serialSearchQuery, setSerialSearchQuery] = useState("");
 
   // Chat form
   const [chatSubject, setChatSubject] = useState("");
@@ -66,6 +74,12 @@ function HelpPage() {
   const { data: faqs = [], isLoading: loadingFaqs } = useQuery({
     queryKey: ["faqs"],
     queryFn: async () => ((await getFaqsFn({ data: {} })) as any).data || [],
+  });
+
+  const { data: allSales = [], isLoading: loadingSales } = useQuery({
+    queryKey: ["salesForWarranty"],
+    queryFn: async () => ((await getSalesFn({ data: { pageSize: 500 } })) as any).data || [],
+    enabled: activeTab === "warranty",
   });
 
   const chatMutation = useMutation({
@@ -239,6 +253,18 @@ function HelpPage() {
           >
             FAQs ({filteredFaqs.length})
           </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab("warranty")}
+            className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all flex items-center gap-1.5 ${
+              activeTab === "warranty"
+                ? "bg-card text-foreground shadow-sm font-bold text-primary"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <ShieldCheck className="size-3.5" />
+            Warranty Check
+          </button>
         </div>
       </div>
 
@@ -326,6 +352,205 @@ function HelpPage() {
               </div>
             );
           })}
+        </div>
+      )}
+
+      {/* 🛡️ Warranty & Guarantee Verification Lookup */}
+      {activeTab === "warranty" && (
+        <div className="space-y-6">
+          {/* Search Card */}
+          <div className="rounded-3xl border border-primary/20 bg-gradient-to-b from-primary/5 via-card to-card p-6 shadow-soft space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div className="size-12 rounded-2xl bg-primary/10 border border-primary/25 grid place-items-center text-primary shadow-xs">
+                  <ShieldCheck className="size-6" />
+                </div>
+                <div>
+                  <h3 className="text-base sm:text-lg font-bold text-foreground">
+                    Digital Warranty & Guarantee Verification
+                  </h3>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    Look up product purchase dates, registered serials/IMEIs, and live warranty coverage status.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="relative">
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+              <Input
+                placeholder="Enter Serial Number (SN-xxx), IMEI, or Invoice ID (e.g. INV-2026-001)..."
+                value={serialSearchQuery}
+                onChange={(e) => setSerialSearchQuery(e.target.value)}
+                className="pl-10 h-12 text-sm sm:text-base font-medium rounded-2xl bg-card border-border/80 shadow-xs"
+                autoFocus
+              />
+            </div>
+          </div>
+
+          {/* Results List */}
+          {loadingSales ? (
+            <div className="p-12 text-center text-muted-foreground text-xs flex items-center justify-center gap-2">
+              <Loader2 className="size-4 animate-spin text-primary" /> Searching warranty records...
+            </div>
+          ) : (
+            (() => {
+              const q = serialSearchQuery.toLowerCase().trim();
+              const matchedWarrantyItems: any[] = [];
+
+              (allSales || []).forEach((sale: any) => {
+                const lines = Array.isArray(sale.lines) ? sale.lines : [];
+                lines.forEach((l: any) => {
+                  const meta = l.product?.metadata || {};
+                  const serial = l.selectedSerial || "";
+                  const invId = sale.invoiceNumber || sale.id || "";
+                  const prodName = l.product?.name || "";
+
+                  const matchQuery =
+                    !q ||
+                    serial.toLowerCase().includes(q) ||
+                    invId.toLowerCase().includes(q) ||
+                    prodName.toLowerCase().includes(q);
+
+                  if (matchQuery && (meta.hasWarranty || serial || l.product?.hasSerial)) {
+                    const saleDate = new Date(sale.createdAt || sale.date || new Date());
+                    const warrantyMonths = Number(meta.warrantyMonths || 12);
+                    const guaranteeMonths = Number(meta.guaranteeMonths || 0);
+
+                    const warrantyExpiryDate = new Date(saleDate);
+                    warrantyExpiryDate.setMonth(warrantyExpiryDate.getMonth() + warrantyMonths);
+
+                    const guaranteeExpiryDate = new Date(saleDate);
+                    guaranteeExpiryDate.setMonth(guaranteeExpiryDate.getMonth() + guaranteeMonths);
+
+                    const now = new Date();
+                    const isWarrantyValid = warrantyExpiryDate.getTime() > now.getTime();
+                    const isGuaranteeValid = guaranteeMonths > 0 && guaranteeExpiryDate.getTime() > now.getTime();
+
+                    const daysRemaining = Math.max(
+                      0,
+                      Math.ceil((warrantyExpiryDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
+                    );
+
+                    matchedWarrantyItems.push({
+                      sale,
+                      line: l,
+                      meta,
+                      serial,
+                      saleDate,
+                      warrantyMonths,
+                      guaranteeMonths,
+                      warrantyExpiryDate,
+                      guaranteeExpiryDate,
+                      isWarrantyValid,
+                      isGuaranteeValid,
+                      daysRemaining,
+                    });
+                  }
+                });
+              });
+
+              if (matchedWarrantyItems.length === 0) {
+                return (
+                  <div className="p-12 text-center border border-dashed border-border/80 rounded-3xl bg-muted/10 space-y-2">
+                    <ShieldCheck className="size-10 text-muted-foreground/40 mx-auto" />
+                    <h4 className="font-bold text-sm text-foreground">
+                      {serialSearchQuery ? "No Warranty Record Found" : "Search to Verify Warranty"}
+                    </h4>
+                    <p className="text-xs text-muted-foreground max-w-sm mx-auto">
+                      {serialSearchQuery
+                        ? `No serialized sale matched "${serialSearchQuery}". Check if the serial or invoice number is typed correctly.`
+                        : "Type any product serial number, customer mobile, or receipt number above to check warranty validity."}
+                    </p>
+                  </div>
+                );
+              }
+
+              return (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {matchedWarrantyItems.map((item, idx) => (
+                    <div
+                      key={idx}
+                      className="rounded-3xl border border-border/80 bg-card p-5 shadow-soft space-y-3.5 hover:border-primary/40 transition-all"
+                    >
+                      {/* Header */}
+                      <div className="flex items-start justify-between gap-3 border-b border-border/60 pb-3">
+                        <div>
+                          <h4 className="font-extrabold text-sm sm:text-base text-foreground">
+                            {item.line.product.name}
+                          </h4>
+                          <p className="text-xs text-muted-foreground mt-0.5">
+                            Invoice: <strong className="text-foreground">#{String(item.sale.invoiceNumber || item.sale.id).slice(0, 12)}</strong>
+                            {" • "}
+                            Sold on: {item.saleDate.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" })}
+                          </p>
+                        </div>
+                        <Badge
+                          variant="outline"
+                          className={
+                            item.isWarrantyValid
+                              ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/30 font-bold"
+                              : "bg-destructive/10 text-destructive border-destructive/30 font-bold"
+                          }
+                        >
+                          {item.isWarrantyValid ? `Active (${item.daysRemaining}d left)` : "Expired"}
+                        </Badge>
+                      </div>
+
+                      {/* Specs Body */}
+                      <div className="grid grid-cols-2 gap-2 text-xs">
+                        <div className="p-2.5 rounded-xl bg-muted/40 border border-border/60">
+                          <span className="text-[10px] text-muted-foreground uppercase font-bold block">
+                            Serial / IMEI No.
+                          </span>
+                          <span className="font-mono font-bold text-foreground">
+                            {item.serial || "Standard Sku Sale"}
+                          </span>
+                        </div>
+                        <div className="p-2.5 rounded-xl bg-muted/40 border border-border/60">
+                          <span className="text-[10px] text-muted-foreground uppercase font-bold block">
+                            Customer
+                          </span>
+                          <span className="font-semibold text-foreground truncate block">
+                            {item.sale.customer?.name || item.sale.customerName || "Walk-in Customer"}
+                          </span>
+                        </div>
+                        <div className="p-2.5 rounded-xl bg-muted/40 border border-border/60">
+                          <span className="text-[10px] text-muted-foreground uppercase font-bold block">
+                            Warranty Period
+                          </span>
+                          <span className="font-bold text-foreground">
+                            {item.warrantyMonths} Months ({item.meta.warrantyType || "Carry-In"})
+                          </span>
+                        </div>
+                        <div className="p-2.5 rounded-xl bg-muted/40 border border-border/60">
+                          <span className="text-[10px] text-muted-foreground uppercase font-bold block">
+                            Valid Until
+                          </span>
+                          <span className={`font-bold ${item.isWarrantyValid ? "text-emerald-600" : "text-destructive"}`}>
+                            {item.warrantyExpiryDate.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" })}
+                          </span>
+                        </div>
+                      </div>
+
+                      {item.guaranteeMonths > 0 && (
+                        <div className="p-2 rounded-xl bg-amber-500/10 border border-amber-500/20 text-xs text-amber-800 dark:text-amber-300 flex items-center justify-between">
+                          <span>Replacement Guarantee: {item.guaranteeMonths} Months</span>
+                          <span className="font-bold">{item.isGuaranteeValid ? "Active ✓" : "Guarantee Expired"}</span>
+                        </div>
+                      )}
+
+                      {item.meta.warrantyPolicy && (
+                        <p className="text-[11px] text-muted-foreground italic">
+                          Policy: {item.meta.warrantyPolicy}
+                        </p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              );
+            })()
+          )}
         </div>
       )}
 

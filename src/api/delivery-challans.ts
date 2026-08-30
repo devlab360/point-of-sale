@@ -21,11 +21,8 @@ const inMemoryChallans: Record<string, any[]> = {};
 export const getDeliveryChallansFn = createServerFn({ method: "GET" })
   .validator((data: any) => data)
   .handler(async ({ data }) => {
-    let orgId = "default";
-    try {
-      const session = await requireAuth();
-      orgId = session.orgId;
-    } catch {}
+    const session = await requireAuth();
+    const orgId = session.orgId;
 
     try {
       if (schema.deliveryChallans) {
@@ -44,11 +41,8 @@ export const getDeliveryChallansFn = createServerFn({ method: "GET" })
 export const createDeliveryChallanFn = createServerFn({ method: "POST" })
   .validator((data: any) => data)
   .handler(async ({ data }) => {
-    let orgId = "default";
-    try {
-      const session = await requireAuth();
-      orgId = session.orgId;
-    } catch {}
+    const session = await requireAuth();
+    const orgId = session.orgId;
 
     const id = uuidv4();
     const newChallan = {
@@ -87,11 +81,8 @@ export const createDeliveryChallanFn = createServerFn({ method: "POST" })
 export const updateDeliveryChallanStatusFn = createServerFn({ method: "POST" })
   .validator((data: any) => data)
   .handler(async ({ data }) => {
-    let orgId = "default";
-    try {
-      const session = await requireAuth();
-      orgId = session.orgId;
-    } catch {}
+    const session = await requireAuth();
+    const orgId = session.orgId;
 
     try {
       if (schema.deliveryChallans) {
@@ -121,11 +112,8 @@ export const updateDeliveryChallanStatusFn = createServerFn({ method: "POST" })
 export const deleteDeliveryChallanFn = createServerFn({ method: "POST" })
   .validator((data: any) => data)
   .handler(async ({ data }) => {
-    let orgId = "default";
-    try {
-      const session = await requireAuth();
-      orgId = session.orgId;
-    } catch {}
+    const session = await requireAuth();
+    const orgId = session.orgId;
 
     try {
       if (schema.deliveryChallans) {

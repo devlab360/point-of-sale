@@ -66,11 +66,8 @@ export const getPurchasesFn = createServerFn({ method: "GET" })
       .passthrough(),
   )
   .handler(async ({ data }) => {
-    let orgId = "default";
-    try {
-      const session = await requireAuth();
-      orgId = session.orgId;
-    } catch {}
+    const session = await requireAuth();
+    const orgId = session.orgId;
 
     try {
       if (schema.purchases) {
@@ -105,24 +102,21 @@ export const getPurchasesFn = createServerFn({ method: "GET" })
           .where(whereClause);
         const totalCount = Number(totalCountRes[0].count);
 
-        if (all && all.length > 0) return { success: true, data: all, total: totalCount };
+        if (all) return { success: true, data: all, total: totalCount };
       }
     } catch (e) {
       console.warn("DB getPurchases fallback:", e);
     }
 
-    const fallbackList = inMemoryPurchases[orgId] || inMemoryPurchases["default"] || [];
+    const fallbackList = inMemoryPurchases[orgId] || [];
     return { success: true, data: fallbackList, total: fallbackList.length };
   });
 
 export const getPurchaseByIdFn = createServerFn({ method: "GET" })
   .validator((data: any) => data)
   .handler(async ({ data }) => {
-    let orgId = "default";
-    try {
-      const session = await requireAuth();
-      orgId = session.orgId;
-    } catch {}
+    const session = await requireAuth();
+    const orgId = session.orgId;
 
     try {
       if (schema.purchases) {
@@ -137,7 +131,12 @@ export const getPurchaseByIdFn = createServerFn({ method: "GET" })
             items = await db
               .select()
               .from(schema.purchaseItems)
-              .where(eq(schema.purchaseItems.purchaseId, data.id));
+              .where(
+                and(
+                  eq(schema.purchaseItems.purchaseId, data.id),
+                  eq(schema.purchaseItems.organizationId, orgId),
+                ),
+              );
           }
           return { success: true, data: { ...found[0], items } };
         }
@@ -146,7 +145,7 @@ export const getPurchaseByIdFn = createServerFn({ method: "GET" })
       console.warn("DB getPurchaseById fallback:", e);
     }
 
-    const fallback = (inMemoryPurchases[orgId] || inMemoryPurchases["default"] || []).find((p) => p.id === data.id);
+    const fallback = (inMemoryPurchases[orgId] || []).find((p) => p.id === data.id);
     let items = [];
     if (fallback?.purchaseItems) {
       try {
@@ -269,7 +268,9 @@ export const createPurchaseFn = createServerFn({ method: "POST" })
                 stock: sql`${schema.products.stock} + ${line.quantity}`,
                 cost: line.cost.toFixed(2),
               })
-              .where(eq(schema.products.id, line.productId));
+              .where(
+                and(eq(schema.products.id, line.productId), eq(schema.products.organizationId, session.orgId)),
+              );
           }
 
           // --- Batch/Lot creation for products with hasBatch enabled ---
@@ -373,11 +374,8 @@ export const createPurchaseFn = createServerFn({ method: "POST" })
 export const updatePurchaseStatusFn = createServerFn({ method: "POST" })
   .validator((data: any) => data)
   .handler(async ({ data }) => {
-    let orgId = "default";
-    try {
-      const session = await requireAuth();
-      orgId = session.orgId;
-    } catch {}
+    const session = await requireAuth();
+    const orgId = session.orgId;
 
     if (inMemoryPurchases[orgId]) {
       const p = inMemoryPurchases[orgId].find((item) => item.id === data.id);
@@ -406,11 +404,8 @@ export const updatePurchaseStatusFn = createServerFn({ method: "POST" })
 export const updatePurchaseFn = createServerFn({ method: "POST" })
   .validator((data: any) => data)
   .handler(async ({ data }) => {
-    let orgId = "default";
-    try {
-      const session = await requireAuth();
-      orgId = session.orgId;
-    } catch {}
+    const session = await requireAuth();
+    const orgId = session.orgId;
 
     const purchaseId = data.id || data.purchase?.id;
     const pData = data.purchase || data;
@@ -452,11 +447,8 @@ export const updatePurchaseFn = createServerFn({ method: "POST" })
 export const deletePurchaseFn = createServerFn({ method: "POST" })
   .validator((data: any) => data)
   .handler(async ({ data }) => {
-    let orgId = "default";
-    try {
-      const session = await requireAuth();
-      orgId = session.orgId;
-    } catch {}
+    const session = await requireAuth();
+    const orgId = session.orgId;
 
     if (inMemoryPurchases[orgId]) {
       inMemoryPurchases[orgId] = inMemoryPurchases[orgId].filter((item) => item.id !== data.id);
@@ -579,7 +571,9 @@ export const createPurchaseReturnFn = createServerFn({ method: "POST" })
                 .set({
                   stock: sql`GREATEST(0, ${schema.products.stock} - ${line.quantity})`,
                 })
-                .where(eq(schema.products.id, line.productId));
+                .where(
+                and(eq(schema.products.id, line.productId), eq(schema.products.organizationId, session.orgId)),
+              );
             }
           }
         }

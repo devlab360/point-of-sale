@@ -67,6 +67,7 @@ const ALLOWED_PRODUCT_COLUMNS = [
   "locationBin",
   "hsnCode",
   "gstRate",
+  "taxMasterId",
   "taxInclusive",
   "mrp",
   "metadata",
@@ -272,12 +273,22 @@ export class ProductService {
     const bundleComponents = await db
       .select()
       .from(schema.productBundles)
-      .where(eq(schema.productBundles.bundleProductId, productId));
+      .where(
+        and(
+          eq(schema.productBundles.bundleProductId, productId),
+          eq(schema.productBundles.organizationId, orgId),
+        ),
+      );
 
     const modifiers = await db
       .select()
       .from(schema.productModifiers)
-      .where(eq(schema.productModifiers.productId, productId));
+      .where(
+        and(
+          eq(schema.productModifiers.productId, productId),
+          eq(schema.productModifiers.organizationId, orgId),
+        ),
+      );
 
     return {
       ...product,

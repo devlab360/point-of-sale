@@ -47,11 +47,8 @@ const inMemoryGiftCards: Record<string, any[]> = {
 export const getGiftCardsFn = createServerFn({ method: "GET" })
   .validator((data: any) => data)
   .handler(async () => {
-    let orgId = "default";
-    try {
-      const session = await requireAuth();
-      orgId = session.orgId;
-    } catch {}
+    const session = await requireAuth();
+    const orgId = session.orgId;
 
     try {
       if (schema.giftCards) {
@@ -59,24 +56,21 @@ export const getGiftCardsFn = createServerFn({ method: "GET" })
           .select()
           .from(schema.giftCards)
           .where(eq(schema.giftCards.organizationId, orgId));
-        if (all && all.length > 0) {
+        if (all) {
           return { success: true, data: all };
         }
       }
     } catch (e) {
       console.warn("DB giftCards query fallback:", e);
     }
-    return { success: true, data: inMemoryGiftCards[orgId] || inMemoryGiftCards["default"] || [] };
+    return { success: true, data: inMemoryGiftCards[orgId] || [] };
   });
 
 export const createGiftCardFn = createServerFn({ method: "POST" })
   .validator((data: any) => data)
   .handler(async ({ data }) => {
-    let orgId = "default";
-    try {
-      const session = await requireAuth();
-      orgId = session.orgId;
-    } catch {}
+    const session = await requireAuth();
+    const orgId = session.orgId;
 
     const g = data?.card || data?.giftCard || data || {};
     const balanceNum = Number(g.balance ?? g.initialBalance) || 0;
@@ -126,11 +120,8 @@ export const createGiftCardFn = createServerFn({ method: "POST" })
 export const updateGiftCardFn = createServerFn({ method: "POST" })
   .validator((data: any) => data)
   .handler(async ({ data }) => {
-    let orgId = "default";
-    try {
-      const session = await requireAuth();
-      orgId = session.orgId;
-    } catch {}
+    const session = await requireAuth();
+    const orgId = session.orgId;
 
     const g = data?.card || data?.giftCard || data || {};
     const cardId = g.id || data.id;
@@ -144,9 +135,10 @@ export const updateGiftCardFn = createServerFn({ method: "POST" })
 
     try {
       if (schema.giftCards) {
+        const { organizationId: _omitted, ...safeUpdates } = g;
         await db
           .update(schema.giftCards)
-          .set(g)
+          .set(safeUpdates)
           .where(and(eq(schema.giftCards.id, cardId), eq(schema.giftCards.organizationId, orgId)));
       }
       return { success: true };
@@ -159,11 +151,8 @@ export const updateGiftCardFn = createServerFn({ method: "POST" })
 export const updateGiftCardStatusFn = createServerFn({ method: "POST" })
   .validator((data: any) => data)
   .handler(async ({ data }) => {
-    let orgId = "default";
-    try {
-      const session = await requireAuth();
-      orgId = session.orgId;
-    } catch {}
+    const session = await requireAuth();
+    const orgId = session.orgId;
 
     if (inMemoryGiftCards[orgId]) {
       const card = inMemoryGiftCards[orgId].find((c) => c.id === data.id);
@@ -187,11 +176,8 @@ export const updateGiftCardStatusFn = createServerFn({ method: "POST" })
 export const addGiftCardBalanceFn = createServerFn({ method: "POST" })
   .validator((data: any) => data)
   .handler(async ({ data }) => {
-    let orgId = "default";
-    try {
-      const session = await requireAuth();
-      orgId = session.orgId;
-    } catch {}
+    const session = await requireAuth();
+    const orgId = session.orgId;
 
     const addAmount = Number(data.amount) || 0;
     if (inMemoryGiftCards[orgId]) {
@@ -232,11 +218,8 @@ export const addGiftCardBalanceFn = createServerFn({ method: "POST" })
 export const deleteGiftCardFn = createServerFn({ method: "POST" })
   .validator((data: any) => data)
   .handler(async ({ data }) => {
-    let orgId = "default";
-    try {
-      const session = await requireAuth();
-      orgId = session.orgId;
-    } catch {}
+    const session = await requireAuth();
+    const orgId = session.orgId;
 
     if (inMemoryGiftCards[orgId]) {
       inMemoryGiftCards[orgId] = inMemoryGiftCards[orgId].filter((c) => c.id !== data.id);

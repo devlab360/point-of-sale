@@ -1,4 +1,4 @@
-import { Search, ScanBarcode, Plus, Image as ImageIcon, MapPin, X } from "lucide-react";
+import { Search, ScanBarcode, Plus, Image as ImageIcon, MapPin, X, Gem, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -15,6 +15,7 @@ import { useVirtualizer } from "@tanstack/react-virtual";
 import { getLocationsFn } from "@/api/locations";
 import { VariantSelectorModal } from "./VariantSelectorModal";
 import { ModifierSelectionModal } from "./ModifierSelectionModal";
+import { JewelleryCalculatorModal } from "./JewelleryCalculatorModal";
 
 export function ProductGrid({ state }: { state: any }) {
   const {
@@ -26,12 +27,14 @@ export function ProductGrid({ state }: { state: any }) {
     categories,
     filtered,
     addToCart,
+    addCustomLineToCart,
     formatCurrency,
     products,
     toast,
     getCategoryName,
     getUnitName,
     getBrandName,
+    settings,
   } = state;
 
   const { data: locationsRes } = useQuery({
@@ -41,6 +44,7 @@ export function ProductGrid({ state }: { state: any }) {
   const locations = locationsRes?.data || [];
 
   const [selectedVariantProduct, setSelectedVariantProduct] = useState<any>(null);
+  const [selectedJewelleryProduct, setSelectedJewelleryProduct] = useState<any>(null);
   const [selectedModifierProduct, setSelectedModifierProduct] = useState<{
     product: any;
     variant?: any;
@@ -53,6 +57,8 @@ export function ProductGrid({ state }: { state: any }) {
           setSelectedModifierProduct(null);
         } else if (selectedVariantProduct) {
           setSelectedVariantProduct(null);
+        } else if (selectedJewelleryProduct) {
+          setSelectedJewelleryProduct(null);
         }
       }
     };
@@ -343,7 +349,9 @@ export function ProductGrid({ state }: { state: any }) {
                           key={p.id}
                           type="button"
                           onClick={() => {
-                            if (p.hasVariants) {
+                            if (p.metadata?.isJewellery || settings?.businessType === "JEWELLERY") {
+                              setSelectedJewelleryProduct(p);
+                            } else if (p.hasVariants) {
                               setSelectedVariantProduct(p);
                             } else if (p.hasModifiers) {
                               setSelectedModifierProduct({ product: p });
@@ -392,6 +400,12 @@ export function ProductGrid({ state }: { state: any }) {
                                 Service
                               </span>
                             )}
+                            {p.metadata?.isJewellery && (
+                              <span className="absolute right-2 top-2 rounded-full bg-amber-500/95 px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wider text-white shadow-sm backdrop-blur-sm flex items-center gap-1">
+                                <Gem className="size-2.5" />
+                                {p.metadata.purityKarat || "22K"}
+                              </span>
+                            )}
                           </div>
 
                           {/* Product Details */}
@@ -405,6 +419,11 @@ export function ProductGrid({ state }: { state: any }) {
                                   {subText}
                                 </p>
                               )}
+                              {p.metadata?.compatibleVehicles && (
+                                <p className="mt-0.5 line-clamp-1 text-[10px] text-blue-600 dark:text-blue-400 font-medium">
+                                  Fit: {p.metadata.compatibleVehicles}
+                                </p>
+                              )}
                             </div>
 
                             <div className="mt-2.5 flex items-center justify-between gap-1.5 border-t border-border/40 pt-2 shrink-0">
@@ -412,6 +431,12 @@ export function ProductGrid({ state }: { state: any }) {
                                 {formatCurrency(p.price)}
                               </span>
                               <div className="flex items-center gap-1">
+                                {p.metadata?.hasWarranty && (
+                                  <span className="text-[9px] font-bold rounded-md bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 px-1.5 py-0.5 uppercase tracking-wider flex items-center gap-0.5" title="Warranty Protected">
+                                    <ShieldCheck className="size-2.5" />
+                                    {p.metadata.warrantyMonths}M
+                                  </span>
+                                )}
                                 {p.hasVariants && (
                                   <span className="text-[9px] font-bold rounded-md bg-secondary/80 px-1.5 py-0.5 text-secondary-foreground uppercase tracking-wider">
                                     Variants
@@ -469,6 +494,22 @@ export function ProductGrid({ state }: { state: any }) {
             setSelectedModifierProduct(null);
             toast.success(`Added ${product.name} to cart`);
           }}
+        />
+      )}
+
+      {selectedJewelleryProduct && (
+        <JewelleryCalculatorModal
+          product={selectedJewelleryProduct}
+          isOpen={true}
+          onClose={() => setSelectedJewelleryProduct(null)}
+          onAddToCart={(customLine) => {
+            if (addCustomLineToCart) {
+              addCustomLineToCart(customLine);
+            } else {
+              addToCart(customLine.productId);
+            }
+          }}
+          settings={settings}
         />
       )}
     </div>

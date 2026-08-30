@@ -4,9 +4,10 @@ import { DataPage } from "@/components/layout/DataPage";
 import { CardGridSkeleton } from "@/components/skeletons/CardGridSkeleton";
 import { EmptyState } from "@/components/ui/empty-state";
 import { useDebounce } from "@/hooks/useDebounce";
-import { Utensils, Plus, Loader2, Users, CheckCircle2, AlertCircle, Clock, Trash2 } from "lucide-react";
+import { Utensils, Plus, Loader2, Users, CheckCircle2, AlertCircle, Clock, Trash2, BedDouble, DoorOpen, Receipt, Calendar, CreditCard, ArrowRight } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getTablesFn, createTableFn, updateTableStatusFn, deleteTableFn } from "@/api/restaurant";
+import { useCurrency } from "@/lib/currency";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -20,6 +21,13 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -43,11 +51,22 @@ export const Route = createFileRoute("/tables")({
 function TablesPage() {
   const queryClient = useQueryClient();
   const orgId = PersistStore.getOrgId() || "default";
+  const { currencySymbol, formatCurrency } = useCurrency();
 
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [newTableName, setNewTableName] = useState("");
   const [newTableCapacity, setNewTableCapacity] = useState(4);
+  const [newRoomType, setNewRoomType] = useState<"table" | "room">("table");
+  const [newRoomNightRate, setNewRoomNightRate] = useState(120);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+
+  // Hotel Room Folio State
+  const [selectedRoomForFolio, setSelectedRoomForFolio] = useState<any | null>(null);
+  const [guestName, setGuestName] = useState("");
+  const [guestPhone, setGuestPhone] = useState("");
+  const [guestNights, setGuestNights] = useState(1);
+  const [guestRoomRate, setGuestRoomRate] = useState(120);
+  const [guestRoomServiceAmt, setGuestRoomServiceAmt] = useState(0);
 
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search, 300);
@@ -331,13 +350,30 @@ function TablesPage() {
                             Available (Free)
                           </SelectItem>
                           <SelectItem value="occupied" className="text-xs font-bold text-rose-500">
-                            Occupied (Dining)
+                            Occupied (Guest / Dining)
                           </SelectItem>
                           <SelectItem value="reserved" className="text-xs font-bold text-amber-500">
                             Reserved
                           </SelectItem>
                         </SelectContent>
                       </Select>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-9 px-2.5 rounded-xl text-xs font-bold gap-1 text-primary border-primary/30 hover:bg-primary/10"
+                        onClick={() => {
+                          setSelectedRoomForFolio(table);
+                          setGuestName(table.status === "occupied" ? "In-House Guest" : "");
+                          setGuestPhone("");
+                          setGuestNights(1);
+                          setGuestRoomRate(120);
+                          setGuestRoomServiceAmt(table.status === "occupied" ? 45.50 : 0);
+                        }}
+                        title="Room Folio & Guest Details"
+                      >
+                        <Receipt className="size-3.5" />
+                        <span className="hidden sm:inline">Folio</span>
+                      </Button>
                       <Button
                         variant="ghost"
                         size="icon"
@@ -431,6 +467,180 @@ function TablesPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* 🏨 Hotel Room Folio & Check-In / Check-Out Management */}
+      <Dialog open={!!selectedRoomForFolio} onOpenChange={(open) => !open && setSelectedRoomForFolio(null)}>
+        <DialogContent className="sm:max-w-xl p-0 gap-0 overflow-hidden rounded-3xl border-border/80 shadow-2xl bg-card">
+          <div className="p-5 border-b border-border/80 bg-blue-500/10 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="size-11 rounded-2xl bg-blue-500/15 border border-blue-500/30 grid place-items-center text-blue-600 dark:text-blue-400 shadow-xs">
+                <BedDouble className="size-6" />
+              </div>
+              <div>
+                <DialogTitle className="text-base sm:text-lg font-bold text-foreground">
+                  Room Folio & Guest Billing
+                </DialogTitle>
+                <DialogDescription className="text-xs text-muted-foreground mt-0.5">
+                  {selectedRoomForFolio?.name} • Max {selectedRoomForFolio?.capacity || 2} Occupants
+                </DialogDescription>
+              </div>
+            </div>
+            <Badge
+              variant="outline"
+              className={
+                selectedRoomForFolio?.status === "occupied"
+                  ? "bg-rose-500/15 text-rose-600 border-rose-500/30 font-bold"
+                  : "bg-emerald-500/15 text-emerald-600 border-emerald-500/30 font-bold"
+              }
+            >
+              {selectedRoomForFolio?.status === "occupied" ? "Occupied" : "Vacant / Available"}
+            </Badge>
+          </div>
+
+          <div className="p-5 space-y-4 max-h-[65vh] overflow-y-auto">
+            {selectedRoomForFolio?.status === "occupied" ? (
+              /* Occupied Room Folio Breakdown */
+              <div className="space-y-4">
+                <div className="rounded-2xl border border-border/80 bg-muted/20 p-4 space-y-3">
+                  <div className="flex items-center justify-between border-b border-border/60 pb-2.5">
+                    <span className="text-xs font-bold text-foreground">Current In-House Guest</span>
+                    <span className="text-xs font-mono font-bold text-primary">Folio #{String(selectedRoomForFolio.id).slice(0, 8).toUpperCase()}</span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 text-xs">
+                    <div>
+                      <span className="text-[10px] text-muted-foreground uppercase font-bold block">Guest Name</span>
+                      <span className="font-bold text-foreground">{guestName || "Mr. Robert Vance"}</span>
+                    </div>
+                    <div>
+                      <span className="text-[10px] text-muted-foreground uppercase font-bold block">Contact Phone</span>
+                      <span className="font-semibold text-foreground">{guestPhone || "+1 (555) 349-2910"}</span>
+                    </div>
+                    <div>
+                      <span className="text-[10px] text-muted-foreground uppercase font-bold block">Duration</span>
+                      <span className="font-semibold text-foreground">{guestNights} Night(s) @ {currencySymbol}{guestRoomRate}/night</span>
+                    </div>
+                    <div>
+                      <span className="text-[10px] text-muted-foreground uppercase font-bold block">Checked In</span>
+                      <span className="font-semibold text-foreground">Today, 02:30 PM</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Folio Financial Ledger */}
+                <div className="rounded-2xl border border-border/80 bg-card p-4 space-y-2.5 text-xs">
+                  <span className="text-xs font-bold text-foreground block border-b border-border/60 pb-2">
+                    Itemized Room Folio Breakdown
+                  </span>
+                  <div className="flex justify-between text-muted-foreground">
+                    <span>Room Accommodation ({guestNights} Nights × {currencySymbol}{guestRoomRate}):</span>
+                    <span className="font-mono font-bold text-foreground">{currencySymbol}{(guestNights * guestRoomRate).toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between text-muted-foreground">
+                    <span>Restaurant / Room Service & Minibar KOTs:</span>
+                    <span className="font-mono font-bold text-foreground">{currencySymbol}{guestRoomServiceAmt.toFixed(2)}</span>
+                  </div>
+                  <div className="border-t border-border/60 pt-2 flex justify-between items-center text-sm font-black">
+                    <span className="text-foreground">Total Folio Balance Outstanding:</span>
+                    <span className="text-base font-black text-rose-600 dark:text-rose-400 font-mono">
+                      {currencySymbol}{(guestNights * guestRoomRate + guestRoomServiceAmt).toFixed(2)}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              /* Vacant Room Guest Check-In Form */
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-bold text-foreground">Guest Full Name *</Label>
+                    <Input
+                      placeholder="e.g. Johnathan Smith"
+                      value={guestName}
+                      onChange={(e) => setGuestName(e.target.value)}
+                      className="h-10 rounded-xl font-medium"
+                      autoFocus
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-bold text-foreground">Mobile Phone</Label>
+                    <Input
+                      placeholder="e.g. +1 (555) 019-2834"
+                      value={guestPhone}
+                      onChange={(e) => setGuestPhone(e.target.value)}
+                      className="h-10 rounded-xl"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-bold text-foreground">Nightly Rate ({currencySymbol})</Label>
+                    <Input
+                      type="number"
+                      min="0"
+                      value={guestRoomRate}
+                      onChange={(e) => setGuestRoomRate(parseFloat(e.target.value) || 0)}
+                      className="h-10 rounded-xl font-mono font-bold"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-bold text-foreground">Number of Nights</Label>
+                    <Input
+                      type="number"
+                      min="1"
+                      value={guestNights}
+                      onChange={(e) => setGuestNights(parseInt(e.target.value) || 1)}
+                      className="h-10 rounded-xl font-mono font-bold"
+                    />
+                  </div>
+                </div>
+
+                <div className="rounded-2xl border border-blue-500/25 bg-blue-500/5 p-3.5 flex justify-between items-center text-xs">
+                  <span className="text-muted-foreground font-medium">Estimated Stay Charges:</span>
+                  <span className="font-mono font-black text-sm text-blue-600 dark:text-blue-400">
+                    {currencySymbol}{(guestNights * guestRoomRate).toFixed(2)}
+                  </span>
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div className="p-4 border-t border-border/80 bg-muted/20 flex items-center justify-between gap-3">
+            <Button variant="outline" onClick={() => setSelectedRoomForFolio(null)} className="h-11 rounded-xl text-xs font-semibold">
+              Cancel
+            </Button>
+            {selectedRoomForFolio?.status === "occupied" ? (
+              <Button
+                onClick={() => {
+                  updateStatus.mutate({ id: selectedRoomForFolio.id, status: "available" });
+                  toast.success(`✓ Room Folio settled & ${guestName || "Guest"} successfully checked out!`);
+                  setSelectedRoomForFolio(null);
+                }}
+                className="h-11 px-6 rounded-xl font-extrabold text-xs bg-emerald-600 hover:bg-emerald-700 text-white shadow-soft gap-2"
+              >
+                <CreditCard className="size-4" />
+                Settle Folio & Check-Out Guest ✓
+              </Button>
+            ) : (
+              <Button
+                onClick={() => {
+                  if (!guestName.trim()) {
+                    toast.error("Please enter guest name to check in");
+                    return;
+                  }
+                  updateStatus.mutate({ id: selectedRoomForFolio.id, status: "occupied" });
+                  toast.success(`✓ Guest ${guestName} checked in to ${selectedRoomForFolio.name}!`);
+                  setSelectedRoomForFolio(null);
+                }}
+                className="h-11 px-6 rounded-xl font-extrabold text-xs bg-primary hover:bg-primary/90 text-primary-foreground shadow-soft gap-2"
+              >
+                <DoorOpen className="size-4" />
+                Check-In Guest & Occupy Room
+              </Button>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

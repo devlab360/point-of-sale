@@ -19,11 +19,8 @@ const inMemoryQuotations: Record<string, any[]> = {};
 export const getQuotationsFn = createServerFn({ method: "GET" })
   .validator((data: any) => data)
   .handler(async ({ data }) => {
-    let orgId = "default";
-    try {
-      const session = await requireAuth();
-      orgId = session.orgId;
-    } catch {}
+    const session = await requireAuth();
+    const orgId = session.orgId;
 
     try {
       if (schema.quotations) {
@@ -42,11 +39,8 @@ export const getQuotationsFn = createServerFn({ method: "GET" })
 export const createQuotationFn = createServerFn({ method: "POST" })
   .validator((data: any) => data)
   .handler(async ({ data }) => {
-    let orgId = "default";
-    try {
-      const session = await requireAuth();
-      orgId = session.orgId;
-    } catch {}
+    const session = await requireAuth();
+    const orgId = session.orgId;
 
     const id = data.quotation?.id || uuidv4();
     const newQuotation = {
@@ -88,11 +82,8 @@ export const createQuotationFn = createServerFn({ method: "POST" })
 export const updateQuotationFn = createServerFn({ method: "POST" })
   .validator((data: any) => data)
   .handler(async ({ data }) => {
-    let orgId = "default";
-    try {
-      const session = await requireAuth();
-      orgId = session.orgId;
-    } catch {}
+    const session = await requireAuth();
+    const orgId = session.orgId;
 
     try {
       if (schema.quotations) {
@@ -117,11 +108,8 @@ export const updateQuotationFn = createServerFn({ method: "POST" })
 export const deleteQuotationFn = createServerFn({ method: "POST" })
   .validator((data: any) => data)
   .handler(async ({ data }) => {
-    let orgId = "default";
-    try {
-      const session = await requireAuth();
-      orgId = session.orgId;
-    } catch {}
+    const session = await requireAuth();
+    const orgId = session.orgId;
 
     try {
       if (schema.quotations) {

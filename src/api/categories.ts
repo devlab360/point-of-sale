@@ -78,9 +78,10 @@ export const updateCategoryFn = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     try {
       const session = await requireAuth();
+      const { organizationId: _omitted, ...safeUpdates } = data.updates;
       await db
         .update(schema.categories)
-        .set(data.updates as any)
+        .set(safeUpdates as any)
         .where(
           and(
             eq(schema.categories.id, data.id),

@@ -19,6 +19,7 @@ import { getBrandsFn, createBrandFn } from "@/api/brands";
 import { getUnitsFn, createUnitFn } from "@/api/units";
 import { getLocationsFn } from "@/api/locations";
 import { getSettingsFn } from "@/api/settings";
+import { getTaxMastersFn } from "@/api/tax-master";
 import { useCurrency } from "@/lib/currency";
 import { VariantManager } from "./VariantManager";
 import { BundleManager } from "./BundleManager";
@@ -45,6 +46,11 @@ import {
   Tag,
   Sparkles,
   Barcode as BarcodeIcon,
+  Gem,
+  Car,
+  Shield,
+  Award,
+  Clock,
 } from "lucide-react";
 
 export function ProductForm({
@@ -85,6 +91,12 @@ export function ProductForm({
   });
   const settings: any = settingsData;
 
+  const { data: taxMastersRes } = useQuery({
+    queryKey: ["taxMasters"],
+    queryFn: () => getTaxMastersFn(),
+  });
+  const taxMasters: any[] = taxMastersRes?.data || [];
+
   // Per-location stock state: { [locationId]: number }
   const [locationStock, setLocationStock] = useState<Record<string, number>>(() => {
     const initial: Record<string, number> = {};
@@ -117,6 +129,7 @@ export function ProductForm({
         batchExpiryInput: initialData.batches?.[0]?.expiryDate || "",
         batchStockInput: initialData.batches?.[0]?.stock || 0,
         gstRate: initialData.gstRate || 0,
+        taxMasterId: initialData.taxMasterId || settings?.defaultTaxMasterId || null,
         metadata: initialData.metadata || {},
       };
     }
@@ -155,6 +168,7 @@ export function ProductForm({
       locationBin: "",
       hsnCode: "",
       gstRate: 0,
+      taxMasterId: settings?.defaultTaxMasterId || null,
       taxInclusive: false,
       metadata: {},
     };
@@ -229,7 +243,7 @@ export function ProductForm({
             className="flex-1 sm:flex-none min-w-[140px] h-10 rounded-xl font-bold text-xs shadow-soft"
           >
             {isSaving && <Loader2 className="size-4 animate-spin mr-1.5" />}
-            Save SKU Changes
+            Save Product
           </Button>
         </div>
       </div>
@@ -333,11 +347,10 @@ export function ProductForm({
                   <div className="flex items-center gap-2">
                     <span className="text-xs text-muted-foreground font-semibold">Margin:</span>
                     <span
-                      className={`text-xs font-black px-2.5 py-0.5 rounded-full ${
-                        formData.price - formData.cost >= 0
+                      className={`text-xs font-black px-2.5 py-0.5 rounded-full ${formData.price - formData.cost >= 0
                           ? "bg-success/15 text-success border border-success/20"
                           : "bg-destructive/15 text-destructive border border-destructive/20"
-                      }`}
+                        }`}
                     >
                       {(
                         ((formData.price - formData.cost) / (formData.price || 1)) *
@@ -860,22 +873,35 @@ export function ProductForm({
                 />
               </div>
               <div className="grid gap-1.5">
-                <Label className="text-sm font-semibold">GST Rate (%)</Label>
+                <Label className="text-sm font-semibold">Tax Rate (Tax Master)</Label>
                 <Select
-                  value={formData.gstRate.toString()}
-                  onValueChange={(v) => setFormData({ ...formData, gstRate: parseInt(v) || 0 })}
+                  value={formData.taxMasterId?.toString() || ""}
+                  onValueChange={(v) => {
+                    const master = taxMasters.find((m: any) => m.id === v);
+                    setFormData({
+                      ...formData,
+                      taxMasterId: v || null,
+                      gstRate: master ? Number(master.rate) || 0 : 0,
+                    });
+                  }}
                 >
                   <SelectTrigger className="h-10">
-                    <SelectValue placeholder="Select Rate" />
+                    <SelectValue placeholder="Select Tax Rate" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="0">0% (Nil Rated)</SelectItem>
-                    <SelectItem value="5">5%</SelectItem>
-                    <SelectItem value="12">12%</SelectItem>
-                    <SelectItem value="18">18%</SelectItem>
-                    <SelectItem value="28">28%</SelectItem>
+                    <SelectItem value="">0% (Nil Rated)</SelectItem>
+                    {taxMasters
+                      .filter((m: any) => m.status !== "archived")
+                      .map((m: any) => (
+                        <SelectItem key={m.id} value={m.id}>
+                          {m.name} ({Number(m.rate) || 0}%)
+                        </SelectItem>
+                      ))}
                   </SelectContent>
                 </Select>
+                <p className="text-[10px] text-muted-foreground">
+                  Rates are managed dynamically in Tax Master. If empty, use it to keep product tax in sync.
+                </p>
               </div>
               <div className="flex items-center gap-3 pt-2">
                 <input
@@ -1030,6 +1056,410 @@ export function ProductForm({
               </div>
             </CardContent>
           </Card>
+
+          {/* 🛡️ Product Warranty & Guarantee Management */}
+          <Card className="rounded-2xl border-border/80 shadow-soft overflow-hidden">
+            <CardHeader className="bg-muted/30 pb-3 border-b border-border/60">
+              <CardTitle className="text-base font-bold flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <ShieldCheck className="size-4.5 text-primary" />
+                  <span>Warranty & Guarantee Coverage</span>
+                </div>
+                <label className="flex items-center gap-2 text-xs font-semibold cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={formData.metadata?.hasWarranty || false}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        metadata: {
+                          ...formData.metadata,
+                          hasWarranty: e.target.checked,
+                          warrantyMonths: formData.metadata?.warrantyMonths ?? 12,
+                          guaranteeMonths: formData.metadata?.guaranteeMonths ?? 0,
+                          warrantyType: formData.metadata?.warrantyType ?? "carry-in",
+                          warrantyPolicy: formData.metadata?.warrantyPolicy ?? "Comprehensive coverage on manufacturing defects",
+                        },
+                      })
+                    }
+                    className="rounded border-primary text-primary size-4 cursor-pointer"
+                  />
+                  <span>Enable Warranty Card</span>
+                </label>
+              </CardTitle>
+            </CardHeader>
+            {formData.metadata?.hasWarranty && (
+              <CardContent className="p-4 sm:p-5 space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-bold">Warranty Period (Months)</Label>
+                    <Input
+                      type="number"
+                      min="0"
+                      value={formData.metadata?.warrantyMonths ?? 12}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          metadata: {
+                            ...formData.metadata,
+                            warrantyMonths: parseInt(e.target.value) || 0,
+                          },
+                        })
+                      }
+                      placeholder="e.g. 12"
+                      className="h-10 rounded-xl"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-bold">Guarantee Period (Months)</Label>
+                    <Input
+                      type="number"
+                      min="0"
+                      value={formData.metadata?.guaranteeMonths ?? 0}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          metadata: {
+                            ...formData.metadata,
+                            guaranteeMonths: parseInt(e.target.value) || 0,
+                          },
+                        })
+                      }
+                      placeholder="e.g. 6 (Replacement)"
+                      className="h-10 rounded-xl"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-bold">Service Claim Mode</Label>
+                    <Select
+                      value={formData.metadata?.warrantyType ?? "carry-in"}
+                      onValueChange={(val) =>
+                        setFormData({
+                          ...formData,
+                          metadata: {
+                            ...formData.metadata,
+                            warrantyType: val,
+                          },
+                        })
+                      }
+                    >
+                      <SelectTrigger className="h-10 rounded-xl">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="carry-in">Store Carry-In</SelectItem>
+                        <SelectItem value="onsite">On-Site / Home Visit</SelectItem>
+                        <SelectItem value="replacement">Instant Replacement</SelectItem>
+                        <SelectItem value="brand-service">Brand Service Center</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-bold">Warranty Terms & Policy (Printed on Receipts)</Label>
+                  <Input
+                    value={formData.metadata?.warrantyPolicy ?? ""}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        metadata: {
+                          ...formData.metadata,
+                          warrantyPolicy: e.target.value,
+                        },
+                      })
+                    }
+                    placeholder="e.g. Free repair service. Physical or liquid damage excluded."
+                    className="h-10 rounded-xl"
+                  />
+                </div>
+              </CardContent>
+            )}
+          </Card>
+
+          {/* 💍 Jewellery & Precious Metals Specs */}
+          {(settings?.businessType === "JEWELLERY" || settings?.businessType === "UNIVERSAL") && (
+            <Card className="rounded-2xl border-border/80 shadow-soft overflow-hidden">
+              <CardHeader className="bg-amber-500/10 pb-3 border-b border-amber-500/20">
+                <CardTitle className="text-base font-bold flex items-center justify-between text-amber-700 dark:text-amber-400">
+                  <div className="flex items-center gap-2">
+                    <Gem className="size-4.5" />
+                    <span>Jewellery Bullion Specs & Making Charges</span>
+                  </div>
+                  <label className="flex items-center gap-2 text-xs font-semibold cursor-pointer text-foreground">
+                    <input
+                      type="checkbox"
+                      checked={formData.metadata?.isJewellery || false}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          metadata: {
+                            ...formData.metadata,
+                            isJewellery: e.target.checked,
+                            purityKarat: formData.metadata?.purityKarat ?? "22K",
+                            metalType: formData.metadata?.metalType ?? "gold",
+                            grossWeight: formData.metadata?.grossWeight ?? 0,
+                            stoneWeight: formData.metadata?.stoneWeight ?? 0,
+                            netWeight: formData.metadata?.netWeight ?? 0,
+                            makingChargeType: formData.metadata?.makingChargeType ?? "percent",
+                            makingChargeValue: formData.metadata?.makingChargeValue ?? 10,
+                            wastagePercent: formData.metadata?.wastagePercent ?? 0,
+                          },
+                        })
+                      }
+                      className="rounded border-amber-500 text-amber-600 size-4 cursor-pointer"
+                    />
+                    <span>Jewellery Item</span>
+                  </label>
+                </CardTitle>
+              </CardHeader>
+              {formData.metadata?.isJewellery && (
+                <CardContent className="p-4 sm:p-5 space-y-4">
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    <div className="space-y-1.5">
+                      <Label className="text-xs font-bold">Metal Type</Label>
+                      <Select
+                        value={formData.metadata?.metalType ?? "gold"}
+                        onValueChange={(val) =>
+                          setFormData({
+                            ...formData,
+                            metadata: { ...formData.metadata, metalType: val },
+                          })
+                        }
+                      >
+                        <SelectTrigger className="h-10 rounded-xl">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="gold">Gold</SelectItem>
+                          <SelectItem value="silver">Silver</SelectItem>
+                          <SelectItem value="platinum">Platinum</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-xs font-bold">Purity / Karat</Label>
+                      <Select
+                        value={formData.metadata?.purityKarat ?? "22K"}
+                        onValueChange={(val) =>
+                          setFormData({
+                            ...formData,
+                            metadata: { ...formData.metadata, purityKarat: val },
+                          })
+                        }
+                      >
+                        <SelectTrigger className="h-10 rounded-xl">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="24K">24K (99.9% Pure)</SelectItem>
+                          <SelectItem value="22K">22K (91.6% Hallmark)</SelectItem>
+                          <SelectItem value="18K">18K (75.0%)</SelectItem>
+                          <SelectItem value="14K">14K (58.5%)</SelectItem>
+                          <SelectItem value="925">925 Sterling Silver</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-xs font-bold">Gross Weight (Grams)</Label>
+                      <Input
+                        type="number"
+                        step="0.001"
+                        min="0"
+                        value={formData.metadata?.grossWeight ?? ""}
+                        onChange={(e) => {
+                          const gw = parseFloat(e.target.value) || 0;
+                          const sw = formData.metadata?.stoneWeight ?? 0;
+                          setFormData({
+                            ...formData,
+                            metadata: {
+                              ...formData.metadata,
+                              grossWeight: gw,
+                              netWeight: Math.max(0, gw - sw),
+                            },
+                          });
+                        }}
+                        placeholder="0.000"
+                        className="h-10 rounded-xl font-mono font-bold"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-xs font-bold">Stone / Bead Wt (g)</Label>
+                      <Input
+                        type="number"
+                        step="0.001"
+                        min="0"
+                        value={formData.metadata?.stoneWeight ?? ""}
+                        onChange={(e) => {
+                          const sw = parseFloat(e.target.value) || 0;
+                          const gw = formData.metadata?.grossWeight ?? 0;
+                          setFormData({
+                            ...formData,
+                            metadata: {
+                              ...formData.metadata,
+                              stoneWeight: sw,
+                              netWeight: Math.max(0, gw - sw),
+                            },
+                          });
+                        }}
+                        placeholder="0.000"
+                        className="h-10 rounded-xl font-mono"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div className="space-y-1.5">
+                      <Label className="text-xs font-bold">Net Gold Weight</Label>
+                      <div className="h-10 rounded-xl border bg-muted/40 px-3 flex items-center font-mono font-black text-sm text-foreground">
+                        {(formData.metadata?.netWeight ?? 0).toFixed(3)} grams
+                      </div>
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-xs font-bold">Making Charge Type</Label>
+                      <Select
+                        value={formData.metadata?.makingChargeType ?? "percent"}
+                        onValueChange={(val) =>
+                          setFormData({
+                            ...formData,
+                            metadata: { ...formData.metadata, makingChargeType: val },
+                          })
+                        }
+                      >
+                        <SelectTrigger className="h-10 rounded-xl">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="percent">Percentage (%)</SelectItem>
+                          <SelectItem value="per_gram">Per Gram Rate</SelectItem>
+                          <SelectItem value="fixed">Fixed Lump Sum</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-xs font-bold">Making Charge Value</Label>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        value={formData.metadata?.makingChargeValue ?? ""}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            metadata: {
+                              ...formData.metadata,
+                              makingChargeValue: parseFloat(e.target.value) || 0,
+                            },
+                          })
+                        }
+                        placeholder={formData.metadata?.makingChargeType === "percent" ? "10%" : "₹500"}
+                        className="h-10 rounded-xl font-bold"
+                      />
+                    </div>
+                  </div>
+                </CardContent>
+              )}
+            </Card>
+          )}
+
+          {/* 🚗 Auto Parts & Vehicle Compatibility Specs */}
+          {(settings?.businessType === "AUTO_PARTS" || settings?.businessType === "UNIVERSAL") && (
+            <Card className="rounded-2xl border-border/80 shadow-soft overflow-hidden">
+              <CardHeader className="bg-blue-500/10 pb-3 border-b border-blue-500/20">
+                <CardTitle className="text-base font-bold flex items-center justify-between text-blue-700 dark:text-blue-400">
+                  <div className="flex items-center gap-2">
+                    <Car className="size-4.5" />
+                    <span>Auto Parts OEM & Vehicle Fitment</span>
+                  </div>
+                  <label className="flex items-center gap-2 text-xs font-semibold cursor-pointer text-foreground">
+                    <input
+                      type="checkbox"
+                      checked={formData.metadata?.isAutoPart || false}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          metadata: {
+                            ...formData.metadata,
+                            isAutoPart: e.target.checked,
+                            partNumber: formData.metadata?.partNumber ?? "",
+                            oemNumber: formData.metadata?.oemNumber ?? "",
+                            compatibleVehicles: formData.metadata?.compatibleVehicles ?? "",
+                            alternatePartNumbers: formData.metadata?.alternatePartNumbers ?? "",
+                          },
+                        })
+                      }
+                      className="rounded border-blue-500 text-blue-600 size-4 cursor-pointer"
+                    />
+                    <span>Automotive Part</span>
+                  </label>
+                </CardTitle>
+              </CardHeader>
+              {formData.metadata?.isAutoPart && (
+                <CardContent className="p-4 sm:p-5 space-y-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="space-y-1.5">
+                      <Label className="text-xs font-bold">Manufacturer Part Number (MPN)</Label>
+                      <Input
+                        value={formData.metadata?.partNumber ?? ""}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            metadata: { ...formData.metadata, partNumber: e.target.value.toUpperCase() },
+                          })
+                        }
+                        placeholder="e.g. 04465-02220"
+                        className="h-10 rounded-xl font-mono font-bold uppercase"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-xs font-bold">OEM Reference Number</Label>
+                      <Input
+                        value={formData.metadata?.oemNumber ?? ""}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            metadata: { ...formData.metadata, oemNumber: e.target.value.toUpperCase() },
+                          })
+                        }
+                        placeholder="e.g. OEM-TY-8832"
+                        className="h-10 rounded-xl font-mono font-bold uppercase"
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-bold">Compatible Vehicles / Models</Label>
+                    <Input
+                      value={formData.metadata?.compatibleVehicles ?? ""}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          metadata: { ...formData.metadata, compatibleVehicles: e.target.value },
+                        })
+                      }
+                      placeholder="e.g. Toyota Corolla (2015-2022), Honda Civic (2016-2021), Hyundai Elantra"
+                      className="h-10 rounded-xl"
+                    />
+                    <p className="text-[11px] text-muted-foreground">
+                      Cashiers can search by vehicle make, model, or year in POS to locate this part instantly.
+                    </p>
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-bold">Cross-Reference / Alternate Part Numbers</Label>
+                    <Input
+                      value={formData.metadata?.alternatePartNumbers ?? ""}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          metadata: { ...formData.metadata, alternatePartNumbers: e.target.value },
+                        })
+                      }
+                      placeholder="e.g. D923, BP-4421, TRW-GDB3392"
+                      className="h-10 rounded-xl font-mono"
+                    />
+                  </div>
+                </CardContent>
+              )}
+            </Card>
+          )}
         </div>
       </div>
     </div>

@@ -32,6 +32,7 @@ export interface Product {
   orgId?: string;
   hsnCode?: string;
   gstRate?: number;
+  taxMasterId?: string;
   taxInclusive?: boolean;
   _deleted?: boolean;
 }
@@ -61,6 +62,22 @@ export interface LocalUnit {
   orgId?: string;
   name: string;
   short: string;
+  synced?: boolean;
+  syncRetryCount?: number;
+  _deleted?: boolean;
+}
+export interface LocalTaxMaster {
+  id: string;
+  orgId?: string;
+  name: string;
+  rate: number;
+  taxType?: string;
+  cgstRate?: number;
+  sgstRate?: number;
+  igstRate?: number;
+  isDefault?: boolean;
+  status?: string;
+  description?: string;
   synced?: boolean;
   syncRetryCount?: number;
   _deleted?: boolean;
@@ -663,6 +680,7 @@ export class POSDatabase extends Dexie {
   categories!: Table<LocalCategory, string>;
   brands!: Table<LocalBrand, string>;
   units!: Table<LocalUnit, string>;
+  taxMasters!: Table<LocalTaxMaster, string>;
   suppliers!: Table<LocalSupplier, string>;
   purchases!: Table<LocalPurchase, string>;
   inventoryMovements!: Table<LocalInventoryMovement, number>;
@@ -1061,6 +1079,49 @@ export class POSDatabase extends Dexie {
       categories: "id, name, orgId",
       brands: "id, name, orgId",
       units: "id, name, orgId",
+      suppliers: "id, name, orgId",
+      purchases: "id, supplier, date, orgId",
+      inventoryMovements: "++id, productName, action, orgId",
+      adjustments: "id, ref, date, orgId",
+      transfers: "id, ref, date, orgId",
+      expenses: "id, date, category, orgId",
+      coupons: "id, code, orgId",
+      giftCards: "id, code, orgId",
+      promotions: "id, status, orgId",
+      activityLog: "id, timestamp, orgId",
+      users: "id, role, status, orgId",
+      notifications: "id, read, orgId",
+      settings: "id, orgId",
+      heldInvoices: "id, savedAt, orgId",
+      salesReturns: "id, ref, saleId, date, status, orgId",
+      purchaseReturns: "id, ref, purchaseId, date, status, orgId",
+      locations: "id, name, type, status, orgId",
+      shifts: "id, userId, status, orgId",
+      cashMovements: "id, shiftId, type, orgId",
+      invitations: "id, orgId, token, status",
+      customerLedgers: "id, orgId, customerId, date",
+      supplierLedgers: "id, orgId, supplierId, date",
+      quotations: "id, orgId, quotationNo, status",
+      deliveryChallans: "id, orgId, challanNo, status",
+      accounts: "id, orgId, type",
+      vouchers: "id, orgId, type, date",
+      repairs: "id, orgId, customerId, status",
+      subscriptions: "id, orgId, customerId, planId, status, nextBilling",
+      rentals: "id, orgId, customerId, productId, status, returnDate",
+      saasOrganizations: "id, status, currentPlanId",
+      saasPlans: "id, name",
+      saasSessions: "id, orgId, userId, status",
+    });
+
+    // Version 20: adds Tax Master tables
+    this.version(20).stores({
+      products: "id, name, sku, barcode, category, orgId",
+      customers: "id, name, phone, orgId",
+      offlineSales: "id, status, synced, date, orgId",
+      categories: "id, name, orgId",
+      brands: "id, name, orgId",
+      units: "id, name, orgId",
+      taxMasters: "id, orgId",
       suppliers: "id, name, orgId",
       purchases: "id, supplier, date, orgId",
       inventoryMovements: "++id, productName, action, orgId",

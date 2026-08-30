@@ -44,6 +44,7 @@ import { toast } from "sonner";
 import { useEffect, useState, useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { getSettingsFn, updateSettingsFn, getAllSaasPlansFn } from "@/api/settings";
+import { getTaxMastersFn } from "@/api/tax-master";
 import { DEFAULT_PAYMENT_METHODS, PAYMENT_METHOD_ICONS, type PaymentMethodConfig } from "@/lib/payment-methods";
 import { submitPaymentProofFn } from "@/api/subscription-payments";
 import { updateUserFn } from "@/api/users";
@@ -123,6 +124,7 @@ const defaultSettings: any = {
   email: "",
   standardRate: 0,
   reducedRate: 0,
+  defaultTaxMasterId: null,
   pricesIncludeTax: false,
   showTaxBreakdown: true,
   headerNote: "",
@@ -170,6 +172,19 @@ function SettingsPage() {
     },
   });
   const dbSettings = dbSettingsData || null;
+
+  const { data: taxMastersData } = useQuery({
+    queryKey: ["taxMasters", orgId],
+    queryFn: async () => {
+      try {
+        const res = await getTaxMastersFn({ data: {} });
+        return (res as any)?.data || [];
+      } catch {
+        return [];
+      }
+    },
+  });
+  const taxMasters: any[] = taxMastersData || [];
 
   const { data: plansData, isLoading: isLoadingPlans } = useQuery({
     queryKey: ["saas_plans"],
@@ -344,6 +359,7 @@ function SettingsPage() {
               signatureUrl: settings.signatureUrl,
               standardRate: settings.standardRate?.toString() || "0",
               reducedRate: settings.reducedRate?.toString() || "0",
+              defaultTaxMasterId: settings.defaultTaxMasterId || null,
               pricesIncludeTax: settings.pricesIncludeTax,
               showTaxBreakdown: settings.showTaxBreakdown,
               enableGST: settings.enableGST,
@@ -1594,6 +1610,34 @@ function SettingsPage() {
               >
                 <div className="space-y-6">
                   <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+                    <Field
+                      label="Default Tax Master"
+                      description="Master tax rate applied as the default when a product has no linked tax rate. Set additional rates in Tax Master."
+                    >
+                      <Select
+                        value={settings.defaultTaxMasterId?.toString() || ""}
+                        onValueChange={(v) => handleChange("defaultTaxMasterId", v)}
+                      >
+                        <SelectTrigger className="h-10 font-bold">
+                          <SelectValue placeholder="Select default tax rate" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {taxMasters.length === 0 && (
+                            <SelectItem value="__none" disabled>
+                              No tax rates configured
+                            </SelectItem>
+                          )}
+                          {taxMasters
+                            .filter((tm: any) => tm.status !== "archived")
+                            .map((tm: any) => (
+                              <SelectItem key={tm.id} value={tm.id}>
+                                {tm.name} ({Number(tm.rate) || 0}%)
+                              </SelectItem>
+                            ))}
+                        </SelectContent>
+                      </Select>
+                    </Field>
+
                     <Field label="Standard Tax Rate (%)" description="Default VAT / GST percentage applied to general items.">
                       <Input
                         type="number"

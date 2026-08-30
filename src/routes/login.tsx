@@ -119,37 +119,46 @@ function LoginPage() {
       items: [
         { label: "🏪 Flagship Owner", email: "demo@onedesk360.com" },
         { label: "⚡ POS Cashier", email: "cashier@onedesk360.com" },
-        { label: "🌐 Universal", email: "universal@onedesk360.com" },
+        { label: "🌐 Universal Store", email: "universal@onedesk360.com" },
       ],
     },
     {
-      group: "Food & Dining",
+      group: "Food & Hospitality",
       items: [
         { label: "🍽️ Restaurant (KOT)", email: "restaurant@onedesk360.com" },
-        { label: "☕ Cafe & Bakery", email: "cafe@onedesk360.com" },
+        { label: "☕ Cafe & Espresso", email: "cafe@onedesk360.com" },
+        { label: "🥐 Artisan Bakery", email: "bakery@onedesk360.com" },
+        { label: "🏨 Hotel & Suites", email: "hotel@onedesk360.com" },
       ],
     },
     {
-      group: "Personal Care",
+      group: "Retail & Luxury",
+      items: [
+        { label: "🛒 General Retail", email: "retail@onedesk360.com" },
+        { label: "👗 Clothing Boutique", email: "clothing@onedesk360.com" },
+        { label: "💍 Jewellery & Gold", email: "jewellery@onedesk360.com" },
+        { label: "⚡ Tech Electronics", email: "electronics@onedesk360.com" },
+        { label: "🥬 Supermarket", email: "grocery@onedesk360.com" },
+      ],
+    },
+    {
+      group: "Health & Wellness",
       items: [
         { label: "✂️ Salon & Spa", email: "salon@onedesk360.com" },
-        { label: "💈 Barber Shop", email: "barber@onedesk360.com" },
+        { label: "💈 Barber Club", email: "barber@onedesk360.com" },
+        { label: "🏋️ Gym & Fitness", email: "gym@onedesk360.com" },
+        { label: "🩺 Medical Clinic", email: "clinic@onedesk360.com" },
+        { label: "💊 Pharmacy & Rx", email: "pharmacy@onedesk360.com" },
       ],
     },
     {
-      group: "Tech & Repairs",
+      group: "Auto, Tech & Rental",
       items: [
-        { label: "🔧 Auto & Electronics", email: "repair@onedesk360.com" },
-        { label: "📱 Mobile & Gadgets", email: "mobilerepair@onedesk360.com" },
-      ],
-    },
-    {
-      group: "Retail & Trade",
-      items: [
-        { label: "🛒 Retail Apparel", email: "retail@onedesk360.com" },
-        { label: "🥬 Supermarket", email: "grocery@onedesk360.com" },
-        { label: "📦 Wholesale", email: "wholesale@onedesk360.com" },
-        { label: "💊 Pharmacy", email: "pharmacy@onedesk360.com" },
+        { label: "🚗 Auto Parts & OEM", email: "autoparts@onedesk360.com" },
+        { label: "🔧 Repair Center", email: "repair@onedesk360.com" },
+        { label: "📱 Mobile Gadgets", email: "mobilerepair@onedesk360.com" },
+        { label: "🔑 Equipment Rentals", email: "rental@onedesk360.com" },
+        { label: "📦 Wholesale Bulk", email: "wholesale@onedesk360.com" },
       ],
     },
   ];

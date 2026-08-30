@@ -34,6 +34,9 @@ export type CartLine = {
   variantId?: string;
   variantName?: string;
   variantPrice?: number;
+  customPrice?: number;
+  customName?: string;
+  customMetadata?: Record<string, any>;
   batchId?: string; // Add batchId for explicit selection
   batchNo?: string;
   modifiers?: { id: string; name: string; optionId: string; optionName: string; price: number }[];
@@ -102,6 +105,7 @@ export function usePosState() {
   const units: any[] = bootstrapData?.units || [];
   const brands: any[] = bootstrapData?.brands || [];
   const users: any[] = bootstrapData?.users || [];
+  const taxMasters: any[] = bootstrapData?.taxMasters || [];
   const activeShift: any = user
     ? (bootstrapData?.shifts || []).find((s: any) => s.userId === user.id && s.status === "open")
     : undefined;
@@ -246,11 +250,17 @@ export function usePosState() {
           if (!isCatMatch) return false;
         }
         if (!query.trim()) return true;
-        const q = query.toLowerCase();
+        const q = query.toLowerCase().trim();
+        const meta = p.metadata || {};
         return Boolean(
           (p.name && String(p.name).toLowerCase().includes(q)) ||
           (p.sku && String(p.sku).toLowerCase().includes(q)) ||
-          (p.barcode && String(p.barcode).toLowerCase().includes(q)),
+          (p.barcode && String(p.barcode).toLowerCase().includes(q)) ||
+          (p.brand && String(p.brand).toLowerCase().includes(q)) ||
+          (meta.partNumber && String(meta.partNumber).toLowerCase().includes(q)) ||
+          (meta.oemNumber && String(meta.oemNumber).toLowerCase().includes(q)) ||
+          (meta.compatibleVehicles && String(meta.compatibleVehicles).toLowerCase().includes(q)) ||
+          (meta.alternatePartNumbers && String(meta.alternatePartNumbers).toLowerCase().includes(q))
         );
       }),
     [activeCat, query, allProducts, categories],
@@ -387,12 +397,50 @@ export function usePosState() {
     setCart((c) => c.map((l) => (l.id === id ? { ...l, batchId, batchNo } : l)));
   }, []);
 
+  const addCustomLineToCart = useCallback(
+    (customLine: {
+      productId: string;
+      customPrice: number;
+      customName?: string;
+      customMetadata?: Record<string, any>;
+    }) => {
+      setCart((c) => [
+        ...c,
+        {
+          id: customLine.productId,
+          qty: 1,
+          customPrice: customLine.customPrice,
+          customName: customLine.customName,
+          customMetadata: customLine.customMetadata,
+        },
+      ]);
+      toast.success("Custom item added to cart");
+    },
+    [],
+  );
+
   const lines = cart
     .map((l) => {
-      const p = allProducts.find((p) => p.id === l.id);
-      if (!p) return null;
+      const originalProduct = allProducts.find((p) => p.id === l.id);
+      if (!originalProduct) return null;
 
-      let unitPrice = l.variantPrice !== undefined ? l.variantPrice : p.price;
+      const p = l.customName || l.customMetadata
+        ? {
+            ...originalProduct,
+            name: l.customName || originalProduct.name,
+            metadata: {
+              ...(originalProduct.metadata || {}),
+              ...(l.customMetadata || {}),
+            },
+          }
+        : originalProduct;
+
+      let unitPrice =
+        l.customPrice !== undefined
+          ? l.customPrice
+          : l.variantPrice !== undefined
+            ? l.variantPrice
+            : p.price;
 
       if (l.modifiers) {
         const modifiersTotal = l.modifiers.reduce((sum, m) => sum + m.price, 0);
@@ -402,7 +450,7 @@ export function usePosState() {
       let priceTierLabel = l.variantName ? l.variantName : "";
       const minQty = p.minWholesaleQty || 1;
 
-      if (!l.variantId) {
+      if (!l.variantId && l.customPrice === undefined) {
         if (activeCustomer.type === "wholesale" && p.wholesalePrice && p.wholesalePrice > 0) {
           if (l.qty >= minQty) {
             unitPrice = p.wholesalePrice;
@@ -455,7 +503,20 @@ export function usePosState() {
     : 0;
   const discountAmt = subtotal * (discountPct / 100) + couponDisc;
 
-  const taxRate = settings ? settings.standardRate / 100 : 0.08;
+  const taxMasterMap = useMemo(() => {
+    const m = new Map<string, any>();
+    taxMasters.forEach((tm) => m.set(tm.id, tm));
+    return m;
+  }, [taxMasters]);
+
+  const defaultTax = useMemo(() => {
+    const master = settings?.defaultTaxMasterId
+      ? taxMasterMap.get(settings.defaultTaxMasterId)
+      : undefined;
+    return master ? Number(master.rate) || 0 : settings ? Number(settings.standardRate) || 0 : 8;
+  }, [settings, taxMasterMap]);
+
+  const taxRate = defaultTax / 100;
   let taxableAmt = 0;
   let taxAmt = 0;
   let total = 0;
@@ -466,11 +527,17 @@ export function usePosState() {
   if (settings?.enableGST) {
     lines.forEach((l) => {
       const itemDisc = subtotal > 0 ? (l.total / subtotal) * discountAmt : 0;
+      const master = l.product.taxMasterId ? taxMasterMap.get(l.product.taxMasterId) : undefined;
+      const gstRate = master ? Number(master.rate) || 0 : Number(l.product.gstRate) || 0;
       const res = calculateItemTax({
         price: l.unitPrice,
         quantity: l.qty,
         discountAmt: itemDisc,
-        gstRate: l.product.gstRate || 0,
+        gstRate,
+        taxType: master?.taxType === "vat" || master?.taxType === "flat" ? master.taxType : "gst",
+        cgstRate: master?.cgstRate != null ? Number(master.cgstRate) : undefined,
+        sgstRate: master?.sgstRate != null ? Number(master.sgstRate) : undefined,
+        igstRate: master?.igstRate != null ? Number(master.igstRate) : undefined,
         taxInclusive: !!l.product.taxInclusive,
         storeStateCode: settings.stateCode,
         customerStateCode: activeCustomer.stateCode,
@@ -813,6 +880,7 @@ export function usePosState() {
     changeDue,
     taxRate,
     addToCart,
+    addCustomLineToCart,
     removeFromCart,
     addRepairToCart,
     updateQty,

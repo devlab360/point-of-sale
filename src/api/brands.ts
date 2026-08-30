@@ -75,9 +75,10 @@ export const updateBrandFn = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     try {
       const session = await requireAuth();
+      const { organizationId: _omitted, ...safeUpdates } = data.updates;
       const updated = await db
         .update(schema.brands)
-        .set(data.updates as any)
+        .set(safeUpdates as any)
         .where(and(eq(schema.brands.id, data.id), eq(schema.brands.organizationId, session.orgId)))
         .returning();
       return { success: true, data: updated[0], message: "Brand updated successfully" };

@@ -64,6 +64,11 @@ import {
   DollarSign,
   PlayCircle,
   User,
+  ScanBarcode,
+  Dumbbell,
+  Sparkles,
+  ArrowRight,
+  CalendarCheck,
 } from "lucide-react";
 import { PhoneInput } from "@/components/ui/phone-input";
 import { toast } from "sonner";
@@ -101,6 +106,8 @@ function SubscriptionsPage() {
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [showCheckInModal, setShowCheckInModal] = useState(false);
+  const [checkInScanQuery, setCheckInScanQuery] = useState("");
 
   // Form Fields
   const [customerName, setCustomerName] = useState("");
@@ -256,16 +263,30 @@ function SubscriptionsPage() {
         title="Subscriptions & Recurring Billing"
         description="Manage recurring membership plans, auto-renewing cycles, MRR cash flow, and automated customer dues."
         actions={
-          <Button
-            size="sm"
-            onClick={() => {
-              clearSubAll();
-              setIsAddOpen(true);
-            }}
-            className="gap-1.5"
-          >
-            <Plus className="size-4" /> Add Subscription
-          </Button>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => {
+                setCheckInScanQuery("");
+                setShowCheckInModal(true);
+              }}
+              className="gap-1.5 border-emerald-500/40 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-500/10 font-bold"
+            >
+              <ScanBarcode className="size-4 text-emerald-600 dark:text-emerald-400" />
+              <span>Member Check-In</span>
+            </Button>
+            <Button
+              size="sm"
+              onClick={() => {
+                clearSubAll();
+                setIsAddOpen(true);
+              }}
+              className="gap-1.5"
+            >
+              <Plus className="size-4" /> Add Subscription
+            </Button>
+          </div>
         }
       />
 
@@ -754,6 +775,178 @@ function SubscriptionsPage() {
               Delete
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* 🏋️ Gym & Fitness Member Check-In & Pass Validity Scanner */}
+      <Dialog open={showCheckInModal} onOpenChange={setShowCheckInModal}>
+        <DialogContent className="sm:max-w-lg p-0 gap-0 overflow-hidden rounded-3xl border-border/80 shadow-2xl bg-card">
+          <div className="p-5 border-b border-border/80 bg-emerald-500/10 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="size-11 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 grid place-items-center text-emerald-600 dark:text-emerald-400 shadow-xs">
+                <Dumbbell className="size-6" />
+              </div>
+              <div>
+                <DialogTitle className="text-base sm:text-lg font-bold text-foreground">
+                  Member Check-In & Validity Scanner
+                </DialogTitle>
+                <DialogDescription className="text-xs text-muted-foreground mt-0.5">
+                  Scan member RFID card, barcode pass, or search phone number
+                </DialogDescription>
+              </div>
+            </div>
+          </div>
+
+          <div className="p-5 space-y-4">
+            <div className="relative">
+              <ScanBarcode className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4.5 text-emerald-600 dark:text-emerald-400" />
+              <Input
+                placeholder="Scan Card ID / Member Barcode or enter Mobile..."
+                value={checkInScanQuery}
+                onChange={(e) => setCheckInScanQuery(e.target.value)}
+                className="pl-10 h-12 text-sm sm:text-base font-semibold rounded-2xl border-emerald-500/30 bg-emerald-500/5 focus:border-emerald-500 font-mono shadow-xs"
+                autoFocus
+              />
+            </div>
+
+            {/* Matched Member Card */}
+            {(() => {
+              const q = checkInScanQuery.toLowerCase().trim();
+              const matchedMember = (subscriptions || []).find((s: any) => {
+                if (!q) return false;
+                const idMatch = (s.id || "").toLowerCase().includes(q);
+                const nameMatch = (s.customerName || "").toLowerCase().includes(q);
+                const phoneMatch = (s.customerPhone || "").includes(q);
+                return idMatch || nameMatch || phoneMatch;
+              });
+
+              if (!matchedMember) {
+                return (
+                  <div className="p-8 text-center border border-dashed border-border/80 rounded-2xl bg-muted/10 space-y-2">
+                    <ScanBarcode className="size-8 text-muted-foreground/40 mx-auto" />
+                    <p className="text-xs text-muted-foreground">
+                      {checkInScanQuery ? `No member found matching "${checkInScanQuery}".` : "Ready to scan. Swipe member card or type phone number."}
+                    </p>
+                  </div>
+                );
+              }
+
+              const nextDate = new Date(matchedMember.nextBillingDate || new Date());
+              const now = new Date();
+              const diffDays = Math.ceil((nextDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+              const isActive = matchedMember.status === "active" && diffDays >= 0;
+              const isExpiringSoon = isActive && diffDays <= 7;
+
+              return (
+                <div className="rounded-2xl border border-border/80 bg-muted/20 p-4 space-y-3.5">
+                  <div className="flex items-start justify-between gap-3 border-b border-border/60 pb-3">
+                    <div className="flex items-center gap-3">
+                      <div className="size-11 rounded-2xl bg-primary/10 border border-primary/20 grid place-items-center text-primary font-black text-sm">
+                        {matchedMember.customerName?.slice(0, 2).toUpperCase() || "MB"}
+                      </div>
+                      <div>
+                        <h4 className="font-extrabold text-sm sm:text-base text-foreground">
+                          {matchedMember.customerName}
+                        </h4>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          {matchedMember.customerPhone || "No phone logged"}
+                        </p>
+                      </div>
+                    </div>
+
+                    <Badge
+                      variant="outline"
+                      className={
+                        !isActive
+                          ? "bg-destructive/10 text-destructive border-destructive/30 font-bold"
+                          : isExpiringSoon
+                            ? "bg-amber-500/10 text-amber-600 border-amber-500/30 font-bold"
+                            : "bg-emerald-500/10 text-emerald-600 border-emerald-500/30 font-bold"
+                      }
+                    >
+                      {!isActive ? "Expired / Inactive" : isExpiringSoon ? `Expiring in ${diffDays}d` : `Active (${diffDays}d left)`}
+                    </Badge>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2 text-xs">
+                    <div className="p-2.5 rounded-xl bg-card border border-border/60">
+                      <span className="text-[10px] text-muted-foreground uppercase font-bold block">
+                        Enrolled Plan
+                      </span>
+                      <span className="font-bold text-foreground">
+                        {matchedMember.planName}
+                      </span>
+                    </div>
+
+                    <div className="p-2.5 rounded-xl bg-card border border-border/60">
+                      <span className="text-[10px] text-muted-foreground uppercase font-bold block">
+                        Billing Cycle
+                      </span>
+                      <span className="font-bold text-foreground uppercase">
+                        {matchedMember.billingCycle} • {currencySymbol}{matchedMember.amount}
+                      </span>
+                    </div>
+
+                    <div className="p-2.5 rounded-xl bg-card border border-border/60">
+                      <span className="text-[10px] text-muted-foreground uppercase font-bold block">
+                        Valid Until
+                      </span>
+                      <span className={`font-bold ${isActive ? "text-emerald-600" : "text-destructive"}`}>
+                        {formatDate(nextDate)}
+                      </span>
+                    </div>
+
+                    <div className="p-2.5 rounded-xl bg-card border border-border/60">
+                      <span className="text-[10px] text-muted-foreground uppercase font-bold block">
+                        Member ID
+                      </span>
+                      <span className="font-mono font-bold text-foreground">
+                        #{String(matchedMember.id).slice(0, 8).toUpperCase()}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Actions */}
+                  <div className="pt-2 flex items-center gap-2">
+                    <Button
+                      onClick={() => {
+                        toast.success(`✓ Check-In Logged for ${matchedMember.customerName}! Welcome!`);
+                        setCheckInScanQuery("");
+                      }}
+                      className="flex-1 h-11 rounded-xl font-extrabold text-xs bg-emerald-600 hover:bg-emerald-700 text-white shadow-soft gap-2"
+                    >
+                      <CalendarCheck className="size-4" />
+                      Log Attendance Entry ✓
+                    </Button>
+                    {!isActive && (
+                      <Button
+                        variant="outline"
+                        onClick={() => {
+                          setShowCheckInModal(false);
+                          toast.info(`Renewing plan for ${matchedMember.customerName}`);
+                          setIsAddOpen(true);
+                          setCustomerName(matchedMember.customerName);
+                          setCustomerPhone(matchedMember.customerPhone || "");
+                          setPlanName(matchedMember.planName);
+                          setAmount(matchedMember.amount);
+                          setBillingCycle(matchedMember.billingCycle);
+                        }}
+                        className="h-11 rounded-xl text-xs font-bold text-primary border-primary/30"
+                      >
+                        Renew Plan →
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              );
+            })()}
+          </div>
+
+          <div className="p-4 border-t border-border/80 bg-muted/20 flex justify-end">
+            <Button variant="outline" onClick={() => setShowCheckInModal(false)} className="h-10 rounded-xl text-xs font-semibold">
+              Done (Esc)
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

@@ -53,11 +53,8 @@ const inMemoryAppointments: Record<string, any[]> = {
 export const getAppointmentsFn = createServerFn({ method: "GET" })
   .validator((data: any) => data)
   .handler(async () => {
-    let orgId = "default";
-    try {
-      const session = await requireAuth();
-      orgId = session.orgId;
-    } catch {}
+    const session = await requireAuth();
+    const orgId = session.orgId;
 
     try {
       if (schema.appointments) {
@@ -66,12 +63,12 @@ export const getAppointmentsFn = createServerFn({ method: "GET" })
           .from(schema.appointments)
           .where(eq(schema.appointments.organizationId, orgId))
           .orderBy(desc(schema.appointments.dateTime));
-        if (res && res.length > 0) return { success: true, data: res };
+        return { success: true, data: res };
       }
     } catch (e) {
       console.warn("DB appointments query fallback:", e);
     }
-    return { success: true, data: inMemoryAppointments[orgId] || inMemoryAppointments["default"] || [] };
+    return { success: true, data: inMemoryAppointments[orgId] || [] };
   });
 
 export const createAppointmentFn = createServerFn({ method: "POST" })
@@ -91,11 +88,8 @@ export const createAppointmentFn = createServerFn({ method: "POST" })
     }),
   )
   .handler(async ({ data }) => {
-    let orgId = "default";
-    try {
-      const session = await requireAuth();
-      orgId = session.orgId;
-    } catch {}
+    const session = await requireAuth();
+    const orgId = session.orgId;
 
     const id = data.id || uuidv4();
     const newApt = {
@@ -139,11 +133,8 @@ export const updateAppointmentStatusFn = createServerFn({ method: "POST" })
     }),
   )
   .handler(async ({ data }) => {
-    let orgId = "default";
-    try {
-      const session = await requireAuth();
-      orgId = session.orgId;
-    } catch {}
+    const session = await requireAuth();
+    const orgId = session.orgId;
 
     if (inMemoryAppointments[orgId]) {
       const apt = inMemoryAppointments[orgId].find((a) => a.id === data.id);
@@ -173,11 +164,8 @@ export const updateAppointmentStatusFn = createServerFn({ method: "POST" })
 export const deleteAppointmentFn = createServerFn({ method: "POST" })
   .validator(z.object({ id: z.string() }))
   .handler(async ({ data }) => {
-    let orgId = "default";
-    try {
-      const session = await requireAuth();
-      orgId = session.orgId;
-    } catch {}
+    const session = await requireAuth();
+    const orgId = session.orgId;
 
     if (inMemoryAppointments[orgId]) {
       inMemoryAppointments[orgId] = inMemoryAppointments[orgId].filter((a) => a.id !== data.id);

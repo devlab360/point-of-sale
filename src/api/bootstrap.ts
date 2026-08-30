@@ -10,13 +10,14 @@ import { getUsersFn } from "@/api/users";
 import { getShiftsFn } from "@/api/pos";
 import { getTablesFn } from "@/api/restaurant";
 import { getRepairsFn } from "@/api/repairs";
+import { getTaxMastersFn } from "@/api/tax-master";
 
 export const getPosBootstrapFn = createServerFn({ method: "GET" }).handler(async () => {
   // Ensure the user is authenticated first
   await requireAuth();
 
   // Fetch all static/semi-static POS data in parallel on the server
-  const [categories, units, brands, settings, coupons, users, shifts, tables, repairs] =
+  const [categories, units, brands, settings, coupons, users, shifts, tables, repairs, taxMasters] =
     await Promise.all([
       getCategoriesFn({ data: {} } as any),
       getUnitsFn({ data: {} } as any),
@@ -27,6 +28,7 @@ export const getPosBootstrapFn = createServerFn({ method: "GET" }).handler(async
       getShiftsFn({ data: {} } as any),
       getTablesFn({ data: {} } as any),
       getRepairsFn({ data: {} } as any),
+      getTaxMastersFn({ data: {} } as any),
     ]);
 
   return {
@@ -41,6 +43,7 @@ export const getPosBootstrapFn = createServerFn({ method: "GET" }).handler(async
       shifts: (shifts as any)?.data || [],
       tables: (tables as any)?.data || [],
       repairs: (repairs as any)?.data || [],
+      taxMasters: (taxMasters as any)?.data || [],
     },
   };
 });

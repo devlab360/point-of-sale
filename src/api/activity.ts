@@ -50,11 +50,8 @@ const inMemoryActivityLog: Record<string, any[]> = {
 export const getActivityLogFn = createServerFn({ method: "GET" })
   .validator((data: any) => data)
   .handler(async () => {
-    let orgId = "default";
-    try {
-      const session = await requireAuth();
-      orgId = session.orgId;
-    } catch {}
+    const session = await requireAuth();
+    const orgId = session.orgId;
 
     try {
       if (schema.activityLog) {
@@ -63,22 +60,19 @@ export const getActivityLogFn = createServerFn({ method: "GET" })
           .from(schema.activityLog)
           .where(eq(schema.activityLog.organizationId, orgId))
           .orderBy(desc(schema.activityLog.timestamp));
-        if (all && all.length > 0) return { success: true, data: all };
+        if (all) return { success: true, data: all };
       }
     } catch (e) {
       console.warn("DB getActivityLog fallback:", e);
     }
-    return { success: true, data: inMemoryActivityLog[orgId] || inMemoryActivityLog["default"] || [] };
+    return { success: true, data: inMemoryActivityLog[orgId] || [] };
   });
 
 export const createActivityLogFn = createServerFn({ method: "POST" })
   .validator((data: any) => data)
   .handler(async ({ data }) => {
-    let orgId = "default";
-    try {
-      const session = await requireAuth();
-      orgId = session.orgId;
-    } catch {}
+    const session = await requireAuth();
+    const orgId = session.orgId;
 
     const logEntry = {
       id: data.log?.id || uuidv4(),

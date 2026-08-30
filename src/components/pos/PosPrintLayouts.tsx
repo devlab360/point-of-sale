@@ -4,6 +4,16 @@ import QRCode from "react-qr-code";
 
 const fmt = (val: any): string => (Number(val) || 0).toFixed(2);
 
+function getWarrantyExpiry(saleDateStr: any, months: number = 12) {
+  try {
+    const d = new Date(saleDateStr || new Date());
+    d.setMonth(d.getMonth() + Number(months || 12));
+    return d.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
+  } catch {
+    return `${months} Months from purchase`;
+  }
+}
+
 function BankDetailsDisplay({ data, className = "" }: { data: string; className?: string }) {
   if (!data) return null;
   try {
@@ -133,33 +143,51 @@ export function PosPrintLayouts({ state, preview = false }: { state: any; previe
                 </tr>
               </thead>
               <tbody className="text-[11px]">
-                {printData.lines.map((l: any, i: number) => (
-                  <tr
-                    key={i}
-                    className="align-top border-b border-gray-300 border-dotted last:border-0"
-                  >
-                    <td className="py-2 pr-1">
-                      <div className="font-bold">{l.product.name}</div>
-                      {l.selectedSerial && (
-                        <div className="text-[9px] text-gray-600 mt-0.5">
-                          SN: {l.selectedSerial}
-                        </div>
-                      )}
-                    </td>
-                    <td className="py-2 text-center font-semibold">
-                      {Number(l.qty).toString()}{" "}
-                      {state?.getUnitName
-                        ? state.getUnitName(l.product.unit)
-                        : !/^[0-9a-f]{8}-/i.test(l.product.unit || "")
-                          ? l.product.unit
-                          : ""}
-                    </td>
-                    <td className="py-2 text-right font-bold">
-                      {currencySymbol}
-                      {fmt(l.total)}
-                    </td>
-                  </tr>
-                ))}
+                {printData.lines.map((l: any, i: number) => {
+                  const meta = l.product?.metadata || {};
+                  return (
+                    <tr
+                      key={i}
+                      className="align-top border-b border-gray-300 border-dotted last:border-0"
+                    >
+                      <td className="py-2 pr-1">
+                        <div className="font-bold">{l.product.name}</div>
+                        {l.selectedSerial && (
+                          <div className="text-[9px] text-gray-600 mt-0.5 font-mono">
+                            SN: {l.selectedSerial}
+                          </div>
+                        )}
+                        {meta.hasWarranty && (
+                          <div className="text-[9px] font-semibold text-gray-700 mt-0.5">
+                            🛡️ {meta.warrantyMonths}M Warranty {meta.guaranteeMonths ? `+ ${meta.guaranteeMonths}M Guarantee` : ""}
+                          </div>
+                        )}
+                        {meta.isJewellery && (
+                          <div className="text-[9px] text-gray-700 mt-0.5">
+                            {meta.purityKarat || "22K"} | Net: {Number(meta.netWeight || 0).toFixed(3)}g {meta.makingChargeValue ? `| MC: ${meta.makingChargeValue}${meta.makingChargeType === "percent" ? "%" : ""}` : ""}
+                          </div>
+                        )}
+                        {meta.isAutoPart && (
+                          <div className="text-[9px] text-gray-700 mt-0.5 font-mono">
+                            {meta.partNumber ? `MPN: ${meta.partNumber}` : ""} {meta.oemNumber ? `| OEM: ${meta.oemNumber}` : ""}
+                          </div>
+                        )}
+                      </td>
+                      <td className="py-2 text-center font-semibold">
+                        {Number(l.qty).toString()}{" "}
+                        {state?.getUnitName
+                          ? state.getUnitName(l.product.unit)
+                          : !/^[0-9a-f]{8}-/i.test(l.product.unit || "")
+                            ? l.product.unit
+                            : ""}
+                      </td>
+                      <td className="py-2 text-right font-bold">
+                        {currencySymbol}
+                        {fmt(l.total)}
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
 
@@ -320,6 +348,44 @@ export function PosPrintLayouts({ state, preview = false }: { state: any; previe
               </div>
             )}
 
+            {/* 🛡️ Official Digital Warranty Certificate */}
+            {printData.lines.some((l: any) => l.product?.metadata?.hasWarranty) && (
+              <div className="mt-4 p-2.5 border-2 border-black border-dashed rounded-lg text-left text-[10px] space-y-1.5 bg-gray-50/50">
+                <div className="font-black uppercase tracking-wider text-center border-b border-black pb-1 text-[11px]">
+                  🛡️ Official Warranty Certificate
+                </div>
+                {printData.lines
+                  .filter((l: any) => l.product?.metadata?.hasWarranty)
+                  .map((l: any, idx: number) => {
+                    const meta = l.product.metadata;
+                    return (
+                      <div key={idx} className="space-y-0.5 pt-0.5 border-b border-gray-300 border-dotted last:border-0 pb-1">
+                        <div className="font-bold text-[11px]">{l.product.name}</div>
+                        {l.selectedSerial && (
+                          <div className="font-mono font-bold text-[10px]">
+                            Serial / IMEI: {l.selectedSerial}
+                          </div>
+                        )}
+                        <div className="flex justify-between font-semibold text-gray-800">
+                          <span>Coverage: {meta.warrantyMonths || 12} Mos ({meta.warrantyType || "Carry-In"})</span>
+                          <span className="font-bold">Expires: {getWarrantyExpiry(printData.date, meta.warrantyMonths || 12)}</span>
+                        </div>
+                        {meta.guaranteeMonths > 0 && (
+                          <div className="text-gray-700">
+                            • Instant Replacement Guarantee: {meta.guaranteeMonths} Months
+                          </div>
+                        )}
+                        {meta.warrantyPolicy && (
+                          <div className="text-[9px] text-gray-600 italic">
+                            Policy: {meta.warrantyPolicy}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+              </div>
+            )}
+
             <div className="text-center text-[11px] mt-6 mb-2">
               <p className="font-black uppercase tracking-widest text-[14px]">*** Thank You ***</p>
               {printData.receiptDeclaration && (
@@ -472,28 +538,53 @@ export function PosPrintLayouts({ state, preview = false }: { state: any; previe
                 </tr>
               </thead>
               <tbody>
-                {printData.lines.map((l: any, i: number) => (
-                  <tr
-                    key={i}
-                    className={`border-b border-gray-100 ${i % 2 === 1 ? "bg-gray-50/40" : ""}`}
-                  >
-                    <td className="px-3 py-2 text-gray-400 text-xs">{i + 1}</td>
-                    <td className="px-3 py-2 font-medium">{l.product.name}</td>
-                    <td className="px-3 py-2 text-center">
-                      {Number(l.qty).toString()}{" "}
-                      {state?.getUnitName
-                        ? state.getUnitName(l.product.unit)
-                        : !/^[0-9a-f]{8}-/i.test(l.product.unit || "")
-                          ? l.product.unit
-                          : ""}
-                    </td>
-                    <td className="px-3 py-2 text-right text-gray-600">{fmt(l.unitPrice)}</td>
-                    <td className="px-3 py-2 text-right font-semibold">
-                      {currencySymbol}
-                      {fmt(l.total)}
-                    </td>
-                  </tr>
-                ))}
+                {printData.lines.map((l: any, i: number) => {
+                  const meta = l.product?.metadata || {};
+                  return (
+                    <tr
+                      key={i}
+                      className={`border-b border-gray-100 ${i % 2 === 1 ? "bg-gray-50/40" : ""}`}
+                    >
+                      <td className="px-3 py-2 text-gray-400 text-xs">{i + 1}</td>
+                      <td className="px-3 py-2">
+                        <div className="font-medium text-black">{l.product.name}</div>
+                        {l.selectedSerial && (
+                          <div className="text-[11px] text-gray-600 mt-0.5 font-mono">
+                            SN: {l.selectedSerial}
+                          </div>
+                        )}
+                        {meta.hasWarranty && (
+                          <div className="text-[11px] text-emerald-700 font-semibold mt-0.5">
+                            🛡️ {meta.warrantyMonths} Months Warranty {meta.guaranteeMonths ? `+ ${meta.guaranteeMonths}M Guarantee` : ""} ({meta.warrantyType || "Carry-In"})
+                          </div>
+                        )}
+                        {meta.isJewellery && (
+                          <div className="text-[11px] text-amber-800 mt-0.5">
+                            Purity: {meta.purityKarat || "22K"} | Net Gold: {Number(meta.netWeight || 0).toFixed(3)}g {meta.makingChargeValue ? `| Making Charge: ${meta.makingChargeValue}${meta.makingChargeType === "percent" ? "%" : ""}` : ""}
+                          </div>
+                        )}
+                        {meta.isAutoPart && (
+                          <div className="text-[11px] text-blue-800 mt-0.5 font-mono">
+                            {meta.partNumber ? `Part No: ${meta.partNumber}` : ""} {meta.oemNumber ? `| OEM Ref: ${meta.oemNumber}` : ""}
+                          </div>
+                        )}
+                      </td>
+                      <td className="px-3 py-2 text-center">
+                        {Number(l.qty).toString()}{" "}
+                        {state?.getUnitName
+                          ? state.getUnitName(l.product.unit)
+                          : !/^[0-9a-f]{8}-/i.test(l.product.unit || "")
+                            ? l.product.unit
+                            : ""}
+                      </td>
+                      <td className="px-3 py-2 text-right text-gray-600">{fmt(l.unitPrice)}</td>
+                      <td className="px-3 py-2 text-right font-semibold">
+                        {currencySymbol}
+                        {fmt(l.total)}
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
             <div className="border-b-2 border-black" />
@@ -697,6 +788,51 @@ export function PosPrintLayouts({ state, preview = false }: { state: any; previe
                 </div>
               </div>
             </div>
+
+            {/* 🛡️ Official Digital Warranty Certificate (A4) */}
+            {printData.lines.some((l: any) => l.product?.metadata?.hasWarranty) && (
+              <div className="mt-6 p-4 border-2 border-black border-dashed rounded-xl bg-gray-50/50 space-y-2">
+                <div className="flex items-center justify-between border-b border-black pb-1.5">
+                  <span className="font-black text-sm uppercase tracking-wider">
+                    🛡️ OFFICIAL DIGITAL WARRANTY & GUARANTEE CERTIFICATE
+                  </span>
+                  <span className="text-xs text-gray-500 font-medium">
+                    Store Verification ID: #{String(printData.id).slice(0, 10).toUpperCase()}
+                  </span>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                  {printData.lines
+                    .filter((l: any) => l.product?.metadata?.hasWarranty)
+                    .map((l: any, idx: number) => {
+                      const meta = l.product.metadata;
+                      return (
+                        <div key={idx} className="p-2.5 rounded-lg border border-gray-200 bg-white space-y-1 text-xs">
+                          <div className="font-bold text-black">{l.product.name}</div>
+                          {l.selectedSerial && (
+                            <div className="font-mono text-gray-700">
+                              Registered SN: <strong className="text-black">{l.selectedSerial}</strong>
+                            </div>
+                          )}
+                          <div className="flex justify-between font-medium text-gray-600">
+                            <span>Warranty: {meta.warrantyMonths || 12} Mos ({meta.warrantyType || "Carry-In"})</span>
+                            <span className="font-bold text-emerald-800">Valid Till: {getWarrantyExpiry(printData.date, meta.warrantyMonths || 12)}</span>
+                          </div>
+                          {meta.guaranteeMonths > 0 && (
+                            <div className="text-amber-800 font-medium">
+                              • Instant Replacement Guarantee: {meta.guaranteeMonths} Months
+                            </div>
+                          )}
+                          {meta.warrantyPolicy && (
+                            <div className="text-[10px] text-gray-500 italic mt-0.5">
+                              Policy: {meta.warrantyPolicy}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                </div>
+              </div>
+            )}
 
             {/* ── DECLARATION ── */}
             {printData.receiptDeclaration && (

@@ -53,11 +53,8 @@ const inMemoryRentals: Record<string, any[]> = {
 export const getRentalsFn = createServerFn({ method: "GET" })
   .validator((data: any) => data)
   .handler(async () => {
-    let orgId = "default";
-    try {
-      const session = await requireAuth();
-      orgId = session.orgId;
-    } catch {}
+    const session = await requireAuth();
+    const orgId = session.orgId;
 
     try {
       if (schema.rentals) {
@@ -65,22 +62,19 @@ export const getRentalsFn = createServerFn({ method: "GET" })
           .select()
           .from(schema.rentals)
           .where(eq(schema.rentals.organizationId, orgId));
-        if (all && all.length > 0) return { success: true, data: all };
+        if (all) return { success: true, data: all };
       }
     } catch (e) {
       console.warn("DB getRentals fallback:", e);
     }
-    return { success: true, data: inMemoryRentals[orgId] || inMemoryRentals["default"] || [] };
+    return { success: true, data: inMemoryRentals[orgId] || [] };
   });
 
 export const createRentalFn = createServerFn({ method: "POST" })
   .validator((data: any) => data)
   .handler(async ({ data }) => {
-    let orgId = "default";
-    try {
-      const session = await requireAuth();
-      orgId = session.orgId;
-    } catch {}
+    const session = await requireAuth();
+    const orgId = session.orgId;
 
     const r = data?.rental || data || {};
     const rentalData = {
@@ -121,11 +115,8 @@ export const createRentalFn = createServerFn({ method: "POST" })
 export const updateRentalStatusFn = createServerFn({ method: "POST" })
   .validator((data: any) => data)
   .handler(async ({ data }) => {
-    let orgId = "default";
-    try {
-      const session = await requireAuth();
-      orgId = session.orgId;
-    } catch {}
+    const session = await requireAuth();
+    const orgId = session.orgId;
 
     if (inMemoryRentals[orgId]) {
       const rnt = inMemoryRentals[orgId].find((r) => r.id === data.id);
@@ -149,11 +140,8 @@ export const updateRentalStatusFn = createServerFn({ method: "POST" })
 export const updateRentalFn = createServerFn({ method: "POST" })
   .validator((data: any) => data)
   .handler(async ({ data }) => {
-    let orgId = "default";
-    try {
-      const session = await requireAuth();
-      orgId = session.orgId;
-    } catch {}
+    const session = await requireAuth();
+    const orgId = session.orgId;
 
     const updates = data.updates || data.rental || data;
     const rentalId = data.id || updates.id;
@@ -196,11 +184,8 @@ export const updateRentalFn = createServerFn({ method: "POST" })
 export const deleteRentalFn = createServerFn({ method: "POST" })
   .validator((data: any) => data)
   .handler(async ({ data }) => {
-    let orgId = "default";
-    try {
-      const session = await requireAuth();
-      orgId = session.orgId;
-    } catch {}
+    const session = await requireAuth();
+    const orgId = session.orgId;
 
     if (inMemoryRentals[orgId]) {
       inMemoryRentals[orgId] = inMemoryRentals[orgId].filter((r) => r.id !== data.id);

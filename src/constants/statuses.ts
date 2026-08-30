@@ -35,12 +35,10 @@ export const RENTAL_STATUSES: OptionItem[] = [
 ];
 
 export const APPOINTMENT_STATUSES: OptionItem[] = [
-  { value: "scheduled", label: "Scheduled", badge: "bg-info/15 text-info border-info/30" },
-  { value: "confirmed", label: "Confirmed", badge: "bg-primary/15 text-primary border-primary/30" },
-  { value: "in_progress", label: "In Service", badge: "bg-amber-500/15 text-amber-600 border-amber-500/30" },
-  { value: "completed", label: "Completed", badge: "bg-success/15 text-success border-success/30" },
-  { value: "cancelled", label: "Cancelled", badge: "bg-destructive/15 text-destructive border-destructive/30" },
-  { value: "no_show", label: "No Show", badge: "bg-muted text-muted-foreground border-border" },
+  { value: "scheduled", label: "Scheduled (Upcoming)", badge: "bg-blue-500/15 text-blue-600 border-blue-500/25" },
+  { value: "in-progress", label: "In Progress", badge: "bg-amber-500/15 text-amber-600 border-amber-500/25" },
+  { value: "completed", label: "Completed", badge: "bg-success/15 text-success border-success/25" },
+  { value: "cancelled", label: "Cancelled", badge: "bg-destructive/15 text-destructive border-destructive/25" },
 ];
 
 export const SUBSCRIPTION_STATUSES: OptionItem[] = [

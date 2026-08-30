@@ -45,11 +45,8 @@ const inMemoryNotifications: Record<string, any[]> = {
 export const getNotificationsFn = createServerFn({ method: "GET" })
   .validator((data: any) => data)
   .handler(async () => {
-    let orgId = "default";
-    try {
-      const session = await requireAuth();
-      orgId = session.orgId;
-    } catch {}
+    const session = await requireAuth();
+    const orgId = session.orgId;
 
     try {
       if (schema.notifications) {
@@ -59,27 +56,24 @@ export const getNotificationsFn = createServerFn({ method: "GET" })
           .where(eq(schema.notifications.organizationId, orgId))
           .orderBy(desc(schema.notifications.timestamp))
           .limit(100);
-        if (all && all.length > 0) return { success: true, data: all };
+        if (all) return { success: true, data: all };
       }
     } catch (e) {
       console.warn("DB getNotifications fallback:", e);
     }
-    return { success: true, data: inMemoryNotifications[orgId] || inMemoryNotifications["default"] || [] };
+    return { success: true, data: inMemoryNotifications[orgId] || [] };
   });
 
 export const markNotificationReadFn = createServerFn({ method: "POST" })
   .validator((data: any) => data)
   .handler(async ({ data }) => {
-    let orgId = "default";
-    try {
-      const session = await requireAuth();
-      orgId = session.orgId;
-    } catch {}
+    const session = await requireAuth();
+    const orgId = session.orgId;
 
     const targetId = data?.id || data;
 
     // Update in-memory fallback stores
-    for (const key of [orgId, "default"]) {
+    for (const key of [orgId]) {
       if (inMemoryNotifications[key]) {
         const item = inMemoryNotifications[key].find((n) => n.id === targetId);
         if (item) item.read = true;
@@ -105,14 +99,11 @@ export const markNotificationReadFn = createServerFn({ method: "POST" })
 export const markAllNotificationsReadFn = createServerFn({ method: "POST" })
   .validator((data: any) => data)
   .handler(async ({ data }) => {
-    let orgId = "default";
-    try {
-      const session = await requireAuth();
-      orgId = session.orgId;
-    } catch {}
+    const session = await requireAuth();
+    const orgId = session.orgId;
 
     // Update in-memory fallback stores
-    for (const key of [orgId, "default"]) {
+    for (const key of [orgId]) {
       if (inMemoryNotifications[key]) {
         inMemoryNotifications[key].forEach((n) => {
           n.read = true;
@@ -149,11 +140,8 @@ export const markAllNotificationsReadFn = createServerFn({ method: "POST" })
 export const createNotificationFn = createServerFn({ method: "POST" })
   .validator((data: any) => data)
   .handler(async ({ data }) => {
-    let orgId = "default";
-    try {
-      const session = await requireAuth();
-      orgId = session.orgId;
-    } catch {}
+    const session = await requireAuth();
+    const orgId = session.orgId;
 
     const newNotif = {
       id: data.notification?.id || uuidv4(),
