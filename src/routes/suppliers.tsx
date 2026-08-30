@@ -6,6 +6,7 @@ import { PaginationControls } from "@/components/ui/pagination-controls";
 import { useDebounce } from "@/hooks/useDebounce";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { PhoneInput } from "@/components/ui/phone-input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { PageHeader } from "@/components/layout/PageHeader";
@@ -948,10 +949,8 @@ function SuppliersPage() {
                         <Label htmlFor="phone" className="text-xs font-semibold">
                           Phone Number <span className="text-destructive">*</span>
                         </Label>
-                        <Input
+                        <PhoneInput
                           id="phone"
-                          type="tel"
-                          placeholder="e.g. +1 555-0199"
                           value={phone}
                           onChange={(e) => {
                             setPhone(e.target.value);

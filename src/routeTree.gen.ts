@@ -12,7 +12,6 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as VerifyEmailRouteImport } from './routes/verify-email'
 import { Route as UsersRouteImport } from './routes/users'
 import { Route as UnitsRouteImport } from './routes/units'
-import { Route as TaxMastersRouteImport } from './routes/tax-masters'
 import { Route as TablesRouteImport } from './routes/tables'
 import { Route as SuppliersRouteImport } from './routes/suppliers'
 import { Route as SubscriptionsRouteImport } from './routes/subscriptions'
@@ -89,11 +88,6 @@ const UsersRoute = UsersRouteImport.update({
 const UnitsRoute = UnitsRouteImport.update({
   id: '/units',
   path: '/units',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const TaxMastersRoute = TaxMastersRouteImport.update({
-  id: '/tax-masters',
-  path: '/tax-masters',
   getParentRoute: () => rootRouteImport,
 } as any)
 const TablesRoute = TablesRouteImport.update({
@@ -452,7 +446,6 @@ export interface FileRoutesByFullPath {
   '/subscriptions': typeof SubscriptionsRoute
   '/suppliers': typeof SuppliersRoute
   '/tables': typeof TablesRoute
-  '/tax-masters': typeof TaxMastersRoute
   '/units': typeof UnitsRoute
   '/users': typeof UsersRoute
   '/verify-email': typeof VerifyEmailRoute
@@ -515,7 +508,6 @@ export interface FileRoutesByTo {
   '/subscriptions': typeof SubscriptionsRoute
   '/suppliers': typeof SuppliersRoute
   '/tables': typeof TablesRoute
-  '/tax-masters': typeof TaxMastersRoute
   '/units': typeof UnitsRoute
   '/users': typeof UsersRoute
   '/verify-email': typeof VerifyEmailRoute
@@ -584,7 +576,6 @@ export interface FileRoutesById {
   '/subscriptions': typeof SubscriptionsRoute
   '/suppliers': typeof SuppliersRoute
   '/tables': typeof TablesRoute
-  '/tax-masters': typeof TaxMastersRoute
   '/units': typeof UnitsRoute
   '/users': typeof UsersRoute
   '/verify-email': typeof VerifyEmailRoute
@@ -654,7 +645,6 @@ export interface FileRouteTypes {
     | '/subscriptions'
     | '/suppliers'
     | '/tables'
-    | '/tax-masters'
     | '/units'
     | '/users'
     | '/verify-email'
@@ -717,7 +707,6 @@ export interface FileRouteTypes {
     | '/subscriptions'
     | '/suppliers'
     | '/tables'
-    | '/tax-masters'
     | '/units'
     | '/users'
     | '/verify-email'
@@ -785,7 +774,6 @@ export interface FileRouteTypes {
     | '/subscriptions'
     | '/suppliers'
     | '/tables'
-    | '/tax-masters'
     | '/units'
     | '/users'
     | '/verify-email'
@@ -854,7 +842,6 @@ export interface RootRouteChildren {
   SubscriptionsRoute: typeof SubscriptionsRoute
   SuppliersRoute: typeof SuppliersRoute
   TablesRoute: typeof TablesRoute
-  TaxMastersRoute: typeof TaxMastersRoute
   UnitsRoute: typeof UnitsRoute
   UsersRoute: typeof UsersRoute
   VerifyEmailRoute: typeof VerifyEmailRoute
@@ -892,13 +879,6 @@ declare module '@tanstack/react-router' {
       path: '/units'
       fullPath: '/units'
       preLoaderRoute: typeof UnitsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/tax-masters': {
-      id: '/tax-masters'
-      path: '/tax-masters'
-      fullPath: '/tax-masters'
-      preLoaderRoute: typeof TaxMastersRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/tables': {
@@ -1453,7 +1433,6 @@ const rootRouteChildren: RootRouteChildren = {
   SubscriptionsRoute: SubscriptionsRoute,
   SuppliersRoute: SuppliersRoute,
   TablesRoute: TablesRoute,
-  TaxMastersRoute: TaxMastersRoute,
   UnitsRoute: UnitsRoute,
   UsersRoute: UsersRoute,
   VerifyEmailRoute: VerifyEmailRoute,

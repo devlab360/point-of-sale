@@ -39,12 +39,32 @@ import {
   Smartphone,
   Users,
   Wallet,
+  Search,
+  Star,
+  DownloadCloud,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useEffect, useState, useMemo } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getSettingsFn, updateSettingsFn, getAllSaasPlansFn } from "@/api/settings";
-import { getTaxMastersFn } from "@/api/tax-master";
+import {
+  getTaxMastersFn,
+  createTaxMasterFn,
+  updateTaxMasterFn,
+  deleteTaxMasterFn,
+  loadCountryTaxTemplateFn,
+  COUNTRY_TAX_TEMPLATES,
+} from "@/api/tax-master";
+import { useDebounce } from "@/hooks/useDebounce";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { DEFAULT_PAYMENT_METHODS, PAYMENT_METHOD_ICONS, type PaymentMethodConfig } from "@/lib/payment-methods";
 import { submitPaymentProofFn } from "@/api/subscription-payments";
 import { updateUserFn } from "@/api/users";
@@ -101,7 +121,9 @@ import { PhoneInput } from "@/components/ui/phone-input";
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { BUSINESS_TEMPLATES } from "@/lib/business-templates";
-import { BUSINESS_TYPE_OPTIONS, DATE_FORMAT_OPTIONS, TIME_FORMAT_OPTIONS, TIME_ZONE_OPTIONS } from "@/constants";
+import { BUSINESS_TYPE_OPTIONS, TIME_FORMAT_OPTIONS } from "@/constants";
+import { COUNTRIES, getCountryByIso, getCountryOptionList } from "@/lib/countries";
+import { TIMEZONES, DATE_FORMATS } from "@/lib/formatters";
 
 export const Route = createFileRoute("/settings")({
   head: () => ({ meta: [{ title: "Settings · OneDesk360" }] }),
@@ -118,7 +140,10 @@ const defaultSettings: any = {
   storeName: "",
   currencySymbol: "$",
   currencyCode: "USD",
+  country: "US",
+  countryCode: "+1",
   taxId: "",
+  taxIdLabel: "VAT / Tax ID",
   address: "",
   phone: "",
   email: "",
@@ -217,6 +242,150 @@ function SettingsPage() {
   const search = Route.useSearch();
   const router = useRouter();
   const { t } = useLanguage();
+
+  // --- Tax Master Manager State in Settings ---
+  const [taxModalOpen, setTaxModalOpen] = useState(false);
+  const [taxTemplateModalOpen, setTaxTemplateModalOpen] = useState(false);
+  const [selectedTaxTemplateCountry, setSelectedTaxTemplateCountry] = useState("US");
+  const [editingTax, setEditingTax] = useState<any>(null);
+  const [taxName, setTaxName] = useState("");
+  const [taxRate, setTaxRate] = useState<string>("");
+  const [taxType, setTaxType] = useState<string>("gst");
+  const [taxCgstRate, setTaxCgstRate] = useState<string>("");
+  const [taxSgstRate, setTaxSgstRate] = useState<string>("");
+  const [taxIgstRate, setTaxIgstRate] = useState<string>("");
+  const [taxIsDefault, setTaxIsDefault] = useState(false);
+  const [taxStatus, setTaxStatus] = useState("active");
+  const [taxDescription, setTaxDescription] = useState("");
+  const [taxDeleteId, setTaxDeleteId] = useState<string | null>(null);
+  const [isSavingTax, setIsSavingTax] = useState(false);
+  const [taxSearch, setTaxSearch] = useState("");
+  const debouncedTaxSearch = useDebounce(taxSearch, 300);
+
+  const filteredTaxMasters = useMemo(() => {
+    let list = taxMasters;
+    if (debouncedTaxSearch) {
+      const lower = debouncedTaxSearch.toLowerCase();
+      list = list.filter(
+        (t: any) =>
+          t.name?.toLowerCase().includes(lower) ||
+          `${Number(t.rate) || 0}%`.toLowerCase().includes(lower) ||
+          String(t.taxType || "").toLowerCase().includes(lower) ||
+          String(t.description || "").toLowerCase().includes(lower),
+      );
+    }
+    return [...list].sort((a: any, b: any) => Number(a.rate || 0) - Number(b.rate || 0));
+  }, [taxMasters, debouncedTaxSearch]);
+
+  const openNewTax = () => {
+    setEditingTax(null);
+    setTaxName("");
+    setTaxRate("");
+    setTaxType("gst");
+    setTaxCgstRate("");
+    setTaxSgstRate("");
+    setTaxIgstRate("");
+    setTaxIsDefault(false);
+    setTaxStatus("active");
+    setTaxDescription("");
+    setTaxModalOpen(true);
+  };
+
+  const openEditTax = (tm: any) => {
+    setEditingTax(tm);
+    setTaxName(tm.name || "");
+    setTaxRate(tm.rate != null ? String(tm.rate) : "");
+    setTaxType(tm.taxType || "gst");
+    setTaxCgstRate(tm.cgstRate != null ? String(tm.cgstRate) : "");
+    setTaxSgstRate(tm.sgstRate != null ? String(tm.sgstRate) : "");
+    setTaxIgstRate(tm.igstRate != null ? String(tm.igstRate) : "");
+    setTaxIsDefault(Boolean(tm.isDefault));
+    setTaxStatus(tm.status || "active");
+    setTaxDescription(tm.description || "");
+    setTaxModalOpen(true);
+  };
+
+  const saveTaxMutation = useMutation({
+    mutationFn: async () => {
+      const payload = {
+        name: taxName,
+        rate: taxRate === "" ? "0" : taxRate,
+        taxType,
+        cgstRate: taxCgstRate === "" ? null : taxCgstRate,
+        sgstRate: taxSgstRate === "" ? null : taxSgstRate,
+        igstRate: taxIgstRate === "" ? null : taxIgstRate,
+        isDefault: taxIsDefault,
+        status: taxStatus,
+        description: taxDescription || null,
+      };
+      if (editingTax) {
+        return await updateTaxMasterFn({ data: { id: editingTax.id, updates: payload } });
+      }
+      return await createTaxMasterFn({ data: { taxMaster: payload } });
+    },
+    onSuccess: async (res: any) => {
+      if (!res?.success) {
+        toast.error(res?.error || "Failed to save tax rate");
+        return;
+      }
+      toast.success(res.message || "Tax rate saved");
+      setTaxModalOpen(false);
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["taxMasters"] }),
+        queryClient.invalidateQueries({ queryKey: ["settings", orgId] }),
+      ]);
+    },
+    onError: () => toast.error("Failed to save tax rate"),
+  });
+
+  const deleteTaxMutation = useMutation({
+    mutationFn: async (id: string) => {
+      return await deleteTaxMasterFn({ data: { id } });
+    },
+    onSuccess: async (res: any) => {
+      if (!res?.success) {
+        toast.error(res?.error || "Failed to delete tax rate");
+        return;
+      }
+      toast.success("Tax rate deleted");
+      setTaxDeleteId(null);
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["taxMasters"] }),
+        queryClient.invalidateQueries({ queryKey: ["settings", orgId] }),
+      ]);
+    },
+    onError: () => toast.error("Failed to delete tax rate"),
+  });
+
+  const loadTaxTemplateMutation = useMutation({
+    mutationFn: async (countryCode: string) => {
+      return await loadCountryTaxTemplateFn({ data: { countryCode } });
+    },
+    onSuccess: async (res: any) => {
+      if (!res?.success) {
+        toast.error(res?.error || "Failed to import presets");
+        return;
+      }
+      toast.success(res.message || "Country tax slabs imported");
+      setTaxTemplateModalOpen(false);
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["taxMasters"] }),
+        queryClient.invalidateQueries({ queryKey: ["settings", orgId] }),
+      ]);
+    },
+    onError: () => toast.error("Failed to import country tax slabs"),
+  });
+
+  const handleSaveTax = () => {
+    if (!taxName.trim()) {
+      toast.error("Tax name is required");
+      return;
+    }
+    setIsSavingTax(true);
+    saveTaxMutation.mutate(undefined, {
+      onSettled: () => setIsSavingTax(false),
+    });
+  };
 
   const handlePaymentProofSubmit = async () => {
     if (!paymentForm.utrNumber.trim()) {
@@ -366,9 +535,14 @@ function SettingsPage() {
               gstin: settings.gstin,
               stateCode: settings.stateCode,
               businessType: settings.businessType,
+              countryCode: settings.countryCode,
               timeZone: settings.timeZone,
               dateFormat: settings.dateFormat,
-              config: settings.config,
+              config: {
+                ...(settings.config || {}),
+                country: settings.country,
+                taxIdLabel: settings.taxIdLabel,
+              },
             },
           },
         });
@@ -493,11 +667,28 @@ function SettingsPage() {
     }
   };
 
+  const handleCountryChange = (countryIso: string) => {
+    const c = getCountryByIso(countryIso);
+    if (!c) return;
+    setSettings((prev: any) => ({
+      ...prev,
+      country: c.code,
+      countryCode: c.phoneCode,
+      currencySymbol: c.currencySymbol,
+      currencyCode: c.currencyCode,
+      timeZone: c.timeZone,
+      dateFormat: c.dateFormat,
+      taxIdLabel: c.taxIdLabel,
+      standardRate: prev.standardRate === 0 || prev.standardRate === "0" ? c.defaultTaxRate : prev.standardRate,
+    }));
+    toast.success(`Applied regional presets for ${c.flag} ${c.name}`);
+  };
+
   const parseBankDetails = (str: string) => {
     try {
       if (str && str.trim().startsWith("{")) return JSON.parse(str);
     } catch (e) { }
-    return { bankName: str || "", holderName: "", accountNo: "", ifscCode: "" };
+    return { bankName: str || "", holderName: "", accountNo: "", ifscCode: "", iban: "", swiftBic: "" };
   };
   const bankInfo = parseBankDetails(settings.bankDetails || "");
   const handleBankChange = (field: string, val: string) => {
@@ -936,6 +1127,17 @@ function SettingsPage() {
                   />
 
                   <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+                    <Field label="Operating Country / Territory" description="Auto-configures your regional currency, phone prefix, timezone, and tax rules.">
+                      <SearchableSelect
+                        value={settings.country || "US"}
+                        onChange={handleCountryChange}
+                        options={getCountryOptionList().map((c) => ({
+                          value: c.value,
+                          label: c.label,
+                        }))}
+                      />
+                    </Field>
+
                     <Field label="Store Name" description="The public brand or trading name of your business.">
                       <Input
                         value={settings.storeName}
@@ -949,11 +1151,11 @@ function SettingsPage() {
                       <Input
                         value={settings.taxId}
                         onChange={(e) => handleChange("taxId", e.target.value)}
-                        placeholder="e.g. VAT-89472910 or GSTIN29ABCDE"
+                        placeholder="e.g. VAT-89472910, TRN 100234, GSTIN29ABCDE"
                       />
                     </Field>
 
-                    <Field label="Physical Store Address" full description="Complete street address, city, state, and postal code.">
+                    <Field label="Physical Store Address" full description="Complete street address, city, state/province, and postal code.">
                       <Input
                         value={settings.address}
                         onChange={(e) => handleChange("address", e.target.value)}
@@ -964,6 +1166,7 @@ function SettingsPage() {
                     <Field label="Store Customer Support Phone" description="Printed on receipts for customer inquiries and returns.">
                       <PhoneInput
                         value={settings.phone}
+                        countryCallingCode={settings.countryCode}
                         onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                           handleChange("phone", e.target.value);
                         }}
@@ -996,31 +1199,33 @@ function SettingsPage() {
               {/* Regional Localization & Currency */}
               <SettingsCard
                 icon={Globe}
-                title="Regional Localization & Currency"
-                desc="Configure currency display symbol, accounting timezone, and date presentation format."
+                title="Regional Localization & Multi-Currency Engine"
+                desc="Configure currency display symbol, accounting timezone, and date presentation format for your jurisdiction."
               >
                 <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-                  <Field label={t("currency") || "Currency Preset"} description="Quick select standard world currencies.">
+                  <Field label={t("currency") || "Currency Preset"} description="Quick select standard world currencies (60+ supported).">
                     <SearchableSelect
-                      value={settings.currencySymbol || "$"}
+                      value={settings.currencyCode || "USD"}
                       onChange={(val) => {
-                        const opt = CURRENCY_OPTIONS.find((o) => o.symbol === val);
-                        handleChange("currencySymbol", val);
-                        if (opt) handleChange("currencyCode", opt.code);
+                        const opt = CURRENCY_OPTIONS.find((o) => o.code === val);
+                        if (opt) {
+                          handleChange("currencyCode", opt.code);
+                          handleChange("currencySymbol", opt.symbol);
+                        }
                       }}
                       options={CURRENCY_OPTIONS.map((c) => ({
-                        value: c.symbol,
-                        label: c.label,
+                        value: c.code,
+                        label: `${c.symbol} (${c.code}) - ${c.label}`,
                       }))}
                     />
                   </Field>
 
-                  <Field label="Custom Currency Symbol" description="Symbol rendered beside all price figures in POS.">
+                  <Field label="Custom Currency Symbol" description="Symbol rendered beside all price figures across POS and receipts.">
                     <Input
                       className="font-bold text-base"
                       value={settings.currencySymbol || "$"}
                       onChange={(e) => handleChange("currencySymbol", e.target.value)}
-                      placeholder="e.g. $, ₹, ৳, €, £, AED"
+                      placeholder="e.g. $, ₹, ৳, €, £, AED, SAR, R$, ¥, ₺, ₦"
                     />
                   </Field>
 
@@ -1028,7 +1233,7 @@ function SettingsPage() {
                     <SearchableSelect
                       value={settings.timeZone || "UTC"}
                       onChange={(val) => handleChange("timeZone", val)}
-                      options={TIME_ZONE_OPTIONS}
+                      options={TIMEZONES}
                       placeholder="Select Time Zone"
                     />
                   </Field>
@@ -1037,7 +1242,7 @@ function SettingsPage() {
                     <SearchableSelect
                       value={settings.dateFormat || "dd MMM yyyy"}
                       onChange={(val) => handleChange("dateFormat", val)}
-                      options={DATE_FORMAT_OPTIONS}
+                      options={DATE_FORMATS}
                     />
                   </Field>
 
@@ -1603,16 +1808,186 @@ function SettingsPage() {
           {/* TAB 4: Taxes & Compliance */}
           {activeTab === "tax" && (
             <div className="space-y-6 animate-in fade-in duration-200">
+              {/* Card 1: Tax Master & Rate Slabs Manager */}
               <SettingsCard
                 icon={Receipt}
-                title="Tax Configuration & Rates"
-                desc="Configure baseline tax percentages applied to transactions, and set whether product shelf prices are tax-inclusive."
+                title="Tax Master & Rate Slabs"
+                desc="Create and configure multiple custom tax rates, GST/VAT/Sales Tax slabs, and rules applied to products and billing."
+                headerRight={
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setTaxTemplateModalOpen(true)}
+                      className="gap-1.5 text-xs font-semibold h-9"
+                    >
+                      <Globe className="size-3.5" /> Load Country Presets
+                    </Button>
+                    <Button
+                      size="sm"
+                      onClick={openNewTax}
+                      className="gap-1.5 text-xs font-bold h-9 shadow-soft"
+                    >
+                      <Plus className="size-3.5" /> Add Tax Rate
+                    </Button>
+                  </div>
+                }
+              >
+                <div className="space-y-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div className="relative flex-1 max-w-sm">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground" />
+                      <Input
+                        placeholder="Search tax rates, types, or rules..."
+                        value={taxSearch}
+                        onChange={(e) => setTaxSearch(e.target.value)}
+                        className="pl-8.5 h-9 text-xs"
+                      />
+                    </div>
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <span className="font-semibold">{filteredTaxMasters.length}</span> slabs configured
+                    </div>
+                  </div>
+
+                  {filteredTaxMasters.length === 0 ? (
+                    <div className="rounded-xl border border-dashed border-border/80 p-8 text-center bg-muted/10 space-y-3">
+                      <Receipt className="size-8 text-muted-foreground mx-auto opacity-50" />
+                      <div className="space-y-1">
+                        <p className="text-xs font-bold text-foreground">No tax rate slabs found</p>
+                        <p className="text-[11px] text-muted-foreground">
+                          Create custom tax items or import standard statutory country presets.
+                        </p>
+                      </div>
+                      <div className="flex items-center justify-center gap-2 pt-1">
+                        <Button variant="outline" size="sm" onClick={() => setTaxTemplateModalOpen(true)} className="text-xs gap-1">
+                          <Globe className="size-3" /> Load Presets
+                        </Button>
+                        <Button size="sm" onClick={openNewTax} className="text-xs gap-1">
+                          <Plus className="size-3" /> Add Tax Rate
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="overflow-hidden rounded-xl border border-border/80 bg-card shadow-soft">
+                      <div className="overflow-x-auto">
+                        <Table className="min-w-[640px]">
+                          <TableHeader>
+                            <TableRow className="bg-muted/40 text-[11px]">
+                              <TableHead>Name & Rules</TableHead>
+                              <TableHead>Tax Rate</TableHead>
+                              <TableHead>Type</TableHead>
+                              <TableHead>Breakdown / Split</TableHead>
+                              <TableHead>Default</TableHead>
+                              <TableHead>Status</TableHead>
+                              <TableHead className="text-right">Actions</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {filteredTaxMasters.map((tm: any) => (
+                              <TableRow key={tm.id} className="hover:bg-muted/30 transition-colors text-xs">
+                                <TableCell>
+                                  <div>
+                                    <span className="font-bold text-foreground">{tm.name}</span>
+                                    {tm.description && (
+                                      <p className="text-[10px] text-muted-foreground truncate max-w-[240px]">
+                                        {tm.description}
+                                      </p>
+                                    )}
+                                  </div>
+                                </TableCell>
+                                <TableCell>
+                                  <Badge variant="outline" className="font-mono text-xs font-bold">
+                                    {Number(tm.rate) || 0}%
+                                  </Badge>
+                                </TableCell>
+                                <TableCell>
+                                  <Badge variant="outline" className="text-[10px] font-semibold uppercase">
+                                    {tm.taxType === "sales_tax" ? "Sales Tax" : tm.taxType || "gst"}
+                                  </Badge>
+                                </TableCell>
+                                <TableCell>
+                                  {tm.taxType === "gst" ? (
+                                    <span className="font-mono text-[11px] text-muted-foreground">
+                                      {tm.cgstRate != null ? `${tm.cgstRate}%` : "auto"} CGST +{" "}
+                                      {tm.sgstRate != null ? `${tm.sgstRate}%` : "auto"} SGST
+                                    </span>
+                                  ) : tm.taxType === "exempt" ? (
+                                    <span className="text-[11px] text-muted-foreground">0% Exempt</span>
+                                  ) : (
+                                    <span className="text-[11px] text-muted-foreground">Single rate ({tm.rate}%)</span>
+                                  )}
+                                </TableCell>
+                                <TableCell>
+                                  {tm.isDefault ? (
+                                    <Badge className="bg-primary/10 text-primary border-primary/20 text-[10px] font-bold">
+                                      <Star className="size-2.5 mr-1 fill-primary" /> Default
+                                    </Badge>
+                                  ) : (
+                                    <span className="text-muted-foreground">—</span>
+                                  )}
+                                </TableCell>
+                                <TableCell>
+                                  <Badge
+                                    variant="outline"
+                                    className={`text-[10px] font-bold uppercase ${
+                                      tm.status === "archived"
+                                        ? "text-muted-foreground"
+                                        : "text-success border-success/30 bg-success/10"
+                                    }`}
+                                  >
+                                    {tm.status === "archived" ? "Archived" : tm.status || "active"}
+                                  </Badge>
+                                </TableCell>
+                                <TableCell className="text-right">
+                                  <div className="flex justify-end gap-1">
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => openEditTax(tm)}
+                                      className="h-7 text-xs font-semibold px-2"
+                                    >
+                                      <Pencil className="size-3 mr-1" /> Edit
+                                    </Button>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => setTaxDeleteId(tm.id)}
+                                      className="h-7 text-xs text-muted-foreground hover:text-destructive px-2"
+                                    >
+                                      <Trash2 className="size-3" />
+                                    </Button>
+                                  </div>
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </SettingsCard>
+
+              {/* Card 2: Baseline Store Tax Settings & Rules */}
+              <SettingsCard
+                icon={Sliders}
+                title="Baseline Tax Configuration & Compliance"
+                desc="Configure baseline store tax defaults, pricing mode, and jurisdiction reporting."
               >
                 <div className="space-y-6">
                   <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+                    <Field label="Statutory Tax Label (Receipts & Invoices)" description="Printed as header label before your Tax ID (e.g. VAT No., GSTIN, TRN, CIF, RFC).">
+                      <Input
+                        className="font-semibold"
+                        value={settings.taxIdLabel || "VAT / Tax ID"}
+                        onChange={(e) => handleChange("taxIdLabel", e.target.value)}
+                        placeholder="e.g. VAT Registration No., GSTIN, TRN, Tax ID"
+                      />
+                    </Field>
+
                     <Field
                       label="Default Tax Master"
-                      description="Master tax rate applied as the default when a product has no linked tax rate. Set additional rates in Tax Master."
+                      description="Master tax rate applied as the store default when a product has no linked tax rate."
                     >
                       <Select
                         value={settings.defaultTaxMasterId?.toString() || ""}
@@ -1638,7 +2013,7 @@ function SettingsPage() {
                       </Select>
                     </Field>
 
-                    <Field label="Standard Tax Rate (%)" description="Default VAT / GST percentage applied to general items.">
+                    <Field label="Standard Fallback Tax Rate (%)" description="Default percentage applied when no specific tax slab is linked.">
                       <Input
                         type="number"
                         step="0.1"
@@ -1647,7 +2022,7 @@ function SettingsPage() {
                         className="font-bold text-base"
                         value={settings.standardRate}
                         onChange={(e) => handleChange("standardRate", parseFloat(e.target.value) || 0)}
-                        placeholder="e.g. 5 or 18"
+                        placeholder="e.g. 5, 10, 15, 18, 20"
                       />
                     </Field>
 
@@ -1728,6 +2103,242 @@ function SettingsPage() {
                   </div>
                 </div>
               </SettingsCard>
+
+              {/* Tax Master Create / Edit Sheet */}
+              <Sheet open={taxModalOpen} onOpenChange={setTaxModalOpen}>
+                <SheetContent className="w-full sm:max-w-lg overflow-y-auto">
+                  <SheetHeader>
+                    <SheetTitle>{editingTax ? "Edit Tax Rate" : "Add Tax Rate"}</SheetTitle>
+                    <SheetDescription>
+                      Configure custom tax items and rules applied dynamically to products and POS transactions.
+                    </SheetDescription>
+                  </SheetHeader>
+                  <div className="space-y-4 py-4">
+                    <div className="grid gap-1.5">
+                      <Label className="text-xs font-bold">Tax Name *</Label>
+                      <Input
+                        placeholder="e.g. Standard VAT 20%, GST 18%, State Sales Tax, Zero Rate"
+                        value={taxName}
+                        onChange={(e) => setTaxName(e.target.value)}
+                        className="h-10"
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="grid gap-1.5">
+                        <Label className="text-xs font-bold">Tax Rate (%) *</Label>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          value={taxRate}
+                          onChange={(e) => setTaxRate(e.target.value)}
+                          placeholder="e.g. 20"
+                          className="h-10"
+                        />
+                      </div>
+                      <div className="grid gap-1.5">
+                        <Label className="text-xs font-bold">Tax Type</Label>
+                        <Select value={taxType} onValueChange={(v: any) => setTaxType(v)}>
+                          <SelectTrigger className="h-10">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="gst">GST (CGST + SGST / IGST)</SelectItem>
+                            <SelectItem value="vat">VAT (Value Added Tax)</SelectItem>
+                            <SelectItem value="sales_tax">Sales Tax (State / Local)</SelectItem>
+                            <SelectItem value="flat">Flat Percentage Tax</SelectItem>
+                            <SelectItem value="compound">Compound / Cascade Tax</SelectItem>
+                            <SelectItem value="exempt">Tax-Exempt (0%)</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+
+                    {taxType === "gst" && (
+                      <div className="grid grid-cols-3 gap-3 rounded-xl border border-border/80 bg-muted/20 p-3">
+                        <div className="grid gap-1.5">
+                          <Label className="text-[10px] font-bold">CGST (%)</Label>
+                          <Input
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            value={taxCgstRate}
+                            onChange={(e) => setTaxCgstRate(e.target.value)}
+                            placeholder="e.g. 9"
+                            className="h-9"
+                          />
+                        </div>
+                        <div className="grid gap-1.5">
+                          <Label className="text-[10px] font-bold">SGST (%)</Label>
+                          <Input
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            value={taxSgstRate}
+                            onChange={(e) => setTaxSgstRate(e.target.value)}
+                            placeholder="e.g. 9"
+                            className="h-9"
+                          />
+                        </div>
+                        <div className="grid gap-1.5">
+                          <Label className="text-[10px] font-bold">IGST (%)</Label>
+                          <Input
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            value={taxIgstRate}
+                            onChange={(e) => setTaxIgstRate(e.target.value)}
+                            placeholder="e.g. 18"
+                            className="h-9"
+                          />
+                        </div>
+                        <p className="col-span-3 text-[10px] text-muted-foreground">
+                          Leave empty to auto-split rate (50% CGST + 50% SGST) for intra-state sales.
+                        </p>
+                      </div>
+                    )}
+
+                    <div className="grid gap-1.5">
+                      <Label className="text-xs font-bold">Description / Rules</Label>
+                      <Textarea
+                        placeholder="e.g. Applicable on electronics, luxury items, and consumer goods"
+                        value={taxDescription}
+                        onChange={(e) => setTaxDescription(e.target.value)}
+                        className="min-h-[70px] text-xs"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="grid gap-1.5">
+                        <Label className="text-xs font-bold">Status</Label>
+                        <Select value={taxStatus} onValueChange={setTaxStatus}>
+                          <SelectTrigger className="h-10">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="active">Active</SelectItem>
+                            <SelectItem value="archived">Archived</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <label className="flex items-center gap-2 pt-6 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={taxIsDefault}
+                          onChange={(e) => setTaxIsDefault(e.target.checked)}
+                          className="rounded border-gray-300 text-primary focus:ring-primary w-4 h-4 cursor-pointer"
+                        />
+                        <span className="text-sm font-medium">Set as default rate</span>
+                      </label>
+                    </div>
+                  </div>
+                  <SheetFooter>
+                    <Button variant="outline" onClick={() => setTaxModalOpen(false)}>
+                      Cancel
+                    </Button>
+                    <Button onClick={handleSaveTax} disabled={isSavingTax}>
+                      {isSavingTax && <Loader2 className="size-4 mr-1 animate-spin" />}
+                      {editingTax ? "Save Changes" : "Create Tax Rate"}
+                    </Button>
+                  </SheetFooter>
+                </SheetContent>
+              </Sheet>
+
+              {/* Load Country Presets Dialog */}
+              <Dialog open={taxTemplateModalOpen} onOpenChange={setTaxTemplateModalOpen}>
+                <DialogContent className="max-w-md">
+                  <DialogHeader>
+                    <DialogTitle className="flex items-center gap-2">
+                      <Sparkles className="size-5 text-primary" /> Import Country Tax Presets
+                    </DialogTitle>
+                    <DialogDescription>
+                      Instantly import standard official statutory tax slabs and rules for your country.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-4 py-2">
+                    <div className="grid gap-1.5">
+                      <Label className="text-xs font-bold">Select Country System</Label>
+                      <Select
+                        value={selectedTaxTemplateCountry}
+                        onValueChange={setSelectedTaxTemplateCountry}
+                      >
+                        <SelectTrigger className="h-10">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="GB">🇬🇧 United Kingdom (Standard VAT 20%, 5%, 0%)</SelectItem>
+                          <SelectItem value="US">🇺🇸 United States (Sales Tax 7.5%, 8.25%, 10%)</SelectItem>
+                          <SelectItem value="AE">🇦🇪 United Arab Emirates (VAT 5%, 0%)</SelectItem>
+                          <SelectItem value="SA">🇸🇦 Saudi Arabia (ZATCA VAT 15%, 0%)</SelectItem>
+                          <SelectItem value="CA">🇨🇦 Canada (GST / HST / PST 5%, 13%, 12%)</SelectItem>
+                          <SelectItem value="AU">🇦🇺 Australia (GST 10%, 0%)</SelectItem>
+                          <SelectItem value="IN">🇮🇳 India (GST 0%, 5%, 12%, 18%, 28%)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="rounded-xl border border-border/80 bg-muted/20 p-3 space-y-2">
+                      <p className="text-xs font-semibold text-foreground">Included Slabs:</p>
+                      <div className="space-y-1">
+                        {(
+                          COUNTRY_TAX_TEMPLATES[selectedTaxTemplateCountry] ||
+                          COUNTRY_TAX_TEMPLATES.DEFAULT
+                        ).map((s, idx) => (
+                          <div key={idx} className="flex items-center justify-between text-xs">
+                            <span className="text-foreground">{s.name}</span>
+                            <Badge variant="outline" className="font-mono text-[10px]">
+                              {s.rate}% ({s.taxType.toUpperCase()})
+                            </Badge>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                  <DialogFooter>
+                    <Button variant="outline" onClick={() => setTaxTemplateModalOpen(false)}>
+                      Cancel
+                    </Button>
+                    <Button
+                      onClick={() => loadTaxTemplateMutation.mutate(selectedTaxTemplateCountry)}
+                      disabled={loadTaxTemplateMutation.isPending}
+                      className="gap-1.5"
+                    >
+                      {loadTaxTemplateMutation.isPending ? (
+                        <Loader2 className="size-4 animate-spin" />
+                      ) : (
+                        <DownloadCloud className="size-4" />
+                      )}
+                      Import Tax Slabs
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+
+              {/* Delete Tax Dialog */}
+              <Dialog open={!!taxDeleteId} onOpenChange={(o) => !o && setTaxDeleteId(null)}>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Delete Tax Rate?</DialogTitle>
+                    <DialogDescription>
+                      This will permanently remove this tax rate slab. Products currently using it will fall back to
+                      their standard saved rate. This action cannot be undone.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <DialogFooter>
+                    <Button variant="outline" onClick={() => setTaxDeleteId(null)}>
+                      Cancel
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      onClick={() => taxDeleteId && deleteTaxMutation.mutate(taxDeleteId)}
+                      disabled={deleteTaxMutation.isPending}
+                    >
+                      {deleteTaxMutation.isPending && <Loader2 className="size-4 mr-1 animate-spin" />}
+                      Delete Tax Rate
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
             </div>
           )}
 
@@ -1770,10 +2381,10 @@ function SettingsPage() {
                           <div className="flex items-center justify-between border-b border-border/60 pb-2.5">
                             <div>
                               <h4 className="text-xs font-black uppercase tracking-wider text-foreground">
-                                Bank Wire & Settlement Info
+                                Bank Wire & Settlement Info (International)
                               </h4>
                               <p className="text-[11px] text-muted-foreground mt-0.5">
-                                Printed on corporate A4 invoices for direct bank transfer payments.
+                                Printed on corporate A4 invoices for direct bank transfers (supports IBAN, SWIFT/BIC).
                               </p>
                             </div>
                             <Landmark className="size-4 text-primary" />
@@ -1782,32 +2393,38 @@ function SettingsPage() {
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <Field label="Bank Name">
                               <Input
-                                placeholder="e.g. State Bank of India"
+                                placeholder="e.g. JPMorgan Chase / HSBC / Emirates NBD"
                                 value={bankInfo.bankName}
                                 onChange={(e) => handleBankChange("bankName", e.target.value)}
                               />
                             </Field>
                             <Field label="Account Holder Name">
                               <Input
-                                placeholder="e.g. Acme Retail Pvt Ltd"
+                                placeholder="e.g. Acme Retail Global Corp"
                                 value={bankInfo.holderName}
                                 onChange={(e) => handleBankChange("holderName", e.target.value)}
                               />
                             </Field>
-                            <Field label="Account Number">
+                            <Field label="Account Number / IBAN">
                               <Input
-                                placeholder="e.g. 10023456789012"
-                                value={bankInfo.accountNo}
-                                onChange={(e) => handleBankChange("accountNo", e.target.value)}
+                                placeholder="e.g. GB29NWBK60161331926819 or 1002345678"
+                                value={bankInfo.iban || bankInfo.accountNo}
+                                onChange={(e) => {
+                                  handleBankChange("iban", e.target.value);
+                                  handleBankChange("accountNo", e.target.value);
+                                }}
                                 className="font-mono"
                               />
                             </Field>
-                            <Field label="IFSC / Routing / SWIFT Code">
+                            <Field label="SWIFT / BIC / Routing Code / IFSC">
                               <Input
-                                placeholder="e.g. SBIN0001234"
-                                value={bankInfo.ifscCode}
-                                onChange={(e) => handleBankChange("ifscCode", e.target.value)}
-                                className="font-mono"
+                                placeholder="e.g. CHASUS33 / HSBCHKHH / SBIN0001234"
+                                value={bankInfo.swiftBic || bankInfo.ifscCode}
+                                onChange={(e) => {
+                                  handleBankChange("swiftBic", e.target.value);
+                                  handleBankChange("ifscCode", e.target.value);
+                                }}
+                                className="font-mono uppercase"
                               />
                             </Field>
                           </div>

@@ -155,7 +155,7 @@ function CustomersPage() {
       minLength: { value: 2, message: "Name must be at least 2 characters" },
     },
     email: { email: "Enter a valid email address" },
-    phone: { phone: "Enter a valid 10-15 digit phone number" },
+    phone: { phone: "Enter a valid phone number" },
     creditLimit: { positive: "Credit limit must be a valid positive number" },
   });
 

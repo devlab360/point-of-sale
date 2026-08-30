@@ -78,7 +78,6 @@ export const APP_GROUPS: MenuGroup[] = [
           { to: "/categories", label: "Categories", tkey: "categories" },
           { to: "/brands", label: "Brands", tkey: "brands" },
           { to: "/units", label: "Units", tkey: "units" },
-          { to: "/tax-masters", label: "Tax Master", tkey: "taxMaster" },
         ],
       },
       {
@@ -373,7 +372,7 @@ export const PERMISSION_ROUTE_MAP: Record<string, string[]> = {
   returns: ["/sales/returns", "/purchases/returns"],
   quotations: ["/quotations"],
   "delivery-challans": ["/delivery-challans"],
-  products: ["/products", "/categories", "/brands", "/units", "/tax-masters"],
+  products: ["/products", "/categories", "/brands", "/units"],
   inventory: [
     "/inventory",
     "/inventory/adjustments",

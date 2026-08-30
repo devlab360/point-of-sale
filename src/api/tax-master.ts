@@ -6,15 +6,75 @@ import { v4 as uuidv4 } from "uuid";
 
 import { db } from "@/db";
 import * as schema from "@/db/schema";
-import { eq, and } from "drizzle-orm";
+import { eq, and, ne } from "drizzle-orm";
 
-const DEFAULT_TAX_SLABS: { name: string; rate: string; cgstRate?: string; sgstRate?: string; igstRate?: string }[] = [
-  { name: "Nil Rated", rate: "0" },
-  { name: "GST 5%", rate: "5", cgstRate: "2.50", sgstRate: "2.50" },
-  { name: "GST 12%", rate: "12", cgstRate: "6", sgstRate: "6" },
-  { name: "GST 18%", rate: "18", cgstRate: "9", sgstRate: "9" },
-  { name: "GST 28%", rate: "28", cgstRate: "14", sgstRate: "14" },
-];
+export interface TaxSlabTemplate {
+  name: string;
+  rate: string;
+  taxType: string;
+  cgstRate?: string | null;
+  sgstRate?: string | null;
+  igstRate?: string | null;
+  description?: string;
+  isDefault?: boolean;
+}
+
+export const COUNTRY_TAX_TEMPLATES: Record<string, TaxSlabTemplate[]> = {
+  // India (GST)
+  IN: [
+    { name: "Nil / Zero Rated (0%)", rate: "0", taxType: "gst", isDefault: true, description: "Exempt goods & services" },
+    { name: "GST 5%", rate: "5", taxType: "gst", cgstRate: "2.50", sgstRate: "2.50", igstRate: "5", description: "Essential commodities" },
+    { name: "GST 12%", rate: "12", taxType: "gst", cgstRate: "6", sgstRate: "6", igstRate: "12", description: "Standard goods" },
+    { name: "GST 18%", rate: "18", taxType: "gst", cgstRate: "9", sgstRate: "9", igstRate: "18", description: "Standard services & goods" },
+    { name: "GST 28%", rate: "28", taxType: "gst", cgstRate: "14", sgstRate: "14", igstRate: "28", description: "Luxury & sin items" },
+  ],
+  // United Kingdom (VAT)
+  GB: [
+    { name: "Zero Rate (0%)", rate: "0", taxType: "vat", isDefault: false, description: "Books, children's clothes, food" },
+    { name: "Reduced Rate (5%)", rate: "5", taxType: "vat", isDefault: false, description: "Domestic fuel & energy" },
+    { name: "Standard VAT (20%)", rate: "20", taxType: "vat", isDefault: true, description: "Standard rate for UK" },
+    { name: "Exempt", rate: "0", taxType: "exempt", isDefault: false, description: "Exempt financial/health services" },
+  ],
+  // United States (Sales Tax)
+  US: [
+    { name: "Tax Exempt (0%)", rate: "0", taxType: "exempt", isDefault: false, description: "Tax-free groceries / prescriptions" },
+    { name: "Standard Sales Tax (7.5%)", rate: "7.5", taxType: "sales_tax", isDefault: true, description: "General sales tax" },
+    { name: "Combined State + Local (8.25%)", rate: "8.25", taxType: "sales_tax", isDefault: false, description: "State and county tax" },
+    { name: "Luxury / Hospitality (10%)", rate: "10", taxType: "sales_tax", isDefault: false, description: "Prepared food & beverage" },
+  ],
+  // United Arab Emirates (VAT)
+  AE: [
+    { name: "Zero Rated (0%)", rate: "0", taxType: "vat", isDefault: false, description: "Exports & international transport" },
+    { name: "Standard VAT (5%)", rate: "5", taxType: "vat", isDefault: true, description: "Standard UAE VAT rate" },
+    { name: "Exempt", rate: "0", taxType: "exempt", isDefault: false, description: "Local passenger transport & bare land" },
+  ],
+  // Saudi Arabia (VAT)
+  SA: [
+    { name: "Zero Rated (0%)", rate: "0", taxType: "vat", isDefault: false, description: "Qualified medicines & medical goods" },
+    { name: "Standard VAT (15%)", rate: "15", taxType: "vat", isDefault: true, description: "Standard ZATCA VAT rate" },
+    { name: "Exempt", rate: "0", taxType: "exempt", isDefault: false, description: "Financial services & residential rent" },
+  ],
+  // Canada (GST / HST / PST)
+  CA: [
+    { name: "Zero-Rated (0%)", rate: "0", taxType: "gst", isDefault: false, description: "Basic groceries & medical devices" },
+    { name: "Federal GST (5%)", rate: "5", taxType: "gst", isDefault: false, description: "Federal goods and services tax" },
+    { name: "Ontario HST (13%)", rate: "13", taxType: "sales_tax", isDefault: true, description: "Harmonized sales tax" },
+    { name: "BC GST + PST (12%)", rate: "12", taxType: "sales_tax", isDefault: false, description: "5% GST + 7% PST" },
+  ],
+  // Australia (GST)
+  AU: [
+    { name: "GST-Free (0%)", rate: "0", taxType: "gst", isDefault: false, description: "Fresh food, education & medical" },
+    { name: "Standard GST (10%)", rate: "10", taxType: "gst", isDefault: true, description: "Standard Australian GST" },
+  ],
+  // Default Global Fallback
+  DEFAULT: [
+    { name: "Tax Exempt (0%)", rate: "0", taxType: "exempt", isDefault: true, description: "Zero tax / exempt items" },
+    { name: "Standard Tax (5%)", rate: "5", taxType: "vat", isDefault: false, description: "Standard 5% tax" },
+    { name: "Standard Tax (10%)", rate: "10", taxType: "vat", isDefault: false, description: "Standard 10% tax" },
+    { name: "Standard Tax (15%)", rate: "15", taxType: "vat", isDefault: false, description: "Standard 15% tax" },
+    { name: "Standard Tax (20%)", rate: "20", taxType: "vat", isDefault: false, description: "Standard 20% tax" },
+  ],
+};
 
 export async function ensureDefaultTaxMasters(orgId: string) {
   const existing = await db
@@ -24,22 +84,45 @@ export async function ensureDefaultTaxMasters(orgId: string) {
     .limit(1);
   if (existing.length > 0) return;
 
+  // Retrieve org settings to pick matching country template
+  const settingsRows = await db
+    .select({ countryCode: schema.settings.countryCode, config: schema.settings.config })
+    .from(schema.settings)
+    .where(eq(schema.settings.organizationId, orgId))
+    .limit(1);
+
+  const country = (settingsRows[0]?.config as any)?.country || "IN";
+  const slabs = COUNTRY_TAX_TEMPLATES[country] || COUNTRY_TAX_TEMPLATES.IN || COUNTRY_TAX_TEMPLATES.DEFAULT;
+
   const now = new Date().toISOString();
-  await db.insert(schema.taxMasters).values(
-    DEFAULT_TAX_SLABS.map((slab, index) => ({
-      id: uuidv4(),
-      organizationId: orgId,
-      name: slab.name,
-      rate: slab.rate,
-      cgstRate: slab.cgstRate || null,
-      sgstRate: slab.sgstRate || null,
-      igstRate: slab.igstRate || null,
-      isDefault: index === 0,
-      status: "active",
-      createdAt: now,
-      updatedAt: now,
-    })),
-  );
+  const inserted = await db
+    .insert(schema.taxMasters)
+    .values(
+      slabs.map((slab) => ({
+        id: uuidv4(),
+        organizationId: orgId,
+        name: slab.name,
+        rate: slab.rate,
+        taxType: slab.taxType || "gst",
+        cgstRate: slab.cgstRate || null,
+        sgstRate: slab.sgstRate || null,
+        igstRate: slab.igstRate || null,
+        isDefault: Boolean(slab.isDefault),
+        status: "active",
+        description: slab.description || null,
+        createdAt: now,
+        updatedAt: now,
+      })),
+    )
+    .returning();
+
+  const defaultItem = inserted.find((i) => i.isDefault) || inserted[0];
+  if (defaultItem) {
+    await db
+      .update(schema.settings)
+      .set({ defaultTaxMasterId: defaultItem.id, updatedAt: now })
+      .where(eq(schema.settings.organizationId, orgId));
+  }
 }
 
 export const getTaxMastersFn = createServerFn({ method: "GET" })
@@ -66,7 +149,7 @@ const CreateTaxMasterSchema = z.object({
       id: z.string().optional(),
       name: z.string().min(1, "Tax name is required"),
       rate: z.union([z.string(), z.number()]).default("0"),
-      taxType: z.enum(["gst", "vat", "flat"]).default("gst"),
+      taxType: z.string().default("gst"),
       cgstRate: z.union([z.string(), z.number()]).nullable().optional(),
       sgstRate: z.union([z.string(), z.number()]).nullable().optional(),
       igstRate: z.union([z.string(), z.number()]).nullable().optional(),
@@ -84,25 +167,43 @@ export const createTaxMasterFn = createServerFn({ method: "POST" })
       const session = await requireAuth();
       const tm = data.taxMaster;
       const now = new Date().toISOString();
+      const newId = tm.id || uuidv4();
       const num = (v: any) => (v == null || v === "" ? null : Number(v));
+
+      if (tm.isDefault) {
+        // Clear existing defaults for this tenant
+        await db
+          .update(schema.taxMasters)
+          .set({ isDefault: false, updatedAt: now })
+          .where(eq(schema.taxMasters.organizationId, session.orgId));
+      }
+
       const inserted = await db
         .insert(schema.taxMasters)
         .values({
-          id: tm.id || uuidv4(),
+          id: newId,
           organizationId: session.orgId,
           name: tm.name,
           rate: String(tm.rate || 0),
-          taxType: tm.taxType,
+          taxType: tm.taxType || "gst",
           cgstRate: num(tm.cgstRate) == null ? null : String(num(tm.cgstRate)),
           sgstRate: num(tm.sgstRate) == null ? null : String(num(tm.sgstRate)),
           igstRate: num(tm.igstRate) == null ? null : String(num(tm.igstRate)),
           isDefault: Boolean(tm.isDefault),
-          status: tm.status,
+          status: tm.status || "active",
           description: tm.description || null,
           createdAt: now,
           updatedAt: now,
         })
         .returning();
+
+      if (tm.isDefault) {
+        await db
+          .update(schema.settings)
+          .set({ defaultTaxMasterId: newId, updatedAt: now })
+          .where(eq(schema.settings.organizationId, session.orgId));
+      }
+
       return { success: true, data: inserted[0], message: "Tax rate created successfully" };
     } catch (e) {
       return handleApiError(e);
@@ -115,7 +216,7 @@ const UpdateTaxMasterSchema = z.object({
     .object({
       name: z.string().optional(),
       rate: z.union([z.string(), z.number()]).optional(),
-      taxType: z.enum(["gst", "vat", "flat"]).optional(),
+      taxType: z.string().optional(),
       cgstRate: z.union([z.string(), z.number()]).nullable().optional(),
       sgstRate: z.union([z.string(), z.number()]).nullable().optional(),
       igstRate: z.union([z.string(), z.number()]).nullable().optional(),
@@ -131,7 +232,9 @@ export const updateTaxMasterFn = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     try {
       const session = await requireAuth();
-      const updatesObj: Record<string, any> = { updatedAt: new Date().toISOString() };
+      const now = new Date().toISOString();
+      const updatesObj: Record<string, any> = { updatedAt: now };
+
       for (const key of [
         "name",
         "rate",
@@ -151,10 +254,30 @@ export const updateTaxMasterFn = createServerFn({ method: "POST" })
           updatesObj[k] = updatesObj[k] == null || updatesObj[k] === "" ? null : String(updatesObj[k]);
         }
       }
+
+      if (updatesObj.isDefault === true) {
+        // Unset default on other items
+        await db
+          .update(schema.taxMasters)
+          .set({ isDefault: false, updatedAt: now })
+          .where(
+            and(
+              eq(schema.taxMasters.organizationId, session.orgId),
+              ne(schema.taxMasters.id, data.id),
+            ),
+          );
+
+        await db
+          .update(schema.settings)
+          .set({ defaultTaxMasterId: data.id, updatedAt: now })
+          .where(eq(schema.settings.organizationId, session.orgId));
+      }
+
       await db
         .update(schema.taxMasters)
         .set(updatesObj)
         .where(and(eq(schema.taxMasters.id, data.id), eq(schema.taxMasters.organizationId, session.orgId)));
+
       return { success: true, message: "Tax rate updated successfully" };
     } catch (e) {
       return handleApiError(e);
@@ -174,6 +297,52 @@ export const deleteTaxMasterFn = createServerFn({ method: "POST" })
         .delete(schema.taxMasters)
         .where(and(eq(schema.taxMasters.id, data.id), eq(schema.taxMasters.organizationId, session.orgId)));
       return { success: true, message: "Tax rate deleted successfully" };
+    } catch (e) {
+      return handleApiError(e);
+    }
+  });
+
+const LoadCountryTaxTemplateSchema = z.object({
+  countryCode: z.string().min(2),
+});
+
+export const loadCountryTaxTemplateFn = createServerFn({ method: "POST" })
+  .validator((data: unknown) => LoadCountryTaxTemplateSchema.parse(data))
+  .handler(async ({ data }) => {
+    try {
+      const session = await requireAuth();
+      const orgId = session.orgId;
+      const code = data.countryCode.toUpperCase();
+      const slabs = COUNTRY_TAX_TEMPLATES[code] || COUNTRY_TAX_TEMPLATES.DEFAULT;
+      const now = new Date().toISOString();
+
+      // Insert the slabs
+      const inserted = await db
+        .insert(schema.taxMasters)
+        .values(
+          slabs.map((slab) => ({
+            id: uuidv4(),
+            organizationId: orgId,
+            name: slab.name,
+            rate: slab.rate,
+            taxType: slab.taxType || "vat",
+            cgstRate: slab.cgstRate || null,
+            sgstRate: slab.sgstRate || null,
+            igstRate: slab.igstRate || null,
+            isDefault: Boolean(slab.isDefault),
+            status: "active",
+            description: slab.description || null,
+            createdAt: now,
+            updatedAt: now,
+          })),
+        )
+        .returning();
+
+      return {
+        success: true,
+        message: `Imported ${inserted.length} standard tax rate slabs for ${code}`,
+        data: inserted,
+      };
     } catch (e) {
       return handleApiError(e);
     }

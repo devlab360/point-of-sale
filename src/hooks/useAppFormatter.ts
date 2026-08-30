@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { getSettingsFn } from "@/api/settings";
 import { PersistStore } from "@/lib/session-store";
 import { formatInTimeZone } from "date-fns-tz";
+import { getCurrencyDecimals } from "@/lib/currency";
 
 export function useAppFormatter() {
   const orgId = PersistStore.getOrgId() || "default";
@@ -20,6 +21,8 @@ export function useAppFormatter() {
   const timeZone = settings.timeZone || "UTC";
   // Default to dd MMM yyyy if none specified
   const dateFormat = settings.dateFormat || "dd MMM yyyy";
+  const currencyCode = settings.currencyCode || "USD";
+  const decimals = getCurrencyDecimals(currencyCode);
 
   /**
    * Formats a date according to the org's timezone and date format.
@@ -67,16 +70,17 @@ export function useAppFormatter() {
         return new Intl.NumberFormat(undefined, {
           style: "currency",
           currency: symbol,
-          maximumFractionDigits: 2,
+          maximumFractionDigits: decimals,
+          minimumFractionDigits: decimals,
         }).format(val);
       } catch (e) {
-        return `${symbol} ${val.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+        return `${symbol} ${val.toLocaleString(undefined, { minimumFractionDigits: decimals, maximumFractionDigits: decimals })}`;
       }
     }
 
     // Otherwise fallback to symbol prefix
-    return `${symbol}${val.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    return `${symbol}${val.toLocaleString(undefined, { minimumFractionDigits: decimals, maximumFractionDigits: decimals })}`;
   };
 
-  return { formatAppDate, formatAppCurrency, timeZone, dateFormat };
+  return { formatAppDate, formatAppCurrency, timeZone, dateFormat, currencySymbol: settings.currencySymbol || "$", currencyCode, decimals };
 }

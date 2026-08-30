@@ -41,10 +41,10 @@ function validateField(value: string, rules: FieldRules): string {
 
   if (rules.phone) {
     const clean = strVal.replace(/[\s\-\+\(\)]/g, "");
-    if (!/^\d{10,15}$/.test(clean)) {
+    if (!/^\d{7,15}$/.test(clean)) {
       return typeof rules.phone === "string"
         ? rules.phone
-        : "Enter a valid 10-15 digit phone number";
+        : "Enter a valid phone number (7-15 digits)";
     }
   }
 

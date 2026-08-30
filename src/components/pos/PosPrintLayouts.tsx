@@ -1,6 +1,11 @@
-import { useCurrency } from "@/lib/currency";
+import { useCurrency, getCurrencyDecimals } from "@/lib/currency";
 import { usePreferences } from "@/contexts/PreferencesContext";
 import QRCode from "react-qr-code";
+
+function formatMoney(val: any, currencyCode?: string): string {
+  const dec = getCurrencyDecimals(currencyCode);
+  return (Number(val) || 0).toFixed(dec);
+}
 
 const fmt = (val: any): string => (Number(val) || 0).toFixed(2);
 
@@ -19,13 +24,13 @@ function BankDetailsDisplay({ data, className = "" }: { data: string; className?
   try {
     if (data.trim().startsWith("{")) {
       const b = JSON.parse(data);
-      if (!b.bankName && !b.accountNo && !b.ifscCode && !b.holderName) return null;
+      if (!b.bankName && !b.accountNo && !b.ifscCode && !b.holderName && !b.iban && !b.swiftBic) return null;
       return (
         <div className={className}>
           {b.bankName && <div>Bank: {b.bankName}</div>}
           {b.holderName && <div>Name: {b.holderName}</div>}
-          {b.accountNo && <div>A/C No: {b.accountNo}</div>}
-          {b.ifscCode && <div>IFSC: {b.ifscCode}</div>}
+          {(b.iban || b.accountNo) && <div>A/C / IBAN: {b.iban || b.accountNo}</div>}
+          {(b.swiftBic || b.ifscCode) && <div>SWIFT / BIC / IFSC: {b.swiftBic || b.ifscCode}</div>}
         </div>
       );
     }

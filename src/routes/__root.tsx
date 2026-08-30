@@ -1,3 +1,11 @@
+import { Buffer } from "buffer/";
+if (typeof globalThis !== "undefined" && !globalThis.Buffer) {
+  globalThis.Buffer = Buffer;
+}
+if (typeof window !== "undefined" && !(window as any).Buffer) {
+  (window as any).Buffer = Buffer;
+}
+
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
   Outlet,

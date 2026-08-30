@@ -13,19 +13,19 @@ export function printAccountingStatement(params: AccountingPrintData) {
     reportType,
     storeName = "OneDesk360 Store",
     periodLabel = "All Time",
-    currencySymbol = "₹",
+    currencySymbol = "$",
     data,
   } = params;
 
   const formatCurr = (val: number | string) => {
     const num = Number(val) || 0;
-    return `${currencySymbol}${num.toLocaleString("en-IN", {
+    return `${currencySymbol}${num.toLocaleString(undefined, {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
     })}`;
   };
 
-  const currentDate = new Date().toLocaleString("en-IN", {
+  const currentDate = new Date().toLocaleString(undefined, {
     dateStyle: "medium",
     timeStyle: "short",
   });

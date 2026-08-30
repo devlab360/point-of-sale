@@ -33,6 +33,7 @@ export default defineConfig({
         "drizzle-orm",
         "uuid",
         "zod",
+        "buffer",
       ],
       exclude: ["virtual:pwa-register"],
     },

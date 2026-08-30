@@ -39,7 +39,6 @@ export const ALL_SELECTABLE_ROUTES = [
   "/categories",
   "/brands",
   "/units",
-  "/tax-masters",
   "/inventory",
   "/inventory/adjustments",
   "/inventory/transfers",

@@ -140,6 +140,11 @@ export const registerOrgFn = createServerFn({ method: "POST" })
       password: z.string().min(4, "Password must be at least 4 characters long"),
       assignedPlanId: z.string(),
       seedData: z.any().optional(),
+      country: z.string().optional(),
+      countryCode: z.string().optional(),
+      currencyCode: z.string().optional(),
+      currencySymbol: z.string().optional(),
+      timeZone: z.string().optional(),
     }),
   )
   .handler(async ({ data }) => {
@@ -155,6 +160,11 @@ export const registerOrgFn = createServerFn({ method: "POST" })
         password,
         assignedPlanId,
         seedData,
+        country,
+        countryCode,
+        currencyCode,
+        currencySymbol,
+        timeZone,
       } = data;
 
       // Check if user with this email already exists
@@ -190,6 +200,8 @@ export const registerOrgFn = createServerFn({ method: "POST" })
           lastActive: new Date().toISOString(),
           pin: hashedPin,
           emailVerified: false,
+          countryCode: countryCode || "+1",
+          timeZone: timeZone || "UTC",
         });
 
         await tx.insert(schema.settings).values({
@@ -197,8 +209,10 @@ export const registerOrgFn = createServerFn({ method: "POST" })
           organizationId: orgId,
           trialEndsAt: new Date(trialEndsAt).toISOString(),
           subscriptionStatus: "trial",
-          currencySymbol: "$",
-          currencyCode: "USD",
+          currencySymbol: currencySymbol || "$",
+          currencyCode: currencyCode || "USD",
+          countryCode: countryCode || "+1",
+          timeZone: timeZone || "UTC",
           storeName: companyName,
           phone: phone,
           email: email.toLowerCase(),
@@ -206,6 +220,9 @@ export const registerOrgFn = createServerFn({ method: "POST" })
           footerNote: "Thank you for your business!",
           emailReceiptDefault: true,
           printStoreLogo: true,
+          config: {
+            country: country || "US",
+          },
         });
 
         if (seedData) {
