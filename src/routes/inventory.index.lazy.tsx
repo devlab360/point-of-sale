@@ -217,60 +217,60 @@ function StockList() {
             </Button>
           </div>
         }
-      topContent={
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5 mb-6">
-              <div className="rounded-xl border border-border/80 bg-card p-4 shadow-soft flex flex-col justify-between card-interactive">
-                <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
-                  Total Stock Count
-                </p>
-                <div className="mt-2 flex items-baseline gap-1.5">
-                  <span className="text-2xl sm:text-3xl font-black text-foreground">
-                    {inventorySummary?.totalStock || 0}
-                  </span>
-                  <span className="text-xs font-semibold text-muted-foreground">units</span>
-                </div>
-                <p className="text-xs text-muted-foreground mt-1 font-medium">
-                  {products.length} catalog SKUs
-                </p>
+        topContent={
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5 mb-6">
+            <div className="rounded-xl border border-border/80 bg-card p-4 shadow-soft flex flex-col justify-between card-interactive">
+              <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
+                Total Stock Count
+              </p>
+              <div className="mt-2 flex items-baseline gap-1.5">
+                <span className="text-2xl sm:text-3xl font-black text-foreground">
+                  {inventorySummary?.totalStock || 0}
+                </span>
+                <span className="text-xs font-semibold text-muted-foreground">units</span>
               </div>
-
-              <div className="rounded-xl border border-border/80 bg-card p-4 shadow-soft flex flex-col justify-between card-interactive">
-                <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
-                  Inventory Value (Cost)
-                </p>
-                <div className="mt-2 text-2xl sm:text-3xl font-black text-foreground">
-                  {formatCurrency(inventorySummary?.totalValue || 0)}
-                </div>
-                <p className="text-xs text-muted-foreground mt-1 font-medium">
-                  Cost valuation invested
-                </p>
-              </div>
-
-              <div className="rounded-xl border border-border/80 bg-card p-4 shadow-soft flex flex-col justify-between card-interactive">
-                <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
-                  Retail Valuation
-                </p>
-                <div className="mt-2 text-2xl sm:text-3xl font-black text-primary">
-                  {formatCurrency(inventorySummary?.totalRetailValue || 0)}
-                </div>
-                <p className="text-xs text-muted-foreground mt-1 font-medium">Expected sales revenue</p>
-              </div>
-
-              <div className="rounded-xl border border-border/80 bg-card p-4 shadow-soft flex flex-col justify-between card-interactive">
-                <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
-                  Stock Alerts
-                </p>
-                <div className="mt-2 text-2xl sm:text-3xl font-black text-destructive">
-                  {inventorySummary?.lowStockCount || lowCount}
-                </div>
-                <p className="text-xs text-muted-foreground mt-1 flex gap-2 font-medium">
-                  <span>{outCount} out</span>
-                  {expiringCount > 0 && <span>· {expiringCount} expiring</span>}
-                </p>
-              </div>
+              <p className="text-xs text-muted-foreground mt-1 font-medium">
+                {products.length} catalog SKUs
+              </p>
             </div>
-          }
-        >
+
+            <div className="rounded-xl border border-border/80 bg-card p-4 shadow-soft flex flex-col justify-between card-interactive">
+              <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
+                Inventory Value (Cost)
+              </p>
+              <div className="mt-2 text-2xl sm:text-3xl font-black text-foreground">
+                {formatCurrency(inventorySummary?.totalValue || 0)}
+              </div>
+              <p className="text-xs text-muted-foreground mt-1 font-medium">
+                Cost valuation invested
+              </p>
+            </div>
+
+            <div className="rounded-xl border border-border/80 bg-card p-4 shadow-soft flex flex-col justify-between card-interactive">
+              <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
+                Retail Valuation
+              </p>
+              <div className="mt-2 text-2xl sm:text-3xl font-black text-primary">
+                {formatCurrency(inventorySummary?.totalRetailValue || 0)}
+              </div>
+              <p className="text-xs text-muted-foreground mt-1 font-medium">Expected sales revenue</p>
+            </div>
+
+            <div className="rounded-xl border border-border/80 bg-card p-4 shadow-soft flex flex-col justify-between card-interactive">
+              <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
+                Stock Alerts
+              </p>
+              <div className="mt-2 text-2xl sm:text-3xl font-black text-destructive">
+                {inventorySummary?.lowStockCount || lowCount}
+              </div>
+              <p className="text-xs text-muted-foreground mt-1 flex gap-2 font-medium">
+                <span>{outCount} out</span>
+                {expiringCount > 0 && <span>· {expiringCount} expiring</span>}
+              </p>
+            </div>
+          </div>
+        }
+      >
         <div className="overflow-hidden rounded-xl border border-border/80 bg-card shadow-soft">
           {/* Desktop Table (>= 768px) */}
           <div className="table-desktop overflow-x-auto">
@@ -311,7 +311,7 @@ function StockList() {
                       <TableRow
                         key={p.id}
                         className="cursor-pointer"
-                        onClick={() => router.navigate({ to: "/products", search: { edit: p.id } })}
+                        onClick={() => router.navigate({ to: `/products/${p.id}` })}
                       >
                         <TableCell className="whitespace-nowrap">
                           <div className="flex items-center gap-3">
@@ -405,7 +405,7 @@ function StockList() {
                   <div
                     key={p.id}
                     className="flex items-center justify-between rounded-xl border border-border/80 bg-card p-3 shadow-sm card-interactive"
-                    onClick={() => router.navigate({ to: "/products", search: { edit: p.id } })}
+                    onClick={() => router.navigate({ to: `/products/${p.id}` })}
                   >
                     <div className="flex items-center gap-3 min-w-0 flex-1">
                       <div className="grid size-11 shrink-0 place-items-center rounded-xl bg-muted/60 overflow-hidden border border-border/50">

@@ -199,8 +199,8 @@ export const categories = pgTable(
       .notNull()
       .references(() => organizations.id),
     name: text("name").notNull(),
-    color: text("color").notNull().default("oklch(0.7 0.1 200)"),
-    icon: text("icon").notNull().default("📦"),
+    color: text("color").default("oklch(0.7 0.1 200)"),
+    icon: text("icon").default("📦"),
     count: integer("count").notNull().default(0),
   },
   (t) => ({

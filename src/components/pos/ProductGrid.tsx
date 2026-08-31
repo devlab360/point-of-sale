@@ -276,6 +276,7 @@ export function ProductGrid({ state }: { state: any }) {
               icon={c.icon || "🏷️"}
               label={c.name}
               count={count}
+              color={c.color || ""}
             />
           );
         })}
@@ -522,22 +523,36 @@ function CatChip({
   icon,
   label,
   count,
+  color,
 }: {
   active: boolean;
   onClick: () => void;
   icon: string;
   label: string;
   count?: number;
+  color?: string;
 }) {
+  const accent = color && color.startsWith("#") ? color : "";
   return (
     <button
       type="button"
       onClick={onClick}
+      style={
+        accent
+          ? {
+              backgroundColor: active ? accent : `${accent}14`,
+              borderColor: accent,
+              color: active ? "#fff" : accent,
+            }
+          : undefined
+      }
       className={cn(
         "inline-flex shrink-0 items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-xs sm:text-sm font-semibold transition-all duration-150 active:scale-95",
-        active
-          ? "border-primary bg-primary text-primary-foreground shadow-sm font-bold"
-          : "border-border/80 bg-background text-muted-foreground hover:border-primary/40 hover:text-foreground",
+        accent
+          ? "shadow-sm"
+          : active
+            ? "border-primary bg-primary text-primary-foreground shadow-sm font-bold"
+            : "border-border/80 bg-background text-muted-foreground hover:border-primary/40 hover:text-foreground",
       )}
     >
       <span className="text-sm">{icon}</span>

@@ -172,7 +172,10 @@ export const PhoneInput = React.forwardRef<HTMLInputElement, PhoneInputProps>(
                 autoFocus
               />
             </div>
-            <div className="max-h-56 overflow-y-auto space-y-0.5 pr-1">
+            <div
+              className="max-h-56 overflow-y-auto space-y-0.5 pr-1"
+              onWheel={(e) => e.stopPropagation()}
+            >
               {filteredCountries.length === 0 ? (
                 <div className="text-center py-4 text-xs text-muted-foreground">No countries found</div>
               ) : (

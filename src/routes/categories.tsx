@@ -12,8 +12,8 @@ import {
   Table as TableIcon,
   CheckCircle2,
   Palette,
+  X,
 } from "lucide-react";
-import * as LucideIcons from "lucide-react";
 import { EmptyState } from "@/components/ui/empty-state";
 import { IconPicker } from "@/components/ui/icon-picker";
 import { PersistStore } from "@/lib/session-store";
@@ -160,8 +160,8 @@ function CategoriesPage() {
   const openNew = () => {
     setEditingCat(null);
     setName("");
-    setIcon("ShoppingCart");
-    setColor("#3b82f6");
+    setIcon("");
+    setColor("");
     clearCatAll();
     setModalOpen(true);
   };
@@ -169,8 +169,8 @@ function CategoriesPage() {
   const openEdit = (cat: any) => {
     setEditingCat(cat);
     setName(cat.name || "");
-    setIcon(cat.icon || "ShoppingCart");
-    setColor(cat.color || "#3b82f6");
+    setIcon(cat.icon || "");
+    setColor(cat.color || "");
     clearCatAll();
     setModalOpen(true);
   };
@@ -314,11 +314,10 @@ function CategoriesPage() {
               <button
                 type="button"
                 onClick={() => setViewMode("grid")}
-                className={`grid size-8 place-items-center rounded-md transition-all ${
-                  viewMode === "grid"
+                className={`grid size-8 place-items-center rounded-md transition-all ${viewMode === "grid"
                     ? "bg-card text-foreground shadow-sm font-bold"
                     : "text-muted-foreground hover:text-foreground"
-                }`}
+                  }`}
                 title="Grid View"
               >
                 <LayoutGrid className="size-4" />
@@ -326,11 +325,10 @@ function CategoriesPage() {
               <button
                 type="button"
                 onClick={() => setViewMode("table")}
-                className={`grid size-8 place-items-center rounded-md transition-all ${
-                  viewMode === "table"
+                className={`grid size-8 place-items-center rounded-md transition-all ${viewMode === "table"
                     ? "bg-card text-foreground shadow-sm font-bold"
                     : "text-muted-foreground hover:text-foreground"
-                }`}
+                  }`}
                 title="Table View"
               >
                 <TableIcon className="size-4" />
@@ -363,7 +361,7 @@ function CategoriesPage() {
           <div className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
               {paginatedCategories.map((c: any) => {
-                const IconComponent = (LucideIcons as any)[c.icon] || Tag;
+                const catIcon = c.icon || "";
 
                 return (
                   <div
@@ -379,7 +377,11 @@ function CategoriesPage() {
                             color: c.color || "#3b82f6",
                           }}
                         >
-                          <IconComponent className="size-6" />
+                          {catIcon ? (
+                            <span className="text-2xl leading-none">{catIcon}</span>
+                          ) : (
+                            <Tag className="size-6" />
+                          )}
                         </div>
                         <Badge variant="outline" className="text-xs font-semibold">
                           {c.count} {c.count === 1 ? "Product" : "Products"}
@@ -426,7 +428,7 @@ function CategoriesPage() {
                   pageSize={pageSize}
                   totalItems={filteredCategories.length}
                   onPageChange={setPage}
-                  onPageSizeChange={() => {}}
+                  onPageSizeChange={() => { }}
                 />
               </div>
             )}
@@ -446,7 +448,7 @@ function CategoriesPage() {
                 </TableHeader>
                 <TableBody>
                   {paginatedCategories.map((c: any) => {
-                    const IconComponent = (LucideIcons as any)[c.icon] || Tag;
+                    const catIcon = c.icon || "";
 
                     return (
                       <TableRow key={c.id} className="hover:bg-muted/30 transition-colors">
@@ -459,8 +461,12 @@ function CategoriesPage() {
                                 color: c.color || "#3b82f6",
                               }}
                             >
-                              <IconComponent className="size-4" />
-                            </div>
+                              {catIcon ? (
+                              <span className="text-base leading-none">{catIcon}</span>
+                            ) : (
+                              <Tag className="size-4" />
+                            )}
+                          </div>
                             <span className="font-semibold text-foreground">{c.name}</span>
                           </div>
                         </TableCell>
@@ -468,9 +474,9 @@ function CategoriesPage() {
                           <div className="flex items-center gap-1.5">
                             <span
                               className="size-3 rounded-full border border-black/10"
-                              style={{ backgroundColor: c.color || "#3b82f6" }}
+                              style={{ backgroundColor: c.color || "#e2e8f0" }}
                             />
-                            <span className="text-xs font-mono text-muted-foreground">{c.color || "#3b82f6"}</span>
+                            <span className="text-xs font-mono text-muted-foreground">{c.color || "none"}</span>
                           </div>
                         </TableCell>
                         <TableCell>
@@ -512,7 +518,7 @@ function CategoriesPage() {
                   pageSize={pageSize}
                   totalItems={filteredCategories.length}
                   onPageChange={setPage}
-                  onPageSizeChange={() => {}}
+                  onPageSizeChange={() => { }}
                 />
               </div>
             )}
@@ -556,23 +562,35 @@ function CategoriesPage() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label className="text-xs font-semibold">Department Icon</Label>
+                  <Label className="text-xs font-semibold">Category Icon (optional)</Label>
                   <IconPicker value={icon} onChange={setIcon} />
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label className="text-xs font-semibold">POS Touch Button Color</Label>
+                  <Label className="text-xs font-semibold">POS Touch Button Color (optional)</Label>
                   <div className="grid grid-cols-4 gap-2 pt-1">
+                    <button
+                      type="button"
+                      onClick={() => setColor("")}
+                      className={`flex items-center gap-2 p-2 rounded-xl border text-xs font-semibold transition-all ${color === ""
+                          ? "border-primary ring-2 ring-primary/20 bg-primary/5"
+                          : "border-border/60 hover:bg-muted/50"
+                        }`}
+                    >
+                      <span className="grid size-4 place-items-center rounded-full border border-dashed border-foreground/30">
+                        <X className="size-2.5 text-muted-foreground" />
+                      </span>
+                      <span className="truncate">None</span>
+                    </button>
                     {PREDEFINED_COLORS.map((c) => (
                       <button
                         key={c.value}
                         type="button"
                         onClick={() => setColor(c.value)}
-                        className={`flex items-center gap-2 p-2 rounded-xl border text-xs font-semibold transition-all ${
-                          color === c.value
+                        className={`flex items-center gap-2 p-2 rounded-xl border text-xs font-semibold transition-all ${color === c.value
                             ? "border-primary ring-2 ring-primary/20 bg-primary/5"
                             : "border-border/60 hover:bg-muted/50"
-                        }`}
+                          }`}
                       >
                         <span
                           className="size-4 rounded-full shrink-0 border border-black/10"

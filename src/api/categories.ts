@@ -51,8 +51,8 @@ export const createCategoryFn = createServerFn({ method: "POST" })
         .values({
           id: data.category.id || uuidv4(),
           name: data.category.name,
-          color: data.category.color || "oklch(0.7 0.1 200)",
-          icon: data.category.icon || "📦",
+          color: data.category.color || null,
+          icon: data.category.icon || null,
           organizationId: session.orgId,
         })
         .returning();
@@ -79,6 +79,8 @@ export const updateCategoryFn = createServerFn({ method: "POST" })
     try {
       const session = await requireAuth();
       const { organizationId: _omitted, ...safeUpdates } = data.updates;
+      if (safeUpdates.icon === "") safeUpdates.icon = null;
+      if (safeUpdates.color === "") safeUpdates.color = null;
       await db
         .update(schema.categories)
         .set(safeUpdates as any)

@@ -190,6 +190,7 @@ export function SearchableSelect({
         <div
           ref={listRef}
           onScroll={handleScroll}
+          onWheel={(e) => e.stopPropagation()}
           className="max-h-64 overflow-y-auto p-1.5 text-sm scrollbar-thin space-y-0.5"
         >
           {visibleOptions.length === 0 ? (
