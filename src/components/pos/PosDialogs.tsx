@@ -897,13 +897,13 @@ export function PosDialogs({
         </DialogContent>
       </Dialog>
 
-      {/* Premium Quick Add Item (Product / Service) Modal */}
+      {/* Quick Add Item (Product / Service) Modal */}
       <Dialog open={showAddProduct} onOpenChange={setShowAddProduct}>
-        <DialogContent className="sm:max-w-2xl md:max-w-3xl p-0 gap-0 overflow-hidden rounded-3xl border-border/80 shadow-2xl bg-card">
+        <DialogContent className="sm:max-w-2xl md:max-w-3xl p-0 sm:p-0 gap-0 overflow-hidden rounded-3xl border-border/80 shadow-2xl bg-card flex max-h-[calc(100dvh-2rem)] flex-col">
           {/* Header */}
-          <div className="p-4 sm:p-5 border-b border-border/80 bg-muted/20 flex items-center justify-between">
+          <div className="p-4 sm:p-5 border-b border-border/80 bg-muted/20 flex items-center justify-between shrink-0">
             <div className="flex items-center gap-3">
-              <div className="size-10 rounded-xl bg-primary/10 border border-primary/20 grid place-items-center text-primary shadow-xs">
+              <div className="size-10 rounded-xl bg-primary/15 border border-primary/30 grid place-items-center text-primary shadow-sm">
                 <Plus className="size-5 stroke-[2.5]" />
               </div>
               <div>
@@ -917,29 +917,37 @@ export function PosDialogs({
             </div>
           </div>
 
-          <Tabs defaultValue="product" className="w-full flex flex-col">
-            <div className="px-5 pt-4 pb-0 bg-muted/5 border-b border-border/60">
-              <TabsList className="grid w-full sm:w-64 grid-cols-2 rounded-xl p-1 bg-muted/50 border border-border/60">
-                <TabsTrigger value="product" className="rounded-lg text-xs font-bold">
+          <Tabs defaultValue="product" className="w-full flex min-h-0 flex-1 flex-col">
+            <div className="px-5 pt-4 pb-0 bg-muted/5 border-b border-border/60 shrink-0">
+              <TabsList className="grid w-full sm:w-64 grid-cols-2 rounded-xl p-1 bg-muted/40 border border-border/60 shadow-xs">
+                <TabsTrigger
+                  value="product"
+                  className="rounded-lg text-xs font-bold data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm"
+                >
                   Product
                 </TabsTrigger>
-                <TabsTrigger value="service" className="rounded-lg text-xs font-bold">
+                <TabsTrigger
+                  value="service"
+                  className="rounded-lg text-xs font-bold data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm"
+                >
                   Service
                 </TabsTrigger>
               </TabsList>
             </div>
 
-            <TabsContent value="product" className="m-0">
-              <form onSubmit={handleQuickAddProduct} className="flex flex-col">
-                <div className="p-5 space-y-4 max-h-[60vh] overflow-y-auto">
+            <TabsContent value="product" className="m-0 min-h-0 flex-1 overflow-hidden">
+              <form onSubmit={handleQuickAddProduct} className="flex h-full flex-col">
+                <div className="p-5 space-y-4 min-h-0 flex-1 overflow-y-auto">
                   <div className="space-y-1.5">
-                    <Label className="text-xs font-bold text-muted-foreground">Product Image</Label>
+                    <Label className="text-xs font-bold text-foreground">Product Image</Label>
                     <FileUpload
                       value={newProductImage}
                       onChange={setNewProductImage}
                       folder="products"
                       accept="image/*"
                       maxSizeMB={5}
+                      label=""
+                      compact
                     />
                   </div>
 
@@ -1014,7 +1022,7 @@ export function PosDialogs({
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <div className="space-y-1.5">
                       <Label className="text-xs font-bold text-foreground">Unit *</Label>
                       <input type="hidden" name="unit" value={newProductUnit} />
@@ -1092,17 +1100,19 @@ export function PosDialogs({
               </form>
             </TabsContent>
 
-            <TabsContent value="service" className="m-0">
-              <form onSubmit={handleQuickAddService} className="flex flex-col">
-                <div className="p-5 space-y-4 max-h-[60vh] overflow-y-auto">
+            <TabsContent value="service" className="m-0 min-h-0 flex-1 overflow-hidden">
+              <form onSubmit={handleQuickAddService} className="flex h-full flex-col">
+                <div className="p-5 space-y-4 min-h-0 flex-1 overflow-y-auto">
                   <div className="space-y-1.5">
-                    <Label className="text-xs font-bold text-muted-foreground">Service Image</Label>
+                    <Label className="text-xs font-bold text-foreground">Service Image</Label>
                     <FileUpload
                       value={newServiceImage}
                       onChange={setNewServiceImage}
                       folder="services"
                       accept="image/*"
                       maxSizeMB={5}
+                      label=""
+                      compact
                     />
                   </div>
                   <div className="space-y-1.5">
@@ -1215,7 +1225,7 @@ export function PosDialogs({
         </DialogContent>
       </Dialog>
 
-      {/* Premium Keyboard Shortcuts Matrix Modal */}
+      {/* Keyboard Shortcuts Matrix Modal */}
       <Dialog open={showShortcutsHelp} onOpenChange={setShowShortcutsHelp}>
         <DialogContent className="sm:max-w-2xl p-0 gap-0 overflow-hidden rounded-3xl border-border/80 shadow-2xl bg-card">
           {/* Header */}
@@ -1418,9 +1428,9 @@ export function PosDialogs({
 
                   const savedTimeStr = h.savedAt
                     ? new Date(h.savedAt).toLocaleTimeString([], {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })
                     : "Recently";
 
                   return (
@@ -1747,10 +1757,10 @@ export function PosDialogs({
               const shortAmount = minOrder - subtotal;
               const expiryFormatted = c.expires
                 ? new Date(c.expires).toLocaleDateString(undefined, {
-                    day: "numeric",
-                    month: "short",
-                    year: "numeric",
-                  })
+                  day: "numeric",
+                  month: "short",
+                  year: "numeric",
+                })
                 : "No expiry";
 
               return (
@@ -1967,18 +1977,18 @@ export function PosDialogs({
 
             {(settings?.businessType === "PHARMACY" ||
               state.lines.some((l: any) => l.product.metadata?.prescriptionRequired)) && (
-              <div className="pt-2 border-t space-y-1.5">
-                <Label className="text-xs font-bold text-foreground">
-                  Prescription Reference (Optional)
-                </Label>
-                <Input
-                  placeholder="e.g. Rx-12345"
-                  value={state.prescriptionRef}
-                  onChange={(e) => state.setPrescriptionRef(e.target.value)}
-                  className="h-10 rounded-xl"
-                />
-              </div>
-            )}
+                <div className="pt-2 border-t space-y-1.5">
+                  <Label className="text-xs font-bold text-foreground">
+                    Prescription Reference (Optional)
+                  </Label>
+                  <Input
+                    placeholder="e.g. Rx-12345"
+                    value={state.prescriptionRef}
+                    onChange={(e) => state.setPrescriptionRef(e.target.value)}
+                    className="h-10 rounded-xl"
+                  />
+                </div>
+              )}
           </div>
 
           {/* Footer */}
@@ -2142,7 +2152,7 @@ export function PosDialogs({
         </DialogContent>
       </Dialog>
 
-      {/* Premium Open Register / Float Balance Modal */}
+      {/* Open Register / Float Balance Modal */}
       <Dialog open={showOpenRegister} onOpenChange={setShowOpenRegister}>
         <DialogContent className="sm:max-w-md p-0 gap-0 overflow-hidden rounded-3xl border-border/80 shadow-2xl bg-card">
           <div className="p-5 border-b border-border/80 bg-muted/20 flex items-center gap-3">

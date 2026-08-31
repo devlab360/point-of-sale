@@ -29,6 +29,7 @@ export interface FileUploadProps {
   description?: string;
   className?: string;
   variant?: "default" | "avatar";
+  compact?: boolean;
 }
 
 export function FileUpload({
@@ -44,6 +45,7 @@ export function FileUpload({
   description = `Drag & drop or click to upload (Max ${maxSizeMB}MB)`,
   className,
   variant = "default",
+  compact = false,
 }: FileUploadProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
@@ -242,7 +244,8 @@ export function FileUpload({
               onDragLeave={handleDragLeave}
               onDrop={handleDrop}
               className={cn(
-                "group relative overflow-hidden rounded-xl border-2 border-dashed transition-all h-32 sm:h-40",
+                "group relative overflow-hidden rounded-xl border-2 border-dashed transition-all",
+                compact ? "h-24" : "h-32 sm:h-40",
                 isDragging
                   ? "border-primary scale-[1.01]"
                   : "border-border/60 hover:border-primary/60",
@@ -313,6 +316,7 @@ export function FileUpload({
               onClick={() => !disabled && !isUploading && fileInputRef.current?.click()}
               className={cn(
                 "relative flex flex-col items-center justify-center rounded-xl border-2 border-dashed p-8 text-center transition-all cursor-pointer select-none",
+                compact && "p-0",
                 isDragging
                   ? "border-primary bg-primary/10 scale-[1.01]"
                   : "border-border/80 bg-muted/20 hover:border-primary/50 hover:bg-muted/40",
@@ -333,14 +337,26 @@ export function FileUpload({
                   <span className="text-[10px] font-mono text-muted-foreground">{progress}%</span>
                 </div>
               ) : (
-                <div className="flex flex-col items-center gap-1.5">
-                  <div className="grid size-11 place-items-center rounded-full bg-primary/10 text-primary mb-1">
-                    <UploadCloud className="size-5" />
+                <div
+                  className={cn(
+                    "flex flex-col items-center gap-1.5",
+                    compact && "flex-row gap-3 px-5 py-4",
+                  )}
+                >
+                  <div
+                    className={cn(
+                      "grid place-items-center rounded-full bg-primary/10 text-primary shrink-0",
+                      compact ? "size-9" : "size-11 mb-1",
+                    )}
+                  >
+                    <UploadCloud className={cn(compact ? "size-4" : "size-5")} />
                   </div>
-                  <span className="text-sm font-semibold text-foreground">
-                    Click or drag image here
-                  </span>
-                  <span className="text-xs text-muted-foreground">{description}</span>
+                  <div className="flex flex-col items-center gap-0.5 leading-tight">
+                    <span className="text-sm font-semibold text-foreground">
+                      Click or drag image here
+                    </span>
+                    <span className="text-xs text-muted-foreground">{description}</span>
+                  </div>
                 </div>
               )}
             </div>
