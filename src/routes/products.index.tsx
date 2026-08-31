@@ -58,6 +58,7 @@ import { TableSkeleton } from "@/components/skeletons/TableSkeleton";
 import { CardGridSkeleton } from "@/components/skeletons/CardGridSkeleton";
 import { ErrorState } from "@/components/ui/error-state";
 import Barcode from "react-barcode";
+import { printReceiptIframe } from "@/lib/printIframe";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
@@ -168,7 +169,7 @@ function ProductsPage() {
 
   useEffect(() => {
     if (isPrinting) {
-      window.print();
+      printReceiptIframe(".pos-print-labels");
       setIsPrinting(false);
       setPrintProduct(null);
     }
@@ -699,7 +700,7 @@ function ProductsPage() {
 
       {/* Hidden Print Layout */}
       {isPrinting && printProduct && (
-        <div className="hidden print:flex fixed inset-0 z-[100] bg-white flex-wrap content-start gap-4 p-4 print:text-black">
+        <div className="pos-print-labels">
           {Array.from({ length: printCount }).map((_, i) => (
             <div
               key={i}

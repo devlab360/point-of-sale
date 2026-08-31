@@ -490,6 +490,11 @@ input[type="number"] {
   margin: 0mm !important;
 }
 
+/* Product barcode label grid: hidden on screen, printed inside its own iframe */
+.pos-print-labels {
+  display: none !important;
+}
+
 @media print {
   @page {
     size: auto;

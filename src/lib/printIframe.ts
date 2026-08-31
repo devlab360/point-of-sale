@@ -74,6 +74,25 @@ export function printReceiptIframe(selector = ".pos-print-thermal, .pos-print-a4
     }
   } catch (e) {}
 
+  // App stylesheets are appended above, so print-specific overrides must come last.
+  // Product barcode label grid: flow as a normal flex grid that grows across pages.
+  styles += `
+    @media print {
+      .pos-print-labels {
+        display: flex !important;
+        flex-wrap: wrap !important;
+        align-content: flex-start !important;
+        gap: 16px !important;
+        padding: 16px !important;
+        width: 100% !important;
+        position: static !important;
+        inset: auto !important;
+        background: #fff !important;
+        color: #000 !important;
+      }
+    }
+  `;
+
   const iframe = document.createElement("iframe");
   iframe.setAttribute("aria-hidden", "true");
   iframe.style.position = "fixed";

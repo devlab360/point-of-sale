@@ -78,7 +78,11 @@ const ProductInputSchema = z
     unitId: z.string().nullable().optional(),
     cost: z.union([z.string(), z.number()]),
     price: z.union([z.string(), z.number()]),
-    stock: z.number().optional().default(0),
+    stock: z
+      .preprocess(
+        (v) => (v === "" || v === undefined || v === null ? undefined : Number(v)),
+        z.number().optional().default(0),
+      ),
     minStock: z.number().nullable().optional(),
     taxPct: z.string().nullable().optional(),
     gstRate: z.union([z.string(), z.number()]).nullable().optional(),
@@ -90,7 +94,17 @@ const ProductInputSchema = z
     hasModifiers: z.boolean().nullable().optional(),
     course: z.string().nullable().optional(),
     variants: z.array(VariantInputSchema).optional(),
-    locationStocks: z.array(z.object({ locationId: z.string(), stock: z.number() })).optional(),
+    locationStocks: z
+      .array(
+        z.object({
+          locationId: z.string(),
+          stock: z.preprocess(
+            (v) => (v === "" || v === undefined || v === null ? undefined : Number(v)),
+            z.number(),
+          ),
+        }),
+      )
+      .optional(),
     description: z.string().nullable().optional(),
     status: z.string().nullable().optional(),
     images: z.array(z.string()).nullable().optional(),
@@ -192,6 +206,7 @@ export const createProductFn = createServerFn({ method: "POST" })
           cleanData[k] = (restProductData as any)[k];
         }
       }
+      if (cleanData.expiryDate === "") cleanData.expiryDate = null;
 
       const inserted = await db
         .insert(schema.products)
@@ -369,6 +384,8 @@ export const updateProductFn = createServerFn({ method: "POST" })
       if (updatesObj.trackFifo !== undefined) updateData.trackFifo = Boolean(updatesObj.trackFifo);
       if (updatesObj.hasModifiers !== undefined)
         updateData.hasModifiers = Boolean(updatesObj.hasModifiers);
+
+      if (updateData.expiryDate === "") updateData.expiryDate = null;
 
       await db
         .update(schema.products)
