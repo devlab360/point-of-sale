@@ -42,6 +42,24 @@ export const getMyOrganizationsFn = createServerFn({ method: "GET" })
             )
         : [];
 
+      // Get memberships for these orgs, matching by email (join with users)
+      const memberships = orgIds.length
+        ? await db
+            .select({
+              organizationId: schema.organizationMemberships.organizationId,
+              role: schema.organizationMemberships.role,
+              userId: schema.organizationMemberships.userId,
+            })
+            .from(schema.organizationMemberships)
+            .innerJoin(schema.users, eq(schema.organizationMemberships.userId, schema.users.id))
+            .where(
+              and(
+                or(...orgIds.map((id) => eq(schema.organizationMemberships.organizationId, id))),
+                eq(schema.users.email, email),
+              ),
+            )
+        : [];
+
       const branches = orgIds.length
         ? await db
             .select()
@@ -54,6 +72,7 @@ export const getMyOrganizationsFn = createServerFn({ method: "GET" })
       // Map each org with its user row role and branch list.
       const data = orgs.map((org) => {
         const userRow = myUserRows.find((u) => u.organizationId === org.id);
+        const membership = memberships.find((m) => m.organizationId === org.id);
         return {
           id: org.id,
           name: org.name,
@@ -61,7 +80,7 @@ export const getMyOrganizationsFn = createServerFn({ method: "GET" })
           status: org.status,
           industryType: org.industryType,
           branchPricingEnabled: org.branchPricingEnabled,
-          role: userRow?.role || "admin",
+          role: membership?.role || userRow?.role || "admin",
           branches: branches
             .filter((b) => b.organizationId === org.id)
             .map((b) => ({
@@ -272,13 +291,17 @@ export const deleteOrganizationFn = createServerFn({ method: "POST" })
       const email = currentUser.email.toLowerCase();
 
       // Check if user is owner of the target organization
+      // Match membership by email (join with users table) since membership userId may differ from session userId
       const membership = await db
-        .select()
+        .select({
+          role: schema.organizationMemberships.role,
+        })
         .from(schema.organizationMemberships)
+        .innerJoin(schema.users, eq(schema.organizationMemberships.userId, schema.users.id))
         .where(
           and(
             eq(schema.organizationMemberships.organizationId, data.orgId),
-            eq(schema.organizationMemberships.userId, currentUser.id),
+            eq(schema.users.email, email),
           ),
         )
         .limit(1);
@@ -286,13 +309,14 @@ export const deleteOrganizationFn = createServerFn({ method: "POST" })
         throw new Error("Only the owner can delete this organization");
       }
 
-      // Count total organizations this user owns
+      // Count total organizations this user owns (by email)
       const userMemberships = await db
         .select()
         .from(schema.organizationMemberships)
+        .innerJoin(schema.users, eq(schema.organizationMemberships.userId, schema.users.id))
         .where(
           and(
-            eq(schema.organizationMemberships.userId, currentUser.id),
+            eq(schema.users.email, email),
             eq(schema.organizationMemberships.role, "owner"),
           ),
         );

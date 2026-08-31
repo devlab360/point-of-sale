@@ -128,6 +128,7 @@ export const BUSINESS_TEMPLATES: Record<BusinessType, BusinessTemplate> = {
       "PROMOTIONS",
       "QUOTATIONS",
       "DELIVERY_CHALLANS",
+      "STAFF",
     ],
   },
   CLOTHING: {
@@ -153,6 +154,8 @@ export const BUSINESS_TEMPLATES: Record<BusinessType, BusinessTemplate> = {
       "REPORTS",
       "SETTINGS",
       "ACCOUNTS",
+      "STAFF",
+      "WHOLESALE",
     ],
   },
   JEWELLERY: {
@@ -180,6 +183,8 @@ export const BUSINESS_TEMPLATES: Record<BusinessType, BusinessTemplate> = {
       "REPORTS",
       "SETTINGS",
       "ACCOUNTS",
+      "STAFF",
+      "WHOLESALE",
     ],
   },
   ELECTRONICS: {
@@ -210,6 +215,8 @@ export const BUSINESS_TEMPLATES: Record<BusinessType, BusinessTemplate> = {
       "REPORTS",
       "SETTINGS",
       "ACCOUNTS",
+      "STAFF",
+      "WHOLESALE",
     ],
   },
   GROCERY: {
@@ -239,6 +246,7 @@ export const BUSINESS_TEMPLATES: Record<BusinessType, BusinessTemplate> = {
       "DELIVERY_CHALLANS",
       "BATCH_EXPIRY_TRACKING",
       "FEFO_ALLOCATION",
+      "STAFF",
     ],
   },
   BAKERY: {
@@ -263,6 +271,8 @@ export const BUSINESS_TEMPLATES: Record<BusinessType, BusinessTemplate> = {
       "REPORTS",
       "SETTINGS",
       "ACCOUNTS",
+      "STAFF",
+      "WHOLESALE",
     ],
   },
   RESTAURANT: {
@@ -282,6 +292,10 @@ export const BUSINESS_TEMPLATES: Record<BusinessType, BusinessTemplate> = {
       "KITCHEN",
       "INVENTORY",
       "STAFF",
+      "PRODUCTS",
+      "PURCHASES",
+      "SUPPLIERS",
+      "WHOLESALE",
     ],
   },
   CAFE: {
@@ -300,6 +314,11 @@ export const BUSINESS_TEMPLATES: Record<BusinessType, BusinessTemplate> = {
       "KOT",
       "KITCHEN",
       "INVENTORY",
+      "STAFF",
+      "PRODUCTS",
+      "PURCHASES",
+      "SUPPLIERS",
+      "WHOLESALE",
     ],
   },
   HOTEL: {
@@ -323,6 +342,11 @@ export const BUSINESS_TEMPLATES: Record<BusinessType, BusinessTemplate> = {
       "REPORTS",
       "SETTINGS",
       "ACCOUNTS",
+      "PRODUCTS",
+      "INVENTORY",
+      "PURCHASES",
+      "SUPPLIERS",
+      "WHOLESALE",
     ],
   },
   SALON: {
@@ -343,6 +367,9 @@ export const BUSINESS_TEMPLATES: Record<BusinessType, BusinessTemplate> = {
       "PACKAGES",
       "MEMBERSHIP",
       "PRODUCTS", // For selling retail products
+      "INVENTORY",
+      "PURCHASES",
+      "SUPPLIERS",
     ],
   },
   BARBER: {
@@ -361,6 +388,9 @@ export const BUSINESS_TEMPLATES: Record<BusinessType, BusinessTemplate> = {
       "APPOINTMENTS",
       "COMMISSIONS",
       "PRODUCTS",
+      "INVENTORY",
+      "PURCHASES",
+      "SUPPLIERS",
     ],
   },
   GYM: {
@@ -384,6 +414,10 @@ export const BUSINESS_TEMPLATES: Record<BusinessType, BusinessTemplate> = {
       "ACCOUNTS",
       "COUPONS",
       "PROMOTIONS",
+      "INVENTORY",
+      "PURCHASES",
+      "SUPPLIERS",
+      "WHOLESALE",
     ],
   },
   CLINIC: {
@@ -406,6 +440,10 @@ export const BUSINESS_TEMPLATES: Record<BusinessType, BusinessTemplate> = {
       "SETTINGS",
       "ACCOUNTS",
       "QUOTATIONS",
+      "PURCHASES",
+      "SUPPLIERS",
+      "WHOLESALE",
+      "COMMISSIONS",
     ],
   },
   RENTAL: {
@@ -426,6 +464,10 @@ export const BUSINESS_TEMPLATES: Record<BusinessType, BusinessTemplate> = {
       "REPORTS",
       "SETTINGS",
       "ACCOUNTS",
+      "STAFF",
+      "PURCHASES",
+      "SUPPLIERS",
+      "WHOLESALE",
     ],
   },
   REPAIR_CENTER: {
@@ -447,6 +489,10 @@ export const BUSINESS_TEMPLATES: Record<BusinessType, BusinessTemplate> = {
       "SERVICES",
       "PRODUCTS",
       "INVENTORY", // For spare parts
+      "STAFF",
+      "PURCHASES",
+      "SUPPLIERS",
+      "WHOLESALE",
     ],
   },
   MOBILE_REPAIR: {
@@ -469,6 +515,10 @@ export const BUSINESS_TEMPLATES: Record<BusinessType, BusinessTemplate> = {
       "PRODUCTS",
       "INVENTORY",
       "BARCODE",
+      "STAFF",
+      "PURCHASES",
+      "SUPPLIERS",
+      "WHOLESALE",
     ],
   },
   AUTO_PARTS: {
@@ -493,6 +543,7 @@ export const BUSINESS_TEMPLATES: Record<BusinessType, BusinessTemplate> = {
       "REPORTS",
       "SETTINGS",
       "ACCOUNTS",
+      "STAFF",
     ],
   },
   WHOLESALE: {
@@ -501,6 +552,8 @@ export const BUSINESS_TEMPLATES: Record<BusinessType, BusinessTemplate> = {
     description: "B2B features like ledgers, bulk pricing, and credit sales.",
     capabilities: [
       "POS",
+      "PRODUCTS",
+      "BARCODE",
       "CUSTOMERS",
       "EXPENSES",
       "REPORTS",
@@ -511,11 +564,14 @@ export const BUSINESS_TEMPLATES: Record<BusinessType, BusinessTemplate> = {
       "CUSTOMER_LEDGER",
       "DELIVERY_CHALLANS",
       "QUOTATIONS",
-      "PRODUCTS",
+      "EXPENSES",
+      "REPORTS",
+      "SETTINGS",
+      "ACCOUNTS",
+      "STAFF",
       "INVENTORY",
       "PURCHASES",
       "SUPPLIERS",
-      "BARCODE",
     ],
   },
   PHARMACY: {
@@ -544,6 +600,8 @@ export const BUSINESS_TEMPLATES: Record<BusinessType, BusinessTemplate> = {
       "CREDIT_SALES",
       "CUSTOMER_LEDGER",
       "QUOTATIONS",
+      "STAFF",
+      "WHOLESALE",
     ],
   },
 };

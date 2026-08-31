@@ -57,6 +57,7 @@ import {
   loadCountryTaxTemplateFn,
   COUNTRY_TAX_TEMPLATES,
 } from "@/api/tax-master";
+import { getOrgDataFn } from "@/api/auth";
 import { useDebounce } from "@/hooks/useDebounce";
 import {
   Dialog,
@@ -3596,8 +3597,8 @@ function BranchPricingTab() {
   const { data: orgData } = useQuery({
     queryKey: ["organization", orgId],
     queryFn: async () => {
-      const res = await db.select().from(schema.organizations).where(eq(schema.organizations.id, orgId)).limit(1);
-      return res[0] || null;
+      const res = await getOrgDataFn({ data: { orgId } });
+      return res.success ? res.org : null;
     },
     staleTime: 60 * 1000,
   });
