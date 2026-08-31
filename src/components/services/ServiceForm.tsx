@@ -284,6 +284,7 @@ export function ServiceForm({
                       <SelectItem value="mins">Minutes</SelectItem>
                       <SelectItem value="hours">Hours</SelectItem>
                       <SelectItem value="days">Days</SelectItem>
+                      <SelectItem value="session">Session</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
