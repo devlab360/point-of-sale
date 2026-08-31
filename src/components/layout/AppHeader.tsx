@@ -23,6 +23,7 @@ import {
   Sparkles,
   Megaphone,
   X,
+  Building2,
 } from "lucide-react";
 import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
@@ -55,6 +56,7 @@ import { v4 as uuidv4 } from "uuid";
 import { useDebounce } from "@/hooks/useDebounce";
 import { InstallAppButton } from "@/components/InstallAppButton";
 import { LogoutConfirmDialog } from "./LogoutConfirmDialog";
+import { BusinessSwitcher } from "@/components/layout/BusinessSwitcher";
 
 function pathToCrumbs(pathname: string) {
   if (pathname === "/") return [{ label: "Dashboard", to: "/" }];
@@ -389,6 +391,7 @@ export function AppHeader() {
 
         <InstallAppButton />
         <SyncStatus />
+        <BusinessSwitcher />
 
         {canAccessPos && (
           <Button asChild size="sm" variant="gradient" className="hidden sm:inline-flex shadow-sm">

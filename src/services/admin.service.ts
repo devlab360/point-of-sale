@@ -171,6 +171,14 @@ export class AdminService {
         lastActive: now.toISOString(),
       });
 
+      await tx.insert(schema.organizationMemberships).values({
+        id: crypto.randomUUID(),
+        organizationId: orgId,
+        userId: ownerId,
+        role: "owner",
+        status: "active",
+      });
+
       await tx.insert(schema.settings).values({
         id: crypto.randomUUID(),
         organizationId: orgId,

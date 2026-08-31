@@ -32,6 +32,14 @@ const CreateLocationSchema = z.object({
       name: z.string().min(1, "Location name is required"),
       type: z.string().optional().default("store"),
       status: z.string().optional().default("active"),
+      code: z.string().optional(),
+      industryType: z.string().optional(),
+      address: z.string().optional(),
+      city: z.string().optional(),
+      phone: z.string().optional(),
+      email: z.string().optional(),
+      managerName: z.string().optional(),
+      isHeadOffice: z.boolean().optional(),
     })
     .passthrough(),
 });
@@ -52,6 +60,14 @@ export const createLocationFn = createServerFn({ method: "POST" })
           name: data.location.name,
           type: data.location.type || "store",
           status: data.location.status || "active",
+          code: data.location.code,
+          industryType: data.location.industryType,
+          address: data.location.address,
+          city: data.location.city,
+          phone: data.location.phone,
+          email: data.location.email,
+          managerName: data.location.managerName,
+          isHeadOffice: data.location.isHeadOffice || false,
           organizationId: session.orgId,
         })
         .returning();
@@ -68,6 +84,14 @@ const UpdateLocationSchema = z.object({
       name: z.string().optional(),
       type: z.string().optional(),
       status: z.string().optional(),
+      code: z.string().optional(),
+      industryType: z.string().optional(),
+      address: z.string().optional(),
+      city: z.string().optional(),
+      phone: z.string().optional(),
+      email: z.string().optional(),
+      managerName: z.string().optional(),
+      isHeadOffice: z.boolean().optional(),
     })
     .passthrough(),
 });

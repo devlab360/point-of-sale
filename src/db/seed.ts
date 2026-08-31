@@ -392,6 +392,16 @@ export async function seedDatabase() {
         permissions: ["all"],
         joined: new Date().toISOString(),
       });
+      const userId = (await db.select().from(schema.users).where(eq(schema.users.email, acc.ownerEmail)).limit(1))[0]?.id;
+      if (userId) {
+        await db.insert(schema.organizationMemberships).values({
+          id: uuidv4(),
+          organizationId: acc.orgId,
+          userId,
+          role: "owner",
+          status: "active",
+        });
+      }
       console.log(` - Created Industry Login: ${acc.ownerEmail} / password123 [${acc.businessType}]`);
     } else {
       await db

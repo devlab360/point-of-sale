@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+﻿import { createFileRoute } from "@tanstack/react-router";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -28,6 +28,7 @@ import {
   Copy,
   CheckCircle2,
   AlertCircle,
+  Tag,
   Clock,
   Shield,
   HelpCircle,
@@ -42,6 +43,7 @@ import {
   Search,
   Star,
   DownloadCloud,
+  Package,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useEffect, useState, useMemo } from "react";
@@ -74,7 +76,17 @@ import {
   updateLocationFn,
   deleteLocationFn,
 } from "@/api/locations";
+import {
+  getBranchPriceOverridesFn,
+  toggleBranchPricingFn,
+  upsertBranchPriceFn,
+  deleteBranchPriceFn,
+} from "@/api/branch-pricing";
+import { db } from "@/db";
+import * as schema from "@/db/schema";
+import { eq } from "drizzle-orm";
 import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -126,7 +138,7 @@ import { COUNTRIES, getCountryByIso, getCountryOptionList } from "@/lib/countrie
 import { TIMEZONES, DATE_FORMATS } from "@/lib/formatters";
 
 export const Route = createFileRoute("/settings")({
-  head: () => ({ meta: [{ title: "Settings · OneDesk360" }] }),
+  head: () => ({ meta: [{ title: "Settings ┬╖ OneDesk360" }] }),
   validateSearch: (search: Record<string, unknown>): { tab?: string } => {
     return {
       tab: typeof search.tab === "string" ? search.tab : undefined,
@@ -456,6 +468,11 @@ function SettingsPage() {
   };
 
   const [activeTab, setActiveTab] = useState(isTrialExpired ? "billing" : search.tab || "store");
+
+  const handleTabChange = (tab: string) => {
+    setActiveTab(tab);
+    router.navigate({ to: "/settings", search: { ...search, tab } });
+  };
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const isMobile = useIsMobile();
@@ -892,6 +909,13 @@ function SettingsPage() {
       badge: null,
     },
     {
+      id: "branchPricing",
+      label: "Branch Pricing",
+      description: "Per-branch price overrides",
+      icon: Tag,
+      badge: null,
+    },
+    {
       id: "data",
       label: "Data & Storage",
       description: "Offline cache & database sync",
@@ -969,7 +993,7 @@ function SettingsPage() {
                 <button
                   key={item.id}
                   type="button"
-                  onClick={() => setActiveTab(item.id)}
+                  onClick={() => handleTabChange(item.id)}
                   className={`w-full text-left flex items-start gap-3 p-3 rounded-xl transition-all duration-200 group relative ${isActive
                       ? "bg-primary text-primary-foreground shadow-soft"
                       : "hover:bg-muted/70 text-foreground"
@@ -1048,7 +1072,7 @@ function SettingsPage() {
                 <button
                   key={item.id}
                   type="button"
-                  onClick={() => setActiveTab(item.id)}
+                  onClick={() => handleTabChange(item.id)}
                   className={`shrink-0 flex items-center gap-2 px-3.5 py-2.5 rounded-xl text-xs font-bold border transition-all ${isActive
                       ? "bg-primary text-primary-foreground border-primary shadow-soft"
                       : "bg-card text-foreground border-border/80 hover:bg-muted"
@@ -1100,7 +1124,7 @@ function SettingsPage() {
                     </p>
                     <div className="flex items-center gap-3 text-[11px] text-muted-foreground mt-1.5 font-medium">
                       <span>Phone: {settings.phone || "Not set"}</span>
-                      <span>•</span>
+                      <span>ΓÇó</span>
                       <span>Currency: {settings.currencySymbol} ({settings.currencyCode})</span>
                     </div>
                   </div>
@@ -1225,7 +1249,7 @@ function SettingsPage() {
                       className="font-bold text-base"
                       value={settings.currencySymbol || "$"}
                       onChange={(e) => handleChange("currencySymbol", e.target.value)}
-                      placeholder="e.g. $, ₹, ৳, €, £, AED, SAR, R$, ¥, ₺, ₦"
+                      placeholder="e.g. $, Γé╣, αº│, Γé¼, ┬ú, AED, SAR, R$, ┬Ñ, Γé║, Γéª"
                     />
                   </Field>
 
@@ -1448,7 +1472,7 @@ function SettingsPage() {
                               if (days <= 0 || isTrialExpired)
                                 return (
                                   <span className="text-destructive font-bold">
-                                    Trial Expired • Please upgrade to continue
+                                    Trial Expired ΓÇó Please upgrade to continue
                                   </span>
                                 );
                               return <span className="font-semibold text-foreground">{days} days remaining in trial</span>;
@@ -1464,7 +1488,7 @@ function SettingsPage() {
 
                     <div className="text-left sm:text-right border-t sm:border-t-0 pt-3 sm:pt-0 border-border/60">
                       <div className="text-2xl font-black text-primary">
-                        ₹{saasPlan?.price || 0}
+                        {settings?.currencySymbol || "$"}{saasPlan?.price || 0}
                         <span className="text-xs font-normal text-muted-foreground"> / month</span>
                       </div>
                       <p className="text-[11px] text-muted-foreground font-mono mt-0.5">
@@ -1525,7 +1549,7 @@ function SettingsPage() {
                             <div>
                               <h4 className="font-extrabold text-base text-foreground">{plan.name}</h4>
                               <div className="text-2xl font-black mt-1 text-primary">
-                                ₹{plan.price}{" "}
+                                {settings?.currencySymbol || "$"}{plan.price}{" "}
                                 <span className="text-xs font-normal text-muted-foreground">
                                   / month
                                 </span>
@@ -1923,7 +1947,7 @@ function SettingsPage() {
                                       <Star className="size-2.5 mr-1 fill-primary" /> Default
                                     </Badge>
                                   ) : (
-                                    <span className="text-muted-foreground">—</span>
+                                    <span className="text-muted-foreground">ΓÇö</span>
                                   )}
                                 </TableCell>
                                 <TableCell>
@@ -2093,8 +2117,8 @@ function SettingsPage() {
                       </div>
                       <p className="text-xs text-muted-foreground font-medium">
                         {settings.pricesIncludeTax
-                          ? `Tax-Inclusive: Shelf Price ${settings.currencySymbol || "$"}100.00 → Base: ${settings.currencySymbol || "$"}${(100 / (1 + (Number(settings.standardRate) || 0) / 100)).toFixed(2)}, Tax (${settings.standardRate}%): ${settings.currencySymbol || "$"}${(100 - 100 / (1 + (Number(settings.standardRate) || 0) / 100)).toFixed(2)}`
-                          : `Tax-Exclusive: Shelf Price ${settings.currencySymbol || "$"}100.00 + Tax (${settings.standardRate}%): ${settings.currencySymbol || "$"}${((100 * (Number(settings.standardRate) || 0)) / 100).toFixed(2)} → Total: ${settings.currencySymbol || "$"}${(100 + (100 * (Number(settings.standardRate) || 0)) / 100).toFixed(2)}`}
+                          ? `Tax-Inclusive: Shelf Price ${settings.currencySymbol || "$"}100.00 ΓåÆ Base: ${settings.currencySymbol || "$"}${(100 / (1 + (Number(settings.standardRate) || 0) / 100)).toFixed(2)}, Tax (${settings.standardRate}%): ${settings.currencySymbol || "$"}${(100 - 100 / (1 + (Number(settings.standardRate) || 0) / 100)).toFixed(2)}`
+                          : `Tax-Exclusive: Shelf Price ${settings.currencySymbol || "$"}100.00 + Tax (${settings.standardRate}%): ${settings.currencySymbol || "$"}${((100 * (Number(settings.standardRate) || 0)) / 100).toFixed(2)} ΓåÆ Total: ${settings.currencySymbol || "$"}${(100 + (100 * (Number(settings.standardRate) || 0)) / 100).toFixed(2)}`}
                       </p>
                     </div>
                     <Badge variant="outline" className="bg-card border-primary/40 text-primary text-xs font-black shrink-0 py-1 px-3">
@@ -2266,13 +2290,13 @@ function SettingsPage() {
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="GB">🇬🇧 United Kingdom (Standard VAT 20%, 5%, 0%)</SelectItem>
-                          <SelectItem value="US">🇺🇸 United States (Sales Tax 7.5%, 8.25%, 10%)</SelectItem>
-                          <SelectItem value="AE">🇦🇪 United Arab Emirates (VAT 5%, 0%)</SelectItem>
-                          <SelectItem value="SA">🇸🇦 Saudi Arabia (ZATCA VAT 15%, 0%)</SelectItem>
-                          <SelectItem value="CA">🇨🇦 Canada (GST / HST / PST 5%, 13%, 12%)</SelectItem>
-                          <SelectItem value="AU">🇦🇺 Australia (GST 10%, 0%)</SelectItem>
-                          <SelectItem value="IN">🇮🇳 India (GST 0%, 5%, 12%, 18%, 28%)</SelectItem>
+                          <SelectItem value="GB">≡ƒç¼≡ƒçº United Kingdom (Standard VAT 20%, 5%, 0%)</SelectItem>
+                          <SelectItem value="US">≡ƒç║≡ƒç╕ United States (Sales Tax 7.5%, 8.25%, 10%)</SelectItem>
+                          <SelectItem value="AE">≡ƒçª≡ƒç¬ United Arab Emirates (VAT 5%, 0%)</SelectItem>
+                          <SelectItem value="SA">≡ƒç╕≡ƒçª Saudi Arabia (ZATCA VAT 15%, 0%)</SelectItem>
+                          <SelectItem value="CA">≡ƒç¿≡ƒçª Canada (GST / HST / PST 5%, 13%, 12%)</SelectItem>
+                          <SelectItem value="AU">≡ƒçª≡ƒç║ Australia (GST 10%, 0%)</SelectItem>
+                          <SelectItem value="IN">≡ƒç«≡ƒç│ India (GST 0%, 5%, 12%, 18%, 28%)</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -2585,7 +2609,14 @@ function SettingsPage() {
             </div>
           )}
 
-          {/* TAB 7: Data & Diagnostics */}
+          {/* TAB 7: Branch Pricing */}
+          {activeTab === "branchPricing" && (
+            <div className="space-y-6 animate-in fade-in duration-200">
+              <BranchPricingTab />
+            </div>
+          )}
+
+          {/* TAB 8: Data & Diagnostics */}
           {activeTab === "data" && (
             <div className="space-y-6 animate-in fade-in duration-200">
               <SettingsCard
@@ -2708,7 +2739,7 @@ function SettingsPage() {
             <p className="text-xs text-muted-foreground">
               Upgrading/renewing <strong>{selectedPlanForUpgrade?.name}</strong> at{" "}
               <strong>
-                ₹
+                Γé╣
                 {paymentForm.billingCycle === "yearly"
                   ? selectedPlanForUpgrade?.yearlyPrice || selectedPlanForUpgrade?.price * 12
                   : selectedPlanForUpgrade?.monthlyPrice || selectedPlanForUpgrade?.price}
@@ -2860,7 +2891,7 @@ function SettingsPage() {
                     <div>
                       <span className="font-bold text-foreground block">Additional Staff User Seats</span>
                       <span className="text-[11px] text-muted-foreground">
-                        +₹{selectedPlanForUpgrade.perExtraUserPrice}/seat/mo (Base plan includes {selectedPlanForUpgrade.limits?.maxUsers || 5} users)
+                        +Γé╣{selectedPlanForUpgrade.perExtraUserPrice}/seat/mo (Base plan includes {selectedPlanForUpgrade.limits?.maxUsers || 5} users)
                       </span>
                     </div>
                     <div className="flex items-center gap-2">
@@ -2901,7 +2932,7 @@ function SettingsPage() {
                 <div>
                   <Label className="text-xs font-bold">Total Amount to Pay</Label>
                   <Input
-                    value={`₹${(
+                    value={`Γé╣${(
                       (paymentForm.billingCycle === "yearly"
                         ? selectedPlanForUpgrade?.yearlyPrice
                           ? Number(selectedPlanForUpgrade.yearlyPrice)
@@ -3008,7 +3039,7 @@ function SettingsPage() {
               {!editingPaymentMethodId && (
                 <div className="space-y-2 bg-muted/20 p-3.5 rounded-2xl border border-border/60">
                   <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground block">
-                    ⚡ Quick Presets (1-Click Fill)
+                    ΓÜí Quick Presets (1-Click Fill)
                   </span>
                   <div className="flex flex-wrap gap-1.5">
                     {[
@@ -3187,7 +3218,18 @@ function LocationsTab() {
   const queryClient = useQueryClient();
   const [showForm, setShowForm] = useState(false);
   const [editingLocation, setEditingLocation] = useState<any>(null);
-  const [formData, setFormData] = useState({ name: "", type: "store" });
+  const [formData, setFormData] = useState({
+    name: "",
+    type: "store",
+    code: "",
+    industryType: "",
+    address: "",
+    city: "",
+    phone: "",
+    email: "",
+    managerName: "",
+    isHeadOffice: false,
+  });
   const [isSaving, setIsSaving] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
@@ -3199,13 +3241,35 @@ function LocationsTab() {
 
   const openAdd = () => {
     setEditingLocation(null);
-    setFormData({ name: "", type: "store" });
+    setFormData({
+      name: "",
+      type: "store",
+      code: "",
+      industryType: "",
+      address: "",
+      city: "",
+      phone: "",
+      email: "",
+      managerName: "",
+      isHeadOffice: false,
+    });
     setShowForm(true);
   };
 
   const openEdit = (loc: any) => {
     setEditingLocation(loc);
-    setFormData({ name: loc.name, type: loc.type || "store" });
+    setFormData({
+      name: loc.name,
+      type: loc.type || "store",
+      code: loc.code || "",
+      industryType: loc.industryType || "",
+      address: loc.address || "",
+      city: loc.city || "",
+      phone: loc.phone || "",
+      email: loc.email || "",
+      managerName: loc.managerName || "",
+      isHeadOffice: loc.isHeadOffice || false,
+    });
     setShowForm(true);
   };
 
@@ -3325,6 +3389,99 @@ function LocationsTab() {
                   </SelectContent>
                 </Select>
               </div>
+              <div className="space-y-1.5 sm:col-span-2">
+                <Label htmlFor="loc-code" className="text-xs font-bold">Branch Code</Label>
+                <Input
+                  id="loc-code"
+                  placeholder="e.g. DEL-01, MUM-02"
+                  value={formData.code}
+                  onChange={(e) => setFormData({ ...formData, code: e.target.value.toUpperCase() })}
+                />
+              </div>
+              <div className="space-y-1.5 sm:col-span-2">
+                <Label className="text-xs font-bold">Industry Type (optional)</Label>
+                <Select
+                  value={formData.industryType}
+                  onValueChange={(val) => setFormData({ ...formData, industryType: val })}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Inherit from business..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">Inherit from Business</SelectItem>
+                    <SelectItem value="Super Market & Grocery">Super Market & Grocery</SelectItem>
+                    <SelectItem value="Apparel & Fashion">Apparel & Fashion</SelectItem>
+                    <SelectItem value="Electronics & Computers">Electronics & Computers</SelectItem>
+                    <SelectItem value="Hotel & Restaurant">Hotel & Restaurant</SelectItem>
+                    <SelectItem value="Salon & Beauty Spa">Salon & Beauty Spa</SelectItem>
+                    <SelectItem value="Pharmacy & Healthcare">Pharmacy & Healthcare</SelectItem>
+                    <SelectItem value="Furniture & Home Decor">Furniture & Home Decor</SelectItem>
+                    <SelectItem value="Books, Toys & Gifts">Books, Toys & Gifts</SelectItem>
+                    <SelectItem value="General Retail Store">General Retail Store</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5 sm:col-span-2">
+                <Label htmlFor="loc-manager" className="text-xs font-bold">Manager Name</Label>
+                <Input
+                  id="loc-manager"
+                  placeholder="e.g. John Smith"
+                  value={formData.managerName}
+                  onChange={(e) => setFormData({ ...formData, managerName: e.target.value })}
+                />
+              </div>
+              <div className="space-y-1.5 sm:col-span-2">
+                <Label htmlFor="loc-address" className="text-xs font-bold">Address</Label>
+                <Input
+                  id="loc-address"
+                  placeholder="e.g. 123 Main Street"
+                  value={formData.address}
+                  onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="loc-city" className="text-xs font-bold">City</Label>
+                <Input
+                  id="loc-city"
+                  placeholder="e.g. New Delhi"
+                  value={formData.city}
+                  onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="loc-phone" className="text-xs font-bold">Phone</Label>
+                <Input
+                  id="loc-phone"
+                  type="tel"
+                  placeholder="e.g. +91 11 1234 5678"
+                  value={formData.phone}
+                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="loc-email" className="text-xs font-bold">Email</Label>
+                <Input
+                  id="loc-email"
+                  type="email"
+                  placeholder="e.g. branch@store.com"
+                  value={formData.email}
+                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                />
+              </div>
+              <div className="space-y-1.5 sm:col-span-2 flex items-end">
+                <div className="flex items-center gap-2 w-full">
+                  <input
+                    id="loc-head-office"
+                    type="checkbox"
+                    checked={formData.isHeadOffice}
+                    onChange={(e) => setFormData({ ...formData, isHeadOffice: e.target.checked })}
+                    className="h-4 w-4 rounded border-input bg-background focus:ring-primary"
+                  />
+                  <Label htmlFor="loc-head-office" className="text-xs font-bold cursor-pointer mb-0">
+                    Mark as Head Office
+                  </Label>
+                </div>
+              </div>
             </div>
             <div className="flex justify-end gap-2 pt-2 border-t border-border/60">
               <Button variant="outline" size="sm" onClick={() => setShowForm(false)} disabled={isSaving}>
@@ -3420,9 +3577,268 @@ function LocationsTab() {
               </tbody>
             </table>
           )}
-        </div>
+</div>
       </div>
     </SettingsCard>
+  );
+}
+
+function BranchPricingTab() {
+  const queryClient = useQueryClient();
+  const { user, settings, refetchOrgData } = useAuth() as any;
+  const orgId = user?.organizationId || PersistStore.getOrgId();
+
+  const formatCurrency = (amount: string | number | null | undefined) => {
+    const n = Number(amount || 0);
+    return n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  };
+
+  const { data: orgData } = useQuery({
+    queryKey: ["organization", orgId],
+    queryFn: async () => {
+      const res = await db.select().from(schema.organizations).where(eq(schema.organizations.id, orgId)).limit(1);
+      return res[0] || null;
+    },
+    staleTime: 60 * 1000,
+  });
+
+  const { data: branchesData } = useQuery({
+    queryKey: ["branches", orgId],
+    queryFn: async () => {
+      const res = await getLocationsFn({ data: {} });
+      return (res as any)?.data || [];
+    },
+    staleTime: 60 * 1000,
+  });
+
+  const { data: overridesData } = useQuery({
+    queryKey: ["branchPriceOverrides", orgId],
+    queryFn: async () => {
+      const res = await getBranchPriceOverridesFn({ data: { branchId: "" } });
+      return (res as any)?.data || [];
+    },
+    staleTime: 30 * 1000,
+  });
+
+  const { data: productsData } = useQuery({
+    queryKey: ["products", orgId],
+    queryFn: async () => {
+      const res = await db.select().from(schema.products).where(eq(schema.products.organizationId, orgId));
+      return res;
+    },
+    staleTime: 60 * 1000,
+  });
+
+  const { data: servicesData } = useQuery({
+    queryKey: ["services", orgId],
+    queryFn: async () => {
+      const res = await db.select().from(schema.services).where(eq(schema.services.organizationId, orgId));
+      return res;
+    },
+    staleTime: 60 * 1000,
+  });
+
+  const branchPricingEnabled = orgData?.branchPricingEnabled || false;
+  const branches: any[] = branchesData || [];
+  const overrides: any[] = overridesData || [];
+  const products: any[] = productsData || [];
+  const services: any[] = servicesData || [];
+
+  const toggleMutation = useMutation({
+    mutationFn: (enabled: boolean) => toggleBranchPricingFn({ data: { enabled } }),
+    onSuccess: async (res: any) => {
+      if (res?.success) {
+        toast.success(res.message || "Updated");
+        queryClient.invalidateQueries({ queryKey: ["organization", orgId] });
+        await refetchOrgData?.();
+      } else {
+        toast.error(res?.error || "Failed");
+      }
+    },
+    onError: (e: any) => toast.error(e?.message || "Failed"),
+  });
+
+  const upsertMutation = useMutation({
+    mutationFn: (data: any) => upsertBranchPriceFn({ data }),
+    onSuccess: async (res: any) => {
+      if (res?.success) {
+        toast.success("Price saved");
+        queryClient.invalidateQueries({ queryKey: ["branchPriceOverrides", orgId] });
+      } else {
+        toast.error(res?.error || "Failed");
+      }
+    },
+    onError: (e: any) => toast.error(e?.message || "Failed"),
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => deleteBranchPriceFn({ data: { id } }),
+    onSuccess: async (res: any) => {
+      if (res?.success) {
+        toast.success("Override removed");
+        queryClient.invalidateQueries({ queryKey: ["branchPriceOverrides", orgId] });
+      } else {
+        toast.error(res?.error || "Failed");
+      }
+    },
+    onError: (e: any) => toast.error(e?.message || "Failed"),
+  });
+
+  const getOverride = (branchId: string, entityType: string, entityId: string) =>
+    overrides.find((o) => o.branchId === branchId && o.entityType === entityType && o.entityId === entityId);
+
+  const handleUpsert = (branchId: string, entityType: string, entityId: string, price: string) => {
+    if (!price.trim()) return;
+    upsertMutation.mutate({ branchId, entityType, entityId, price });
+  };
+
+  const handleDelete = (id: string) => {
+    deleteMutation.mutate(id);
+  };
+
+  return (
+    <div className="space-y-6">
+      <SettingsCard
+        icon={Tag}
+        title="Branch-Wise Pricing"
+        desc="Enable per-branch price overrides. When enabled, products/services can have different prices at each branch. Overrides take priority over default prices in POS and sales."
+        headerRight={
+          <Switch
+            checked={branchPricingEnabled}
+            onCheckedChange={(checked) => toggleMutation.mutate(checked)}
+            disabled={toggleMutation.isPending}
+            className="shrink-0"
+          />
+        }
+      >
+        <div className="space-y-4">
+          {!branchPricingEnabled && (
+            <div className="p-4 rounded-xl border border-border/80 bg-muted/20 text-center space-y-2">
+              <p className="text-sm text-muted-foreground">
+                Branch pricing is disabled. Enable the toggle above to set per-branch prices for products and services.
+              </p>
+            </div>
+          )}
+
+          {branchPricingEnabled && branches.length === 0 && (
+            <div className="p-4 rounded-xl border border-border/80 bg-muted/20 text-center space-y-2">
+              <p className="text-sm text-muted-foreground">
+                No branches configured. Add branches in the <strong>Multi-Location</strong> tab first.
+              </p>
+            </div>
+          )}
+
+          {branchPricingEnabled && branches.length > 0 && (
+            <div className="space-y-4">
+              <div className="p-4 rounded-xl border border-primary/30 bg-primary/5 space-y-2">
+                <p className="text-xs font-bold text-primary">
+                  How it works: Enter a price for a product/service at a specific branch. Leave empty to use the default price.
+                </p>
+              </div>
+
+              {products.length > 0 && (
+                <div className="space-y-3">
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+                    <Package className="size-3.5" /> Products
+                  </h4>
+                  <div className="rounded-xl border border-border/80 bg-card overflow-hidden">
+                    <table className="w-full text-xs">
+                      <thead className="bg-muted/40 border-b border-border/60">
+                        <tr>
+                          <th className="text-left px-4 py-3 font-bold text-muted-foreground uppercase tracking-wider w-48">Product</th>
+                          {branches.map((b) => (
+                            <th key={b.id} className="text-center px-2 py-3 font-bold text-muted-foreground uppercase tracking-wider">
+                              {b.name} {b.isHeadOffice && <span className="ml-1 text-[10px] bg-primary/20 text-primary px-1 rounded">HQ</span>}
+                            </th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-border/60">
+                        {products.slice(0, 50).map((p) => (
+                          <tr key={p.id} className="hover:bg-muted/30 transition-colors">
+                            <td className="px-4 py-2 font-medium text-foreground truncate max-w-[180px]">
+                              {p.name} <span className="text-muted-foreground ml-2">{formatCurrency(p.price)}</span>
+                            </td>
+                            {branches.map((b) => {
+                              const override = getOverride(b.id, "product", p.id);
+                              return (
+                                <td key={b.id} className="px-2 py-2 text-center">
+                                  <Input
+                                    type="text"
+                                    placeholder="—"
+                                    value={override?.price || ""}
+                                    onChange={(e) => handleUpsert(b.id, "product", p.id, e.target.value)}
+                                    className="w-full h-7 text-center text-xs font-mono"
+                                    disabled={upsertMutation.isPending}
+                                  />
+                                </td>
+                              );
+                            })}
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+
+              {services.length > 0 && (
+                <div className="space-y-3 mt-6">
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+                    <Sparkles className="size-3.5" /> Services
+                  </h4>
+                  <div className="rounded-xl border border-border/80 bg-card overflow-hidden">
+                    <table className="w-full text-xs">
+                      <thead className="bg-muted/40 border-b border-border/60">
+                        <tr>
+                          <th className="text-left px-4 py-3 font-bold text-muted-foreground uppercase tracking-wider w-48">Service</th>
+                          {branches.map((b) => (
+                            <th key={b.id} className="text-center px-2 py-3 font-bold text-muted-foreground uppercase tracking-wider">
+                              {b.name}
+                            </th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-border/60">
+                        {services.slice(0, 50).map((s) => (
+                          <tr key={s.id} className="hover:bg-muted/30 transition-colors">
+                            <td className="px-4 py-2 font-medium text-foreground truncate max-w-[180px]">
+                              {s.name} <span className="text-muted-foreground ml-2">{formatCurrency(s.price)}</span>
+                            </td>
+                            {branches.map((b) => {
+                              const override = getOverride(b.id, "service", s.id);
+                              return (
+                                <td key={b.id} className="px-2 py-2 text-center">
+                                  <Input
+                                    type="text"
+                                    placeholder="—"
+                                    value={override?.price || ""}
+                                    onChange={(e) => handleUpsert(b.id, "service", s.id, e.target.value)}
+                                    className="w-full h-7 text-center text-xs font-mono"
+                                    disabled={upsertMutation.isPending}
+                                  />
+                                </td>
+                              );
+                            })}
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+
+              {(products.length === 0 && services.length === 0) && (
+                <div className="p-8 text-center text-muted-foreground">
+                  <Package className="size-12 mx-auto mb-2 opacity-50" />
+                  <p>No products or services found. Add catalog items first.</p>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </SettingsCard>
+    </div>
   );
 }
 

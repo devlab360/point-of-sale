@@ -21,8 +21,30 @@ export const organizations = pgTable("organizations", {
   planExpiryDate: timestamp("plan_expiry_date", { mode: "string" }),
   syncKey: text("sync_key").notNull().default("default-sync-key"), // To authenticate devices
   isOnline: boolean("is_online").notNull().default(true),
+  industryType: text("industry_type"), // business vertical (e.g. "Saloon & Spa", "Grocery Shop")
+  branchPricingEnabled: boolean("branch_pricing_enabled").notNull().default(false), // per-branch price overrides toggle
   createdAt: timestamp("created_at", { mode: "string" }).defaultNow().notNull(),
 });
+
+// Many-to-many membership between users and organizations (one user can own/manage multiple businesses)
+export const organizationMemberships = pgTable(
+  "organization_memberships",
+  {
+    id: text("id").primaryKey(),
+    organizationId: text("organization_id")
+      .notNull()
+      .references(() => organizations.id, { onDelete: "cascade" }),
+    userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    role: text("role").notNull().default("owner"), // owner, admin, staff
+    status: text("status").notNull().default("active"),
+    createdAt: timestamp("created_at", { mode: "string" }).defaultNow().notNull(),
+  },
+  (t) => ({
+    orgUserUniqueIdx: unique("org_membership_org_user_idx").on(t.organizationId, t.userId),
+    userIdx: index("org_memberships_user_idx").on(t.userId),
+    orgIdx: index("org_memberships_org_idx").on(t.organizationId),
+  }),
+);
 
 export const saasPlans = pgTable("saas_plans", {
   id: text("id").primaryKey(),
@@ -162,6 +184,7 @@ export const users = pgTable(
   {
     id: text("id").primaryKey(),
     organizationId: text("organization_id").references(() => organizations.id),
+    branchId: text("branch_id").references(() => locations.id, { onDelete: "set null" }),
     name: text("name").notNull(),
     role: text("role").notNull(),
     email: text("email").notNull(),
@@ -412,6 +435,39 @@ export const serviceVariantAttributes = pgTable(
   },
   (t) => ({
     variantIdx: index("svc_variant_attr_idx").on(t.variantId),
+  }),
+);
+
+// Per-branch price overrides used when an organization enables branch-wise pricing.
+// entityType distinguishes which catalog item is being overridden.
+export const branchPriceOverrides = pgTable(
+  "branch_price_overrides",
+  {
+    id: text("id").primaryKey(),
+    organizationId: text("organization_id")
+      .notNull()
+      .references(() => organizations.id, { onDelete: "cascade" }),
+    branchId: text("branch_id")
+      .notNull()
+      .references(() => locations.id, { onDelete: "cascade" }),
+    entityType: text("entity_type").notNull().default("product"), // product | service | service_variant | product_variant
+    entityId: text("entity_id").notNull(),
+    price: numeric("price", { precision: 10, scale: 2 }),
+    cost: numeric("cost", { precision: 10, scale: 2 }),
+    wholesalePrice: numeric("wholesale_price", { precision: 10, scale: 2 }),
+    dealerPrice: numeric("dealer_price", { precision: 10, scale: 2 }),
+    mrp: numeric("mrp", { precision: 10, scale: 2 }),
+    createdAt: timestamp("created_at", { mode: "string" }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { mode: "string" }).defaultNow().notNull(),
+  },
+  (t) => ({
+    orgIdx: index("branch_price_overrides_org_idx").on(t.organizationId),
+    branchIdx: index("branch_price_overrides_branch_idx").on(t.branchId),
+    branchEntityUniqueIdx: unique("branch_price_override_branch_entity_idx").on(
+      t.branchId,
+      t.entityType,
+      t.entityId,
+    ),
   }),
 );
 
@@ -674,6 +730,7 @@ export const expenses = pgTable(
     organizationId: text("organization_id")
       .notNull()
       .references(() => organizations.id),
+    branchId: text("branch_id").references(() => locations.id, { onDelete: "set null" }),
     date: timestamp("date", { mode: "string" }).notNull(),
     category: text("category").notNull(),
     description: text("description").notNull(),
@@ -682,6 +739,7 @@ export const expenses = pgTable(
   },
   (t) => ({
     orgIdx: index("expenses_org_idx").on(t.organizationId),
+    branchIdx: index("expenses_branch_idx").on(t.branchId),
   }),
 );
 
@@ -892,8 +950,16 @@ export const locations = pgTable(
       .notNull()
       .references(() => organizations.id),
     name: text("name").notNull(),
-    type: text("type").notNull(),
-    status: text("status").notNull(),
+    type: text("type").notNull(), // store, branch, outlet, warehouse
+    status: text("status").notNull(), // active, inactive
+    code: text("code"), // human-friendly branch code e.g. "DEL-01"
+    industryType: text("industry_type"), // optional vertical override for this branch
+    address: text("address"),
+    city: text("city"),
+    phone: text("phone"),
+    email: text("email"),
+    managerName: text("manager_name"),
+    isHeadOffice: boolean("is_head_office").notNull().default(false),
   },
   (t) => ({
     orgIdx: index("locations_org_idx").on(t.organizationId),
@@ -1123,6 +1189,7 @@ export const rentals = pgTable(
     organizationId: text("organization_id")
       .notNull()
       .references(() => organizations.id),
+    branchId: text("branch_id").references(() => locations.id, { onDelete: "set null" }),
     rentalNo: text("rental_no").notNull(),
     customerName: text("customer_name").notNull(),
     itemName: text("item_name").notNull(),
@@ -1135,6 +1202,7 @@ export const rentals = pgTable(
   },
   (t) => ({
     orgIdx: index("rentals_org_idx").on(t.organizationId),
+    branchIdx: index("rentals_branch_idx").on(t.branchId),
   }),
 );
 
@@ -1218,6 +1286,7 @@ export const reviews = pgTable("reviews", {
 export const appointments = pgTable("appointments", {
   id: text("id").primaryKey(),
   organizationId: text("organization_id").notNull(),
+  branchId: text("branch_id").references(() => locations.id, { onDelete: "set null" }),
   customerId: text("customer_id"),
   customerName: text("customer_name").notNull(),
   customerPhone: text("customer_phone"),
@@ -1236,6 +1305,7 @@ export const appointments = pgTable("appointments", {
 export const restaurantTables = pgTable("restaurant_tables", {
   id: text("id").primaryKey(),
   organizationId: text("organization_id").notNull(),
+  branchId: text("branch_id").references(() => locations.id, { onDelete: "set null" }),
   name: text("name").notNull(),
   capacity: integer("capacity").notNull().default(4),
   status: text("status").notNull().default("available"), // available, occupied, reserved
@@ -1247,6 +1317,7 @@ export const restaurantTables = pgTable("restaurant_tables", {
 export const kitchenOrderTickets = pgTable("kitchen_order_tickets", {
   id: text("id").primaryKey(),
   organizationId: text("organization_id").notNull(),
+  branchId: text("branch_id").references(() => locations.id, { onDelete: "set null" }),
   tableId: text("table_id"),
   waiterId: text("waiter_id"),
   items: jsonb("items").$type<any[]>().notNull(),

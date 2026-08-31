@@ -163,6 +163,14 @@ export class AuthService {
         emailVerified: false,
       });
 
+      await tx.insert(schema.organizationMemberships).values({
+        id: uuidv4(),
+        organizationId: data.orgId,
+        userId: data.ownerId,
+        role: "owner",
+        status: "active",
+      });
+
       await tx.insert(schema.settings).values({
         id: uuidv4(),
         organizationId: data.orgId,

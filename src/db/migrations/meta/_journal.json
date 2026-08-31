@@ -15,6 +15,13 @@
       "when": 1788153010250,
       "tag": "0001_whole_deathbird",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1788166084069,
+      "tag": "0002_acoustic_boom_boom",
+      "breakpoints": true
     }
   ]
 }
