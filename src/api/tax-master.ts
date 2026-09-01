@@ -4,10 +4,6 @@ import { requireAuth } from "@/lib/auth-utils";
 import { z } from "zod";
 import { v4 as uuidv4 } from "uuid";
 
-import { db } from "@/db";
-import * as schema from "@/db/schema";
-import { eq, and, ne } from "drizzle-orm";
-
 export interface TaxSlabTemplate {
   name: string;
   rate: string;
@@ -76,7 +72,16 @@ export const COUNTRY_TAX_TEMPLATES: Record<string, TaxSlabTemplate[]> = {
   ],
 };
 
+async function getDb() {
+  const { db } = await import("@/db");
+  const schema = await import("@/db/schema");
+  const { eq, and, ne } = await import("drizzle-orm");
+  return { db, schema, eq, and, ne };
+}
+
 export async function ensureDefaultTaxMasters(orgId: string) {
+  const { db, schema, eq } = await getDb();
+
   const existing = await db
     .select({ id: schema.taxMasters.id })
     .from(schema.taxMasters)
@@ -132,6 +137,7 @@ export const getTaxMastersFn = createServerFn({ method: "GET" })
       const session = await requireAuth();
       const orgId = session.orgId;
       await ensureDefaultTaxMasters(orgId);
+      const { db, schema, eq } = await getDb();
       const res = await db
         .select()
         .from(schema.taxMasters)
@@ -169,6 +175,8 @@ export const createTaxMasterFn = createServerFn({ method: "POST" })
       const now = new Date().toISOString();
       const newId = tm.id || uuidv4();
       const num = (v: any) => (v == null || v === "" ? null : Number(v));
+
+      const { db, schema, eq } = await getDb();
 
       if (tm.isDefault) {
         // Clear existing defaults for this tenant
@@ -235,6 +243,8 @@ export const updateTaxMasterFn = createServerFn({ method: "POST" })
       const now = new Date().toISOString();
       const updatesObj: Record<string, any> = { updatedAt: now };
 
+      const { db, schema, eq, and, ne } = await getDb();
+
       for (const key of [
         "name",
         "rate",
@@ -293,6 +303,7 @@ export const deleteTaxMasterFn = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     try {
       const session = await requireAuth();
+      const { db, schema, eq, and } = await getDb();
       await db
         .delete(schema.taxMasters)
         .where(and(eq(schema.taxMasters.id, data.id), eq(schema.taxMasters.organizationId, session.orgId)));
@@ -315,6 +326,8 @@ export const loadCountryTaxTemplateFn = createServerFn({ method: "POST" })
       const code = data.countryCode.toUpperCase();
       const slabs = COUNTRY_TAX_TEMPLATES[code] || COUNTRY_TAX_TEMPLATES.DEFAULT;
       const now = new Date().toISOString();
+
+      const { db, schema } = await getDb();
 
       // Insert the slabs
       const inserted = await db
