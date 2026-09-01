@@ -19,7 +19,14 @@ import {
   SheetDescription,
   SheetFooter,
 } from "@/components/ui/sheet";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { FieldError } from "@/components/ui/field-error";
 import { useFormValidation } from "@/hooks/useFormValidation";
@@ -104,7 +111,9 @@ function SuppliersPage() {
   const [isSaving, setIsSaving] = useState(false);
 
   // Form active tab in Drawer
-  const [activeFormTab, setActiveFormTab] = useState<"general" | "tax_address" | "banking" | "notes">("general");
+  const [activeFormTab, setActiveFormTab] = useState<
+    "general" | "tax_address" | "banking" | "notes"
+  >("general");
 
   // Form Fields State
   const [name, setName] = useState("");
@@ -159,7 +168,9 @@ function SuppliersPage() {
     },
     enabled: !!ledgerSupplier,
   });
-  const supplierLedgerEntries = Array.isArray(supplierLedgerEntriesData) ? supplierLedgerEntriesData : [];
+  const supplierLedgerEntries = Array.isArray(supplierLedgerEntriesData)
+    ? supplierLedgerEntriesData
+    : [];
 
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search, 300);
@@ -179,7 +190,7 @@ function SuppliersPage() {
           s.email?.toLowerCase().includes(lower) ||
           s.phone?.includes(lower) ||
           s.gstin?.toLowerCase().includes(lower) ||
-          s.city?.toLowerCase().includes(lower)
+          s.city?.toLowerCase().includes(lower),
       );
     }
     if (balanceFilter === "has_balance") {
@@ -193,7 +204,10 @@ function SuppliersPage() {
   // Metrics
   const metrics = useMemo(() => {
     const totalSuppliers = rawSuppliers.length;
-    const totalPayable = rawSuppliers.reduce((acc, s) => acc + Math.max(0, Number(s.balance) || 0), 0);
+    const totalPayable = rawSuppliers.reduce(
+      (acc, s) => acc + Math.max(0, Number(s.balance) || 0),
+      0,
+    );
     const withDue = rawSuppliers.filter((s) => Number(s.balance) > 0).length;
     const settled = rawSuppliers.filter((s) => Number(s.balance) <= 0).length;
     return { totalSuppliers, totalPayable, withDue, settled };
@@ -287,7 +301,11 @@ function SuppliersPage() {
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    const isValid = validateSupp({ name: name.trim(), contact: contact.trim(), phone: phone.trim() });
+    const isValid = validateSupp({
+      name: name.trim(),
+      contact: contact.trim(),
+      phone: phone.trim(),
+    });
     if (!isValid) {
       setActiveFormTab("general");
       return;
@@ -419,7 +437,7 @@ function SuppliersPage() {
         { key: "gstin", label: "GSTIN" },
         { key: "balance", label: "Payable Balance" },
       ],
-      "suppliers"
+      "suppliers",
     );
   };
 
@@ -594,7 +612,9 @@ function SuppliersPage() {
             icon={Truck}
             title="No suppliers found"
             description={
-              search ? "Try adjusting your search criteria." : "You haven't registered any suppliers yet."
+              search
+                ? "Try adjusting your search criteria."
+                : "You haven't registered any suppliers yet."
             }
             actionLabel="Add Supplier"
             onAction={openAddDrawer}
@@ -644,11 +664,17 @@ function SuppliersPage() {
                         </TableCell>
                         <TableCell className="text-right">
                           {hasDue ? (
-                            <Badge variant="outline" className="bg-destructive/10 text-destructive border-destructive/25 text-xs font-bold">
+                            <Badge
+                              variant="outline"
+                              className="bg-destructive/10 text-destructive border-destructive/25 text-xs font-bold"
+                            >
                               Due: {formatCurrency(Number(s.balance))}
                             </Badge>
                           ) : (
-                            <Badge variant="outline" className="bg-success/15 text-success border-success/30 text-[10px] font-bold uppercase">
+                            <Badge
+                              variant="outline"
+                              className="bg-success/15 text-success border-success/30 text-[10px] font-bold uppercase"
+                            >
                               Settled
                             </Badge>
                           )}
@@ -683,7 +709,10 @@ function SuppliersPage() {
                                 </Button>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end" className="rounded-xl w-40">
-                                <DropdownMenuItem onClick={() => openEditDrawer(s)} className="text-xs font-semibold">
+                                <DropdownMenuItem
+                                  onClick={() => openEditDrawer(s)}
+                                  className="text-xs font-semibold"
+                                >
                                   <Edit2 className="size-3.5 mr-2 text-primary" /> Edit Profile
                                 </DropdownMenuItem>
                                 <DropdownMenuItem
@@ -750,13 +779,22 @@ function SuppliersPage() {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end" className="rounded-xl w-40">
-                            <DropdownMenuItem onClick={() => openEditDrawer(s)} className="text-xs font-semibold">
+                            <DropdownMenuItem
+                              onClick={() => openEditDrawer(s)}
+                              className="text-xs font-semibold"
+                            >
                               <Edit2 className="size-3.5 mr-2 text-primary" /> Edit
                             </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => setLedgerSupplier(s)} className="text-xs font-semibold">
+                            <DropdownMenuItem
+                              onClick={() => setLedgerSupplier(s)}
+                              className="text-xs font-semibold"
+                            >
                               <FileText className="size-3.5 mr-2 text-blue-500" /> Khata Ledger
                             </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => setDeleteId(s.id)} className="text-xs font-semibold text-destructive">
+                            <DropdownMenuItem
+                              onClick={() => setDeleteId(s.id)}
+                              className="text-xs font-semibold text-destructive"
+                            >
                               <Trash2 className="size-3.5 mr-2" /> Delete
                             </DropdownMenuItem>
                           </DropdownMenuContent>
@@ -787,8 +825,12 @@ function SuppliersPage() {
                           <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground block">
                             Khata Balance
                           </span>
-                          <span className={`text-sm font-bold ${hasDue ? "text-destructive" : "text-success"}`}>
-                            {hasDue ? `Due: ${formatCurrency(Number(s.balance))}` : `Settled (${currencySymbol}0.00)`}
+                          <span
+                            className={`text-sm font-bold ${hasDue ? "text-destructive" : "text-success"}`}
+                          >
+                            {hasDue
+                              ? `Due: ${formatCurrency(Number(s.balance))}`
+                              : `Settled (${currencySymbol}0.00)`}
                           </span>
                         </div>
                         {s.paymentTerms && (
@@ -853,7 +895,8 @@ function SuppliersPage() {
                 {editItem ? "Edit Supplier Profile" : "Add New Supplier"}
               </SheetTitle>
               <SheetDescription className="text-xs text-muted-foreground mt-0.5">
-                Configure vendor contact information, tax identification, billing terms, and bank routing.
+                Configure vendor contact information, tax identification, billing terms, and bank
+                routing.
               </SheetDescription>
 
               {/* Form Navigation Tabs */}
@@ -905,7 +948,10 @@ function SuppliersPage() {
               </div>
             </SheetHeader>
 
-            <form onSubmit={handleSave} className="flex-1 flex flex-col justify-between overflow-hidden">
+            <form
+              onSubmit={handleSave}
+              className="flex-1 flex flex-col justify-between overflow-hidden"
+            >
               <div className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-4">
                 {/* TAB 1: General & Contacts */}
                 {activeFormTab === "general" && (
@@ -922,7 +968,9 @@ function SuppliersPage() {
                           setName(e.target.value);
                           clearSuppError("name");
                         }}
-                        className={suppErrors.name ? "border-destructive focus-visible:ring-destructive" : ""}
+                        className={
+                          suppErrors.name ? "border-destructive focus-visible:ring-destructive" : ""
+                        }
                       />
                       <FieldError message={suppErrors.name} />
                     </div>
@@ -940,7 +988,11 @@ function SuppliersPage() {
                             setContact(e.target.value);
                             clearSuppError("contact");
                           }}
-                          className={suppErrors.contact ? "border-destructive focus-visible:ring-destructive" : ""}
+                          className={
+                            suppErrors.contact
+                              ? "border-destructive focus-visible:ring-destructive"
+                              : ""
+                          }
                         />
                         <FieldError message={suppErrors.contact} />
                       </div>
@@ -956,7 +1008,11 @@ function SuppliersPage() {
                             setPhone(e.target.value);
                             clearSuppError("phone");
                           }}
-                          className={suppErrors.phone ? "border-destructive focus-visible:ring-destructive" : ""}
+                          className={
+                            suppErrors.phone
+                              ? "border-destructive focus-visible:ring-destructive"
+                              : ""
+                          }
                         />
                         <FieldError message={suppErrors.phone} />
                       </div>
@@ -964,7 +1020,9 @@ function SuppliersPage() {
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div className="space-y-1.5">
-                        <Label htmlFor="email" className="text-xs font-semibold">Email Address</Label>
+                        <Label htmlFor="email" className="text-xs font-semibold">
+                          Email Address
+                        </Label>
                         <Input
                           id="email"
                           type="email"
@@ -975,7 +1033,9 @@ function SuppliersPage() {
                       </div>
 
                       <div className="space-y-1.5">
-                        <Label htmlFor="website" className="text-xs font-semibold">Website</Label>
+                        <Label htmlFor="website" className="text-xs font-semibold">
+                          Website
+                        </Label>
                         <Input
                           id="website"
                           placeholder="e.g. https://vendor.com"
@@ -992,7 +1052,9 @@ function SuppliersPage() {
                   <div className="space-y-4">
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                       <div className="space-y-1.5">
-                        <Label htmlFor="gstin" className="text-xs font-semibold">GSTIN / Tax ID</Label>
+                        <Label htmlFor="gstin" className="text-xs font-semibold">
+                          GSTIN / Tax ID
+                        </Label>
                         <Input
                           id="gstin"
                           placeholder="e.g. 29ABCDE1234F1Z5"
@@ -1003,7 +1065,9 @@ function SuppliersPage() {
                       </div>
 
                       <div className="space-y-1.5">
-                        <Label htmlFor="pan" className="text-xs font-semibold">PAN Number</Label>
+                        <Label htmlFor="pan" className="text-xs font-semibold">
+                          PAN Number
+                        </Label>
                         <Input
                           id="pan"
                           placeholder="e.g. ABCDE1234F"
@@ -1014,7 +1078,9 @@ function SuppliersPage() {
                       </div>
 
                       <div className="space-y-1.5">
-                        <Label htmlFor="stateCode" className="text-xs font-semibold">State Code</Label>
+                        <Label htmlFor="stateCode" className="text-xs font-semibold">
+                          State Code
+                        </Label>
                         <Input
                           id="stateCode"
                           placeholder="e.g. 29"
@@ -1026,7 +1092,9 @@ function SuppliersPage() {
                     </div>
 
                     <div className="space-y-1.5">
-                      <Label htmlFor="address" className="text-xs font-semibold">Street Address</Label>
+                      <Label htmlFor="address" className="text-xs font-semibold">
+                        Street Address
+                      </Label>
                       <Input
                         id="address"
                         placeholder="e.g. 123 Commerce Way, Suite 400"
@@ -1037,7 +1105,9 @@ function SuppliersPage() {
 
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                       <div className="space-y-1.5">
-                        <Label htmlFor="city" className="text-xs font-semibold">City</Label>
+                        <Label htmlFor="city" className="text-xs font-semibold">
+                          City
+                        </Label>
                         <Input
                           id="city"
                           placeholder="e.g. Mumbai"
@@ -1047,7 +1117,9 @@ function SuppliersPage() {
                       </div>
 
                       <div className="space-y-1.5">
-                        <Label htmlFor="state" className="text-xs font-semibold">State / Province</Label>
+                        <Label htmlFor="state" className="text-xs font-semibold">
+                          State / Province
+                        </Label>
                         <Input
                           id="state"
                           placeholder="e.g. Maharashtra"
@@ -1057,7 +1129,9 @@ function SuppliersPage() {
                       </div>
 
                       <div className="space-y-1.5">
-                        <Label htmlFor="postalCode" className="text-xs font-semibold">Postal Code</Label>
+                        <Label htmlFor="postalCode" className="text-xs font-semibold">
+                          Postal Code
+                        </Label>
                         <Input
                           id="postalCode"
                           placeholder="e.g. 400001"
@@ -1092,7 +1166,9 @@ function SuppliersPage() {
                       </div>
 
                       <div className="space-y-1.5">
-                        <Label htmlFor="creditLimit" className="text-xs font-semibold">Credit Limit ({currencySymbol})</Label>
+                        <Label htmlFor="creditLimit" className="text-xs font-semibold">
+                          Credit Limit ({currencySymbol})
+                        </Label>
                         <Input
                           id="creditLimit"
                           type="number"
@@ -1104,7 +1180,9 @@ function SuppliersPage() {
                       </div>
 
                       <div className="space-y-1.5">
-                        <Label htmlFor="openingBalance" className="text-xs font-semibold">Opening Due Balance ({currencySymbol})</Label>
+                        <Label htmlFor="openingBalance" className="text-xs font-semibold">
+                          Opening Due Balance ({currencySymbol})
+                        </Label>
                         <Input
                           id="openingBalance"
                           type="number"
@@ -1123,7 +1201,9 @@ function SuppliersPage() {
 
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div className="space-y-1.5">
-                          <Label htmlFor="bankName" className="text-xs font-semibold">Bank Name</Label>
+                          <Label htmlFor="bankName" className="text-xs font-semibold">
+                            Bank Name
+                          </Label>
                           <Input
                             id="bankName"
                             placeholder="e.g. HDFC Bank"
@@ -1133,7 +1213,9 @@ function SuppliersPage() {
                         </div>
 
                         <div className="space-y-1.5">
-                          <Label htmlFor="accountNumber" className="text-xs font-semibold">Account Number</Label>
+                          <Label htmlFor="accountNumber" className="text-xs font-semibold">
+                            Account Number
+                          </Label>
                           <Input
                             id="accountNumber"
                             placeholder="e.g. 50100234567890"
@@ -1146,7 +1228,9 @@ function SuppliersPage() {
 
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div className="space-y-1.5">
-                          <Label htmlFor="ifscSwift" className="text-xs font-semibold">IFSC / SWIFT Code</Label>
+                          <Label htmlFor="ifscSwift" className="text-xs font-semibold">
+                            IFSC / SWIFT Code
+                          </Label>
                           <Input
                             id="ifscSwift"
                             placeholder="e.g. HDFC0001234"
@@ -1157,7 +1241,9 @@ function SuppliersPage() {
                         </div>
 
                         <div className="space-y-1.5">
-                          <Label htmlFor="upiId" className="text-xs font-semibold">UPI ID</Label>
+                          <Label htmlFor="upiId" className="text-xs font-semibold">
+                            UPI ID
+                          </Label>
                           <Input
                             id="upiId"
                             placeholder="e.g. vendor@upi"
@@ -1190,7 +1276,9 @@ function SuppliersPage() {
                     </div>
 
                     <div className="space-y-1.5">
-                      <Label htmlFor="notes" className="text-xs font-semibold">Procurement Notes</Label>
+                      <Label htmlFor="notes" className="text-xs font-semibold">
+                        Procurement Notes
+                      </Label>
                       <Textarea
                         id="notes"
                         rows={4}
@@ -1247,11 +1335,7 @@ function SuppliersPage() {
                   >
                     Cancel
                   </Button>
-                  <Button
-                    type="submit"
-                    disabled={isSaving}
-                    className="font-semibold shadow-sm"
-                  >
+                  <Button type="submit" disabled={isSaving} className="font-semibold shadow-sm">
                     {isSaving && <Loader2 className="size-4 animate-spin mr-2" />}
                     {editItem ? "Update Supplier" : "Save Supplier"}
                   </Button>
@@ -1279,7 +1363,10 @@ function SuppliersPage() {
               </SheetDescription>
             </SheetHeader>
 
-            <form onSubmit={handleSettle} className="flex-1 flex flex-col justify-between overflow-hidden">
+            <form
+              onSubmit={handleSettle}
+              className="flex-1 flex flex-col justify-between overflow-hidden"
+            >
               <div className="flex-1 overflow-y-auto p-5 space-y-4">
                 <div className="p-4 rounded-xl border border-destructive/20 bg-destructive/5 text-center space-y-1">
                   <span className="text-xs font-semibold text-destructive uppercase tracking-wider">
@@ -1308,18 +1395,10 @@ function SuppliersPage() {
               </div>
 
               <SheetFooter className="p-4 border-t border-border/60 bg-muted/20 flex flex-row items-center justify-end gap-2 shrink-0">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setSettleItem(null)}
-                >
+                <Button type="button" variant="outline" onClick={() => setSettleItem(null)}>
                   Cancel
                 </Button>
-                <Button
-                  type="submit"
-                  disabled={isSettling}
-                  className="font-semibold shadow-sm"
-                >
+                <Button type="submit" disabled={isSettling} className="font-semibold shadow-sm">
                   {isSettling && <Loader2 className="mr-2 size-4 animate-spin" />}
                   Confirm Payment
                 </Button>
@@ -1348,7 +1427,9 @@ function SuppliersPage() {
                     </SheetDescription>
                   </div>
                   <div className="text-right">
-                    <span className="text-[10px] font-semibold text-muted-foreground uppercase block">Due Balance</span>
+                    <span className="text-[10px] font-semibold text-muted-foreground uppercase block">
+                      Due Balance
+                    </span>
                     <span className="text-lg font-bold text-destructive">
                       {formatCurrency(Number(ledgerSupplier.balance) || 0)}
                     </span>
@@ -1378,11 +1459,19 @@ function SuppliersPage() {
                       ) : (
                         supplierLedgerEntries.map((l: any) => (
                           <TableRow key={l.id}>
-                            <TableCell className="text-muted-foreground">{formatDate(l.date)}</TableCell>
-                            <TableCell className="font-semibold text-foreground">{l.type}</TableCell>
+                            <TableCell className="text-muted-foreground">
+                              {formatDate(l.date)}
+                            </TableCell>
+                            <TableCell className="font-semibold text-foreground">
+                              {l.type}
+                            </TableCell>
                             <TableCell className="text-muted-foreground">{l.note || "—"}</TableCell>
-                            <TableCell className="font-bold text-right">{formatCurrency(Number(l.amount))}</TableCell>
-                            <TableCell className="font-bold text-right text-primary">{formatCurrency(Number(l.balanceAfter))}</TableCell>
+                            <TableCell className="font-bold text-right">
+                              {formatCurrency(Number(l.amount))}
+                            </TableCell>
+                            <TableCell className="font-bold text-right text-primary">
+                              {formatCurrency(Number(l.balanceAfter))}
+                            </TableCell>
                           </TableRow>
                         ))
                       )}
@@ -1392,11 +1481,7 @@ function SuppliersPage() {
               </div>
 
               <SheetFooter className="p-4 border-t border-border/60 bg-muted/20 flex flex-row items-center justify-end gap-2 shrink-0">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setLedgerSupplier(null)}
-                >
+                <Button type="button" variant="outline" onClick={() => setLedgerSupplier(null)}>
                   Close Statement
                 </Button>
               </SheetFooter>
@@ -1424,18 +1509,10 @@ function SuppliersPage() {
             </div>
           </DialogHeader>
           <DialogFooter className="mt-4 flex flex-row items-center justify-end gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setDeleteId(null)}
-            >
+            <Button type="button" variant="outline" onClick={() => setDeleteId(null)}>
               Cancel
             </Button>
-            <Button
-              type="button"
-              variant="destructive"
-              onClick={handleDelete}
-            >
+            <Button type="button" variant="destructive" onClick={handleDelete}>
               Delete
             </Button>
           </DialogFooter>

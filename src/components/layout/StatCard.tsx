@@ -93,9 +93,7 @@ export function StatCard({ label, value, delta, hint, icon: Icon, accent = "prim
               )}
               {Math.abs(delta)}%
             </span>
-            {hint && (
-              <span className="text-[11px] text-muted-foreground">{hint}</span>
-            )}
+            {hint && <span className="text-[11px] text-muted-foreground">{hint}</span>}
           </div>
         ) : hint ? (
           <span className="text-[11px] text-muted-foreground">{hint}</span>

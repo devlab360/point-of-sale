@@ -34,7 +34,9 @@ export const organizationMemberships = pgTable(
     organizationId: text("organization_id")
       .notNull()
       .references(() => organizations.id, { onDelete: "cascade" }),
-    userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
     role: text("role").notNull().default("owner"), // owner, admin, staff
     status: text("status").notNull().default("active"),
     createdAt: timestamp("created_at", { mode: "string" }).defaultNow().notNull(),
@@ -1561,4 +1563,3 @@ export const subscriptionPayments = pgTable(
     statusIdx: index("sub_payments_status_idx").on(t.status),
   }),
 );
-

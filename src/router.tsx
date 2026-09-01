@@ -25,7 +25,11 @@ export const getRouter = () => {
       });
 
       // Handle 401 Unauthorized
-      if (error?.status === 401 || error?.statusCode === 401 || String(error?.message).includes("401")) {
+      if (
+        error?.status === 401 ||
+        error?.statusCode === 401 ||
+        String(error?.message).includes("401")
+      ) {
         SessionStore.removeAuthUser();
         if (typeof window !== "undefined" && !window.location.pathname.startsWith("/login")) {
           toast.error("Your session has expired. Please log in again.");
@@ -35,7 +39,11 @@ export const getRouter = () => {
       }
 
       // Handle 403 Forbidden
-      if (error?.status === 403 || error?.statusCode === 403 || String(error?.message).includes("403")) {
+      if (
+        error?.status === 403 ||
+        error?.statusCode === 403 ||
+        String(error?.message).includes("403")
+      ) {
         toast.error("Access denied. You do not have permission to perform this action.");
         return;
       }

@@ -86,7 +86,10 @@ export const markNotificationReadFn = createServerFn({ method: "POST" })
           .update(schema.notifications)
           .set({ read: true })
           .where(
-            and(eq(schema.notifications.id, targetId), eq(schema.notifications.organizationId, orgId)),
+            and(
+              eq(schema.notifications.id, targetId),
+              eq(schema.notifications.organizationId, orgId),
+            ),
           );
       }
       return { success: true };
@@ -159,9 +162,7 @@ export const createNotificationFn = createServerFn({ method: "POST" })
 
     try {
       if (schema.notifications) {
-        await db
-          .insert(schema.notifications)
-          .values(newNotif);
+        await db.insert(schema.notifications).values(newNotif);
       }
       return { success: true };
     } catch (e) {
@@ -169,4 +170,3 @@ export const createNotificationFn = createServerFn({ method: "POST" })
       return { success: true };
     }
   });
-

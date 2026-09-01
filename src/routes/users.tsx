@@ -74,7 +74,14 @@ import { v4 as uuidv4 } from "uuid";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCurrency } from "@/lib/currency";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { PaginationControls } from "@/components/ui/pagination-controls";
 import {
   SYSTEM_MODULES,
@@ -102,25 +109,31 @@ function RoleSelectCards({ value, onChange }: { value: string; onChange: (v: str
             key={opt.value}
             type="button"
             onClick={() => onChange(opt.value)}
-            className={`rounded-2xl border p-4 text-left transition-all relative ${active
+            className={`rounded-2xl border p-4 text-left transition-all relative ${
+              active
                 ? "border-primary bg-primary/10 shadow-sm ring-1.5 ring-primary/50"
                 : "border-border/70 bg-card hover:bg-muted/30 hover:border-border"
-              }`}
+            }`}
           >
             <div className="flex items-center gap-3">
               <span
-                className={`grid size-9.5 place-items-center rounded-xl transition-colors shrink-0 ${active
+                className={`grid size-9.5 place-items-center rounded-xl transition-colors shrink-0 ${
+                  active
                     ? "bg-primary text-primary-foreground shadow-xs"
                     : "bg-muted/70 text-muted-foreground"
-                  }`}
+                }`}
               >
                 <Icon className="size-4.5" />
               </span>
               <div className="min-w-0">
-                <span className={`text-xs font-bold block truncate ${active ? "text-primary" : "text-foreground"}`}>
+                <span
+                  className={`text-xs font-bold block truncate ${active ? "text-primary" : "text-foreground"}`}
+                >
                   {opt.label}
                 </span>
-                <span className="text-[10px] text-muted-foreground capitalize block">{opt.value} role</span>
+                <span className="text-[10px] text-muted-foreground capitalize block">
+                  {opt.value} role
+                </span>
               </div>
               {active && <Check className="ml-auto size-4 text-primary shrink-0 font-bold" />}
             </div>
@@ -141,7 +154,7 @@ function UsersPage() {
   const { data: orgData } = useQuery({
     queryKey: ["orgData", orgId],
     queryFn: async () => {
-      const res = await import("@/api/auth").then(m => m.getOrgDataFn({ data: { orgId } }));
+      const res = await import("@/api/auth").then((m) => m.getOrgDataFn({ data: { orgId } }));
       return res.success ? res : null;
     },
     enabled: !!orgId,
@@ -214,7 +227,12 @@ function UsersPage() {
   const [directLocationIds, setDirectLocationIds] = useState<string[]>([]);
   const [directAllBranches, setDirectAllBranches] = useState(false);
 
-  const { data: usersData, isLoading: isUsersLoading, isError: isUsersError, refetch: refetchUsers } = useQuery({
+  const {
+    data: usersData,
+    isLoading: isUsersLoading,
+    isError: isUsersError,
+    refetch: refetchUsers,
+  } = useQuery({
     queryKey: ["users", orgId],
     queryFn: async () => {
       const res = (await getUsersFn({ data: {} })) as any;
@@ -224,7 +242,10 @@ function UsersPage() {
   const users: any[] = usersData || [];
 
   const totalEmployees = users.length;
-  const adminCount = useMemo(() => users.filter((u) => u.role === "admin" || u.role === "manager").length, [users]);
+  const adminCount = useMemo(
+    () => users.filter((u) => u.role === "admin" || u.role === "manager").length,
+    [users],
+  );
   const cashierCount = useMemo(() => users.filter((u) => u.role === "cashier").length, [users]);
   const pendingCount = useMemo(() => users.filter((u) => u.status !== "active").length, [users]);
 
@@ -236,7 +257,7 @@ function UsersPage() {
         (u) =>
           u.name?.toLowerCase().includes(lower) ||
           u.email?.toLowerCase().includes(lower) ||
-          u.role?.toLowerCase().includes(lower)
+          u.role?.toLowerCase().includes(lower),
       );
     }
     if (roleFilter !== "all") {
@@ -283,7 +304,7 @@ function UsersPage() {
 
   const togglePermission = (routePath: string) => {
     setEditPermissions((prev) =>
-      prev.includes(routePath) ? prev.filter((p) => p !== routePath) : [...prev, routePath]
+      prev.includes(routePath) ? prev.filter((p) => p !== routePath) : [...prev, routePath],
     );
   };
 
@@ -342,16 +363,16 @@ function UsersPage() {
     setIsSaving(true);
     try {
       const res = (await createUserFn({
-data: {
-            user: {
-              name: directName.trim(),
-              email: directEmail.trim().toLowerCase(),
-              password: directPassword,
-              role: directRole,
-              permissions: DEFAULT_ROLE_PERMISSIONS[directRole] || [],
-              locationIds: directAllBranches ? [] : directLocationIds,
-            },
+        data: {
+          user: {
+            name: directName.trim(),
+            email: directEmail.trim().toLowerCase(),
+            password: directPassword,
+            role: directRole,
+            permissions: DEFAULT_ROLE_PERMISSIONS[directRole] || [],
+            locationIds: directAllBranches ? [] : directLocationIds,
           },
+        },
       })) as any;
 
       if (res?.success) {
@@ -523,10 +544,11 @@ data: {
               <button
                 type="button"
                 onClick={() => setViewMode("grid")}
-                className={`grid size-8.5 place-items-center rounded-lg transition-all ${viewMode === "grid"
+                className={`grid size-8.5 place-items-center rounded-lg transition-all ${
+                  viewMode === "grid"
                     ? "bg-card text-primary shadow-xs font-bold"
                     : "text-muted-foreground hover:text-foreground"
-                  }`}
+                }`}
                 title="Grid View"
               >
                 <LayoutGrid className="size-4" />
@@ -534,10 +556,11 @@ data: {
               <button
                 type="button"
                 onClick={() => setViewMode("table")}
-                className={`grid size-8.5 place-items-center rounded-lg transition-all ${viewMode === "table"
+                className={`grid size-8.5 place-items-center rounded-lg transition-all ${
+                  viewMode === "table"
                     ? "bg-card text-primary shadow-xs font-bold"
                     : "text-muted-foreground hover:text-foreground"
-                  }`}
+                }`}
                 title="Table View"
               >
                 <TableIcon className="size-4" />
@@ -597,7 +620,10 @@ data: {
                           </div>
                         </div>
 
-                        <Badge variant="outline" className={`text-[10px] font-bold shrink-0 py-1 px-2.5 rounded-lg ${roleVisuals.badge}`}>
+                        <Badge
+                          variant="outline"
+                          className={`text-[10px] font-bold shrink-0 py-1 px-2.5 rounded-lg ${roleVisuals.badge}`}
+                        >
                           {roleVisuals.label}
                         </Badge>
                       </div>
@@ -657,15 +683,17 @@ data: {
                     <div className="pt-3 border-t border-border/60 flex items-center justify-between gap-2">
                       <div className="flex items-center gap-1.5">
                         <span
-                          className={`size-2 rounded-full ${isActive ? "bg-emerald-500 animate-pulse" : "bg-muted-foreground"
-                            }`}
+                          className={`size-2 rounded-full ${
+                            isActive ? "bg-emerald-500 animate-pulse" : "bg-muted-foreground"
+                          }`}
                         />
                         <Badge
                           variant="outline"
-                          className={`text-[10px] font-black uppercase py-0.5 px-2 ${isActive
+                          className={`text-[10px] font-black uppercase py-0.5 px-2 ${
+                            isActive
                               ? "bg-success/15 text-success border-success/30"
                               : "bg-muted text-muted-foreground border-border"
-                            }`}
+                          }`}
                         >
                           {u.status}
                         </Badge>
@@ -678,7 +706,11 @@ data: {
                           onClick={() => openEditModal(u)}
                           className="h-8.5 px-3 text-xs font-bold gap-1.5 border-primary/40 text-primary hover:bg-primary/10 hover:border-primary rounded-xl shadow-2xs"
                           disabled={u.email?.toLowerCase() === ownerEmail}
-                          title={u.email?.toLowerCase() === ownerEmail ? "Owner cannot modify their own access" : undefined}
+                          title={
+                            u.email?.toLowerCase() === ownerEmail
+                              ? "Owner cannot modify their own access"
+                              : undefined
+                          }
                         >
                           <Shield className="size-3.5" /> Access
                         </Button>
@@ -692,7 +724,10 @@ data: {
                             <Trash2 className="size-3.5" />
                           </Button>
                         ) : (
-                          <span className="size-8.5 px-3 pt-2.5 rounded-xl text-muted-foreground/50" title="Owner cannot be deleted">
+                          <span
+                            className="size-8.5 px-3 pt-2.5 rounded-xl text-muted-foreground/50"
+                            title="Owner cannot be deleted"
+                          >
                             <Trash2 className="size-3.5" />
                           </span>
                         )}
@@ -710,7 +745,7 @@ data: {
                   pageSize={pageSize}
                   totalItems={filteredUsers.length}
                   onPageChange={setPage}
-                  onPageSizeChange={() => { }}
+                  onPageSizeChange={() => {}}
                 />
               </div>
             )}
@@ -751,7 +786,10 @@ data: {
                           </div>
                         </TableCell>
                         <TableCell>
-                          <Badge variant="outline" className={`text-[10px] font-bold ${roleVisuals.badge}`}>
+                          <Badge
+                            variant="outline"
+                            className={`text-[10px] font-bold ${roleVisuals.badge}`}
+                          >
                             {roleVisuals.label}
                           </Badge>
                         </TableCell>
@@ -769,10 +807,11 @@ data: {
                         <TableCell>
                           <Badge
                             variant="outline"
-                            className={`text-[10px] font-black uppercase ${isActive
+                            className={`text-[10px] font-black uppercase ${
+                              isActive
                                 ? "bg-success/15 text-success border-success/30"
                                 : "bg-muted text-muted-foreground border-border"
-                              }`}
+                            }`}
                           >
                             {u.status}
                           </Badge>
@@ -785,7 +824,11 @@ data: {
                               onClick={() => openEditModal(u)}
                               className="h-8 text-xs font-bold gap-1 border-primary/30 text-primary hover:bg-primary/10 rounded-xl"
                               disabled={u.email?.toLowerCase() === ownerEmail}
-                              title={u.email?.toLowerCase() === ownerEmail ? "Owner cannot modify their own access" : undefined}
+                              title={
+                                u.email?.toLowerCase() === ownerEmail
+                                  ? "Owner cannot modify their own access"
+                                  : undefined
+                              }
                             >
                               <Shield className="size-3.5" /> Permissions
                             </Button>
@@ -799,7 +842,10 @@ data: {
                                 <Trash2 className="size-3.5" />
                               </Button>
                             ) : (
-                              <span className="size-8 rounded-xl text-muted-foreground/50" title="Owner cannot be deleted">
+                              <span
+                                className="size-8 rounded-xl text-muted-foreground/50"
+                                title="Owner cannot be deleted"
+                              >
                                 <Trash2 className="size-3.5" />
                               </span>
                             )}
@@ -819,7 +865,7 @@ data: {
                   pageSize={pageSize}
                   totalItems={filteredUsers.length}
                   onPageChange={setPage}
-                  onPageSizeChange={() => { }}
+                  onPageSizeChange={() => {}}
                 />
               </div>
             )}
@@ -853,15 +899,19 @@ data: {
                     </div>
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
-                    <Badge variant="outline" className={`text-xs font-bold py-1 px-2.5 rounded-lg ${getRoleVisuals(editRole).badge}`}>
+                    <Badge
+                      variant="outline"
+                      className={`text-xs font-bold py-1 px-2.5 rounded-lg ${getRoleVisuals(editRole).badge}`}
+                    >
                       {getRoleVisuals(editRole).label}
                     </Badge>
                     <Badge
                       variant="outline"
-                      className={`text-xs font-black uppercase py-1 px-2.5 rounded-lg ${editStatus === "active"
+                      className={`text-xs font-black uppercase py-1 px-2.5 rounded-lg ${
+                        editStatus === "active"
                           ? "bg-success/15 text-success border-success/30"
                           : "bg-muted text-muted-foreground border-border"
-                        }`}
+                      }`}
                     >
                       {editStatus}
                     </Badge>
@@ -869,7 +919,10 @@ data: {
                 </div>
               </SheetHeader>
 
-              <form onSubmit={handleSaveEdit} className="flex-1 flex flex-col justify-between overflow-hidden">
+              <form
+                onSubmit={handleSaveEdit}
+                className="flex-1 flex flex-col justify-between overflow-hidden"
+              >
                 <div className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-6">
                   {/* 1. Staff Profile Details */}
                   <section className="rounded-2xl border border-border/80 bg-card p-4 sm:p-5 space-y-4 shadow-xs">
@@ -877,7 +930,9 @@ data: {
                       <p className="text-[11px] font-black uppercase tracking-[0.14em] text-muted-foreground flex items-center gap-2">
                         <Users className="size-3.5 text-primary" /> Staff Member Profile
                       </p>
-                      <span className="text-[11px] text-muted-foreground font-mono">ID: {editItem.id?.slice(0, 8)}...</span>
+                      <span className="text-[11px] text-muted-foreground font-mono">
+                        ID: {editItem.id?.slice(0, 8)}...
+                      </span>
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div className="space-y-1.5">
@@ -910,7 +965,9 @@ data: {
                     <RoleSelectCards value={editRole} onChange={handleRoleChangeInEdit} />
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-1">
                       <div className="space-y-1.5">
-                        <Label className="text-xs font-bold text-foreground">Commission Rate (%)</Label>
+                        <Label className="text-xs font-bold text-foreground">
+                          Commission Rate (%)
+                        </Label>
                         <div className="relative">
                           <Percent className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
                           <Input
@@ -926,7 +983,9 @@ data: {
                         </div>
                       </div>
                       <div className="space-y-1.5">
-                        <Label className="text-xs font-bold text-foreground">Monthly Sales Target</Label>
+                        <Label className="text-xs font-bold text-foreground">
+                          Monthly Sales Target
+                        </Label>
                         <div className="relative">
                           <Target className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
                           <Input
@@ -962,20 +1021,23 @@ data: {
                         <Building2 className="size-3.5 text-primary" /> Branch Assignment
                       </p>
                       <p className="text-xs text-muted-foreground mt-0.5">
-                        Select one or more branches this staff member can work at. The first selected branch is treated
-                        as their default branch.
+                        Select one or more branches this staff member can work at. The first
+                        selected branch is treated as their default branch.
                       </p>
                     </div>
                     {locations.length === 0 ? (
                       <p className="text-xs text-muted-foreground">
-                        No branches configured yet. Add branches under Settings → Locations to assign staff.
+                        No branches configured yet. Add branches under Settings → Locations to
+                        assign staff.
                       </p>
                     ) : (
                       <>
-                        <label className="flex items-center gap-2 rounded-xl border px-3 py-2 text-xs font-bold transition-all cursor-pointer mb-2
+                        <label
+                          className="flex items-center gap-2 rounded-xl border px-3 py-2 text-xs font-bold transition-all cursor-pointer mb-2
                           {editAllBranches
                             ? 'border-primary bg-primary/10 text-primary shadow-xs ring-1.5 ring-primary/50'
-                            : 'border-border/70 bg-muted/30 hover:bg-muted/50 text-muted-foreground'}">
+                            : 'border-border/70 bg-muted/30 hover:bg-muted/50 text-muted-foreground'}"
+                        >
                           <input
                             type="checkbox"
                             checked={editAllBranches}
@@ -988,7 +1050,9 @@ data: {
                           <span className="flex items-center gap-2">
                             <Building2 className="size-4" />
                             <span>All Branches</span>
-                            <span className="text-[9px] font-black uppercase tracking-wider text-primary/70 bg-primary/10 px-1.5 py-0.5 rounded">All</span>
+                            <span className="text-[9px] font-black uppercase tracking-wider text-primary/70 bg-primary/10 px-1.5 py-0.5 rounded">
+                              All
+                            </span>
                           </span>
                         </label>
                         {!editAllBranches && (
@@ -1009,7 +1073,9 @@ data: {
                                   {active && <Check className="size-3.5 shrink-0" />}
                                   {loc.name}
                                   {loc.isHeadOffice && (
-                                    <span className="text-[9px] font-black uppercase tracking-wider text-muted-foreground bg-muted px-1.5 py-0.5 rounded">HQ</span>
+                                    <span className="text-[9px] font-black uppercase tracking-wider text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
+                                      HQ
+                                    </span>
                                   )}
                                 </button>
                               );
@@ -1020,7 +1086,9 @@ data: {
                     )}
                     {(editAllBranches || editLocationIds.length > 0) && (
                       <p className="text-[11px] text-muted-foreground">
-                        {editAllBranches ? "Access: All branches" : `Assigned branches: ${editLocationIds.length}`}
+                        {editAllBranches
+                          ? "Access: All branches"
+                          : `Assigned branches: ${editLocationIds.length}`}
                       </p>
                     )}
                   </section>
@@ -1030,15 +1098,18 @@ data: {
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-1 border-b border-border/60">
                       <div>
                         <p className="text-[11px] font-black uppercase tracking-[0.14em] text-foreground flex items-center gap-2">
-                          <Layers className="size-3.5 text-primary" /> Granular Module Authorization Matrix
+                          <Layers className="size-3.5 text-primary" /> Granular Module Authorization
+                          Matrix
                         </p>
                         <p className="text-xs text-muted-foreground mt-0.5">
-                          Toggle specific business capabilities and route access for this staff member.
+                          Toggle specific business capabilities and route access for this staff
+                          member.
                         </p>
                       </div>
                       <div className="flex items-center gap-2">
                         <span className="text-xs text-primary font-mono font-bold bg-primary/10 px-2.5 py-1 rounded-lg border border-primary/20">
-                          {editPermissions.filter((r) => applicableRoutes.includes(r)).length} / {applicableRoutes.length} enabled
+                          {editPermissions.filter((r) => applicableRoutes.includes(r)).length} /{" "}
+                          {applicableRoutes.length} enabled
                         </span>
                         <Button
                           type="button"
@@ -1063,12 +1134,18 @@ data: {
 
                     <div className="space-y-4">
                       {MODULE_CATEGORIES.map((category) => {
-                        const categoryModules = applicableModules.filter((m) => m.category === category);
+                        const categoryModules = applicableModules.filter(
+                          (m) => m.category === category,
+                        );
                         if (categoryModules.length === 0) return null;
 
                         const categoryRoutes = categoryModules.map((m) => m.defaultRoute);
-                        const categoryAllOn = categoryRoutes.every((r) => editPermissions.includes(r));
-                        const activeCount = categoryRoutes.filter((r) => editPermissions.includes(r)).length;
+                        const categoryAllOn = categoryRoutes.every((r) =>
+                          editPermissions.includes(r),
+                        );
+                        const activeCount = categoryRoutes.filter((r) =>
+                          editPermissions.includes(r),
+                        ).length;
 
                         return (
                           <div
@@ -1103,28 +1180,34 @@ data: {
                                     key={mod.id}
                                     type="button"
                                     onClick={() => togglePermission(mod.defaultRoute)}
-                                    className={`flex items-center gap-3 p-3 rounded-xl border text-left transition-all relative ${isChecked
+                                    className={`flex items-center gap-3 p-3 rounded-xl border text-left transition-all relative ${
+                                      isChecked
                                         ? "bg-primary/10 border-primary text-primary shadow-xs ring-1 ring-primary/30"
                                         : "bg-muted/20 border-border/70 text-muted-foreground hover:bg-muted/40 hover:text-foreground"
-                                      }`}
+                                    }`}
                                   >
                                     <span
-                                      className={`grid size-7.5 shrink-0 place-items-center rounded-lg transition-colors ${isChecked
+                                      className={`grid size-7.5 shrink-0 place-items-center rounded-lg transition-colors ${
+                                        isChecked
                                           ? "bg-primary text-primary-foreground shadow-xs"
                                           : "bg-muted text-muted-foreground"
-                                        }`}
+                                      }`}
                                     >
                                       <Icon className="size-4" />
                                     </span>
                                     <div className="min-w-0 flex-1">
-                                      <span className={`text-xs font-bold block truncate ${isChecked ? "text-primary" : "text-foreground"}`}>
+                                      <span
+                                        className={`text-xs font-bold block truncate ${isChecked ? "text-primary" : "text-foreground"}`}
+                                      >
                                         {mod.label}
                                       </span>
                                       <span className="text-[10px] text-muted-foreground truncate block font-mono">
                                         {mod.defaultRoute}
                                       </span>
                                     </div>
-                                    {isChecked && <Check className="ml-auto size-4 shrink-0 text-primary font-bold" />}
+                                    {isChecked && (
+                                      <Check className="ml-auto size-4 shrink-0 text-primary font-bold" />
+                                    )}
                                   </button>
                                 );
                               })}
@@ -1145,10 +1228,19 @@ data: {
                     module grants on save.
                   </div>
                   <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
-                    <Button type="button" variant="outline" onClick={() => setEditItem(null)} className="font-bold rounded-xl">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => setEditItem(null)}
+                      className="font-bold rounded-xl"
+                    >
                       Cancel
                     </Button>
-                    <Button type="submit" disabled={isSaving} className="font-bold rounded-xl shadow-sm">
+                    <Button
+                      type="submit"
+                      disabled={isSaving}
+                      className="font-bold rounded-xl shadow-sm"
+                    >
                       {isSaving && <Loader2 className="size-4 animate-spin mr-2" />}
                       Save Permissions
                     </Button>
@@ -1183,7 +1275,10 @@ data: {
               </div>
             </SheetHeader>
 
-            <form onSubmit={handleCreateDirectUser} className="flex-1 flex flex-col justify-between overflow-hidden">
+            <form
+              onSubmit={handleCreateDirectUser}
+              className="flex-1 flex flex-col justify-between overflow-hidden"
+            >
               <div className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-6">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-1.5">
@@ -1239,10 +1334,12 @@ data: {
                     </p>
                   ) : (
                     <>
-                      <label className="flex items-center gap-2 rounded-xl border px-3 py-2 text-xs font-bold transition-all cursor-pointer mb-2
+                      <label
+                        className="flex items-center gap-2 rounded-xl border px-3 py-2 text-xs font-bold transition-all cursor-pointer mb-2
                         {directAllBranches
                           ? 'border-primary bg-primary/10 text-primary shadow-xs ring-1.5 ring-primary/50'
-                          : 'border-border/70 bg-muted/30 hover:bg-muted/50 text-muted-foreground'}">
+                          : 'border-border/70 bg-muted/30 hover:bg-muted/50 text-muted-foreground'}"
+                      >
                         <input
                           type="checkbox"
                           checked={directAllBranches}
@@ -1255,7 +1352,9 @@ data: {
                         <span className="flex items-center gap-2">
                           <Building2 className="size-4" />
                           <span>All Branches</span>
-                          <span className="text-[9px] font-black uppercase tracking-wider text-primary/70 bg-primary/10 px-1.5 py-0.5 rounded">All</span>
+                          <span className="text-[9px] font-black uppercase tracking-wider text-primary/70 bg-primary/10 px-1.5 py-0.5 rounded">
+                            All
+                          </span>
                         </span>
                       </label>
                       {!directAllBranches && (
@@ -1276,7 +1375,9 @@ data: {
                                 {active && <Check className="size-3.5 shrink-0" />}
                                 {loc.name}
                                 {loc.isHeadOffice && (
-                                  <span className="text-[9px] font-black uppercase tracking-wider text-muted-foreground bg-muted px-1.5 py-0.5 rounded">HQ</span>
+                                  <span className="text-[9px] font-black uppercase tracking-wider text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
+                                    HQ
+                                  </span>
                                 )}
                               </button>
                             );
@@ -1287,7 +1388,9 @@ data: {
                   )}
                   {(directAllBranches || directLocationIds.length > 0) && (
                     <p className="text-[11px] text-muted-foreground">
-                      {directAllBranches ? "Access: All branches" : `Assigned branches: ${directLocationIds.length}`}
+                      {directAllBranches
+                        ? "Access: All branches"
+                        : `Assigned branches: ${directLocationIds.length}`}
                     </p>
                   )}
                 </div>
@@ -1304,16 +1407,26 @@ data: {
                     <span className="font-mono font-bold text-primary">
                       {(DEFAULT_ROLE_PERMISSIONS[directRole] || []).length}
                     </span>{" "}
-                    default module grants. Fine-tune granular permissions anytime using the Access drawer.
+                    default module grants. Fine-tune granular permissions anytime using the Access
+                    drawer.
                   </p>
                 </div>
               </div>
 
               <SheetFooter className="p-5 sm:p-6 border-t border-border/80 bg-muted/20 flex flex-row items-center justify-end gap-2 shrink-0">
-                <Button type="button" variant="outline" onClick={() => setIsDirectAddOpen(false)} className="font-bold rounded-xl">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setIsDirectAddOpen(false)}
+                  className="font-bold rounded-xl"
+                >
                   Cancel
                 </Button>
-                <Button type="submit" disabled={isSaving} className="font-bold rounded-xl shadow-sm">
+                <Button
+                  type="submit"
+                  disabled={isSaving}
+                  className="font-bold rounded-xl shadow-sm"
+                >
                   {isSaving && <Loader2 className="size-4 animate-spin mr-2" />}
                   Create Account
                 </Button>
@@ -1346,7 +1459,10 @@ data: {
               </div>
             </SheetHeader>
 
-            <form onSubmit={handleGenerateInvite} className="flex-1 flex flex-col justify-between overflow-hidden">
+            <form
+              onSubmit={handleGenerateInvite}
+              className="flex-1 flex flex-col justify-between overflow-hidden"
+            >
               <div className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-6">
                 <div className="space-y-1.5">
                   <Label className="text-xs font-bold text-foreground">Staff Email Address *</Label>
@@ -1412,11 +1528,7 @@ data: {
                     >
                       Cancel
                     </Button>
-                    <Button
-                      type="submit"
-                      disabled={isGenerating}
-                      className="font-bold rounded-xl"
-                    >
+                    <Button type="submit" disabled={isGenerating} className="font-bold rounded-xl">
                       {isGenerating && <Loader2 className="size-4 animate-spin mr-2" />}
                       Generate Link
                     </Button>
@@ -1441,7 +1553,8 @@ data: {
                   Remove Employee Account
                 </DialogTitle>
                 <DialogDescription className="text-xs text-muted-foreground mt-0.5">
-                  Are you sure you want to delete this staff member? Their POS sales and shift records will remain intact.
+                  Are you sure you want to delete this staff member? Their POS sales and shift
+                  records will remain intact.
                 </DialogDescription>
               </div>
             </div>

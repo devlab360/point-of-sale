@@ -83,7 +83,9 @@ function KitchenPage() {
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [notifPermission, setNotifPermission] = useState<NotificationPermission>("default");
-  const [newOrderBanner, setNewOrderBanner] = useState<{ count: number; ids: string[] } | null>(null);
+  const [newOrderBanner, setNewOrderBanner] = useState<{ count: number; ids: string[] } | null>(
+    null,
+  );
   const prevKotIdsRef = useRef<Set<string>>(new Set());
   const bannerTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isFirstLoad = useRef(true);
@@ -166,10 +168,7 @@ function KitchenPage() {
       const tableLabel = newKots[0]?.tableId
         ? `Table #${newKots[0].tableId.substring(0, 4).toUpperCase()}`
         : "Takeaway";
-      const itemCount = newKots.reduce(
-        (acc: number, k: any) => acc + (k.items?.length || 0),
-        0,
-      );
+      const itemCount = newKots.reduce((acc: number, k: any) => acc + (k.items?.length || 0), 0);
       sendBrowserNotification(
         `🍽️ New Kitchen Order${newIds.length > 1 ? "s" : ""} (${newIds.length})`,
         `${tableLabel} — ${itemCount} item${itemCount !== 1 ? "s" : ""} waiting to be prepared`,
@@ -221,7 +220,7 @@ function KitchenPage() {
         return {
           ...old,
           data: old.data.map((kot: any) =>
-            kot.id === newData.id ? { ...kot, status: newData.status } : kot
+            kot.id === newData.id ? { ...kot, status: newData.status } : kot,
           ),
         };
       });
@@ -274,7 +273,7 @@ function KitchenPage() {
 
   const renderTicket = (kot: any, stage: "pending" | "preparing" | "ready") => {
     const elapsedMinutes = Math.floor(
-      (new Date().getTime() - new Date(kot.timestamp).getTime()) / 60000
+      (new Date().getTime() - new Date(kot.timestamp).getTime()) / 60000,
     );
     const isLate = elapsedMinutes > 15 && stage !== "ready";
 
@@ -325,9 +324,13 @@ function KitchenPage() {
         exit={{ opacity: 0, scale: 0.9, transition: { duration: 0.2 } }}
         transition={{ type: "spring", stiffness: 350, damping: 28 }}
       >
-        <Card className={`overflow-hidden rounded-2xl border ${colorScheme.border} bg-card shadow-soft flex flex-col justify-between hover:border-border transition-all`}>
+        <Card
+          className={`overflow-hidden rounded-2xl border ${colorScheme.border} bg-card shadow-soft flex flex-col justify-between hover:border-border transition-all`}
+        >
           {/* Card Top Header */}
-          <div className={`p-3.5 ${colorScheme.bgHeader} border-b border-border/60 flex items-center justify-between`}>
+          <div
+            className={`p-3.5 ${colorScheme.bgHeader} border-b border-border/60 flex items-center justify-between`}
+          >
             <div>
               <div className="flex items-center gap-2">
                 <span className="text-sm font-bold text-foreground">
@@ -360,7 +363,10 @@ function KitchenPage() {
                 </h4>
                 <ul className="space-y-1.5">
                   {groupedItems[course].map((item: any, idx: number) => (
-                    <li key={idx} className="flex flex-col bg-muted/30 p-2 rounded-xl border border-border/40">
+                    <li
+                      key={idx}
+                      className="flex flex-col bg-muted/30 p-2 rounded-xl border border-border/40"
+                    >
                       <div className="flex justify-between items-start font-bold text-xs text-foreground">
                         <span className="flex items-center gap-1.5">
                           <span className="grid size-5 place-items-center rounded-md bg-primary text-primary-foreground font-bold text-[10px]">
@@ -371,9 +377,7 @@ function KitchenPage() {
                       </div>
                       {(item.variantName || (item.modifiers && item.modifiers.length > 0)) && (
                         <div className="text-xs text-muted-foreground mt-1 ml-6 border-l-2 border-primary/40 pl-2 space-y-0.5">
-                          {item.variantName && (
-                            <div>Portion: {item.variantName}</div>
-                          )}
+                          {item.variantName && <div>Portion: {item.variantName}</div>}
                           {item.modifiers?.map((m: any, i: number) => (
                             <div key={i}>+ {m.optionName}</div>
                           ))}
@@ -428,7 +432,8 @@ function KitchenPage() {
               </div>
               <div className="flex-1">
                 <p className="text-sm font-extrabold text-foreground">
-                  🍽️ {newOrderBanner.count} New Kitchen Order{newOrderBanner.count > 1 ? "s" : ""} Received!
+                  🍽️ {newOrderBanner.count} New Kitchen Order{newOrderBanner.count > 1 ? "s" : ""}{" "}
+                  Received!
                 </p>
                 <p className="text-xs text-muted-foreground mt-0.5">
                   New tickets arrived in the Incoming Orders queue — chef action required.
@@ -477,7 +482,11 @@ function KitchenPage() {
               onClick={() => setSoundEnabled(!soundEnabled)}
               className="gap-1.5 text-xs font-semibold"
             >
-              {soundEnabled ? <Volume2 className="size-4 text-success" /> : <VolumeX className="size-4 text-muted-foreground" />}
+              {soundEnabled ? (
+                <Volume2 className="size-4 text-success" />
+              ) : (
+                <VolumeX className="size-4 text-muted-foreground" />
+              )}
               {soundEnabled ? "Chimes ON" : "Muted"}
             </Button>
 
@@ -534,9 +543,7 @@ function KitchenPage() {
             <div className="flex items-center justify-between pb-2 border-b border-border/60">
               <div className="flex items-center gap-2">
                 <span className="size-2.5 rounded-full bg-destructive" />
-                <h2 className="font-bold text-sm text-foreground">
-                  Incoming Orders
-                </h2>
+                <h2 className="font-bold text-sm text-foreground">Incoming Orders</h2>
               </div>
               <Badge variant="outline" className="font-mono text-xs font-bold">
                 {pendingKots.length}
@@ -561,9 +568,7 @@ function KitchenPage() {
             <div className="flex items-center justify-between pb-2 border-b border-border/60">
               <div className="flex items-center gap-2">
                 <span className="size-2.5 rounded-full bg-warning" />
-                <h2 className="font-bold text-sm text-foreground">
-                  In Preparation
-                </h2>
+                <h2 className="font-bold text-sm text-foreground">In Preparation</h2>
               </div>
               <Badge variant="outline" className="font-mono text-xs font-bold">
                 {preparingKots.length}
@@ -588,9 +593,7 @@ function KitchenPage() {
             <div className="flex items-center justify-between pb-2 border-b border-border/60">
               <div className="flex items-center gap-2">
                 <span className="size-2.5 rounded-full bg-success" />
-                <h2 className="font-bold text-sm text-foreground">
-                  Ready to Serve
-                </h2>
+                <h2 className="font-bold text-sm text-foreground">Ready to Serve</h2>
               </div>
               <Badge variant="outline" className="font-mono text-xs font-bold">
                 {readyKots.length}

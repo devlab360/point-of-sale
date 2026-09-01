@@ -69,7 +69,14 @@ import { CardGridSkeleton } from "@/components/skeletons/CardGridSkeleton";
 import { TableSkeleton } from "@/components/skeletons/TableSkeleton";
 import { ErrorState } from "@/components/ui/error-state";
 import { EmptyState } from "@/components/ui/empty-state";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { PaginationControls } from "@/components/ui/pagination-controls";
 
 export const Route = createFileRoute("/coupons")({
@@ -134,15 +141,21 @@ function CouponsPage() {
     clearError: clearCouponError,
     clearAll: clearCouponAll,
   } = useFormValidation({
-    code: { required: "Promo coupon code is required", minLength: { value: 3, message: "At least 3 chars" } },
+    code: {
+      required: "Promo coupon code is required",
+      minLength: { value: 3, message: "At least 3 chars" },
+    },
     value: { required: "Discount value is required", positive: "Must be > 0" },
   });
 
   const totalCoupons = rawCoupons.length;
-  const activeCoupons = useMemo(() => rawCoupons.filter((c: any) => c.status === "active").length, [rawCoupons]);
+  const activeCoupons = useMemo(
+    () => rawCoupons.filter((c: any) => c.status === "active").length,
+    [rawCoupons],
+  );
   const totalRedemptions = useMemo(
     () => rawCoupons.reduce((sum: number, c: any) => sum + (Number(c.usageCount) || 0), 0),
-    [rawCoupons]
+    [rawCoupons],
   );
   const avgDiscountValue = useMemo(() => {
     if (!rawCoupons.length) return "0";
@@ -381,7 +394,9 @@ function CouponsPage() {
             icon={Ticket}
             title="No promo codes found"
             description={
-              search ? "Try adjusting your search criteria." : "You haven't generated any discount promo codes yet."
+              search
+                ? "Try adjusting your search criteria."
+                : "You haven't generated any discount promo codes yet."
             }
             actionLabel="Create Promo Code"
             onAction={() => {
@@ -445,7 +460,9 @@ function CouponsPage() {
                         {Number(c.minSpend) > 0 && (
                           <div className="flex items-center justify-between text-xs text-muted-foreground">
                             <span>Min. Order</span>
-                            <span className="font-semibold text-foreground">{formatCurrency(c.minSpend)}</span>
+                            <span className="font-semibold text-foreground">
+                              {formatCurrency(c.minSpend)}
+                            </span>
                           </div>
                         )}
                       </div>
@@ -470,7 +487,9 @@ function CouponsPage() {
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => updateStatus(c.id, c.status === "active" ? "paused" : "active")}
+                        onClick={() =>
+                          updateStatus(c.id, c.status === "active" ? "paused" : "active")
+                        }
                         className="h-8 text-xs font-semibold"
                       >
                         {c.status === "active" ? "Pause" : "Activate"}
@@ -569,7 +588,9 @@ function CouponsPage() {
                             <Button
                               variant="ghost"
                               size="sm"
-                              onClick={() => updateStatus(c.id, c.status === "active" ? "paused" : "active")}
+                              onClick={() =>
+                                updateStatus(c.id, c.status === "active" ? "paused" : "active")
+                              }
                               className="h-8 text-xs font-semibold"
                             >
                               {c.status === "active" ? "Pause" : "Activate"}
@@ -622,7 +643,10 @@ function CouponsPage() {
               </SheetDescription>
             </SheetHeader>
 
-            <form onSubmit={handleSave} className="flex-1 flex flex-col justify-between overflow-hidden">
+            <form
+              onSubmit={handleSave}
+              className="flex-1 flex flex-col justify-between overflow-hidden"
+            >
               <div className="flex-1 overflow-y-auto p-5 space-y-4">
                 <div className="space-y-1.5">
                   <div className="flex items-center justify-between">
@@ -705,7 +729,9 @@ function CouponsPage() {
 
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1.5">
-                    <Label htmlFor="coupon-min" className="text-xs font-semibold">Minimum Order ({currencySymbol})</Label>
+                    <Label htmlFor="coupon-min" className="text-xs font-semibold">
+                      Minimum Order ({currencySymbol})
+                    </Label>
                     <Input
                       id="coupon-min"
                       type="number"
@@ -716,7 +742,9 @@ function CouponsPage() {
                     />
                   </div>
                   <div className="space-y-1.5">
-                    <Label htmlFor="coupon-limit" className="text-xs font-semibold">Total Usage Limit</Label>
+                    <Label htmlFor="coupon-limit" className="text-xs font-semibold">
+                      Total Usage Limit
+                    </Label>
                     <Input
                       id="coupon-limit"
                       type="number"
@@ -739,18 +767,10 @@ function CouponsPage() {
               </div>
 
               <SheetFooter className="p-4 border-t border-border/60 bg-muted/20 flex flex-row items-center justify-end gap-2 shrink-0">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setIsAddOpen(false)}
-                >
+                <Button type="button" variant="outline" onClick={() => setIsAddOpen(false)}>
                   Cancel
                 </Button>
-                <Button
-                  type="submit"
-                  disabled={isSaving}
-                  className="font-semibold shadow-sm"
-                >
+                <Button type="submit" disabled={isSaving} className="font-semibold shadow-sm">
                   {isSaving && <Loader2 className="size-4 animate-spin mr-2" />}
                   Publish Coupon
                 </Button>
@@ -773,17 +793,14 @@ function CouponsPage() {
                   Delete Promo Code
                 </DialogTitle>
                 <DialogDescription className="text-xs text-muted-foreground mt-0.5">
-                  Are you sure you want to permanently delete this coupon code? Customers will no longer be able to redeem it.
+                  Are you sure you want to permanently delete this coupon code? Customers will no
+                  longer be able to redeem it.
                 </DialogDescription>
               </div>
             </div>
           </DialogHeader>
           <DialogFooter className="mt-4 flex flex-row items-center justify-end gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setDeleteId(null)}
-            >
+            <Button type="button" variant="outline" onClick={() => setDeleteId(null)}>
               Cancel
             </Button>
             <Button

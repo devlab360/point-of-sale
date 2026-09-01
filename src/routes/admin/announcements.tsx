@@ -81,14 +81,18 @@ function SuperAdminAnnouncementsPage() {
     active: true,
   });
 
-  const { data: announcementsData, isLoading, refetch, isFetching } = useQuery({
+  const {
+    data: announcementsData,
+    isLoading,
+    refetch,
+    isFetching,
+  } = useQuery({
     queryKey: ["super-admin-broadcast-announcements"],
     queryFn: () => getBroadcastAnnouncementsAdminFn({ data: {} }),
   });
 
   const createMutation = useMutation({
-    mutationFn: (data: typeof newAnnouncement) =>
-      saveBroadcastAnnouncementAdminFn({ data }),
+    mutationFn: (data: typeof newAnnouncement) => saveBroadcastAnnouncementAdminFn({ data }),
     onSuccess: (res: any) => {
       if (res.success) {
         toast.success("Broadcast announcement published to merchant stores!");
@@ -263,7 +267,9 @@ function SuperAdminAnnouncementsPage() {
               <SelectContent>
                 <SelectItem value="all">All ({announcements.length})</SelectItem>
                 <SelectItem value="active">Live ({activeCount})</SelectItem>
-                <SelectItem value="inactive">Hidden ({announcements.length - activeCount})</SelectItem>
+                <SelectItem value="inactive">
+                  Hidden ({announcements.length - activeCount})
+                </SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -272,9 +278,7 @@ function SuperAdminAnnouncementsPage() {
         {/* Announcements Catalog Table */}
         <div className="rounded-2xl border bg-card shadow-xs overflow-hidden">
           <div className="p-4 border-b bg-muted/20 flex items-center justify-between">
-            <h3 className="font-bold text-sm text-foreground">
-              Broadcast Announcements Directory
-            </h3>
+            <h3 className="font-bold text-sm text-foreground">Broadcast Announcements Directory</h3>
             <span className="text-xs text-muted-foreground">
               {filteredAnnouncements.length} records
             </span>
@@ -289,13 +293,10 @@ function SuperAdminAnnouncementsPage() {
               <Megaphone className="size-8 mx-auto text-muted-foreground/40" />
               <h4 className="font-bold text-sm text-foreground">No Broadcast Announcements Yet</h4>
               <p className="text-xs text-muted-foreground">
-                Create your first platform announcement to notify store merchants of updates or maintenance.
+                Create your first platform announcement to notify store merchants of updates or
+                maintenance.
               </p>
-              <Button
-                onClick={() => setIsCreateOpen(true)}
-                size="sm"
-                className="mt-3 gap-1.5"
-              >
+              <Button onClick={() => setIsCreateOpen(true)} size="sm" className="mt-3 gap-1.5">
                 <Plus className="size-3.5" />
                 <span>Create Announcement</span>
               </Button>
@@ -303,7 +304,9 @@ function SuperAdminAnnouncementsPage() {
           ) : announcements.length > 0 && filteredAnnouncements.length === 0 ? (
             <div className="p-16 text-center space-y-2">
               <Search className="size-8 mx-auto text-muted-foreground/40" />
-              <h4 className="font-bold text-sm text-foreground">No announcements match your filters</h4>
+              <h4 className="font-bold text-sm text-foreground">
+                No announcements match your filters
+              </h4>
               <p className="text-xs text-muted-foreground">
                 Try adjusting the search terms or clearing the type, audience, and status filters.
               </p>
@@ -326,10 +329,18 @@ function SuperAdminAnnouncementsPage() {
                     <TableRow key={item.id} className="hover:bg-muted/30 transition-colors">
                       <TableCell className="px-4 py-3.5 max-w-md">
                         <div className="font-bold text-xs text-foreground flex items-center gap-1.5">
-                          {item.type === "warning" && <AlertCircle className="size-3.5 text-amber-500 shrink-0" />}
-                          {item.type === "success" && <CheckCircle2 className="size-3.5 text-emerald-500 shrink-0" />}
-                          {item.type === "info" && <Info className="size-3.5 text-blue-500 shrink-0" />}
-                          {item.type === "update" && <Sparkles className="size-3.5 text-purple-500 shrink-0" />}
+                          {item.type === "warning" && (
+                            <AlertCircle className="size-3.5 text-amber-500 shrink-0" />
+                          )}
+                          {item.type === "success" && (
+                            <CheckCircle2 className="size-3.5 text-emerald-500 shrink-0" />
+                          )}
+                          {item.type === "info" && (
+                            <Info className="size-3.5 text-blue-500 shrink-0" />
+                          )}
+                          {item.type === "update" && (
+                            <Sparkles className="size-3.5 text-purple-500 shrink-0" />
+                          )}
                           <span>{item.title}</span>
                         </div>
                         <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">
@@ -344,10 +355,10 @@ function SuperAdminAnnouncementsPage() {
                             item.type === "warning"
                               ? "text-amber-600 border-amber-500/30 bg-amber-500/10"
                               : item.type === "success"
-                              ? "text-emerald-600 border-emerald-500/30 bg-emerald-500/10"
-                              : item.type === "update"
-                              ? "text-purple-600 border-purple-500/30 bg-purple-500/10"
-                              : "text-blue-600 border-blue-500/30 bg-blue-500/10"
+                                ? "text-emerald-600 border-emerald-500/30 bg-emerald-500/10"
+                                : item.type === "update"
+                                  ? "text-purple-600 border-purple-500/30 bg-purple-500/10"
+                                  : "text-blue-600 border-blue-500/30 bg-blue-500/10"
                           }`}
                         >
                           {item.type}
@@ -359,8 +370,8 @@ function SuperAdminAnnouncementsPage() {
                           {item.audience === "all"
                             ? "All Merchants"
                             : item.audience === "trial"
-                            ? "Trial Stores Only"
-                            : "Active Paid Stores"}
+                              ? "Trial Stores Only"
+                              : "Active Paid Stores"}
                         </Badge>
                       </TableCell>
 
@@ -415,7 +426,8 @@ function SuperAdminAnnouncementsPage() {
                 New Broadcast Announcement
               </SheetTitle>
               <SheetDescription className="text-xs text-muted-foreground mt-0.5">
-                Publish a high-visibility alert banner displayed on all merchant store admin dashboards.
+                Publish a high-visibility alert banner displayed on all merchant store admin
+                dashboards.
               </SheetDescription>
             </SheetHeader>
 

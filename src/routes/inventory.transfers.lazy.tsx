@@ -47,7 +47,14 @@ import {
 import { EmptyState } from "@/components/ui/empty-state";
 import { useDebounce } from "@/hooks/useDebounce";
 import { useCurrency } from "@/lib/currency";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { PaginationControls } from "@/components/ui/pagination-controls";
 import { TableSkeleton } from "@/components/skeletons/TableSkeleton";
 import { CardGridSkeleton } from "@/components/skeletons/CardGridSkeleton";
@@ -98,18 +105,18 @@ function TransfersPage() {
 
   const selectedProduct = useMemo(
     () => products.find((p: any) => p.id === productId),
-    [products, productId]
+    [products, productId],
   );
 
   // KPI Calculations
   const totalTransferCount = transfers.length;
   const totalUnitsTransferred = useMemo(
     () => transfers.reduce((acc, t: any) => acc + (Number(t.quantity) || 0), 0),
-    [transfers]
+    [transfers],
   );
   const totalTransferAssetValue = useMemo(
     () => transfers.reduce((acc, t: any) => acc + (Number(t.totalAmount) || 0), 0),
-    [transfers]
+    [transfers],
   );
 
   const filtered = useMemo(() => {
@@ -120,10 +127,11 @@ function TransfersPage() {
         (t: any) =>
           t.productName?.toLowerCase().includes(lower) ||
           t.supplierName?.toLowerCase().includes(lower) ||
-          t.id?.toLowerCase().includes(lower)
+          t.id?.toLowerCase().includes(lower),
       );
     }
-    if (paymentFilter !== "all") list = list.filter((t: any) => (t.paymentMethod || "cash") === paymentFilter);
+    if (paymentFilter !== "all")
+      list = list.filter((t: any) => (t.paymentMethod || "cash") === paymentFilter);
     return [...list].reverse();
   }, [transfers, debouncedSearch, paymentFilter]);
 
@@ -270,17 +278,18 @@ function TransfersPage() {
                 <SelectValue placeholder="Filter by settlement" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">
-                  All Settlements ({totalTransferCount})
-                </SelectItem>
+                <SelectItem value="all">All Settlements ({totalTransferCount})</SelectItem>
                 <SelectItem value="cash">
-                  Cash ({transfers.filter((t: any) => (t.paymentMethod || "cash") === "cash").length})
+                  Cash (
+                  {transfers.filter((t: any) => (t.paymentMethod || "cash") === "cash").length})
                 </SelectItem>
                 <SelectItem value="bank">
-                  Bank ({transfers.filter((t: any) => (t.paymentMethod || "cash") === "bank").length})
+                  Bank (
+                  {transfers.filter((t: any) => (t.paymentMethod || "cash") === "bank").length})
                 </SelectItem>
                 <SelectItem value="credit">
-                  Credit ({transfers.filter((t: any) => (t.paymentMethod || "cash") === "credit").length})
+                  Credit (
+                  {transfers.filter((t: any) => (t.paymentMethod || "cash") === "credit").length})
                 </SelectItem>
               </SelectContent>
             </Select>
@@ -326,7 +335,9 @@ function TransfersPage() {
             icon={Truck}
             title="No transfers found"
             description={
-              search ? "Try adjusting your search criteria." : "You haven't recorded any inventory transfers yet."
+              search
+                ? "Try adjusting your search criteria."
+                : "You haven't recorded any inventory transfers yet."
             }
             actionLabel="New Transfer"
             onAction={() => setOpen(true)}
@@ -345,9 +356,7 @@ function TransfersPage() {
                       <Badge variant="outline" className="font-mono text-xs font-bold">
                         {t.quantity} units
                       </Badge>
-                      <span className="text-xs text-muted-foreground">
-                        {formatAppDate(t.date)}
-                      </span>
+                      <span className="text-xs text-muted-foreground">{formatAppDate(t.date)}</span>
                     </div>
 
                     <div>
@@ -357,15 +366,21 @@ function TransfersPage() {
                       <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-1">
                         <span>Central Store</span>
                         <ArrowRight className="size-3 text-primary" />
-                        <span className="font-semibold text-foreground truncate">{t.supplierName}</span>
+                        <span className="font-semibold text-foreground truncate">
+                          {t.supplierName}
+                        </span>
                       </div>
                     </div>
                   </div>
 
                   <div className="pt-3 border-t border-border/60 flex items-center justify-between text-xs">
                     <div>
-                      <span className="text-[10px] text-muted-foreground block uppercase">Asset Value</span>
-                      <span className="font-bold text-foreground">{formatCurrency(Number(t.totalAmount) || 0)}</span>
+                      <span className="text-[10px] text-muted-foreground block uppercase">
+                        Asset Value
+                      </span>
+                      <span className="font-bold text-foreground">
+                        {formatCurrency(Number(t.totalAmount) || 0)}
+                      </span>
                     </div>
                     <Badge variant="outline" className="text-[10px]">
                       {t.paymentMethod || "Cash"}
@@ -462,7 +477,10 @@ function TransfersPage() {
               </SheetDescription>
             </SheetHeader>
 
-            <form onSubmit={handleSave} className="flex-1 flex flex-col justify-between overflow-hidden">
+            <form
+              onSubmit={handleSave}
+              className="flex-1 flex flex-col justify-between overflow-hidden"
+            >
               <div className="flex-1 overflow-y-auto p-5 space-y-4">
                 <div className="space-y-1.5">
                   <Label className="text-xs font-semibold">Select Product *</Label>
@@ -476,7 +494,9 @@ function TransfersPage() {
                       setProductId(val);
                       const prod = products.find((p: any) => p.id === val);
                       if (prod) {
-                        setTotalAmount(String((Number(prod.cost) || 0) * parseInt(transferQty || "1", 10)));
+                        setTotalAmount(
+                          String((Number(prod.cost) || 0) * parseInt(transferQty || "1", 10)),
+                        );
                       }
                     }}
                     placeholder="Search product SKU..."
@@ -497,7 +517,9 @@ function TransfersPage() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label htmlFor="t-qty" className="text-xs font-semibold">Transfer Units *</Label>
+                  <Label htmlFor="t-qty" className="text-xs font-semibold">
+                    Transfer Units *
+                  </Label>
                   <Input
                     id="t-qty"
                     type="number"
@@ -508,7 +530,9 @@ function TransfersPage() {
                       const q = e.target.value;
                       setTransferQty(q);
                       if (selectedProduct) {
-                        setTotalAmount(String((Number(selectedProduct.cost) || 0) * parseInt(q || "1", 10)));
+                        setTotalAmount(
+                          String((Number(selectedProduct.cost) || 0) * parseInt(q || "1", 10)),
+                        );
                       }
                     }}
                     className="font-bold text-base"
@@ -518,7 +542,9 @@ function TransfersPage() {
 
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1.5">
-                    <Label htmlFor="t-total" className="text-xs font-semibold">Transfer Valuation ({currencySymbol})</Label>
+                    <Label htmlFor="t-total" className="text-xs font-semibold">
+                      Transfer Valuation ({currencySymbol})
+                    </Label>
                     <Input
                       id="t-total"
                       type="number"
@@ -528,7 +554,9 @@ function TransfersPage() {
                     />
                   </div>
                   <div className="space-y-1.5">
-                    <Label htmlFor="t-paid" className="text-xs font-semibold">Settled Amount ({currencySymbol})</Label>
+                    <Label htmlFor="t-paid" className="text-xs font-semibold">
+                      Settled Amount ({currencySymbol})
+                    </Label>
                     <Input
                       id="t-paid"
                       type="number"
@@ -555,18 +583,10 @@ function TransfersPage() {
               </div>
 
               <SheetFooter className="p-4 border-t border-border/60 bg-muted/20 flex flex-row items-center justify-end gap-2 shrink-0">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setOpen(false)}
-                >
+                <Button type="button" variant="outline" onClick={() => setOpen(false)}>
                   Cancel
                 </Button>
-                <Button
-                  type="submit"
-                  disabled={isSaving}
-                  className="font-semibold shadow-sm"
-                >
+                <Button type="submit" disabled={isSaving} className="font-semibold shadow-sm">
                   {isSaving && <Loader2 className="size-4 animate-spin mr-2" />}
                   Confirm Dispatch
                 </Button>

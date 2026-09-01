@@ -1,4 +1,5 @@
 # OneDesk360 Cloud POS — Complete Test Application Flow
+
 ## Quality Assurance & User Acceptance Testing (UAT) Runbook
 
 ---
@@ -8,19 +9,19 @@
 This test runbook covers the end-to-end operational flows across the platform, verifying **Multi-Tenant SaaS Provisioning**, **Store Administration**, **POS Billing & Offline Resilience**, **Inventory Movements**, and **Double-Entry Accounting**.
 
 ```
-[Super Admin Provisioning] 
+[Super Admin Provisioning]
        │
        ▼
-[Store Setup & Master Catalog] 
+[Store Setup & Master Catalog]
        │
        ▼
-[POS Shift Open & Barcode Billing] 
+[POS Shift Open & Barcode Billing]
        │
        ▼
-[Multi-Tender Checkout (Cash/Card/UPI/Split)] 
+[Multi-Tender Checkout (Cash/Card/UPI/Split)]
        │
        ▼
-[Sales Returns, Restock & Khata Ledgers] 
+[Sales Returns, Restock & Khata Ledgers]
        │
        ▼
 [Shift Close, Double-Entry P&L & Balance Sheet]
@@ -31,14 +32,16 @@ This test runbook covers the end-to-end operational flows across the platform, v
 ## Flow 1: Super Admin SaaS Management & Store Provisioning
 
 ### Objective
+
 Validate that platform super administrators can configure SaaS plan tiers, inspect global analytics, and provision a new isolated merchant store tenant.
 
 ### Steps:
+
 1. **Access Super Admin Login**:
    - URL: `http://localhost:3000/admin`
    - Email: `admin@superadmin.com`
    - Password: `superadmin_password`
-   - *Expected Result*: Successful JWT authentication and redirect to `/admin/dashboard`.
+   - _Expected Result_: Successful JWT authentication and redirect to `/admin/dashboard`.
 
 2. **Validate Executive Dashboard (`/admin/dashboard`)**:
    - Check the 5 KPI counters: MRR (₹), Total Merchant Stores, Trial Registrations, Pending Approvals, and Support Inquiries.
@@ -51,7 +54,7 @@ Validate that platform super administrators can configure SaaS plan tiers, inspe
    - Set Quotas: Max Users = `10`, Max Products = `5000`, Max Branches = `3`, Monthly Invoices = `10000`.
    - In **Bundled Features & Modules**, click **"Select All"** (verify all 28 modules across 6 categories are checked).
    - Click **"Save Plan Tier"**.
-   - *Expected Result*: Plan appears in the pricing grid with active module tags.
+   - _Expected Result_: Plan appears in the pricing grid with active module tags.
 
 4. **Provision a New Tenant Store (`/admin/tenants`)**:
    - Click **"Provision New Store"**.
@@ -61,28 +64,30 @@ Validate that platform super administrators can configure SaaS plan tiers, inspe
    - Initial Password: `storepassword123`.
    - Select Plan: `Pro Retail Growth`.
    - Click **"Provision Store Now"**.
-   - *Expected Result*: Store appears in the Tenant Directory with an `Active` badge and 14-day default trial period.
+   - _Expected Result_: Store appears in the Tenant Directory with an `Active` badge and 14-day default trial period.
 
 5. **Test Granular Module Grants**:
    - Click **"Manage"** on `Metro Supermarket & Cafe`.
    - Switch to the **"Module Grants"** tab.
    - Toggle specific modules (e.g. `Restaurant Tables`, `Kitchen KOT`, `Repair Job Sheets`).
    - Click **"Save Module Grants"**.
-   - *Expected Result*: Success toast notification and persistent module flags.
+   - _Expected Result_: Success toast notification and persistent module flags.
 
 ---
 
 ## Flow 2: Store Owner Master Setup & Catalog Configuration
 
 ### Objective
+
 Log in as the store owner, configure store currency and tax rules, and set up the product inventory catalog.
 
 ### Steps:
+
 1. **Store Owner Login**:
    - URL: `http://localhost:3000/login`
    - Email: `demo@onedesk360.com` (or the newly provisioned email)
    - Password: `password123`
-   - *Expected Result*: Store admin dashboard loads with store branding.
+   - _Expected Result_: Store admin dashboard loads with store branding.
 
 2. **Configure Store Profile & Currency (`/settings`)**:
    - Set Store Name, Phone, and Email.
@@ -103,16 +108,18 @@ Log in as the store owner, configure store currency and tax rules, and set up th
    - Initial Quantity on Hand: `50 units`.
    - Reorder Low Stock Level: `10 units`.
    - Click **"Save Product"**.
-   - *Expected Result*: Product is created and searchable by barcode or name.
+   - _Expected Result_: Product is created and searchable by barcode or name.
 
 ---
 
 ## Flow 3: POS Terminal Billing & Multi-Tender Checkout
 
 ### Objective
+
 Execute real-time billing transactions, test barcode lookups, line item discounts, customer loyalty points, and thermal receipt generation.
 
 ### Steps:
+
 1. **Launch POS Terminal (`/pos`)**:
    - If starting a new session, enter the opening cash drawer float (e.g., `₹2,000.00`).
    - Click **"Start Register Shift"**.
@@ -132,7 +139,7 @@ Execute real-time billing transactions, test barcode lookups, line item discount
      - Cash: `₹500.00`
      - Card / UPI QR: `₹490.00`
    - Click **"Complete Sale"**.
-   - *Expected Result*:
+   - _Expected Result_:
      - Instant sale completion sound and success banner.
      - Printable ESC/POS thermal receipt preview (80mm / 58mm).
      - Cash drawer kick signal sent to receipt printer.
@@ -149,15 +156,17 @@ Execute real-time billing transactions, test barcode lookups, line item discount
 ## Flow 4: Sales Returns, Restocking & Customer Khata Ledger
 
 ### Objective
+
 Validate returns processing, automated inventory restocking, and customer store credit ledgers.
 
 ### Steps:
+
 1. **Process Sales Return (`/sales`)**:
    - Find the completed invoice -> Click **"Return / Refund"**.
    - Select 1 unit to return -> Reason: `Customer Changed Mind`.
    - Select Refund Method: **Store Credit / Khata Ledger**.
    - Click **"Confirm Refund"**.
-   - *Expected Result*: Credit note generated, inventory restored to `49 units`, customer wallet credited.
+   - _Expected Result_: Credit note generated, inventory restored to `49 units`, customer wallet credited.
 
 2. **Verify Inventory Ledger (`/inventory`)**:
    - Check stock movement history in `/inventory` to verify return audit trail.
@@ -167,15 +176,17 @@ Validate returns processing, automated inventory restocking, and customer store 
 ## Flow 5: Double-Entry Financials & End-of-Day Shift Close
 
 ### Objective
+
 Reconcile cash drawer shifts and audit automated financial accounting statements.
 
 ### Steps:
+
 1. **Close Cash Shift (`/pos`)**:
    - Click **"Close Shift"**.
    - View expected cash calculation (Opening Float + Cash Sales - Cash Refunds).
    - Enter physical counted cash in drawer.
    - Click **"Finalize Shift"**.
-   - *Expected Result*: Shift summary report generated with any cash variance (over/short).
+   - _Expected Result_: Shift summary report generated with any cash variance (over/short).
 
 2. **Audit Financial Statements (`/accounting-reports` & `/reports`)**:
    - Navigate to `/accounting-reports`.
@@ -187,12 +198,12 @@ Reconcile cash drawer shifts and audit automated financial accounting statements
 
 ## 🏁 Verification Matrix
 
-| Flow Area | Test Case | Success Criteria | Status |
-| :--- | :--- | :--- | :---: |
-| **Super Admin** | Plan Quotas & 28 Modules | All modules configurable with drawer open/save | Passed |
-| **Super Admin** | Tenant Store Provisioning | New store created with credentials & plan | Passed |
-| **Store Admin** | Profile & Currency Setup | Dynamic currency formatting across POS | Passed |
-| **POS Billing** | Multi-Tender & Split Checkout | Thermal receipt generated, stock auto-deducted | Passed |
-| **POS Resilience** | Offline IndexedDB Caching | Continues billing during network disconnect | Passed |
-| **Inventory** | Stock Adjustments & Returns | Real-time restock upon return confirmation | Passed |
-| **Finance** | Accounting & Double-Entry P&L | Real-time P&L, Balance Sheet, and Trial Balance | Passed |
+| Flow Area          | Test Case                     | Success Criteria                                | Status |
+| :----------------- | :---------------------------- | :---------------------------------------------- | :----: |
+| **Super Admin**    | Plan Quotas & 28 Modules      | All modules configurable with drawer open/save  | Passed |
+| **Super Admin**    | Tenant Store Provisioning     | New store created with credentials & plan       | Passed |
+| **Store Admin**    | Profile & Currency Setup      | Dynamic currency formatting across POS          | Passed |
+| **POS Billing**    | Multi-Tender & Split Checkout | Thermal receipt generated, stock auto-deducted  | Passed |
+| **POS Resilience** | Offline IndexedDB Caching     | Continues billing during network disconnect     | Passed |
+| **Inventory**      | Stock Adjustments & Returns   | Real-time restock upon return confirmation      | Passed |
+| **Finance**        | Accounting & Double-Entry P&L | Real-time P&L, Balance Sheet, and Trial Balance | Passed |

@@ -1,10 +1,14 @@
 import { createServerFn } from "@tanstack/react-start";
-import { db } from "@/db";
-import * as schema from "@/db/schema";
-import { eq } from "drizzle-orm";
 import { requireAuth } from "@/lib/auth-utils";
 import { z } from "zod";
 import { v4 as uuidv4 } from "uuid";
+
+async function getDb() {
+  const { db } = await import("@/db");
+  const schema = await import("@/db/schema");
+  const { eq } = await import("drizzle-orm");
+  return { db, schema, eq };
+}
 
 export const submitPaymentProofFn = createServerFn({ method: "POST" })
   .validator(
@@ -22,7 +26,8 @@ export const submitPaymentProofFn = createServerFn({ method: "POST" })
       const session = await requireAuth();
       if (!session.orgId) return { success: false as const, error: "Unauthorized: No Org ID" };
 
-      // Validate plan exists
+      const { db, schema, eq } = await getDb();
+
       const plan = await db
         .select()
         .from(schema.saasPlans)
@@ -48,6 +53,6 @@ export const submitPaymentProofFn = createServerFn({ method: "POST" })
       return { success: true as const, message: "Payment proof submitted successfully" };
     } catch (error: any) {
       console.error("Submit payment error:", error);
-      return { success: false as const, error: error.message || "Failed to submit payment proof" };
+      return { success: false as const, error: error.message || "Failed to submit payment" };
     }
   });

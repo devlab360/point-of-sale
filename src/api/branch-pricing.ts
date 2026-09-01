@@ -4,9 +4,12 @@ import { requireAuth } from "@/lib/auth-utils";
 import { z } from "zod";
 import { v4 as uuidv4 } from "uuid";
 
-import { db } from "@/db";
-import * as schema from "@/db/schema";
-import { eq, and } from "drizzle-orm";
+async function getDb() {
+  const { db } = await import("@/db");
+  const schema = await import("@/db/schema");
+  const { eq, and } = await import("drizzle-orm");
+  return { db, schema, eq, and };
+}
 
 // Toggle branch-wise pricing for the organization.
 export const toggleBranchPricingFn = createServerFn({ method: "POST" })
@@ -14,6 +17,7 @@ export const toggleBranchPricingFn = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     try {
       const session = await requireAuth();
+      const { db, schema, eq } = await getDb();
       await db
         .update(schema.organizations)
         .set({ branchPricingEnabled: data.enabled })
@@ -30,6 +34,7 @@ export const getBranchPriceOverridesFn = createServerFn({ method: "GET" })
   .handler(async ({ data }) => {
     try {
       const session = await requireAuth();
+      const { db, schema, eq, and } = await getDb();
       const rows = data.locationId
         ? await db
             .select()
@@ -67,13 +72,16 @@ export const upsertBranchPriceFn = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     try {
       const session = await requireAuth();
+      const { db, schema, eq, and } = await getDb();
 
-      // Verify the branch belongs to this org.
       const branch = await db
         .select()
         .from(schema.locations)
         .where(
-          and(eq(schema.locations.id, data.locationId), eq(schema.locations.organizationId, session.orgId)),
+          and(
+            eq(schema.locations.id, data.locationId),
+            eq(schema.locations.organizationId, session.orgId),
+          ),
         )
         .limit(1);
       if (!branch.length) throw new Error("Branch not found");
@@ -132,6 +140,7 @@ export const deleteBranchPriceFn = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     try {
       const session = await requireAuth();
+      const { db, schema, eq, and } = await getDb();
       await db
         .delete(schema.branchPriceOverrides)
         .where(

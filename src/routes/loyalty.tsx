@@ -100,7 +100,12 @@ const getDefaultTiers = (currencySymbol: string): LoyaltyTier[] => [
   {
     tier: "Platinum",
     min: 5000,
-    perks: [`3x points multiplier`, "Dedicated VIP concierge", "Early sale access", "Free express delivery"],
+    perks: [
+      `3x points multiplier`,
+      "Dedicated VIP concierge",
+      "Early sale access",
+      "Free express delivery",
+    ],
     color: "bg-indigo-600",
   },
 ];
@@ -112,7 +117,10 @@ const defaultLoyaltyRules: LoyaltyRules = {
   welcomeBonusPoints: 100,
 };
 
-export function getCustomerTier(points: number, tiers: LoyaltyTier[]): {
+export function getCustomerTier(
+  points: number,
+  tiers: LoyaltyTier[],
+): {
   currentTier: LoyaltyTier;
   nextTier: LoyaltyTier | null;
   pointsToNext: number;
@@ -150,7 +158,12 @@ export function getCustomerTier(points: number, tiers: LoyaltyTier[]): {
 // Elegant Tier Styling with Gradients and Glass Borders
 function getTierVisuals(tierName: string, colorClass: string) {
   const lower = (tierName || "").toLowerCase();
-  if (lower.includes("platinum") || lower.includes("diamond") || colorClass.includes("indigo") || colorClass.includes("purple")) {
+  if (
+    lower.includes("platinum") ||
+    lower.includes("diamond") ||
+    colorClass.includes("indigo") ||
+    colorClass.includes("purple")
+  ) {
     return {
       gradient: "from-indigo-500/20 via-purple-500/10 to-transparent",
       badge: "bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 border-indigo-500/30",
@@ -161,7 +174,11 @@ function getTierVisuals(tierName: string, colorClass: string) {
       fillBar: "bg-gradient-to-r from-indigo-500 to-purple-500",
     };
   }
-  if (lower.includes("gold") || colorClass.includes("amber-500") || colorClass.includes("warning")) {
+  if (
+    lower.includes("gold") ||
+    colorClass.includes("amber-500") ||
+    colorClass.includes("warning")
+  ) {
     return {
       gradient: "from-amber-500/20 via-yellow-500/10 to-transparent",
       badge: "bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30",
@@ -204,7 +221,9 @@ function LoyaltyPage() {
   const [isConfigOpen, setIsConfigOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedTierFilter, setSelectedTierFilter] = useState("all");
-  const [sortBy, setSortBy] = useState<"points-desc" | "points-asc" | "spent-desc" | "name-asc">("points-desc");
+  const [sortBy, setSortBy] = useState<"points-desc" | "points-asc" | "spent-desc" | "name-asc">(
+    "points-desc",
+  );
   const [page, setPage] = useState(1);
   const pageSize = 10;
 
@@ -292,10 +311,22 @@ function LoyaltyPage() {
 
   // Key metrics
   const totalMembers = customers.length;
-  const totalPoints = useMemo(() => customers.reduce((acc, c) => acc + c.loyaltyPoints, 0), [customers]);
-  const avgLtv = useMemo(() => (totalMembers ? customers.reduce((acc, c) => acc + c.totalSpent, 0) / totalMembers : 0), [customers, totalMembers]);
-  const totalRedemptionValue = useMemo(() => (totalPoints / 100) * (activeRules.redemptionRate || 5), [totalPoints, activeRules.redemptionRate]);
-  const topMembers = useMemo(() => [...customers].sort((a, b) => b.loyaltyPoints - a.loyaltyPoints).slice(0, 5), [customers]);
+  const totalPoints = useMemo(
+    () => customers.reduce((acc, c) => acc + c.loyaltyPoints, 0),
+    [customers],
+  );
+  const avgLtv = useMemo(
+    () => (totalMembers ? customers.reduce((acc, c) => acc + c.totalSpent, 0) / totalMembers : 0),
+    [customers, totalMembers],
+  );
+  const totalRedemptionValue = useMemo(
+    () => (totalPoints / 100) * (activeRules.redemptionRate || 5),
+    [totalPoints, activeRules.redemptionRate],
+  );
+  const topMembers = useMemo(
+    () => [...customers].sort((a, b) => b.loyaltyPoints - a.loyaltyPoints).slice(0, 5),
+    [customers],
+  );
 
   // Tier distribution counts
   const tierCounts = useMemo(() => {
@@ -382,13 +413,7 @@ function LoyaltyPage() {
 
   // Mutation to update customer profile or points
   const updateCustomerMutation = useMutation({
-    mutationFn: async ({
-      id,
-      updates,
-    }: {
-      id: string;
-      updates: any;
-    }) => {
+    mutationFn: async ({ id, updates }: { id: string; updates: any }) => {
       return updateCustomerFn({
         data: {
           id,
@@ -558,7 +583,8 @@ function LoyaltyPage() {
               Customer Retention & VIP Loyalty
             </h1>
             <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
-              Reward your most frequent buyers, elevate customer lifetime value, and automate tier progression with point multipliers and custom VIP perks.
+              Reward your most frequent buyers, elevate customer lifetime value, and automate tier
+              progression with point multipliers and custom VIP perks.
             </p>
           </div>
 
@@ -665,7 +691,8 @@ function LoyaltyPage() {
           </div>
           <div className="mt-3">
             <div className="text-2xl sm:text-3xl font-black text-indigo-600 dark:text-indigo-400">
-              1 pt / {currencySymbol}{activeRules.earnRate}
+              1 pt / {currencySymbol}
+              {activeRules.earnRate}
             </div>
             <div className="mt-1 text-xs text-muted-foreground font-medium">
               Redeem: 100 pts = {formatAppCurrency(activeRules.redemptionRate)}
@@ -697,7 +724,10 @@ function LoyaltyPage() {
               >
                 <Edit className="size-3.5 text-primary" /> Edit Tiers
               </Button>
-              <Badge variant="outline" className="font-bold text-xs py-1 px-3 w-fit bg-primary/5 border-primary/20 text-primary">
+              <Badge
+                variant="outline"
+                className="font-bold text-xs py-1 px-3 w-fit bg-primary/5 border-primary/20 text-primary"
+              >
                 {activeTiers.length} Configured Tiers
               </Badge>
             </div>
@@ -725,7 +755,9 @@ function LoyaltyPage() {
                         </div>
                         <div className="text-xs text-muted-foreground font-semibold mt-0.5">
                           {count} {count === 1 ? "member" : "members"}{" "}
-                          <span className="text-[11px] font-normal opacity-80">({percent}% share)</span>
+                          <span className="text-[11px] font-normal opacity-80">
+                            ({percent}% share)
+                          </span>
                         </div>
                       </div>
                     </div>
@@ -811,7 +843,10 @@ function LoyaltyPage() {
             ) : (
               <div className="space-y-2.5">
                 {topMembers.map((c, i) => {
-                  const visuals = getTierVisuals(c.currentTier?.tier || "", c.currentTier?.color || "");
+                  const visuals = getTierVisuals(
+                    c.currentTier?.tier || "",
+                    c.currentTier?.color || "",
+                  );
                   return (
                     <div
                       key={c.id}
@@ -870,7 +905,10 @@ function LoyaltyPage() {
             <span className="flex items-center gap-1">
               <Zap className="size-3 text-warning" /> Auto points on every POS sale
             </span>
-            <span className="text-primary font-bold">1 pt / {currencySymbol}{activeRules.earnRate}</span>
+            <span className="text-primary font-bold">
+              1 pt / {currencySymbol}
+              {activeRules.earnRate}
+            </span>
           </div>
         </div>
       </div>
@@ -884,7 +922,8 @@ function LoyaltyPage() {
               Member Loyalty Directory
             </h2>
             <p className="text-xs text-muted-foreground mt-0.5">
-              Browse customers, view live tier progression progress, and click any row to view, adjust points, or edit member details.
+              Browse customers, view live tier progression progress, and click any row to view,
+              adjust points, or edit member details.
             </p>
           </div>
 
@@ -924,10 +963,7 @@ function LoyaltyPage() {
               </SelectContent>
             </Select>
 
-            <Select
-              value={sortBy}
-              onValueChange={(val: any) => setSortBy(val)}
-            >
+            <Select value={sortBy} onValueChange={(val: any) => setSortBy(val)}>
               <SelectTrigger className="h-9 w-40 text-xs rounded-xl bg-background/80">
                 <SelectValue placeholder="Sort by" />
               </SelectTrigger>
@@ -971,7 +1007,10 @@ function LoyaltyPage() {
                 </tr>
               ) : (
                 paginatedCustomers.map((c) => {
-                  const visuals = getTierVisuals(c.currentTier?.tier || "", c.currentTier?.color || "");
+                  const visuals = getTierVisuals(
+                    c.currentTier?.tier || "",
+                    c.currentTier?.color || "",
+                  );
                   return (
                     <tr
                       key={c.id}
@@ -1019,7 +1058,9 @@ function LoyaltyPage() {
                         </span>{" "}
                         <span className="text-[10px] text-muted-foreground">pts</span>
                         <span className="block text-[10px] font-semibold text-emerald-600 dark:text-emerald-400">
-                          ≈ {formatAppCurrency((c.loyaltyPoints / 100) * activeRules.redemptionRate)} value
+                          ≈{" "}
+                          {formatAppCurrency((c.loyaltyPoints / 100) * activeRules.redemptionRate)}{" "}
+                          value
                         </span>
                       </td>
 
@@ -1054,7 +1095,9 @@ function LoyaltyPage() {
                       </td>
 
                       {/* Visits */}
-                      <td className="p-4 text-muted-foreground font-medium">{c.visits || 0} visits</td>
+                      <td className="p-4 text-muted-foreground font-medium">
+                        {c.visits || 0} visits
+                      </td>
 
                       {/* Action: Drawer View / Adjust / Edit */}
                       <td className="p-4 pr-5 text-right" onClick={(e) => e.stopPropagation()}>
@@ -1169,7 +1212,7 @@ function LoyaltyPage() {
                 {(() => {
                   const visuals = getTierVisuals(
                     activeCustomer.currentTier?.tier || "",
-                    activeCustomer.currentTier?.color || ""
+                    activeCustomer.currentTier?.color || "",
                   );
                   return (
                     <div
@@ -1206,7 +1249,8 @@ function LoyaltyPage() {
                         <div className="space-y-1.5 pt-2 border-t border-border/60">
                           <div className="flex justify-between text-xs font-semibold">
                             <span className="text-muted-foreground">
-                              Next Tier: <strong>{activeCustomer.nextTier.tier}</strong> ({activeCustomer.nextTier.min} pts)
+                              Next Tier: <strong>{activeCustomer.nextTier.tier}</strong> (
+                              {activeCustomer.nextTier.min} pts)
                             </span>
                             <span className="text-primary font-bold">
                               {activeCustomer.pointsToNext} pts to upgrade
@@ -1233,7 +1277,10 @@ function LoyaltyPage() {
                         </span>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                           {activeCustomer.currentTier?.perks?.map((perk: string, pIdx: number) => (
-                            <div key={pIdx} className="text-xs text-foreground/90 flex items-center gap-2 font-medium">
+                            <div
+                              key={pIdx}
+                              className="text-xs text-foreground/90 flex items-center gap-2 font-medium"
+                            >
                               <CheckCircle2 className="size-3.5 text-success shrink-0" />
                               <span className="truncate">{perk}</span>
                             </div>
@@ -1267,20 +1314,32 @@ function LoyaltyPage() {
                       <Wallet className="size-3 text-success" /> Redeem Value
                     </div>
                     <div className="text-sm sm:text-base font-black text-emerald-600 dark:text-emerald-400 mt-1">
-                      {formatAppCurrency((activeCustomer.loyaltyPoints / 100) * activeRules.redemptionRate)}
+                      {formatAppCurrency(
+                        (activeCustomer.loyaltyPoints / 100) * activeRules.redemptionRate,
+                      )}
                     </div>
                   </div>
                 </div>
 
                 {/* Tabs: Adjust Points vs Edit Customer Profile & Points */}
                 <div className="rounded-3xl border border-border/80 bg-card p-5 sm:p-6 shadow-sm space-y-4">
-                  <Tabs value={drawerActiveTab} onValueChange={(val: any) => setDrawerActiveTab(val)} className="space-y-4">
+                  <Tabs
+                    value={drawerActiveTab}
+                    onValueChange={(val: any) => setDrawerActiveTab(val)}
+                    className="space-y-4"
+                  >
                     <TabsList className="grid grid-cols-2 w-full rounded-xl">
-                      <TabsTrigger value="adjust" className="text-xs font-bold rounded-lg flex items-center gap-1.5">
+                      <TabsTrigger
+                        value="adjust"
+                        className="text-xs font-bold rounded-lg flex items-center gap-1.5"
+                      >
                         <Coins className="size-3.5 text-warning" />
                         Adjust Points (+ / -)
                       </TabsTrigger>
-                      <TabsTrigger value="edit" className="text-xs font-bold rounded-lg flex items-center gap-1.5">
+                      <TabsTrigger
+                        value="edit"
+                        className="text-xs font-bold rounded-lg flex items-center gap-1.5"
+                      >
                         <Edit className="size-3.5 text-primary" />
                         Edit Member & Points
                       </TabsTrigger>
@@ -1358,11 +1417,21 @@ function LoyaltyPage() {
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="Promotion / Bonus Reward">Promotion / Bonus Reward</SelectItem>
-                              <SelectItem value="Goodwill Gesture / Customer Satisfaction">Goodwill Gesture / Customer Satisfaction</SelectItem>
-                              <SelectItem value="Birthday / Anniversary Gift">Birthday / Anniversary Gift</SelectItem>
-                              <SelectItem value="Return / Refund Points Deduction">Return / Refund Points Deduction</SelectItem>
-                              <SelectItem value="Manual Balance Correction">Manual Balance Correction</SelectItem>
+                              <SelectItem value="Promotion / Bonus Reward">
+                                Promotion / Bonus Reward
+                              </SelectItem>
+                              <SelectItem value="Goodwill Gesture / Customer Satisfaction">
+                                Goodwill Gesture / Customer Satisfaction
+                              </SelectItem>
+                              <SelectItem value="Birthday / Anniversary Gift">
+                                Birthday / Anniversary Gift
+                              </SelectItem>
+                              <SelectItem value="Return / Refund Points Deduction">
+                                Return / Refund Points Deduction
+                              </SelectItem>
+                              <SelectItem value="Manual Balance Correction">
+                                Manual Balance Correction
+                              </SelectItem>
                               <SelectItem value="Other (Custom)">Other (Custom Reason)</SelectItem>
                             </SelectContent>
                           </Select>
@@ -1381,18 +1450,27 @@ function LoyaltyPage() {
                         {(() => {
                           const qty = parseInt(adjustAmount, 10) || 0;
                           const currentPts = activeCustomer.loyaltyPoints || 0;
-                          const projected = adjustType === "add" ? currentPts + qty : Math.max(0, currentPts - qty);
+                          const projected =
+                            adjustType === "add" ? currentPts + qty : Math.max(0, currentPts - qty);
                           const projectedTier = getCustomerTier(projected, activeTiers);
-                          const projVisuals = getTierVisuals(projectedTier.currentTier.tier, projectedTier.currentTier.color);
+                          const projVisuals = getTierVisuals(
+                            projectedTier.currentTier.tier,
+                            projectedTier.currentTier.color,
+                          );
 
                           return (
                             <div className="p-3.5 bg-muted/40 rounded-2xl border border-border/80 flex items-center justify-between text-xs">
-                              <span className="text-muted-foreground font-medium">New Point Balance Preview:</span>
+                              <span className="text-muted-foreground font-medium">
+                                New Point Balance Preview:
+                              </span>
                               <div className="text-right">
                                 <span className="font-black text-foreground text-sm mr-2">
                                   {projected.toLocaleString()} pts
                                 </span>
-                                <Badge variant="outline" className={`text-[10px] font-bold ${projVisuals.badge}`}>
+                                <Badge
+                                  variant="outline"
+                                  className={`text-[10px] font-bold ${projVisuals.badge}`}
+                                >
                                   {projVisuals.icon} {projectedTier.currentTier.tier} Tier
                                 </Badge>
                               </div>
@@ -1464,7 +1542,10 @@ function LoyaltyPage() {
                           </div>
                           <div className="space-y-1.5 sm:col-span-1">
                             <Label className="text-xs font-bold">Customer Status</Label>
-                            <Select value={editCustomerStatus} onValueChange={setEditCustomerStatus}>
+                            <Select
+                              value={editCustomerStatus}
+                              onValueChange={setEditCustomerStatus}
+                            >
                               <SelectTrigger className="h-9 text-xs rounded-xl">
                                 <SelectValue />
                               </SelectTrigger>
@@ -1499,11 +1580,19 @@ function LoyaltyPage() {
                         {(() => {
                           const pts = parseInt(editCustomerPoints, 10) || 0;
                           const calculatedTier = getCustomerTier(pts, activeTiers);
-                          const calcVisuals = getTierVisuals(calculatedTier.currentTier.tier, calculatedTier.currentTier.color);
+                          const calcVisuals = getTierVisuals(
+                            calculatedTier.currentTier.tier,
+                            calculatedTier.currentTier.color,
+                          );
                           return (
                             <div className="p-3 bg-muted/40 rounded-2xl border border-border/80 flex items-center justify-between text-xs">
-                              <span className="text-muted-foreground font-medium">Calculated Tier from Points:</span>
-                              <Badge variant="outline" className={`text-[10px] font-bold ${calcVisuals.badge}`}>
+                              <span className="text-muted-foreground font-medium">
+                                Calculated Tier from Points:
+                              </span>
+                              <Badge
+                                variant="outline"
+                                className={`text-[10px] font-bold ${calcVisuals.badge}`}
+                              >
                                 {calcVisuals.icon} {calculatedTier.currentTier.tier} Tier
                               </Badge>
                             </div>
@@ -1555,21 +1644,29 @@ function LoyaltyPage() {
                 Configure Loyalty Program & Tiers
               </SheetTitle>
               <SheetDescription className="text-xs text-muted-foreground mt-0.5">
-                Customize tier thresholds, member benefits, earning rate per purchase, and conversion discount values.
+                Customize tier thresholds, member benefits, earning rate per purchase, and
+                conversion discount values.
               </SheetDescription>
             </SheetHeader>
 
             <div className="flex-1 overflow-y-auto p-6">
               <Tabs defaultValue="tiers" className="space-y-5">
                 <TabsList className="grid grid-cols-2 w-72 rounded-xl">
-                  <TabsTrigger value="tiers" className="text-xs font-bold rounded-lg">Loyalty Tiers</TabsTrigger>
-                  <TabsTrigger value="rules" className="text-xs font-bold rounded-lg">Earning & Rules</TabsTrigger>
+                  <TabsTrigger value="tiers" className="text-xs font-bold rounded-lg">
+                    Loyalty Tiers
+                  </TabsTrigger>
+                  <TabsTrigger value="rules" className="text-xs font-bold rounded-lg">
+                    Earning & Rules
+                  </TabsTrigger>
                 </TabsList>
 
                 {/* TAB 1: Loyalty Tiers */}
                 <TabsContent value="tiers" className="space-y-4 pt-2">
                   {editTiers.map((tier, i) => (
-                    <div key={i} className="border border-border/80 rounded-2xl p-4 sm:p-5 bg-muted/20 relative space-y-4 shadow-sm">
+                    <div
+                      key={i}
+                      className="border border-border/80 rounded-2xl p-4 sm:p-5 bg-muted/20 relative space-y-4 shadow-sm"
+                    >
                       <div className="flex items-center justify-between border-b border-border/60 pb-3">
                         <span className="text-xs font-black text-foreground uppercase tracking-wider flex items-center gap-2">
                           <ShieldCheck className="size-4 text-primary" />
@@ -1603,7 +1700,9 @@ function LoyaltyPage() {
                             type="number"
                             min="0"
                             value={tier.min}
-                            onChange={(e) => updateEditTier(i, "min", parseInt(e.target.value, 10) || 0)}
+                            onChange={(e) =>
+                              updateEditTier(i, "min", parseInt(e.target.value, 10) || 0)
+                            }
                             className="h-8 text-xs rounded-lg"
                             required
                           />
@@ -1707,7 +1806,8 @@ function LoyaltyPage() {
                           className="h-9 text-xs rounded-lg"
                         />
                         <p className="text-[10px] text-muted-foreground">
-                          Customer earns 1 loyalty point for every {currencySymbol}{editRules.earnRate} spent.
+                          Customer earns 1 loyalty point for every {currencySymbol}
+                          {editRules.earnRate} spent.
                         </p>
                       </div>
 
@@ -1729,7 +1829,8 @@ function LoyaltyPage() {
                           className="h-9 text-xs rounded-lg"
                         />
                         <p className="text-[10px] text-muted-foreground">
-                          100 points can be redeemed for a {currencySymbol}{editRules.redemptionRate} discount.
+                          100 points can be redeemed for a {currencySymbol}
+                          {editRules.redemptionRate} discount.
                         </p>
                       </div>
 
@@ -1781,7 +1882,12 @@ function LoyaltyPage() {
             </div>
 
             <SheetFooter className="p-4 border-t border-border/60 bg-muted/20 flex flex-row items-center justify-end gap-2 shrink-0">
-              <Button type="button" variant="outline" className="rounded-xl" onClick={() => setIsConfigOpen(false)}>
+              <Button
+                type="button"
+                variant="outline"
+                className="rounded-xl"
+                onClick={() => setIsConfigOpen(false)}
+              >
                 Cancel
               </Button>
               <Button

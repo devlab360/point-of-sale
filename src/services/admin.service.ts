@@ -46,7 +46,10 @@ export interface SuperAdminPaymentConfigDTO {
 export class AdminService {
   // ─── Organizations & Tenants ──────────────────────────────────
   async getAllOrganizations() {
-    const orgs = await db.select().from(schema.organizations).orderBy(desc(schema.organizations.createdAt));
+    const orgs = await db
+      .select()
+      .from(schema.organizations)
+      .orderBy(desc(schema.organizations.createdAt));
     const rawPlans = await db.select().from(schema.saasPlans);
     const plans = rawPlans.filter((p) => p.id !== "super_admin_payment_config");
     return { orgs, plans };
@@ -217,7 +220,8 @@ export class AdminService {
     const priceStr = String(dto.price ?? dto.monthlyPrice ?? 0);
     const monthlyPriceStr = dto.monthlyPrice !== undefined ? String(dto.monthlyPrice) : priceStr;
     const yearlyPriceStr = dto.yearlyPrice !== undefined ? String(dto.yearlyPrice) : null;
-    const perExtraUserPriceStr = dto.perExtraUserPrice !== undefined ? String(dto.perExtraUserPrice) : "0";
+    const perExtraUserPriceStr =
+      dto.perExtraUserPrice !== undefined ? String(dto.perExtraUserPrice) : "0";
 
     await db
       .insert(schema.saasPlans)
@@ -296,17 +300,17 @@ export class AdminService {
         joined: schema.users.joined,
       })
       .from(schema.users)
-      .where(
-        or(
-          eq(schema.users.role, "super_admin"),
-          isNull(schema.users.organizationId),
-        ),
-      );
+      .where(or(eq(schema.users.role, "super_admin"), isNull(schema.users.organizationId)));
 
     return adminUsers;
   }
 
-  async createSuperAdminUser(data: { name: string; email: string; password: string; adminPermissions?: string[] }) {
+  async createSuperAdminUser(data: {
+    name: string;
+    email: string;
+    password: string;
+    adminPermissions?: string[];
+  }) {
     const email = data.email.toLowerCase().trim();
     const existing = await db
       .select()
@@ -330,9 +334,8 @@ export class AdminService {
       pin: hashedPin,
       permissions: ["all"],
       // null = full access (root); non-empty array = restricted
-      adminPermissions: data.adminPermissions && data.adminPermissions.length > 0
-        ? data.adminPermissions
-        : null,
+      adminPermissions:
+        data.adminPermissions && data.adminPermissions.length > 0 ? data.adminPermissions : null,
       joined: new Date().toISOString(),
       lastActive: new Date().toISOString(),
     });
@@ -358,10 +361,7 @@ export class AdminService {
     await db.delete(schema.users).where(eq(schema.users.id, userId));
   }
 
-  async updateSuperAdminUserPermissions(
-    userId: string,
-    adminPermissions: string[] | null,
-  ) {
+  async updateSuperAdminUserPermissions(userId: string, adminPermissions: string[] | null) {
     const existing = await db
       .select()
       .from(schema.users)
@@ -373,8 +373,7 @@ export class AdminService {
     }
 
     // Store null = full access; non-empty array = restricted
-    const permsToStore =
-      adminPermissions && adminPermissions.length > 0 ? adminPermissions : null;
+    const permsToStore = adminPermissions && adminPermissions.length > 0 ? adminPermissions : null;
 
     await db
       .update(schema.users)
@@ -487,7 +486,8 @@ export class AdminService {
         ifscCode: "",
         upiId: "",
         qrCodeUrl: "",
-        instructions: "Please scan the QR code or transfer to the bank account and submit your UTR reference.",
+        instructions:
+          "Please scan the QR code or transfer to the bank account and submit your UTR reference.",
       };
     }
 
@@ -528,7 +528,10 @@ export class AdminService {
         createdAt: schema.supportTickets.createdAt,
       })
       .from(schema.supportTickets)
-      .leftJoin(schema.organizations, eq(schema.supportTickets.organizationId, schema.organizations.id))
+      .leftJoin(
+        schema.organizations,
+        eq(schema.supportTickets.organizationId, schema.organizations.id),
+      )
       .leftJoin(schema.users, eq(schema.supportTickets.userId, schema.users.id))
       .orderBy(desc(schema.supportTickets.createdAt));
 
@@ -562,14 +565,18 @@ export class AdminService {
       .orderBy(desc(schema.reviews.createdAt));
 
     const total = reviews.length;
-    const avgRating = total > 0 ? (reviews.reduce((acc, r) => acc + (r.rating || 0), 0) / total).toFixed(1) : "5.0";
+    const avgRating =
+      total > 0 ? (reviews.reduce((acc, r) => acc + (r.rating || 0), 0) / total).toFixed(1) : "5.0";
 
     return { reviews, total, avgRating: parseFloat(avgRating) };
   }
 
   // ─── Help Center & Tutorials ───────────────────────────────────
   async getHelpArticles() {
-    const articles = await db.select().from(schema.helpArticles).orderBy(desc(schema.helpArticles.createdAt));
+    const articles = await db
+      .select()
+      .from(schema.helpArticles)
+      .orderBy(desc(schema.helpArticles.createdAt));
     const faqs = await db.select().from(schema.faqs).orderBy(desc(schema.faqs.createdAt));
     return { articles, faqs };
   }
@@ -656,9 +663,7 @@ export class AdminService {
 
   async toggleBroadcastAnnouncement(id: string, active: boolean) {
     const list = await this.getBroadcastAnnouncements();
-    const updated = list.map((item: any) =>
-      item.id === id ? { ...item, active } : item
-    );
+    const updated = list.map((item: any) => (item.id === id ? { ...item, active } : item));
 
     await db
       .insert(schema.saasPlans)
@@ -711,4 +716,3 @@ export class AdminService {
 }
 
 export const adminService = new AdminService();
-

@@ -449,33 +449,46 @@ function DeliveryChallansPage() {
             </div>
           </div>
         )}
-      topContent={
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-              <div className="rounded-xl border border-border/80 bg-card p-3 shadow-2xs">
-                <div className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Total Challans</div>
-                <div className="mt-1 text-xl sm:text-2xl font-black text-foreground">{rawChallans.length}</div>
+        topContent={
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <div className="rounded-xl border border-border/80 bg-card p-3 shadow-2xs">
+              <div className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
+                Total Challans
               </div>
-              <div className="rounded-xl border border-border/80 bg-card p-3 shadow-2xs">
-                <div className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Invoiced</div>
-                <div className="mt-1 text-xl sm:text-2xl font-black text-success">
-                  {rawChallans.filter((c) => c.status === "invoiced").length}
-                </div>
-              </div>
-              <div className="rounded-xl border border-border/80 bg-card p-3 shadow-2xs">
-                <div className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Dispatched</div>
-                <div className="mt-1 text-xl sm:text-2xl font-black text-primary">
-                  {rawChallans.filter((c) => c.status === "dispatched" || c.status === "delivered").length}
-                </div>
-              </div>
-              <div className="rounded-xl border border-border/80 bg-card p-3 shadow-2xs">
-                <div className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Pending Conversion</div>
-                <div className="mt-1 text-xl sm:text-2xl font-black text-amber-500">
-                  {rawChallans.filter((c) => c.status !== "invoiced").length}
-                </div>
+              <div className="mt-1 text-xl sm:text-2xl font-black text-foreground">
+                {rawChallans.length}
               </div>
             </div>
-          }
-        >
+            <div className="rounded-xl border border-border/80 bg-card p-3 shadow-2xs">
+              <div className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
+                Invoiced
+              </div>
+              <div className="mt-1 text-xl sm:text-2xl font-black text-success">
+                {rawChallans.filter((c) => c.status === "invoiced").length}
+              </div>
+            </div>
+            <div className="rounded-xl border border-border/80 bg-card p-3 shadow-2xs">
+              <div className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
+                Dispatched
+              </div>
+              <div className="mt-1 text-xl sm:text-2xl font-black text-primary">
+                {
+                  rawChallans.filter((c) => c.status === "dispatched" || c.status === "delivered")
+                    .length
+                }
+              </div>
+            </div>
+            <div className="rounded-xl border border-border/80 bg-card p-3 shadow-2xs">
+              <div className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
+                Pending Conversion
+              </div>
+              <div className="mt-1 text-xl sm:text-2xl font-black text-amber-500">
+                {rawChallans.filter((c) => c.status !== "invoiced").length}
+              </div>
+            </div>
+          </div>
+        }
+      >
         <div className="space-y-4">
           <div className="overflow-hidden rounded-xl border border-border/80 bg-card shadow-soft">
             {/* Desktop Table View */}
@@ -676,8 +689,12 @@ function DeliveryChallansPage() {
           className="w-full sm:max-w-3xl lg:max-w-4xl xl:max-w-5xl p-0 flex flex-col h-full bg-background border-l border-border"
         >
           <SheetHeader className="bg-muted/60 p-5 border-b pr-12 text-left">
-            <SheetTitle className="text-xl font-bold text-foreground">Dispatch Delivery Challan</SheetTitle>
-            <p className="text-xs text-muted-foreground mt-0.5">Issue goods dispatch notes with driver, carrier, and vehicle verification.</p>
+            <SheetTitle className="text-xl font-bold text-foreground">
+              Dispatch Delivery Challan
+            </SheetTitle>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Issue goods dispatch notes with driver, carrier, and vehicle verification.
+            </p>
           </SheetHeader>
           <form
             noValidate

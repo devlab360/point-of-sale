@@ -373,12 +373,7 @@ export const PERMISSION_ROUTE_MAP: Record<string, string[]> = {
   quotations: ["/quotations"],
   "delivery-challans": ["/delivery-challans"],
   products: ["/products", "/categories", "/brands", "/units"],
-  inventory: [
-    "/inventory",
-    "/inventory/adjustments",
-    "/inventory/transfers",
-    "/inventory/history",
-  ],
+  inventory: ["/inventory", "/inventory/adjustments", "/inventory/transfers", "/inventory/history"],
   services: ["/services"],
   purchases: ["/purchases", "/purchases/returns"],
   suppliers: ["/suppliers"],
@@ -563,9 +558,10 @@ export function hasPermissionForRoute(
   }
 
   // 7. User-Specific Granular Employee Permissions
-  const userPerms: string[] = Array.isArray(user?.permissions) && user.permissions.length > 0
-    ? user.permissions
-    : DEFAULT_ROLE_PERMISSIONS_FALLBACK[userRole] || ["pos", "/pos"];
+  const userPerms: string[] =
+    Array.isArray(user?.permissions) && user.permissions.length > 0
+      ? user.permissions
+      : DEFAULT_ROLE_PERMISSIONS_FALLBACK[userRole] || ["pos", "/pos"];
 
   if (userPerms.includes("all")) {
     return { allowed: true };

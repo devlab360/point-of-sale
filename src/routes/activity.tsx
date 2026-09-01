@@ -36,7 +36,12 @@ function ActivityPage() {
   const { formatDateTime, formatDate } = usePreferences();
   const orgId = PersistStore.getOrgId() || "default";
 
-  const { data: activityData, isLoading, isError, refetch } = useQuery({
+  const {
+    data: activityData,
+    isLoading,
+    isError,
+    refetch,
+  } = useQuery({
     queryKey: ["activityLog", orgId],
     queryFn: async () => ((await getActivityLogFn({ data: {} })) as any)?.data || [],
   });
@@ -57,10 +62,12 @@ function ActivityPage() {
   };
 
   const filteredLogs = useMemo(() => {
-    let list = rawActivityLog.slice().sort(
-      (a: any, b: any) =>
-        new Date(b.timestamp || 0).getTime() - new Date(a.timestamp || 0).getTime(),
-    );
+    let list = rawActivityLog
+      .slice()
+      .sort(
+        (a: any, b: any) =>
+          new Date(b.timestamp || 0).getTime() - new Date(a.timestamp || 0).getTime(),
+      );
 
     if (debouncedSearch) {
       const lower = debouncedSearch.toLowerCase();
@@ -74,9 +81,13 @@ function ActivityPage() {
 
     if (filters.type) {
       if (filters.type === "deletion") {
-        list = list.filter((a: any) => a.action === "TOMBSTONE" || a.action?.toLowerCase().includes("delete"));
+        list = list.filter(
+          (a: any) => a.action === "TOMBSTONE" || a.action?.toLowerCase().includes("delete"),
+        );
       } else {
-        list = list.filter((a: any) => a.type === filters.type || a.action?.toLowerCase().includes(filters.type));
+        list = list.filter(
+          (a: any) => a.type === filters.type || a.action?.toLowerCase().includes(filters.type),
+        );
       }
     }
 
@@ -187,71 +198,71 @@ function ActivityPage() {
             </div>
           </div>
         )}
-      topContent={
-            <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
-              <div className="rounded-xl border border-border/80 bg-card p-4 sm:p-5 shadow-soft transition-all hover:border-primary/40">
-                <div className="flex items-center justify-between">
-                  <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                    Total Logged Events
-                  </p>
-                  <div className="grid size-8 place-items-center rounded-lg bg-primary/10 text-primary">
-                    <Activity className="size-4" />
-                  </div>
-                </div>
-                <p className="mt-2 text-xl sm:text-2xl font-black text-foreground">
-                  {metrics.total}
+        topContent={
+          <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+            <div className="rounded-xl border border-border/80 bg-card p-4 sm:p-5 shadow-soft transition-all hover:border-primary/40">
+              <div className="flex items-center justify-between">
+                <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                  Total Logged Events
                 </p>
-              </div>
-
-              <div className="rounded-xl border border-border/80 bg-card p-4 sm:p-5 shadow-soft transition-all hover:border-blue-500/40">
-                <div className="flex items-center justify-between">
-                  <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                    Today's Events
-                  </p>
-                  <div className="grid size-8 place-items-center rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400">
-                    <Clock className="size-4" />
-                  </div>
+                <div className="grid size-8 place-items-center rounded-lg bg-primary/10 text-primary">
+                  <Activity className="size-4" />
                 </div>
-                <p className="mt-2 text-xl sm:text-2xl font-black text-blue-600 dark:text-blue-400">
-                  {metrics.todayCount}
-                </p>
               </div>
-
-              <div className="rounded-xl border border-border/80 bg-card p-4 sm:p-5 shadow-soft transition-all hover:border-amber-500/40">
-                <div className="flex items-center justify-between">
-                  <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                    Active Operators
-                  </p>
-                  <div className="grid size-8 place-items-center rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400">
-                    <User className="size-4" />
-                  </div>
-                </div>
-                <p className="mt-2 text-xl sm:text-2xl font-black text-amber-600 dark:text-amber-400">
-                  {metrics.uniqueUsers}
-                </p>
-              </div>
-
-              <div className="rounded-xl border border-border/80 bg-card p-4 sm:p-5 shadow-soft transition-all hover:border-destructive/40">
-                <div className="flex items-center justify-between">
-                  <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                    Deletions / Purges
-                  </p>
-                  <div className="grid size-8 place-items-center rounded-lg bg-destructive/10 text-destructive">
-                    <Trash2 className="size-4" />
-                  </div>
-                </div>
-                <p className="mt-2 text-xl sm:text-2xl font-black text-destructive">
-                  {metrics.deletions}
-                </p>
-              </div>
+              <p className="mt-2 text-xl sm:text-2xl font-black text-foreground">{metrics.total}</p>
             </div>
-          }
-        >
+
+            <div className="rounded-xl border border-border/80 bg-card p-4 sm:p-5 shadow-soft transition-all hover:border-blue-500/40">
+              <div className="flex items-center justify-between">
+                <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                  Today's Events
+                </p>
+                <div className="grid size-8 place-items-center rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400">
+                  <Clock className="size-4" />
+                </div>
+              </div>
+              <p className="mt-2 text-xl sm:text-2xl font-black text-blue-600 dark:text-blue-400">
+                {metrics.todayCount}
+              </p>
+            </div>
+
+            <div className="rounded-xl border border-border/80 bg-card p-4 sm:p-5 shadow-soft transition-all hover:border-amber-500/40">
+              <div className="flex items-center justify-between">
+                <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                  Active Operators
+                </p>
+                <div className="grid size-8 place-items-center rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400">
+                  <User className="size-4" />
+                </div>
+              </div>
+              <p className="mt-2 text-xl sm:text-2xl font-black text-amber-600 dark:text-amber-400">
+                {metrics.uniqueUsers}
+              </p>
+            </div>
+
+            <div className="rounded-xl border border-border/80 bg-card p-4 sm:p-5 shadow-soft transition-all hover:border-destructive/40">
+              <div className="flex items-center justify-between">
+                <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                  Deletions / Purges
+                </p>
+                <div className="grid size-8 place-items-center rounded-lg bg-destructive/10 text-destructive">
+                  <Trash2 className="size-4" />
+                </div>
+              </div>
+              <p className="mt-2 text-xl sm:text-2xl font-black text-destructive">
+                {metrics.deletions}
+              </p>
+            </div>
+          </div>
+        }
+      >
         <div className="space-y-6">
           {/* Audit Timeline Container */}
           <div className="rounded-xl border border-border bg-card shadow-soft overflow-hidden">
             {isLoading ? (
-              <div className="p-8 text-center text-muted-foreground text-sm">Loading activity logs...</div>
+              <div className="p-8 text-center text-muted-foreground text-sm">
+                Loading activity logs...
+              </div>
             ) : isError ? (
               <ErrorState onRetry={refetch} />
             ) : paginatedLogs.length === 0 ? (
@@ -271,7 +282,8 @@ function ActivityPage() {
               <div className="p-5 sm:p-6">
                 <ol className="relative space-y-6 border-l-2 border-border/80 pl-6 ml-3">
                   {paginatedLogs.map((a: any) => {
-                    const isDeletion = a.action === "TOMBSTONE" || a.action?.toLowerCase().includes("delete");
+                    const isDeletion =
+                      a.action === "TOMBSTONE" || a.action?.toLowerCase().includes("delete");
 
                     return (
                       <li key={a.id} className="relative group">
@@ -290,7 +302,9 @@ function ActivityPage() {
                             .toUpperCase()}
                         </span>
                         <div className="text-xs sm:text-sm">
-                          <span className="font-bold text-foreground mr-1.5">{a.user || "System"}</span>
+                          <span className="font-bold text-foreground mr-1.5">
+                            {a.user || "System"}
+                          </span>
                           {renderLogMessage(a)}
                         </div>
                         <div className="text-[11px] text-muted-foreground font-medium mt-1 flex items-center gap-1">

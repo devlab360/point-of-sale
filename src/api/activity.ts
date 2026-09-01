@@ -99,4 +99,3 @@ export const createActivityLogFn = createServerFn({ method: "POST" })
       return { success: true };
     }
   });
-

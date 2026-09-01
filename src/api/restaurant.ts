@@ -11,11 +11,41 @@ import { v4 as uuidv4 } from "uuid";
 
 const inMemoryTables: Record<string, any[]> = {
   default: [
-    { id: "tbl-1", organizationId: "default", name: "Table 1 (Window)", capacity: 4, status: "available" },
-    { id: "tbl-2", organizationId: "default", name: "Table 2 (Main Hall)", capacity: 6, status: "occupied" },
-    { id: "tbl-3", organizationId: "default", name: "Table 3 (Corner Booth)", capacity: 2, status: "reserved" },
-    { id: "tbl-4", organizationId: "default", name: "Table 4 (Outdoor Patio)", capacity: 4, status: "available" },
-    { id: "tbl-5", organizationId: "default", name: "Table 5 (VIP Family)", capacity: 8, status: "available" },
+    {
+      id: "tbl-1",
+      organizationId: "default",
+      name: "Table 1 (Window)",
+      capacity: 4,
+      status: "available",
+    },
+    {
+      id: "tbl-2",
+      organizationId: "default",
+      name: "Table 2 (Main Hall)",
+      capacity: 6,
+      status: "occupied",
+    },
+    {
+      id: "tbl-3",
+      organizationId: "default",
+      name: "Table 3 (Corner Booth)",
+      capacity: 2,
+      status: "reserved",
+    },
+    {
+      id: "tbl-4",
+      organizationId: "default",
+      name: "Table 4 (Outdoor Patio)",
+      capacity: 4,
+      status: "available",
+    },
+    {
+      id: "tbl-5",
+      organizationId: "default",
+      name: "Table 5 (VIP Family)",
+      capacity: 8,
+      status: "available",
+    },
   ],
 };
 
@@ -65,10 +95,7 @@ export const createTableFn = createServerFn({ method: "POST" })
 
     try {
       if (schema.restaurantTables) {
-        const res = await db
-          .insert(schema.restaurantTables)
-          .values(newTbl)
-          .returning();
+        const res = await db.insert(schema.restaurantTables).values(newTbl).returning();
         return { success: true, data: res[0] || newTbl };
       }
     } catch (e) {
@@ -134,14 +161,18 @@ export const deleteTableFn = createServerFn({ method: "POST" })
       if (schema.restaurantTables) {
         await db
           .delete(schema.restaurantTables)
-          .where(and(eq(schema.restaurantTables.id, data.id), eq(schema.restaurantTables.organizationId, orgId)));
+          .where(
+            and(
+              eq(schema.restaurantTables.id, data.id),
+              eq(schema.restaurantTables.organizationId, orgId),
+            ),
+          );
       }
     } catch (e) {
       console.warn("DB deleteTable fallback:", e);
     }
     return { success: true };
   });
-
 
 // ---------------- KOT API ----------------
 

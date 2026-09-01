@@ -34,7 +34,8 @@ export const Route = createFileRoute("/admin/")({
       { title: "Super Admin Command Center · OneDesk360 Cloud POS" },
       {
         name: "description",
-        content: "Master root portal for multi-tenant store provisioning, pricing plans, and global governance.",
+        content:
+          "Master root portal for multi-tenant store provisioning, pricing plans, and global governance.",
       },
     ],
   }),
@@ -109,7 +110,8 @@ function AdminLoginPage() {
             </h1>
 
             <p className="text-xs xl:text-sm text-muted-foreground leading-relaxed">
-              Global tenant store orchestrator, multi-industry catalog engine, SaaS subscription plans, and real-time ledger velocity.
+              Global tenant store orchestrator, multi-industry catalog engine, SaaS subscription
+              plans, and real-time ledger velocity.
             </p>
           </div>
 
@@ -143,7 +145,9 @@ function AdminLoginPage() {
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-bold text-foreground">{item.title}</p>
-                    <p className="text-xs text-muted-foreground leading-relaxed mt-0.5">{item.desc}</p>
+                    <p className="text-xs text-muted-foreground leading-relaxed mt-0.5">
+                      {item.desc}
+                    </p>
                   </div>
                 </div>
               );
@@ -190,7 +194,9 @@ function AdminLoginPage() {
                     Level 0
                   </Badge>
                 </div>
-                <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">Sign in to master multi-tenant administration</p>
+                <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
+                  Sign in to master multi-tenant administration
+                </p>
               </div>
               <div className="size-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary border border-primary/20">
                 <Lock className="size-5" />
@@ -204,7 +210,9 @@ function AdminLoginPage() {
                   <Zap className="size-4 fill-primary/20 text-primary" />
                   <span>Development & Demo Quick Sign In</span>
                 </span>
-                <span className="text-xs font-mono text-muted-foreground uppercase font-bold">Instant</span>
+                <span className="text-xs font-mono text-muted-foreground uppercase font-bold">
+                  Instant
+                </span>
               </div>
               <Button
                 type="button"
@@ -221,7 +229,10 @@ function AdminLoginPage() {
             {/* Manual Credential Form */}
             <form onSubmit={handleSubmit} className="space-y-4 pt-1">
               <div className="space-y-2">
-                <Label className="text-sm font-bold text-foreground flex items-center gap-1.5" htmlFor="sa-email">
+                <Label
+                  className="text-sm font-bold text-foreground flex items-center gap-1.5"
+                  htmlFor="sa-email"
+                >
                   <Mail className="size-4 text-muted-foreground" />
                   <span>Master Administrator Email</span>
                 </Label>
@@ -239,7 +250,10 @@ function AdminLoginPage() {
 
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <Label className="text-sm font-bold text-foreground flex items-center gap-1.5" htmlFor="sa-password">
+                  <Label
+                    className="text-sm font-bold text-foreground flex items-center gap-1.5"
+                    htmlFor="sa-password"
+                  >
                     <Lock className="size-4 text-muted-foreground" />
                     <span>Master Password</span>
                   </Label>

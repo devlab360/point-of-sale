@@ -34,7 +34,14 @@ import {
   Printer,
 } from "lucide-react";
 import { useState, useMemo, useEffect } from "react";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -108,7 +115,10 @@ function PurchasesPage() {
   const metrics = useMemo(() => {
     const totalOrders = purchases.length;
     const totalSpent = purchases.reduce((acc: number, p: any) => acc + (Number(p.total) || 0), 0);
-    const totalPaid = purchases.reduce((acc: number, p: any) => acc + (Number(p.paid) || Number(p.total) || 0), 0);
+    const totalPaid = purchases.reduce(
+      (acc: number, p: any) => acc + (Number(p.paid) || Number(p.total) || 0),
+      0,
+    );
     const totalDue = purchases.reduce((acc: number, p: any) => acc + (Number(p.due) || 0), 0);
     return { totalOrders, totalSpent, totalPaid, totalDue };
   }, [purchases]);
@@ -190,46 +200,46 @@ function PurchasesPage() {
             </div>
           </div>
         )}
-      topContent={
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
-              <div className="rounded-xl border border-border/80 bg-card p-4 shadow-soft flex flex-col gap-1 card-interactive">
-                <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
-                  Total Orders
-                </span>
-                <span className="text-xl sm:text-2xl font-black text-foreground">
-                  {metrics.totalOrders}
-                </span>
-              </div>
-
-              <div className="rounded-xl border border-border/80 bg-card p-4 shadow-soft flex flex-col gap-1 card-interactive">
-                <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
-                  Total Invoiced
-                </span>
-                <span className="text-xl sm:text-2xl font-black text-info">
-                  {formatCurrency(metrics.totalSpent)}
-                </span>
-              </div>
-
-              <div className="rounded-xl border border-border/80 bg-card p-4 shadow-soft flex flex-col gap-1 card-interactive">
-                <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
-                  Paid to Vendors
-                </span>
-                <span className="text-xl sm:text-2xl font-black text-success">
-                  {formatCurrency(metrics.totalPaid)}
-                </span>
-              </div>
-
-              <div className="rounded-xl border border-border/80 bg-card p-4 shadow-soft flex flex-col gap-1 card-interactive">
-                <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
-                  Vendor Khata Due
-                </span>
-                <span className="text-xl sm:text-2xl font-black text-destructive">
-                  {formatCurrency(metrics.totalDue)}
-                </span>
-              </div>
+        topContent={
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
+            <div className="rounded-xl border border-border/80 bg-card p-4 shadow-soft flex flex-col gap-1 card-interactive">
+              <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
+                Total Orders
+              </span>
+              <span className="text-xl sm:text-2xl font-black text-foreground">
+                {metrics.totalOrders}
+              </span>
             </div>
-          }
-        >
+
+            <div className="rounded-xl border border-border/80 bg-card p-4 shadow-soft flex flex-col gap-1 card-interactive">
+              <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
+                Total Invoiced
+              </span>
+              <span className="text-xl sm:text-2xl font-black text-info">
+                {formatCurrency(metrics.totalSpent)}
+              </span>
+            </div>
+
+            <div className="rounded-xl border border-border/80 bg-card p-4 shadow-soft flex flex-col gap-1 card-interactive">
+              <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
+                Paid to Vendors
+              </span>
+              <span className="text-xl sm:text-2xl font-black text-success">
+                {formatCurrency(metrics.totalPaid)}
+              </span>
+            </div>
+
+            <div className="rounded-xl border border-border/80 bg-card p-4 shadow-soft flex flex-col gap-1 card-interactive">
+              <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
+                Vendor Khata Due
+              </span>
+              <span className="text-xl sm:text-2xl font-black text-destructive">
+                {formatCurrency(metrics.totalDue)}
+              </span>
+            </div>
+          </div>
+        }
+      >
         {isPurchasesLoading ? (
           <TableSkeleton columns={7} rows={6} showHeaderAction={false} showFilters={false} />
         ) : isPurchasesError ? (
@@ -242,14 +252,30 @@ function PurchasesPage() {
                 <Table className="min-w-[750px]">
                   <TableHeader>
                     <TableRow>
-                      <TableHead className="font-bold text-xs uppercase tracking-wider">Invoice / PO #</TableHead>
-                      <TableHead className="font-bold text-xs uppercase tracking-wider">Supplier Name</TableHead>
-                      <TableHead className="font-bold text-xs uppercase tracking-wider">Order Date</TableHead>
-                      <TableHead className="font-bold text-xs uppercase tracking-wider text-right">Items</TableHead>
-                      <TableHead className="font-bold text-xs uppercase tracking-wider">Status</TableHead>
-                      <TableHead className="font-bold text-xs uppercase tracking-wider text-right">Total</TableHead>
-                      <TableHead className="font-bold text-xs uppercase tracking-wider text-right">Paid / Due</TableHead>
-                      <TableHead className="font-bold text-xs uppercase tracking-wider text-right">Actions</TableHead>
+                      <TableHead className="font-bold text-xs uppercase tracking-wider">
+                        Invoice / PO #
+                      </TableHead>
+                      <TableHead className="font-bold text-xs uppercase tracking-wider">
+                        Supplier Name
+                      </TableHead>
+                      <TableHead className="font-bold text-xs uppercase tracking-wider">
+                        Order Date
+                      </TableHead>
+                      <TableHead className="font-bold text-xs uppercase tracking-wider text-right">
+                        Items
+                      </TableHead>
+                      <TableHead className="font-bold text-xs uppercase tracking-wider">
+                        Status
+                      </TableHead>
+                      <TableHead className="font-bold text-xs uppercase tracking-wider text-right">
+                        Total
+                      </TableHead>
+                      <TableHead className="font-bold text-xs uppercase tracking-wider text-right">
+                        Paid / Due
+                      </TableHead>
+                      <TableHead className="font-bold text-xs uppercase tracking-wider text-right">
+                        Actions
+                      </TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody className="divide-y divide-border/60">
@@ -305,7 +331,9 @@ function PurchasesPage() {
                             {formatCurrency(Number(p.total) || 0)}
                           </TableCell>
                           <TableCell className="text-right text-xs">
-                            <div className="font-bold text-success">{formatCurrency(Number(p.paid) || Number(p.total) || 0)}</div>
+                            <div className="font-bold text-success">
+                              {formatCurrency(Number(p.paid) || Number(p.total) || 0)}
+                            </div>
                             {Number(p.due) > 0 && (
                               <div className="text-[11px] font-black text-destructive">
                                 Due: {formatCurrency(Number(p.due))}
@@ -320,11 +348,16 @@ function PurchasesPage() {
                                 </Button>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end" className="rounded-xl w-44">
-                                <DropdownMenuItem onClick={() => setViewPurchase(p)} className="text-xs font-semibold">
+                                <DropdownMenuItem
+                                  onClick={() => setViewPurchase(p)}
+                                  className="text-xs font-semibold"
+                                >
                                   <Eye className="size-3.5 mr-2 text-primary" /> View Order Sheet
                                 </DropdownMenuItem>
                                 <DropdownMenuItem
-                                  onClick={() => void navigate({ to: `/purchases/new?editId=${p.id}` as any })}
+                                  onClick={() =>
+                                    void navigate({ to: `/purchases/new?editId=${p.id}` as any })
+                                  }
                                   className="text-xs font-semibold"
                                 >
                                   <Edit2 className="size-3.5 mr-2 text-primary" /> Edit Purchase
@@ -358,7 +391,9 @@ function PurchasesPage() {
                         <span className="font-mono text-xs font-bold text-primary">
                           {p.invoiceNo || `#${p.id.slice(0, 8).toUpperCase()}`}
                         </span>
-                        <span className="text-[10px] text-muted-foreground">{formatDate(p.date)}</span>
+                        <span className="text-[10px] text-muted-foreground">
+                          {formatDate(p.date)}
+                        </span>
                       </div>
                       <div className="font-bold text-xs sm:text-sm text-foreground mt-0.5 truncate">
                         {p.supplier}
@@ -369,8 +404,12 @@ function PurchasesPage() {
                     </div>
 
                     <div className="text-right shrink-0 pl-2">
-                      <div className="text-sm font-black text-foreground">{formatCurrency(Number(p.total) || 0)}</div>
-                      <div className="text-[10px] text-muted-foreground mt-0.5">{p.items || 1} items</div>
+                      <div className="text-sm font-black text-foreground">
+                        {formatCurrency(Number(p.total) || 0)}
+                      </div>
+                      <div className="text-[10px] text-muted-foreground mt-0.5">
+                        {p.items || 1} items
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -403,7 +442,10 @@ function PurchasesPage() {
             <>
               <SheetHeader className="bg-muted/60 p-5 sm:p-6 border-b pr-12 text-left shrink-0">
                 <div className="flex items-center gap-2">
-                  <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20 text-[10px] font-black uppercase">
+                  <Badge
+                    variant="outline"
+                    className="bg-primary/10 text-primary border-primary/20 text-[10px] font-black uppercase"
+                  >
                     Purchase Order
                   </Badge>
                   <Badge className="bg-success/15 text-success border-success/30 text-[10px] font-black uppercase">
@@ -414,7 +456,9 @@ function PurchasesPage() {
                   {viewPurchase.invoiceNo || `PO #${viewPurchase.id.slice(0, 8).toUpperCase()}`}
                 </SheetTitle>
                 <p className="text-xs text-muted-foreground">
-                  Purchased from <strong className="text-foreground">{viewPurchase.supplier}</strong> on {formatDate(viewPurchase.date)}
+                  Purchased from{" "}
+                  <strong className="text-foreground">{viewPurchase.supplier}</strong> on{" "}
+                  {formatDate(viewPurchase.date)}
                 </p>
               </SheetHeader>
 
@@ -422,17 +466,25 @@ function PurchasesPage() {
                 {/* Metric overview */}
                 <div className="grid grid-cols-3 gap-3">
                   <div className="p-3.5 rounded-xl border border-border bg-card text-center">
-                    <span className="text-[10px] font-bold text-muted-foreground uppercase">Total Invoiced</span>
-                    <p className="text-base font-black text-foreground mt-0.5">{formatCurrency(Number(viewPurchase.total) || 0)}</p>
+                    <span className="text-[10px] font-bold text-muted-foreground uppercase">
+                      Total Invoiced
+                    </span>
+                    <p className="text-base font-black text-foreground mt-0.5">
+                      {formatCurrency(Number(viewPurchase.total) || 0)}
+                    </p>
                   </div>
                   <div className="p-3.5 rounded-xl border border-success/20 bg-success/5 text-center">
-                    <span className="text-[10px] font-bold text-success uppercase">Paid Amount</span>
+                    <span className="text-[10px] font-bold text-success uppercase">
+                      Paid Amount
+                    </span>
                     <p className="text-base font-black text-success mt-0.5">
                       {formatCurrency(Number(viewPurchase.paid) || Number(viewPurchase.total) || 0)}
                     </p>
                   </div>
                   <div className="p-3.5 rounded-xl border border-destructive/20 bg-destructive/5 text-center">
-                    <span className="text-[10px] font-bold text-destructive uppercase">Due Payable</span>
+                    <span className="text-[10px] font-bold text-destructive uppercase">
+                      Due Payable
+                    </span>
                     <p className="text-base font-black text-destructive mt-0.5">
                       {formatCurrency(Number(viewPurchase.due) || 0)}
                     </p>
@@ -448,9 +500,15 @@ function PurchasesPage() {
                     <TableHeader className="bg-muted/20">
                       <TableRow>
                         <TableHead className="text-xs font-bold uppercase">Product</TableHead>
-                        <TableHead className="text-xs font-bold uppercase text-right">Quantity</TableHead>
-                        <TableHead className="text-xs font-bold uppercase text-right">Cost</TableHead>
-                        <TableHead className="text-xs font-bold uppercase text-right">Total</TableHead>
+                        <TableHead className="text-xs font-bold uppercase text-right">
+                          Quantity
+                        </TableHead>
+                        <TableHead className="text-xs font-bold uppercase text-right">
+                          Cost
+                        </TableHead>
+                        <TableHead className="text-xs font-bold uppercase text-right">
+                          Total
+                        </TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody className="divide-y divide-border/60">
@@ -458,14 +516,21 @@ function PurchasesPage() {
                         let items = [];
                         if (viewPurchase.purchaseItems) {
                           try {
-                            items = typeof viewPurchase.purchaseItems === "string" ? JSON.parse(viewPurchase.purchaseItems) : viewPurchase.purchaseItems;
+                            items =
+                              typeof viewPurchase.purchaseItems === "string"
+                                ? JSON.parse(viewPurchase.purchaseItems)
+                                : viewPurchase.purchaseItems;
                           } catch {}
                         }
                         if (!items || items.length === 0) {
                           return (
                             <TableRow>
-                              <TableCell colSpan={4} className="text-center py-6 text-xs text-muted-foreground">
-                                Detailed line items not recorded. Total items: {viewPurchase.items || 1}
+                              <TableCell
+                                colSpan={4}
+                                className="text-center py-6 text-xs text-muted-foreground"
+                              >
+                                Detailed line items not recorded. Total items:{" "}
+                                {viewPurchase.items || 1}
                               </TableCell>
                             </TableRow>
                           );
@@ -482,7 +547,9 @@ function PurchasesPage() {
                               {formatCurrency(Number(it.cost) || 0)}
                             </TableCell>
                             <TableCell className="text-right text-xs font-black text-foreground">
-                              {formatCurrency((Number(it.qty || it.quantity) || 1) * (Number(it.cost) || 0))}
+                              {formatCurrency(
+                                (Number(it.qty || it.quantity) || 1) * (Number(it.cost) || 0),
+                              )}
                             </TableCell>
                           </TableRow>
                         ));
@@ -534,12 +601,16 @@ function PurchasesPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Purchase Order?</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete this purchase order record? This will remove the recorded bill and transaction reference.
+              Are you sure you want to delete this purchase order record? This will remove the
+              recorded bill and transaction reference.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+            <AlertDialogAction
+              onClick={handleDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
               Delete
             </AlertDialogAction>
           </AlertDialogFooter>

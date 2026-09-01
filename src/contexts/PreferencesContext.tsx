@@ -65,7 +65,11 @@ export function PreferencesProvider({ children }: { children: React.ReactNode })
         try {
           const d = new Date(dateInput);
           const fallbackPattern = timeFormat === "24h" ? "HH:mm" : "hh:mm a";
-          return formatInTimeZone(d, "UTC", mode === "time" ? fallbackPattern : `dd MMM yyyy ${fallbackPattern}`);
+          return formatInTimeZone(
+            d,
+            "UTC",
+            mode === "time" ? fallbackPattern : `dd MMM yyyy ${fallbackPattern}`,
+          );
         } catch {
           return String(dateInput || "-");
         }

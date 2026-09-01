@@ -85,7 +85,12 @@ import { createCustomerFn, getCustomersFn } from "@/api/customers";
 import { getCouponsFn } from "@/api/coupons";
 import { createProductFn } from "@/api/products";
 import { createServiceItemFn } from "@/api/services";
-import { deleteHeldInvoiceFn, clearAllHeldInvoicesFn, splitHeldInvoiceFn, voidPosSaleFn } from "@/api/pos";
+import {
+  deleteHeldInvoiceFn,
+  clearAllHeldInvoicesFn,
+  splitHeldInvoiceFn,
+  voidPosSaleFn,
+} from "@/api/pos";
 import { toast } from "sonner";
 import { printReceiptIframe } from "@/lib/printIframe";
 import { SplitCheckModal } from "./SplitCheckModal";
@@ -780,7 +785,11 @@ export function PosDialogs({
           <div className="p-3.5 sm:p-4 border-t border-border/80 bg-muted/20 flex items-center justify-between text-xs text-muted-foreground">
             <span className="flex items-center gap-1.5">
               <span className="size-2 rounded-full bg-primary" />
-              Press <kbd className="font-mono bg-background border px-1.5 py-0.5 rounded text-[10px] font-bold">F2</kbd> to add a new customer quickly.
+              Press{" "}
+              <kbd className="font-mono bg-background border px-1.5 py-0.5 rounded text-[10px] font-bold">
+                F2
+              </kbd>{" "}
+              to add a new customer quickly.
             </span>
             <Button
               variant="outline"
@@ -964,7 +973,9 @@ export function PosDialogs({
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-1.5">
-                      <Label className="text-xs font-bold text-foreground">Selling Price ({currencySymbol}) *</Label>
+                      <Label className="text-xs font-bold text-foreground">
+                        Selling Price ({currencySymbol}) *
+                      </Label>
                       <Input
                         name="price"
                         type="number"
@@ -976,7 +987,9 @@ export function PosDialogs({
                       />
                     </div>
                     <div className="space-y-1.5">
-                      <Label className="text-xs font-bold text-foreground">Cost Price ({currencySymbol}) *</Label>
+                      <Label className="text-xs font-bold text-foreground">
+                        Cost Price ({currencySymbol}) *
+                      </Label>
                       <Input
                         name="cost"
                         type="number"
@@ -1127,7 +1140,9 @@ export function PosDialogs({
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-1.5">
-                      <Label className="text-xs font-bold text-foreground">Price ({currencySymbol}) *</Label>
+                      <Label className="text-xs font-bold text-foreground">
+                        Price ({currencySymbol}) *
+                      </Label>
                       <Input
                         name="price"
                         type="number"
@@ -1377,8 +1392,8 @@ export function PosDialogs({
                 <p className="text-xs text-muted-foreground mt-1 max-w-md mx-auto">
                   When a customer takes time or needs to grab another item, click{" "}
                   <span className="font-bold text-foreground">[Hold]</span> or press{" "}
-                  <span className="font-bold text-foreground">F4</span> during checkout to park their
-                  cart and immediately serve the next customer.
+                  <span className="font-bold text-foreground">F4</span> during checkout to park
+                  their cart and immediately serve the next customer.
                 </p>
               </div>
             ) : (
@@ -1405,7 +1420,8 @@ export function PosDialogs({
                     );
                     cartTotal = cartItems.reduce(
                       (acc: number, item: any) =>
-                        acc + (Number(item.variantPrice || item.price) || 0) * (Number(item.qty) || 1),
+                        acc +
+                        (Number(item.variantPrice || item.price) || 0) * (Number(item.qty) || 1),
                       0,
                     );
                   } catch {
@@ -1416,21 +1432,17 @@ export function PosDialogs({
 
                   const discountValue = Number(h.discount) || 0;
                   const finalEstimatedTotal =
-                    discountValue > 0
-                      ? cartTotal - (cartTotal * discountValue) / 100
-                      : cartTotal;
+                    discountValue > 0 ? cartTotal - (cartTotal * discountValue) / 100 : cartTotal;
 
                   const customerPhone =
                     h.customerPhone ||
-                    (h.note?.startsWith("Phone:")
-                      ? h.note.replace("Phone:", "").trim()
-                      : null);
+                    (h.note?.startsWith("Phone:") ? h.note.replace("Phone:", "").trim() : null);
 
                   const savedTimeStr = h.savedAt
                     ? new Date(h.savedAt).toLocaleTimeString([], {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })
                     : "Recently";
 
                   return (
@@ -1553,7 +1565,11 @@ export function PosDialogs({
           <div className="p-3.5 sm:p-4 border-t border-border/80 bg-muted/30 flex items-center justify-between text-xs text-muted-foreground">
             <span className="flex items-center gap-1.5">
               <span className="size-2 rounded-full bg-emerald-500 animate-pulse" />
-              Tip: Press <kbd className="font-mono bg-background border px-1.5 py-0.5 rounded text-[10px] font-bold">F4</kbd> during billing to park any basket in 0.0s.
+              Tip: Press{" "}
+              <kbd className="font-mono bg-background border px-1.5 py-0.5 rounded text-[10px] font-bold">
+                F4
+              </kbd>{" "}
+              during billing to park any basket in 0.0s.
             </span>
             <Button
               variant="outline"
@@ -1578,7 +1594,10 @@ export function PosDialogs({
               Clear All Parked Invoices?
             </AlertDialogTitle>
             <AlertDialogDescription className="text-xs text-muted-foreground leading-relaxed">
-              This will permanently delete all <strong className="text-foreground font-bold">{heldInvoices.length}</strong> parked customer invoices from your queue. All unbilled carts will be removed. This action cannot be undone.
+              This will permanently delete all{" "}
+              <strong className="text-foreground font-bold">{heldInvoices.length}</strong> parked
+              customer invoices from your queue. All unbilled carts will be removed. This action
+              cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="gap-2 sm:gap-2 mt-3">
@@ -1606,7 +1625,10 @@ export function PosDialogs({
       </AlertDialog>
 
       {/* Confirmation Modal: Void Single Held Order */}
-      <AlertDialog open={!!voidingInvoice} onOpenChange={(open) => !open && setVoidingInvoice(null)}>
+      <AlertDialog
+        open={!!voidingInvoice}
+        onOpenChange={(open) => !open && setVoidingInvoice(null)}
+      >
         <AlertDialogContent className="rounded-2xl border-border/80 shadow-2xl max-w-md">
           <AlertDialogHeader>
             <div className="size-12 rounded-2xl bg-destructive/10 border border-destructive/25 grid place-items-center text-destructive mb-2">
@@ -1616,7 +1638,11 @@ export function PosDialogs({
               Void Held Invoice?
             </AlertDialogTitle>
             <AlertDialogDescription className="text-xs text-muted-foreground leading-relaxed">
-              Are you sure you want to void the parked order for <strong className="text-foreground font-bold">{voidingInvoice?.customerName || "Walk-in Customer"}</strong>? The basket items will be permanently removed.
+              Are you sure you want to void the parked order for{" "}
+              <strong className="text-foreground font-bold">
+                {voidingInvoice?.customerName || "Walk-in Customer"}
+              </strong>
+              ? The basket items will be permanently removed.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="gap-2 sm:gap-2 mt-3">
@@ -1757,10 +1783,10 @@ export function PosDialogs({
               const shortAmount = minOrder - subtotal;
               const expiryFormatted = c.expires
                 ? new Date(c.expires).toLocaleDateString(undefined, {
-                  day: "numeric",
-                  month: "short",
-                  year: "numeric",
-                })
+                    day: "numeric",
+                    month: "short",
+                    year: "numeric",
+                  })
                 : "No expiry";
 
               return (
@@ -1977,18 +2003,18 @@ export function PosDialogs({
 
             {(settings?.businessType === "PHARMACY" ||
               state.lines.some((l: any) => l.product.metadata?.prescriptionRequired)) && (
-                <div className="pt-2 border-t space-y-1.5">
-                  <Label className="text-xs font-bold text-foreground">
-                    Prescription Reference (Optional)
-                  </Label>
-                  <Input
-                    placeholder="e.g. Rx-12345"
-                    value={state.prescriptionRef}
-                    onChange={(e) => state.setPrescriptionRef(e.target.value)}
-                    className="h-10 rounded-xl"
-                  />
-                </div>
-              )}
+              <div className="pt-2 border-t space-y-1.5">
+                <Label className="text-xs font-bold text-foreground">
+                  Prescription Reference (Optional)
+                </Label>
+                <Input
+                  placeholder="e.g. Rx-12345"
+                  value={state.prescriptionRef}
+                  onChange={(e) => state.setPrescriptionRef(e.target.value)}
+                  className="h-10 rounded-xl"
+                />
+              </div>
+            )}
           </div>
 
           {/* Footer */}
@@ -2040,7 +2066,10 @@ export function PosDialogs({
               <span>{saleComplete?.storeName || "Store"}</span>
               <span>•</span>
               <span className="font-mono font-bold text-foreground">
-                #{String(saleComplete?.id || "").slice(0, 10).toUpperCase()}
+                #
+                {String(saleComplete?.id || "")
+                  .slice(0, 10)
+                  .toUpperCase()}
               </span>
             </p>
 
@@ -2171,7 +2200,9 @@ export function PosDialogs({
 
           <div className="p-5 space-y-4">
             <div className="space-y-1.5">
-              <Label className="text-xs font-bold text-foreground">Starting Cash Float ({currencySymbol})</Label>
+              <Label className="text-xs font-bold text-foreground">
+                Starting Cash Float ({currencySymbol})
+              </Label>
               <div className="relative">
                 <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-sm font-extrabold text-muted-foreground">
                   {currencySymbol}
@@ -2191,7 +2222,9 @@ export function PosDialogs({
 
             {/* Quick Preset Chips */}
             <div className="space-y-1.5">
-              <span className="text-[11px] font-bold text-muted-foreground">Quick Float Amounts:</span>
+              <span className="text-[11px] font-bold text-muted-foreground">
+                Quick Float Amounts:
+              </span>
               <div className="flex flex-wrap gap-1.5">
                 {[100, 200, 500, 1000, 2000].map((amt) => (
                   <Button
@@ -2202,7 +2235,8 @@ export function PosDialogs({
                     onClick={() => setStartingCash(String(amt))}
                     className="h-7 text-xs font-bold rounded-lg border-border/80 hover:border-primary hover:bg-primary/5"
                   >
-                    +{currencySymbol}{amt}
+                    +{currencySymbol}
+                    {amt}
                   </Button>
                 ))}
               </div>

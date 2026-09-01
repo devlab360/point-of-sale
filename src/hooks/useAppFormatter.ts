@@ -82,5 +82,13 @@ export function useAppFormatter() {
     return `${symbol}${val.toLocaleString(undefined, { minimumFractionDigits: decimals, maximumFractionDigits: decimals })}`;
   };
 
-  return { formatAppDate, formatAppCurrency, timeZone, dateFormat, currencySymbol: settings.currencySymbol || "$", currencyCode, decimals };
+  return {
+    formatAppDate,
+    formatAppCurrency,
+    timeZone,
+    dateFormat,
+    currencySymbol: settings.currencySymbol || "$",
+    currencyCode,
+    decimals,
+  };
 }

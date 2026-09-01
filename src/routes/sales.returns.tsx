@@ -49,7 +49,14 @@ import { cn } from "@/lib/utils";
 import { useDebounce } from "@/hooks/useDebounce";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { usePreferences } from "@/contexts/PreferencesContext";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 export const Route = createFileRoute("/sales/returns")({
   head: () => ({ meta: [{ title: "Sales Returns · OneDesk360" }] }),
@@ -313,33 +320,43 @@ function SalesReturnsPage() {
             </div>
           </div>
         )}
-      topContent={
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-              <div className="rounded-xl border border-border/80 bg-card p-3 shadow-2xs">
-                <div className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Total Returns</div>
-                <div className="mt-1 text-xl sm:text-2xl font-black text-foreground">{rawReturns.length}</div>
+        topContent={
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <div className="rounded-xl border border-border/80 bg-card p-3 shadow-2xs">
+              <div className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
+                Total Returns
               </div>
-              <div className="rounded-xl border border-border/80 bg-card p-3 shadow-2xs">
-                <div className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Approved / Refunded</div>
-                <div className="mt-1 text-xl sm:text-2xl font-black text-success">
-                  {rawReturns.filter((r) => r.status === "approved").length}
-                </div>
-              </div>
-              <div className="rounded-xl border border-border/80 bg-card p-3 shadow-2xs">
-                <div className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Stock Restored</div>
-                <div className="mt-1 text-xl sm:text-2xl font-black text-primary">
-                  {rawReturns.filter((r) => r.stockRestored).length}
-                </div>
-              </div>
-              <div className="rounded-xl border border-border/80 bg-card p-3 shadow-2xs">
-                <div className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Total Refund Amount</div>
-                <div className="mt-1 text-xl sm:text-2xl font-black text-destructive truncate">
-                  {formatCurrency(totalRefundAmount)}
-                </div>
+              <div className="mt-1 text-xl sm:text-2xl font-black text-foreground">
+                {rawReturns.length}
               </div>
             </div>
-          }
-        >
+            <div className="rounded-xl border border-border/80 bg-card p-3 shadow-2xs">
+              <div className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
+                Approved / Refunded
+              </div>
+              <div className="mt-1 text-xl sm:text-2xl font-black text-success">
+                {rawReturns.filter((r) => r.status === "approved").length}
+              </div>
+            </div>
+            <div className="rounded-xl border border-border/80 bg-card p-3 shadow-2xs">
+              <div className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
+                Stock Restored
+              </div>
+              <div className="mt-1 text-xl sm:text-2xl font-black text-primary">
+                {rawReturns.filter((r) => r.stockRestored).length}
+              </div>
+            </div>
+            <div className="rounded-xl border border-border/80 bg-card p-3 shadow-2xs">
+              <div className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
+                Total Refund Amount
+              </div>
+              <div className="mt-1 text-xl sm:text-2xl font-black text-destructive truncate">
+                {formatCurrency(totalRefundAmount)}
+              </div>
+            </div>
+          </div>
+        }
+      >
         <div className="space-y-4">
           <div className="overflow-hidden rounded-xl border border-border/80 bg-card shadow-soft">
             <div className="overflow-x-auto">
@@ -348,15 +365,11 @@ function SalesReturnsPage() {
                   <TableRow>
                     <TableHead>{t("ref") || "Ref"}</TableHead>
                     <TableHead>{t("invoice") || "Invoice"}</TableHead>
-                    <TableHead>
-                      {t("customer") || "Customer"}
-                    </TableHead>
+                    <TableHead>{t("customer") || "Customer"}</TableHead>
                     <TableHead>{t("reason") || "Reason"}</TableHead>
                     <TableHead>{t("date") || "Date"}</TableHead>
                     <TableHead>{t("status") || "Status"}</TableHead>
-                    <TableHead className="text-right">
-                      {t("refund") || "Refund"}
-                    </TableHead>
+                    <TableHead className="text-right">{t("refund") || "Refund"}</TableHead>
                     <TableHead className="text-right whitespace-nowrap">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -454,8 +467,12 @@ function SalesReturnsPage() {
           className="w-full sm:max-w-2xl lg:max-w-3xl p-0 flex flex-col h-full bg-background border-l border-border"
         >
           <SheetHeader className="bg-muted/60 p-5 border-b pr-12 text-left">
-            <SheetTitle className="text-xl font-bold text-foreground">Process Sales Return</SheetTitle>
-            <p className="text-xs text-muted-foreground mt-0.5">Select an invoice, choose items to return, and refund the customer.</p>
+            <SheetTitle className="text-xl font-bold text-foreground">
+              Process Sales Return
+            </SheetTitle>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Select an invoice, choose items to return, and refund the customer.
+            </p>
           </SheetHeader>
           <div className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-5">
             <div className="space-y-1.5">

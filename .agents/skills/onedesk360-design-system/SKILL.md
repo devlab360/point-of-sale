@@ -15,22 +15,23 @@ This skill defines the UI aesthetics, component patterns, layout rules, and inte
 
 OneDesk360 utilizes a curated luxury retail color system blending rich neutral darks/lights with signature gold/bronze brand accents:
 
-| Token Name | Value / Tailwind Class | Semantic Purpose |
-| :--- | :--- | :--- |
-| **Brand Gold Accent** | `#B58D4C` / `text-[#B58D4C]` | Primary brand identity, active sidebar items, emblem badges, highlights |
-| **Brand Gold Glow** | `#B58D4C]/15` / `border-[#B58D4C]/30` | Avatar initials containers, highlight backgrounds, subtle focus rings |
-| **Background (Light)**| `bg-background` (`hsl(0 0% 100%)`) | Main canvas background |
-| **Background (Dark)** | `dark:bg-background` (`hsl(224 71% 4%)`) | Sleek obsidian night canvas |
-| **Card / Surface** | `bg-card` / `backdrop-blur-xl` | Floating cards, header bars, and sidebars |
-| **Muted Canvas** | `bg-muted/20` / `bg-muted/30` | Content wrappers, table headers, alternating rows |
-| **Success / Active** | `text-emerald-600 dark:text-emerald-400` | Active status badges, positive cash flow, paid invoices |
-| **Destructive / Alert**| `text-destructive` / `bg-destructive/10` | Error banners, overdue payments, store suspension |
+| Token Name              | Value / Tailwind Class                   | Semantic Purpose                                                        |
+| :---------------------- | :--------------------------------------- | :---------------------------------------------------------------------- |
+| **Brand Gold Accent**   | `#B58D4C` / `text-[#B58D4C]`             | Primary brand identity, active sidebar items, emblem badges, highlights |
+| **Brand Gold Glow**     | `#B58D4C]/15` / `border-[#B58D4C]/30`    | Avatar initials containers, highlight backgrounds, subtle focus rings   |
+| **Background (Light)**  | `bg-background` (`hsl(0 0% 100%)`)       | Main canvas background                                                  |
+| **Background (Dark)**   | `dark:bg-background` (`hsl(224 71% 4%)`) | Sleek obsidian night canvas                                             |
+| **Card / Surface**      | `bg-card` / `backdrop-blur-xl`           | Floating cards, header bars, and sidebars                               |
+| **Muted Canvas**        | `bg-muted/20` / `bg-muted/30`            | Content wrappers, table headers, alternating rows                       |
+| **Success / Active**    | `text-emerald-600 dark:text-emerald-400` | Active status badges, positive cash flow, paid invoices                 |
+| **Destructive / Alert** | `text-destructive` / `bg-destructive/10` | Error banners, overdue payments, store suspension                       |
 
 ---
 
 ## 2. Layout Structure & Navigation Consistency
 
 ### 2.1 Sidebar Architecture (`AppSidebar` & `SuperAdminLayout`)
+
 - **Dimensions**: Expanded `w-64` (`16rem`), Minimized `w-[4.75rem]`.
 - **Brand Header**: Fixed `h-20` height with a black & gold emblem (`relative grid size-11 place-items-center rounded-lg bg-black text-[#B58D4C] border border-[#B58D4C]/30 font-serif font-black text-sm`).
 - **Floating Minimize Toggle**:
@@ -49,6 +50,7 @@ OneDesk360 utilizes a curated luxury retail color system blending rich neutral d
   - **Icons**: `size-5 shrink-0 stroke-[1.6]`.
 
 ### 2.2 Top Header Bar
+
 - **Height**: `h-14 md:h-16 shrink-0`.
 - **Backdrop**: `backdrop-blur-xl bg-background/80 border-b border-border`.
 - **Breadcrumb Navigation**: `<ol className="flex items-center gap-1.5 text-sm">...` with font-medium and `/` dividers.
@@ -78,9 +80,7 @@ All modal interactions, store management, plan editors, and forms MUST use the r
     </SheetHeader>
 
     {/* 2. Isolated Scrollable Body */}
-    <div className="flex-1 overflow-y-auto p-5 space-y-4">
-      {/* Form Fields & Sections */}
-    </div>
+    <div className="flex-1 overflow-y-auto p-5 space-y-4">{/* Form Fields & Sections */}</div>
 
     {/* 3. Sticky Bottom Actions Footer */}
     <SheetFooter className="p-5 border-t bg-muted/20 flex sm:justify-end gap-2 shrink-0">
@@ -96,6 +96,7 @@ All modal interactions, store management, plan editors, and forms MUST use the r
 ```
 
 ### Drawer Sizing Rules:
+
 - **Complex Forms** (Tenant Store Management, Plan Quotas, Ticket Triage, Invoices): `sm:max-w-2xl md:max-w-3xl lg:max-w-4xl`.
 - **Standard Forms** (Profile & Password, Add User, Add FAQ, Payment QR): `sm:max-w-xl md:max-w-2xl lg:max-w-3xl`.
 

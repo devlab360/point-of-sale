@@ -16,7 +16,10 @@ export function IconPicker({ value, onChange }: IconPickerProps) {
     <div className="flex items-center gap-2">
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
-          <Button variant="outline" className="w-full justify-start text-left font-normal px-3 h-10">
+          <Button
+            variant="outline"
+            className="w-full justify-start text-left font-normal px-3 h-10"
+          >
             <div className="flex items-center gap-2">
               {value ? (
                 <span className="text-lg leading-none">{value}</span>

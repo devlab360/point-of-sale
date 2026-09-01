@@ -18,7 +18,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Gem, Scale, Sparkles, DollarSign, Calculator, Percent, ArrowRight, ShieldCheck } from "lucide-react";
+import {
+  Gem,
+  Scale,
+  Sparkles,
+  DollarSign,
+  Calculator,
+  Percent,
+  ArrowRight,
+  ShieldCheck,
+} from "lucide-react";
 import { useCurrency } from "@/lib/currency";
 
 interface JewelleryCalculatorModalProps {
@@ -52,7 +61,9 @@ export function JewelleryCalculatorModal({
   const [grossWeight, setGrossWeight] = useState<number>(0);
   const [stoneWeight, setStoneWeight] = useState<number>(0);
   const [stoneCharges, setStoneCharges] = useState<number>(0);
-  const [makingChargeType, setMakingChargeType] = useState<"percent" | "per_gram" | "fixed">("percent");
+  const [makingChargeType, setMakingChargeType] = useState<"percent" | "per_gram" | "fixed">(
+    "percent",
+  );
   const [makingChargeValue, setMakingChargeValue] = useState<number>(10);
   const [wastagePercent, setWastagePercent] = useState<number>(0);
 
@@ -163,7 +174,10 @@ export function JewelleryCalculatorModal({
               </DialogDescription>
             </div>
           </div>
-          <Badge variant="outline" className="bg-amber-500/10 text-amber-700 dark:text-amber-300 font-mono font-bold text-xs border-amber-500/30">
+          <Badge
+            variant="outline"
+            className="bg-amber-500/10 text-amber-700 dark:text-amber-300 font-mono font-bold text-xs border-amber-500/30"
+          >
             {purityKarat} {metalType.toUpperCase()}
           </Badge>
         </div>
@@ -189,7 +203,9 @@ export function JewelleryCalculatorModal({
             </div>
 
             <div className="space-y-1.5">
-              <Label className="text-xs font-bold text-foreground">Spot Rate / Gram ({currencySymbol})</Label>
+              <Label className="text-xs font-bold text-foreground">
+                Spot Rate / Gram ({currencySymbol})
+              </Label>
               <div className="relative">
                 <Input
                   type="number"
@@ -212,7 +228,9 @@ export function JewelleryCalculatorModal({
 
             <div className="grid grid-cols-3 gap-3">
               <div className="space-y-1.5">
-                <Label className="text-[11px] font-semibold text-muted-foreground">Gross Wt (g)</Label>
+                <Label className="text-[11px] font-semibold text-muted-foreground">
+                  Gross Wt (g)
+                </Label>
                 <Input
                   type="number"
                   step="0.001"
@@ -225,7 +243,9 @@ export function JewelleryCalculatorModal({
               </div>
 
               <div className="space-y-1.5">
-                <Label className="text-[11px] font-semibold text-muted-foreground">Stone Wt (g)</Label>
+                <Label className="text-[11px] font-semibold text-muted-foreground">
+                  Stone Wt (g)
+                </Label>
                 <Input
                   type="number"
                   step="0.001"
@@ -238,7 +258,9 @@ export function JewelleryCalculatorModal({
               </div>
 
               <div className="space-y-1.5">
-                <Label className="text-[11px] font-semibold text-muted-foreground">Net Gold Wt (g)</Label>
+                <Label className="text-[11px] font-semibold text-muted-foreground">
+                  Net Gold Wt (g)
+                </Label>
                 <div className="h-10 rounded-xl border bg-card px-3 flex items-center font-mono font-black text-sm text-foreground shadow-xs">
                   {netWeight.toFixed(3)}g
                 </div>
@@ -299,7 +321,9 @@ export function JewelleryCalculatorModal({
             </div>
 
             <div className="space-y-1.5">
-              <Label className="text-xs font-bold text-foreground">Stone / Diamond Charges ({currencySymbol})</Label>
+              <Label className="text-xs font-bold text-foreground">
+                Stone / Diamond Charges ({currencySymbol})
+              </Label>
               <Input
                 type="number"
                 step="1"
@@ -315,23 +339,44 @@ export function JewelleryCalculatorModal({
           {/* Real-time Calculation Summary Card */}
           <div className="rounded-2xl border border-amber-500/30 bg-amber-500/5 p-4 space-y-2 text-xs">
             <div className="flex justify-between text-muted-foreground">
-              <span>Pure Metal Cost ({netWeight.toFixed(3)}g × {currencySymbol}{ratePerGram}/g):</span>
-              <span className="font-mono font-bold text-foreground">{currencySymbol}{metalAmount.toFixed(2)}</span>
+              <span>
+                Pure Metal Cost ({netWeight.toFixed(3)}g × {currencySymbol}
+                {ratePerGram}/g):
+              </span>
+              <span className="font-mono font-bold text-foreground">
+                {currencySymbol}
+                {metalAmount.toFixed(2)}
+              </span>
             </div>
             <div className="flex justify-between text-muted-foreground">
-              <span>Making Charges ({makingChargeType === "percent" ? `${makingChargeValue}%` : makingChargeType === "per_gram" ? `${currencySymbol}${makingChargeValue}/g` : "Fixed"}):</span>
-              <span className="font-mono font-bold text-foreground">{currencySymbol}{makingChargeAmount.toFixed(2)}</span>
+              <span>
+                Making Charges (
+                {makingChargeType === "percent"
+                  ? `${makingChargeValue}%`
+                  : makingChargeType === "per_gram"
+                    ? `${currencySymbol}${makingChargeValue}/g`
+                    : "Fixed"}
+                ):
+              </span>
+              <span className="font-mono font-bold text-foreground">
+                {currencySymbol}
+                {makingChargeAmount.toFixed(2)}
+              </span>
             </div>
             {stoneCharges > 0 && (
               <div className="flex justify-between text-muted-foreground">
                 <span>Stone / Gem Charges:</span>
-                <span className="font-mono font-bold text-foreground">{currencySymbol}{stoneCharges.toFixed(2)}</span>
+                <span className="font-mono font-bold text-foreground">
+                  {currencySymbol}
+                  {stoneCharges.toFixed(2)}
+                </span>
               </div>
             )}
             <div className="border-t border-amber-500/20 pt-2 mt-2 flex justify-between items-center text-sm">
               <span className="font-black text-foreground">Calculated Item Total:</span>
               <span className="text-lg font-black text-amber-700 dark:text-amber-400 font-mono">
-                {currencySymbol}{finalTotal.toFixed(2)}
+                {currencySymbol}
+                {finalTotal.toFixed(2)}
               </span>
             </div>
           </div>
@@ -339,7 +384,11 @@ export function JewelleryCalculatorModal({
 
         {/* Tier 3: Sticky Footer */}
         <div className="p-4 border-t border-border/80 bg-muted/20 flex items-center justify-between gap-3">
-          <Button variant="outline" onClick={onClose} className="h-11 rounded-xl text-xs font-semibold">
+          <Button
+            variant="outline"
+            onClick={onClose}
+            className="h-11 rounded-xl text-xs font-semibold"
+          >
             Cancel
           </Button>
           <Button

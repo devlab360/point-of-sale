@@ -47,13 +47,16 @@ import { TableSkeleton } from "@/components/skeletons/TableSkeleton";
 import { CardGridSkeleton } from "@/components/skeletons/CardGridSkeleton";
 import { ErrorState } from "@/components/ui/error-state";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import {
-  getServicesListFn,
-  deleteServiceItemFn,
-  getAllServiceVariantsFn,
-} from "@/api/services";
+import { getServicesListFn, deleteServiceItemFn, getAllServiceVariantsFn } from "@/api/services";
 import { getCategoriesFn } from "@/api/categories";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 export const Route = createFileRoute("/services/")({
   head: () => ({
@@ -122,7 +125,10 @@ function ServicesPage() {
   }, [filtered, page, pageSize]);
 
   const totalItems = rawServices.length;
-  const activeCount = useMemo(() => rawServices.filter((s) => (s.status || "active") === "active").length, [rawServices]);
+  const activeCount = useMemo(
+    () => rawServices.filter((s) => (s.status || "active") === "active").length,
+    [rawServices],
+  );
   const categoriesCount = categories.length;
 
   const [deleteId, setDeleteId] = useState<string | null>(null);
@@ -161,7 +167,7 @@ function ServicesPage() {
         { key: "Duration", label: "Duration (min)" },
         { key: "Status", label: "Status" },
       ],
-      "services-catalog"
+      "services-catalog",
     );
   };
 
@@ -173,19 +179,10 @@ function ServicesPage() {
         description="Configure billable services, session durations, multi-tier pricing variants, and staff commission rules."
         actions={
           <div className="flex flex-wrap items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleExport}
-              className="gap-1.5"
-            >
+            <Button variant="outline" size="sm" onClick={handleExport} className="gap-1.5">
               <Download className="size-4" /> Export CSV
             </Button>
-            <Button
-              size="sm"
-              onClick={() => navigate({ to: "/services/new" })}
-              className="gap-1.5"
-            >
+            <Button size="sm" onClick={() => navigate({ to: "/services/new" })} className="gap-1.5">
               <Plus className="size-4" /> Add Service
             </Button>
           </div>
@@ -307,7 +304,9 @@ function ServicesPage() {
             icon={Wrench}
             title="No services found"
             description={
-              search ? "Try adjusting your search criteria." : "You haven't created any service items yet."
+              search
+                ? "Try adjusting your search criteria."
+                : "You haven't created any service items yet."
             }
             actionLabel="Add Service"
             onAction={() => navigate({ to: "/services/new" })}
@@ -428,9 +427,7 @@ function ServicesPage() {
                             {s.name}
                           </div>
                         </TableCell>
-                        <TableCell className="text-xs">
-                          {catObj?.name || "General"}
-                        </TableCell>
+                        <TableCell className="text-xs">{catObj?.name || "General"}</TableCell>
                         <TableCell>
                           <Badge variant="outline" className="text-xs">
                             <Clock className="size-3 mr-1 text-muted-foreground" />
@@ -495,17 +492,14 @@ function ServicesPage() {
                   Delete Service Offering
                 </DialogTitle>
                 <DialogDescription className="text-xs text-muted-foreground mt-0.5">
-                  Are you sure you want to delete this service? Historical appointments will retain their records.
+                  Are you sure you want to delete this service? Historical appointments will retain
+                  their records.
                 </DialogDescription>
               </div>
             </div>
           </DialogHeader>
           <DialogFooter className="mt-4 flex flex-row items-center justify-end gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setDeleteId(null)}
-            >
+            <Button type="button" variant="outline" onClick={() => setDeleteId(null)}>
               Cancel
             </Button>
             <Button

@@ -54,12 +54,19 @@ export const Route = createFileRoute("/admin/support")({
 
 function SuperAdminSupportPage() {
   const queryClient = useQueryClient();
-  const [statusFilter, setStatusFilter] = useState<"all" | "open" | "in-progress" | "resolved" | "closed">("all");
+  const [statusFilter, setStatusFilter] = useState<
+    "all" | "open" | "in-progress" | "resolved" | "closed"
+  >("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedTicket, setSelectedTicket] = useState<any>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
 
-  const { data: ticketsData, isLoading, refetch, isFetching } = useQuery({
+  const {
+    data: ticketsData,
+    isLoading,
+    refetch,
+    isFetching,
+  } = useQuery({
     queryKey: ["super-admin-support-tickets"],
     queryFn: () => getAllSupportTicketsAdminFn({ data: {} }),
   });
@@ -181,7 +188,9 @@ function SuperAdminSupportPage() {
               type="button"
               onClick={() => setStatusFilter("all")}
               className={`px-3 py-1.5 rounded-lg transition-colors ${
-                statusFilter === "all" ? "bg-card text-foreground shadow-xs" : "text-muted-foreground hover:text-foreground"
+                statusFilter === "all"
+                  ? "bg-card text-foreground shadow-xs"
+                  : "text-muted-foreground hover:text-foreground"
               }`}
             >
               All Tickets ({tickets.length})
@@ -190,7 +199,9 @@ function SuperAdminSupportPage() {
               type="button"
               onClick={() => setStatusFilter("open")}
               className={`px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5 ${
-                statusFilter === "open" ? "bg-card text-foreground shadow-xs" : "text-muted-foreground hover:text-foreground"
+                statusFilter === "open"
+                  ? "bg-card text-foreground shadow-xs"
+                  : "text-muted-foreground hover:text-foreground"
               }`}
             >
               <span>Open</span>
@@ -204,7 +215,9 @@ function SuperAdminSupportPage() {
               type="button"
               onClick={() => setStatusFilter("in-progress")}
               className={`px-3 py-1.5 rounded-lg transition-colors ${
-                statusFilter === "in-progress" ? "bg-card text-foreground shadow-xs" : "text-muted-foreground hover:text-foreground"
+                statusFilter === "in-progress"
+                  ? "bg-card text-foreground shadow-xs"
+                  : "text-muted-foreground hover:text-foreground"
               }`}
             >
               In Progress ({inProgressCount})
@@ -213,7 +226,9 @@ function SuperAdminSupportPage() {
               type="button"
               onClick={() => setStatusFilter("resolved")}
               className={`px-3 py-1.5 rounded-lg transition-colors ${
-                statusFilter === "resolved" ? "bg-card text-foreground shadow-xs" : "text-muted-foreground hover:text-foreground"
+                statusFilter === "resolved"
+                  ? "bg-card text-foreground shadow-xs"
+                  : "text-muted-foreground hover:text-foreground"
               }`}
             >
               Resolved ({resolvedCount})
@@ -222,7 +237,9 @@ function SuperAdminSupportPage() {
               type="button"
               onClick={() => setStatusFilter("closed")}
               className={`px-3 py-1.5 rounded-lg transition-colors ${
-                statusFilter === "closed" ? "bg-card text-foreground shadow-xs" : "text-muted-foreground hover:text-foreground"
+                statusFilter === "closed"
+                  ? "bg-card text-foreground shadow-xs"
+                  : "text-muted-foreground hover:text-foreground"
               }`}
             >
               Closed ({closedCount})
@@ -275,7 +292,9 @@ function SuperAdminSupportPage() {
                       <div className="font-bold text-foreground">
                         {ticket.orgName || ticket.organizationId}
                       </div>
-                      <div className="text-[10px] text-muted-foreground">{ticket.userName || ticket.orgEmail || "Store Owner"}</div>
+                      <div className="text-[10px] text-muted-foreground">
+                        {ticket.userName || ticket.orgEmail || "Store Owner"}
+                      </div>
                     </TableCell>
 
                     <TableCell className="px-4 py-3.5 max-w-md">
@@ -297,10 +316,10 @@ function SuperAdminSupportPage() {
                           ticket.status === "resolved"
                             ? "default"
                             : ticket.status === "in-progress"
-                            ? "secondary"
-                            : ticket.status === "closed"
-                            ? "outline"
-                            : "destructive"
+                              ? "secondary"
+                              : ticket.status === "closed"
+                                ? "outline"
+                                : "destructive"
                         }
                         className="text-[10px] font-bold uppercase"
                       >
@@ -339,7 +358,8 @@ function SuperAdminSupportPage() {
                 Ticket Details: {selectedTicket?.subject || "Support Inquiry"}
               </SheetTitle>
               <SheetDescription className="text-xs text-muted-foreground mt-0.5">
-                Review message from {selectedTicket?.orgName || "Merchant Store"} and update ticket state.
+                Review message from {selectedTicket?.orgName || "Merchant Store"} and update ticket
+                state.
               </SheetDescription>
             </SheetHeader>
 
@@ -354,7 +374,11 @@ function SuperAdminSupportPage() {
                           {selectedTicket.orgName || selectedTicket.organizationId}
                         </span>
                         <Link to="/admin/tenants">
-                          <Button size="sm" variant="ghost" className="h-6 text-[10px] px-1.5 gap-1">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-6 text-[10px] px-1.5 gap-1"
+                          >
                             <Store className="size-3" /> View Store
                           </Button>
                         </Link>
@@ -362,11 +386,15 @@ function SuperAdminSupportPage() {
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Submitter:</span>
-                      <span className="text-foreground font-medium">{selectedTicket.userName || selectedTicket.orgEmail || "Store Owner"}</span>
+                      <span className="text-foreground font-medium">
+                        {selectedTicket.userName || selectedTicket.orgEmail || "Store Owner"}
+                      </span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Received Date:</span>
-                      <span className="font-mono text-foreground">{new Date(selectedTicket.createdAt).toLocaleString()}</span>
+                      <span className="font-mono text-foreground">
+                        {new Date(selectedTicket.createdAt).toLocaleString()}
+                      </span>
                     </div>
                     <div className="flex justify-between items-center">
                       <span className="text-muted-foreground">Current State:</span>
@@ -375,10 +403,10 @@ function SuperAdminSupportPage() {
                           selectedTicket.status === "resolved"
                             ? "default"
                             : selectedTicket.status === "in-progress"
-                            ? "secondary"
-                            : selectedTicket.status === "closed"
-                            ? "outline"
-                            : "destructive"
+                              ? "secondary"
+                              : selectedTicket.status === "closed"
+                                ? "outline"
+                                : "destructive"
                         }
                         className="text-[10px] font-bold uppercase"
                       >
@@ -447,7 +475,11 @@ function SuperAdminSupportPage() {
                 </div>
 
                 <SheetFooter className="p-5 border-t bg-muted/20 flex sm:justify-end shrink-0">
-                  <Button type="button" variant="outline" onClick={() => setIsDetailModalOpen(false)}>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setIsDetailModalOpen(false)}
+                  >
                     Close Drawer
                   </Button>
                 </SheetFooter>

@@ -111,7 +111,7 @@ function HelpPage() {
     .filter(
       (a: any) =>
         a.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        a.content?.toLowerCase().includes(searchQuery.toLowerCase())
+        a.content?.toLowerCase().includes(searchQuery.toLowerCase()),
     );
 
   const filteredVideos = articles
@@ -119,13 +119,13 @@ function HelpPage() {
     .filter(
       (a: any) =>
         a.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        a.content?.toLowerCase().includes(searchQuery.toLowerCase())
+        a.content?.toLowerCase().includes(searchQuery.toLowerCase()),
     );
 
   const filteredFaqs = faqs.filter(
     (f: any) =>
       f.question?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      f.answer?.toLowerCase().includes(searchQuery.toLowerCase())
+      f.answer?.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
   return (
@@ -144,11 +144,7 @@ function HelpPage() {
             >
               <Star className="size-4 text-warning fill-warning" /> Rate App
             </Button>
-            <Button
-              size="sm"
-              onClick={() => setIsChatOpen(true)}
-              className="gap-1.5"
-            >
+            <Button size="sm" onClick={() => setIsChatOpen(true)} className="gap-1.5">
               <Headphones className="size-4" /> Support Ticket
             </Button>
           </div>
@@ -318,9 +314,7 @@ function HelpPage() {
                 <h3 className="font-bold text-sm text-foreground group-hover:text-primary transition-colors">
                   {vid.title}
                 </h3>
-                <p className="text-xs text-muted-foreground line-clamp-2">
-                  {vid.content}
-                </p>
+                <p className="text-xs text-muted-foreground line-clamp-2">{vid.content}</p>
               </div>
             </div>
           ))}
@@ -342,7 +336,9 @@ function HelpPage() {
                   className="w-full flex items-center justify-between text-left font-bold text-sm text-foreground gap-4"
                 >
                   <span>{faq.question}</span>
-                  <ChevronDown className={`size-4 text-muted-foreground shrink-0 transition-transform ${isOpen ? "rotate-180" : ""}`} />
+                  <ChevronDown
+                    className={`size-4 text-muted-foreground shrink-0 transition-transform ${isOpen ? "rotate-180" : ""}`}
+                  />
                 </button>
                 {isOpen && (
                   <p className="mt-3 pt-3 border-t border-border/60 text-xs text-muted-foreground leading-relaxed">
@@ -370,7 +366,8 @@ function HelpPage() {
                     Digital Warranty & Guarantee Verification
                   </h3>
                   <p className="text-xs text-muted-foreground mt-0.5">
-                    Look up product purchase dates, registered serials/IMEIs, and live warranty coverage status.
+                    Look up product purchase dates, registered serials/IMEIs, and live warranty
+                    coverage status.
                   </p>
                 </div>
               </div>
@@ -425,11 +422,14 @@ function HelpPage() {
 
                     const now = new Date();
                     const isWarrantyValid = warrantyExpiryDate.getTime() > now.getTime();
-                    const isGuaranteeValid = guaranteeMonths > 0 && guaranteeExpiryDate.getTime() > now.getTime();
+                    const isGuaranteeValid =
+                      guaranteeMonths > 0 && guaranteeExpiryDate.getTime() > now.getTime();
 
                     const daysRemaining = Math.max(
                       0,
-                      Math.ceil((warrantyExpiryDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
+                      Math.ceil(
+                        (warrantyExpiryDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24),
+                      ),
                     );
 
                     matchedWarrantyItems.push({
@@ -480,9 +480,17 @@ function HelpPage() {
                             {item.line.product.name}
                           </h4>
                           <p className="text-xs text-muted-foreground mt-0.5">
-                            Invoice: <strong className="text-foreground">#{String(item.sale.invoiceNumber || item.sale.id).slice(0, 12)}</strong>
+                            Invoice:{" "}
+                            <strong className="text-foreground">
+                              #{String(item.sale.invoiceNumber || item.sale.id).slice(0, 12)}
+                            </strong>
                             {" • "}
-                            Sold on: {item.saleDate.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" })}
+                            Sold on:{" "}
+                            {item.saleDate.toLocaleDateString(undefined, {
+                              year: "numeric",
+                              month: "short",
+                              day: "numeric",
+                            })}
                           </p>
                         </div>
                         <Badge
@@ -493,7 +501,9 @@ function HelpPage() {
                               : "bg-destructive/10 text-destructive border-destructive/30 font-bold"
                           }
                         >
-                          {item.isWarrantyValid ? `Active (${item.daysRemaining}d left)` : "Expired"}
+                          {item.isWarrantyValid
+                            ? `Active (${item.daysRemaining}d left)`
+                            : "Expired"}
                         </Badge>
                       </div>
 
@@ -512,7 +522,9 @@ function HelpPage() {
                             Customer
                           </span>
                           <span className="font-semibold text-foreground truncate block">
-                            {item.sale.customer?.name || item.sale.customerName || "Walk-in Customer"}
+                            {item.sale.customer?.name ||
+                              item.sale.customerName ||
+                              "Walk-in Customer"}
                           </span>
                         </div>
                         <div className="p-2.5 rounded-xl bg-muted/40 border border-border/60">
@@ -527,8 +539,14 @@ function HelpPage() {
                           <span className="text-[10px] text-muted-foreground uppercase font-bold block">
                             Valid Until
                           </span>
-                          <span className={`font-bold ${item.isWarrantyValid ? "text-emerald-600" : "text-destructive"}`}>
-                            {item.warrantyExpiryDate.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" })}
+                          <span
+                            className={`font-bold ${item.isWarrantyValid ? "text-emerald-600" : "text-destructive"}`}
+                          >
+                            {item.warrantyExpiryDate.toLocaleDateString(undefined, {
+                              year: "numeric",
+                              month: "short",
+                              day: "numeric",
+                            })}
                           </span>
                         </div>
                       </div>
@@ -536,7 +554,9 @@ function HelpPage() {
                       {item.guaranteeMonths > 0 && (
                         <div className="p-2 rounded-xl bg-amber-500/10 border border-amber-500/20 text-xs text-amber-800 dark:text-amber-300 flex items-center justify-between">
                           <span>Replacement Guarantee: {item.guaranteeMonths} Months</span>
-                          <span className="font-bold">{item.isGuaranteeValid ? "Active ✓" : "Guarantee Expired"}</span>
+                          <span className="font-bold">
+                            {item.isGuaranteeValid ? "Active ✓" : "Guarantee Expired"}
+                          </span>
                         </div>
                       )}
 
@@ -619,17 +639,10 @@ function HelpPage() {
               </div>
 
               <SheetFooter className="p-4 border-t border-border/60 bg-muted/20 flex flex-row items-center justify-end gap-2 shrink-0">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setIsChatOpen(false)}
-                >
+                <Button type="button" variant="outline" onClick={() => setIsChatOpen(false)}>
                   Cancel
                 </Button>
-                <Button
-                  type="submit"
-                  disabled={chatMutation.isPending}
-                >
+                <Button type="submit" disabled={chatMutation.isPending}>
                   {chatMutation.isPending && <Loader2 className="size-4 animate-spin mr-2" />}
                   Submit Ticket
                 </Button>
@@ -700,17 +713,10 @@ function HelpPage() {
               </div>
 
               <SheetFooter className="p-4 border-t border-border/60 bg-muted/20 flex flex-row items-center justify-end gap-2 shrink-0">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setIsReviewOpen(false)}
-                >
+                <Button type="button" variant="outline" onClick={() => setIsReviewOpen(false)}>
                   Cancel
                 </Button>
-                <Button
-                  type="submit"
-                  disabled={reviewMutation.isPending}
-                >
+                <Button type="submit" disabled={reviewMutation.isPending}>
                   {reviewMutation.isPending && <Loader2 className="size-4 animate-spin mr-2" />}
                   Submit Feedback
                 </Button>

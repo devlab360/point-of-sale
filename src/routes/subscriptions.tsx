@@ -80,7 +80,14 @@ import { CardGridSkeleton } from "@/components/skeletons/CardGridSkeleton";
 import { TableSkeleton } from "@/components/skeletons/TableSkeleton";
 import { ErrorState } from "@/components/ui/error-state";
 import { usePreferences } from "@/contexts/PreferencesContext";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { PaginationControls } from "@/components/ui/pagination-controls";
 
 export const Route = createFileRoute("/subscriptions")({
@@ -144,7 +151,10 @@ function SubscriptionsPage() {
   });
 
   const totalMembers = subscriptions.length;
-  const activeSubs = useMemo(() => subscriptions.filter((s: any) => s.status === "active").length, [subscriptions]);
+  const activeSubs = useMemo(
+    () => subscriptions.filter((s: any) => s.status === "active").length,
+    [subscriptions],
+  );
   const mrrValue = useMemo(() => {
     return subscriptions
       .filter((s: any) => s.status === "active")
@@ -155,7 +165,10 @@ function SubscriptionsPage() {
         return acc + amt;
       }, 0);
   }, [subscriptions]);
-  const pausedSubs = useMemo(() => subscriptions.filter((s: any) => s.status === "paused").length, [subscriptions]);
+  const pausedSubs = useMemo(
+    () => subscriptions.filter((s: any) => s.status === "paused").length,
+    [subscriptions],
+  );
 
   const filteredSubs = useMemo(() => {
     let list = Array.isArray(subscriptions) ? subscriptions : [];
@@ -165,7 +178,7 @@ function SubscriptionsPage() {
         (s: any) =>
           s.customerName?.toLowerCase().includes(lower) ||
           s.planName?.toLowerCase().includes(lower) ||
-          s.customerPhone?.includes(lower)
+          s.customerPhone?.includes(lower),
       );
     }
     if (cycleFilter !== "all") {
@@ -233,7 +246,9 @@ function SubscriptionsPage() {
 
   const updateStatus = async (id: string, newStatus: string) => {
     try {
-      const res = (await updateSubscriptionFn({ data: { id, updates: { status: newStatus as any } } })) as any;
+      const res = (await updateSubscriptionFn({
+        data: { id, updates: { status: newStatus as any } },
+      })) as any;
       if (res?.success) {
         queryClient.invalidateQueries({ queryKey: ["subscriptions", orgId] });
         toast.success(`Subscription status updated to ${newStatus}`);
@@ -408,7 +423,9 @@ function SubscriptionsPage() {
             icon={Repeat}
             title="No subscriptions found"
             description={
-              search ? "Try adjusting your search criteria." : "You haven't enrolled any recurring customer subscriptions yet."
+              search
+                ? "Try adjusting your search criteria."
+                : "You haven't enrolled any recurring customer subscriptions yet."
             }
             actionLabel="Add Subscription"
             onAction={() => {
@@ -474,7 +491,9 @@ function SubscriptionsPage() {
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => updateStatus(s.id, s.status === "active" ? "paused" : "active")}
+                        onClick={() =>
+                          updateStatus(s.id, s.status === "active" ? "paused" : "active")
+                        }
                         className="h-8 text-xs font-semibold"
                       >
                         {s.status === "active" ? "Pause" : "Resume"}
@@ -530,14 +549,12 @@ function SubscriptionsPage() {
                       <TableRow key={s.id} className="hover:bg-muted/30 transition-colors">
                         <TableCell>
                           <span className="font-semibold text-foreground">{s.customerName}</span>
-                          {s.customerPhone && <div className="text-xs text-muted-foreground">{s.customerPhone}</div>}
+                          {s.customerPhone && (
+                            <div className="text-xs text-muted-foreground">{s.customerPhone}</div>
+                          )}
                         </TableCell>
-                        <TableCell className="font-medium text-foreground">
-                          {s.planName}
-                        </TableCell>
-                        <TableCell className="capitalize text-xs">
-                          {s.billingCycle}
-                        </TableCell>
+                        <TableCell className="font-medium text-foreground">{s.planName}</TableCell>
+                        <TableCell className="capitalize text-xs">{s.billingCycle}</TableCell>
                         <TableCell className="font-bold text-foreground">
                           {formatCurrency(s.amount)}
                         </TableCell>
@@ -561,7 +578,9 @@ function SubscriptionsPage() {
                             <Button
                               variant="ghost"
                               size="sm"
-                              onClick={() => updateStatus(s.id, s.status === "active" ? "paused" : "active")}
+                              onClick={() =>
+                                updateStatus(s.id, s.status === "active" ? "paused" : "active")
+                              }
                               className="h-8 text-xs font-semibold"
                             >
                               {s.status === "active" ? "Pause" : "Resume"}
@@ -614,7 +633,10 @@ function SubscriptionsPage() {
               </SheetDescription>
             </SheetHeader>
 
-            <form onSubmit={handleSave} className="flex-1 flex flex-col justify-between overflow-hidden">
+            <form
+              onSubmit={handleSave}
+              className="flex-1 flex flex-col justify-between overflow-hidden"
+            >
               <div className="flex-1 overflow-y-auto p-5 space-y-4">
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1.5">
@@ -635,7 +657,9 @@ function SubscriptionsPage() {
                   </div>
 
                   <div className="space-y-1.5">
-                    <Label htmlFor="sub-phone" className="text-xs font-semibold">Phone Number</Label>
+                    <Label htmlFor="sub-phone" className="text-xs font-semibold">
+                      Phone Number
+                    </Label>
                     <Input
                       id="sub-phone"
                       type="tel"
@@ -686,10 +710,7 @@ function SubscriptionsPage() {
 
                   <div className="space-y-1.5">
                     <Label className="text-xs font-semibold">Billing Frequency</Label>
-                    <Select
-                      value={billingCycle}
-                      onValueChange={(val: any) => setBillingCycle(val)}
-                    >
+                    <Select value={billingCycle} onValueChange={(val: any) => setBillingCycle(val)}>
                       <SelectTrigger className="h-9 text-xs">
                         <SelectValue />
                       </SelectTrigger>
@@ -720,18 +741,10 @@ function SubscriptionsPage() {
               </div>
 
               <SheetFooter className="p-4 border-t border-border/60 bg-muted/20 flex flex-row items-center justify-end gap-2 shrink-0">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setIsAddOpen(false)}
-                >
+                <Button type="button" variant="outline" onClick={() => setIsAddOpen(false)}>
                   Cancel
                 </Button>
-                <Button
-                  type="submit"
-                  disabled={isSaving}
-                  className="font-semibold shadow-sm"
-                >
+                <Button type="submit" disabled={isSaving} className="font-semibold shadow-sm">
                   {isSaving && <Loader2 className="size-4 animate-spin mr-2" />}
                   Create Subscription
                 </Button>
@@ -760,11 +773,7 @@ function SubscriptionsPage() {
             </div>
           </DialogHeader>
           <DialogFooter className="mt-4 flex flex-row items-center justify-end gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setDeleteId(null)}
-            >
+            <Button type="button" variant="outline" onClick={() => setDeleteId(null)}>
               Cancel
             </Button>
             <Button
@@ -825,7 +834,9 @@ function SubscriptionsPage() {
                   <div className="p-8 text-center border border-dashed border-border/80 rounded-2xl bg-muted/10 space-y-2">
                     <ScanBarcode className="size-8 text-muted-foreground/40 mx-auto" />
                     <p className="text-xs text-muted-foreground">
-                      {checkInScanQuery ? `No member found matching "${checkInScanQuery}".` : "Ready to scan. Swipe member card or type phone number."}
+                      {checkInScanQuery
+                        ? `No member found matching "${checkInScanQuery}".`
+                        : "Ready to scan. Swipe member card or type phone number."}
                     </p>
                   </div>
                 );
@@ -833,7 +844,9 @@ function SubscriptionsPage() {
 
               const nextDate = new Date(matchedMember.nextBillingDate || new Date());
               const now = new Date();
-              const diffDays = Math.ceil((nextDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+              const diffDays = Math.ceil(
+                (nextDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24),
+              );
               const isActive = matchedMember.status === "active" && diffDays >= 0;
               const isExpiringSoon = isActive && diffDays <= 7;
 
@@ -864,7 +877,11 @@ function SubscriptionsPage() {
                             : "bg-emerald-500/10 text-emerald-600 border-emerald-500/30 font-bold"
                       }
                     >
-                      {!isActive ? "Expired / Inactive" : isExpiringSoon ? `Expiring in ${diffDays}d` : `Active (${diffDays}d left)`}
+                      {!isActive
+                        ? "Expired / Inactive"
+                        : isExpiringSoon
+                          ? `Expiring in ${diffDays}d`
+                          : `Active (${diffDays}d left)`}
                     </Badge>
                   </div>
 
@@ -873,9 +890,7 @@ function SubscriptionsPage() {
                       <span className="text-[10px] text-muted-foreground uppercase font-bold block">
                         Enrolled Plan
                       </span>
-                      <span className="font-bold text-foreground">
-                        {matchedMember.planName}
-                      </span>
+                      <span className="font-bold text-foreground">{matchedMember.planName}</span>
                     </div>
 
                     <div className="p-2.5 rounded-xl bg-card border border-border/60">
@@ -883,7 +898,8 @@ function SubscriptionsPage() {
                         Billing Cycle
                       </span>
                       <span className="font-bold text-foreground uppercase">
-                        {matchedMember.billingCycle} • {currencySymbol}{matchedMember.amount}
+                        {matchedMember.billingCycle} • {currencySymbol}
+                        {matchedMember.amount}
                       </span>
                     </div>
 
@@ -891,7 +907,9 @@ function SubscriptionsPage() {
                       <span className="text-[10px] text-muted-foreground uppercase font-bold block">
                         Valid Until
                       </span>
-                      <span className={`font-bold ${isActive ? "text-emerald-600" : "text-destructive"}`}>
+                      <span
+                        className={`font-bold ${isActive ? "text-emerald-600" : "text-destructive"}`}
+                      >
                         {formatDate(nextDate)}
                       </span>
                     </div>
@@ -910,7 +928,9 @@ function SubscriptionsPage() {
                   <div className="pt-2 flex items-center gap-2">
                     <Button
                       onClick={() => {
-                        toast.success(`✓ Check-In Logged for ${matchedMember.customerName}! Welcome!`);
+                        toast.success(
+                          `✓ Check-In Logged for ${matchedMember.customerName}! Welcome!`,
+                        );
                         setCheckInScanQuery("");
                       }}
                       className="flex-1 h-11 rounded-xl font-extrabold text-xs bg-emerald-600 hover:bg-emerald-700 text-white shadow-soft gap-2"
@@ -943,7 +963,11 @@ function SubscriptionsPage() {
           </div>
 
           <div className="p-4 border-t border-border/80 bg-muted/20 flex justify-end">
-            <Button variant="outline" onClick={() => setShowCheckInModal(false)} className="h-10 rounded-xl text-xs font-semibold">
+            <Button
+              variant="outline"
+              onClick={() => setShowCheckInModal(false)}
+              className="h-10 rounded-xl text-xs font-semibold"
+            >
               Done (Esc)
             </Button>
           </div>

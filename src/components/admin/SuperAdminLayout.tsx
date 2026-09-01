@@ -4,10 +4,7 @@ import { useAdminAuth } from "@/contexts/AdminAuthContext";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getPendingPaymentsFn } from "@/api/admin/subscription-payments";
 import { updateSuperAdminProfileAdminFn } from "@/api/admin/super-admin";
-import {
-  SUPER_ADMIN_MODULES,
-  getModuleKeyForRoute,
-} from "@/lib/admin/super-admin-permissions";
+import { SUPER_ADMIN_MODULES, getModuleKeyForRoute } from "@/lib/admin/super-admin-permissions";
 import {
   Shield,
   LayoutGrid,
@@ -75,7 +72,10 @@ function pathToCrumbs(pathname: string) {
       { label: "Dashboard", to: "/admin/dashboard" },
     ];
   }
-  const parts = pathname.replace(/^\/admin\/?/, "").split("/").filter(Boolean);
+  const parts = pathname
+    .replace(/^\/admin\/?/, "")
+    .split("/")
+    .filter(Boolean);
   return [
     { label: "Super Admin", to: "/admin/dashboard" },
     ...parts.map((p, i) => ({
@@ -245,25 +245,25 @@ export function SuperAdminLayout({ children }: { children: React.ReactNode }) {
         { label: "Support Inbox", to: "/admin/support", icon: MessageCircle, moduleKey: "support" },
         { label: "Merchant Reviews", to: "/admin/reviews", icon: Star, moduleKey: "reviews" },
         { label: "Help Center & FAQs", to: "/admin/help", icon: BookOpen, moduleKey: "help" },
-        { label: "Broadcast Notices", to: "/admin/announcements", icon: Megaphone, moduleKey: "announcements" },
+        {
+          label: "Broadcast Notices",
+          to: "/admin/announcements",
+          icon: Megaphone,
+          moduleKey: "announcements",
+        },
       ],
     },
     {
       groupTitle: "Platform Personnel",
-      items: [
-        { label: "Super Admin Users", to: "/admin/users", icon: Users, moduleKey: "users" },
-      ],
+      items: [{ label: "Super Admin Users", to: "/admin/users", icon: Users, moduleKey: "users" }],
     },
   ];
 
-
   // Filter groups/items by module permissions
-  const navGroups = ALL_NAV_GROUPS
-    .map((group) => ({
-      ...group,
-      items: group.items.filter((item) => hasModuleAccess(item.moduleKey)),
-    }))
-    .filter((group) => group.items.length > 0);
+  const navGroups = ALL_NAV_GROUPS.map((group) => ({
+    ...group,
+    items: group.items.filter((item) => hasModuleAccess(item.moduleKey)),
+  })).filter((group) => group.items.length > 0);
 
   const crumbs = pathToCrumbs(pathname);
   const initials = user?.name
@@ -363,7 +363,12 @@ export function SuperAdminLayout({ children }: { children: React.ReactNode }) {
                       : "bg-muted/30 text-foreground hover:bg-muted/60",
                   )}
                 >
-                  <LayoutGrid className={cn("size-5 shrink-0 stroke-[2]", isDashboardActive ? "text-white" : "text-foreground/80")} />
+                  <LayoutGrid
+                    className={cn(
+                      "size-5 shrink-0 stroke-[2]",
+                      isDashboardActive ? "text-white" : "text-foreground/80",
+                    )}
+                  />
                 </Link>
               </TooltipTrigger>
               <TooltipContent side="right" className="font-bold text-xs">
@@ -380,7 +385,12 @@ export function SuperAdminLayout({ children }: { children: React.ReactNode }) {
                   : "bg-muted/30 text-foreground hover:bg-muted/60",
               )}
             >
-              <LayoutGrid className={cn("size-5 shrink-0 stroke-[2]", isDashboardActive ? "text-white" : "text-foreground/80")} />
+              <LayoutGrid
+                className={cn(
+                  "size-5 shrink-0 stroke-[2]",
+                  isDashboardActive ? "text-white" : "text-foreground/80",
+                )}
+              />
               <span>Executive Dashboard</span>
             </Link>
           )}
@@ -414,7 +424,12 @@ export function SuperAdminLayout({ children }: { children: React.ReactNode }) {
                                 : "text-foreground/80 hover:bg-muted/40 hover:text-foreground",
                             )}
                           >
-                            <Icon className={cn("size-5 stroke-[1.6]", isActive ? "text-white" : "text-foreground/75")} />
+                            <Icon
+                              className={cn(
+                                "size-5 stroke-[1.6]",
+                                isActive ? "text-white" : "text-foreground/75",
+                              )}
+                            />
                             {item.badge && (
                               <span className="absolute top-1.5 right-1.5 size-2 rounded-full bg-destructive" />
                             )}
@@ -439,7 +454,12 @@ export function SuperAdminLayout({ children }: { children: React.ReactNode }) {
                       )}
                     >
                       <div className="flex items-center gap-3 min-w-0">
-                        <Icon className={cn("size-5 shrink-0 stroke-[1.6]", isActive ? "text-white" : "text-foreground/75")} />
+                        <Icon
+                          className={cn(
+                            "size-5 shrink-0 stroke-[1.6]",
+                            isActive ? "text-white" : "text-foreground/75",
+                          )}
+                        />
                         <span className="truncate text-left">{item.label}</span>
                       </div>
                       {item.badge && (
@@ -535,7 +555,10 @@ export function SuperAdminLayout({ children }: { children: React.ReactNode }) {
           <nav aria-label="Breadcrumb" className="hidden min-w-0 flex-1 items-center md:flex">
             <ol className="flex items-center gap-1.5 text-sm">
               <li className="flex items-center gap-1.5">
-                <Link to="/admin/dashboard" className="text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1">
+                <Link
+                  to="/admin/dashboard"
+                  className="text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
+                >
                   <Home className="size-3.5 text-muted-foreground/70" />
                 </Link>
               </li>
@@ -559,7 +582,12 @@ export function SuperAdminLayout({ children }: { children: React.ReactNode }) {
 
           <div className="flex flex-1 items-center justify-end gap-2.5 md:flex-none">
             {/* Quick POS Terminal link */}
-            <Button asChild size="sm" variant="outline" className="hidden sm:inline-flex shadow-xs h-9 text-xs font-semibold gap-1.5">
+            <Button
+              asChild
+              size="sm"
+              variant="outline"
+              className="hidden sm:inline-flex shadow-xs h-9 text-xs font-semibold gap-1.5"
+            >
               <Link to="/pos">
                 <Store className="size-3.5 text-[#B58D4C]" />
                 <span>Store POS</span>
@@ -605,7 +633,9 @@ export function SuperAdminLayout({ children }: { children: React.ReactNode }) {
                       {initials}
                     </div>
                     <div className="flex flex-col space-y-0.5 min-w-0">
-                      <p className="text-xs font-bold leading-tight truncate">{user?.name || "Super Administrator"}</p>
+                      <p className="text-xs font-bold leading-tight truncate">
+                        {user?.name || "Super Administrator"}
+                      </p>
                       <p className="text-[11px] leading-tight text-muted-foreground truncate">
                         {user?.email || "admin@superadmin.com"}
                       </p>
@@ -655,37 +685,39 @@ export function SuperAdminLayout({ children }: { children: React.ReactNode }) {
               <div className="flex h-[70vh] items-center justify-center">
                 <Loader2 className="size-8 animate-spin text-[#B58D4C]" />
               </div>
-            ) : (() => {
-              // Route-level access denied guard
-              const moduleKey = getModuleKeyForRoute(pathname);
-              if (moduleKey && !hasModuleAccess(moduleKey)) {
-                const mod = SUPER_ADMIN_MODULES.find((m) => m.key === moduleKey);
-                return (
-                  <div className="flex h-[80vh] flex-col items-center justify-center gap-5 px-6 text-center">
-                    <div className="size-20 rounded-3xl bg-destructive/10 flex items-center justify-center border border-destructive/20">
-                      <Lock className="size-10 text-destructive" />
+            ) : (
+              (() => {
+                // Route-level access denied guard
+                const moduleKey = getModuleKeyForRoute(pathname);
+                if (moduleKey && !hasModuleAccess(moduleKey)) {
+                  const mod = SUPER_ADMIN_MODULES.find((m) => m.key === moduleKey);
+                  return (
+                    <div className="flex h-[80vh] flex-col items-center justify-center gap-5 px-6 text-center">
+                      <div className="size-20 rounded-3xl bg-destructive/10 flex items-center justify-center border border-destructive/20">
+                        <Lock className="size-10 text-destructive" />
+                      </div>
+                      <div className="space-y-2">
+                        <h1 className="text-2xl font-black text-foreground">Access Restricted</h1>
+                        <p className="text-sm text-muted-foreground max-w-sm">
+                          You do not have permission to access{" "}
+                          <span className="font-semibold text-foreground">
+                            {mod?.label || "this module"}
+                          </span>
+                          . Contact your Super Admin owner to request access.
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => navigate({ to: "/admin/dashboard" as any })}
+                        className="mt-2 rounded-xl border border-border bg-card px-5 py-2.5 text-sm font-bold text-foreground hover:bg-muted/50 transition-colors"
+                      >
+                        ← Back to Dashboard
+                      </button>
                     </div>
-                    <div className="space-y-2">
-                      <h1 className="text-2xl font-black text-foreground">
-                        Access Restricted
-                      </h1>
-                      <p className="text-sm text-muted-foreground max-w-sm">
-                        You do not have permission to access{" "}
-                        <span className="font-semibold text-foreground">{mod?.label || "this module"}</span>.
-                        Contact your Super Admin owner to request access.
-                      </p>
-                    </div>
-                    <button
-                      onClick={() => navigate({ to: "/admin/dashboard" as any })}
-                      className="mt-2 rounded-xl border border-border bg-card px-5 py-2.5 text-sm font-bold text-foreground hover:bg-muted/50 transition-colors"
-                    >
-                      ← Back to Dashboard
-                    </button>
-                  </div>
-                );
-              }
-              return children;
-            })()}
+                  );
+                }
+                return children;
+              })()
+            )}
           </div>
         </main>
 
@@ -769,8 +801,12 @@ export function SuperAdminLayout({ children }: { children: React.ReactNode }) {
                 <Shield className="size-5 text-[#B58D4C]" />
               </div>
               <div>
-                <h3 className="text-xs font-bold font-serif uppercase text-foreground">ONEDESK360</h3>
-                <p className="text-[10px] font-black text-[#B58D4C] tracking-wider uppercase">SUPER ADMIN</p>
+                <h3 className="text-xs font-bold font-serif uppercase text-foreground">
+                  ONEDESK360
+                </h3>
+                <p className="text-[10px] font-black text-[#B58D4C] tracking-wider uppercase">
+                  SUPER ADMIN
+                </p>
               </div>
             </div>
           </div>
@@ -877,7 +913,9 @@ export function SuperAdminLayout({ children }: { children: React.ReactNode }) {
                   </div>
                   <div>
                     <div className="flex items-center gap-1.5">
-                      <span className="font-bold text-sm text-foreground">{user?.name || "Super Administrator"}</span>
+                      <span className="font-bold text-sm text-foreground">
+                        {user?.name || "Super Administrator"}
+                      </span>
                       <Badge className="bg-[#B58D4C]/15 text-[#B58D4C] border-[#B58D4C]/30 text-[10px] font-bold">
                         Root Access
                       </Badge>
@@ -931,7 +969,9 @@ export function SuperAdminLayout({ children }: { children: React.ReactNode }) {
                     <KeyRound className="size-3.5 text-[#B58D4C]" />
                     <span>Change Master Password</span>
                   </h4>
-                  <span className="text-[10px] text-muted-foreground">Leave blank to keep unchanged</span>
+                  <span className="text-[10px] text-muted-foreground">
+                    Leave blank to keep unchanged
+                  </span>
                 </div>
 
                 <div className="space-y-1.5">
@@ -950,7 +990,11 @@ export function SuperAdminLayout({ children }: { children: React.ReactNode }) {
                       onClick={() => setShowCurrentPw(!showCurrentPw)}
                       className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                     >
-                      {showCurrentPw ? <EyeOff className="size-3.5" /> : <Eye className="size-3.5" />}
+                      {showCurrentPw ? (
+                        <EyeOff className="size-3.5" />
+                      ) : (
+                        <Eye className="size-3.5" />
+                      )}
                     </button>
                   </div>
                 </div>
@@ -1010,4 +1054,3 @@ export function SuperAdminLayout({ children }: { children: React.ReactNode }) {
     </div>
   );
 }
-

@@ -1,8 +1,5 @@
 import { handleApiError } from "@/lib/error-utils";
 import { createServerFn } from "@tanstack/react-start";
-import { db } from "@/db";
-import * as schema from "@/db/schema";
-import { eq, and, inArray } from "drizzle-orm";
 import { z } from "zod";
 import { requireAuth, requireAdmin, invalidateUserSessionCache } from "@/lib/auth-utils";
 import bcrypt from "bcryptjs";
@@ -44,16 +41,21 @@ const UserInputSchema = z
   })
   .passthrough();
 
+async function getDb() {
+  const { db } = await import("@/db");
+  const schema = await import("@/db/schema");
+  const { eq, and, inArray } = await import("drizzle-orm");
+  return { db, schema, eq, and, inArray };
+}
+
 // Fetch the branch (location) ids a user is assigned to within an org.
 async function fetchUserLocationIds(orgId: string, userId: string): Promise<string[]> {
+  const { db, schema, eq, and } = await getDb();
   const rows = await db
     .select({ locationId: schema.userBranches.locationId })
     .from(schema.userBranches)
     .where(
-      and(
-        eq(schema.userBranches.organizationId, orgId),
-        eq(schema.userBranches.userId, userId),
-      ),
+      and(eq(schema.userBranches.organizationId, orgId), eq(schema.userBranches.userId, userId)),
     );
   return rows.map((r) => r.locationId);
 }
@@ -65,14 +67,12 @@ async function validateOrgLocations(
   locationIds: string[],
 ): Promise<string[] | null> {
   if (!locationIds || locationIds.length === 0) return [];
+  const { db, schema, eq, and, inArray } = await getDb();
   const orgLocations = await db
     .select({ id: schema.locations.id })
     .from(schema.locations)
     .where(
-      and(
-        eq(schema.locations.organizationId, orgId),
-        inArray(schema.locations.id, locationIds),
-      ),
+      and(eq(schema.locations.organizationId, orgId), inArray(schema.locations.id, locationIds)),
     );
   const valid = orgLocations.map((l) => l.id);
   if (valid.length !== new Set(locationIds).size) return null;
@@ -86,13 +86,11 @@ async function replaceUserLocations(
   userId: string,
   locationIds: string[],
 ): Promise<void> {
+  const { db, schema, eq, and } = await getDb();
   await db
     .delete(schema.userBranches)
     .where(
-      and(
-        eq(schema.userBranches.organizationId, orgId),
-        eq(schema.userBranches.userId, userId),
-      ),
+      and(eq(schema.userBranches.organizationId, orgId), eq(schema.userBranches.userId, userId)),
     );
 
   let idx = 0;
@@ -108,19 +106,18 @@ async function replaceUserLocations(
     idx++;
   }
 
-  // Keep the scalar column as the default branch (or null if none assigned).
   await db
     .update(schema.users)
     .set({ locationId: locationIds[0] || null })
     .where(and(eq(schema.users.id, userId), eq(schema.users.organizationId, orgId)));
 }
 
-
 export const getUsersFn = createServerFn({ method: "GET" })
   .validator(z.object({}).optional().default({}))
   .handler(async () => {
     try {
       const session = await requireAuth();
+      const { db, schema, eq } = await getDb();
       const res = await db
         .select()
         .from(schema.users)
@@ -156,6 +153,7 @@ export const getUserFn = createServerFn({ method: "GET" })
   .handler(async ({ data }) => {
     try {
       const session = await requireAuth();
+      const { db, schema, eq, and } = await getDb();
       const res = await db
         .select()
         .from(schema.users)
@@ -184,9 +182,10 @@ export const createUserFn = createServerFn({ method: "POST" })
       if (!session.orgId) return { success: false, error: "Unauthorized" };
       await assertUserLimit(session.orgId);
 
+      const { db, schema, eq } = await getDb();
+
       const email = data.user.email.toLowerCase();
 
-      // Enforce globally unique emails
       const existingUser = await db
         .select()
         .from(schema.users)
@@ -204,7 +203,6 @@ export const createUserFn = createServerFn({ method: "POST" })
       if (filteredPermissions && filteredPermissions.length > 0) {
         const menusRes = await getEffectiveMenusFn({ data: {} });
         if (menusRes.success && !menusRes.menus.includes("all")) {
-          // Keep permissions that match allowed plan menus
           filteredPermissions = filteredPermissions.filter((p) => {
             const cleanP = p.replace(/^\//, "").split("/")[0].split(".")[0];
             return menusRes.menus.some((m: string) => {
@@ -263,10 +261,11 @@ export const updateUserFn = createServerFn({ method: "POST" })
       if (session.role !== "admin" && session.userId !== data.id)
         return { success: false, error: "Forbidden" };
 
+      const { db, schema, eq, and } = await getDb();
+
       const { locationIds, ...updatesRest } = data.updates;
       let updateData = { ...updatesRest };
 
-      // Validate requested branch changes before applying them.
       let newLocationIds: string[] | null | undefined = undefined;
       if (locationIds !== undefined) {
         newLocationIds = await validateOrgLocations(session.orgId, locationIds);
@@ -334,6 +333,7 @@ export const deleteUserFn = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     try {
       const session = await requireAdmin();
+      const { db, schema, eq, and } = await getDb();
 
       await db
         .delete(schema.users)
@@ -363,8 +363,10 @@ export const createInvitationFn = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     try {
       const session = await requireAdmin();
+      const { db, schema } = await getDb();
       const token = data.invitation.token || uuidv4();
-      const expiresAt = data.invitation.expiresAt || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+      const expiresAt =
+        data.invitation.expiresAt || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
 
       const inserted = await db
         .insert(schema.invitations)

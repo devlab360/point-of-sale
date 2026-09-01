@@ -78,7 +78,9 @@ export const createGiftCardFn = createServerFn({ method: "POST" })
     const cardData = {
       id: g.id || uuidv4(),
       organizationId: orgId,
-      code: g.code || `GC-${Math.floor(1000 + Math.random() * 9000)}-${Math.floor(1000 + Math.random() * 9000)}`,
+      code:
+        g.code ||
+        `GC-${Math.floor(1000 + Math.random() * 9000)}-${Math.floor(1000 + Math.random() * 9000)}`,
       balance: balanceNum.toFixed(2),
       initialBalance: initialNum.toFixed(2),
       customer: g.customer || g.customerName || null,
@@ -98,7 +100,10 @@ export const createGiftCardFn = createServerFn({ method: "POST" })
     if (!inMemoryGiftCards[orgId]) inMemoryGiftCards[orgId] = [];
     const existingIndex = inMemoryGiftCards[orgId].findIndex((c) => c.id === cardData.id);
     if (existingIndex >= 0) {
-      inMemoryGiftCards[orgId][existingIndex] = { ...inMemoryGiftCards[orgId][existingIndex], ...cardData };
+      inMemoryGiftCards[orgId][existingIndex] = {
+        ...inMemoryGiftCards[orgId][existingIndex],
+        ...cardData,
+      };
     } else {
       inMemoryGiftCards[orgId].unshift(cardData);
     }
@@ -194,7 +199,9 @@ export const addGiftCardBalanceFn = createServerFn({ method: "POST" })
           const card = await tx
             .select()
             .from(schema.giftCards)
-            .where(and(eq(schema.giftCards.id, data.id), eq(schema.giftCards.organizationId, orgId)))
+            .where(
+              and(eq(schema.giftCards.id, data.id), eq(schema.giftCards.organizationId, orgId)),
+            )
             .limit(1);
           if (card.length > 0) {
             const currentBal = Number(card[0].balance) || 0;
@@ -237,4 +244,3 @@ export const deleteGiftCardFn = createServerFn({ method: "POST" })
       return { success: true };
     }
   });
-

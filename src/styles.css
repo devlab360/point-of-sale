@@ -611,7 +611,10 @@ input[type="number"] {
   border: 1px solid var(--border) !important;
   border-radius: 0.75rem !important;
   padding: 0.875rem 2.25rem 0.875rem 1rem !important;
-  box-shadow: 0 10px 25px -5px oklch(0.25 0.02 50 / 0.12), 0 8px 10px -6px oklch(0.25 0.02 50 / 0.06), 0 0 0 1px oklch(0.25 0.02 50 / 0.04) !important;
+  box-shadow:
+    0 10px 25px -5px oklch(0.25 0.02 50 / 0.12),
+    0 8px 10px -6px oklch(0.25 0.02 50 / 0.06),
+    0 0 0 1px oklch(0.25 0.02 50 / 0.04) !important;
   font-family: var(--font-sans) !important;
   display: flex !important;
   align-items: flex-start !important;
@@ -726,5 +729,3 @@ input[type="number"] {
 [data-sonner-toaster] [data-sonner-toast] [data-button]:hover {
   opacity: 0.9 !important;
 }
-
-

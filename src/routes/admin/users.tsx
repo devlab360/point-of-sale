@@ -73,7 +73,12 @@ function SuperAdminUsersPage() {
   const queryClient = useQueryClient();
   const { user: currentUser } = useAdminAuth();
   const [isAddUserModalOpen, setIsAddUserModalOpen] = useState(false);
-  const [newUser, setNewUser] = useState({ name: "", email: "", password: "", adminPermissions: [] as string[] });
+  const [newUser, setNewUser] = useState({
+    name: "",
+    email: "",
+    password: "",
+    adminPermissions: [] as string[],
+  });
   const [newUserFullAccess, setNewUserFullAccess] = useState(true);
 
   // Permissions editing state
@@ -81,12 +86,21 @@ function SuperAdminUsersPage() {
   const [editingPerms, setEditingPerms] = useState<string[]>([]);
   const [editPermFullAccess, setEditPermFullAccess] = useState(true);
 
-  const { data: usersData, isLoading: isUsersLoading, refetch: refetchUsers, isFetching: isUsersFetching } = useQuery({
+  const {
+    data: usersData,
+    isLoading: isUsersLoading,
+    refetch: refetchUsers,
+    isFetching: isUsersFetching,
+  } = useQuery({
     queryKey: ["super-admin-users"],
     queryFn: () => getSuperAdminUsersFn({ data: {} }),
   });
 
-  const { data: sessionsData, isLoading: isSessionsLoading, refetch: refetchSessions } = useQuery({
+  const {
+    data: sessionsData,
+    isLoading: isSessionsLoading,
+    refetch: refetchSessions,
+  } = useQuery({
     queryKey: ["super-admin-sessions"],
     queryFn: () => getSuperAdminSessionsFn({ data: {} }),
   });
@@ -97,7 +111,9 @@ function SuperAdminUsersPage() {
   const [filterQuery, setFilterQuery] = useState("");
   const [filterEntity, setFilterEntity] = useState<"admins" | "sessions">("admins");
   const [adminAccessFilter, setAdminAccessFilter] = useState<"all" | "full" | "restricted">("all");
-  const [sessionStatusFilter, setSessionStatusFilter] = useState<"all" | "live" | "expired" | "revoked">("all");
+  const [sessionStatusFilter, setSessionStatusFilter] = useState<
+    "all" | "live" | "expired" | "revoked"
+  >("all");
 
   const filteredUsers = useMemo(() => {
     const q = filterEntity === "admins" ? filterQuery.trim().toLowerCase() : "";
@@ -131,15 +147,19 @@ function SuperAdminUsersPage() {
   }, [sessions, filterQuery, filterEntity, sessionStatusFilter]);
 
   const liveSessionCount = useMemo(
-    () => sessions.filter((s: any) => !s.revokedAt && new Date(s.expiresAt).getTime() > Date.now()).length,
-    [sessions]
+    () =>
+      sessions.filter((s: any) => !s.revokedAt && new Date(s.expiresAt).getTime() > Date.now())
+        .length,
+    [sessions],
   );
   const revokedSessionCount = useMemo(
     () => sessions.filter((s: any) => Boolean(s.revokedAt)).length,
-    [sessions]
+    [sessions],
   );
 
-  const activeSessionsCount = sessions.filter((s: any) => !s.revokedAt && new Date(s.expiresAt).getTime() > Date.now()).length;
+  const activeSessionsCount = sessions.filter(
+    (s: any) => !s.revokedAt && new Date(s.expiresAt).getTime() > Date.now(),
+  ).length;
 
   const createUserMutation = useMutation({
     mutationFn: (data: any) => createSuperAdminUserFn({ data }),
@@ -229,7 +249,11 @@ function SuperAdminUsersPage() {
                 <Download className="size-3.5" />
                 <span>Export Staff CSV</span>
               </Button>
-              <Button onClick={() => setIsAddUserModalOpen(true)} size="sm" className="gap-2 h-9 shadow-xs">
+              <Button
+                onClick={() => setIsAddUserModalOpen(true)}
+                size="sm"
+                className="gap-2 h-9 shadow-xs"
+              >
                 <Plus className="size-4" />
                 <span>Add Super Admin</span>
               </Button>
@@ -295,8 +319,23 @@ function SuperAdminUsersPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Access ({users.length})</SelectItem>
-                  <SelectItem value="full">Full Access ({users.filter((u: any) => !u.adminPermissions || u.adminPermissions.length === 0).length})</SelectItem>
-                  <SelectItem value="restricted">Restricted ({users.filter((u: any) => u.adminPermissions && u.adminPermissions.length > 0).length})</SelectItem>
+                  <SelectItem value="full">
+                    Full Access (
+                    {
+                      users.filter(
+                        (u: any) => !u.adminPermissions || u.adminPermissions.length === 0,
+                      ).length
+                    }
+                    )
+                  </SelectItem>
+                  <SelectItem value="restricted">
+                    Restricted (
+                    {
+                      users.filter((u: any) => u.adminPermissions && u.adminPermissions.length > 0)
+                        .length
+                    }
+                    )
+                  </SelectItem>
                 </SelectContent>
               </Select>
             )}
@@ -312,7 +351,9 @@ function SuperAdminUsersPage() {
                 <SelectContent>
                   <SelectItem value="all">All Statuses ({sessions.length})</SelectItem>
                   <SelectItem value="live">Live Valid ({liveSessionCount})</SelectItem>
-                  <SelectItem value="expired">Expired ({sessions.length - liveSessionCount - revokedSessionCount})</SelectItem>
+                  <SelectItem value="expired">
+                    Expired ({sessions.length - liveSessionCount - revokedSessionCount})
+                  </SelectItem>
                   <SelectItem value="revoked">Revoked ({revokedSessionCount})</SelectItem>
                 </SelectContent>
               </Select>
@@ -353,7 +394,8 @@ function SuperAdminUsersPage() {
                   </TableHeader>
                   <TableBody>
                     {filteredUsers.map((admin: any) => {
-                      const isSelf = admin.email === currentUser?.email || admin.id === currentUser?.id;
+                      const isSelf =
+                        admin.email === currentUser?.email || admin.id === currentUser?.id;
                       return (
                         <TableRow key={admin.id} className="hover:bg-muted/30 transition-colors">
                           <TableCell className="px-4 py-3.5">
@@ -365,7 +407,10 @@ function SuperAdminUsersPage() {
                                 <div className="font-bold text-foreground flex items-center gap-2">
                                   <span>{admin.name}</span>
                                   {isSelf && (
-                                    <Badge variant="secondary" className="text-[10px] px-1.5 py-0 font-bold">
+                                    <Badge
+                                      variant="secondary"
+                                      className="text-[10px] px-1.5 py-0 font-bold"
+                                    >
                                       You
                                     </Badge>
                                   )}
@@ -389,7 +434,11 @@ function SuperAdminUsersPage() {
                                     perms.map((key) => {
                                       const mod = SUPER_ADMIN_MODULES.find((m) => m.key === key);
                                       return (
-                                        <Badge key={key} variant="secondary" className="text-[9px] font-semibold uppercase">
+                                        <Badge
+                                          key={key}
+                                          variant="secondary"
+                                          className="text-[9px] font-semibold uppercase"
+                                        >
                                           {mod?.label || key}
                                         </Badge>
                                       );
@@ -407,11 +456,15 @@ function SuperAdminUsersPage() {
                           </TableCell>
 
                           <TableCell className="px-4 py-3.5 text-xs font-mono text-muted-foreground">
-                            {admin.lastActive ? new Date(admin.lastActive).toLocaleString() : "Just now"}
+                            {admin.lastActive
+                              ? new Date(admin.lastActive).toLocaleString()
+                              : "Just now"}
                           </TableCell>
 
                           <TableCell className="px-4 py-3.5 text-xs font-mono text-muted-foreground">
-                            {admin.joined ? new Date(admin.joined).toLocaleDateString() : "System Initial"}
+                            {admin.joined
+                              ? new Date(admin.joined).toLocaleDateString()
+                              : "System Initial"}
                           </TableCell>
 
                           <TableCell className="px-4 py-3.5 text-right">
@@ -479,7 +532,9 @@ function SuperAdminUsersPage() {
                 <Loader2 className="size-6 animate-spin text-primary" />
               </div>
             ) : sessions.length === 0 ? (
-              <div className="p-8 text-center text-xs text-muted-foreground">No active sessions.</div>
+              <div className="p-8 text-center text-xs text-muted-foreground">
+                No active sessions.
+              </div>
             ) : filteredSessions.length === 0 ? (
               <div className="p-8 text-center text-xs text-muted-foreground">
                 No sessions match your search or filter.
@@ -524,9 +579,19 @@ function SuperAdminUsersPage() {
 
                           <TableCell className="px-4 py-3.5">
                             {isRevoked ? (
-                              <Badge variant="destructive" className="font-bold uppercase text-[10px]">Revoked</Badge>
+                              <Badge
+                                variant="destructive"
+                                className="font-bold uppercase text-[10px]"
+                              >
+                                Revoked
+                              </Badge>
                             ) : isExpired ? (
-                              <Badge variant="secondary" className="font-bold uppercase text-[10px]">Expired</Badge>
+                              <Badge
+                                variant="secondary"
+                                className="font-bold uppercase text-[10px]"
+                              >
+                                Expired
+                              </Badge>
                             ) : (
                               <Badge className="bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 font-bold uppercase text-[10px]">
                                 Live Valid
@@ -564,7 +629,9 @@ function SuperAdminUsersPage() {
             className="w-full sm:max-w-xl md:max-w-2xl p-0 flex flex-col h-full bg-background border-l border-border"
           >
             <SheetHeader className="bg-muted/60 p-5 border-b pr-12 text-left">
-              <SheetTitle className="text-lg font-bold text-foreground">Add Super Administrator</SheetTitle>
+              <SheetTitle className="text-lg font-bold text-foreground">
+                Add Super Administrator
+              </SheetTitle>
               <SheetDescription className="text-xs text-muted-foreground mt-0.5">
                 Provision a new super admin user and define which platform modules they can access.
               </SheetDescription>
@@ -622,7 +689,9 @@ function SuperAdminUsersPage() {
                 <div className="p-4 rounded-2xl border border-border/80 bg-muted/20 space-y-3">
                   <div className="flex items-center justify-between">
                     <div>
-                      <h4 className="text-sm font-bold text-foreground">Module Access Permissions</h4>
+                      <h4 className="text-sm font-bold text-foreground">
+                        Module Access Permissions
+                      </h4>
                       <p className="text-[11px] text-muted-foreground mt-0.5">
                         Define which super admin modules this user can access.
                       </p>
@@ -663,7 +732,9 @@ function SuperAdminUsersPage() {
                               className="mt-0.5 shrink-0"
                             />
                             <div className="min-w-0">
-                              <p className={`font-bold truncate ${isChecked ? "text-primary" : "text-foreground"}`}>
+                              <p
+                                className={`font-bold truncate ${isChecked ? "text-primary" : "text-foreground"}`}
+                              >
                                 {mod.label}
                               </p>
                               <p className="text-[10px] text-muted-foreground leading-relaxed">
@@ -679,7 +750,11 @@ function SuperAdminUsersPage() {
               </div>
 
               <SheetFooter className="p-5 border-t bg-muted/20 flex sm:justify-end gap-2 shrink-0">
-                <Button type="button" variant="outline" onClick={() => setIsAddUserModalOpen(false)}>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setIsAddUserModalOpen(false)}
+                >
                   Cancel
                 </Button>
                 <Button type="submit" disabled={createUserMutation.isPending}>
@@ -691,7 +766,10 @@ function SuperAdminUsersPage() {
         </Sheet>
 
         {/* Edit Permissions Drawer */}
-        <Sheet open={!!editingPermissionsUser} onOpenChange={(open) => !open && setEditingPermissionsUser(null)}>
+        <Sheet
+          open={!!editingPermissionsUser}
+          onOpenChange={(open) => !open && setEditingPermissionsUser(null)}
+        >
           <SheetContent
             side="right"
             className="w-full sm:max-w-xl p-0 flex flex-col h-full bg-background border-l border-border"
@@ -723,7 +801,9 @@ function SuperAdminUsersPage() {
                         if (v) setEditingPerms([]);
                       }}
                     />
-                    <span className="text-xs font-bold text-primary">Full Access (No Restrictions)</span>
+                    <span className="text-xs font-bold text-primary">
+                      Full Access (No Restrictions)
+                    </span>
                   </label>
                 </div>
 
@@ -743,15 +823,18 @@ function SuperAdminUsersPage() {
                           <Checkbox
                             checked={isChecked}
                             onCheckedChange={(v) => {
-                              setEditingPerms(v
-                                ? [...editingPerms, mod.key]
-                                : editingPerms.filter((k) => k !== mod.key)
+                              setEditingPerms(
+                                v
+                                  ? [...editingPerms, mod.key]
+                                  : editingPerms.filter((k) => k !== mod.key),
                               );
                             }}
                             className="mt-0.5 shrink-0"
                           />
                           <div className="min-w-0">
-                            <p className={`font-bold truncate ${isChecked ? "text-primary" : "text-foreground"}`}>
+                            <p
+                              className={`font-bold truncate ${isChecked ? "text-primary" : "text-foreground"}`}
+                            >
                               {mod.label}
                             </p>
                             <p className="text-[10px] text-muted-foreground leading-relaxed">
@@ -774,7 +857,11 @@ function SuperAdminUsersPage() {
             </div>
 
             <SheetFooter className="p-5 border-t bg-muted/20 flex sm:justify-end gap-2 shrink-0">
-              <Button type="button" variant="outline" onClick={() => setEditingPermissionsUser(null)}>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setEditingPermissionsUser(null)}
+              >
                 Cancel
               </Button>
               <Button

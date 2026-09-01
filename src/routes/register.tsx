@@ -218,7 +218,10 @@ function RegisterPage() {
               "Instant thermal & WhatsApp receipts",
               "Automatic daily reports & stock alerts",
             ].map((feat) => (
-              <div key={feat} className="flex items-center gap-3 text-base sm:text-lg text-primary-foreground/95 font-medium">
+              <div
+                key={feat}
+                className="flex items-center gap-3 text-base sm:text-lg text-primary-foreground/95 font-medium"
+              >
                 <span className="grid size-6 shrink-0 place-items-center rounded-full bg-primary-foreground/15 border border-primary-foreground/30 text-primary-foreground">
                   <CheckCircle2 className="size-4" />
                 </span>
@@ -241,7 +244,10 @@ function RegisterPage() {
               DevLab360
             </a>
           </p>
-          <Link to="/login" className="hover:text-primary-foreground transition-colors underline font-semibold">
+          <Link
+            to="/login"
+            className="hover:text-primary-foreground transition-colors underline font-semibold"
+          >
             Sign In to Existing Store
           </Link>
         </div>
@@ -282,121 +288,150 @@ function RegisterPage() {
           {/* Wizard Form Card */}
           <div className="rounded-2xl border border-border bg-card p-7 sm:p-9 md:p-10 shadow-elevated space-y-6">
             {step === 1 ? (
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="ownerName" className="text-sm sm:text-base font-bold text-foreground">
-                  Your Full Name
-                </Label>
-                <Input
-                  id="ownerName"
-                  value={formData.ownerName}
-                  onChange={(e) => setFormData({ ...formData, ownerName: e.target.value })}
-                  placeholder="John Doe"
-                  className="h-12 sm:h-13 rounded-xl text-base px-4"
-                />
-                {errors.ownerName && <p className="text-xs sm:text-sm text-destructive mt-1 font-semibold">{errors.ownerName}</p>}
-              </div>
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label
+                    htmlFor="ownerName"
+                    className="text-sm sm:text-base font-bold text-foreground"
+                  >
+                    Your Full Name
+                  </Label>
+                  <Input
+                    id="ownerName"
+                    value={formData.ownerName}
+                    onChange={(e) => setFormData({ ...formData, ownerName: e.target.value })}
+                    placeholder="John Doe"
+                    className="h-12 sm:h-13 rounded-xl text-base px-4"
+                  />
+                  {errors.ownerName && (
+                    <p className="text-xs sm:text-sm text-destructive mt-1 font-semibold">
+                      {errors.ownerName}
+                    </p>
+                  )}
+                </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="email" className="text-sm sm:text-base font-bold text-foreground">
-                  Business Email Address
-                </Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  placeholder="owner@store.com"
-                  className="h-12 sm:h-13 rounded-xl text-base px-4"
-                />
-                {errors.email && <p className="text-xs sm:text-sm text-destructive mt-1 font-semibold">{errors.email}</p>}
-              </div>
+                <div className="space-y-2">
+                  <Label htmlFor="email" className="text-sm sm:text-base font-bold text-foreground">
+                    Business Email Address
+                  </Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    placeholder="owner@store.com"
+                    className="h-12 sm:h-13 rounded-xl text-base px-4"
+                  />
+                  {errors.email && (
+                    <p className="text-xs sm:text-sm text-destructive mt-1 font-semibold">
+                      {errors.email}
+                    </p>
+                  )}
+                </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="password" className="text-sm sm:text-base font-bold text-foreground">
-                  Password
-                </Label>
-                <PasswordInput
-                  id="password"
-                  value={formData.password}
-                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                  placeholder="••••••••"
-                  className="h-12 sm:h-13 rounded-xl text-base px-4"
-                />
-                {errors.password && (
-                  <p className="text-xs sm:text-sm text-destructive mt-1 font-semibold">{errors.password}</p>
-                )}
-              </div>
+                <div className="space-y-2">
+                  <Label
+                    htmlFor="password"
+                    className="text-sm sm:text-base font-bold text-foreground"
+                  >
+                    Password
+                  </Label>
+                  <PasswordInput
+                    id="password"
+                    value={formData.password}
+                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                    placeholder="••••••••"
+                    className="h-12 sm:h-13 rounded-xl text-base px-4"
+                  />
+                  {errors.password && (
+                    <p className="text-xs sm:text-sm text-destructive mt-1 font-semibold">
+                      {errors.password}
+                    </p>
+                  )}
+                </div>
 
-              <Button
-                onClick={handleNextStep}
-                className="w-full h-12 sm:h-13 rounded-xl font-bold gap-2 text-base sm:text-lg mt-2 shadow-sm"
-              >
-                <span>Continue to Store Profile</span>
-                <ChevronRight className="size-5" />
-              </Button>
-            </div>
-          ) : (
-            /* Step 2: Store Information, Country & Industry */
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="country" className="text-sm sm:text-base font-bold text-foreground">
-                  Country / Operating Territory
-                </Label>
-                <SearchableSelect
-                  options={getCountryOptionList().map((c) => ({
-                    value: c.value,
-                    label: c.label,
-                  }))}
-                  value={formData.country}
-                  onChange={(val) => setFormData({ ...formData, country: val })}
-                  placeholder="Select country..."
-                />
+                <Button
+                  onClick={handleNextStep}
+                  className="w-full h-12 sm:h-13 rounded-xl font-bold gap-2 text-base sm:text-lg mt-2 shadow-sm"
+                >
+                  <span>Continue to Store Profile</span>
+                  <ChevronRight className="size-5" />
+                </Button>
               </div>
+            ) : (
+              /* Step 2: Store Information, Country & Industry */
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="space-y-2">
+                  <Label
+                    htmlFor="country"
+                    className="text-sm sm:text-base font-bold text-foreground"
+                  >
+                    Country / Operating Territory
+                  </Label>
+                  <SearchableSelect
+                    options={getCountryOptionList().map((c) => ({
+                      value: c.value,
+                      label: c.label,
+                    }))}
+                    value={formData.country}
+                    onChange={(val) => setFormData({ ...formData, country: val })}
+                    placeholder="Select country..."
+                  />
+                </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="companyName" className="text-sm sm:text-base font-bold text-foreground">
-                  Store / Business Name
-                </Label>
-                <Input
-                  id="companyName"
-                  value={formData.companyName}
-                  onChange={(e) => setFormData({ ...formData, companyName: e.target.value })}
-                  placeholder="e.g. Apex Supermarket & Grocery"
-                  className="h-12 sm:h-13 rounded-xl text-base px-4"
-                />
-                {errors.companyName && (
-                  <p className="text-xs sm:text-sm text-destructive mt-1 font-semibold">{errors.companyName}</p>
-                )}
-              </div>
+                <div className="space-y-2">
+                  <Label
+                    htmlFor="companyName"
+                    className="text-sm sm:text-base font-bold text-foreground"
+                  >
+                    Store / Business Name
+                  </Label>
+                  <Input
+                    id="companyName"
+                    value={formData.companyName}
+                    onChange={(e) => setFormData({ ...formData, companyName: e.target.value })}
+                    placeholder="e.g. Apex Supermarket & Grocery"
+                    className="h-12 sm:h-13 rounded-xl text-base px-4"
+                  />
+                  {errors.companyName && (
+                    <p className="text-xs sm:text-sm text-destructive mt-1 font-semibold">
+                      {errors.companyName}
+                    </p>
+                  )}
+                </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="phone" className="text-sm sm:text-base font-bold text-foreground">
-                  Contact Phone Number (Optional)
-                </Label>
-                <Input
-                  id="phone"
-                  value={formData.phone}
-                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                  placeholder="e.g. +1 555 123 4567"
-                  className="h-12 sm:h-13 rounded-xl text-base px-4"
-                />
-              </div>
+                <div className="space-y-2">
+                  <Label htmlFor="phone" className="text-sm sm:text-base font-bold text-foreground">
+                    Contact Phone Number (Optional)
+                  </Label>
+                  <Input
+                    id="phone"
+                    value={formData.phone}
+                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                    placeholder="e.g. +1 555 123 4567"
+                    className="h-12 sm:h-13 rounded-xl text-base px-4"
+                  />
+                </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="industry" className="text-sm sm:text-base font-bold text-foreground">
-                  Select Business Type
-                </Label>
-                <SearchableSelect
-                  options={INDUSTRIES.map((ind) => ({ label: ind, value: ind }))}
-                  value={formData.industry}
-                  onChange={(val) => setFormData({ ...formData, industry: val })}
-                  placeholder="Choose industry..."
-                />
-                {errors.industry && (
-                  <p className="text-xs sm:text-sm text-destructive mt-1 font-semibold">{errors.industry}</p>
-                )}
-              </div>
+                <div className="space-y-2">
+                  <Label
+                    htmlFor="industry"
+                    className="text-sm sm:text-base font-bold text-foreground"
+                  >
+                    Select Business Type
+                  </Label>
+                  <SearchableSelect
+                    options={INDUSTRIES.map((ind) => ({ label: ind, value: ind }))}
+                    value={formData.industry}
+                    onChange={(val) => setFormData({ ...formData, industry: val })}
+                    placeholder="Choose industry..."
+                  />
+                  {errors.industry && (
+                    <p className="text-xs sm:text-sm text-destructive mt-1 font-semibold">
+                      {errors.industry}
+                    </p>
+                  )}
+                </div>
 
                 <div className="flex items-center gap-3 pt-2">
                   <Button

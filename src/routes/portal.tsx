@@ -79,7 +79,8 @@ function CustomerPortalPage() {
   }, [sales, foundCustomer]);
 
   const warrantyItems = useMemo(() => {
-    const items: { productName: string; serialNumber: string; date: string; invoiceId: string }[] = [];
+    const items: { productName: string; serialNumber: string; date: string; invoiceId: string }[] =
+      [];
     customerSales.forEach((sale: any) => {
       sale.saleItems?.forEach((item: any) => {
         if (item.serialNumber) {
@@ -116,7 +117,8 @@ function CustomerPortalPage() {
           Customer Statement & Warranty Lookup
         </h1>
         <p className="text-xs sm:text-sm text-muted-foreground">
-          Enter customer phone number, client name, or select below to view Khata due balance, invoices, and verified IMEI warranty records.
+          Enter customer phone number, client name, or select below to view Khata due balance,
+          invoices, and verified IMEI warranty records.
         </p>
       </div>
 
@@ -177,7 +179,9 @@ function CustomerPortalPage() {
                 Customer Name & Phone
               </span>
               <p className="text-lg font-black mt-1 text-primary">{foundCustomer.name}</p>
-              <p className="text-xs text-muted-foreground font-medium mt-0.5">{foundCustomer.phone || "No phone recorded"}</p>
+              <p className="text-xs text-muted-foreground font-medium mt-0.5">
+                {foundCustomer.phone || "No phone recorded"}
+              </p>
             </div>
 
             <div className="rounded-xl border border-destructive/30 bg-destructive/5 p-5 text-center shadow-soft">
@@ -195,7 +199,11 @@ function CustomerPortalPage() {
               </span>
               <p className="text-2xl font-black text-success mt-1">
                 {formatCurrency(
-                  Math.max(0, (Number(foundCustomer.creditLimit) || 5000) - (Number(foundCustomer.credit) || 0)),
+                  Math.max(
+                    0,
+                    (Number(foundCustomer.creditLimit) || 5000) -
+                      (Number(foundCustomer.credit) || 0),
+                  ),
                 )}
               </p>
             </div>
@@ -215,20 +223,37 @@ function CustomerPortalPage() {
               <Table>
                 <TableHeader className="bg-muted/30">
                   <TableRow>
-                    <TableHead className="font-bold text-xs uppercase tracking-wider">Product Name</TableHead>
-                    <TableHead className="font-bold text-xs uppercase tracking-wider">Serial / IMEI Number</TableHead>
-                    <TableHead className="font-bold text-xs uppercase tracking-wider text-right">Purchase Date</TableHead>
-                    <TableHead className="font-bold text-xs uppercase tracking-wider text-center">Warranty Status</TableHead>
+                    <TableHead className="font-bold text-xs uppercase tracking-wider">
+                      Product Name
+                    </TableHead>
+                    <TableHead className="font-bold text-xs uppercase tracking-wider">
+                      Serial / IMEI Number
+                    </TableHead>
+                    <TableHead className="font-bold text-xs uppercase tracking-wider text-right">
+                      Purchase Date
+                    </TableHead>
+                    <TableHead className="font-bold text-xs uppercase tracking-wider text-center">
+                      Warranty Status
+                    </TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody className="divide-y divide-border/60">
                   {warrantyItems.map((item, idx) => (
                     <TableRow key={idx}>
-                      <TableCell className="font-semibold text-sm text-foreground">{item.productName}</TableCell>
-                      <TableCell className="font-mono text-xs font-bold text-primary">{item.serialNumber}</TableCell>
-                      <TableCell className="text-right text-xs text-muted-foreground font-medium">{formatDate(item.date)}</TableCell>
+                      <TableCell className="font-semibold text-sm text-foreground">
+                        {item.productName}
+                      </TableCell>
+                      <TableCell className="font-mono text-xs font-bold text-primary">
+                        {item.serialNumber}
+                      </TableCell>
+                      <TableCell className="text-right text-xs text-muted-foreground font-medium">
+                        {formatDate(item.date)}
+                      </TableCell>
                       <TableCell className="text-center">
-                        <Badge variant="outline" className="bg-success/15 text-success border-success/25 text-[10px] font-black uppercase tracking-wider">
+                        <Badge
+                          variant="outline"
+                          className="bg-success/15 text-success border-success/25 text-[10px] font-black uppercase tracking-wider"
+                        >
                           Active Warranty
                         </Badge>
                       </TableCell>
@@ -248,7 +273,12 @@ function CustomerPortalPage() {
                   Purchase Invoice History ({customerSales.length})
                 </h3>
               </div>
-              <Button size="sm" variant="outline" onClick={() => window.print()} className="font-semibold text-xs">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => window.print()}
+                className="font-semibold text-xs"
+              >
                 <Printer className="mr-1.5 size-3.5" /> Print Statement
               </Button>
             </div>
@@ -261,10 +291,18 @@ function CustomerPortalPage() {
               <Table>
                 <TableHeader className="bg-muted/30">
                   <TableRow>
-                    <TableHead className="font-bold text-xs uppercase tracking-wider">Invoice #</TableHead>
-                    <TableHead className="font-bold text-xs uppercase tracking-wider">Date</TableHead>
-                    <TableHead className="font-bold text-xs uppercase tracking-wider">Payment Method</TableHead>
-                    <TableHead className="font-bold text-xs uppercase tracking-wider text-right">Total Amount</TableHead>
+                    <TableHead className="font-bold text-xs uppercase tracking-wider">
+                      Invoice #
+                    </TableHead>
+                    <TableHead className="font-bold text-xs uppercase tracking-wider">
+                      Date
+                    </TableHead>
+                    <TableHead className="font-bold text-xs uppercase tracking-wider">
+                      Payment Method
+                    </TableHead>
+                    <TableHead className="font-bold text-xs uppercase tracking-wider text-right">
+                      Total Amount
+                    </TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody className="divide-y divide-border/60">
@@ -291,7 +329,9 @@ function CustomerPortalPage() {
         </div>
       ) : activeLookup ? (
         <div className="rounded-xl border border-border bg-card p-12 text-center text-sm text-muted-foreground shadow-soft max-w-3xl mx-auto">
-          No customer found matching &ldquo;<strong className="text-foreground">{activeLookup}</strong>&rdquo;. Please verify the phone number or select a client from the suggestions.
+          No customer found matching &ldquo;
+          <strong className="text-foreground">{activeLookup}</strong>&rdquo;. Please verify the
+          phone number or select a client from the suggestions.
         </div>
       ) : null}
     </div>

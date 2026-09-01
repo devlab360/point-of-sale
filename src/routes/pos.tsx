@@ -602,7 +602,11 @@ function PosScreen() {
       status: "draft",
       changeDue: payment === "cash" ? (changeDue > 0 ? changeDue : 0) : null,
       cashTendered:
-        payment === "cash" ? (state.cashTendered ? parseFloat(state.cashTendered) : totalVal) : null,
+        payment === "cash"
+          ? state.cashTendered
+            ? parseFloat(state.cashTendered)
+            : totalVal
+          : null,
     };
 
     state.setPrintFormat("thermal");

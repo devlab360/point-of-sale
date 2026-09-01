@@ -83,10 +83,7 @@ export async function seedDatabase() {
       await db.insert(schema.saasPlans).values(plan);
       console.log(` - Created Plan: ${plan.name}`);
     } else {
-      await db
-        .update(schema.saasPlans)
-        .set(plan)
-        .where(eq(schema.saasPlans.id, plan.id));
+      await db.update(schema.saasPlans).set(plan).where(eq(schema.saasPlans.id, plan.id));
       console.log(` - Updated Plan: ${plan.name}`);
     }
   }
@@ -392,7 +389,9 @@ export async function seedDatabase() {
         permissions: ["all"],
         joined: new Date().toISOString(),
       });
-      const userId = (await db.select().from(schema.users).where(eq(schema.users.email, acc.ownerEmail)).limit(1))[0]?.id;
+      const userId = (
+        await db.select().from(schema.users).where(eq(schema.users.email, acc.ownerEmail)).limit(1)
+      )[0]?.id;
       if (userId) {
         await db.insert(schema.organizationMemberships).values({
           id: uuidv4(),
@@ -402,7 +401,9 @@ export async function seedDatabase() {
           status: "active",
         });
       }
-      console.log(` - Created Industry Login: ${acc.ownerEmail} / password123 [${acc.businessType}]`);
+      console.log(
+        ` - Created Industry Login: ${acc.ownerEmail} / password123 [${acc.businessType}]`,
+      );
     } else {
       await db
         .update(schema.users)
@@ -414,7 +415,9 @@ export async function seedDatabase() {
           permissions: ["all"],
         })
         .where(eq(schema.users.email, acc.ownerEmail));
-      console.log(` - Verified Industry Login: ${acc.ownerEmail} / password123 [${acc.businessType}]`);
+      console.log(
+        ` - Verified Industry Login: ${acc.ownerEmail} / password123 [${acc.businessType}]`,
+      );
     }
   }
 
@@ -500,7 +503,8 @@ export async function seedDatabase() {
           category: "Appetizers & Starters",
           brand: "Chef Signature",
           unit: "Plate",
-          image: "https://images.unsplash.com/photo-1576107232684-1279f3908594?w=600&auto=format&fit=crop&q=80",
+          image:
+            "https://images.unsplash.com/photo-1576107232684-1279f3908594?w=600&auto=format&fit=crop&q=80",
         },
         {
           name: "Crispy Calamari Fritti",
@@ -512,7 +516,8 @@ export async function seedDatabase() {
           category: "Appetizers & Starters",
           brand: "Chef Signature",
           unit: "Plate",
-          image: "https://images.unsplash.com/photo-1604909052743-94e838986d24?w=600&auto=format&fit=crop&q=80",
+          image:
+            "https://images.unsplash.com/photo-1604909052743-94e838986d24?w=600&auto=format&fit=crop&q=80",
         },
         {
           name: "Margherita D.O.P Pizza",
@@ -524,7 +529,8 @@ export async function seedDatabase() {
           category: "Gourmet Pizzas",
           brand: "Chef Signature",
           unit: "Plate",
-          image: "https://images.unsplash.com/photo-1604382355076-af4b0eb60143?w=600&auto=format&fit=crop&q=80",
+          image:
+            "https://images.unsplash.com/photo-1604382355076-af4b0eb60143?w=600&auto=format&fit=crop&q=80",
         },
         {
           name: "Pepperoni Rustica Woodfire Pizza",
@@ -536,7 +542,8 @@ export async function seedDatabase() {
           category: "Gourmet Pizzas",
           brand: "Chef Signature",
           unit: "Plate",
-          image: "https://images.unsplash.com/photo-1628840042765-356cda07504e?w=600&auto=format&fit=crop&q=80",
+          image:
+            "https://images.unsplash.com/photo-1628840042765-356cda07504e?w=600&auto=format&fit=crop&q=80",
         },
         {
           name: "Truffle Fettuccine Alfredo",
@@ -548,7 +555,8 @@ export async function seedDatabase() {
           category: "Pasta & Italian",
           brand: "Barilla",
           unit: "Plate",
-          image: "https://images.unsplash.com/photo-1645112411341-6c4fd023714a?w=600&auto=format&fit=crop&q=80",
+          image:
+            "https://images.unsplash.com/photo-1645112411341-6c4fd023714a?w=600&auto=format&fit=crop&q=80",
         },
         {
           name: "Slow-Cooked Beef Bolognese",
@@ -560,7 +568,8 @@ export async function seedDatabase() {
           category: "Pasta & Italian",
           brand: "Barilla",
           unit: "Plate",
-          image: "https://images.unsplash.com/photo-1551183053-bf91a1d81141?w=600&auto=format&fit=crop&q=80",
+          image:
+            "https://images.unsplash.com/photo-1551183053-bf91a1d81141?w=600&auto=format&fit=crop&q=80",
         },
         {
           name: "8oz Wagyu Ribeye Steak",
@@ -572,7 +581,8 @@ export async function seedDatabase() {
           category: "Signature Steaks & Mains",
           brand: "Angus Reserve",
           unit: "Plate",
-          image: "https://images.unsplash.com/photo-1544025162-d76694265947?w=600&auto=format&fit=crop&q=80",
+          image:
+            "https://images.unsplash.com/photo-1544025162-d76694265947?w=600&auto=format&fit=crop&q=80",
         },
         {
           name: "Grilled Norwegian Atlantic Salmon",
@@ -584,7 +594,8 @@ export async function seedDatabase() {
           category: "Signature Steaks & Mains",
           brand: "Chef Signature",
           unit: "Plate",
-          image: "https://images.unsplash.com/photo-1467003909585-2f8a72700288?w=600&auto=format&fit=crop&q=80",
+          image:
+            "https://images.unsplash.com/photo-1467003909585-2f8a72700288?w=600&auto=format&fit=crop&q=80",
         },
         {
           name: "Tiramisu Classico",
@@ -596,7 +607,8 @@ export async function seedDatabase() {
           category: "Desserts",
           brand: "Chef Signature",
           unit: "Serving",
-          image: "https://images.unsplash.com/photo-1571877227200-a0d98ea607e9?w=600&auto=format&fit=crop&q=80",
+          image:
+            "https://images.unsplash.com/photo-1571877227200-a0d98ea607e9?w=600&auto=format&fit=crop&q=80",
         },
         {
           name: "Pinot Noir Reserve Red Wine",
@@ -608,7 +620,8 @@ export async function seedDatabase() {
           category: "Fine Beverages",
           brand: "Chef Signature",
           unit: "Bottle",
-          image: "https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?w=600&auto=format&fit=crop&q=80",
+          image:
+            "https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?w=600&auto=format&fit=crop&q=80",
         },
         {
           name: "San Pellegrino Sparkling 750ml",
@@ -620,7 +633,8 @@ export async function seedDatabase() {
           category: "Fine Beverages",
           brand: "San Pellegrino",
           unit: "Bottle",
-          image: "https://images.unsplash.com/photo-1559839914-17aae19cec71?w=600&auto=format&fit=crop&q=80",
+          image:
+            "https://images.unsplash.com/photo-1559839914-17aae19cec71?w=600&auto=format&fit=crop&q=80",
         },
       ],
       services: [
@@ -694,7 +708,8 @@ export async function seedDatabase() {
           category: "Hot Specialty Coffee",
           brand: "Single Origin",
           unit: "Cup",
-          image: "https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?w=600&auto=format&fit=crop&q=80",
+          image:
+            "https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?w=600&auto=format&fit=crop&q=80",
         },
         {
           name: "Velvety Flat White Coffee",
@@ -706,7 +721,8 @@ export async function seedDatabase() {
           category: "Hot Specialty Coffee",
           brand: "Single Origin",
           unit: "Cup",
-          image: "https://images.unsplash.com/photo-1577968897966-3d4325b36b61?w=600&auto=format&fit=crop&q=80",
+          image:
+            "https://images.unsplash.com/photo-1577968897966-3d4325b36b61?w=600&auto=format&fit=crop&q=80",
         },
         {
           name: "Caramel Macchiato",
@@ -718,7 +734,8 @@ export async function seedDatabase() {
           category: "Hot Specialty Coffee",
           brand: "Monin",
           unit: "Cup",
-          image: "https://images.unsplash.com/photo-1485808191679-5f86510681a2?w=600&auto=format&fit=crop&q=80",
+          image:
+            "https://images.unsplash.com/photo-1485808191679-5f86510681a2?w=600&auto=format&fit=crop&q=80",
         },
         {
           name: "Nitro Cold Brew Reserve",
@@ -730,7 +747,8 @@ export async function seedDatabase() {
           category: "Cold Brews & Refreshers",
           brand: "Single Origin",
           unit: "Glass",
-          image: "https://images.unsplash.com/photo-1517701550927-30cf4ba1dba5?w=600&auto=format&fit=crop&q=80",
+          image:
+            "https://images.unsplash.com/photo-1517701550927-30cf4ba1dba5?w=600&auto=format&fit=crop&q=80",
         },
         {
           name: "Iced Vanilla Oat Latte",
@@ -742,7 +760,8 @@ export async function seedDatabase() {
           category: "Cold Brews & Refreshers",
           brand: "Oatly",
           unit: "Glass",
-          image: "https://images.unsplash.com/photo-1517256064527-09c73fc73e38?w=600&auto=format&fit=crop&q=80",
+          image:
+            "https://images.unsplash.com/photo-1517256064527-09c73fc73e38?w=600&auto=format&fit=crop&q=80",
         },
         {
           name: "Butter Flaky Croissant",
@@ -754,7 +773,8 @@ export async function seedDatabase() {
           category: "Fresh Artisanal Bakery",
           brand: "Parisian Bakery",
           unit: "Piece",
-          image: "https://images.unsplash.com/photo-1555507036-ab1f4038808a?w=600&auto=format&fit=crop&q=80",
+          image:
+            "https://images.unsplash.com/photo-1555507036-ab1f4038808a?w=600&auto=format&fit=crop&q=80",
         },
         {
           name: "Wild Blueberry Muffin",
@@ -766,7 +786,8 @@ export async function seedDatabase() {
           category: "Fresh Artisanal Bakery",
           brand: "Parisian Bakery",
           unit: "Piece",
-          image: "https://images.unsplash.com/photo-1607958996333-41aef7caefaa?w=600&auto=format&fit=crop&q=80",
+          image:
+            "https://images.unsplash.com/photo-1607958996333-41aef7caefaa?w=600&auto=format&fit=crop&q=80",
         },
         {
           name: "Cinnamon Swirl Roll",
@@ -778,7 +799,8 @@ export async function seedDatabase() {
           category: "Fresh Artisanal Bakery",
           brand: "Parisian Bakery",
           unit: "Piece",
-          image: "https://images.unsplash.com/photo-1509440159596-0249088772ff?w=600&auto=format&fit=crop&q=80",
+          image:
+            "https://images.unsplash.com/photo-1509440159596-0249088772ff?w=600&auto=format&fit=crop&q=80",
         },
         {
           name: "Smoked Turkey & Pesto Panini",
@@ -790,7 +812,8 @@ export async function seedDatabase() {
           category: "Gourmet Paninis & Toast",
           brand: "Parisian Bakery",
           unit: "Piece",
-          image: "https://images.unsplash.com/photo-1528735602780-2552fd46c7af?w=600&auto=format&fit=crop&q=80",
+          image:
+            "https://images.unsplash.com/photo-1528735602780-2552fd46c7af?w=600&auto=format&fit=crop&q=80",
         },
         {
           name: "Sourdough Avocado Toast",
@@ -802,7 +825,8 @@ export async function seedDatabase() {
           category: "Gourmet Paninis & Toast",
           brand: "Parisian Bakery",
           unit: "Piece",
-          image: "https://images.unsplash.com/photo-1588137378633-dea1336ce1e2?w=600&auto=format&fit=crop&q=80",
+          image:
+            "https://images.unsplash.com/photo-1588137378633-dea1336ce1e2?w=600&auto=format&fit=crop&q=80",
         },
       ],
       services: [
@@ -869,7 +893,8 @@ export async function seedDatabase() {
           category: "Professional Retail Care",
           brand: "Moroccanoil",
           unit: "Bottle",
-          image: "https://images.unsplash.com/photo-1608248597359-0098f9ecfa0f?w=600&auto=format&fit=crop&q=80",
+          image:
+            "https://images.unsplash.com/photo-1608248597359-0098f9ecfa0f?w=600&auto=format&fit=crop&q=80",
         },
         {
           name: "Olaplex No. 3 Hair Perfector 100ml",
@@ -881,7 +906,8 @@ export async function seedDatabase() {
           category: "Professional Retail Care",
           brand: "Olaplex",
           unit: "Bottle",
-          image: "https://images.unsplash.com/photo-1535585209827-a15fcdbc4c2d?w=600&auto=format&fit=crop&q=80",
+          image:
+            "https://images.unsplash.com/photo-1535585209827-a15fcdbc4c2d?w=600&auto=format&fit=crop&q=80",
         },
         {
           name: "Dermalogica Daily Microfoliant 74g",
@@ -893,7 +919,8 @@ export async function seedDatabase() {
           category: "Professional Retail Care",
           brand: "Dermalogica",
           unit: "Pcs",
-          image: "https://images.unsplash.com/photo-1556228722-d9b3be7dd88a?w=600&auto=format&fit=crop&q=80",
+          image:
+            "https://images.unsplash.com/photo-1556228722-d9b3be7dd88a?w=600&auto=format&fit=crop&q=80",
         },
         {
           name: "Kérastase Bain Hydration Shampoo 250ml",
@@ -905,7 +932,8 @@ export async function seedDatabase() {
           category: "Professional Retail Care",
           brand: "Kérastase",
           unit: "Bottle",
-          image: "https://images.unsplash.com/photo-1608248597359-0098f9ecfa0f?w=600&auto=format&fit=crop&q=80",
+          image:
+            "https://images.unsplash.com/photo-1608248597359-0098f9ecfa0f?w=600&auto=format&fit=crop&q=80",
         },
         {
           name: "OPI Cuticle Oil & Nail Repair Duo",
@@ -917,7 +945,8 @@ export async function seedDatabase() {
           category: "Professional Retail Care",
           brand: "OPI",
           unit: "Pcs",
-          image: "https://images.unsplash.com/photo-1632345031435-8727f6897d53?w=600&auto=format&fit=crop&q=80",
+          image:
+            "https://images.unsplash.com/photo-1632345031435-8727f6897d53?w=600&auto=format&fit=crop&q=80",
         },
       ],
       services: [
@@ -997,7 +1026,8 @@ export async function seedDatabase() {
           category: "Styling Products",
           brand: "Reuzel",
           unit: "Piece",
-          image: "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=600&auto=format&fit=crop&q=80",
+          image:
+            "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=600&auto=format&fit=crop&q=80",
         },
         {
           name: "Sandalwood Beard Conditioning Oil 50ml",
@@ -1009,7 +1039,8 @@ export async function seedDatabase() {
           category: "Styling Products",
           brand: "Proraso",
           unit: "Bottle",
-          image: "https://images.unsplash.com/photo-1608248597359-0098f9ecfa0f?w=600&auto=format&fit=crop&q=80",
+          image:
+            "https://images.unsplash.com/photo-1608248597359-0098f9ecfa0f?w=600&auto=format&fit=crop&q=80",
         },
         {
           name: "Uppercut Deluxe Matt Pomade 100g",
@@ -1021,7 +1052,8 @@ export async function seedDatabase() {
           category: "Styling Products",
           brand: "Uppercut Deluxe",
           unit: "Piece",
-          image: "https://images.unsplash.com/photo-1621605815971-fbc98d665033?w=600&auto=format&fit=crop&q=80",
+          image:
+            "https://images.unsplash.com/photo-1621605815971-fbc98d665033?w=600&auto=format&fit=crop&q=80",
         },
         {
           name: "Proraso Refreshing Shave Cream 150ml",
@@ -1033,7 +1065,8 @@ export async function seedDatabase() {
           category: "Styling Products",
           brand: "Proraso",
           unit: "Tube",
-          image: "https://images.unsplash.com/photo-1599351431202-1e0f0137899a?w=600&auto=format&fit=crop&q=80",
+          image:
+            "https://images.unsplash.com/photo-1599351431202-1e0f0137899a?w=600&auto=format&fit=crop&q=80",
         },
         {
           name: "Professional Cordless Hair Clipper Kit",
@@ -1045,7 +1078,8 @@ export async function seedDatabase() {
           category: "Styling Products",
           brand: "Wahl",
           unit: "Piece",
-          image: "https://images.unsplash.com/photo-1503951914875-452162b0f3f1?w=600&auto=format&fit=crop&q=80",
+          image:
+            "https://images.unsplash.com/photo-1503951914875-452162b0f3f1?w=600&auto=format&fit=crop&q=80",
         },
       ],
       services: [
@@ -1117,7 +1151,8 @@ export async function seedDatabase() {
           category: "Spare Parts & Accessories",
           brand: "Anker",
           unit: "Piece",
-          image: "https://images.unsplash.com/photo-1583863788434-e58a36330cf0?w=600&auto=format&fit=crop&q=80",
+          image:
+            "https://images.unsplash.com/photo-1583863788434-e58a36330cf0?w=600&auto=format&fit=crop&q=80",
         },
         {
           name: "9H Diamond Tempered Glass Protector",
@@ -1129,7 +1164,8 @@ export async function seedDatabase() {
           category: "Spare Parts & Accessories",
           brand: "Spigen",
           unit: "Piece",
-          image: "https://images.unsplash.com/photo-1601784551446-20c9e07cdbdb?w=600&auto=format&fit=crop&q=80",
+          image:
+            "https://images.unsplash.com/photo-1601784551446-20c9e07cdbdb?w=600&auto=format&fit=crop&q=80",
         },
         {
           name: "Precision Multi-Bit Screwdriver Toolkit",
@@ -1141,7 +1177,8 @@ export async function seedDatabase() {
           category: "Spare Parts & Accessories",
           brand: "iFixit",
           unit: "Unit",
-          image: "https://images.unsplash.com/photo-1581092160607-ee22621dd758?w=600&auto=format&fit=crop&q=80",
+          image:
+            "https://images.unsplash.com/photo-1581092160607-ee22621dd758?w=600&auto=format&fit=crop&q=80",
         },
         {
           name: "MacBook Air M2 Replacement Battery (OEM)",
@@ -1153,7 +1190,8 @@ export async function seedDatabase() {
           category: "Spare Parts & Accessories",
           brand: "Apple OEM",
           unit: "Piece",
-          image: "https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=600&auto=format&fit=crop&q=80",
+          image:
+            "https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=600&auto=format&fit=crop&q=80",
         },
         {
           name: "Anker 10000mAh Magnetic Power Bank",
@@ -1165,7 +1203,8 @@ export async function seedDatabase() {
           category: "Spare Parts & Accessories",
           brand: "Anker",
           unit: "Unit",
-          image: "https://images.unsplash.com/photo-1583863788434-e58a36330cf0?w=600&auto=format&fit=crop&q=80",
+          image:
+            "https://images.unsplash.com/photo-1583863788434-e58a36330cf0?w=600&auto=format&fit=crop&q=80",
         },
         {
           name: "Anti-Glare Matte Screen Film (iPad Pro)",
@@ -1177,7 +1216,8 @@ export async function seedDatabase() {
           category: "Spare Parts & Accessories",
           brand: "Spigen",
           unit: "Piece",
-          image: "https://images.unsplash.com/photo-1601784551446-20c9e07cdbdb?w=600&auto=format&fit=crop&q=80",
+          image:
+            "https://images.unsplash.com/photo-1601784551446-20c9e07cdbdb?w=600&auto=format&fit=crop&q=80",
         },
       ],
       services: [
@@ -1249,7 +1289,8 @@ export async function seedDatabase() {
           category: "Accessories & Protection",
           brand: "Spigen",
           unit: "Piece",
-          image: "https://images.unsplash.com/photo-1601784551446-20c9e07cdbdb?w=600&auto=format&fit=crop&q=80",
+          image:
+            "https://images.unsplash.com/photo-1601784551446-20c9e07cdbdb?w=600&auto=format&fit=crop&q=80",
         },
         {
           name: "Braided 2M Fast-Charging Cable (USB-C)",
@@ -1261,7 +1302,8 @@ export async function seedDatabase() {
           category: "Accessories & Protection",
           brand: "Anker",
           unit: "Piece",
-          image: "https://images.unsplash.com/photo-1583863788434-e58a36330cf0?w=600&auto=format&fit=crop&q=80",
+          image:
+            "https://images.unsplash.com/photo-1583863788434-e58a36330cf0?w=600&auto=format&fit=crop&q=80",
         },
         {
           name: "9H Tempered Glass Screen Protector (5-Pack)",
@@ -1273,7 +1315,8 @@ export async function seedDatabase() {
           category: "Accessories & Protection",
           brand: "Spigen",
           unit: "Piece",
-          image: "https://images.unsplash.com/photo-1601784551446-20c9e07cdbdb?w=600&auto=format&fit=crop&q=80",
+          image:
+            "https://images.unsplash.com/photo-1601784551446-20c9e07cdbdb?w=600&auto=format&fit=crop&q=80",
         },
         {
           name: "MagSafe 10000mAh Wireless Power Bank",
@@ -1285,7 +1328,8 @@ export async function seedDatabase() {
           category: "Accessories & Protection",
           brand: "Anker",
           unit: "Unit",
-          image: "https://images.unsplash.com/photo-1583863788434-e58a36330cf0?w=600&auto=format&fit=crop&q=80",
+          image:
+            "https://images.unsplash.com/photo-1583863788434-e58a36330cf0?w=600&auto=format&fit=crop&q=80",
         },
       ],
       services: [
@@ -1358,7 +1402,8 @@ export async function seedDatabase() {
           category: "Tops & Shirts",
           brand: "Ralph Lauren",
           unit: "Pcs",
-          image: "https://images.unsplash.com/photo-1596755094514-f87e34085b2c?w=600&auto=format&fit=crop&q=80",
+          image:
+            "https://images.unsplash.com/photo-1596755094514-f87e34085b2c?w=600&auto=format&fit=crop&q=80",
         },
         {
           name: "Casual Linen Button-Down Shirt",
@@ -1370,7 +1415,8 @@ export async function seedDatabase() {
           category: "Tops & Shirts",
           brand: "Zara",
           unit: "Pcs",
-          image: "https://images.unsplash.com/photo-1602810318383-e386cc2a3ccf?w=600&auto=format&fit=crop&q=80",
+          image:
+            "https://images.unsplash.com/photo-1602810318383-e386cc2a3ccf?w=600&auto=format&fit=crop&q=80",
         },
         {
           name: "Classic 501 Straight Denim Jeans",
@@ -1382,7 +1428,8 @@ export async function seedDatabase() {
           category: "Denim & Trousers",
           brand: "Levi's",
           unit: "Pcs",
-          image: "https://images.unsplash.com/photo-1542272604-787c3835535d?w=600&auto=format&fit=crop&q=80",
+          image:
+            "https://images.unsplash.com/photo-1542272604-787c3835535d?w=600&auto=format&fit=crop&q=80",
         },
         {
           name: "Stretch Chino Trousers Slim",
@@ -1394,7 +1441,8 @@ export async function seedDatabase() {
           category: "Denim & Trousers",
           brand: "Zara",
           unit: "Pcs",
-          image: "https://images.unsplash.com/photo-1473966968600-fa801b869a1a?w=600&auto=format&fit=crop&q=80",
+          image:
+            "https://images.unsplash.com/photo-1473966968600-fa801b869a1a?w=600&auto=format&fit=crop&q=80",
         },
         {
           name: "Genuine Leather Bomber Jacket",
@@ -1406,7 +1454,8 @@ export async function seedDatabase() {
           category: "Outerwear & Jackets",
           brand: "Zara",
           unit: "Pcs",
-          image: "https://images.unsplash.com/photo-1551028719-00167b16eac5?w=600&auto=format&fit=crop&q=80",
+          image:
+            "https://images.unsplash.com/photo-1551028719-00167b16eac5?w=600&auto=format&fit=crop&q=80",
         },
         {
           name: "Breathable Athletic Running Shoes",
@@ -1418,7 +1467,8 @@ export async function seedDatabase() {
           category: "Footwear & Accessories",
           brand: "Nike",
           unit: "Pair",
-          image: "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=600&auto=format&fit=crop&q=80",
+          image:
+            "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=600&auto=format&fit=crop&q=80",
         },
         {
           name: "Polarized Aviator Sunglasses",
@@ -1430,7 +1480,8 @@ export async function seedDatabase() {
           category: "Footwear & Accessories",
           brand: "Ray-Ban",
           unit: "Item",
-          image: "https://images.unsplash.com/photo-1572635196237-14b3f281503f?w=600&auto=format&fit=crop&q=80",
+          image:
+            "https://images.unsplash.com/photo-1572635196237-14b3f281503f?w=600&auto=format&fit=crop&q=80",
         },
       ],
       services: [
@@ -1497,7 +1548,8 @@ export async function seedDatabase() {
           category: "Fresh Produce",
           brand: "Farm Fresh",
           unit: "Kg",
-          image: "https://images.unsplash.com/photo-1571771894821-ce9b6c11b08e?w=600&auto=format&fit=crop&q=80",
+          image:
+            "https://images.unsplash.com/photo-1571771894821-ce9b6c11b08e?w=600&auto=format&fit=crop&q=80",
           batchNumber: "BATCH-BAN-92",
           expiryDate: "2026-09-15",
         },
@@ -1511,7 +1563,8 @@ export async function seedDatabase() {
           category: "Fresh Produce",
           brand: "Farm Fresh",
           unit: "Kg",
-          image: "https://images.unsplash.com/photo-1560806887-1e4cd0b6cbd6?w=600&auto=format&fit=crop&q=80",
+          image:
+            "https://images.unsplash.com/photo-1560806887-1e4cd0b6cbd6?w=600&auto=format&fit=crop&q=80",
           batchNumber: "BATCH-APP-44",
           expiryDate: "2026-09-20",
         },
@@ -1525,7 +1578,8 @@ export async function seedDatabase() {
           category: "Farm Dairy & Eggs",
           brand: "Organic Valley",
           unit: "Liter",
-          image: "https://images.unsplash.com/photo-1563636619-e9143da7973b?w=600&auto=format&fit=crop&q=80",
+          image:
+            "https://images.unsplash.com/photo-1563636619-e9143da7973b?w=600&auto=format&fit=crop&q=80",
           batchNumber: "BATCH-MLK-81",
           expiryDate: "2026-09-10",
         },
@@ -1539,7 +1593,8 @@ export async function seedDatabase() {
           category: "Farm Dairy & Eggs",
           brand: "Organic Valley",
           unit: "Pack",
-          image: "https://images.unsplash.com/photo-1582722872445-44dc5f7e3c8f?w=600&auto=format&fit=crop&q=80",
+          image:
+            "https://images.unsplash.com/photo-1582722872445-44dc5f7e3c8f?w=600&auto=format&fit=crop&q=80",
           batchNumber: "BATCH-EGG-12",
           expiryDate: "2026-09-25",
         },
@@ -1553,7 +1608,8 @@ export async function seedDatabase() {
           category: "Pantry Essentials",
           brand: "Farm Fresh",
           unit: "Pcs",
-          image: "https://images.unsplash.com/photo-1474979266404-7eaacbcd87c5?w=600&auto=format&fit=crop&q=80",
+          image:
+            "https://images.unsplash.com/photo-1474979266404-7eaacbcd87c5?w=600&auto=format&fit=crop&q=80",
           batchNumber: "BATCH-OIL-33",
           expiryDate: "2027-06-30",
         },
@@ -1567,7 +1623,8 @@ export async function seedDatabase() {
           category: "Pantry Essentials",
           brand: "Nestle",
           unit: "Kg",
-          image: "https://images.unsplash.com/photo-1559056199-641a0ac8b55e?w=600&auto=format&fit=crop&q=80",
+          image:
+            "https://images.unsplash.com/photo-1559056199-641a0ac8b55e?w=600&auto=format&fit=crop&q=80",
           batchNumber: "BATCH-COF-09",
           expiryDate: "2027-12-31",
         },
@@ -1581,7 +1638,8 @@ export async function seedDatabase() {
           category: "Beverages & Snacks",
           brand: "Tropicana",
           unit: "Liter",
-          image: "https://images.unsplash.com/photo-1613478223719-2ab802602423?w=600&auto=format&fit=crop&q=80",
+          image:
+            "https://images.unsplash.com/photo-1613478223719-2ab802602423?w=600&auto=format&fit=crop&q=80",
           batchNumber: "BATCH-OJ-77",
           expiryDate: "2026-09-18",
         },
@@ -1643,7 +1701,8 @@ export async function seedDatabase() {
           category: "Bulk Agricultural Sacks",
           brand: "Cargill",
           unit: "Sack",
-          image: "https://images.unsplash.com/photo-1581441363689-1f3c3c414635?w=600&auto=format&fit=crop&q=80",
+          image:
+            "https://images.unsplash.com/photo-1581441363689-1f3c3c414635?w=600&auto=format&fit=crop&q=80",
         },
         {
           name: "Royal Basmati Rice 25kg Woven Bag",
@@ -1655,7 +1714,8 @@ export async function seedDatabase() {
           category: "Bulk Agricultural Sacks",
           brand: "Cargill",
           unit: "Sack",
-          image: "https://images.unsplash.com/photo-1586201375761-83865001e31c?w=600&auto=format&fit=crop&q=80",
+          image:
+            "https://images.unsplash.com/photo-1586201375761-83865001e31c?w=600&auto=format&fit=crop&q=80",
         },
         {
           name: "Commercial Canola Cooking Oil 20L Drum",
@@ -1667,7 +1727,8 @@ export async function seedDatabase() {
           category: "Commercial Oils & Fluids",
           brand: "Commercial Grade",
           unit: "Drum",
-          image: "https://images.unsplash.com/photo-1474979266404-7eaacbcd87c5?w=600&auto=format&fit=crop&q=80",
+          image:
+            "https://images.unsplash.com/photo-1474979266404-7eaacbcd87c5?w=600&auto=format&fit=crop&q=80",
         },
         {
           name: "Corrugated Shipping Boxes (Bundle of 50)",
@@ -1679,7 +1740,8 @@ export async function seedDatabase() {
           category: "Industrial Packaging",
           brand: "PackagingPro",
           unit: "Pack",
-          image: "https://images.unsplash.com/photo-1530587191325-3db32d826c18?w=600&auto=format&fit=crop&q=80",
+          image:
+            "https://images.unsplash.com/photo-1530587191325-3db32d826c18?w=600&auto=format&fit=crop&q=80",
         },
         {
           name: "Multipurpose Copy Paper A4 80gsm (10 Reams)",
@@ -1691,7 +1753,8 @@ export async function seedDatabase() {
           category: "Office Supplies Bulk",
           brand: "International Paper",
           unit: "Box",
-          image: "https://images.unsplash.com/photo-1589330694653-ded6df03f754?w=600&auto=format&fit=crop&q=80",
+          image:
+            "https://images.unsplash.com/photo-1589330694653-ded6df03f754?w=600&auto=format&fit=crop&q=80",
         },
       ],
       services: [
@@ -1758,7 +1821,8 @@ export async function seedDatabase() {
           category: "Prescription & Pain Relief",
           brand: "GSK",
           unit: "Box",
-          image: "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=600&auto=format&fit=crop&q=80",
+          image:
+            "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=600&auto=format&fit=crop&q=80",
           batchNumber: "BATCH-PAR-2401",
           expiryDate: "2027-08-31",
         },
@@ -1772,7 +1836,8 @@ export async function seedDatabase() {
           category: "Antibiotics & Respiratory",
           brand: "Pfizer",
           unit: "Box",
-          image: "https://images.unsplash.com/photo-1471864190281-a93a3070b6de?w=600&auto=format&fit=crop&q=80",
+          image:
+            "https://images.unsplash.com/photo-1471864190281-a93a3070b6de?w=600&auto=format&fit=crop&q=80",
           batchNumber: "BATCH-AMX-9912",
           expiryDate: "2027-11-30",
         },
@@ -1786,7 +1851,8 @@ export async function seedDatabase() {
           category: "Prescription & Pain Relief",
           brand: "Bayer",
           unit: "Box",
-          image: "https://images.unsplash.com/photo-1587854692152-cbe660dbde88?w=600&auto=format&fit=crop&q=80",
+          image:
+            "https://images.unsplash.com/photo-1587854692152-cbe660dbde88?w=600&auto=format&fit=crop&q=80",
           batchNumber: "BATCH-IBU-4022",
           expiryDate: "2027-05-31",
         },
@@ -1800,7 +1866,8 @@ export async function seedDatabase() {
           category: "Vitamins & Supplements",
           brand: "Bayer",
           unit: "Bottle",
-          image: "https://images.unsplash.com/photo-1550572017-ed200f5e5a43?w=600&auto=format&fit=crop&q=80",
+          image:
+            "https://images.unsplash.com/photo-1550572017-ed200f5e5a43?w=600&auto=format&fit=crop&q=80",
           batchNumber: "BATCH-VIT-7182",
           expiryDate: "2028-01-31",
         },
@@ -1814,7 +1881,8 @@ export async function seedDatabase() {
           category: "Antibiotics & Respiratory",
           brand: "Johnson & Johnson",
           unit: "Bottle",
-          image: "https://images.unsplash.com/photo-1512069772995-ec65ed45afd6?w=600&auto=format&fit=crop&q=80",
+          image:
+            "https://images.unsplash.com/photo-1512069772995-ec65ed45afd6?w=600&auto=format&fit=crop&q=80",
           batchNumber: "BATCH-CGH-1049",
           expiryDate: "2027-04-30",
         },
@@ -1828,7 +1896,8 @@ export async function seedDatabase() {
           category: "First Aid & Diagnostics",
           brand: "Abbott",
           unit: "Piece",
-          image: "https://images.unsplash.com/photo-1629909613654-28e377c37b09?w=600&auto=format&fit=crop&q=80",
+          image:
+            "https://images.unsplash.com/photo-1629909613654-28e377c37b09?w=600&auto=format&fit=crop&q=80",
         },
         {
           name: "Sterile Adhesive First Aid Kit (100 pcs)",
@@ -1840,7 +1909,8 @@ export async function seedDatabase() {
           category: "First Aid & Diagnostics",
           brand: "Johnson & Johnson",
           unit: "Box",
-          image: "https://images.unsplash.com/photo-1603398938378-e54eab446dde?w=600&auto=format&fit=crop&q=80",
+          image:
+            "https://images.unsplash.com/photo-1603398938378-e54eab446dde?w=600&auto=format&fit=crop&q=80",
           batchNumber: "BATCH-FAK-3021",
           expiryDate: "2029-12-31",
         },
@@ -1900,7 +1970,8 @@ export async function seedDatabase() {
           category: "Electronics",
           brand: "Apple",
           unit: "Pcs",
-          image: "https://images.unsplash.com/photo-1695048133142-1a20484d2569?w=600&auto=format&fit=crop&q=80",
+          image:
+            "https://images.unsplash.com/photo-1695048133142-1a20484d2569?w=600&auto=format&fit=crop&q=80",
         },
         {
           name: "Samsung Galaxy S24 Ultra",
@@ -1912,7 +1983,8 @@ export async function seedDatabase() {
           category: "Electronics",
           brand: "Samsung",
           unit: "Pcs",
-          image: "https://images.unsplash.com/photo-1610945265064-0e34e5519bbf?w=600&auto=format&fit=crop&q=80",
+          image:
+            "https://images.unsplash.com/photo-1610945265064-0e34e5519bbf?w=600&auto=format&fit=crop&q=80",
         },
         {
           name: "MacBook Air 15-inch M3",
@@ -1924,7 +1996,8 @@ export async function seedDatabase() {
           category: "Electronics",
           brand: "Apple",
           unit: "Pcs",
-          image: "https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=600&auto=format&fit=crop&q=80",
+          image:
+            "https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=600&auto=format&fit=crop&q=80",
         },
         {
           name: "Sony WH-1000XM5 Wireless Headphones",
@@ -1936,7 +2009,8 @@ export async function seedDatabase() {
           category: "Electronics",
           brand: "Sony",
           unit: "Pcs",
-          image: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=600&auto=format&fit=crop&q=80",
+          image:
+            "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=600&auto=format&fit=crop&q=80",
         },
         {
           name: "Nike Air Max 270 Black/White",
@@ -1948,7 +2022,8 @@ export async function seedDatabase() {
           category: "Apparel & Fashion",
           brand: "Nike",
           unit: "Pcs",
-          image: "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=600&auto=format&fit=crop&q=80",
+          image:
+            "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=600&auto=format&fit=crop&q=80",
         },
         {
           name: "Levi's 511 Slim Fit Jeans",
@@ -1960,7 +2035,8 @@ export async function seedDatabase() {
           category: "Apparel & Fashion",
           brand: "Levi's",
           unit: "Pcs",
-          image: "https://images.unsplash.com/photo-1542272604-787c3835535d?w=600&auto=format&fit=crop&q=80",
+          image:
+            "https://images.unsplash.com/photo-1542272604-787c3835535d?w=600&auto=format&fit=crop&q=80",
         },
       ],
       services: [
@@ -2019,7 +2095,8 @@ export async function seedDatabase() {
           category: "Women's Collection",
           brand: "Zara",
           unit: "Pcs",
-          image: "https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=600&auto=format&fit=crop&q=80",
+          image:
+            "https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=600&auto=format&fit=crop&q=80",
         },
         {
           name: "High-Rise Skinny Stretch Jeans (Women)",
@@ -2031,7 +2108,8 @@ export async function seedDatabase() {
           category: "Women's Collection",
           brand: "Mango",
           unit: "Pcs",
-          image: "https://images.unsplash.com/photo-1541099649105-f69ad21f3246?w=600&auto=format&fit=crop&q=80",
+          image:
+            "https://images.unsplash.com/photo-1541099649105-f69ad21f3246?w=600&auto=format&fit=crop&q=80",
         },
         {
           name: "Satin Slip Cami Blouse (Ivory/Blush)",
@@ -2043,7 +2121,8 @@ export async function seedDatabase() {
           category: "Women's Collection",
           brand: "Forever 21",
           unit: "Pcs",
-          image: "https://images.unsplash.com/photo-1564257631407-4deb1f99d992?w=600&auto=format&fit=crop&q=80",
+          image:
+            "https://images.unsplash.com/photo-1564257631407-4deb1f99d992?w=600&auto=format&fit=crop&q=80",
         },
         {
           name: "Classic Polo Shirt (White/Navy/Black)",
@@ -2055,7 +2134,8 @@ export async function seedDatabase() {
           category: "Men's Collection",
           brand: "Tommy Hilfiger",
           unit: "Pcs",
-          image: "https://images.unsplash.com/photo-1586790170083-2f9ceadc732d?w=600&auto=format&fit=crop&q=80",
+          image:
+            "https://images.unsplash.com/photo-1586790170083-2f9ceadc732d?w=600&auto=format&fit=crop&q=80",
         },
         {
           name: "Slim-Fit Chino Trousers (Men)",
@@ -2067,7 +2147,8 @@ export async function seedDatabase() {
           category: "Men's Collection",
           brand: "H&M",
           unit: "Pcs",
-          image: "https://images.unsplash.com/photo-1473966968600-fa801b869a1a?w=600&auto=format&fit=crop&q=80",
+          image:
+            "https://images.unsplash.com/photo-1473966968600-fa801b869a1a?w=600&auto=format&fit=crop&q=80",
         },
         {
           name: "Quilted Puffer Bomber Jacket (Men)",
@@ -2079,7 +2160,8 @@ export async function seedDatabase() {
           category: "Men's Collection",
           brand: "Zara",
           unit: "Pcs",
-          image: "https://images.unsplash.com/photo-1548883354-94bcfe321cbb?w=600&auto=format&fit=crop&q=80",
+          image:
+            "https://images.unsplash.com/photo-1548883354-94bcfe321cbb?w=600&auto=format&fit=crop&q=80",
         },
         {
           name: "Girls Printed Cotton Dress (Ages 4-12)",
@@ -2091,7 +2173,8 @@ export async function seedDatabase() {
           category: "Kids & Teen Wear",
           brand: "H&M",
           unit: "Pcs",
-          image: "https://images.unsplash.com/photo-1591047139829-d91aecb6caea?w=600&auto=format&fit=crop&q=80",
+          image:
+            "https://images.unsplash.com/photo-1591047139829-d91aecb6caea?w=600&auto=format&fit=crop&q=80",
         },
         {
           name: "Boys Graphic Tee & Jogger Set",
@@ -2103,7 +2186,8 @@ export async function seedDatabase() {
           category: "Kids & Teen Wear",
           brand: "Forever 21",
           unit: "Set",
-          image: "https://images.unsplash.com/photo-1596609548086-85bbf8ddb6b9?w=600&auto=format&fit=crop&q=80",
+          image:
+            "https://images.unsplash.com/photo-1596609548086-85bbf8ddb6b9?w=600&auto=format&fit=crop&q=80",
         },
         {
           name: "Structured Leather Tote Handbag",
@@ -2115,7 +2199,8 @@ export async function seedDatabase() {
           category: "Accessories & Bags",
           brand: "Mango",
           unit: "Pcs",
-          image: "https://images.unsplash.com/photo-1548036328-c9fa89d128fa?w=600&auto=format&fit=crop&q=80",
+          image:
+            "https://images.unsplash.com/photo-1548036328-c9fa89d128fa?w=600&auto=format&fit=crop&q=80",
         },
         {
           name: "Silk Square Printed Scarf",
@@ -2127,7 +2212,8 @@ export async function seedDatabase() {
           category: "Accessories & Bags",
           brand: "Zara",
           unit: "Pcs",
-          image: "https://images.unsplash.com/photo-1601924994987-69e26d50dc26?w=600&auto=format&fit=crop&q=80",
+          image:
+            "https://images.unsplash.com/photo-1601924994987-69e26d50dc26?w=600&auto=format&fit=crop&q=80",
         },
       ],
       services: [
@@ -2194,7 +2280,8 @@ export async function seedDatabase() {
           category: "Gold Jewellery (22K/24K)",
           brand: "Tanishq",
           unit: "Set",
-          image: "https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?w=600&auto=format&fit=crop&q=80",
+          image:
+            "https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?w=600&auto=format&fit=crop&q=80",
         },
         {
           name: "24K Pure Gold Coin 10g (BIS Hallmark)",
@@ -2206,7 +2293,8 @@ export async function seedDatabase() {
           category: "Gold Jewellery (22K/24K)",
           brand: "Malabar Gold",
           unit: "Pcs",
-          image: "https://images.unsplash.com/photo-1611652022419-a9419f74343d?w=600&auto=format&fit=crop&q=80",
+          image:
+            "https://images.unsplash.com/photo-1611652022419-a9419f74343d?w=600&auto=format&fit=crop&q=80",
         },
         {
           name: "Gold Chain Flat Curb Link 916 (8g)",
@@ -2218,7 +2306,8 @@ export async function seedDatabase() {
           category: "Gold Jewellery (22K/24K)",
           brand: "Kalyan",
           unit: "Pcs",
-          image: "https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?w=600&auto=format&fit=crop&q=80",
+          image:
+            "https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?w=600&auto=format&fit=crop&q=80",
         },
         {
           name: "Solitaire Diamond Ring 0.5ct F/VS1",
@@ -2230,7 +2319,8 @@ export async function seedDatabase() {
           category: "Diamond & Gemstone",
           brand: "Caratlane",
           unit: "Pcs",
-          image: "https://images.unsplash.com/photo-1605100804763-247f67b3557e?w=600&auto=format&fit=crop&q=80",
+          image:
+            "https://images.unsplash.com/photo-1605100804763-247f67b3557e?w=600&auto=format&fit=crop&q=80",
         },
         {
           name: "Emerald Pavé Halo Earrings (18K)",
@@ -2242,7 +2332,8 @@ export async function seedDatabase() {
           category: "Diamond & Gemstone",
           brand: "PC Jeweller",
           unit: "Pcs",
-          image: "https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?w=600&auto=format&fit=crop&q=80",
+          image:
+            "https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?w=600&auto=format&fit=crop&q=80",
         },
         {
           name: "925 Sterling Silver Oxidised Jhumka Earrings",
@@ -2254,7 +2345,8 @@ export async function seedDatabase() {
           category: "Silver & White Gold",
           brand: "Caratlane",
           unit: "Pcs",
-          image: "https://images.unsplash.com/photo-1596944924616-7b38e7cfac36?w=600&auto=format&fit=crop&q=80",
+          image:
+            "https://images.unsplash.com/photo-1596944924616-7b38e7cfac36?w=600&auto=format&fit=crop&q=80",
         },
         {
           name: "Silver Moonstone Adjustable Ring",
@@ -2266,7 +2358,8 @@ export async function seedDatabase() {
           category: "Silver & White Gold",
           brand: "Caratlane",
           unit: "Pcs",
-          image: "https://images.unsplash.com/photo-1573408301185-9519f94815b3?w=600&auto=format&fit=crop&q=80",
+          image:
+            "https://images.unsplash.com/photo-1573408301185-9519f94815b3?w=600&auto=format&fit=crop&q=80",
         },
         {
           name: "Bridal Choker Necklace Set (Gold Plated)",
@@ -2278,7 +2371,8 @@ export async function seedDatabase() {
           category: "Bridal Collections",
           brand: "Tanishq",
           unit: "Set",
-          image: "https://images.unsplash.com/photo-1576828831022-ca41d3905fb7?w=600&auto=format&fit=crop&q=80",
+          image:
+            "https://images.unsplash.com/photo-1576828831022-ca41d3905fb7?w=600&auto=format&fit=crop&q=80",
         },
         {
           name: "Full Bridal Jewellery Set (6-Pc Gold)",
@@ -2290,7 +2384,8 @@ export async function seedDatabase() {
           category: "Bridal Collections",
           brand: "Kalyan",
           unit: "Set",
-          image: "https://images.unsplash.com/photo-1592790988843-9c7c671e7acf?w=600&auto=format&fit=crop&q=80",
+          image:
+            "https://images.unsplash.com/photo-1592790988843-9c7c671e7acf?w=600&auto=format&fit=crop&q=80",
         },
         {
           name: "Men's Heavy Curb Bracelet (22K, 12g)",
@@ -2302,7 +2397,8 @@ export async function seedDatabase() {
           category: "Men's Jewellery",
           brand: "Malabar Gold",
           unit: "Pcs",
-          image: "https://images.unsplash.com/photo-1622979135240-e07da41e8e81?w=600&auto=format&fit=crop&q=80",
+          image:
+            "https://images.unsplash.com/photo-1622979135240-e07da41e8e81?w=600&auto=format&fit=crop&q=80",
         },
       ],
       services: [
@@ -2368,7 +2464,8 @@ export async function seedDatabase() {
           category: "Smartphones & Tablets",
           brand: "Apple",
           unit: "Pcs",
-          image: "https://images.unsplash.com/photo-1695048133142-1a20484d2569?w=600&auto=format&fit=crop&q=80",
+          image:
+            "https://images.unsplash.com/photo-1695048133142-1a20484d2569?w=600&auto=format&fit=crop&q=80",
         },
         {
           name: "Samsung Galaxy S24+ 256GB",
@@ -2380,7 +2477,8 @@ export async function seedDatabase() {
           category: "Smartphones & Tablets",
           brand: "Samsung",
           unit: "Pcs",
-          image: "https://images.unsplash.com/photo-1610945265064-0e34e5519bbf?w=600&auto=format&fit=crop&q=80",
+          image:
+            "https://images.unsplash.com/photo-1610945265064-0e34e5519bbf?w=600&auto=format&fit=crop&q=80",
         },
         {
           name: "iPad Air 11-inch M2 Wi-Fi 256GB",
@@ -2392,7 +2490,8 @@ export async function seedDatabase() {
           category: "Smartphones & Tablets",
           brand: "Apple",
           unit: "Pcs",
-          image: "https://images.unsplash.com/photo-1544244015-0df4b3ffc6b0?w=600&auto=format&fit=crop&q=80",
+          image:
+            "https://images.unsplash.com/photo-1544244015-0df4b3ffc6b0?w=600&auto=format&fit=crop&q=80",
         },
         {
           name: "MacBook Pro 14-inch M3 Pro",
@@ -2404,7 +2503,8 @@ export async function seedDatabase() {
           category: "Laptops & Computers",
           brand: "Apple",
           unit: "Pcs",
-          image: "https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=600&auto=format&fit=crop&q=80",
+          image:
+            "https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=600&auto=format&fit=crop&q=80",
         },
         {
           name: "Samsung 27-inch 4K Smart Monitor",
@@ -2416,7 +2516,8 @@ export async function seedDatabase() {
           category: "Laptops & Computers",
           brand: "Samsung",
           unit: "Unit",
-          image: "https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?w=600&auto=format&fit=crop&q=80",
+          image:
+            "https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?w=600&auto=format&fit=crop&q=80",
         },
         {
           name: "Sony WH-1000XM5 Noise Cancelling Headphones",
@@ -2428,7 +2529,8 @@ export async function seedDatabase() {
           category: "Audio & Headphones",
           brand: "Sony",
           unit: "Pcs",
-          image: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=600&auto=format&fit=crop&q=80",
+          image:
+            "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=600&auto=format&fit=crop&q=80",
         },
         {
           name: "JBL Charge 5 Portable Bluetooth Speaker",
@@ -2440,7 +2542,8 @@ export async function seedDatabase() {
           category: "Audio & Headphones",
           brand: "JBL",
           unit: "Pcs",
-          image: "https://images.unsplash.com/photo-1608043152269-423dbba4e7e1?w=600&auto=format&fit=crop&q=80",
+          image:
+            "https://images.unsplash.com/photo-1608043152269-423dbba4e7e1?w=600&auto=format&fit=crop&q=80",
         },
         {
           name: "Apple Watch Series 9 (GPS) 45mm",
@@ -2452,7 +2555,8 @@ export async function seedDatabase() {
           category: "Smart Home & Wearables",
           brand: "Apple",
           unit: "Pcs",
-          image: "https://images.unsplash.com/photo-1546868871-7041f2a55e12?w=600&auto=format&fit=crop&q=80",
+          image:
+            "https://images.unsplash.com/photo-1546868871-7041f2a55e12?w=600&auto=format&fit=crop&q=80",
         },
         {
           name: "Anker 140W USB-C 4-Port GaN Charger",
@@ -2464,7 +2568,8 @@ export async function seedDatabase() {
           category: "Cables & Accessories",
           brand: "Anker",
           unit: "Pcs",
-          image: "https://images.unsplash.com/photo-1583863788434-e58a36330cf0?w=600&auto=format&fit=crop&q=80",
+          image:
+            "https://images.unsplash.com/photo-1583863788434-e58a36330cf0?w=600&auto=format&fit=crop&q=80",
         },
         {
           name: "Braided USB-C to Lightning Cable 2M (3-Pack)",
@@ -2476,7 +2581,8 @@ export async function seedDatabase() {
           category: "Cables & Accessories",
           brand: "Anker",
           unit: "Pcs",
-          image: "https://images.unsplash.com/photo-1601784551446-20c9e07cdbdb?w=600&auto=format&fit=crop&q=80",
+          image:
+            "https://images.unsplash.com/photo-1601784551446-20c9e07cdbdb?w=600&auto=format&fit=crop&q=80",
         },
       ],
       services: [
@@ -2545,7 +2651,8 @@ export async function seedDatabase() {
           category: "Fresh Daily Breads",
           brand: "House Baked",
           unit: "Loaf",
-          image: "https://images.unsplash.com/photo-1509440159596-0249088772ff?w=600&auto=format&fit=crop&q=80",
+          image:
+            "https://images.unsplash.com/photo-1509440159596-0249088772ff?w=600&auto=format&fit=crop&q=80",
           batchNumber: "BAK-SRD-001",
           expiryDate: "2026-09-02",
         },
@@ -2559,7 +2666,8 @@ export async function seedDatabase() {
           category: "Fresh Daily Breads",
           brand: "House Baked",
           unit: "Loaf",
-          image: "https://images.unsplash.com/photo-1586444248902-2f64eddc13df?w=600&auto=format&fit=crop&q=80",
+          image:
+            "https://images.unsplash.com/photo-1586444248902-2f64eddc13df?w=600&auto=format&fit=crop&q=80",
           batchNumber: "BAK-MUL-002",
           expiryDate: "2026-09-02",
         },
@@ -2573,7 +2681,8 @@ export async function seedDatabase() {
           category: "Fresh Daily Breads",
           brand: "Patisserie Maison",
           unit: "Piece",
-          image: "https://images.unsplash.com/photo-1549931319-a545dcf3bc7b?w=600&auto=format&fit=crop&q=80",
+          image:
+            "https://images.unsplash.com/photo-1549931319-a545dcf3bc7b?w=600&auto=format&fit=crop&q=80",
           batchNumber: "BAK-BAG-003",
           expiryDate: "2026-09-01",
         },
@@ -2587,7 +2696,8 @@ export async function seedDatabase() {
           category: "Cakes & Celebration",
           brand: "Artisan Collection",
           unit: "Piece",
-          image: "https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=600&auto=format&fit=crop&q=80",
+          image:
+            "https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=600&auto=format&fit=crop&q=80",
           batchNumber: "BAK-CHC-004",
           expiryDate: "2026-09-04",
         },
@@ -2601,7 +2711,8 @@ export async function seedDatabase() {
           category: "Cakes & Celebration",
           brand: "Patisserie Maison",
           unit: "Piece",
-          image: "https://images.unsplash.com/photo-1565958011703-44f9829ba187?w=600&auto=format&fit=crop&q=80",
+          image:
+            "https://images.unsplash.com/photo-1565958011703-44f9829ba187?w=600&auto=format&fit=crop&q=80",
           batchNumber: "BAK-STR-005",
           expiryDate: "2026-09-03",
         },
@@ -2615,7 +2726,8 @@ export async function seedDatabase() {
           category: "Cakes & Celebration",
           brand: "Artisan Collection",
           unit: "Box",
-          image: "https://images.unsplash.com/photo-1571115764595-644a1f56a55c?w=600&auto=format&fit=crop&q=80",
+          image:
+            "https://images.unsplash.com/photo-1571115764595-644a1f56a55c?w=600&auto=format&fit=crop&q=80",
           batchNumber: "BAK-CPC-006",
           expiryDate: "2026-09-03",
         },
@@ -2629,7 +2741,8 @@ export async function seedDatabase() {
           category: "Pastries & Viennoiserie",
           brand: "Patisserie Maison",
           unit: "Piece",
-          image: "https://images.unsplash.com/photo-1555507036-ab1f4038808a?w=600&auto=format&fit=crop&q=80",
+          image:
+            "https://images.unsplash.com/photo-1555507036-ab1f4038808a?w=600&auto=format&fit=crop&q=80",
           batchNumber: "BAK-CRS-007",
           expiryDate: "2026-09-01",
         },
@@ -2643,7 +2756,8 @@ export async function seedDatabase() {
           category: "Pastries & Viennoiserie",
           brand: "House Baked",
           unit: "Piece",
-          image: "https://images.unsplash.com/photo-1533910534207-90f31029a78e?w=600&auto=format&fit=crop&q=80",
+          image:
+            "https://images.unsplash.com/photo-1533910534207-90f31029a78e?w=600&auto=format&fit=crop&q=80",
           batchNumber: "BAK-DAN-008",
           expiryDate: "2026-09-02",
         },
@@ -2657,7 +2771,8 @@ export async function seedDatabase() {
           category: "Cookies & Biscuits",
           brand: "Artisan Collection",
           unit: "Box",
-          image: "https://images.unsplash.com/photo-1499636136210-6f4ee915583e?w=600&auto=format&fit=crop&q=80",
+          image:
+            "https://images.unsplash.com/photo-1499636136210-6f4ee915583e?w=600&auto=format&fit=crop&q=80",
           batchNumber: "BAK-CKI-009",
           expiryDate: "2026-09-15",
         },
@@ -2671,7 +2786,8 @@ export async function seedDatabase() {
           category: "Cookies & Biscuits",
           brand: "House Baked",
           unit: "Piece",
-          image: "https://images.unsplash.com/photo-1606313564200-e75d5e30476c?w=600&auto=format&fit=crop&q=80",
+          image:
+            "https://images.unsplash.com/photo-1606313564200-e75d5e30476c?w=600&auto=format&fit=crop&q=80",
           batchNumber: "BAK-BRW-010",
           expiryDate: "2026-09-05",
         },
@@ -2685,7 +2801,8 @@ export async function seedDatabase() {
           category: "Beverages",
           brand: "Artisan Collection",
           unit: "Cup",
-          image: "https://images.unsplash.com/photo-1542990253-0d0f5be5f0ed?w=600&auto=format&fit=crop&q=80",
+          image:
+            "https://images.unsplash.com/photo-1542990253-0d0f5be5f0ed?w=600&auto=format&fit=crop&q=80",
         },
       ],
       services: [
@@ -2753,7 +2870,8 @@ export async function seedDatabase() {
           category: "Room Accommodation",
           brand: "Hotel Signature",
           unit: "Night",
-          image: "https://images.unsplash.com/photo-1631049307264-da0ec9d70304?w=600&auto=format&fit=crop&q=80",
+          image:
+            "https://images.unsplash.com/photo-1631049307264-da0ec9d70304?w=600&auto=format&fit=crop&q=80",
         },
         {
           name: "Junior Suite (Pool View) - Per Night",
@@ -2765,7 +2883,8 @@ export async function seedDatabase() {
           category: "Room Accommodation",
           brand: "Hotel Signature",
           unit: "Night",
-          image: "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?w=600&auto=format&fit=crop&q=80",
+          image:
+            "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?w=600&auto=format&fit=crop&q=80",
         },
         {
           name: "Presidential Suite (Panoramic) - Per Night",
@@ -2777,7 +2896,8 @@ export async function seedDatabase() {
           category: "Room Accommodation",
           brand: "Hotel Signature",
           unit: "Night",
-          image: "https://images.unsplash.com/photo-1611892440504-42a792e24d32?w=600&auto=format&fit=crop&q=80",
+          image:
+            "https://images.unsplash.com/photo-1611892440504-42a792e24d32?w=600&auto=format&fit=crop&q=80",
         },
         {
           name: "Continental Breakfast Buffet (Per Person)",
@@ -2789,7 +2909,8 @@ export async function seedDatabase() {
           category: "Restaurant & Dining",
           brand: "Hotel Signature",
           unit: "Serving",
-          image: "https://images.unsplash.com/photo-1484723091739-30a097e8f929?w=600&auto=format&fit=crop&q=80",
+          image:
+            "https://images.unsplash.com/photo-1484723091739-30a097e8f929?w=600&auto=format&fit=crop&q=80",
         },
         {
           name: "Grilled Sea Bass (Restaurant Main Course)",
@@ -2801,7 +2922,8 @@ export async function seedDatabase() {
           category: "Restaurant & Dining",
           brand: "Hotel Signature",
           unit: "Serving",
-          image: "https://images.unsplash.com/photo-1467003909585-2f8a72700288?w=600&auto=format&fit=crop&q=80",
+          image:
+            "https://images.unsplash.com/photo-1467003909585-2f8a72700288?w=600&auto=format&fit=crop&q=80",
         },
         {
           name: "Fine Champagne (Restaurant Bottle)",
@@ -2813,7 +2935,8 @@ export async function seedDatabase() {
           category: "Restaurant & Dining",
           brand: "Hotel Signature",
           unit: "Serving",
-          image: "https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?w=600&auto=format&fit=crop&q=80",
+          image:
+            "https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?w=600&auto=format&fit=crop&q=80",
         },
         {
           name: "Room Service Club Sandwich + Fries",
@@ -2825,7 +2948,8 @@ export async function seedDatabase() {
           category: "Room Service & Minibar",
           brand: "Hotel Signature",
           unit: "Serving",
-          image: "https://images.unsplash.com/photo-1528735602780-2552fd46c7af?w=600&auto=format&fit=crop&q=80",
+          image:
+            "https://images.unsplash.com/photo-1528735602780-2552fd46c7af?w=600&auto=format&fit=crop&q=80",
         },
         {
           name: "Minibar Perrier Sparkling Water 330ml",
@@ -2837,7 +2961,8 @@ export async function seedDatabase() {
           category: "Room Service & Minibar",
           brand: "Minibar Select",
           unit: "Pcs",
-          image: "https://images.unsplash.com/photo-1559839914-17aae19cec71?w=600&auto=format&fit=crop&q=80",
+          image:
+            "https://images.unsplash.com/photo-1559839914-17aae19cec71?w=600&auto=format&fit=crop&q=80",
         },
         {
           name: "Minibar Pringles Original 40g",
@@ -2849,7 +2974,8 @@ export async function seedDatabase() {
           category: "Room Service & Minibar",
           brand: "Minibar Select",
           unit: "Piece",
-          image: "https://images.unsplash.com/photo-1549497538-303791108f95?w=600&auto=format&fit=crop&q=80",
+          image:
+            "https://images.unsplash.com/photo-1549497538-303791108f95?w=600&auto=format&fit=crop&q=80",
         },
       ],
       services: [
@@ -2930,7 +3056,8 @@ export async function seedDatabase() {
           category: "Supplements & Nutrition",
           brand: "Optimum Nutrition",
           unit: "Kg",
-          image: "https://images.unsplash.com/photo-1593095948071-474c5cc2989d?w=600&auto=format&fit=crop&q=80",
+          image:
+            "https://images.unsplash.com/photo-1593095948071-474c5cc2989d?w=600&auto=format&fit=crop&q=80",
         },
         {
           name: "Creatine Monohydrate 500g Unflavored",
@@ -2942,7 +3069,8 @@ export async function seedDatabase() {
           category: "Supplements & Nutrition",
           brand: "MyProtein",
           unit: "Pcs",
-          image: "https://images.unsplash.com/photo-1584735422425-6c2a5c73f8e5?w=600&auto=format&fit=crop&q=80",
+          image:
+            "https://images.unsplash.com/photo-1584735422425-6c2a5c73f8e5?w=600&auto=format&fit=crop&q=80",
         },
         {
           name: "Premier Yoga Mat Non-Slip (6mm)",
@@ -2954,7 +3082,8 @@ export async function seedDatabase() {
           category: "Gym Gear & Apparel",
           brand: "Reebok",
           unit: "Pcs",
-          image: "https://images.unsplash.com/photo-1601422407692-ec4eeec1d9b3?w=600&auto=format&fit=crop&q=80",
+          image:
+            "https://images.unsplash.com/photo-1601422407692-ec4eeec1d9b3?w=600&auto=format&fit=crop&q=80",
         },
         {
           name: "Resistance Band Set (5 Levels)",
@@ -2966,7 +3095,8 @@ export async function seedDatabase() {
           category: "Gym Gear & Apparel",
           brand: "IronCore",
           unit: "Pcs",
-          image: "https://images.unsplash.com/photo-1598971861713-54ad16a7e72e?w=600&auto=format&fit=crop&q=80",
+          image:
+            "https://images.unsplash.com/photo-1598971861713-54ad16a7e72e?w=600&auto=format&fit=crop&q=80",
         },
         {
           name: "Pre-Workout Energy & Focus Formula 300g",
@@ -2978,7 +3108,8 @@ export async function seedDatabase() {
           category: "Supplements & Nutrition",
           brand: "Optimum Nutrition",
           unit: "Pcs",
-          image: "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=600&auto=format&fit=crop&q=80",
+          image:
+            "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=600&auto=format&fit=crop&q=80",
         },
         {
           name: "IronCore Gym Duffel Bag 40L",
@@ -2990,7 +3121,8 @@ export async function seedDatabase() {
           category: "Gym Gear & Apparel",
           brand: "Nike Training",
           unit: "Pcs",
-          image: "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=600&auto=format&fit=crop&q=80",
+          image:
+            "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=600&auto=format&fit=crop&q=80",
         },
       ],
       services: [
@@ -3080,7 +3212,8 @@ export async function seedDatabase() {
           category: "Pharmacy & Retail",
           brand: "PharmaCare",
           unit: "Box",
-          image: "https://images.unsplash.com/photo-1584036561566-baf8f5f1b144?w=600&auto=format&fit=crop&q=80",
+          image:
+            "https://images.unsplash.com/photo-1584036561566-baf8f5f1b144?w=600&auto=format&fit=crop&q=80",
         },
         {
           name: "Digital Thermometer & Home Kit",
@@ -3092,7 +3225,8 @@ export async function seedDatabase() {
           category: "Pharmacy & Retail",
           brand: "PharmaCare",
           unit: "Pcs",
-          image: "https://images.unsplash.com/photo-1584118623352-9362ed5b33fa?w=600&auto=format&fit=crop&q=80",
+          image:
+            "https://images.unsplash.com/photo-1584118623352-9362ed5b33fa?w=600&auto=format&fit=crop&q=80",
         },
         {
           name: "Blood Pressure Monitor (Upper Arm)",
@@ -3104,7 +3238,8 @@ export async function seedDatabase() {
           category: "Pharmacy & Retail",
           brand: "PharmaCare",
           unit: "Pcs",
-          image: "https://images.unsplash.com/photo-1615461066841-6116e61058f4?w=600&auto=format&fit=crop&q=80",
+          image:
+            "https://images.unsplash.com/photo-1615461066841-6116e61058f4?w=600&auto=format&fit=crop&q=80",
         },
         {
           name: "Elastic Bandage Support Wrap",
@@ -3116,7 +3251,8 @@ export async function seedDatabase() {
           category: "Pharmacy & Retail",
           brand: "PharmaCare",
           unit: "Roll",
-          image: "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=600&auto=format&fit=crop&q=80",
+          image:
+            "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=600&auto=format&fit=crop&q=80",
         },
       ],
       services: [
@@ -3233,7 +3369,8 @@ export async function seedDatabase() {
           category: "Vehicle Rentals",
           brand: "Velocity Fleet",
           unit: "Day",
-          image: "https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?w=600&auto=format&fit=crop&q=80",
+          image:
+            "https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?w=600&auto=format&fit=crop&q=80",
         },
         {
           name: "SUV / 4x4 All-Terrain Rental (Per Day)",
@@ -3245,7 +3382,8 @@ export async function seedDatabase() {
           category: "Vehicle Rentals",
           brand: "Velocity Fleet",
           unit: "Day",
-          image: "https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?w=600&auto=format&fit=crop&q=80",
+          image:
+            "https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?w=600&auto=format&fit=crop&q=80",
         },
         {
           name: "15-Seat Passenger Van Rental (Per Day)",
@@ -3257,7 +3395,8 @@ export async function seedDatabase() {
           category: "Vehicle Rentals",
           brand: "Velocity Fleet",
           unit: "Day",
-          image: "https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=600&auto=format&fit=crop&q=80",
+          image:
+            "https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=600&auto=format&fit=crop&q=80",
         },
         {
           name: "Industrial Generator 15KVA (Per Day)",
@@ -3269,7 +3408,8 @@ export async function seedDatabase() {
           category: "Power Equipment",
           brand: "Makita Pro",
           unit: "Day",
-          image: "https://images.unsplash.com/photo-1581092160607-ee22621dd758?w=600&auto=format&fit=crop&q=80",
+          image:
+            "https://images.unsplash.com/photo-1581092160607-ee22621dd758?w=600&auto=format&fit=crop&q=80",
         },
         {
           name: "Pressure Washer 3000 PSI (Per Day)",
@@ -3281,7 +3421,8 @@ export async function seedDatabase() {
           category: "Power Equipment",
           brand: "Makita Pro",
           unit: "Day",
-          image: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=600&auto=format&fit=crop&q=80",
+          image:
+            "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=600&auto=format&fit=crop&q=80",
         },
         {
           name: "Concrete Mixer 180L (Per Day)",
@@ -3293,7 +3434,8 @@ export async function seedDatabase() {
           category: "Power Equipment",
           brand: "Makita Pro",
           unit: "Day",
-          image: "https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=600&auto=format&fit=crop&q=80",
+          image:
+            "https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=600&auto=format&fit=crop&q=80",
         },
         {
           name: "Professional PA Speaker System + Mixer (Event)",
@@ -3305,7 +3447,8 @@ export async function seedDatabase() {
           category: "Event & AV Equipment",
           brand: "Sony AV",
           unit: "Event",
-          image: "https://images.unsplash.com/photo-1607293566520-d7e2c0bdfc61?w=600&auto=format&fit=crop&q=80",
+          image:
+            "https://images.unsplash.com/photo-1607293566520-d7e2c0bdfc61?w=600&auto=format&fit=crop&q=80",
         },
         {
           name: "4K DSLR Camera + Lens Kit (Per Day)",
@@ -3317,7 +3460,8 @@ export async function seedDatabase() {
           category: "Event & AV Equipment",
           brand: "Sony AV",
           unit: "Day",
-          image: "https://images.unsplash.com/photo-1516035069371-29a1b244cc32?w=600&auto=format&fit=crop&q=80",
+          image:
+            "https://images.unsplash.com/photo-1516035069371-29a1b244cc32?w=600&auto=format&fit=crop&q=80",
         },
         {
           name: "Projector 5000 Lumens + Screen Set (Per Day)",
@@ -3329,7 +3473,8 @@ export async function seedDatabase() {
           category: "Event & AV Equipment",
           brand: "Sony AV",
           unit: "Day",
-          image: "https://images.unsplash.com/photo-1478720568477-152d9b164e26?w=600&auto=format&fit=crop&q=80",
+          image:
+            "https://images.unsplash.com/photo-1478720568477-152d9b164e26?w=600&auto=format&fit=crop&q=80",
         },
         {
           name: "Mountain Bicycle (Per Day)",
@@ -3341,7 +3486,8 @@ export async function seedDatabase() {
           category: "Sports & Outdoor Gear",
           brand: "Coleman Outdoor",
           unit: "Day",
-          image: "https://images.unsplash.com/photo-1485965120184-e220f721d03e?w=600&auto=format&fit=crop&q=80",
+          image:
+            "https://images.unsplash.com/photo-1485965120184-e220f721d03e?w=600&auto=format&fit=crop&q=80",
         },
         {
           name: "Full Camping Tent Set (4-Person) - Per Night",
@@ -3353,7 +3499,8 @@ export async function seedDatabase() {
           category: "Sports & Outdoor Gear",
           brand: "Coleman Outdoor",
           unit: "Day",
-          image: "https://images.unsplash.com/photo-1537225228614-56cc3556d7ed?w=600&auto=format&fit=crop&q=80",
+          image:
+            "https://images.unsplash.com/photo-1537225228614-56cc3556d7ed?w=600&auto=format&fit=crop&q=80",
         },
         {
           name: "Full Wedding AV + Decor Package",
@@ -3365,7 +3512,8 @@ export async function seedDatabase() {
           category: "Rental Packages",
           brand: "Sony AV",
           unit: "Event",
-          image: "https://images.unsplash.com/photo-1519167758481-83f550bb49b3?w=600&auto=format&fit=crop&q=80",
+          image:
+            "https://images.unsplash.com/photo-1519167758481-83f550bb49b3?w=600&auto=format&fit=crop&q=80",
         },
       ],
       services: [
@@ -3440,7 +3588,8 @@ export async function seedDatabase() {
           category: "Engine & Drivetrain Parts",
           brand: "Bosch",
           unit: "Set",
-          image: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=600&auto=format&fit=crop&q=80",
+          image:
+            "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=600&auto=format&fit=crop&q=80",
         },
         {
           name: "NGK Laser Iridium Spark Plug (Single)",
@@ -3452,7 +3601,8 @@ export async function seedDatabase() {
           category: "Engine & Drivetrain Parts",
           brand: "NGK",
           unit: "Pcs",
-          image: "https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?w=600&auto=format&fit=crop&q=80",
+          image:
+            "https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?w=600&auto=format&fit=crop&q=80",
         },
         {
           name: "Timing Belt Kit with Water Pump",
@@ -3464,7 +3614,8 @@ export async function seedDatabase() {
           category: "Engine & Drivetrain Parts",
           brand: "Bosch",
           unit: "Set",
-          image: "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=600&auto=format&fit=crop&q=80",
+          image:
+            "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=600&auto=format&fit=crop&q=80",
         },
         {
           name: "Brembo Front Brake Disc Rotors (Pair)",
@@ -3476,7 +3627,8 @@ export async function seedDatabase() {
           category: "Brake & Suspension",
           brand: "Brembo",
           unit: "Pair",
-          image: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=600&auto=format&fit=crop&q=80",
+          image:
+            "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=600&auto=format&fit=crop&q=80",
         },
         {
           name: "Ceramic Brake Pad Set (Front + Rear)",
@@ -3488,7 +3640,8 @@ export async function seedDatabase() {
           category: "Brake & Suspension",
           brand: "Brembo",
           unit: "Set",
-          image: "https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?w=600&auto=format&fit=crop&q=80",
+          image:
+            "https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?w=600&auto=format&fit=crop&q=80",
         },
         {
           name: "Monroe Front Shock Absorber (Single)",
@@ -3500,7 +3653,8 @@ export async function seedDatabase() {
           category: "Brake & Suspension",
           brand: "Monroe",
           unit: "Pcs",
-          image: "https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=600&auto=format&fit=crop&q=80",
+          image:
+            "https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=600&auto=format&fit=crop&q=80",
         },
         {
           name: "Bosch H7 Halogen Headlight Bulb (Pair)",
@@ -3512,7 +3666,8 @@ export async function seedDatabase() {
           category: "Electrical & Lighting",
           brand: "Bosch",
           unit: "Pair",
-          image: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=600&auto=format&fit=crop&q=80",
+          image:
+            "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=600&auto=format&fit=crop&q=80",
         },
         {
           name: "Car Battery 75Ah Maintenance-Free (AGM)",
@@ -3524,7 +3679,8 @@ export async function seedDatabase() {
           category: "Electrical & Lighting",
           brand: "Bosch",
           unit: "Pcs",
-          image: "https://images.unsplash.com/photo-1606316399885-23a50b51d9fc?w=600&auto=format&fit=crop&q=80",
+          image:
+            "https://images.unsplash.com/photo-1606316399885-23a50b51d9fc?w=600&auto=format&fit=crop&q=80",
         },
         {
           name: "Castrol EDGE 5W-30 Fully Synthetic Oil 4L",
@@ -3536,7 +3692,8 @@ export async function seedDatabase() {
           category: "Filters & Fluids",
           brand: "Castrol",
           unit: "Liter",
-          image: "https://images.unsplash.com/photo-1444809153920-ef3ade2e5a91?w=600&auto=format&fit=crop&q=80",
+          image:
+            "https://images.unsplash.com/photo-1444809153920-ef3ade2e5a91?w=600&auto=format&fit=crop&q=80",
         },
         {
           name: "Bosch Oil Filter (Spin-On - Universal)",
@@ -3548,7 +3705,8 @@ export async function seedDatabase() {
           category: "Filters & Fluids",
           brand: "Bosch",
           unit: "Pcs",
-          image: "https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?w=600&auto=format&fit=crop&q=80",
+          image:
+            "https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?w=600&auto=format&fit=crop&q=80",
         },
         {
           name: "K&N High-Flow Air Filter (Performance)",
@@ -3560,7 +3718,8 @@ export async function seedDatabase() {
           category: "Filters & Fluids",
           brand: "NGK",
           unit: "Pcs",
-          image: "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=600&auto=format&fit=crop&q=80",
+          image:
+            "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=600&auto=format&fit=crop&q=80",
         },
         {
           name: "Michelin Pilot Sport 4 235/45R18 (Single)",
@@ -3572,7 +3731,8 @@ export async function seedDatabase() {
           category: "Tyres & Wheels",
           brand: "Michelin",
           unit: "Pcs",
-          image: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=600&auto=format&fit=crop&q=80",
+          image:
+            "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=600&auto=format&fit=crop&q=80",
         },
         {
           name: "18-inch Alloy Wheel Rim (Set of 4)",
@@ -3584,7 +3744,8 @@ export async function seedDatabase() {
           category: "Tyres & Wheels",
           brand: "Monroe",
           unit: "Set",
-          image: "https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=600&auto=format&fit=crop&q=80",
+          image:
+            "https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=600&auto=format&fit=crop&q=80",
         },
       ],
       services: [
@@ -3650,10 +3811,7 @@ export async function seedDatabase() {
         .select()
         .from(schema.categories)
         .where(
-          and(
-            eq(schema.categories.organizationId, orgId),
-            eq(schema.categories.name, cat.name),
-          ),
+          and(eq(schema.categories.organizationId, orgId), eq(schema.categories.name, cat.name)),
         )
         .limit(1);
       if (!existing.length) {
@@ -3676,12 +3834,7 @@ export async function seedDatabase() {
       const existing = await db
         .select()
         .from(schema.brands)
-        .where(
-          and(
-            eq(schema.brands.organizationId, orgId),
-            eq(schema.brands.name, b),
-          ),
-        )
+        .where(and(eq(schema.brands.organizationId, orgId), eq(schema.brands.name, b)))
         .limit(1);
       if (!existing.length) {
         const brandId = uuidv4();
@@ -3703,12 +3856,7 @@ export async function seedDatabase() {
       const existing = await db
         .select()
         .from(schema.units)
-        .where(
-          and(
-            eq(schema.units.organizationId, orgId),
-            eq(schema.units.name, u.name),
-          ),
-        )
+        .where(and(eq(schema.units.organizationId, orgId), eq(schema.units.name, u.name)))
         .limit(1);
       if (!existing.length) {
         const unitId = uuidv4();
@@ -3726,9 +3874,7 @@ export async function seedDatabase() {
     }
 
     // 4. Seed products tailored to this store's industry
-    await db
-      .delete(schema.products)
-      .where(eq(schema.products.organizationId, orgId));
+    await db.delete(schema.products).where(eq(schema.products.organizationId, orgId));
 
     for (const p of catalog.products) {
       const prodId = uuidv4();
@@ -3762,9 +3908,7 @@ export async function seedDatabase() {
     }
 
     // 4b. Seed services tailored to this store's industry
-    await db
-      .delete(schema.services)
-      .where(eq(schema.services.organizationId, orgId));
+    await db.delete(schema.services).where(eq(schema.services.organizationId, orgId));
 
     const catalogServices = catalog.services || [];
     const serviceCatFallback = Object.values(catMap)[0];

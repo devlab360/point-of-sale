@@ -290,7 +290,10 @@ function LoginPage() {
               "Customer ledgers your team will actually use",
               "Instant, no-fuss thermal receipts",
             ].map((item) => (
-              <li key={item} className="flex items-center gap-3 text-base sm:text-lg text-primary-foreground/95 font-medium">
+              <li
+                key={item}
+                className="flex items-center gap-3 text-base sm:text-lg text-primary-foreground/95 font-medium"
+              >
                 <span className="grid size-6 shrink-0 place-items-center rounded-full bg-primary-foreground/15 border border-primary-foreground/30 text-primary-foreground">
                   <CheckCircle2 className="size-4" />
                 </span>
@@ -358,7 +361,10 @@ function LoginPage() {
 
                 <div className="space-y-1.5">
                   <div className="flex items-center justify-between">
-                    <Label htmlFor="password" className="text-sm sm:text-base font-bold text-foreground">
+                    <Label
+                      htmlFor="password"
+                      className="text-sm sm:text-base font-bold text-foreground"
+                    >
                       Password
                     </Label>
                     <button
@@ -445,7 +451,10 @@ function LoginPage() {
                 {forgotStep === "request" ? (
                   <form onSubmit={handleSendResetOtp} className="space-y-4">
                     <div className="space-y-2">
-                      <Label htmlFor="resetEmail" className="text-sm sm:text-base font-bold text-foreground">
+                      <Label
+                        htmlFor="resetEmail"
+                        className="text-sm sm:text-base font-bold text-foreground"
+                      >
                         Registered Store Email
                       </Label>
                       <Input
@@ -479,7 +488,10 @@ function LoginPage() {
                 ) : (
                   <form onSubmit={handleResetPasswordSubmit} className="space-y-4">
                     <div className="space-y-2">
-                      <Label htmlFor="otpCode" className="text-sm sm:text-base font-bold text-foreground">
+                      <Label
+                        htmlFor="otpCode"
+                        className="text-sm sm:text-base font-bold text-foreground"
+                      >
                         6-Digit OTP Code
                       </Label>
                       <Input
@@ -492,7 +504,10 @@ function LoginPage() {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="newPassword" className="text-sm sm:text-base font-bold text-foreground">
+                      <Label
+                        htmlFor="newPassword"
+                        className="text-sm sm:text-base font-bold text-foreground"
+                      >
                         New Password
                       </Label>
                       <PasswordInput
@@ -504,7 +519,10 @@ function LoginPage() {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="confirmPassword" className="text-sm sm:text-base font-bold text-foreground">
+                      <Label
+                        htmlFor="confirmPassword"
+                        className="text-sm sm:text-base font-bold text-foreground"
+                      >
                         Confirm Password
                       </Label>
                       <PasswordInput

@@ -65,7 +65,6 @@ export const Route = createFileRoute("/admin/plans")({
 
 export { AVAILABLE_MODULES };
 
-
 const defaultEditingPlan = {
   id: "",
   name: "",
@@ -91,12 +90,21 @@ function SuperAdminPlansPage() {
   const [isPlanModalOpen, setIsPlanModalOpen] = useState(false);
   const [editingPlan, setEditingPlan] = useState({ ...defaultEditingPlan });
 
-  const { data: plansData, isLoading: isPlansLoading, refetch: refetchPlans, isFetching } = useQuery({
+  const {
+    data: plansData,
+    isLoading: isPlansLoading,
+    refetch: refetchPlans,
+    isFetching,
+  } = useQuery({
     queryKey: ["saas-plans"],
     queryFn: () => getAllPlansFn({ data: {} }),
   });
 
-  const { data: orgsData, isLoading: isOrgsLoading, refetch: refetchOrgs } = useQuery({
+  const {
+    data: orgsData,
+    isLoading: isOrgsLoading,
+    refetch: refetchOrgs,
+  } = useQuery({
     queryKey: ["saas-organizations"],
     queryFn: () => getAllOrganizationsFn({ data: {} }),
   });
@@ -179,7 +187,8 @@ function SuperAdminPlansPage() {
                     MaxUsers: p.limits?.maxUsers || "Unlimited",
                     MaxProducts: p.limits?.maxProducts || "Unlimited",
                     MaxBranches: p.limits?.maxBranches || 1,
-                    SubscribedStores: organizations.filter((o: any) => o.currentPlanId === p.id).length,
+                    SubscribedStores: organizations.filter((o: any) => o.currentPlanId === p.id)
+                      .length,
                     IsTrialDefault: p.isTrialDefault ? "Yes" : "No",
                   }));
                   exportToCSV("SaaS_Pricing_Plans", exportRows);
@@ -245,10 +254,13 @@ function SuperAdminPlansPage() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {plans.map((plan: any) => {
               const monthly = Number(plan.monthlyPrice || plan.price || 0);
-              const yearly = Number(plan.yearlyPrice || (monthly * 10)); // 2 months free
-              const currencySymbol = plan.currency === "USD" ? "$" : plan.currency === "EUR" ? "€" : "₹";
+              const yearly = Number(plan.yearlyPrice || monthly * 10); // 2 months free
+              const currencySymbol =
+                plan.currency === "USD" ? "$" : plan.currency === "EUR" ? "€" : "₹";
 
-              const subscribedStores = organizations.filter((o: any) => o.currentPlanId === plan.id);
+              const subscribedStores = organizations.filter(
+                (o: any) => o.currentPlanId === plan.id,
+              );
               const activeCount = subscribedStores.filter((o: any) => o.status === "active").length;
               const trialCount = subscribedStores.filter((o: any) => o.status === "trial").length;
 
@@ -270,20 +282,25 @@ function SuperAdminPlansPage() {
                   <div>
                     <div className="flex items-center justify-between">
                       <h3 className="text-lg font-black text-foreground">{plan.name}</h3>
-                      <Badge variant="outline" className="font-mono text-[10px] uppercase font-bold">
+                      <Badge
+                        variant="outline"
+                        className="font-mono text-[10px] uppercase font-bold"
+                      >
                         {plan.id}
                       </Badge>
                     </div>
 
                     <div className="mt-4 flex items-baseline gap-1.5">
                       <span className="text-3xl font-black text-foreground">
-                        {currencySymbol}{monthly}
+                        {currencySymbol}
+                        {monthly}
                       </span>
                       <span className="text-xs text-muted-foreground font-medium">/ month</span>
                     </div>
                     {yearly > 0 && (
                       <p className="text-[11px] text-emerald-600 dark:text-emerald-400 font-semibold mt-0.5">
-                        {currencySymbol}{yearly} / billed yearly
+                        {currencySymbol}
+                        {yearly} / billed yearly
                       </p>
                     )}
 
@@ -349,7 +366,11 @@ function SuperAdminPlansPage() {
                         </p>
                         <div className="flex flex-wrap gap-1">
                           {plan.features.slice(0, 6).map((feat: string) => (
-                            <Badge key={feat} variant="secondary" className="text-[10px] px-1.5 py-0 font-medium">
+                            <Badge
+                              key={feat}
+                              variant="secondary"
+                              className="text-[10px] px-1.5 py-0 font-medium"
+                            >
                               {feat}
                             </Badge>
                           ))}
@@ -390,7 +411,11 @@ function SuperAdminPlansPage() {
                       variant="ghost"
                       className="h-8 text-xs text-destructive hover:bg-destructive/10"
                       disabled={deletePlanMutation.isPending || subscribedStores.length > 0}
-                      title={subscribedStores.length > 0 ? "Cannot delete tier with active subscribers" : ""}
+                      title={
+                        subscribedStores.length > 0
+                          ? "Cannot delete tier with active subscribers"
+                          : ""
+                      }
                       onClick={() => {
                         if (confirm(`Delete plan tier "${plan.name}"?`)) {
                           deletePlanMutation.mutate(plan.id);
@@ -415,7 +440,9 @@ function SuperAdminPlansPage() {
             <SheetHeader className="bg-muted/60 p-5 border-b pr-12 text-left">
               <SheetTitle className="text-lg font-bold flex items-center gap-2 text-foreground">
                 <Layers className="size-5 text-primary" />
-                <span>{editingPlan.id ? `Edit Plan Tier: ${editingPlan.name}` : "Create New SaaS Plan"}</span>
+                <span>
+                  {editingPlan.id ? `Edit Plan Tier: ${editingPlan.name}` : "Create New SaaS Plan"}
+                </span>
               </SheetTitle>
               <SheetDescription className="text-xs text-muted-foreground mt-0.5">
                 Set monthly/yearly pricing, quota ceilings, and bundled features.
@@ -436,7 +463,9 @@ function SuperAdminPlansPage() {
                     <Input
                       id="plan-id"
                       required
-                      disabled={Boolean(editingPlan.id && plans.some((p) => p.id === editingPlan.id))}
+                      disabled={Boolean(
+                        editingPlan.id && plans.some((p) => p.id === editingPlan.id),
+                      )}
                       value={editingPlan.id}
                       onChange={(e) =>
                         setEditingPlan({
@@ -601,9 +630,12 @@ function SuperAdminPlansPage() {
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
                     <div>
-                      <Label className="text-xs font-bold text-foreground">Bundled System Features & Modules</Label>
+                      <Label className="text-xs font-bold text-foreground">
+                        Bundled System Features & Modules
+                      </Label>
                       <p className="text-[11px] text-muted-foreground">
-                        {editingPlan.features?.length || 0} of {AVAILABLE_MODULES.length} modules enabled for this tier
+                        {editingPlan.features?.length || 0} of {AVAILABLE_MODULES.length} modules
+                        enabled for this tier
                       </p>
                     </div>
                     <div className="flex items-center gap-2">
@@ -681,7 +713,9 @@ function SuperAdminPlansPage() {
                   <Switch
                     id="default-trial"
                     checked={editingPlan.isTrialDefault}
-                    onCheckedChange={(val) => setEditingPlan({ ...editingPlan, isTrialDefault: val })}
+                    onCheckedChange={(val) =>
+                      setEditingPlan({ ...editingPlan, isTrialDefault: val })
+                    }
                   />
                 </div>
               </div>

@@ -69,7 +69,14 @@ import { CardGridSkeleton } from "@/components/skeletons/CardGridSkeleton";
 import { TableSkeleton } from "@/components/skeletons/TableSkeleton";
 import { ErrorState } from "@/components/ui/error-state";
 import { usePreferences } from "@/contexts/PreferencesContext";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { PaginationControls } from "@/components/ui/pagination-controls";
 
 export const Route = createFileRoute("/repairs")({
@@ -175,16 +182,18 @@ function RepairsPage() {
 
   const totalRepairs = repairs.length;
   const inProgressCount = useMemo(
-    () => repairs.filter((r: any) => ["pending", "diagnosing", "in_progress"].includes(r.status)).length,
-    [repairs]
+    () =>
+      repairs.filter((r: any) => ["pending", "diagnosing", "in_progress"].includes(r.status))
+        .length,
+    [repairs],
   );
   const readyCount = useMemo(
     () => repairs.filter((r: any) => ["ready", "ready_for_pickup"].includes(r.status)).length,
-    [repairs]
+    [repairs],
   );
   const completedCount = useMemo(
     () => repairs.filter((r: any) => ["delivered", "completed"].includes(r.status)).length,
-    [repairs]
+    [repairs],
   );
 
   const filteredRepairs = useMemo(() => {
@@ -196,7 +205,7 @@ function RepairsPage() {
           r.ticketNo?.toLowerCase().includes(lower) ||
           r.customerName?.toLowerCase().includes(lower) ||
           r.deviceName?.toLowerCase().includes(lower) ||
-          r.serialOrImei?.toLowerCase().includes(lower)
+          r.serialOrImei?.toLowerCase().includes(lower),
       );
     }
     if (statusFilter !== "all") {
@@ -463,7 +472,9 @@ function RepairsPage() {
             icon={Wrench}
             title="No repair job sheets found"
             description={
-              search ? "Try adjusting your search criteria." : "You haven't logged any repair or service intake tickets yet."
+              search
+                ? "Try adjusting your search criteria."
+                : "You haven't logged any repair or service intake tickets yet."
             }
             actionLabel="New Repair Ticket"
             onAction={() => {
@@ -491,7 +502,10 @@ function RepairsPage() {
                         <span className="font-mono font-bold text-xs text-primary">
                           #{r.ticketNo}
                         </span>
-                        <Badge variant="outline" className={`text-[10px] font-bold ${badgeInfo.color}`}>
+                        <Badge
+                          variant="outline"
+                          className={`text-[10px] font-bold ${badgeInfo.color}`}
+                        >
                           {badgeInfo.label}
                         </Badge>
                       </div>
@@ -511,8 +525,14 @@ function RepairsPage() {
                       </div>
 
                       <div className="flex items-center justify-between text-xs text-muted-foreground">
-                        <span>Estimate: <strong className="text-foreground">{formatCurrency(estCost)}</strong></span>
-                        <span>Due: <strong className="text-destructive">{formatCurrency(balDue)}</strong></span>
+                        <span>
+                          Estimate:{" "}
+                          <strong className="text-foreground">{formatCurrency(estCost)}</strong>
+                        </span>
+                        <span>
+                          Due:{" "}
+                          <strong className="text-destructive">{formatCurrency(balDue)}</strong>
+                        </span>
                       </div>
                     </div>
 
@@ -542,7 +562,10 @@ function RepairsPage() {
                           <DropdownMenuItem onClick={() => updateStatus(r.id, "delivered")}>
                             Mark Delivered / Closed
                           </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => setDeleteId(r.id)} className="text-destructive">
+                          <DropdownMenuItem
+                            onClick={() => setDeleteId(r.id)}
+                            className="text-destructive"
+                          >
                             <Trash2 className="size-3.5 mr-2" /> Delete Ticket
                           </DropdownMenuItem>
                         </DropdownMenuContent>
@@ -604,7 +627,10 @@ function RepairsPage() {
                           {formatCurrency(Number(r.estimatedCost) || 0)}
                         </TableCell>
                         <TableCell>
-                          <Badge variant="outline" className={`text-[10px] font-bold ${badgeInfo.color}`}>
+                          <Badge
+                            variant="outline"
+                            className={`text-[10px] font-bold ${badgeInfo.color}`}
+                          >
                             {badgeInfo.label}
                           </Badge>
                         </TableCell>
@@ -634,7 +660,10 @@ function RepairsPage() {
                                 <DropdownMenuItem onClick={() => updateStatus(r.id, "delivered")}>
                                   Mark Delivered
                                 </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => setDeleteId(r.id)} className="text-destructive">
+                                <DropdownMenuItem
+                                  onClick={() => setDeleteId(r.id)}
+                                  className="text-destructive"
+                                >
                                   <Trash2 className="size-3.5 mr-2" /> Delete
                                 </DropdownMenuItem>
                               </DropdownMenuContent>
@@ -679,7 +708,10 @@ function RepairsPage() {
               </SheetDescription>
             </SheetHeader>
 
-            <form onSubmit={handleSave} className="flex-1 flex flex-col justify-between overflow-hidden">
+            <form
+              onSubmit={handleSave}
+              className="flex-1 flex flex-col justify-between overflow-hidden"
+            >
               <div className="flex-1 overflow-y-auto p-5 space-y-4">
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1.5">
@@ -737,7 +769,9 @@ function RepairsPage() {
                   </div>
 
                   <div className="space-y-1.5">
-                    <Label htmlFor="rep-sn" className="text-xs font-semibold">Serial / IMEI</Label>
+                    <Label htmlFor="rep-sn" className="text-xs font-semibold">
+                      Serial / IMEI
+                    </Label>
                     <Input
                       id="rep-sn"
                       value={serialOrImei}
@@ -768,7 +802,9 @@ function RepairsPage() {
 
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1.5">
-                    <Label htmlFor="rep-est" className="text-xs font-semibold">Estimated Repair Cost ({currencySymbol})</Label>
+                    <Label htmlFor="rep-est" className="text-xs font-semibold">
+                      Estimated Repair Cost ({currencySymbol})
+                    </Label>
                     <Input
                       id="rep-est"
                       type="number"
@@ -780,7 +816,9 @@ function RepairsPage() {
                   </div>
 
                   <div className="space-y-1.5">
-                    <Label htmlFor="rep-adv" className="text-xs font-semibold">Advance Deposit Paid ({currencySymbol})</Label>
+                    <Label htmlFor="rep-adv" className="text-xs font-semibold">
+                      Advance Deposit Paid ({currencySymbol})
+                    </Label>
                     <Input
                       id="rep-adv"
                       type="number"
@@ -793,7 +831,9 @@ function RepairsPage() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label htmlFor="rep-notes" className="text-xs font-semibold">Technician Internal Notes</Label>
+                  <Label htmlFor="rep-notes" className="text-xs font-semibold">
+                    Technician Internal Notes
+                  </Label>
                   <Input
                     id="rep-notes"
                     value={technicianNotes}
@@ -804,18 +844,10 @@ function RepairsPage() {
               </div>
 
               <SheetFooter className="p-4 border-t border-border/60 bg-muted/20 flex flex-row items-center justify-end gap-2 shrink-0">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setIsAddOpen(false)}
-                >
+                <Button type="button" variant="outline" onClick={() => setIsAddOpen(false)}>
                   Cancel
                 </Button>
-                <Button
-                  type="submit"
-                  disabled={isSaving}
-                  className="font-semibold shadow-sm"
-                >
+                <Button type="submit" disabled={isSaving} className="font-semibold shadow-sm">
                   {isSaving && <Loader2 className="size-4 animate-spin mr-2" />}
                   Create Job Sheet
                 </Button>
@@ -844,11 +876,7 @@ function RepairsPage() {
             </div>
           </DialogHeader>
           <DialogFooter className="mt-4 flex flex-row items-center justify-end gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setDeleteId(null)}
-            >
+            <Button type="button" variant="outline" onClick={() => setDeleteId(null)}>
               Cancel
             </Button>
             <Button

@@ -24,7 +24,8 @@ function BankDetailsDisplay({ data, className = "" }: { data: string; className?
   try {
     if (data.trim().startsWith("{")) {
       const b = JSON.parse(data);
-      if (!b.bankName && !b.accountNo && !b.ifscCode && !b.holderName && !b.iban && !b.swiftBic) return null;
+      if (!b.bankName && !b.accountNo && !b.ifscCode && !b.holderName && !b.iban && !b.swiftBic)
+        return null;
       return (
         <div className={className}>
           {b.bankName && <div>Bank: {b.bankName}</div>}
@@ -164,17 +165,23 @@ export function PosPrintLayouts({ state, preview = false }: { state: any; previe
                         )}
                         {meta.hasWarranty && (
                           <div className="text-[9px] font-semibold text-gray-700 mt-0.5">
-                            🛡️ {meta.warrantyMonths}M Warranty {meta.guaranteeMonths ? `+ ${meta.guaranteeMonths}M Guarantee` : ""}
+                            🛡️ {meta.warrantyMonths}M Warranty{" "}
+                            {meta.guaranteeMonths ? `+ ${meta.guaranteeMonths}M Guarantee` : ""}
                           </div>
                         )}
                         {meta.isJewellery && (
                           <div className="text-[9px] text-gray-700 mt-0.5">
-                            {meta.purityKarat || "22K"} | Net: {Number(meta.netWeight || 0).toFixed(3)}g {meta.makingChargeValue ? `| MC: ${meta.makingChargeValue}${meta.makingChargeType === "percent" ? "%" : ""}` : ""}
+                            {meta.purityKarat || "22K"} | Net:{" "}
+                            {Number(meta.netWeight || 0).toFixed(3)}g{" "}
+                            {meta.makingChargeValue
+                              ? `| MC: ${meta.makingChargeValue}${meta.makingChargeType === "percent" ? "%" : ""}`
+                              : ""}
                           </div>
                         )}
                         {meta.isAutoPart && (
                           <div className="text-[9px] text-gray-700 mt-0.5 font-mono">
-                            {meta.partNumber ? `MPN: ${meta.partNumber}` : ""} {meta.oemNumber ? `| OEM: ${meta.oemNumber}` : ""}
+                            {meta.partNumber ? `MPN: ${meta.partNumber}` : ""}{" "}
+                            {meta.oemNumber ? `| OEM: ${meta.oemNumber}` : ""}
                           </div>
                         )}
                       </td>
@@ -364,7 +371,10 @@ export function PosPrintLayouts({ state, preview = false }: { state: any; previe
                   .map((l: any, idx: number) => {
                     const meta = l.product.metadata;
                     return (
-                      <div key={idx} className="space-y-0.5 pt-0.5 border-b border-gray-300 border-dotted last:border-0 pb-1">
+                      <div
+                        key={idx}
+                        className="space-y-0.5 pt-0.5 border-b border-gray-300 border-dotted last:border-0 pb-1"
+                      >
                         <div className="font-bold text-[11px]">{l.product.name}</div>
                         {l.selectedSerial && (
                           <div className="font-mono font-bold text-[10px]">
@@ -372,8 +382,13 @@ export function PosPrintLayouts({ state, preview = false }: { state: any; previe
                           </div>
                         )}
                         <div className="flex justify-between font-semibold text-gray-800">
-                          <span>Coverage: {meta.warrantyMonths || 12} Mos ({meta.warrantyType || "Carry-In"})</span>
-                          <span className="font-bold">Expires: {getWarrantyExpiry(printData.date, meta.warrantyMonths || 12)}</span>
+                          <span>
+                            Coverage: {meta.warrantyMonths || 12} Mos (
+                            {meta.warrantyType || "Carry-In"})
+                          </span>
+                          <span className="font-bold">
+                            Expires: {getWarrantyExpiry(printData.date, meta.warrantyMonths || 12)}
+                          </span>
                         </div>
                         {meta.guaranteeMonths > 0 && (
                           <div className="text-gray-700">
@@ -560,17 +575,24 @@ export function PosPrintLayouts({ state, preview = false }: { state: any; previe
                         )}
                         {meta.hasWarranty && (
                           <div className="text-[11px] text-emerald-700 font-semibold mt-0.5">
-                            🛡️ {meta.warrantyMonths} Months Warranty {meta.guaranteeMonths ? `+ ${meta.guaranteeMonths}M Guarantee` : ""} ({meta.warrantyType || "Carry-In"})
+                            🛡️ {meta.warrantyMonths} Months Warranty{" "}
+                            {meta.guaranteeMonths ? `+ ${meta.guaranteeMonths}M Guarantee` : ""} (
+                            {meta.warrantyType || "Carry-In"})
                           </div>
                         )}
                         {meta.isJewellery && (
                           <div className="text-[11px] text-amber-800 mt-0.5">
-                            Purity: {meta.purityKarat || "22K"} | Net Gold: {Number(meta.netWeight || 0).toFixed(3)}g {meta.makingChargeValue ? `| Making Charge: ${meta.makingChargeValue}${meta.makingChargeType === "percent" ? "%" : ""}` : ""}
+                            Purity: {meta.purityKarat || "22K"} | Net Gold:{" "}
+                            {Number(meta.netWeight || 0).toFixed(3)}g{" "}
+                            {meta.makingChargeValue
+                              ? `| Making Charge: ${meta.makingChargeValue}${meta.makingChargeType === "percent" ? "%" : ""}`
+                              : ""}
                           </div>
                         )}
                         {meta.isAutoPart && (
                           <div className="text-[11px] text-blue-800 mt-0.5 font-mono">
-                            {meta.partNumber ? `Part No: ${meta.partNumber}` : ""} {meta.oemNumber ? `| OEM Ref: ${meta.oemNumber}` : ""}
+                            {meta.partNumber ? `Part No: ${meta.partNumber}` : ""}{" "}
+                            {meta.oemNumber ? `| OEM Ref: ${meta.oemNumber}` : ""}
                           </div>
                         )}
                       </td>
@@ -811,16 +833,26 @@ export function PosPrintLayouts({ state, preview = false }: { state: any; previe
                     .map((l: any, idx: number) => {
                       const meta = l.product.metadata;
                       return (
-                        <div key={idx} className="p-2.5 rounded-lg border border-gray-200 bg-white space-y-1 text-xs">
+                        <div
+                          key={idx}
+                          className="p-2.5 rounded-lg border border-gray-200 bg-white space-y-1 text-xs"
+                        >
                           <div className="font-bold text-black">{l.product.name}</div>
                           {l.selectedSerial && (
                             <div className="font-mono text-gray-700">
-                              Registered SN: <strong className="text-black">{l.selectedSerial}</strong>
+                              Registered SN:{" "}
+                              <strong className="text-black">{l.selectedSerial}</strong>
                             </div>
                           )}
                           <div className="flex justify-between font-medium text-gray-600">
-                            <span>Warranty: {meta.warrantyMonths || 12} Mos ({meta.warrantyType || "Carry-In"})</span>
-                            <span className="font-bold text-emerald-800">Valid Till: {getWarrantyExpiry(printData.date, meta.warrantyMonths || 12)}</span>
+                            <span>
+                              Warranty: {meta.warrantyMonths || 12} Mos (
+                              {meta.warrantyType || "Carry-In"})
+                            </span>
+                            <span className="font-bold text-emerald-800">
+                              Valid Till:{" "}
+                              {getWarrantyExpiry(printData.date, meta.warrantyMonths || 12)}
+                            </span>
                           </div>
                           {meta.guaranteeMonths > 0 && (
                             <div className="text-amber-800 font-medium">

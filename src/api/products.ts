@@ -78,11 +78,10 @@ const ProductInputSchema = z
     unitId: z.string().nullable().optional(),
     cost: z.union([z.string(), z.number()]),
     price: z.union([z.string(), z.number()]),
-    stock: z
-      .preprocess(
-        (v) => (v === "" || v === undefined || v === null ? undefined : Number(v)),
-        z.number().optional().default(0),
-      ),
+    stock: z.preprocess(
+      (v) => (v === "" || v === undefined || v === null ? undefined : Number(v)),
+      z.number().optional().default(0),
+    ),
     minStock: z.number().nullable().optional(),
     taxPct: z.string().nullable().optional(),
     gstRate: z.union([z.string(), z.number()]).nullable().optional(),

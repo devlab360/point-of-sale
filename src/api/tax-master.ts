@@ -18,57 +18,245 @@ export interface TaxSlabTemplate {
 export const COUNTRY_TAX_TEMPLATES: Record<string, TaxSlabTemplate[]> = {
   // India (GST)
   IN: [
-    { name: "Nil / Zero Rated (0%)", rate: "0", taxType: "gst", isDefault: true, description: "Exempt goods & services" },
-    { name: "GST 5%", rate: "5", taxType: "gst", cgstRate: "2.50", sgstRate: "2.50", igstRate: "5", description: "Essential commodities" },
-    { name: "GST 12%", rate: "12", taxType: "gst", cgstRate: "6", sgstRate: "6", igstRate: "12", description: "Standard goods" },
-    { name: "GST 18%", rate: "18", taxType: "gst", cgstRate: "9", sgstRate: "9", igstRate: "18", description: "Standard services & goods" },
-    { name: "GST 28%", rate: "28", taxType: "gst", cgstRate: "14", sgstRate: "14", igstRate: "28", description: "Luxury & sin items" },
+    {
+      name: "Nil / Zero Rated (0%)",
+      rate: "0",
+      taxType: "gst",
+      isDefault: true,
+      description: "Exempt goods & services",
+    },
+    {
+      name: "GST 5%",
+      rate: "5",
+      taxType: "gst",
+      cgstRate: "2.50",
+      sgstRate: "2.50",
+      igstRate: "5",
+      description: "Essential commodities",
+    },
+    {
+      name: "GST 12%",
+      rate: "12",
+      taxType: "gst",
+      cgstRate: "6",
+      sgstRate: "6",
+      igstRate: "12",
+      description: "Standard goods",
+    },
+    {
+      name: "GST 18%",
+      rate: "18",
+      taxType: "gst",
+      cgstRate: "9",
+      sgstRate: "9",
+      igstRate: "18",
+      description: "Standard services & goods",
+    },
+    {
+      name: "GST 28%",
+      rate: "28",
+      taxType: "gst",
+      cgstRate: "14",
+      sgstRate: "14",
+      igstRate: "28",
+      description: "Luxury & sin items",
+    },
   ],
   // United Kingdom (VAT)
   GB: [
-    { name: "Zero Rate (0%)", rate: "0", taxType: "vat", isDefault: false, description: "Books, children's clothes, food" },
-    { name: "Reduced Rate (5%)", rate: "5", taxType: "vat", isDefault: false, description: "Domestic fuel & energy" },
-    { name: "Standard VAT (20%)", rate: "20", taxType: "vat", isDefault: true, description: "Standard rate for UK" },
-    { name: "Exempt", rate: "0", taxType: "exempt", isDefault: false, description: "Exempt financial/health services" },
+    {
+      name: "Zero Rate (0%)",
+      rate: "0",
+      taxType: "vat",
+      isDefault: false,
+      description: "Books, children's clothes, food",
+    },
+    {
+      name: "Reduced Rate (5%)",
+      rate: "5",
+      taxType: "vat",
+      isDefault: false,
+      description: "Domestic fuel & energy",
+    },
+    {
+      name: "Standard VAT (20%)",
+      rate: "20",
+      taxType: "vat",
+      isDefault: true,
+      description: "Standard rate for UK",
+    },
+    {
+      name: "Exempt",
+      rate: "0",
+      taxType: "exempt",
+      isDefault: false,
+      description: "Exempt financial/health services",
+    },
   ],
   // United States (Sales Tax)
   US: [
-    { name: "Tax Exempt (0%)", rate: "0", taxType: "exempt", isDefault: false, description: "Tax-free groceries / prescriptions" },
-    { name: "Standard Sales Tax (7.5%)", rate: "7.5", taxType: "sales_tax", isDefault: true, description: "General sales tax" },
-    { name: "Combined State + Local (8.25%)", rate: "8.25", taxType: "sales_tax", isDefault: false, description: "State and county tax" },
-    { name: "Luxury / Hospitality (10%)", rate: "10", taxType: "sales_tax", isDefault: false, description: "Prepared food & beverage" },
+    {
+      name: "Tax Exempt (0%)",
+      rate: "0",
+      taxType: "exempt",
+      isDefault: false,
+      description: "Tax-free groceries / prescriptions",
+    },
+    {
+      name: "Standard Sales Tax (7.5%)",
+      rate: "7.5",
+      taxType: "sales_tax",
+      isDefault: true,
+      description: "General sales tax",
+    },
+    {
+      name: "Combined State + Local (8.25%)",
+      rate: "8.25",
+      taxType: "sales_tax",
+      isDefault: false,
+      description: "State and county tax",
+    },
+    {
+      name: "Luxury / Hospitality (10%)",
+      rate: "10",
+      taxType: "sales_tax",
+      isDefault: false,
+      description: "Prepared food & beverage",
+    },
   ],
   // United Arab Emirates (VAT)
   AE: [
-    { name: "Zero Rated (0%)", rate: "0", taxType: "vat", isDefault: false, description: "Exports & international transport" },
-    { name: "Standard VAT (5%)", rate: "5", taxType: "vat", isDefault: true, description: "Standard UAE VAT rate" },
-    { name: "Exempt", rate: "0", taxType: "exempt", isDefault: false, description: "Local passenger transport & bare land" },
+    {
+      name: "Zero Rated (0%)",
+      rate: "0",
+      taxType: "vat",
+      isDefault: false,
+      description: "Exports & international transport",
+    },
+    {
+      name: "Standard VAT (5%)",
+      rate: "5",
+      taxType: "vat",
+      isDefault: true,
+      description: "Standard UAE VAT rate",
+    },
+    {
+      name: "Exempt",
+      rate: "0",
+      taxType: "exempt",
+      isDefault: false,
+      description: "Local passenger transport & bare land",
+    },
   ],
   // Saudi Arabia (VAT)
   SA: [
-    { name: "Zero Rated (0%)", rate: "0", taxType: "vat", isDefault: false, description: "Qualified medicines & medical goods" },
-    { name: "Standard VAT (15%)", rate: "15", taxType: "vat", isDefault: true, description: "Standard ZATCA VAT rate" },
-    { name: "Exempt", rate: "0", taxType: "exempt", isDefault: false, description: "Financial services & residential rent" },
+    {
+      name: "Zero Rated (0%)",
+      rate: "0",
+      taxType: "vat",
+      isDefault: false,
+      description: "Qualified medicines & medical goods",
+    },
+    {
+      name: "Standard VAT (15%)",
+      rate: "15",
+      taxType: "vat",
+      isDefault: true,
+      description: "Standard ZATCA VAT rate",
+    },
+    {
+      name: "Exempt",
+      rate: "0",
+      taxType: "exempt",
+      isDefault: false,
+      description: "Financial services & residential rent",
+    },
   ],
   // Canada (GST / HST / PST)
   CA: [
-    { name: "Zero-Rated (0%)", rate: "0", taxType: "gst", isDefault: false, description: "Basic groceries & medical devices" },
-    { name: "Federal GST (5%)", rate: "5", taxType: "gst", isDefault: false, description: "Federal goods and services tax" },
-    { name: "Ontario HST (13%)", rate: "13", taxType: "sales_tax", isDefault: true, description: "Harmonized sales tax" },
-    { name: "BC GST + PST (12%)", rate: "12", taxType: "sales_tax", isDefault: false, description: "5% GST + 7% PST" },
+    {
+      name: "Zero-Rated (0%)",
+      rate: "0",
+      taxType: "gst",
+      isDefault: false,
+      description: "Basic groceries & medical devices",
+    },
+    {
+      name: "Federal GST (5%)",
+      rate: "5",
+      taxType: "gst",
+      isDefault: false,
+      description: "Federal goods and services tax",
+    },
+    {
+      name: "Ontario HST (13%)",
+      rate: "13",
+      taxType: "sales_tax",
+      isDefault: true,
+      description: "Harmonized sales tax",
+    },
+    {
+      name: "BC GST + PST (12%)",
+      rate: "12",
+      taxType: "sales_tax",
+      isDefault: false,
+      description: "5% GST + 7% PST",
+    },
   ],
   // Australia (GST)
   AU: [
-    { name: "GST-Free (0%)", rate: "0", taxType: "gst", isDefault: false, description: "Fresh food, education & medical" },
-    { name: "Standard GST (10%)", rate: "10", taxType: "gst", isDefault: true, description: "Standard Australian GST" },
+    {
+      name: "GST-Free (0%)",
+      rate: "0",
+      taxType: "gst",
+      isDefault: false,
+      description: "Fresh food, education & medical",
+    },
+    {
+      name: "Standard GST (10%)",
+      rate: "10",
+      taxType: "gst",
+      isDefault: true,
+      description: "Standard Australian GST",
+    },
   ],
   // Default Global Fallback
   DEFAULT: [
-    { name: "Tax Exempt (0%)", rate: "0", taxType: "exempt", isDefault: true, description: "Zero tax / exempt items" },
-    { name: "Standard Tax (5%)", rate: "5", taxType: "vat", isDefault: false, description: "Standard 5% tax" },
-    { name: "Standard Tax (10%)", rate: "10", taxType: "vat", isDefault: false, description: "Standard 10% tax" },
-    { name: "Standard Tax (15%)", rate: "15", taxType: "vat", isDefault: false, description: "Standard 15% tax" },
-    { name: "Standard Tax (20%)", rate: "20", taxType: "vat", isDefault: false, description: "Standard 20% tax" },
+    {
+      name: "Tax Exempt (0%)",
+      rate: "0",
+      taxType: "exempt",
+      isDefault: true,
+      description: "Zero tax / exempt items",
+    },
+    {
+      name: "Standard Tax (5%)",
+      rate: "5",
+      taxType: "vat",
+      isDefault: false,
+      description: "Standard 5% tax",
+    },
+    {
+      name: "Standard Tax (10%)",
+      rate: "10",
+      taxType: "vat",
+      isDefault: false,
+      description: "Standard 10% tax",
+    },
+    {
+      name: "Standard Tax (15%)",
+      rate: "15",
+      taxType: "vat",
+      isDefault: false,
+      description: "Standard 15% tax",
+    },
+    {
+      name: "Standard Tax (20%)",
+      rate: "20",
+      taxType: "vat",
+      isDefault: false,
+      description: "Standard 20% tax",
+    },
   ],
 };
 
@@ -97,7 +285,8 @@ export async function ensureDefaultTaxMasters(orgId: string) {
     .limit(1);
 
   const country = (settingsRows[0]?.config as any)?.country || "IN";
-  const slabs = COUNTRY_TAX_TEMPLATES[country] || COUNTRY_TAX_TEMPLATES.IN || COUNTRY_TAX_TEMPLATES.DEFAULT;
+  const slabs =
+    COUNTRY_TAX_TEMPLATES[country] || COUNTRY_TAX_TEMPLATES.IN || COUNTRY_TAX_TEMPLATES.DEFAULT;
 
   const now = new Date().toISOString();
   const inserted = await db
@@ -261,7 +450,8 @@ export const updateTaxMasterFn = createServerFn({ method: "POST" })
       if (updatesObj.rate !== undefined) updatesObj.rate = String(updatesObj.rate);
       for (const k of ["cgstRate", "sgstRate", "igstRate"]) {
         if (updatesObj[k] !== undefined) {
-          updatesObj[k] = updatesObj[k] == null || updatesObj[k] === "" ? null : String(updatesObj[k]);
+          updatesObj[k] =
+            updatesObj[k] == null || updatesObj[k] === "" ? null : String(updatesObj[k]);
         }
       }
 
@@ -286,7 +476,12 @@ export const updateTaxMasterFn = createServerFn({ method: "POST" })
       await db
         .update(schema.taxMasters)
         .set(updatesObj)
-        .where(and(eq(schema.taxMasters.id, data.id), eq(schema.taxMasters.organizationId, session.orgId)));
+        .where(
+          and(
+            eq(schema.taxMasters.id, data.id),
+            eq(schema.taxMasters.organizationId, session.orgId),
+          ),
+        );
 
       return { success: true, message: "Tax rate updated successfully" };
     } catch (e) {
@@ -306,7 +501,12 @@ export const deleteTaxMasterFn = createServerFn({ method: "POST" })
       const { db, schema, eq, and } = await getDb();
       await db
         .delete(schema.taxMasters)
-        .where(and(eq(schema.taxMasters.id, data.id), eq(schema.taxMasters.organizationId, session.orgId)));
+        .where(
+          and(
+            eq(schema.taxMasters.id, data.id),
+            eq(schema.taxMasters.organizationId, session.orgId),
+          ),
+        );
       return { success: true, message: "Tax rate deleted successfully" };
     } catch (e) {
       return handleApiError(e);

@@ -86,9 +86,7 @@ export function hasSuperAdminModuleAccess(
  * Returns all module keys the user can access.
  * If adminPermissions is null/empty => all modules.
  */
-export function getAccessibleModules(
-  adminPermissions: string[] | null | undefined,
-): string[] {
+export function getAccessibleModules(adminPermissions: string[] | null | undefined): string[] {
   if (!adminPermissions || adminPermissions.length === 0) return ALL_MODULE_KEYS;
   return ALL_MODULE_KEYS.filter((key) => adminPermissions.includes(key));
 }

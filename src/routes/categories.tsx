@@ -60,7 +60,14 @@ import { v4 as uuidv4 } from "uuid";
 import { toast } from "sonner";
 import { useFormValidation } from "@/hooks/useFormValidation";
 import { FieldError } from "@/components/ui/field-error";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { PaginationControls } from "@/components/ui/pagination-controls";
 import { TableSkeleton } from "@/components/skeletons/TableSkeleton";
 import { CardGridSkeleton } from "@/components/skeletons/CardGridSkeleton";
@@ -73,13 +80,25 @@ export const Route = createFileRoute("/categories")({
 
 const PREDEFINED_COLORS = [
   { value: "#3b82f6", label: "Blue", bg: "bg-blue-500/15 text-blue-600 border-blue-500/30" },
-  { value: "#10b981", label: "Emerald", bg: "bg-emerald-500/15 text-emerald-600 border-emerald-500/30" },
+  {
+    value: "#10b981",
+    label: "Emerald",
+    bg: "bg-emerald-500/15 text-emerald-600 border-emerald-500/30",
+  },
   { value: "#f59e0b", label: "Amber", bg: "bg-amber-500/15 text-amber-600 border-amber-500/30" },
-  { value: "#8b5cf6", label: "Purple", bg: "bg-purple-500/15 text-purple-600 border-purple-500/30" },
+  {
+    value: "#8b5cf6",
+    label: "Purple",
+    bg: "bg-purple-500/15 text-purple-600 border-purple-500/30",
+  },
   { value: "#ec4899", label: "Pink", bg: "bg-pink-500/15 text-pink-600 border-pink-500/30" },
   { value: "#14b8a6", label: "Teal", bg: "bg-teal-500/15 text-teal-600 border-teal-500/30" },
   { value: "#ef4444", label: "Rose", bg: "bg-rose-500/15 text-rose-600 border-rose-500/30" },
-  { value: "#6366f1", label: "Indigo", bg: "bg-indigo-500/15 text-indigo-600 border-indigo-500/30" },
+  {
+    value: "#6366f1",
+    label: "Indigo",
+    bg: "bg-indigo-500/15 text-indigo-600 border-indigo-500/30",
+  },
 ];
 
 function CategoriesPage() {
@@ -128,8 +147,14 @@ function CategoriesPage() {
 
   // KPI Calculations
   const totalCategories = categoriesWithCounts.length;
-  const inUseCount = useMemo(() => categoriesWithCounts.filter((c) => c.count > 0).length, [categoriesWithCounts]);
-  const totalLinkedProducts = useMemo(() => categoriesWithCounts.reduce((sum, c) => sum + c.count, 0), [categoriesWithCounts]);
+  const inUseCount = useMemo(
+    () => categoriesWithCounts.filter((c) => c.count > 0).length,
+    [categoriesWithCounts],
+  );
+  const totalLinkedProducts = useMemo(
+    () => categoriesWithCounts.reduce((sum, c) => sum + c.count, 0),
+    [categoriesWithCounts],
+  );
 
   const filteredCategories = useMemo(() => {
     let list = categoriesWithCounts;
@@ -314,10 +339,11 @@ function CategoriesPage() {
               <button
                 type="button"
                 onClick={() => setViewMode("grid")}
-                className={`grid size-8 place-items-center rounded-md transition-all ${viewMode === "grid"
+                className={`grid size-8 place-items-center rounded-md transition-all ${
+                  viewMode === "grid"
                     ? "bg-card text-foreground shadow-sm font-bold"
                     : "text-muted-foreground hover:text-foreground"
-                  }`}
+                }`}
                 title="Grid View"
               >
                 <LayoutGrid className="size-4" />
@@ -325,10 +351,11 @@ function CategoriesPage() {
               <button
                 type="button"
                 onClick={() => setViewMode("table")}
-                className={`grid size-8 place-items-center rounded-md transition-all ${viewMode === "table"
+                className={`grid size-8 place-items-center rounded-md transition-all ${
+                  viewMode === "table"
                     ? "bg-card text-foreground shadow-sm font-bold"
                     : "text-muted-foreground hover:text-foreground"
-                  }`}
+                }`}
                 title="Table View"
               >
                 <TableIcon className="size-4" />
@@ -351,7 +378,9 @@ function CategoriesPage() {
             icon={Tag}
             title="No categories found"
             description={
-              search ? "Try adjusting your search criteria." : "You haven't created any product categories yet."
+              search
+                ? "Try adjusting your search criteria."
+                : "You haven't created any product categories yet."
             }
             actionLabel="Add Category"
             onAction={openNew}
@@ -392,9 +421,7 @@ function CategoriesPage() {
                         <h3 className="font-bold text-base text-foreground group-hover:text-primary transition-colors truncate">
                           {c.name}
                         </h3>
-                        <p className="text-xs text-muted-foreground mt-0.5">
-                          POS Touch Department
-                        </p>
+                        <p className="text-xs text-muted-foreground mt-0.5">POS Touch Department</p>
                       </div>
                     </div>
 
@@ -428,7 +455,7 @@ function CategoriesPage() {
                   pageSize={pageSize}
                   totalItems={filteredCategories.length}
                   onPageChange={setPage}
-                  onPageSizeChange={() => { }}
+                  onPageSizeChange={() => {}}
                 />
               </div>
             )}
@@ -462,11 +489,11 @@ function CategoriesPage() {
                               }}
                             >
                               {catIcon ? (
-                              <span className="text-base leading-none">{catIcon}</span>
-                            ) : (
-                              <Tag className="size-4" />
-                            )}
-                          </div>
+                                <span className="text-base leading-none">{catIcon}</span>
+                              ) : (
+                                <Tag className="size-4" />
+                              )}
+                            </div>
                             <span className="font-semibold text-foreground">{c.name}</span>
                           </div>
                         </TableCell>
@@ -476,7 +503,9 @@ function CategoriesPage() {
                               className="size-3 rounded-full border border-black/10"
                               style={{ backgroundColor: c.color || "#e2e8f0" }}
                             />
-                            <span className="text-xs font-mono text-muted-foreground">{c.color || "none"}</span>
+                            <span className="text-xs font-mono text-muted-foreground">
+                              {c.color || "none"}
+                            </span>
                           </div>
                         </TableCell>
                         <TableCell>
@@ -518,7 +547,7 @@ function CategoriesPage() {
                   pageSize={pageSize}
                   totalItems={filteredCategories.length}
                   onPageChange={setPage}
-                  onPageSizeChange={() => { }}
+                  onPageSizeChange={() => {}}
                 />
               </div>
             )}
@@ -542,7 +571,10 @@ function CategoriesPage() {
               </SheetDescription>
             </SheetHeader>
 
-            <form onSubmit={handleSave} className="flex-1 flex flex-col justify-between overflow-hidden">
+            <form
+              onSubmit={handleSave}
+              className="flex-1 flex flex-col justify-between overflow-hidden"
+            >
               <div className="flex-1 overflow-y-auto p-5 space-y-4">
                 <div className="space-y-1.5">
                   <Label htmlFor="category-name" className="text-xs font-semibold">
@@ -572,10 +604,11 @@ function CategoriesPage() {
                     <button
                       type="button"
                       onClick={() => setColor("")}
-                      className={`flex items-center gap-2 p-2 rounded-xl border text-xs font-semibold transition-all ${color === ""
+                      className={`flex items-center gap-2 p-2 rounded-xl border text-xs font-semibold transition-all ${
+                        color === ""
                           ? "border-primary ring-2 ring-primary/20 bg-primary/5"
                           : "border-border/60 hover:bg-muted/50"
-                        }`}
+                      }`}
                     >
                       <span className="grid size-4 place-items-center rounded-full border border-dashed border-foreground/30">
                         <X className="size-2.5 text-muted-foreground" />
@@ -587,10 +620,11 @@ function CategoriesPage() {
                         key={c.value}
                         type="button"
                         onClick={() => setColor(c.value)}
-                        className={`flex items-center gap-2 p-2 rounded-xl border text-xs font-semibold transition-all ${color === c.value
+                        className={`flex items-center gap-2 p-2 rounded-xl border text-xs font-semibold transition-all ${
+                          color === c.value
                             ? "border-primary ring-2 ring-primary/20 bg-primary/5"
                             : "border-border/60 hover:bg-muted/50"
-                          }`}
+                        }`}
                       >
                         <span
                           className="size-4 rounded-full shrink-0 border border-black/10"
@@ -604,18 +638,10 @@ function CategoriesPage() {
               </div>
 
               <SheetFooter className="p-4 border-t border-border/60 bg-muted/20 flex flex-row items-center justify-end gap-2 shrink-0">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setModalOpen(false)}
-                >
+                <Button type="button" variant="outline" onClick={() => setModalOpen(false)}>
                   Cancel
                 </Button>
-                <Button
-                  type="submit"
-                  disabled={isSaving}
-                  className="font-semibold shadow-sm"
-                >
+                <Button type="submit" disabled={isSaving} className="font-semibold shadow-sm">
                   {isSaving && <Loader2 className="size-4 animate-spin mr-2" />}
                   {editingCat ? "Update Category" : "Create Category"}
                 </Button>
@@ -638,24 +664,17 @@ function CategoriesPage() {
                   Delete Category
                 </DialogTitle>
                 <DialogDescription className="text-xs text-muted-foreground mt-0.5">
-                  Are you sure you want to delete this category? Products assigned to it will remain in your catalog.
+                  Are you sure you want to delete this category? Products assigned to it will remain
+                  in your catalog.
                 </DialogDescription>
               </div>
             </div>
           </DialogHeader>
           <DialogFooter className="mt-4 flex flex-row items-center justify-end gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setDeleteId(null)}
-            >
+            <Button type="button" variant="outline" onClick={() => setDeleteId(null)}>
               Cancel
             </Button>
-            <Button
-              type="button"
-              variant="destructive"
-              onClick={handleDelete}
-            >
+            <Button type="button" variant="destructive" onClick={handleDelete}>
               Delete
             </Button>
           </DialogFooter>

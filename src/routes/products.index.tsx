@@ -22,7 +22,14 @@ import { useState, useMemo, useEffect } from "react";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PaginationControls } from "@/components/ui/pagination-controls";
 import { useDebounce } from "@/hooks/useDebounce";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { PageHeader } from "@/components/layout/PageHeader";
@@ -143,7 +150,9 @@ function ProductsPage() {
     if (stockFilter === "in_stock") {
       list = list.filter((p: any) => Number(p.stock) > Number(p.reorderLevel || 0));
     } else if (stockFilter === "low_stock") {
-      list = list.filter((p: any) => Number(p.stock) <= Number(p.reorderLevel || 0) && Number(p.stock) > 0);
+      list = list.filter(
+        (p: any) => Number(p.stock) <= Number(p.reorderLevel || 0) && Number(p.stock) > 0,
+      );
     } else if (stockFilter === "out_of_stock") {
       list = list.filter((p: any) => Number(p.stock) <= 0);
     }
@@ -153,11 +162,11 @@ function ProductsPage() {
   const totalSkus = totalCount || products.length;
   const lowStockCount = useMemo(
     () => products.filter((p: any) => Number(p.stock) <= Number(p.reorderLevel || 0)).length,
-    [products]
+    [products],
   );
   const totalInventoryValue = useMemo(
-    () => products.reduce((sum, p: any) => sum + (Number(p.stock || 0) * Number(p.cost || 0)), 0),
-    [products]
+    () => products.reduce((sum, p: any) => sum + Number(p.stock || 0) * Number(p.cost || 0), 0),
+    [products],
   );
 
   const [deleteId, setDeleteId] = useState<string | null>(null);
@@ -237,7 +246,7 @@ function ProductsPage() {
           { key: "Stock", label: "Stock" },
           { key: "ReorderLevel", label: "Reorder Level" },
         ],
-        "products-catalog"
+        "products-catalog",
       );
     } catch (e) {
       toast.error("Failed to export products");
@@ -252,12 +261,7 @@ function ProductsPage() {
         description="Manage your full SKU catalog, tiered pricing rules, and stock reorder thresholds."
         actions={
           <div className="flex flex-wrap items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleExport}
-              className="gap-1.5"
-            >
+            <Button variant="outline" size="sm" onClick={handleExport} className="gap-1.5">
               <Download className="size-4" /> Export CSV
             </Button>
             <Button size="sm" onClick={openNew} className="gap-1.5">
@@ -344,10 +348,11 @@ function ProductsPage() {
               <button
                 type="button"
                 onClick={() => setView("list")}
-                className={`grid size-8 place-items-center rounded-md transition-all ${view === "list"
+                className={`grid size-8 place-items-center rounded-md transition-all ${
+                  view === "list"
                     ? "bg-card text-foreground shadow-sm font-bold"
                     : "text-muted-foreground hover:text-foreground"
-                  }`}
+                }`}
                 title="Table View"
               >
                 <List className="size-4" />
@@ -355,10 +360,11 @@ function ProductsPage() {
               <button
                 type="button"
                 onClick={() => setView("grid")}
-                className={`grid size-8 place-items-center rounded-md transition-all ${view === "grid"
+                className={`grid size-8 place-items-center rounded-md transition-all ${
+                  view === "grid"
                     ? "bg-card text-foreground shadow-sm font-bold"
                     : "text-muted-foreground hover:text-foreground"
-                  }`}
+                }`}
                 title="Grid View"
               >
                 <LayoutGrid className="size-4" />
@@ -381,7 +387,9 @@ function ProductsPage() {
             icon={PackageSearch}
             title="No products found"
             description={
-              search ? "Try adjusting your search criteria." : "You haven't added any products to your catalog yet."
+              search
+                ? "Try adjusting your search criteria."
+                : "You haven't added any products to your catalog yet."
             }
             actionLabel="Add Product"
             onAction={openNew}
@@ -414,7 +422,10 @@ function ProductsPage() {
                               Low Stock ({p.stock})
                             </Badge>
                           ) : (
-                            <Badge variant="outline" className="bg-success/15 text-success border-success/30 text-[10px] font-bold">
+                            <Badge
+                              variant="outline"
+                              className="bg-success/15 text-success border-success/30 text-[10px] font-bold"
+                            >
                               {p.stock} {unitObj?.short || "pcs"} in stock
                             </Badge>
                           )}
@@ -444,8 +455,12 @@ function ProductsPage() {
 
                     <div className="pt-2.5 border-t border-border/60 flex items-center justify-between">
                       <div>
-                        <span className="text-[10px] font-semibold text-muted-foreground uppercase block">Price</span>
-                        <span className="text-base font-bold text-foreground">{formatCurrency(p.price || 0)}</span>
+                        <span className="text-[10px] font-semibold text-muted-foreground uppercase block">
+                          Price
+                        </span>
+                        <span className="text-base font-bold text-foreground">
+                          {formatCurrency(p.price || 0)}
+                        </span>
                       </div>
 
                       <div className="flex items-center gap-1">
@@ -536,16 +551,17 @@ function ProductsPage() {
                         <TableCell className="font-mono text-xs text-muted-foreground">
                           {p.sku || "-"}
                         </TableCell>
-                        <TableCell className="text-xs">
-                          {catObj?.name || "General"}
-                        </TableCell>
+                        <TableCell className="text-xs">{catObj?.name || "General"}</TableCell>
                         <TableCell>
                           {isLow ? (
                             <Badge variant="destructive" className="text-[10px] font-bold">
                               Low: {p.stock}
                             </Badge>
                           ) : (
-                            <Badge variant="outline" className="bg-success/15 text-success border-success/30 text-[10px] font-bold">
+                            <Badge
+                              variant="outline"
+                              className="bg-success/15 text-success border-success/30 text-[10px] font-bold"
+                            >
                               {p.stock} in stock
                             </Badge>
                           )}
@@ -619,24 +635,17 @@ function ProductsPage() {
                   Delete Product
                 </DialogTitle>
                 <DialogDescription className="text-xs text-muted-foreground mt-0.5">
-                  Are you sure you want to delete this product? All catalog mappings will be removed.
+                  Are you sure you want to delete this product? All catalog mappings will be
+                  removed.
                 </DialogDescription>
               </div>
             </div>
           </DialogHeader>
           <DialogFooter className="mt-4 flex flex-row items-center justify-end gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setDeleteId(null)}
-            >
+            <Button type="button" variant="outline" onClick={() => setDeleteId(null)}>
               Cancel
             </Button>
-            <Button
-              type="button"
-              variant="destructive"
-              onClick={confirmDelete}
-            >
+            <Button type="button" variant="destructive" onClick={confirmDelete}>
               Delete
             </Button>
           </DialogFooter>
@@ -644,7 +653,10 @@ function ProductsPage() {
       </Dialog>
 
       {/* Print Barcode Dialog */}
-      <Dialog open={!!printProduct && !isPrinting} onOpenChange={(open) => !open && setPrintProduct(null)}>
+      <Dialog
+        open={!!printProduct && !isPrinting}
+        onOpenChange={(open) => !open && setPrintProduct(null)}
+      >
         <DialogContent className="sm:max-w-sm rounded-2xl p-6 border border-border shadow-soft bg-card">
           <DialogHeader className="text-left space-y-1">
             <DialogTitle className="font-bold flex items-center gap-2 text-foreground">
@@ -681,15 +693,10 @@ function ProductsPage() {
           </div>
 
           <DialogFooter className="gap-2 flex flex-row items-center justify-end">
-            <Button
-              variant="outline"
-              onClick={() => setPrintProduct(null)}
-            >
+            <Button variant="outline" onClick={() => setPrintProduct(null)}>
               Cancel
             </Button>
-            <Button
-              onClick={handlePrint}
-            >
+            <Button onClick={handlePrint}>
               <Printer className="size-3.5 mr-1" /> Print Labels
             </Button>
           </DialogFooter>

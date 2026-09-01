@@ -15,12 +15,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SearchableSelect } from "@/components/ui/searchable-select";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -177,10 +172,7 @@ function AccountsPage() {
     (sum, a) => sum + (Number(a.balance) || 0),
     0,
   );
-  const totalEquity = accountsByType.equity.reduce(
-    (sum, a) => sum + (Number(a.balance) || 0),
-    0,
-  );
+  const totalEquity = accountsByType.equity.reduce((sum, a) => sum + (Number(a.balance) || 0), 0);
 
   const {
     errors: accErrors,
@@ -458,7 +450,10 @@ function AccountsPage() {
                       <SearchableSelect
                         options={[
                           { value: "", label: "All Types" },
-                          ...VOUCHER_TYPES.map((v) => ({ value: v.value, label: v.label.split(" (")[0] })),
+                          ...VOUCHER_TYPES.map((v) => ({
+                            value: v.value,
+                            label: v.label.split(" (")[0],
+                          })),
                         ]}
                         value={draftFilters.type}
                         onChange={(val) => setDraftFilters((prev) => ({ ...prev, type: val }))}
@@ -481,7 +476,8 @@ function AccountsPage() {
               )
             : undefined
         }
-      topContent={activeTab === "accounts" ? (
+        topContent={
+          activeTab === "accounts" ? (
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
               <div className="rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/5 to-card p-5 text-left card-interactive shadow-card">
                 <div className="flex items-center justify-between">
@@ -528,8 +524,9 @@ function AccountsPage() {
                 </p>
               </div>
             </div>
-          ) : null}
-        >
+          ) : null
+        }
+      >
         {/* Navigation Tabs and Quick Actions */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-border/80 pb-3">
           <div className="flex gap-2">
@@ -559,7 +556,11 @@ function AccountsPage() {
               disabled={isSeeding}
               className="font-bold text-xs gap-1.5 rounded-xl border-primary/30 text-primary hover:bg-primary/5 h-9"
             >
-              {isSeeding ? <Loader2 className="size-3.5 animate-spin" /> : <Sparkles className="size-3.5" />}
+              {isSeeding ? (
+                <Loader2 className="size-3.5 animate-spin" />
+              ) : (
+                <Sparkles className="size-3.5" />
+              )}
               Seed Standard Accounts
             </Button>
           )}
@@ -574,14 +575,25 @@ function AccountsPage() {
                   <Layers className="size-8" />
                 </div>
                 <div className="max-w-md space-y-1">
-                  <h3 className="text-lg font-black text-foreground">No Chart of Accounts Set Up</h3>
+                  <h3 className="text-lg font-black text-foreground">
+                    No Chart of Accounts Set Up
+                  </h3>
                   <p className="text-xs text-muted-foreground">
-                    Set up double-entry ledger accounts for Cash, Bank, Sales, Payables, and Expenses, or initialize the standard predefined chart in one click.
+                    Set up double-entry ledger accounts for Cash, Bank, Sales, Payables, and
+                    Expenses, or initialize the standard predefined chart in one click.
                   </p>
                 </div>
                 <div className="flex flex-wrap gap-3 pt-2">
-                  <Button onClick={handleSeedAccounts} disabled={isSeeding} className="font-bold text-xs shadow-soft">
-                    {isSeeding ? <Loader2 className="size-4 animate-spin mr-2" /> : <Sparkles className="size-4 mr-2" />}
+                  <Button
+                    onClick={handleSeedAccounts}
+                    disabled={isSeeding}
+                    className="font-bold text-xs shadow-soft"
+                  >
+                    {isSeeding ? (
+                      <Loader2 className="size-4 animate-spin mr-2" />
+                    ) : (
+                      <Sparkles className="size-4 mr-2" />
+                    )}
                     Initialize Standard Chart of Accounts
                   </Button>
                   <Button
@@ -609,7 +621,10 @@ function AccountsPage() {
                     >
                       <div className="flex items-center justify-between border-b border-border/60 pb-3">
                         <div className="flex items-center gap-2.5">
-                          <Badge variant="outline" className={`capitalize font-black text-xs px-2.5 py-0.5 ${categoryColor(cat)}`}>
+                          <Badge
+                            variant="outline"
+                            className={`capitalize font-black text-xs px-2.5 py-0.5 ${categoryColor(cat)}`}
+                          >
                             {cat} Accounts
                           </Badge>
                           <span className="text-xs text-muted-foreground font-semibold">
@@ -632,9 +647,13 @@ function AccountsPage() {
                                 {acc.code}
                               </span>
                               <div className="truncate">
-                                <span className="font-bold text-foreground block truncate">{acc.name}</span>
+                                <span className="font-bold text-foreground block truncate">
+                                  {acc.name}
+                                </span>
                                 {acc.isSystem && (
-                                  <span className="text-[10px] text-muted-foreground">Standard System Head</span>
+                                  <span className="text-[10px] text-muted-foreground">
+                                    Standard System Head
+                                  </span>
                                 )}
                               </div>
                             </div>
@@ -708,7 +727,10 @@ function AccountsPage() {
                   <TableBody>
                     {filteredVouchers.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={7} className="py-12 text-center text-xs text-muted-foreground">
+                        <TableCell
+                          colSpan={7}
+                          className="py-12 text-center text-xs text-muted-foreground"
+                        >
                           {search || filters.type
                             ? "No vouchers match your search query."
                             : 'No journal vouchers posted yet. Click "Post New Voucher" to record transactions.'}
@@ -769,12 +791,18 @@ function AccountsPage() {
                       </div>
                       <div className="grid grid-cols-2 gap-2 text-xs pt-1 border-t border-border/50">
                         <div>
-                          <span className="text-muted-foreground block text-[10px]">Debit (+):</span>
+                          <span className="text-muted-foreground block text-[10px]">
+                            Debit (+):
+                          </span>
                           <span className="font-bold text-primary">{v.debitAccountName}</span>
                         </div>
                         <div>
-                          <span className="text-muted-foreground block text-[10px]">Credit (-):</span>
-                          <span className="font-bold text-muted-foreground">{v.creditAccountName}</span>
+                          <span className="text-muted-foreground block text-[10px]">
+                            Credit (-):
+                          </span>
+                          <span className="font-bold text-muted-foreground">
+                            {v.creditAccountName}
+                          </span>
                         </div>
                       </div>
                       <div className="flex items-center justify-between pt-1 border-t border-border/50">
@@ -822,7 +850,10 @@ function AccountsPage() {
                 <History className="size-5 text-primary" />
                 <span>Account Ledger Statement</span>
               </SheetTitle>
-              <Badge variant="outline" className={`capitalize font-black text-xs ${categoryColor(selectedLedgerAccount?.type || "asset")}`}>
+              <Badge
+                variant="outline"
+                className={`capitalize font-black text-xs ${categoryColor(selectedLedgerAccount?.type || "asset")}`}
+              >
                 {selectedLedgerAccount?.type}
               </Badge>
             </div>
@@ -831,10 +862,14 @@ function AccountsPage() {
                 <span className="text-sm font-bold text-foreground block">
                   [{selectedLedgerAccount?.code}] {selectedLedgerAccount?.name}
                 </span>
-                <span className="text-xs text-muted-foreground">Detailed double-entry ledger history</span>
+                <span className="text-xs text-muted-foreground">
+                  Detailed double-entry ledger history
+                </span>
               </div>
               <div className="text-right">
-                <span className="text-[10px] text-muted-foreground uppercase font-bold block">Current Balance</span>
+                <span className="text-[10px] text-muted-foreground uppercase font-bold block">
+                  Current Balance
+                </span>
                 <span className="text-lg font-black text-primary">
                   {formatCurrency(selectedLedgerAccount?.balance || 0)}
                 </span>
@@ -863,8 +898,12 @@ function AccountsPage() {
                     {ledgerTransactions.map((tx: any) => (
                       <TableRow key={tx.id}>
                         <TableCell>
-                          <span className="font-mono font-bold text-primary block">{tx.voucherNo}</span>
-                          <span className="text-[10px] text-muted-foreground">{formatDate(tx.date)}</span>
+                          <span className="font-mono font-bold text-primary block">
+                            {tx.voucherNo}
+                          </span>
+                          <span className="text-[10px] text-muted-foreground">
+                            {formatDate(tx.date)}
+                          </span>
                         </TableCell>
                         <TableCell className="text-muted-foreground">
                           {tx.narration || `${tx.type.toUpperCase()} Entry`}
@@ -911,7 +950,11 @@ function AccountsPage() {
                 : "Create a new general ledger head in your Chart of Accounts."}
             </p>
           </SheetHeader>
-          <form noValidate onSubmit={handleSaveAccount} className="flex flex-col flex-1 overflow-hidden">
+          <form
+            noValidate
+            onSubmit={handleSaveAccount}
+            className="flex flex-col flex-1 overflow-hidden"
+          >
             <div className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1.5">
@@ -980,7 +1023,11 @@ function AccountsPage() {
               >
                 Cancel
               </Button>
-              <Button type="submit" disabled={isSubmittingAccount} className="min-w-[140px] font-bold">
+              <Button
+                type="submit"
+                disabled={isSubmittingAccount}
+                className="min-w-[140px] font-bold"
+              >
                 {isSubmittingAccount && <Loader2 className="size-4 animate-spin mr-2" />}
                 {editingAccount ? "Update Account" : "Save Account"}
               </Button>
@@ -1009,10 +1056,15 @@ function AccountsPage() {
               <span>Post Journal / Payment Voucher</span>
             </SheetTitle>
             <p className="text-xs text-muted-foreground mt-0.5">
-              Record double-entry debit and credit transactions with automatic ledger balance updating.
+              Record double-entry debit and credit transactions with automatic ledger balance
+              updating.
             </p>
           </SheetHeader>
-          <form noValidate onSubmit={handleCreateVoucher} className="flex flex-col flex-1 overflow-hidden">
+          <form
+            noValidate
+            onSubmit={handleCreateVoucher}
+            className="flex flex-col flex-1 overflow-hidden"
+          >
             <div className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-4">
               <div className="space-y-2">
                 <Label>Voucher Type</Label>
@@ -1029,7 +1081,9 @@ function AccountsPage() {
                   <Label>
                     Debit Account (+) <span className="text-destructive">*</span>
                   </Label>
-                  <div className={vchErrors.debitAccId ? "rounded-md border border-destructive" : ""}>
+                  <div
+                    className={vchErrors.debitAccId ? "rounded-md border border-destructive" : ""}
+                  >
                     <SearchableSelect
                       options={rawAccounts.map((a: any) => ({
                         value: a.id,
@@ -1049,7 +1103,9 @@ function AccountsPage() {
                   <Label>
                     Credit Account (-) <span className="text-destructive">*</span>
                   </Label>
-                  <div className={vchErrors.creditAccId ? "rounded-md border border-destructive" : ""}>
+                  <div
+                    className={vchErrors.creditAccId ? "rounded-md border border-destructive" : ""}
+                  >
                     <SearchableSelect
                       options={rawAccounts.map((a: any) => ({
                         value: a.id,
@@ -1081,7 +1137,9 @@ function AccountsPage() {
                   }}
                   placeholder="0.00"
                   className={
-                    vchErrors.voucherAmount ? "border-destructive focus-visible:ring-destructive font-bold text-base" : "font-bold text-base"
+                    vchErrors.voucherAmount
+                      ? "border-destructive focus-visible:ring-destructive font-bold text-base"
+                      : "font-bold text-base"
                   }
                 />
                 <FieldError message={vchErrors.voucherAmount} />
@@ -1118,12 +1176,19 @@ function AccountsPage() {
       </Sheet>
 
       {/* Delete Confirmation Modal */}
-      <AlertDialog open={!!deletingAccount} onOpenChange={(open) => !open && setDeletingAccount(null)}>
+      <AlertDialog
+        open={!!deletingAccount}
+        onOpenChange={(open) => !open && setDeletingAccount(null)}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Ledger Account?</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete account <strong>[{deletingAccount?.code}] {deletingAccount?.name}</strong>? This action cannot be undone.
+              Are you sure you want to delete account{" "}
+              <strong>
+                [{deletingAccount?.code}] {deletingAccount?.name}
+              </strong>
+              ? This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

@@ -76,13 +76,19 @@ export const TIMEZONES = [
   { value: "Australia/Sydney", label: "(AEST+10:00 / AEDT+11:00) Sydney, Melbourne, Australia 🇦🇺" },
   { value: "Australia/Brisbane", label: "(AEST+10:00) Brisbane, Australia 🇦🇺" },
   { value: "Australia/Perth", label: "(AWST+08:00) Perth, Australia 🇦🇺" },
-  { value: "Pacific/Auckland", label: "(NZST+12:00 / NZDT+13:00) Auckland, Wellington, New Zealand 🇳🇿" },
+  {
+    value: "Pacific/Auckland",
+    label: "(NZST+12:00 / NZDT+13:00) Auckland, Wellington, New Zealand 🇳🇿",
+  },
 
   // Americas
   { value: "America/New_York", label: "(EST-05:00 / EDT-04:00) New York, Boston, Atlanta, USA 🇺🇸" },
   { value: "America/Chicago", label: "(CST-06:00 / CDT-05:00) Chicago, Dallas, Houston, USA 🇺🇸" },
   { value: "America/Denver", label: "(MST-07:00 / MDT-06:00) Denver, Salt Lake City, USA 🇺🇸" },
-  { value: "America/Los_Angeles", label: "(PST-08:00 / PDT-07:00) Los Angeles, San Francisco, Seattle, USA 🇺🇸" },
+  {
+    value: "America/Los_Angeles",
+    label: "(PST-08:00 / PDT-07:00) Los Angeles, San Francisco, Seattle, USA 🇺🇸",
+  },
   { value: "America/Toronto", label: "(EST-05:00 / EDT-04:00) Toronto, Montreal, Canada 🇨🇦" },
   { value: "America/Vancouver", label: "(PST-08:00 / PDT-07:00) Vancouver, Canada 🇨🇦" },
   { value: "America/Mexico_City", label: "(CST-06:00) Mexico City, Guadalajara, Mexico 🇲🇽" },
@@ -98,7 +104,10 @@ export const DATE_FORMATS = [
   { value: "MM/DD/YYYY", label: "MM/DD/YYYY (e.g. 07/23/2026 - US, Canada, Philippines)" },
   { value: "YYYY-MM-DD", label: "YYYY-MM-DD (e.g. 2026-07-23 - ISO 8601, East Asia, Global IT)" },
   { value: "DD-MM-YYYY", label: "DD-MM-YYYY (e.g. 23-07-2026)" },
-  { value: "DD.MM.YYYY", label: "DD.MM.YYYY (e.g. 23.07.2026 - Germany, Austria, Switzerland, Nordics)" },
+  {
+    value: "DD.MM.YYYY",
+    label: "DD.MM.YYYY (e.g. 23.07.2026 - Germany, Austria, Switzerland, Nordics)",
+  },
   { value: "DD-MMM-YYYY", label: "DD-MMM-YYYY (e.g. 23-Jul-2026 - Alphanumeric Standard)" },
   { value: "YYYY/MM/DD", label: "YYYY/MM/DD (e.g. 2026/07/23 - Japan, Taiwan, South Africa)" },
 ];

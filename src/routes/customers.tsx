@@ -27,7 +27,14 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -420,10 +427,16 @@ function CustomersPage() {
                       <TableHead>{t("customer") || "Customer Name"}</TableHead>
                       <TableHead>{t("contact") || "Mobile Phone"}</TableHead>
                       <TableHead className="text-right">{t("visits") || "Visits"}</TableHead>
-                      <TableHead className="text-right">{t("spent") || "Total Purchases"}</TableHead>
+                      <TableHead className="text-right">
+                        {t("spent") || "Total Purchases"}
+                      </TableHead>
                       <TableHead className="text-right">{t("points") || "Points"}</TableHead>
-                      <TableHead className="text-right text-destructive font-bold">{t("credit") || "Udhaar (Due)"}</TableHead>
-                      <TableHead className="text-right text-success font-bold">{t("wallet") || "Jama / Advance"}</TableHead>
+                      <TableHead className="text-right text-destructive font-bold">
+                        {t("credit") || "Udhaar (Due)"}
+                      </TableHead>
+                      <TableHead className="text-right text-success font-bold">
+                        {t("wallet") || "Jama / Advance"}
+                      </TableHead>
                       <TableHead>{t("tier") || "Category"}</TableHead>
                       <TableHead className="text-right">{t("actions") || "Actions"}</TableHead>
                     </TableRow>
@@ -476,7 +489,9 @@ function CustomersPage() {
                               <div className="text-xs text-muted-foreground">{c.email}</div>
                             )}
                           </TableCell>
-                          <TableCell className="number text-right font-medium">{c.visits || 0}</TableCell>
+                          <TableCell className="number text-right font-medium">
+                            {c.visits || 0}
+                          </TableCell>
                           <TableCell className="number text-right font-semibold">
                             {formatCurrency(c.totalSpent || 0)}
                           </TableCell>
@@ -507,7 +522,9 @@ function CustomersPage() {
                                 </Badge>
                               )}
                               {c.status === "vip" ? (
-                                <span className="text-[10px] font-extrabold text-warning">★ VIP</span>
+                                <span className="text-[10px] font-extrabold text-warning">
+                                  ★ VIP
+                                </span>
                               ) : null}
                             </div>
                           </TableCell>
@@ -603,7 +620,10 @@ function CustomersPage() {
                           </div>
                           <p className="text-[11px] text-muted-foreground">{c.phone}</p>
                           <div className="flex items-center gap-1.5 mt-1">
-                            <Badge variant="outline" className="text-[9px] font-bold py-0 capitalize">
+                            <Badge
+                              variant="outline"
+                              className="text-[9px] font-bold py-0 capitalize"
+                            >
                               {c.type || "Retail"}
                             </Badge>
                             <span className="text-[10px] font-bold text-primary bg-primary/10 px-1.5 py-0.5 rounded border border-primary/20">
@@ -800,7 +820,9 @@ function CustomersPage() {
                   placeholder="e.g. 5000"
                   defaultValue={editItem?.creditLimit || 5000}
                   className={
-                    custErrors.creditLimit ? "border-destructive focus-visible:ring-destructive" : ""
+                    custErrors.creditLimit
+                      ? "border-destructive focus-visible:ring-destructive"
+                      : ""
                   }
                   onChange={() => clearCustError("creditLimit")}
                 />
@@ -989,7 +1011,10 @@ function CustomersPage() {
                   <TableBody>
                     {customerLedgerEntries.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={6} className="py-8 text-center text-xs text-muted-foreground">
+                        <TableCell
+                          colSpan={6}
+                          className="py-8 text-center text-xs text-muted-foreground"
+                        >
                           No transactions recorded in ledger yet.
                         </TableCell>
                       </TableRow>

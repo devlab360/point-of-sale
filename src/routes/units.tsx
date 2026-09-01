@@ -52,7 +52,14 @@ import { v4 as uuidv4 } from "uuid";
 import { toast } from "sonner";
 import { useFormValidation } from "@/hooks/useFormValidation";
 import { FieldError } from "@/components/ui/field-error";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { PaginationControls } from "@/components/ui/pagination-controls";
 import { TableSkeleton } from "@/components/skeletons/TableSkeleton";
 import { CardGridSkeleton } from "@/components/skeletons/CardGridSkeleton";
@@ -89,7 +96,9 @@ function UnitsPage() {
   const unitsWithCounts = useMemo(() => {
     return rawUnits.map((u: any) => ({
       ...u,
-      products: products.filter((p: any) => p.unit === u.id || p.unit === u.name || p.unit === u.short).length,
+      products: products.filter(
+        (p: any) => p.unit === u.id || p.unit === u.name || p.unit === u.short,
+      ).length,
     }));
   }, [rawUnits, products]);
 
@@ -109,15 +118,21 @@ function UnitsPage() {
 
   // KPI Calculations
   const totalUnits = unitsWithCounts.length;
-  const inUseCount = useMemo(() => unitsWithCounts.filter((u) => u.products > 0).length, [unitsWithCounts]);
-  const totalLinkedItems = useMemo(() => unitsWithCounts.reduce((sum, u) => sum + u.products, 0), [unitsWithCounts]);
+  const inUseCount = useMemo(
+    () => unitsWithCounts.filter((u) => u.products > 0).length,
+    [unitsWithCounts],
+  );
+  const totalLinkedItems = useMemo(
+    () => unitsWithCounts.reduce((sum, u) => sum + u.products, 0),
+    [unitsWithCounts],
+  );
 
   const filteredUnits = useMemo(() => {
     let list = unitsWithCounts;
     if (debouncedSearch) {
       const lower = debouncedSearch.toLowerCase();
       list = list.filter(
-        (u: any) => u.name?.toLowerCase().includes(lower) || u.short?.toLowerCase().includes(lower)
+        (u: any) => u.name?.toLowerCase().includes(lower) || u.short?.toLowerCase().includes(lower),
       );
     }
     if (usageFilter === "in_use") list = list.filter((u: any) => u.products > 0);
@@ -334,7 +349,9 @@ function UnitsPage() {
             icon={Scale}
             title="No units found"
             description={
-              search ? "Try adjusting your search criteria." : "You haven't created any measurement units yet."
+              search
+                ? "Try adjusting your search criteria."
+                : "You haven't created any measurement units yet."
             }
             actionLabel="Add Unit"
             onAction={openNew}
@@ -490,7 +507,10 @@ function UnitsPage() {
               </SheetDescription>
             </SheetHeader>
 
-            <form onSubmit={handleSave} className="flex-1 flex flex-col justify-between overflow-hidden">
+            <form
+              onSubmit={handleSave}
+              className="flex-1 flex flex-col justify-between overflow-hidden"
+            >
               <div className="flex-1 overflow-y-auto p-5 space-y-4">
                 {/* Standard Presets */}
                 {!editingUnit && (
@@ -551,18 +571,10 @@ function UnitsPage() {
               </div>
 
               <SheetFooter className="p-4 border-t border-border/60 bg-muted/20 flex flex-row items-center justify-end gap-2 shrink-0">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setModalOpen(false)}
-                >
+                <Button type="button" variant="outline" onClick={() => setModalOpen(false)}>
                   Cancel
                 </Button>
-                <Button
-                  type="submit"
-                  disabled={isSaving}
-                  className="font-semibold shadow-sm"
-                >
+                <Button type="submit" disabled={isSaving} className="font-semibold shadow-sm">
                   {isSaving && <Loader2 className="size-4 animate-spin mr-2" />}
                   {editingUnit ? "Update Unit" : "Create Unit"}
                 </Button>
@@ -585,24 +597,17 @@ function UnitsPage() {
                   Delete Unit of Measurement
                 </DialogTitle>
                 <DialogDescription className="text-xs text-muted-foreground mt-0.5">
-                  Are you sure you want to delete this unit? Linked products will keep their unit assignment.
+                  Are you sure you want to delete this unit? Linked products will keep their unit
+                  assignment.
                 </DialogDescription>
               </div>
             </div>
           </DialogHeader>
           <DialogFooter className="mt-4 flex flex-row items-center justify-end gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setDeleteId(null)}
-            >
+            <Button type="button" variant="outline" onClick={() => setDeleteId(null)}>
               Cancel
             </Button>
-            <Button
-              type="button"
-              variant="destructive"
-              onClick={handleDelete}
-            >
+            <Button type="button" variant="destructive" onClick={handleDelete}>
               Delete
             </Button>
           </DialogFooter>

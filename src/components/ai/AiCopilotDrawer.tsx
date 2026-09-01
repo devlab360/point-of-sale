@@ -82,7 +82,8 @@ const I18N_AI: Record<LanguageCode, LocalizedContent> = {
     copiedToast: "Copied to clipboard",
     inputPlaceholder: "Ask AI anything (e.g. What is today's profit?)...",
     analyzingText: "Analyzing store data...",
-    welcomeText: "Hello! 👋 I am your **OneDesk360 AI Business Advisor**.\n\nI can analyze your store's profit & loss, identify dead stock, track due accounts, and provide actionable growth insights in real-time.",
+    welcomeText:
+      "Hello! 👋 I am your **OneDesk360 AI Business Advisor**.\n\nI can analyze your store's profit & loss, identify dead stock, track due accounts, and provide actionable growth insights in real-time.",
     welcomeCardTitle: "Store Health Quick Overview",
     tipText: "💡 Tip: Click any suggested prompt below or type your question!",
     categories: [
@@ -136,7 +137,8 @@ const I18N_AI: Record<LanguageCode, LocalizedContent> = {
     copiedToast: "ক্লিপবোর্ডে কপি করা হয়েছে",
     inputPlaceholder: "AI-কে যেকোনো প্রশ্ন করুন (যেমন: আজকের প্রফিট কত?)...",
     analyzingText: "স্টোরের ডেটা বিশ্লেষণ করা হচ্ছে...",
-    welcomeText: "আসসালামু আলাইকুম / নমস্কার! 👋 আমি আপনার **OneDesk360 AI বিজনেস অ্যাডভাইজার**।\n\nআমি আপনার স্টোরের লাভ-ক্ষতি, ডেড স্টক, বাকি খাতা এবং ব্যবসায়িক অগ্রগতির রিয়েল-টাইম বিশ্লেষণ করতে পারি।",
+    welcomeText:
+      "আসসালামু আলাইকুম / নমস্কার! 👋 আমি আপনার **OneDesk360 AI বিজনেস অ্যাডভাইজার**।\n\nআমি আপনার স্টোরের লাভ-ক্ষতি, ডেড স্টক, বাকি খাতা এবং ব্যবসায়িক অগ্রগতির রিয়েল-টাইম বিশ্লেষণ করতে পারি।",
     welcomeCardTitle: "স্টোর হেলথ ওভারভিউ",
     tipText: "💡 পরামর্শ: নিচের সাজেস্টেড প্রশ্নে ক্লিক করুন অথবা বাংলায় লিখে পাঠান!",
     categories: [
@@ -190,7 +192,8 @@ const I18N_AI: Record<LanguageCode, LocalizedContent> = {
     copiedToast: "क्लिपबोर्ड पर कॉपी किया गया",
     inputPlaceholder: "AI से कुछ भी पूछें (जैसे: आज का लाभ कितना है?)...",
     analyzingText: "स्टोर डेटा का विश्लेषण हो रहा है...",
-    welcomeText: "नमस्ते! 👋 मैं आपका **OneDesk360 AI बिजनेस एडवाइजर** हूँ।\n\nमैं आपकी दुकान के लाभ-हानि, डेड स्टॉक, बकाया खातों और व्यावसायिक विकास का रीयल-टाइम विश्लेषण कर सकता हूँ।",
+    welcomeText:
+      "नमस्ते! 👋 मैं आपका **OneDesk360 AI बिजनेस एडवाइजर** हूँ।\n\nमैं आपकी दुकान के लाभ-हानि, डेड स्टॉक, बकाया खातों और व्यावसायिक विकास का रीयल-टाइम विश्लेषण कर सकता हूँ।",
     welcomeCardTitle: "दुकान स्वास्थ्य सारांश",
     tipText: "💡 सुझाव: नीचे दिए गए किसी भी सुझाव पर क्लिक करें या हिंदी में टाइप करें!",
     categories: [
@@ -244,7 +247,8 @@ const I18N_AI: Record<LanguageCode, LocalizedContent> = {
     copiedToast: "تم النسخ إلى الحافظة",
     inputPlaceholder: "اسأل الذكاء الاصطناعي أي شيء (مثال: ما هو ربح اليوم؟)...",
     analyzingText: "جاري تحليل بيانات المتجر...",
-    welcomeText: "مرحباً بك! 👋 أنا **مستشارك التجاري الذكي OneDesk360 AI**.\n\nيمكنني تحليل أرباح وخسائر متجرك، وتحديد المخزون الراكد، وتتبع ديون العملاء وتقديم رؤى للنمو في الوقت الفعلي.",
+    welcomeText:
+      "مرحباً بك! 👋 أنا **مستشارك التجاري الذكي OneDesk360 AI**.\n\nيمكنني تحليل أرباح وخسائر متجرك، وتحديد المخزون الراكد، وتتبع ديون العملاء وتقديم رؤى للنمو في الوقت الفعلي.",
     welcomeCardTitle: "نظرة عامة على صحة المتجر",
     tipText: "💡 نصيحة: اضغط على أي من الأسئلة المقترحة أدناه أو اكتب استفسارك بالعربية!",
     categories: [
@@ -298,7 +302,8 @@ const I18N_AI: Record<LanguageCode, LocalizedContent> = {
     copiedToast: "已复制到剪贴板",
     inputPlaceholder: "向 AI 顾问提问（例如：今天的利润是多少？）...",
     analyzingText: "正在分析店铺实时数据...",
-    welcomeText: "您好！👋 我是您的 **OneDesk360 AI 商业顾问**。\n\n我可以实时为您分析店铺的盈亏利润、呆滞库存、客户应收欠款并提供业务增长策略。",
+    welcomeText:
+      "您好！👋 我是您的 **OneDesk360 AI 商业顾问**。\n\n我可以实时为您分析店铺的盈亏利润、呆滞库存、客户应收欠款并提供业务增长策略。",
     welcomeCardTitle: "店铺健康状态快速概览",
     tipText: "💡 提示：点击下方推荐问题或直接输入您想了解的内容！",
     categories: [
@@ -451,10 +456,7 @@ export function AiCopilotDrawer() {
       (sum, s: any) => sum + safeNum(s?.total ?? s?.grandTotal ?? s?.finalAmount),
       0,
     );
-    const totalExp = expenses.reduce(
-      (sum, e: any) => sum + safeNum(e?.amount ?? e?.total),
-      0,
-    );
+    const totalExp = expenses.reduce((sum, e: any) => sum + safeNum(e?.amount ?? e?.total), 0);
 
     let totalCogs = 0;
     activeSales.forEach((s: any) => {
@@ -475,9 +477,7 @@ export function AiCopilotDrawer() {
     // Dead Stock Calculation (Unsold products with positive stock)
     const soldProductIds = new Set(
       activeSales.flatMap((s: any) =>
-        (s?.saleItems || s?.items || [])
-          .map((i: any) => i?.productId || i?.id)
-          .filter(Boolean),
+        (s?.saleItems || s?.items || []).map((i: any) => i?.productId || i?.id).filter(Boolean),
       ),
     );
     const deadStockItems = products.filter(
@@ -571,7 +571,15 @@ export function AiCopilotDrawer() {
         },
       },
     ]);
-  }, [language, i18n, healthAnalysis.score, healthAnalysis.grade, healthAnalysis.netProfit, healthAnalysis.totalDue, formatCurrency]);
+  }, [
+    language,
+    i18n,
+    healthAnalysis.score,
+    healthAnalysis.grade,
+    healthAnalysis.netProfit,
+    healthAnalysis.totalDue,
+    formatCurrency,
+  ]);
 
   const [isTyping, setIsTyping] = useState(false);
 

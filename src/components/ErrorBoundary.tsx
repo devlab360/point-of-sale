@@ -35,7 +35,11 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    console.error(`[ErrorBoundary${this.props.scopeName ? `:${this.props.scopeName}` : ""}] Caught error:`, error, errorInfo);
+    console.error(
+      `[ErrorBoundary${this.props.scopeName ? `:${this.props.scopeName}` : ""}] Caught error:`,
+      error,
+      errorInfo,
+    );
     this.setState({ errorInfo });
     try {
       reportLovableError(error, {
@@ -110,18 +114,11 @@ export class ErrorBoundary extends Component<Props, State> {
           </p>
 
           <div className="mt-5 flex flex-wrap items-center justify-center gap-2.5">
-            <Button
-              onClick={this.handleReset}
-              className="gap-2 font-semibold shadow-sm"
-            >
+            <Button onClick={this.handleReset} className="gap-2 font-semibold shadow-sm">
               <RefreshCw className="size-4" /> Try Again
             </Button>
 
-            <Button
-              variant="outline"
-              asChild
-              className="gap-2"
-            >
+            <Button variant="outline" asChild className="gap-2">
               <a href="/">
                 <Home className="size-4" /> Go to Dashboard
               </a>
@@ -150,7 +147,11 @@ export class ErrorBoundary extends Component<Props, State> {
                   onClick={this.handleCopyStack}
                   className="h-7 text-[11px] gap-1 text-muted-foreground hover:text-foreground"
                 >
-                  {this.state.copied ? <Check className="size-3 text-success" /> : <Copy className="size-3" />}
+                  {this.state.copied ? (
+                    <Check className="size-3 text-success" />
+                  ) : (
+                    <Copy className="size-3" />
+                  )}
                   {this.state.copied ? "Copied" : "Copy Diagnostics"}
                 </Button>
               </div>

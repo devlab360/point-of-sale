@@ -202,7 +202,12 @@ export class SalesService {
         const custRes = await tx
           .select()
           .from(schema.customers)
-          .where(and(eq(schema.customers.id, input.customerId), eq(schema.customers.organizationId, orgId)))
+          .where(
+            and(
+              eq(schema.customers.id, input.customerId),
+              eq(schema.customers.organizationId, orgId),
+            ),
+          )
           .limit(1);
 
         if (custRes.length > 0) {

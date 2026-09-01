@@ -16,6 +16,7 @@ This skill documents the mandatory code patterns, backend practices, state manag
 All backend APIs, mutations, and database calls must be implemented using TanStack Start's `createServerFn` with Zod input validators.
 
 ### 1.1 Standard Server Function Pattern:
+
 ```typescript
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
@@ -49,6 +50,7 @@ export const updatePlanQuotaFn = createServerFn({ method: "POST" })
 ```
 
 ### Server Function Rules:
+
 - **Never bypass validator**: Every endpoint accepting data must declare `.validator(schema)`.
 - **Always catch errors**: Handler must wrap business logic in `try ... catch` and return `formatErrorResponse(e)`.
 - **Tenant Middleware**: Use `requireAuthSession()` for Store Admin APIs and `requireSuperAdminSession()` for Super Admin APIs.
@@ -58,6 +60,7 @@ export const updatePlanQuotaFn = createServerFn({ method: "POST" })
 ## 2. Multi-Tenant Database Queries (Drizzle ORM)
 
 ### 2.1 Mandatory `orgId` Scoping
+
 In any multi-tenant store service, **EVERY query must scope by `orgId`**:
 
 ```typescript
@@ -87,6 +90,7 @@ export async function getAllProducts() {
 ## 3. Client State & React Query v5 Patterns
 
 ### 3.1 Standard Query Hook:
+
 ```typescript
 const { data, isLoading, refetch, isFetching } = useQuery({
   queryKey: ["saas-organizations", statusFilter, searchQuery],
@@ -96,6 +100,7 @@ const { data, isLoading, refetch, isFetching } = useQuery({
 ```
 
 ### 3.2 Standard Mutation Hook with Invalidation:
+
 ```typescript
 const queryClient = useQueryClient();
 
@@ -146,7 +151,9 @@ export default function SuperAdminPlansPage() { ... }
 ## 5. Offline-First Synchronization (Dexie.js)
 
 ### 5.1 Local Cache Write:
+
 When ringing up POS sales offline:
+
 ```typescript
 // 1. Write to local IndexedDB
 await localDb.sales.add(saleRecord);
@@ -162,6 +169,7 @@ await localDb.syncQueue.add({
 ```
 
 ### 5.2 Flush Queue on Reconnect:
+
 ```typescript
 window.addEventListener("online", async () => {
   const pending = await localDb.syncQueue.where("synced").equals(0).toArray();

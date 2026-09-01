@@ -26,8 +26,20 @@ const inMemoryPurchases: Record<string, any[]> = {
       due: "250.00",
       paymentMethod: "Bank Transfer",
       purchaseItems: JSON.stringify([
-        { productId: "prod-1", productName: "Wireless Noise-Canceling Earbuds", qty: 25, cost: 30, total: 750 },
-        { productId: "prod-2", productName: "Fast USB-C Charging Hub", qty: 20, cost: 25, total: 500 },
+        {
+          productId: "prod-1",
+          productName: "Wireless Noise-Canceling Earbuds",
+          qty: 25,
+          cost: 30,
+          total: 750,
+        },
+        {
+          productId: "prod-2",
+          productName: "Fast USB-C Charging Hub",
+          qty: 20,
+          cost: 25,
+          total: 500,
+        },
       ]),
     },
     {
@@ -47,7 +59,13 @@ const inMemoryPurchases: Record<string, any[]> = {
       due: "0.00",
       paymentMethod: "Cash",
       purchaseItems: JSON.stringify([
-        { productId: "prod-3", productName: "Tempered Glass Screen Protector", qty: 30, cost: 15, total: 450 },
+        {
+          productId: "prod-3",
+          productName: "Tempered Glass Screen Protector",
+          qty: 30,
+          cost: 15,
+          total: 450,
+        },
       ]),
     },
   ],
@@ -149,12 +167,14 @@ export const getPurchaseByIdFn = createServerFn({ method: "GET" })
     let items = [];
     if (fallback?.purchaseItems) {
       try {
-        items = typeof fallback.purchaseItems === "string" ? JSON.parse(fallback.purchaseItems) : fallback.purchaseItems;
+        items =
+          typeof fallback.purchaseItems === "string"
+            ? JSON.parse(fallback.purchaseItems)
+            : fallback.purchaseItems;
       } catch {}
     }
     return { success: true, data: fallback ? { ...fallback, items } : null };
   });
-
 
 const PurchaseItemSchema = z.object({
   productId: z.string(),
@@ -269,7 +289,10 @@ export const createPurchaseFn = createServerFn({ method: "POST" })
                 cost: line.cost.toFixed(2),
               })
               .where(
-                and(eq(schema.products.id, line.productId), eq(schema.products.organizationId, session.orgId)),
+                and(
+                  eq(schema.products.id, line.productId),
+                  eq(schema.products.organizationId, session.orgId),
+                ),
               );
           }
 
@@ -416,7 +439,9 @@ export const updatePurchaseFn = createServerFn({ method: "POST" })
         inMemoryPurchases[orgId][idx] = {
           ...inMemoryPurchases[orgId][idx],
           ...pData,
-          purchaseItems: data.items ? JSON.stringify(data.items) : inMemoryPurchases[orgId][idx].purchaseItems,
+          purchaseItems: data.items
+            ? JSON.stringify(data.items)
+            : inMemoryPurchases[orgId][idx].purchaseItems,
         };
       }
     }
@@ -435,7 +460,9 @@ export const updatePurchaseFn = createServerFn({ method: "POST" })
             due: pData.due !== undefined ? String(pData.due) : undefined,
             purchaseItems: data.items ? JSON.stringify(data.items) : undefined,
           } as any)
-          .where(and(eq(schema.purchases.id, purchaseId), eq(schema.purchases.organizationId, orgId)));
+          .where(
+            and(eq(schema.purchases.id, purchaseId), eq(schema.purchases.organizationId, orgId)),
+          );
       }
       return { success: true };
     } catch (e) {
@@ -572,8 +599,11 @@ export const createPurchaseReturnFn = createServerFn({ method: "POST" })
                   stock: sql`GREATEST(0, ${schema.products.stock} - ${line.quantity})`,
                 })
                 .where(
-                and(eq(schema.products.id, line.productId), eq(schema.products.organizationId, session.orgId)),
-              );
+                  and(
+                    eq(schema.products.id, line.productId),
+                    eq(schema.products.organizationId, session.orgId),
+                  ),
+                );
             }
           }
         }

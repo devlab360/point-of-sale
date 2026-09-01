@@ -4,14 +4,21 @@ import { requireAuth, requireAdmin } from "@/lib/auth-utils";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 import { z } from "zod";
 
-import { db } from "@/db";
-import * as schema from "@/db/schema";
+async function getDb() {
+  const { db } = await import("@/db");
+  const schema = await import("@/db/schema");
+  const { eq } = await import("drizzle-orm");
+  return { db, schema, eq };
+}
 
-const insertSchema = schema.settings
-  ? createInsertSchema(schema.settings).omit({ id: true }).partial()
-  : z.any();
-const updateSchema = schema.settings ? createInsertSchema(schema.settings).partial() : z.any();
-import { eq } from "drizzle-orm";
+async function getSchemas() {
+  const schema = await import("@/db/schema");
+  const insertSchema = schema.settings
+    ? createInsertSchema(schema.settings).omit({ id: true }).partial()
+    : z.any();
+  const updateSchema = schema.settings ? createInsertSchema(schema.settings).partial() : z.any();
+  return { schema, insertSchema, updateSchema };
+}
 
 export const getSettingsFn = createServerFn({ method: "GET" })
   .validator((data: any) => data)
@@ -19,6 +26,7 @@ export const getSettingsFn = createServerFn({ method: "GET" })
     try {
       const session = await requireAuth();
       const orgId = session.orgId;
+      const { db, schema, eq } = await getDb();
       const res = await db
         .select()
         .from(schema.settings)
@@ -38,6 +46,7 @@ export const updateSettingsFn = createServerFn({ method: "POST" })
       const session = await requireAdmin();
       const orgId = session.orgId;
       const payload = data.settings || data.updates || {};
+      const { db, schema, eq } = await getDb();
       const existing = await db
         .select()
         .from(schema.settings)
@@ -68,6 +77,7 @@ export const getAllSaasPlansFn = createServerFn({ method: "GET" })
   .validator((data: any) => data)
   .handler(async () => {
     try {
+      const { db, schema } = await getDb();
       const plans = await db.select().from(schema.saasPlans);
       return { success: true, data: plans };
     } catch (e) {

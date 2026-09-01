@@ -316,7 +316,10 @@ function NewPurchasePage() {
             <h1 className="text-xl sm:text-2xl font-black tracking-tight text-foreground">
               {editId ? "Edit Purchase Order" : "New Inbound Purchase Order"}
             </h1>
-            <Badge variant="outline" className="text-xs font-bold px-2 py-0.5 border-primary/30 text-primary bg-primary/5">
+            <Badge
+              variant="outline"
+              className="text-xs font-bold px-2 py-0.5 border-primary/30 text-primary bg-primary/5"
+            >
               {editId ? `Editing ${existingPurchaseData?.invoiceNo || editId}` : "Stock Inflow"}
             </Badge>
           </div>
@@ -451,7 +454,9 @@ function NewPurchasePage() {
                 <ShoppingBag className="size-4 text-primary" />
                 <div>
                   <h3 className="font-bold text-sm text-foreground">Inbound Stock Items</h3>
-                  <p className="text-[11px] text-muted-foreground">Select products, received quantities, and unit purchase costs.</p>
+                  <p className="text-[11px] text-muted-foreground">
+                    Select products, received quantities, and unit purchase costs.
+                  </p>
                 </div>
               </div>
               <Button
@@ -604,8 +609,9 @@ function NewPurchasePage() {
                   </span>
                 </div>
                 <span
-                  className={`font-black text-base font-mono ${dueVal > 0 ? "text-amber-600 dark:text-amber-400" : "text-success"
-                    }`}
+                  className={`font-black text-base font-mono ${
+                    dueVal > 0 ? "text-amber-600 dark:text-amber-400" : "text-success"
+                  }`}
                 >
                   {formatCurrency(dueVal)}
                 </span>

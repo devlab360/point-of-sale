@@ -37,12 +37,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import {
-  getRentalsFn,
-  createRentalFn,
-  updateRentalStatusFn,
-  deleteRentalFn,
-} from "@/api/rentals";
+import { getRentalsFn, createRentalFn, updateRentalStatusFn, deleteRentalFn } from "@/api/rentals";
 import { getCustomersFn, createCustomerFn } from "@/api/customers";
 import { useCurrency } from "@/lib/currency";
 import {
@@ -77,7 +72,12 @@ function RentalsPage() {
   const orgId = PersistStore.getOrgId() || "default";
   const queryClient = useQueryClient();
 
-  const { data: rentalsData, isLoading, isError, refetch } = useQuery({
+  const {
+    data: rentalsData,
+    isLoading,
+    isError,
+    refetch,
+  } = useQuery({
     queryKey: ["rentals", orgId],
     queryFn: async () => ((await getRentalsFn({ data: {} })) as any)?.data || [],
   });
@@ -312,66 +312,66 @@ function RentalsPage() {
             </div>
           </div>
         )}
-      topContent={
-            <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
-              <div className="rounded-xl border border-border/80 bg-card p-4 sm:p-5 shadow-soft transition-all hover:border-primary/40">
-                <div className="flex items-center justify-between">
-                  <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                    Total Bookings
-                  </p>
-                  <div className="grid size-8 place-items-center rounded-lg bg-primary/10 text-primary">
-                    <KeyRound className="size-4" />
-                  </div>
-                </div>
-                <p className="mt-2 text-xl sm:text-2xl font-black text-foreground">
-                  {metrics.totalCount}
+        topContent={
+          <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+            <div className="rounded-xl border border-border/80 bg-card p-4 sm:p-5 shadow-soft transition-all hover:border-primary/40">
+              <div className="flex items-center justify-between">
+                <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                  Total Bookings
                 </p>
-              </div>
-
-              <div className="rounded-xl border border-border/80 bg-card p-4 sm:p-5 shadow-soft transition-all hover:border-emerald-500/40">
-                <div className="flex items-center justify-between">
-                  <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                    Active Rentals
-                  </p>
-                  <div className="grid size-8 place-items-center rounded-lg bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">
-                    <Package className="size-4" />
-                  </div>
+                <div className="grid size-8 place-items-center rounded-lg bg-primary/10 text-primary">
+                  <KeyRound className="size-4" />
                 </div>
-                <p className="mt-2 text-xl sm:text-2xl font-black text-emerald-600 dark:text-emerald-400">
-                  {metrics.activeCount}
-                </p>
               </div>
-
-              <div className="rounded-xl border border-border/80 bg-card p-4 sm:p-5 shadow-soft transition-all hover:border-blue-500/40">
-                <div className="flex items-center justify-between">
-                  <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                    Daily Rental Revenue
-                  </p>
-                  <div className="grid size-8 place-items-center rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400">
-                    <DollarSign className="size-4" />
-                  </div>
-                </div>
-                <p className="mt-2 text-xl sm:text-2xl font-black text-blue-600 dark:text-blue-400">
-                  {formatCurrency(metrics.totalDailyRevenue)}/day
-                </p>
-              </div>
-
-              <div className="rounded-xl border border-border/80 bg-card p-4 sm:p-5 shadow-soft transition-all hover:border-amber-500/40">
-                <div className="flex items-center justify-between">
-                  <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                    Deposits Held
-                  </p>
-                  <div className="grid size-8 place-items-center rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400">
-                    <ShieldCheck className="size-4" />
-                  </div>
-                </div>
-                <p className="mt-2 text-xl sm:text-2xl font-black text-amber-600 dark:text-amber-400">
-                  {formatCurrency(metrics.totalDeposits)}
-                </p>
-              </div>
+              <p className="mt-2 text-xl sm:text-2xl font-black text-foreground">
+                {metrics.totalCount}
+              </p>
             </div>
-          }
-        >
+
+            <div className="rounded-xl border border-border/80 bg-card p-4 sm:p-5 shadow-soft transition-all hover:border-emerald-500/40">
+              <div className="flex items-center justify-between">
+                <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                  Active Rentals
+                </p>
+                <div className="grid size-8 place-items-center rounded-lg bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">
+                  <Package className="size-4" />
+                </div>
+              </div>
+              <p className="mt-2 text-xl sm:text-2xl font-black text-emerald-600 dark:text-emerald-400">
+                {metrics.activeCount}
+              </p>
+            </div>
+
+            <div className="rounded-xl border border-border/80 bg-card p-4 sm:p-5 shadow-soft transition-all hover:border-blue-500/40">
+              <div className="flex items-center justify-between">
+                <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                  Daily Rental Revenue
+                </p>
+                <div className="grid size-8 place-items-center rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400">
+                  <DollarSign className="size-4" />
+                </div>
+              </div>
+              <p className="mt-2 text-xl sm:text-2xl font-black text-blue-600 dark:text-blue-400">
+                {formatCurrency(metrics.totalDailyRevenue)}/day
+              </p>
+            </div>
+
+            <div className="rounded-xl border border-border/80 bg-card p-4 sm:p-5 shadow-soft transition-all hover:border-amber-500/40">
+              <div className="flex items-center justify-between">
+                <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                  Deposits Held
+                </p>
+                <div className="grid size-8 place-items-center rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400">
+                  <ShieldCheck className="size-4" />
+                </div>
+              </div>
+              <p className="mt-2 text-xl sm:text-2xl font-black text-amber-600 dark:text-amber-400">
+                {formatCurrency(metrics.totalDeposits)}
+              </p>
+            </div>
+          </div>
+        }
+      >
         <div className="space-y-6">
           {/* Table Container */}
           <div className="rounded-xl border border-border bg-card shadow-soft overflow-hidden">
@@ -449,7 +449,9 @@ function RentalsPage() {
                             </TableCell>
                             <TableCell className="text-xs text-muted-foreground whitespace-nowrap font-medium">
                               <div>
-                                <span>{r.rentStartDate ? formatAppDate(r.rentStartDate) : "-"}</span>
+                                <span>
+                                  {r.rentStartDate ? formatAppDate(r.rentStartDate) : "-"}
+                                </span>
                                 <span className="mx-1 text-muted-foreground/60">→</span>
                                 <span className="font-semibold text-foreground">
                                   {r.expectedReturnDate ? formatAppDate(r.expectedReturnDate) : "-"}
@@ -490,7 +492,11 @@ function RentalsPage() {
                                 )}
                                 <DropdownMenu>
                                   <DropdownMenuTrigger asChild>
-                                    <Button variant="ghost" size="icon" className="size-8 rounded-lg">
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="size-8 rounded-lg"
+                                    >
                                       <MoreVertical className="size-4 text-muted-foreground" />
                                     </Button>
                                   </DropdownMenuTrigger>
@@ -531,7 +537,9 @@ function RentalsPage() {
                       >
                         <div className="flex items-start justify-between">
                           <div>
-                            <p className="font-mono text-xs font-bold text-muted-foreground">{r.rentalNo}</p>
+                            <p className="font-mono text-xs font-bold text-muted-foreground">
+                              {r.rentalNo}
+                            </p>
                             <p className="font-bold text-sm text-foreground">{r.customerName}</p>
                             <p className="text-xs text-primary font-semibold">{r.itemName}</p>
                           </div>
@@ -626,12 +634,20 @@ function RentalsPage() {
               Issue tools, event hardware, media equipment, or vehicles with security deposits.
             </p>
           </SheetHeader>
-          <form noValidate onSubmit={handleCreateRental} className="flex flex-col flex-1 overflow-hidden">
+          <form
+            noValidate
+            onSubmit={handleCreateRental}
+            className="flex flex-col flex-1 overflow-hidden"
+          >
             <div className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-4">
               <div className="space-y-1.5">
                 <Label>Customer / Client Name *</Label>
                 <SearchableSelect
-                  options={customers.map((c) => ({ value: c.name, label: c.name, sublabel: c.phone || "" }))}
+                  options={customers.map((c) => ({
+                    value: c.name,
+                    label: c.name,
+                    sublabel: c.phone || "",
+                  }))}
                   value={customerName}
                   onChange={(val) => {
                     setCustomerName(val);

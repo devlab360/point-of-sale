@@ -113,10 +113,7 @@ export const createAppointmentFn = createServerFn({ method: "POST" })
 
     try {
       if (schema.appointments) {
-        const res = await db
-          .insert(schema.appointments)
-          .values(newApt)
-          .returning();
+        const res = await db.insert(schema.appointments).values(newApt).returning();
         return { success: true, data: res[0] || newApt };
       }
     } catch (e) {
@@ -147,10 +144,7 @@ export const updateAppointmentStatusFn = createServerFn({ method: "POST" })
           .update(schema.appointments)
           .set({ status: data.status })
           .where(
-            and(
-              eq(schema.appointments.id, data.id),
-              eq(schema.appointments.organizationId, orgId),
-            ),
+            and(eq(schema.appointments.id, data.id), eq(schema.appointments.organizationId, orgId)),
           )
           .returning();
         return { success: true, data: res[0] };
@@ -175,11 +169,12 @@ export const deleteAppointmentFn = createServerFn({ method: "POST" })
       if (schema.appointments) {
         await db
           .delete(schema.appointments)
-          .where(and(eq(schema.appointments.id, data.id), eq(schema.appointments.organizationId, orgId)));
+          .where(
+            and(eq(schema.appointments.id, data.id), eq(schema.appointments.organizationId, orgId)),
+          );
       }
     } catch (e) {
       console.warn("DB delete appointment fallback:", e);
     }
     return { success: true };
   });
-

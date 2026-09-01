@@ -300,7 +300,6 @@ export const updateSuperAdminProfileAdminFn = createServerFn({ method: "POST" })
     }
   });
 
-
 export const getSuperAdminSessionsFn = createServerFn({ method: "GET" })
   .validator((data: unknown) =>
     z
@@ -572,5 +571,3 @@ export const getActiveBroadcastForStoreFn = createServerFn({ method: "GET" })
       return formatErrorResponse(e);
     }
   });
-
-

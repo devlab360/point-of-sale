@@ -203,4 +203,3 @@ export const deleteRentalFn = createServerFn({ method: "POST" })
       return { success: true };
     }
   });
-

@@ -57,7 +57,8 @@ export function InstallAppButton() {
   }, []);
 
   const handleInstallClick = async () => {
-    const promptEvent = deferredPrompt || (typeof window !== "undefined" ? (window as any).__pwaInstallPrompt : null);
+    const promptEvent =
+      deferredPrompt || (typeof window !== "undefined" ? (window as any).__pwaInstallPrompt : null);
     if (promptEvent) {
       try {
         promptEvent.prompt();
@@ -135,12 +136,14 @@ export function InstallAppButton() {
               <p className="text-muted-foreground">
                 In Safari on iPhone/iPad: Tap <strong>Share (⎋) &rarr; Add to Home Screen</strong>.
                 <br />
-                In Chrome on Android: Tap <strong>Menu (⋮) &rarr; Install app / Add to Home screen</strong>.
+                In Chrome on Android: Tap{" "}
+                <strong>Menu (⋮) &rarr; Install app / Add to Home screen</strong>.
               </p>
             </div>
 
             <div className="flex items-center gap-2 text-success font-semibold pt-1">
-              <CheckCircle className="size-4" /> Works offline & syncs automatically when reconnected!
+              <CheckCircle className="size-4" /> Works offline & syncs automatically when
+              reconnected!
             </div>
           </div>
         </DialogContent>

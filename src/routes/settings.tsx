@@ -67,8 +67,19 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { DEFAULT_PAYMENT_METHODS, PAYMENT_METHOD_ICONS, type PaymentMethodConfig } from "@/lib/payment-methods";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  DEFAULT_PAYMENT_METHODS,
+  PAYMENT_METHOD_ICONS,
+  type PaymentMethodConfig,
+} from "@/lib/payment-methods";
 import { submitPaymentProofFn } from "@/api/subscription-payments";
 import { updateUserFn } from "@/api/users";
 import {
@@ -283,8 +294,12 @@ function SettingsPage() {
         (t: any) =>
           t.name?.toLowerCase().includes(lower) ||
           `${Number(t.rate) || 0}%`.toLowerCase().includes(lower) ||
-          String(t.taxType || "").toLowerCase().includes(lower) ||
-          String(t.description || "").toLowerCase().includes(lower),
+          String(t.taxType || "")
+            .toLowerCase()
+            .includes(lower) ||
+          String(t.description || "")
+            .toLowerCase()
+            .includes(lower),
       );
     }
     return [...list].sort((a: any, b: any) => Number(a.rate || 0) - Number(b.rate || 0));
@@ -447,8 +462,8 @@ function SettingsPage() {
       if (res.success) {
         toast.success(
           "Payment proof submitted successfully! Super Admin will verify UTR: " +
-          paymentForm.utrNumber +
-          " and activate your subscription within 2-4 hours.",
+            paymentForm.utrNumber +
+            " and activate your subscription within 2-4 hours.",
         );
         setSelectedPlanForUpgrade(null);
         setPaymentForm({
@@ -697,7 +712,8 @@ function SettingsPage() {
       timeZone: c.timeZone,
       dateFormat: c.dateFormat,
       taxIdLabel: c.taxIdLabel,
-      standardRate: prev.standardRate === 0 || prev.standardRate === "0" ? c.defaultTaxRate : prev.standardRate,
+      standardRate:
+        prev.standardRate === 0 || prev.standardRate === "0" ? c.defaultTaxRate : prev.standardRate,
     }));
     toast.success(`Applied regional presets for ${c.flag} ${c.name}`);
   };
@@ -705,8 +721,15 @@ function SettingsPage() {
   const parseBankDetails = (str: string) => {
     try {
       if (str && str.trim().startsWith("{")) return JSON.parse(str);
-    } catch (e) { }
-    return { bankName: str || "", holderName: "", accountNo: "", ifscCode: "", iban: "", swiftBic: "" };
+    } catch (e) {}
+    return {
+      bankName: str || "",
+      holderName: "",
+      accountNo: "",
+      ifscCode: "",
+      iban: "",
+      swiftBic: "",
+    };
   };
   const bankInfo = parseBankDetails(settings.bankDetails || "");
   const handleBankChange = (field: string, val: string) => {
@@ -754,7 +777,12 @@ function SettingsPage() {
     handleChange("config", newConfig);
 
     // Auto-persist to DB
-    const orgId = user?.organizationId || dbSettings?.organizationId || settings.organizationId || PersistStore.getOrgId() || "default";
+    const orgId =
+      user?.organizationId ||
+      dbSettings?.organizationId ||
+      settings.organizationId ||
+      PersistStore.getOrgId() ||
+      "default";
     if (orgId) {
       updateSettingsFn({
         data: {
@@ -779,8 +807,7 @@ function SettingsPage() {
       ? [...settings.config.paymentMethods]
       : [...DEFAULT_PAYMENT_METHODS];
     const generatedId =
-      paymentMethodForm.id ||
-      paymentMethodForm.label.toLowerCase().replace(/[^a-z0-9]+/g, "_");
+      paymentMethodForm.id || paymentMethodForm.label.toLowerCase().replace(/[^a-z0-9]+/g, "_");
 
     if (editingPaymentMethodId) {
       const idx = currentList.findIndex((m) => m.id === editingPaymentMethodId);
@@ -814,10 +841,17 @@ function SettingsPage() {
     handleChange("config", newConfig);
     setShowAddPaymentMethodDialog(false);
     setEditingPaymentMethodId(null);
-    toast.success(editingPaymentMethodId ? "Payment method updated" : "Payment method added to checkout");
+    toast.success(
+      editingPaymentMethodId ? "Payment method updated" : "Payment method added to checkout",
+    );
 
     // Auto-persist to DB
-    const orgId = user?.organizationId || dbSettings?.organizationId || settings.organizationId || PersistStore.getOrgId() || "default";
+    const orgId =
+      user?.organizationId ||
+      dbSettings?.organizationId ||
+      settings.organizationId ||
+      PersistStore.getOrgId() ||
+      "default";
     if (orgId) {
       updateSettingsFn({
         data: {
@@ -843,7 +877,12 @@ function SettingsPage() {
     toast.success("Payment method removed");
 
     // Auto-persist to DB
-    const orgId = user?.organizationId || dbSettings?.organizationId || settings.organizationId || PersistStore.getOrgId() || "default";
+    const orgId =
+      user?.organizationId ||
+      dbSettings?.organizationId ||
+      settings.organizationId ||
+      PersistStore.getOrgId() ||
+      "default";
     if (orgId) {
       updateSettingsFn({
         data: {
@@ -942,7 +981,10 @@ function SettingsPage() {
         actions={
           <div className="flex items-center gap-2.5">
             {hasChanges && (
-              <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20 text-xs font-semibold py-1 px-2.5 gap-1.5 animate-pulse hidden sm:flex">
+              <Badge
+                variant="outline"
+                className="bg-primary/10 text-primary border-primary/20 text-xs font-semibold py-1 px-2.5 gap-1.5 animate-pulse hidden sm:flex"
+              >
                 <span className="size-1.5 rounded-full bg-primary" /> Unsaved Changes
               </Badge>
             )}
@@ -995,16 +1037,18 @@ function SettingsPage() {
                   key={item.id}
                   type="button"
                   onClick={() => handleTabChange(item.id)}
-                  className={`w-full text-left flex items-start gap-3 p-3 rounded-xl transition-all duration-200 group relative ${isActive
+                  className={`w-full text-left flex items-start gap-3 p-3 rounded-xl transition-all duration-200 group relative ${
+                    isActive
                       ? "bg-primary text-primary-foreground shadow-soft"
                       : "hover:bg-muted/70 text-foreground"
-                    }`}
+                  }`}
                 >
                   <div
-                    className={`size-8 rounded-lg flex items-center justify-center shrink-0 transition-colors ${isActive
+                    className={`size-8 rounded-lg flex items-center justify-center shrink-0 transition-colors ${
+                      isActive
                         ? "bg-white/20 text-white"
                         : "bg-muted text-muted-foreground group-hover:text-foreground group-hover:bg-card border border-border/50"
-                      }`}
+                    }`}
                   >
                     <Icon className="size-4" />
                   </div>
@@ -1013,20 +1057,22 @@ function SettingsPage() {
                       <span className="text-xs font-bold truncate block">{item.label}</span>
                       {item.badge && (
                         <span
-                          className={`text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded-full ${isActive
+                          className={`text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded-full ${
+                            isActive
                               ? "bg-white/25 text-white"
                               : item.badgeVariant === "destructive"
                                 ? "bg-destructive/10 text-destructive border border-destructive/20"
                                 : "bg-primary/10 text-primary border border-primary/20"
-                            }`}
+                          }`}
                         >
                           {item.badge}
                         </span>
                       )}
                     </div>
                     <span
-                      className={`text-[11px] truncate block mt-0.5 ${isActive ? "text-white/80" : "text-muted-foreground"
-                        }`}
+                      className={`text-[11px] truncate block mt-0.5 ${
+                        isActive ? "text-white/80" : "text-muted-foreground"
+                      }`}
                     >
                       {item.description}
                     </span>
@@ -1038,7 +1084,9 @@ function SettingsPage() {
             {/* Organization Info Footer Card */}
             <div className="mt-4 pt-3 border-t border-border/60 px-3 py-2 bg-muted/30 rounded-xl">
               <div className="flex items-center justify-between">
-                <span className="text-[10px] font-bold text-muted-foreground uppercase">Tenant Code</span>
+                <span className="text-[10px] font-bold text-muted-foreground uppercase">
+                  Tenant Code
+                </span>
                 <button
                   type="button"
                   onClick={() => copyToClipboard(user?.orgId || orgId, "tenant")}
@@ -1074,15 +1122,18 @@ function SettingsPage() {
                   key={item.id}
                   type="button"
                   onClick={() => handleTabChange(item.id)}
-                  className={`shrink-0 flex items-center gap-2 px-3.5 py-2.5 rounded-xl text-xs font-bold border transition-all ${isActive
+                  className={`shrink-0 flex items-center gap-2 px-3.5 py-2.5 rounded-xl text-xs font-bold border transition-all ${
+                    isActive
                       ? "bg-primary text-primary-foreground border-primary shadow-soft"
                       : "bg-card text-foreground border-border/80 hover:bg-muted"
-                    }`}
+                  }`}
                 >
                   <Icon className="size-3.5" />
                   <span>{item.label}</span>
                   {item.badge && (
-                    <span className={`text-[9px] px-1 rounded-full ${isActive ? "bg-white/20 text-white" : "bg-primary/10 text-primary"}`}>
+                    <span
+                      className={`text-[9px] px-1 rounded-full ${isActive ? "bg-white/20 text-white" : "bg-primary/10 text-primary"}`}
+                    >
                       {item.badge}
                     </span>
                   )}
@@ -1126,11 +1177,16 @@ function SettingsPage() {
                     <div className="flex items-center gap-3 text-[11px] text-muted-foreground mt-1.5 font-medium">
                       <span>Phone: {settings.phone || "Not set"}</span>
                       <span>ΓÇó</span>
-                      <span>Currency: {settings.currencySymbol} ({settings.currencyCode})</span>
+                      <span>
+                        Currency: {settings.currencySymbol} ({settings.currencyCode})
+                      </span>
                     </div>
                   </div>
                 </div>
-                <Badge variant="outline" className="bg-success/10 text-success border-success/20 text-xs font-semibold py-1 px-3">
+                <Badge
+                  variant="outline"
+                  className="bg-success/10 text-success border-success/20 text-xs font-semibold py-1 px-3"
+                >
                   <CheckCircle2 className="size-3.5 mr-1" /> Active Store
                 </Badge>
               </div>
@@ -1152,7 +1208,10 @@ function SettingsPage() {
                   />
 
                   <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-                    <Field label="Operating Country / Territory" description="Auto-configures your regional currency, phone prefix, timezone, and tax rules.">
+                    <Field
+                      label="Operating Country / Territory"
+                      description="Auto-configures your regional currency, phone prefix, timezone, and tax rules."
+                    >
                       <SearchableSelect
                         value={settings.country || "US"}
                         onChange={handleCountryChange}
@@ -1163,7 +1222,10 @@ function SettingsPage() {
                       />
                     </Field>
 
-                    <Field label="Store Name" description="The public brand or trading name of your business.">
+                    <Field
+                      label="Store Name"
+                      description="The public brand or trading name of your business."
+                    >
                       <Input
                         value={settings.storeName}
                         onChange={(e) => handleChange("storeName", e.target.value)}
@@ -1172,7 +1234,10 @@ function SettingsPage() {
                       />
                     </Field>
 
-                    <Field label="Tax Registration ID / VAT / GSTIN" description="Printed on receipt header for statutory compliance.">
+                    <Field
+                      label="Tax Registration ID / VAT / GSTIN"
+                      description="Printed on receipt header for statutory compliance."
+                    >
                       <Input
                         value={settings.taxId}
                         onChange={(e) => handleChange("taxId", e.target.value)}
@@ -1180,7 +1245,11 @@ function SettingsPage() {
                       />
                     </Field>
 
-                    <Field label="Physical Store Address" full description="Complete street address, city, state/province, and postal code.">
+                    <Field
+                      label="Physical Store Address"
+                      full
+                      description="Complete street address, city, state/province, and postal code."
+                    >
                       <Input
                         value={settings.address}
                         onChange={(e) => handleChange("address", e.target.value)}
@@ -1188,7 +1257,10 @@ function SettingsPage() {
                       />
                     </Field>
 
-                    <Field label="Store Customer Support Phone" description="Printed on receipts for customer inquiries and returns.">
+                    <Field
+                      label="Store Customer Support Phone"
+                      description="Printed on receipts for customer inquiries and returns."
+                    >
                       <PhoneInput
                         value={settings.phone}
                         countryCallingCode={settings.countryCode}
@@ -1198,7 +1270,10 @@ function SettingsPage() {
                       />
                     </Field>
 
-                    <Field label="Registered Account Email (Read-Only)" description="Primary authentication login email.">
+                    <Field
+                      label="Registered Account Email (Read-Only)"
+                      description="Primary authentication login email."
+                    >
                       <Input
                         value={settings.email}
                         readOnly
@@ -1207,7 +1282,10 @@ function SettingsPage() {
                       />
                     </Field>
 
-                    <Field label="Business Industry & Template" description="Enables industry-tailored navigation items and POS layouts.">
+                    <Field
+                      label="Business Industry & Template"
+                      description="Enables industry-tailored navigation items and POS layouts."
+                    >
                       <SearchableSelect
                         value={settings.businessType || "UNIVERSAL"}
                         onChange={(val) => handleChange("businessType", val)}
@@ -1228,7 +1306,10 @@ function SettingsPage() {
                 desc="Configure currency display symbol, accounting timezone, and date presentation format for your jurisdiction."
               >
                 <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-                  <Field label={t("currency") || "Currency Preset"} description="Quick select standard world currencies (60+ supported).">
+                  <Field
+                    label={t("currency") || "Currency Preset"}
+                    description="Quick select standard world currencies (60+ supported)."
+                  >
                     <SearchableSelect
                       value={settings.currencyCode || "USD"}
                       onChange={(val) => {
@@ -1245,7 +1326,10 @@ function SettingsPage() {
                     />
                   </Field>
 
-                  <Field label="Custom Currency Symbol" description="Symbol rendered beside all price figures across POS and receipts.">
+                  <Field
+                    label="Custom Currency Symbol"
+                    description="Symbol rendered beside all price figures across POS and receipts."
+                  >
                     <Input
                       className="font-bold text-base"
                       value={settings.currencySymbol || "$"}
@@ -1254,7 +1338,10 @@ function SettingsPage() {
                     />
                   </Field>
 
-                  <Field label="Operational Time Zone" description="Determines timestamps on invoices and sales reports.">
+                  <Field
+                    label="Operational Time Zone"
+                    description="Determines timestamps on invoices and sales reports."
+                  >
                     <SearchableSelect
                       value={settings.timeZone || "UTC"}
                       onChange={(val) => handleChange("timeZone", val)}
@@ -1263,7 +1350,10 @@ function SettingsPage() {
                     />
                   </Field>
 
-                  <Field label="Display Date Format" description="Format used across sales reports, invoices, and logs.">
+                  <Field
+                    label="Display Date Format"
+                    description="Format used across sales reports, invoices, and logs."
+                  >
                     <SearchableSelect
                       value={settings.dateFormat || "dd MMM yyyy"}
                       onChange={(val) => handleChange("dateFormat", val)}
@@ -1271,7 +1361,10 @@ function SettingsPage() {
                     />
                   </Field>
 
-                  <Field label="Display Time Format" description="Format used for timestamps across checkout, receipts, and logs.">
+                  <Field
+                    label="Display Time Format"
+                    description="Format used for timestamps across checkout, receipts, and logs."
+                  >
                     <SearchableSelect
                       value={(settings.config as any)?.timeFormat || settings.timeFormat || "12h"}
                       onChange={(val) => {
@@ -1306,7 +1399,10 @@ function SettingsPage() {
                           {user?.name || "Admin"} ({user?.email})
                         </p>
                         <p className="text-[11px] text-muted-foreground">
-                          Logged in Role: <span className="uppercase font-bold text-primary">{user?.role || "admin"}</span>
+                          Logged in Role:{" "}
+                          <span className="uppercase font-bold text-primary">
+                            {user?.role || "admin"}
+                          </span>
                         </p>
                       </div>
                     </div>
@@ -1318,7 +1414,8 @@ function SettingsPage() {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                     <div className="sm:col-span-2 space-y-1.5">
                       <Label className="text-xs font-bold">
-                        Current Password / PIN (Verification Required) <span className="text-destructive">*</span>
+                        Current Password / PIN (Verification Required){" "}
+                        <span className="text-destructive">*</span>
                       </Label>
                       <PasswordInput
                         value={passForm.currentPassword}
@@ -1363,7 +1460,9 @@ function SettingsPage() {
                         className={`bg-background ${secErrors.confirmPassword ? "border-destructive focus-visible:ring-destructive" : ""}`}
                       />
                       {passForm.newPassword && passForm.confirmPassword && (
-                        <p className={`text-[11px] font-medium flex items-center gap-1 mt-1 ${passForm.newPassword === passForm.confirmPassword ? "text-success" : "text-destructive"}`}>
+                        <p
+                          className={`text-[11px] font-medium flex items-center gap-1 mt-1 ${passForm.newPassword === passForm.confirmPassword ? "text-success" : "text-destructive"}`}
+                        >
                           {passForm.newPassword === passForm.confirmPassword ? (
                             <>
                               <CheckCircle2 className="size-3" /> Passwords match
@@ -1385,7 +1484,8 @@ function SettingsPage() {
                             <Key className="size-4 text-primary" /> POS Cashier Quick Access PIN
                           </Label>
                           <p className="text-[11px] text-muted-foreground mt-0.5">
-                            4-digit numeric code used for fast cashier switching on the POS checkout screen.
+                            4-digit numeric code used for fast cashier switching on the POS checkout
+                            screen.
                           </p>
                         </div>
                         <div className="flex items-center gap-2">
@@ -1394,7 +1494,10 @@ function SettingsPage() {
                             maxLength={4}
                             value={passForm.newPin}
                             onChange={(e) =>
-                              setPassForm((p) => ({ ...p, newPin: e.target.value.replace(/\D/g, "") }))
+                              setPassForm((p) => ({
+                                ...p,
+                                newPin: e.target.value.replace(/\D/g, ""),
+                              }))
                             }
                             placeholder="1234"
                             className="w-28 font-mono text-center tracking-widest text-lg font-bold bg-background h-10"
@@ -1476,7 +1579,11 @@ function SettingsPage() {
                                     Trial Expired ΓÇó Please upgrade to continue
                                   </span>
                                 );
-                              return <span className="font-semibold text-foreground">{days} days remaining in trial</span>;
+                              return (
+                                <span className="font-semibold text-foreground">
+                                  {days} days remaining in trial
+                                </span>
+                              );
                             })()}
                           </div>
                         ) : (
@@ -1489,7 +1596,8 @@ function SettingsPage() {
 
                     <div className="text-left sm:text-right border-t sm:border-t-0 pt-3 sm:pt-0 border-border/60">
                       <div className="text-2xl font-black text-primary">
-                        {settings?.currencySymbol || "$"}{saasPlan?.price || 0}
+                        {settings?.currencySymbol || "$"}
+                        {saasPlan?.price || 0}
                         <span className="text-xs font-normal text-muted-foreground"> / month</span>
                       </div>
                       <p className="text-[11px] text-muted-foreground font-mono mt-0.5">
@@ -1504,9 +1612,12 @@ function SettingsPage() {
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h3 className="text-base font-black text-foreground tracking-tight">Available Subscription Plans</h3>
+                    <h3 className="text-base font-black text-foreground tracking-tight">
+                      Available Subscription Plans
+                    </h3>
                     <p className="text-xs text-muted-foreground">
-                      Upgrade or renew your plan. Submissions are verified manually via UPI QR or Bank Transfer.
+                      Upgrade or renew your plan. Submissions are verified manually via UPI QR or
+                      Bank Transfer.
                     </p>
                   </div>
                 </div>
@@ -1536,10 +1647,11 @@ function SettingsPage() {
                       return (
                         <div
                           key={plan.id}
-                          className={`rounded-2xl border p-5 flex flex-col justify-between relative transition-all bg-card shadow-card hover:shadow-card-hover ${isCurrent
+                          className={`rounded-2xl border p-5 flex flex-col justify-between relative transition-all bg-card shadow-card hover:shadow-card-hover ${
+                            isCurrent
                               ? "border-primary ring-2 ring-primary/20 bg-gradient-to-b from-primary/5 to-card"
                               : "border-border/80 hover:border-primary/40"
-                            }`}
+                          }`}
                         >
                           {isCurrent && (
                             <Badge className="absolute -top-2.5 right-4 bg-primary text-primary-foreground text-[10px] font-bold">
@@ -1548,9 +1660,12 @@ function SettingsPage() {
                           )}
                           <div className="space-y-4">
                             <div>
-                              <h4 className="font-extrabold text-base text-foreground">{plan.name}</h4>
+                              <h4 className="font-extrabold text-base text-foreground">
+                                {plan.name}
+                              </h4>
                               <div className="text-2xl font-black mt-1 text-primary">
-                                {settings?.currencySymbol || "$"}{plan.price}{" "}
+                                {settings?.currencySymbol || "$"}
+                                {plan.price}{" "}
                                 <span className="text-xs font-normal text-muted-foreground">
                                   / month
                                 </span>
@@ -1561,19 +1676,27 @@ function SettingsPage() {
                               <div className="space-y-2 py-3 border-t border-b border-border/60 text-xs">
                                 <div className="flex justify-between text-muted-foreground">
                                   <span>Max Users:</span>
-                                  <span className="font-bold text-foreground">{plan.limits.maxUsers}</span>
+                                  <span className="font-bold text-foreground">
+                                    {plan.limits.maxUsers}
+                                  </span>
                                 </div>
                                 <div className="flex justify-between text-muted-foreground">
                                   <span>Max Products:</span>
-                                  <span className="font-bold text-foreground">{plan.limits.maxProducts}</span>
+                                  <span className="font-bold text-foreground">
+                                    {plan.limits.maxProducts}
+                                  </span>
                                 </div>
                                 <div className="flex justify-between text-muted-foreground">
                                   <span>Max Branches:</span>
-                                  <span className="font-bold text-foreground">{plan.limits.maxBranches}</span>
+                                  <span className="font-bold text-foreground">
+                                    {plan.limits.maxBranches}
+                                  </span>
                                 </div>
                                 <div className="flex justify-between text-muted-foreground">
                                   <span>Invoices/Month:</span>
-                                  <span className="font-bold text-foreground">{plan.limits.maxInvoicesPerMonth}</span>
+                                  <span className="font-bold text-foreground">
+                                    {plan.limits.maxInvoicesPerMonth}
+                                  </span>
                                 </div>
                               </div>
                             )}
@@ -1584,7 +1707,11 @@ function SettingsPage() {
                               </span>
                               <div className="flex flex-wrap gap-1 max-h-24 overflow-y-auto pr-1">
                                 {((plan.features as string[]) || []).map((f: string) => (
-                                  <Badge key={f} variant="secondary" className="text-[10px] bg-muted/80">
+                                  <Badge
+                                    key={f}
+                                    variant="secondary"
+                                    className="text-[10px] bg-muted/80"
+                                  >
                                     {f.replace("/", "").toUpperCase() || "CORE"}
                                   </Badge>
                                 ))}
@@ -1744,7 +1871,8 @@ function SettingsPage() {
                           No custom payment methods added
                         </p>
                         <p className="text-xs text-muted-foreground max-w-sm mx-auto">
-                          Need localized methods like bKash, Nagad, Rocket, Bank Wire, or Store Voucher? Click &quot;Add Payment Method&quot; above.
+                          Need localized methods like bKash, Nagad, Rocket, Bank Wire, or Store
+                          Voucher? Click &quot;Add Payment Method&quot; above.
                         </p>
                       </div>
                     ) : (
@@ -1870,7 +1998,8 @@ function SettingsPage() {
                       />
                     </div>
                     <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                      <span className="font-semibold">{filteredTaxMasters.length}</span> slabs configured
+                      <span className="font-semibold">{filteredTaxMasters.length}</span> slabs
+                      configured
                     </div>
                   </div>
 
@@ -1884,7 +2013,12 @@ function SettingsPage() {
                         </p>
                       </div>
                       <div className="flex items-center justify-center gap-2 pt-1">
-                        <Button variant="outline" size="sm" onClick={() => setTaxTemplateModalOpen(true)} className="text-xs gap-1">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setTaxTemplateModalOpen(true)}
+                          className="text-xs gap-1"
+                        >
                           <Globe className="size-3" /> Load Presets
                         </Button>
                         <Button size="sm" onClick={openNewTax} className="text-xs gap-1">
@@ -1909,7 +2043,10 @@ function SettingsPage() {
                           </TableHeader>
                           <TableBody>
                             {filteredTaxMasters.map((tm: any) => (
-                              <TableRow key={tm.id} className="hover:bg-muted/30 transition-colors text-xs">
+                              <TableRow
+                                key={tm.id}
+                                className="hover:bg-muted/30 transition-colors text-xs"
+                              >
                                 <TableCell>
                                   <div>
                                     <span className="font-bold text-foreground">{tm.name}</span>
@@ -1926,7 +2063,10 @@ function SettingsPage() {
                                   </Badge>
                                 </TableCell>
                                 <TableCell>
-                                  <Badge variant="outline" className="text-[10px] font-semibold uppercase">
+                                  <Badge
+                                    variant="outline"
+                                    className="text-[10px] font-semibold uppercase"
+                                  >
                                     {tm.taxType === "sales_tax" ? "Sales Tax" : tm.taxType || "gst"}
                                   </Badge>
                                 </TableCell>
@@ -1937,9 +2077,13 @@ function SettingsPage() {
                                       {tm.sgstRate != null ? `${tm.sgstRate}%` : "auto"} SGST
                                     </span>
                                   ) : tm.taxType === "exempt" ? (
-                                    <span className="text-[11px] text-muted-foreground">0% Exempt</span>
+                                    <span className="text-[11px] text-muted-foreground">
+                                      0% Exempt
+                                    </span>
                                   ) : (
-                                    <span className="text-[11px] text-muted-foreground">Single rate ({tm.rate}%)</span>
+                                    <span className="text-[11px] text-muted-foreground">
+                                      Single rate ({tm.rate}%)
+                                    </span>
                                   )}
                                 </TableCell>
                                 <TableCell>
@@ -2001,7 +2145,10 @@ function SettingsPage() {
               >
                 <div className="space-y-6">
                   <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-                    <Field label="Statutory Tax Label (Receipts & Invoices)" description="Printed as header label before your Tax ID (e.g. VAT No., GSTIN, TRN, CIF, RFC).">
+                    <Field
+                      label="Statutory Tax Label (Receipts & Invoices)"
+                      description="Printed as header label before your Tax ID (e.g. VAT No., GSTIN, TRN, CIF, RFC)."
+                    >
                       <Input
                         className="font-semibold"
                         value={settings.taxIdLabel || "VAT / Tax ID"}
@@ -2038,7 +2185,10 @@ function SettingsPage() {
                       </Select>
                     </Field>
 
-                    <Field label="Standard Fallback Tax Rate (%)" description="Default percentage applied when no specific tax slab is linked.">
+                    <Field
+                      label="Standard Fallback Tax Rate (%)"
+                      description="Default percentage applied when no specific tax slab is linked."
+                    >
                       <Input
                         type="number"
                         step="0.1"
@@ -2046,12 +2196,17 @@ function SettingsPage() {
                         max="100"
                         className="font-bold text-base"
                         value={settings.standardRate}
-                        onChange={(e) => handleChange("standardRate", parseFloat(e.target.value) || 0)}
+                        onChange={(e) =>
+                          handleChange("standardRate", parseFloat(e.target.value) || 0)
+                        }
                         placeholder="e.g. 5, 10, 15, 18, 20"
                       />
                     </Field>
 
-                    <Field label="Reduced / Concession Rate (%)" description="Lower tax bracket for essential foodstuffs, books, or medicines.">
+                    <Field
+                      label="Reduced / Concession Rate (%)"
+                      description="Lower tax bracket for essential foodstuffs, books, or medicines."
+                    >
                       <Input
                         type="number"
                         step="0.1"
@@ -2059,7 +2214,9 @@ function SettingsPage() {
                         max="100"
                         className="font-bold text-base"
                         value={settings.reducedRate}
-                        onChange={(e) => handleChange("reducedRate", parseFloat(e.target.value) || 0)}
+                        onChange={(e) =>
+                          handleChange("reducedRate", parseFloat(e.target.value) || 0)
+                        }
                         placeholder="e.g. 0 or 5"
                       />
                     </Field>
@@ -2087,7 +2244,10 @@ function SettingsPage() {
 
                     {settings.enableGST && (
                       <>
-                        <Field label="GSTIN / VAT Identification Number" description="15-character statutory tax registration number.">
+                        <Field
+                          label="GSTIN / VAT Identification Number"
+                          description="15-character statutory tax registration number."
+                        >
                           <Input
                             placeholder="e.g. 29ABCDE1234F1Z5"
                             value={settings.gstin || ""}
@@ -2095,7 +2255,10 @@ function SettingsPage() {
                             className="font-mono"
                           />
                         </Field>
-                        <Field label="State / Jurisdiction Code" description="e.g. 29 for Karnataka, 19 for West Bengal.">
+                        <Field
+                          label="State / Jurisdiction Code"
+                          description="e.g. 29 for Karnataka, 19 for West Bengal."
+                        >
                           <Input
                             placeholder="e.g. 29"
                             value={settings.stateCode || ""}
@@ -2122,7 +2285,10 @@ function SettingsPage() {
                           : `Tax-Exclusive: Shelf Price ${settings.currencySymbol || "$"}100.00 + Tax (${settings.standardRate}%): ${settings.currencySymbol || "$"}${((100 * (Number(settings.standardRate) || 0)) / 100).toFixed(2)} ΓåÆ Total: ${settings.currencySymbol || "$"}${(100 + (100 * (Number(settings.standardRate) || 0)) / 100).toFixed(2)}`}
                       </p>
                     </div>
-                    <Badge variant="outline" className="bg-card border-primary/40 text-primary text-xs font-black shrink-0 py-1 px-3">
+                    <Badge
+                      variant="outline"
+                      className="bg-card border-primary/40 text-primary text-xs font-black shrink-0 py-1 px-3"
+                    >
                       {settings.standardRate}% Rate Active
                     </Badge>
                   </div>
@@ -2135,7 +2301,8 @@ function SettingsPage() {
                   <SheetHeader>
                     <SheetTitle>{editingTax ? "Edit Tax Rate" : "Add Tax Rate"}</SheetTitle>
                     <SheetDescription>
-                      Configure custom tax items and rules applied dynamically to products and POS transactions.
+                      Configure custom tax items and rules applied dynamically to products and POS
+                      transactions.
                     </SheetDescription>
                   </SheetHeader>
                   <div className="space-y-4 py-4">
@@ -2218,7 +2385,8 @@ function SettingsPage() {
                           />
                         </div>
                         <p className="col-span-3 text-[10px] text-muted-foreground">
-                          Leave empty to auto-split rate (50% CGST + 50% SGST) for intra-state sales.
+                          Leave empty to auto-split rate (50% CGST + 50% SGST) for intra-state
+                          sales.
                         </p>
                       </div>
                     )}
@@ -2277,7 +2445,8 @@ function SettingsPage() {
                       <Sparkles className="size-5 text-primary" /> Import Country Tax Presets
                     </DialogTitle>
                     <DialogDescription>
-                      Instantly import standard official statutory tax slabs and rules for your country.
+                      Instantly import standard official statutory tax slabs and rules for your
+                      country.
                     </DialogDescription>
                   </DialogHeader>
                   <div className="space-y-4 py-2">
@@ -2291,13 +2460,25 @@ function SettingsPage() {
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="GB">≡ƒç¼≡ƒçº United Kingdom (Standard VAT 20%, 5%, 0%)</SelectItem>
-                          <SelectItem value="US">≡ƒç║≡ƒç╕ United States (Sales Tax 7.5%, 8.25%, 10%)</SelectItem>
-                          <SelectItem value="AE">≡ƒçª≡ƒç¬ United Arab Emirates (VAT 5%, 0%)</SelectItem>
-                          <SelectItem value="SA">≡ƒç╕≡ƒçª Saudi Arabia (ZATCA VAT 15%, 0%)</SelectItem>
-                          <SelectItem value="CA">≡ƒç¿≡ƒçª Canada (GST / HST / PST 5%, 13%, 12%)</SelectItem>
+                          <SelectItem value="GB">
+                            ≡ƒç¼≡ƒçº United Kingdom (Standard VAT 20%, 5%, 0%)
+                          </SelectItem>
+                          <SelectItem value="US">
+                            ≡ƒç║≡ƒç╕ United States (Sales Tax 7.5%, 8.25%, 10%)
+                          </SelectItem>
+                          <SelectItem value="AE">
+                            ≡ƒçª≡ƒç¬ United Arab Emirates (VAT 5%, 0%)
+                          </SelectItem>
+                          <SelectItem value="SA">
+                            ≡ƒç╕≡ƒçª Saudi Arabia (ZATCA VAT 15%, 0%)
+                          </SelectItem>
+                          <SelectItem value="CA">
+                            ≡ƒç¿≡ƒçª Canada (GST / HST / PST 5%, 13%, 12%)
+                          </SelectItem>
                           <SelectItem value="AU">≡ƒçª≡ƒç║ Australia (GST 10%, 0%)</SelectItem>
-                          <SelectItem value="IN">≡ƒç«≡ƒç│ India (GST 0%, 5%, 12%, 18%, 28%)</SelectItem>
+                          <SelectItem value="IN">
+                            ≡ƒç«≡ƒç│ India (GST 0%, 5%, 12%, 18%, 28%)
+                          </SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -2345,8 +2526,8 @@ function SettingsPage() {
                   <DialogHeader>
                     <DialogTitle>Delete Tax Rate?</DialogTitle>
                     <DialogDescription>
-                      This will permanently remove this tax rate slab. Products currently using it will fall back to
-                      their standard saved rate. This action cannot be undone.
+                      This will permanently remove this tax rate slab. Products currently using it
+                      will fall back to their standard saved rate. This action cannot be undone.
                     </DialogDescription>
                   </DialogHeader>
                   <DialogFooter>
@@ -2358,7 +2539,9 @@ function SettingsPage() {
                       onClick={() => taxDeleteId && deleteTaxMutation.mutate(taxDeleteId)}
                       disabled={deleteTaxMutation.isPending}
                     >
-                      {deleteTaxMutation.isPending && <Loader2 className="size-4 mr-1 animate-spin" />}
+                      {deleteTaxMutation.isPending && (
+                        <Loader2 className="size-4 mr-1 animate-spin" />
+                      )}
                       Delete Tax Rate
                     </Button>
                   </DialogFooter>
@@ -2384,7 +2567,10 @@ function SettingsPage() {
                     >
                       <div className="space-y-5">
                         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                          <Field label="Header Greeting Note" description="Printed right below your store logo.">
+                          <Field
+                            label="Header Greeting Note"
+                            description="Printed right below your store logo."
+                          >
                             <Input
                               value={settings.headerNote}
                               onChange={(e) => handleChange("headerNote", e.target.value)}
@@ -2392,7 +2578,10 @@ function SettingsPage() {
                             />
                           </Field>
 
-                          <Field label="Footer Thank You Note" description="Printed at the bottom of the receipt.">
+                          <Field
+                            label="Footer Thank You Note"
+                            description="Printed at the bottom of the receipt."
+                          >
                             <Input
                               value={settings.footerNote}
                               onChange={(e) => handleChange("footerNote", e.target.value)}
@@ -2409,7 +2598,8 @@ function SettingsPage() {
                                 Bank Wire & Settlement Info (International)
                               </h4>
                               <p className="text-[11px] text-muted-foreground mt-0.5">
-                                Printed on corporate A4 invoices for direct bank transfers (supports IBAN, SWIFT/BIC).
+                                Printed on corporate A4 invoices for direct bank transfers (supports
+                                IBAN, SWIFT/BIC).
                               </p>
                             </div>
                             <Landmark className="size-4 text-primary" />
@@ -2455,7 +2645,11 @@ function SettingsPage() {
                           </div>
                         </div>
 
-                        <Field label="UPI Handle / Payment Address" full description="Generates a scannable payment QR on thermal bill slips.">
+                        <Field
+                          label="UPI Handle / Payment Address"
+                          full
+                          description="Generates a scannable payment QR on thermal bill slips."
+                        >
                           <Input
                             placeholder="e.g. storename@okaxis"
                             value={settings.upiId || ""}
@@ -2502,7 +2696,9 @@ function SettingsPage() {
                           <ToggleRow
                             label="Print store logo"
                             on={settings.printStoreLogo}
-                            onChange={() => handleChange("printStoreLogo", !settings.printStoreLogo)}
+                            onChange={() =>
+                              handleChange("printStoreLogo", !settings.printStoreLogo)
+                            }
                           />
                         </div>
                       </div>
@@ -2518,26 +2714,30 @@ function SettingsPage() {
                     <SettingsCard
                       icon={Eye}
                       title="Live Visual Studio"
-                      desc={previewFormat === "thermal" ? "Thermal Slip (80mm)" : "Standard A4 Invoice"}
+                      desc={
+                        previewFormat === "thermal" ? "Thermal Slip (80mm)" : "Standard A4 Invoice"
+                      }
                       headerRight={
                         <div className="flex bg-muted/80 rounded-xl p-1 border border-border/60">
                           <button
                             type="button"
                             onClick={() => setPreviewFormat("thermal")}
-                            className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${previewFormat === "thermal"
+                            className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${
+                              previewFormat === "thermal"
                                 ? "bg-card shadow-soft text-primary"
                                 : "text-muted-foreground hover:text-foreground"
-                              }`}
+                            }`}
                           >
                             80mm Thermal
                           </button>
                           <button
                             type="button"
                             onClick={() => setPreviewFormat("a4")}
-                            className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${previewFormat === "a4"
+                            className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${
+                              previewFormat === "a4"
                                 ? "bg-card shadow-soft text-primary"
                                 : "text-muted-foreground hover:text-foreground"
-                              }`}
+                            }`}
                           >
                             A4 Invoice
                           </button>
@@ -2628,14 +2828,18 @@ function SettingsPage() {
                 <div className="space-y-5">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="p-4 rounded-xl border border-border/80 bg-muted/20 space-y-1">
-                      <span className="text-[11px] font-bold text-muted-foreground uppercase">Cloud Sync Status</span>
+                      <span className="text-[11px] font-bold text-muted-foreground uppercase">
+                        Cloud Sync Status
+                      </span>
                       <p className="text-sm font-bold text-success flex items-center gap-1.5">
                         <CheckCircle2 className="size-4" /> Real-time Cloud Connected
                       </p>
                     </div>
 
                     <div className="p-4 rounded-xl border border-border/80 bg-muted/20 space-y-1">
-                      <span className="text-[11px] font-bold text-muted-foreground uppercase">Active Tenant Org</span>
+                      <span className="text-[11px] font-bold text-muted-foreground uppercase">
+                        Active Tenant Org
+                      </span>
                       <p className="text-sm font-mono font-bold text-foreground">
                         {user?.orgId || orgId}
                       </p>
@@ -2644,12 +2848,19 @@ function SettingsPage() {
 
                   <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-5 border border-destructive/20 bg-destructive/5 rounded-2xl gap-4">
                     <div>
-                      <h4 className="font-bold text-destructive text-sm">Wipe Local Database Cache</h4>
+                      <h4 className="font-bold text-destructive text-sm">
+                        Wipe Local Database Cache
+                      </h4>
                       <p className="text-xs text-muted-foreground mt-0.5">
                         Clear offline product catalog, cache caches, and temporary sales drafts.
                       </p>
                     </div>
-                    <Button variant="destructive" size="sm" onClick={() => setConfirmReset(true)} className="font-bold text-xs shadow-soft shrink-0">
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => setConfirmReset(true)}
+                      className="font-bold text-xs shadow-soft shrink-0"
+                    >
                       <Trash2 className="size-3.5 mr-1.5" /> Reset Cache
                     </Button>
                   </div>
@@ -2701,7 +2912,8 @@ function SettingsPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Reset Local Data Cache?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will safely clear temporary offline cache and reload your settings from the cloud database.
+              This will safely clear temporary offline cache and reload your settings from the cloud
+              database.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -2775,9 +2987,7 @@ function SettingsPage() {
             {/* QR Code and Bank Details Grid */}
             <div className="grid grid-cols-1 md:grid-cols-[30%_70%] gap-5 p-4 border border-border/80 rounded-2xl bg-muted/20">
               <div className="flex flex-col items-center justify-center p-3 bg-card rounded-xl border shadow-soft text-center">
-                <span className="text-xs font-bold mb-2 text-foreground">
-                  Scan QR
-                </span>
+                <span className="text-xs font-bold mb-2 text-foreground">Scan QR</span>
                 {paymentConfig?.qrCodeUrl ? (
                   <img
                     src={paymentConfig.qrCodeUrl}
@@ -2789,9 +2999,7 @@ function SettingsPage() {
                     No QR Configured
                   </div>
                 )}
-                <span className="text-[10px] text-muted-foreground mt-2">
-                  UPI, GPay, PhonePe
-                </span>
+                <span className="text-[10px] text-muted-foreground mt-2">UPI, GPay, PhonePe</span>
               </div>
 
               <div className="space-y-2.5 text-xs flex flex-col justify-center">
@@ -2817,11 +3025,15 @@ function SettingsPage() {
                 <div className="grid grid-cols-2 gap-2">
                   <div>
                     <span className="text-muted-foreground block text-[10px]">IFSC Code</span>
-                    <span className="font-mono font-bold">{paymentConfig?.ifscCode || "HDFC0001234"}</span>
+                    <span className="font-mono font-bold">
+                      {paymentConfig?.ifscCode || "HDFC0001234"}
+                    </span>
                   </div>
                   <div>
                     <span className="text-muted-foreground block text-[10px]">UPI ID</span>
-                    <span className="font-mono font-bold">{paymentConfig?.upiId || "pos@hdfc"}</span>
+                    <span className="font-mono font-bold">
+                      {paymentConfig?.upiId || "pos@hdfc"}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -2867,10 +3079,11 @@ function SettingsPage() {
                       <div
                         key={method.id}
                         onClick={() => setPaymentForm({ ...paymentForm, paymentMethod: method.id })}
-                        className={`cursor-pointer rounded-xl border p-3 flex flex-col items-center justify-center text-center transition-all select-none ${isSelected
+                        className={`cursor-pointer rounded-xl border p-3 flex flex-col items-center justify-center text-center transition-all select-none ${
+                          isSelected
                             ? "border-primary bg-primary/10 shadow-soft ring-2 ring-primary/20 text-primary font-bold"
                             : "border-border/80 bg-card hover:bg-muted/50 text-foreground"
-                          }`}
+                        }`}
                       >
                         <Icon
                           className={`size-4 mb-1.5 ${isSelected ? "text-primary" : "text-muted-foreground"}`}
@@ -2890,9 +3103,12 @@ function SettingsPage() {
                 <div className="p-3.5 rounded-2xl border bg-muted/20 space-y-2 text-xs">
                   <div className="flex items-center justify-between">
                     <div>
-                      <span className="font-bold text-foreground block">Additional Staff User Seats</span>
+                      <span className="font-bold text-foreground block">
+                        Additional Staff User Seats
+                      </span>
                       <span className="text-[11px] text-muted-foreground">
-                        +Γé╣{selectedPlanForUpgrade.perExtraUserPrice}/seat/mo (Base plan includes {selectedPlanForUpgrade.limits?.maxUsers || 5} users)
+                        +Γé╣{selectedPlanForUpgrade.perExtraUserPrice}/seat/mo (Base plan includes{" "}
+                        {selectedPlanForUpgrade.limits?.maxUsers || 5} users)
                       </span>
                     </div>
                     <div className="flex items-center gap-2">
@@ -2902,17 +3118,26 @@ function SettingsPage() {
                         variant="outline"
                         className="size-7 p-0 rounded-lg"
                         disabled={paymentForm.extraSeats <= 0}
-                        onClick={() => setPaymentForm({ ...paymentForm, extraSeats: Math.max(0, paymentForm.extraSeats - 1) })}
+                        onClick={() =>
+                          setPaymentForm({
+                            ...paymentForm,
+                            extraSeats: Math.max(0, paymentForm.extraSeats - 1),
+                          })
+                        }
                       >
                         -
                       </Button>
-                      <span className="font-mono font-bold text-sm w-6 text-center">{paymentForm.extraSeats}</span>
+                      <span className="font-mono font-bold text-sm w-6 text-center">
+                        {paymentForm.extraSeats}
+                      </span>
                       <Button
                         type="button"
                         size="sm"
                         variant="outline"
                         className="size-7 p-0 rounded-lg"
-                        onClick={() => setPaymentForm({ ...paymentForm, extraSeats: paymentForm.extraSeats + 1 })}
+                        onClick={() =>
+                          setPaymentForm({ ...paymentForm, extraSeats: paymentForm.extraSeats + 1 })
+                        }
                       >
                         +
                       </Button>
@@ -2922,7 +3147,9 @@ function SettingsPage() {
                     <div className="flex justify-between items-center pt-2 border-t border-border/40 text-[11px]">
                       <span className="text-muted-foreground">Total Staff Capacity:</span>
                       <span className="font-bold text-primary">
-                        {(selectedPlanForUpgrade.limits?.maxUsers || 5) + paymentForm.extraSeats} Users ({selectedPlanForUpgrade.limits?.maxUsers || 5} included + {paymentForm.extraSeats} extra)
+                        {(selectedPlanForUpgrade.limits?.maxUsers || 5) + paymentForm.extraSeats}{" "}
+                        Users ({selectedPlanForUpgrade.limits?.maxUsers || 5} included +{" "}
+                        {paymentForm.extraSeats} extra)
                       </span>
                     </div>
                   )}
@@ -2975,7 +3202,9 @@ function SettingsPage() {
               </div>
 
               <div>
-                <Label className="text-xs font-bold">Sender Note / Bank Account Name (Optional)</Label>
+                <Label className="text-xs font-bold">
+                  Sender Note / Bank Account Name (Optional)
+                </Label>
                 <Input
                   value={paymentForm.note}
                   onChange={(e) => setPaymentForm({ ...paymentForm, note: e.target.value })}
@@ -3029,13 +3258,18 @@ function SettingsPage() {
                     {editingPaymentMethodId ? "Edit Payment Method" : "Add Custom Payment Method"}
                   </SheetTitle>
                   <SheetDescription className="text-xs text-muted-foreground mt-0.5">
-                    Configure a digital wallet, bank transfer, or custom checkout option for your POS terminal.
+                    Configure a digital wallet, bank transfer, or custom checkout option for your
+                    POS terminal.
                   </SheetDescription>
                 </div>
               </div>
             </SheetHeader>
 
-            <form id="payment-method-drawer-form" onSubmit={handleSavePaymentMethod} className="space-y-5 pt-1">
+            <form
+              id="payment-method-drawer-form"
+              onSubmit={handleSavePaymentMethod}
+              className="space-y-5 pt-1"
+            >
               {/* Quick Fill Presets (Only when adding new) */}
               {!editingPaymentMethodId && (
                 <div className="space-y-2 bg-muted/20 p-3.5 rounded-2xl border border-border/60">
@@ -3100,9 +3334,7 @@ function SettingsPage() {
                       <button
                         key={opt.id}
                         type="button"
-                        onClick={() =>
-                          setPaymentMethodForm({ ...paymentMethodForm, icon: opt.id })
-                        }
+                        onClick={() => setPaymentMethodForm({ ...paymentMethodForm, icon: opt.id })}
                         className={cn(
                           "flex items-center gap-2 p-2.5 rounded-xl border text-left transition-all text-xs font-medium cursor-pointer",
                           isSelected
@@ -3140,7 +3372,9 @@ function SettingsPage() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label className="text-xs font-bold text-foreground">Account / Merchant Info (Optional)</Label>
+                  <Label className="text-xs font-bold text-foreground">
+                    Account / Merchant Info (Optional)
+                  </Label>
                   <Input
                     value={paymentMethodForm.notes || ""}
                     onChange={(e) =>
@@ -3335,7 +3569,9 @@ function LocationsTab() {
         {showForm && (
           <div className="rounded-2xl border border-primary/30 bg-card p-5 shadow-card space-y-4 animate-in fade-in slide-in-from-top-2 duration-200">
             <div className="flex items-center justify-between border-b pb-3">
-              <h4 className="font-bold text-sm text-foreground">{editingLocation ? "Edit Branch Location" : "New Branch Location"}</h4>
+              <h4 className="font-bold text-sm text-foreground">
+                {editingLocation ? "Edit Branch Location" : "New Branch Location"}
+              </h4>
               <button
                 onClick={() => setShowForm(false)}
                 className="text-muted-foreground hover:text-foreground transition-colors p-1 rounded-lg"
@@ -3393,7 +3629,9 @@ function LocationsTab() {
                 </Select>
               </div>
               <div className="space-y-1.5 sm:col-span-2">
-                <Label htmlFor="loc-code" className="text-xs font-bold">Branch Code</Label>
+                <Label htmlFor="loc-code" className="text-xs font-bold">
+                  Branch Code
+                </Label>
                 <Input
                   id="loc-code"
                   placeholder="e.g. DEL-01, MUM-02"
@@ -3425,7 +3663,9 @@ function LocationsTab() {
                 </Select>
               </div>
               <div className="space-y-1.5 sm:col-span-2">
-                <Label htmlFor="loc-manager" className="text-xs font-bold">Manager Name</Label>
+                <Label htmlFor="loc-manager" className="text-xs font-bold">
+                  Manager Name
+                </Label>
                 <Input
                   id="loc-manager"
                   placeholder="e.g. John Smith"
@@ -3434,7 +3674,9 @@ function LocationsTab() {
                 />
               </div>
               <div className="space-y-1.5 sm:col-span-2">
-                <Label htmlFor="loc-address" className="text-xs font-bold">Address</Label>
+                <Label htmlFor="loc-address" className="text-xs font-bold">
+                  Address
+                </Label>
                 <Input
                   id="loc-address"
                   placeholder="e.g. 123 Main Street"
@@ -3443,7 +3685,9 @@ function LocationsTab() {
                 />
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="loc-city" className="text-xs font-bold">City</Label>
+                <Label htmlFor="loc-city" className="text-xs font-bold">
+                  City
+                </Label>
                 <Input
                   id="loc-city"
                   placeholder="e.g. New Delhi"
@@ -3452,7 +3696,9 @@ function LocationsTab() {
                 />
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="loc-phone" className="text-xs font-bold">Phone</Label>
+                <Label htmlFor="loc-phone" className="text-xs font-bold">
+                  Phone
+                </Label>
                 <Input
                   id="loc-phone"
                   type="tel"
@@ -3462,7 +3708,9 @@ function LocationsTab() {
                 />
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="loc-email" className="text-xs font-bold">Email</Label>
+                <Label htmlFor="loc-email" className="text-xs font-bold">
+                  Email
+                </Label>
                 <Input
                   id="loc-email"
                   type="email"
@@ -3480,17 +3728,30 @@ function LocationsTab() {
                     onChange={(e) => setFormData({ ...formData, isHeadOffice: e.target.checked })}
                     className="h-4 w-4 rounded border-input bg-background focus:ring-primary"
                   />
-                  <Label htmlFor="loc-head-office" className="text-xs font-bold cursor-pointer mb-0">
+                  <Label
+                    htmlFor="loc-head-office"
+                    className="text-xs font-bold cursor-pointer mb-0"
+                  >
                     Mark as Head Office
                   </Label>
                 </div>
               </div>
             </div>
             <div className="flex justify-end gap-2 pt-2 border-t border-border/60">
-              <Button variant="outline" size="sm" onClick={() => setShowForm(false)} disabled={isSaving}>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowForm(false)}
+                disabled={isSaving}
+              >
                 Cancel
               </Button>
-              <Button size="sm" onClick={handleSave} disabled={isSaving} className="font-bold text-xs shadow-soft">
+              <Button
+                size="sm"
+                onClick={handleSave}
+                disabled={isSaving}
+                className="font-bold text-xs shadow-soft"
+              >
                 {isSaving && <Loader2 className="size-3.5 animate-spin mr-1.5" />}
                 {editingLocation ? "Update" : "Create"} Location
               </Button>
@@ -3512,7 +3773,12 @@ function LocationsTab() {
               <p className="text-xs text-muted-foreground max-w-sm">
                 Add your store outlets or warehouses to start tracking multi-branch inventory.
               </p>
-              <Button onClick={openAdd} variant="outline" size="sm" className="mt-2 font-bold text-xs gap-1.5">
+              <Button
+                onClick={openAdd}
+                variant="outline"
+                size="sm"
+                className="mt-2 font-bold text-xs gap-1.5"
+              >
                 <Plus className="size-3.5" /> Add First Location
               </Button>
             </div>
@@ -3520,10 +3786,18 @@ function LocationsTab() {
             <table className="w-full text-xs">
               <thead className="bg-muted/40 border-b border-border/60">
                 <tr>
-                  <th className="text-left px-4 py-3 font-bold text-muted-foreground uppercase tracking-wider">Branch / Facility</th>
-                  <th className="text-left px-4 py-3 font-bold text-muted-foreground uppercase tracking-wider">Type</th>
-                  <th className="text-left px-4 py-3 font-bold text-muted-foreground uppercase tracking-wider">Status</th>
-                  <th className="text-right px-4 py-3 font-bold text-muted-foreground uppercase tracking-wider">Actions</th>
+                  <th className="text-left px-4 py-3 font-bold text-muted-foreground uppercase tracking-wider">
+                    Branch / Facility
+                  </th>
+                  <th className="text-left px-4 py-3 font-bold text-muted-foreground uppercase tracking-wider">
+                    Type
+                  </th>
+                  <th className="text-left px-4 py-3 font-bold text-muted-foreground uppercase tracking-wider">
+                    Status
+                  </th>
+                  <th className="text-right px-4 py-3 font-bold text-muted-foreground uppercase tracking-wider">
+                    Actions
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border/60">
@@ -3577,7 +3851,7 @@ function LocationsTab() {
                     </td>
                   </tr>
                 ))}
-</tbody>
+              </tbody>
             </table>
           )}
         </div>
@@ -3592,7 +3866,9 @@ function LocationsTab() {
                 <Trash2 className="size-5" />
               </div>
               <div>
-                <DialogTitle className="text-lg font-bold text-foreground">Delete Location</DialogTitle>
+                <DialogTitle className="text-lg font-bold text-foreground">
+                  Delete Location
+                </DialogTitle>
                 <DialogDescription className="text-xs text-muted-foreground mt-0.5">
                   Are you sure you want to delete this location? This action cannot be undone.
                 </DialogDescription>
@@ -3624,7 +3900,7 @@ function LocationsTab() {
       </Dialog>
     </SettingsCard>
   );
-  }
+}
 
 function BranchPricingTab() {
   const queryClient = useQueryClient();
@@ -3666,7 +3942,10 @@ function BranchPricingTab() {
   const { data: productsData } = useQuery({
     queryKey: ["products", orgId],
     queryFn: async () => {
-      const res = await db.select().from(schema.products).where(eq(schema.products.organizationId, orgId));
+      const res = await db
+        .select()
+        .from(schema.products)
+        .where(eq(schema.products.organizationId, orgId));
       return res;
     },
     staleTime: 60 * 1000,
@@ -3675,7 +3954,10 @@ function BranchPricingTab() {
   const { data: servicesData } = useQuery({
     queryKey: ["services", orgId],
     queryFn: async () => {
-      const res = await db.select().from(schema.services).where(eq(schema.services.organizationId, orgId));
+      const res = await db
+        .select()
+        .from(schema.services)
+        .where(eq(schema.services.organizationId, orgId));
       return res;
     },
     staleTime: 60 * 1000,
@@ -3728,9 +4010,16 @@ function BranchPricingTab() {
   });
 
   const getOverride = (locationId: string, entityType: string, entityId: string) =>
-    overrides.find((o) => o.locationId === locationId && o.entityType === entityType && o.entityId === entityId);
+    overrides.find(
+      (o) => o.locationId === locationId && o.entityType === entityType && o.entityId === entityId,
+    );
 
-  const handleUpsert = (locationId: string, entityType: string, entityId: string, price: string) => {
+  const handleUpsert = (
+    locationId: string,
+    entityType: string,
+    entityId: string,
+    price: string,
+  ) => {
     if (!price.trim()) return;
     upsertMutation.mutate({ locationId, entityType, entityId, price });
   };
@@ -3758,7 +4047,8 @@ function BranchPricingTab() {
           {!branchPricingEnabled && (
             <div className="p-4 rounded-xl border border-border/80 bg-muted/20 text-center space-y-2">
               <p className="text-sm text-muted-foreground">
-                Branch pricing is disabled. Enable the toggle above to set per-branch prices for products and services.
+                Branch pricing is disabled. Enable the toggle above to set per-branch prices for
+                products and services.
               </p>
             </div>
           )}
@@ -3766,7 +4056,8 @@ function BranchPricingTab() {
           {branchPricingEnabled && branches.length === 0 && (
             <div className="p-4 rounded-xl border border-border/80 bg-muted/20 text-center space-y-2">
               <p className="text-sm text-muted-foreground">
-                No branches configured. Add branches in the <strong>Multi-Location</strong> tab first.
+                No branches configured. Add branches in the <strong>Multi-Location</strong> tab
+                first.
               </p>
             </div>
           )}
@@ -3775,7 +4066,8 @@ function BranchPricingTab() {
             <div className="space-y-4">
               <div className="p-4 rounded-xl border border-primary/30 bg-primary/5 space-y-2">
                 <p className="text-xs font-bold text-primary">
-                  How it works: Enter a price for a product/service at a specific branch. Leave empty to use the default price.
+                  How it works: Enter a price for a product/service at a specific branch. Leave
+                  empty to use the default price.
                 </p>
               </div>
 
@@ -3788,10 +4080,20 @@ function BranchPricingTab() {
                     <table className="w-full text-xs">
                       <thead className="bg-muted/40 border-b border-border/60">
                         <tr>
-                          <th className="text-left px-4 py-3 font-bold text-muted-foreground uppercase tracking-wider w-48">Product</th>
+                          <th className="text-left px-4 py-3 font-bold text-muted-foreground uppercase tracking-wider w-48">
+                            Product
+                          </th>
                           {branches.map((b) => (
-                            <th key={b.id} className="text-center px-2 py-3 font-bold text-muted-foreground uppercase tracking-wider">
-                              {b.name} {b.isHeadOffice && <span className="ml-1 text-[10px] bg-primary/20 text-primary px-1 rounded">HQ</span>}
+                            <th
+                              key={b.id}
+                              className="text-center px-2 py-3 font-bold text-muted-foreground uppercase tracking-wider"
+                            >
+                              {b.name}{" "}
+                              {b.isHeadOffice && (
+                                <span className="ml-1 text-[10px] bg-primary/20 text-primary px-1 rounded">
+                                  HQ
+                                </span>
+                              )}
                             </th>
                           ))}
                         </tr>
@@ -3800,7 +4102,10 @@ function BranchPricingTab() {
                         {products.slice(0, 50).map((p) => (
                           <tr key={p.id} className="hover:bg-muted/30 transition-colors">
                             <td className="px-4 py-2 font-medium text-foreground truncate max-w-[180px]">
-                              {p.name} <span className="text-muted-foreground ml-2">{formatCurrency(p.price)}</span>
+                              {p.name}{" "}
+                              <span className="text-muted-foreground ml-2">
+                                {formatCurrency(p.price)}
+                              </span>
                             </td>
                             {branches.map((b) => {
                               const override = getOverride(b.id, "product", p.id);
@@ -3810,7 +4115,9 @@ function BranchPricingTab() {
                                     type="text"
                                     placeholder="—"
                                     value={override?.price || ""}
-                                    onChange={(e) => handleUpsert(b.id, "product", p.id, e.target.value)}
+                                    onChange={(e) =>
+                                      handleUpsert(b.id, "product", p.id, e.target.value)
+                                    }
                                     className="w-full h-7 text-center text-xs font-mono"
                                     disabled={upsertMutation.isPending}
                                   />
@@ -3834,9 +4141,14 @@ function BranchPricingTab() {
                     <table className="w-full text-xs">
                       <thead className="bg-muted/40 border-b border-border/60">
                         <tr>
-                          <th className="text-left px-4 py-3 font-bold text-muted-foreground uppercase tracking-wider w-48">Service</th>
+                          <th className="text-left px-4 py-3 font-bold text-muted-foreground uppercase tracking-wider w-48">
+                            Service
+                          </th>
                           {branches.map((b) => (
-                            <th key={b.id} className="text-center px-2 py-3 font-bold text-muted-foreground uppercase tracking-wider">
+                            <th
+                              key={b.id}
+                              className="text-center px-2 py-3 font-bold text-muted-foreground uppercase tracking-wider"
+                            >
                               {b.name}
                             </th>
                           ))}
@@ -3846,7 +4158,10 @@ function BranchPricingTab() {
                         {services.slice(0, 50).map((s) => (
                           <tr key={s.id} className="hover:bg-muted/30 transition-colors">
                             <td className="px-4 py-2 font-medium text-foreground truncate max-w-[180px]">
-                              {s.name} <span className="text-muted-foreground ml-2">{formatCurrency(s.price)}</span>
+                              {s.name}{" "}
+                              <span className="text-muted-foreground ml-2">
+                                {formatCurrency(s.price)}
+                              </span>
                             </td>
                             {branches.map((b) => {
                               const override = getOverride(b.id, "service", s.id);
@@ -3856,7 +4171,9 @@ function BranchPricingTab() {
                                     type="text"
                                     placeholder="—"
                                     value={override?.price || ""}
-                                    onChange={(e) => handleUpsert(b.id, "service", s.id, e.target.value)}
+                                    onChange={(e) =>
+                                      handleUpsert(b.id, "service", s.id, e.target.value)
+                                    }
                                     className="w-full h-7 text-center text-xs font-mono"
                                     disabled={upsertMutation.isPending}
                                   />
@@ -3871,7 +4188,7 @@ function BranchPricingTab() {
                 </div>
               )}
 
-              {(products.length === 0 && services.length === 0) && (
+              {products.length === 0 && services.length === 0 && (
                 <div className="p-8 text-center text-muted-foreground">
                   <Package className="size-12 mx-auto mb-2 opacity-50" />
                   <p>No products or services found. Add catalog items first.</p>
@@ -3932,11 +4249,11 @@ function Field({
 }) {
   return (
     <div className={`space-y-1.5 ${full ? "sm:col-span-2" : ""}`}>
-      <label className="block text-xs font-bold text-foreground">
-        {label}
-      </label>
+      <label className="block text-xs font-bold text-foreground">{label}</label>
       {children}
-      {description && <p className="text-[11px] text-muted-foreground leading-relaxed mt-0.5">{description}</p>}
+      {description && (
+        <p className="text-[11px] text-muted-foreground leading-relaxed mt-0.5">{description}</p>
+      )}
     </div>
   );
 }

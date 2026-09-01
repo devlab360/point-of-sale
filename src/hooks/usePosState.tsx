@@ -260,7 +260,8 @@ export function usePosState() {
           (meta.partNumber && String(meta.partNumber).toLowerCase().includes(q)) ||
           (meta.oemNumber && String(meta.oemNumber).toLowerCase().includes(q)) ||
           (meta.compatibleVehicles && String(meta.compatibleVehicles).toLowerCase().includes(q)) ||
-          (meta.alternatePartNumbers && String(meta.alternatePartNumbers).toLowerCase().includes(q))
+          (meta.alternatePartNumbers &&
+            String(meta.alternatePartNumbers).toLowerCase().includes(q)),
         );
       }),
     [activeCat, query, allProducts, categories],
@@ -424,16 +425,17 @@ export function usePosState() {
       const originalProduct = allProducts.find((p) => p.id === l.id);
       if (!originalProduct) return null;
 
-      const p = l.customName || l.customMetadata
-        ? {
-            ...originalProduct,
-            name: l.customName || originalProduct.name,
-            metadata: {
-              ...(originalProduct.metadata || {}),
-              ...(l.customMetadata || {}),
-            },
-          }
-        : originalProduct;
+      const p =
+        l.customName || l.customMetadata
+          ? {
+              ...originalProduct,
+              name: l.customName || originalProduct.name,
+              metadata: {
+                ...(originalProduct.metadata || {}),
+                ...(l.customMetadata || {}),
+              },
+            }
+          : originalProduct;
 
       let unitPrice =
         l.customPrice !== undefined
@@ -558,10 +560,7 @@ export function usePosState() {
 
   const holdInvoice = useCallback(async () => {
     if (cart.length === 0) return toast.error("Cart is empty");
-    const customerPhone =
-      (activeCustomer as any)?.phone ||
-      (activeCustomer as any)?.mobile ||
-      null;
+    const customerPhone = (activeCustomer as any)?.phone || (activeCustomer as any)?.mobile || null;
 
     const res = await createHeldInvoiceFn({
       data: {
@@ -650,14 +649,7 @@ export function usePosState() {
           setCart(cartData);
           setDiscountPct(Number(matchingHeld.discount) || 0);
           setDiscountInput(String(matchingHeld.discount || 0));
-          const validPayments: PaymentMode[] = [
-            "cash",
-            "card",
-            "upi",
-            "split",
-            "credit",
-            "wallet",
-          ];
+          const validPayments: PaymentMode[] = ["cash", "card", "upi", "split", "credit", "wallet"];
           if (validPayments.includes(matchingHeld.payment as any)) {
             setPayment(matchingHeld.payment as any);
           }
@@ -680,7 +672,15 @@ export function usePosState() {
 
       setSelectedCustomer(customer);
     },
-    [heldInvoices, queryClient, setSelectedCustomer, setCart, setDiscountPct, setDiscountInput, setPayment],
+    [
+      heldInvoices,
+      queryClient,
+      setSelectedCustomer,
+      setCart,
+      setDiscountPct,
+      setDiscountInput,
+      setPayment,
+    ],
   );
 
   const handleOpenRegister = useCallback(async () => {
@@ -711,54 +711,53 @@ export function usePosState() {
     }
   }, [startingCash, user, currencySymbol, queryClient]);
 
-  const applyCoupon = useCallback((couponOrCode?: any) => {
-    let targetCode = "";
-    let targetCoupon: any = null;
+  const applyCoupon = useCallback(
+    (couponOrCode?: any) => {
+      let targetCode = "";
+      let targetCoupon: any = null;
 
-    if (typeof couponOrCode === "object" && couponOrCode?.code) {
-      targetCoupon = couponOrCode;
-      targetCode = couponOrCode.code.toUpperCase();
-    } else if (typeof couponOrCode === "string" && couponOrCode.trim()) {
-      targetCode = couponOrCode.trim().toUpperCase();
-    } else if (couponCode.trim()) {
-      targetCode = couponCode.trim().toUpperCase();
-    }
+      if (typeof couponOrCode === "object" && couponOrCode?.code) {
+        targetCoupon = couponOrCode;
+        targetCode = couponOrCode.code.toUpperCase();
+      } else if (typeof couponOrCode === "string" && couponOrCode.trim()) {
+        targetCode = couponOrCode.trim().toUpperCase();
+      } else if (couponCode.trim()) {
+        targetCode = couponCode.trim().toUpperCase();
+      }
 
-    if (!targetCode) return toast.error("Enter or select a coupon code");
+      if (!targetCode) return toast.error("Enter or select a coupon code");
 
-    const found =
-      targetCoupon ||
-      coupons.find(
-        (c: any) => c.code?.toUpperCase() === targetCode && c.status === "active",
-      );
-    if (!found) {
-      toast.error("Invalid or expired coupon code");
-      return;
-    }
+      const found =
+        targetCoupon ||
+        coupons.find((c: any) => c.code?.toUpperCase() === targetCode && c.status === "active");
+      if (!found) {
+        toast.error("Invalid or expired coupon code");
+        return;
+      }
 
-    if (found.expires && new Date(found.expires).getTime() < Date.now()) {
-      toast.error("This coupon has expired");
-      return;
-    }
+      if (found.expires && new Date(found.expires).getTime() < Date.now()) {
+        toast.error("This coupon has expired");
+        return;
+      }
 
-    if (found.usageLimit && Number(found.used || 0) >= Number(found.usageLimit)) {
-      toast.error("Coupon usage limit reached");
-      return;
-    }
+      if (found.usageLimit && Number(found.used || 0) >= Number(found.usageLimit)) {
+        toast.error("Coupon usage limit reached");
+        return;
+      }
 
-    const minOrder = Number(found.minOrder || 0);
-    if (subtotal < minOrder) {
-      toast.error(
-        `Minimum order of ${currencySymbol}${minOrder} required for this coupon`,
-      );
-      return;
-    }
+      const minOrder = Number(found.minOrder || 0);
+      if (subtotal < minOrder) {
+        toast.error(`Minimum order of ${currencySymbol}${minOrder} required for this coupon`);
+        return;
+      }
 
-    setAppliedCoupon(found);
-    setCouponCode("");
-    setShowCoupon(false);
-    toast.success(`Coupon "${found.code}" applied!`);
-  }, [couponCode, coupons, subtotal, currencySymbol]);
+      setAppliedCoupon(found);
+      setCouponCode("");
+      setShowCoupon(false);
+      toast.success(`Coupon "${found.code}" applied!`);
+    },
+    [couponCode, coupons, subtotal, currencySymbol],
+  );
 
   const removeCoupon = useCallback(() => {
     setAppliedCoupon(null);

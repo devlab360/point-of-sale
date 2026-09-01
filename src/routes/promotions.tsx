@@ -72,7 +72,14 @@ import { CardGridSkeleton } from "@/components/skeletons/CardGridSkeleton";
 import { TableSkeleton } from "@/components/skeletons/TableSkeleton";
 import { ErrorState } from "@/components/ui/error-state";
 import { EmptyState } from "@/components/ui/empty-state";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { PaginationControls } from "@/components/ui/pagination-controls";
 
 export const Route = createFileRoute("/promotions")({
@@ -94,10 +101,14 @@ function PromotionsPage() {
 
   // Form State
   const [formTitle, setFormTitle] = useState("");
-  const [formType, setFormType] = useState<"percentage" | "fixed" | "bogo" | "storewide">("percentage");
+  const [formType, setFormType] = useState<"percentage" | "fixed" | "bogo" | "storewide">(
+    "percentage",
+  );
   const [formValue, setFormValue] = useState("");
   const [formConditions, setFormConditions] = useState("");
-  const [formStatus, setFormStatus] = useState<"active" | "scheduled" | "expired" | "inactive">("active");
+  const [formStatus, setFormStatus] = useState<"active" | "scheduled" | "expired" | "inactive">(
+    "active",
+  );
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
 
@@ -146,9 +157,18 @@ function PromotionsPage() {
 
   // KPI metrics
   const totalCampaigns = promotions.length;
-  const activeCampaigns = useMemo(() => promotions.filter((p: any) => p.status === "active").length, [promotions]);
-  const scheduledCampaigns = useMemo(() => promotions.filter((p: any) => p.status === "scheduled").length, [promotions]);
-  const storewideCount = useMemo(() => promotions.filter((p: any) => p.type === "storewide" || p.type === "percentage").length, [promotions]);
+  const activeCampaigns = useMemo(
+    () => promotions.filter((p: any) => p.status === "active").length,
+    [promotions],
+  );
+  const scheduledCampaigns = useMemo(
+    () => promotions.filter((p: any) => p.status === "scheduled").length,
+    [promotions],
+  );
+  const storewideCount = useMemo(
+    () => promotions.filter((p: any) => p.type === "storewide" || p.type === "percentage").length,
+    [promotions],
+  );
 
   const filteredPromotions = useMemo(() => {
     let list = Array.isArray(promotions) ? promotions : [];
@@ -158,7 +178,7 @@ function PromotionsPage() {
         (p: any) =>
           p.title?.toLowerCase().includes(lower) ||
           p.conditions?.toLowerCase().includes(lower) ||
-          p.type?.toLowerCase().includes(lower)
+          p.type?.toLowerCase().includes(lower),
       );
     }
     if (typeFilter !== "all") {
@@ -387,7 +407,9 @@ function PromotionsPage() {
             icon={Megaphone}
             title="No promotions found"
             description={
-              search ? "Try adjusting your search criteria." : "You haven't launched any promotional campaigns yet."
+              search
+                ? "Try adjusting your search criteria."
+                : "You haven't launched any promotional campaigns yet."
             }
             actionLabel="Create Promotion"
             onAction={() => {
@@ -441,13 +463,19 @@ function PromotionsPage() {
                       <div className="p-3 rounded-xl bg-muted/40 border border-border/50 flex items-center justify-between">
                         <span className="text-xs text-muted-foreground">Benefit</span>
                         <span className="text-base font-bold text-foreground">
-                          {p.type === "bogo" ? "Buy 1 Get 1 Free" : isPercent ? `${p.value}% OFF` : `${formatCurrency(p.value)} FLAT`}
+                          {p.type === "bogo"
+                            ? "Buy 1 Get 1 Free"
+                            : isPercent
+                              ? `${p.value}% OFF`
+                              : `${formatCurrency(p.value)} FLAT`}
                         </span>
                       </div>
 
                       <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                         <Calendar className="size-3.5 shrink-0" />
-                        <span className="truncate">{formatDate(p.startDate)} – {formatDate(p.endDate)}</span>
+                        <span className="truncate">
+                          {formatDate(p.startDate)} – {formatDate(p.endDate)}
+                        </span>
                       </div>
                     </div>
 
@@ -514,13 +542,17 @@ function PromotionsPage() {
                       <TableRow key={p.id} className="hover:bg-muted/30 transition-colors">
                         <TableCell>
                           <span className="font-semibold text-foreground">{p.title}</span>
-                          <div className="text-xs text-muted-foreground truncate max-w-xs">{p.conditions}</div>
+                          <div className="text-xs text-muted-foreground truncate max-w-xs">
+                            {p.conditions}
+                          </div>
                         </TableCell>
-                        <TableCell className="capitalize text-xs font-medium">
-                          {p.type}
-                        </TableCell>
+                        <TableCell className="capitalize text-xs font-medium">{p.type}</TableCell>
                         <TableCell className="font-bold text-foreground">
-                          {p.type === "bogo" ? "BOGO" : isPercent ? `${p.value}% OFF` : `${formatCurrency(p.value)} FLAT`}
+                          {p.type === "bogo"
+                            ? "BOGO"
+                            : isPercent
+                              ? `${p.value}% OFF`
+                              : `${formatCurrency(p.value)} FLAT`}
                         </TableCell>
                         <TableCell className="text-xs text-muted-foreground">
                           {formatDate(p.startDate)} – {formatDate(p.endDate)}
@@ -599,7 +631,10 @@ function PromotionsPage() {
               </SheetDescription>
             </SheetHeader>
 
-            <form onSubmit={handleSave} className="flex-1 flex flex-col justify-between overflow-hidden">
+            <form
+              onSubmit={handleSave}
+              className="flex-1 flex flex-col justify-between overflow-hidden"
+            >
               <div className="flex-1 overflow-y-auto p-5 space-y-4">
                 <div className="space-y-1.5">
                   <Label htmlFor="promo-title" className="text-xs font-semibold">
@@ -621,10 +656,7 @@ function PromotionsPage() {
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1.5">
                     <Label className="text-xs font-semibold">Promotion Type</Label>
-                    <Select
-                      value={formType}
-                      onValueChange={(val: any) => setFormType(val)}
-                    >
+                    <Select value={formType} onValueChange={(val: any) => setFormType(val)}>
                       <SelectTrigger className="h-9 text-xs">
                         <SelectValue />
                       </SelectTrigger>
@@ -707,10 +739,7 @@ function PromotionsPage() {
 
                 <div className="space-y-1.5">
                   <Label className="text-xs font-semibold">Campaign Status</Label>
-                  <Select
-                    value={formStatus}
-                    onValueChange={(val: any) => setFormStatus(val)}
-                  >
+                  <Select value={formStatus} onValueChange={(val: any) => setFormStatus(val)}>
                     <SelectTrigger className="h-9 text-xs">
                       <SelectValue />
                     </SelectTrigger>
@@ -725,18 +754,10 @@ function PromotionsPage() {
               </div>
 
               <SheetFooter className="p-4 border-t border-border/60 bg-muted/20 flex flex-row items-center justify-end gap-2 shrink-0">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setIsAddOpen(false)}
-                >
+                <Button type="button" variant="outline" onClick={() => setIsAddOpen(false)}>
                   Cancel
                 </Button>
-                <Button
-                  type="submit"
-                  disabled={isSaving}
-                  className="font-semibold shadow-sm"
-                >
+                <Button type="submit" disabled={isSaving} className="font-semibold shadow-sm">
                   {isSaving && <Loader2 className="size-4 animate-spin mr-2" />}
                   {editItem ? "Update Promotion" : "Publish Promotion"}
                 </Button>
@@ -765,18 +786,10 @@ function PromotionsPage() {
             </div>
           </DialogHeader>
           <DialogFooter className="mt-4 flex flex-row items-center justify-end gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setDeleteId(null)}
-            >
+            <Button type="button" variant="outline" onClick={() => setDeleteId(null)}>
               Cancel
             </Button>
-            <Button
-              type="button"
-              variant="destructive"
-              onClick={handleDelete}
-            >
+            <Button type="button" variant="destructive" onClick={handleDelete}>
               Delete
             </Button>
           </DialogFooter>

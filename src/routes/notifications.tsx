@@ -42,7 +42,12 @@ function NotificationsPage() {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
 
-  const { data: notifsData, isLoading, isError, refetch } = useQuery({
+  const {
+    data: notifsData,
+    isLoading,
+    isError,
+    refetch,
+  } = useQuery({
     queryKey: ["notifications", orgId],
     queryFn: async () => ((await getNotificationsFn({ data: {} })) as any)?.data || [],
   });
@@ -63,17 +68,18 @@ function NotificationsPage() {
   };
 
   const filteredNotifications = useMemo(() => {
-    let list = rawNotifications.slice().sort(
-      (a: any, b: any) =>
-        new Date(b.timestamp || 0).getTime() - new Date(a.timestamp || 0).getTime(),
-    );
+    let list = rawNotifications
+      .slice()
+      .sort(
+        (a: any, b: any) =>
+          new Date(b.timestamp || 0).getTime() - new Date(a.timestamp || 0).getTime(),
+      );
 
     if (debouncedSearch) {
       const lower = debouncedSearch.toLowerCase();
       list = list.filter(
         (n: any) =>
-          n.title?.toLowerCase().includes(lower) ||
-          n.message?.toLowerCase().includes(lower),
+          n.title?.toLowerCase().includes(lower) || n.message?.toLowerCase().includes(lower),
       );
     }
 
@@ -89,7 +95,10 @@ function NotificationsPage() {
   }, [rawNotifications, debouncedSearch, filters.type]);
 
   const totalPages = Math.ceil(filteredNotifications.length / pageSize);
-  const paginatedNotifications = filteredNotifications.slice((page - 1) * pageSize, page * pageSize);
+  const paginatedNotifications = filteredNotifications.slice(
+    (page - 1) * pageSize,
+    page * pageSize,
+  );
 
   // Summary Metrics
   const metrics = useMemo(() => {
@@ -184,66 +193,64 @@ function NotificationsPage() {
             </div>
           </div>
         )}
-      topContent={
-            <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
-              <div className="rounded-xl border border-border/80 bg-card p-4 sm:p-5 shadow-soft transition-all hover:border-primary/40">
-                <div className="flex items-center justify-between">
-                  <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                    Total Alerts
-                  </p>
-                  <div className="grid size-8 place-items-center rounded-lg bg-primary/10 text-primary">
-                    <Bell className="size-4" />
-                  </div>
-                </div>
-                <p className="mt-2 text-xl sm:text-2xl font-black text-foreground">
-                  {metrics.total}
+        topContent={
+          <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+            <div className="rounded-xl border border-border/80 bg-card p-4 sm:p-5 shadow-soft transition-all hover:border-primary/40">
+              <div className="flex items-center justify-between">
+                <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                  Total Alerts
                 </p>
-              </div>
-
-              <div className="rounded-xl border border-border/80 bg-card p-4 sm:p-5 shadow-soft transition-all hover:border-blue-500/40">
-                <div className="flex items-center justify-between">
-                  <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                    Unread
-                  </p>
-                  <div className="grid size-8 place-items-center rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400">
-                    <Sparkles className="size-4" />
-                  </div>
+                <div className="grid size-8 place-items-center rounded-lg bg-primary/10 text-primary">
+                  <Bell className="size-4" />
                 </div>
-                <p className="mt-2 text-xl sm:text-2xl font-black text-blue-600 dark:text-blue-400">
-                  {metrics.unread}
-                </p>
               </div>
-
-              <div className="rounded-xl border border-border/80 bg-card p-4 sm:p-5 shadow-soft transition-all hover:border-amber-500/40">
-                <div className="flex items-center justify-between">
-                  <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                    Stock Warnings
-                  </p>
-                  <div className="grid size-8 place-items-center rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400">
-                    <AlertTriangle className="size-4" />
-                  </div>
-                </div>
-                <p className="mt-2 text-xl sm:text-2xl font-black text-amber-600 dark:text-amber-400">
-                  {metrics.warnings}
-                </p>
-              </div>
-
-              <div className="rounded-xl border border-border/80 bg-card p-4 sm:p-5 shadow-soft transition-all hover:border-emerald-500/40">
-                <div className="flex items-center justify-between">
-                  <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                    Payments & Collections
-                  </p>
-                  <div className="grid size-8 place-items-center rounded-lg bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">
-                    <CreditCard className="size-4" />
-                  </div>
-                </div>
-                <p className="mt-2 text-xl sm:text-2xl font-black text-emerald-600 dark:text-emerald-400">
-                  {metrics.payments}
-                </p>
-              </div>
+              <p className="mt-2 text-xl sm:text-2xl font-black text-foreground">{metrics.total}</p>
             </div>
-          }
-        >
+
+            <div className="rounded-xl border border-border/80 bg-card p-4 sm:p-5 shadow-soft transition-all hover:border-blue-500/40">
+              <div className="flex items-center justify-between">
+                <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                  Unread
+                </p>
+                <div className="grid size-8 place-items-center rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400">
+                  <Sparkles className="size-4" />
+                </div>
+              </div>
+              <p className="mt-2 text-xl sm:text-2xl font-black text-blue-600 dark:text-blue-400">
+                {metrics.unread}
+              </p>
+            </div>
+
+            <div className="rounded-xl border border-border/80 bg-card p-4 sm:p-5 shadow-soft transition-all hover:border-amber-500/40">
+              <div className="flex items-center justify-between">
+                <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                  Stock Warnings
+                </p>
+                <div className="grid size-8 place-items-center rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400">
+                  <AlertTriangle className="size-4" />
+                </div>
+              </div>
+              <p className="mt-2 text-xl sm:text-2xl font-black text-amber-600 dark:text-amber-400">
+                {metrics.warnings}
+              </p>
+            </div>
+
+            <div className="rounded-xl border border-border/80 bg-card p-4 sm:p-5 shadow-soft transition-all hover:border-emerald-500/40">
+              <div className="flex items-center justify-between">
+                <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                  Payments & Collections
+                </p>
+                <div className="grid size-8 place-items-center rounded-lg bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">
+                  <CreditCard className="size-4" />
+                </div>
+              </div>
+              <p className="mt-2 text-xl sm:text-2xl font-black text-emerald-600 dark:text-emerald-400">
+                {metrics.payments}
+              </p>
+            </div>
+          </div>
+        }
+      >
         <div className="space-y-6">
           {/* Notifications List Container */}
           <div className="rounded-xl border border-border bg-card shadow-soft overflow-hidden">

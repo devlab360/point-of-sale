@@ -134,7 +134,8 @@ export const BUSINESS_TEMPLATES: Record<BusinessType, BusinessTemplate> = {
   CLOTHING: {
     type: "CLOTHING",
     label: "Fashion & Apparel Boutique",
-    description: "Multi-size/color matrix, seasonal discounts, gift cards, and fast barcode checkout.",
+    description:
+      "Multi-size/color matrix, seasonal discounts, gift cards, and fast barcode checkout.",
     capabilities: [
       "POS",
       "PRODUCTS",
@@ -161,7 +162,8 @@ export const BUSINESS_TEMPLATES: Record<BusinessType, BusinessTemplate> = {
   JEWELLERY: {
     type: "JEWELLERY",
     label: "Jewellery & Precious Metals",
-    description: "Purity tracking, stone & making charges, gift cards, luxury invoices, and customer khata.",
+    description:
+      "Purity tracking, stone & making charges, gift cards, luxury invoices, and customer khata.",
     capabilities: [
       "POS",
       "PRODUCTS",
@@ -190,7 +192,8 @@ export const BUSINESS_TEMPLATES: Record<BusinessType, BusinessTemplate> = {
   ELECTRONICS: {
     type: "ELECTRONICS",
     label: "Consumer Electronics & Appliances",
-    description: "Serial/IMEI tracking, warranty logs, repair job cards, quotations, and technician assignments.",
+    description:
+      "Serial/IMEI tracking, warranty logs, repair job cards, quotations, and technician assignments.",
     capabilities: [
       "POS",
       "PRODUCTS",
@@ -252,7 +255,8 @@ export const BUSINESS_TEMPLATES: Record<BusinessType, BusinessTemplate> = {
   BAKERY: {
     type: "BAKERY",
     label: "Bakery & Confectionery",
-    description: "Batch expiry tracking, custom cake orders, freshness monitoring, and takeaway POS.",
+    description:
+      "Batch expiry tracking, custom cake orders, freshness monitoring, and takeaway POS.",
     capabilities: [
       "POS",
       "PRODUCTS",
@@ -324,7 +328,8 @@ export const BUSINESS_TEMPLATES: Record<BusinessType, BusinessTemplate> = {
   HOTEL: {
     type: "HOTEL",
     label: "Hotel & Guest House",
-    description: "Room reservations, guest check-in packages, duration rental billing, and dining POS.",
+    description:
+      "Room reservations, guest check-in packages, duration rental billing, and dining POS.",
     capabilities: [
       "POS",
       "CUSTOMERS",
@@ -396,7 +401,8 @@ export const BUSINESS_TEMPLATES: Record<BusinessType, BusinessTemplate> = {
   GYM: {
     type: "GYM",
     label: "Gym & Fitness Club",
-    description: "Membership plans, recurring subscriptions, personal trainers, and locker/service packages.",
+    description:
+      "Membership plans, recurring subscriptions, personal trainers, and locker/service packages.",
     capabilities: [
       "POS",
       "CUSTOMERS",
@@ -423,7 +429,8 @@ export const BUSINESS_TEMPLATES: Record<BusinessType, BusinessTemplate> = {
   CLINIC: {
     type: "CLINIC",
     label: "Medical Clinic & Health Center",
-    description: "Doctor consultations, patient appointments, treatments, drug inventory, and medical billing.",
+    description:
+      "Doctor consultations, patient appointments, treatments, drug inventory, and medical billing.",
     capabilities: [
       "POS",
       "CUSTOMERS",
@@ -449,7 +456,8 @@ export const BUSINESS_TEMPLATES: Record<BusinessType, BusinessTemplate> = {
   RENTAL: {
     type: "RENTAL",
     label: "Equipment & Event Rental",
-    description: "Item rental tracking, security deposit management, duration billing, and customer ledgers.",
+    description:
+      "Item rental tracking, security deposit management, duration billing, and customer ledgers.",
     capabilities: [
       "POS",
       "CUSTOMERS",
@@ -524,7 +532,8 @@ export const BUSINESS_TEMPLATES: Record<BusinessType, BusinessTemplate> = {
   AUTO_PARTS: {
     type: "AUTO_PARTS",
     label: "Auto Parts & Hardware Store",
-    description: "Part number indexing, wholesale/retail pricing, delivery challans, and B2B customer ledgers.",
+    description:
+      "Part number indexing, wholesale/retail pricing, delivery challans, and B2B customer ledgers.",
     capabilities: [
       "POS",
       "PRODUCTS",

@@ -25,10 +25,7 @@ export const getMyOrganizationsFn = createServerFn({ method: "GET" })
       const email = users[0].email;
 
       // Match by email across orgs (each org has its own user row for this owner).
-      const myUserRows = await db
-        .select()
-        .from(schema.users)
-        .where(eq(schema.users.email, email));
+      const myUserRows = await db.select().from(schema.users).where(eq(schema.users.email, email));
       const orgIds = myUserRows
         .map((u) => u.organizationId)
         .filter((id): id is string => Boolean(id));
@@ -37,9 +34,7 @@ export const getMyOrganizationsFn = createServerFn({ method: "GET" })
         ? await db
             .select()
             .from(schema.organizations)
-            .where(
-              or(...orgIds.map((id) => eq(schema.organizations.id, id))),
-            )
+            .where(or(...orgIds.map((id) => eq(schema.organizations.id, id))))
         : [];
 
       // Get memberships for these orgs, matching by email (join with users)
@@ -64,9 +59,7 @@ export const getMyOrganizationsFn = createServerFn({ method: "GET" })
         ? await db
             .select()
             .from(schema.locations)
-            .where(
-              or(...orgIds.map((id) => eq(schema.locations.organizationId, id))),
-            )
+            .where(or(...orgIds.map((id) => eq(schema.locations.organizationId, id))))
         : [];
 
       // Map each org with its user row role and branch list.
@@ -132,7 +125,10 @@ export const switchOrganizationFn = createServerFn({ method: "POST" })
           .select()
           .from(schema.locations)
           .where(
-            and(eq(schema.locations.id, data.locationId), eq(schema.locations.organizationId, data.orgId)),
+            and(
+              eq(schema.locations.id, data.locationId),
+              eq(schema.locations.organizationId, data.orgId),
+            ),
           )
           .limit(1);
         if (!branch.length) throw new Error("Branch not found in this business");
@@ -315,13 +311,12 @@ export const deleteOrganizationFn = createServerFn({ method: "POST" })
         .from(schema.organizationMemberships)
         .innerJoin(schema.users, eq(schema.organizationMemberships.userId, schema.users.id))
         .where(
-          and(
-            eq(schema.users.email, email),
-            eq(schema.organizationMemberships.role, "owner"),
-          ),
+          and(eq(schema.users.email, email), eq(schema.organizationMemberships.role, "owner")),
         );
       if (userMemberships.length <= 1) {
-        throw new Error("Cannot delete the last organization. At least one organization must remain.");
+        throw new Error(
+          "Cannot delete the last organization. At least one organization must remain.",
+        );
       }
 
       if (!data.confirmDelete) {
@@ -342,8 +337,12 @@ export const deleteOrganizationFn = createServerFn({ method: "POST" })
         await tx.delete(schema.locations).where(eq(schema.locations.organizationId, data.orgId));
         await tx.delete(schema.settings).where(eq(schema.settings.organizationId, data.orgId));
         await tx.delete(schema.users).where(eq(schema.users.organizationId, data.orgId));
-        await tx.delete(schema.organizationMemberships).where(eq(schema.organizationMemberships.organizationId, data.orgId));
-        await tx.delete(schema.branchPriceOverrides).where(eq(schema.branchPriceOverrides.organizationId, data.orgId));
+        await tx
+          .delete(schema.organizationMemberships)
+          .where(eq(schema.organizationMemberships.organizationId, data.orgId));
+        await tx
+          .delete(schema.branchPriceOverrides)
+          .where(eq(schema.branchPriceOverrides.organizationId, data.orgId));
         await tx.delete(schema.products).where(eq(schema.products.organizationId, data.orgId));
         await tx.delete(schema.services).where(eq(schema.services.organizationId, data.orgId));
         await tx.delete(schema.categories).where(eq(schema.categories.organizationId, data.orgId));
@@ -353,39 +352,85 @@ export const deleteOrganizationFn = createServerFn({ method: "POST" })
         await tx.delete(schema.suppliers).where(eq(schema.suppliers.organizationId, data.orgId));
         await tx.delete(schema.taxMasters).where(eq(schema.taxMasters.organizationId, data.orgId));
         await tx.delete(schema.expenses).where(eq(schema.expenses.organizationId, data.orgId));
-        await tx.delete(schema.appointments).where(eq(schema.appointments.organizationId, data.orgId));
+        await tx
+          .delete(schema.appointments)
+          .where(eq(schema.appointments.organizationId, data.orgId));
         await tx.delete(schema.rentals).where(eq(schema.rentals.organizationId, data.orgId));
-        await tx.delete(schema.restaurantTables).where(eq(schema.restaurantTables.organizationId, data.orgId));
-        await tx.delete(schema.kitchenOrderTickets).where(eq(schema.kitchenOrderTickets.organizationId, data.orgId));
+        await tx
+          .delete(schema.restaurantTables)
+          .where(eq(schema.restaurantTables.organizationId, data.orgId));
+        await tx
+          .delete(schema.kitchenOrderTickets)
+          .where(eq(schema.kitchenOrderTickets.organizationId, data.orgId));
         await tx.delete(schema.sales).where(eq(schema.sales.organizationId, data.orgId));
         await tx.delete(schema.purchases).where(eq(schema.purchases.organizationId, data.orgId));
-        await tx.delete(schema.inventoryMovements).where(eq(schema.inventoryMovements.organizationId, data.orgId));
-        await tx.delete(schema.inventoryAdjustments).where(eq(schema.inventoryAdjustments.organizationId, data.orgId));
-        await tx.delete(schema.inventoryTransfers).where(eq(schema.inventoryTransfers.organizationId, data.orgId));
-        await tx.delete(schema.productInventory).where(eq(schema.productInventory.organizationId, data.orgId));
+        await tx
+          .delete(schema.inventoryMovements)
+          .where(eq(schema.inventoryMovements.organizationId, data.orgId));
+        await tx
+          .delete(schema.inventoryAdjustments)
+          .where(eq(schema.inventoryAdjustments.organizationId, data.orgId));
+        await tx
+          .delete(schema.inventoryTransfers)
+          .where(eq(schema.inventoryTransfers.organizationId, data.orgId));
+        await tx
+          .delete(schema.productInventory)
+          .where(eq(schema.productInventory.organizationId, data.orgId));
         await tx.delete(schema.coupons).where(eq(schema.coupons.organizationId, data.orgId));
         await tx.delete(schema.giftCards).where(eq(schema.giftCards.organizationId, data.orgId));
         await tx.delete(schema.promotions).where(eq(schema.promotions.organizationId, data.orgId));
-        await tx.delete(schema.heldInvoices).where(eq(schema.heldInvoices.organizationId, data.orgId));
-        await tx.delete(schema.salesReturns).where(eq(schema.salesReturns.organizationId, data.orgId));
-        await tx.delete(schema.purchaseReturns).where(eq(schema.purchaseReturns.organizationId, data.orgId));
-        await tx.delete(schema.purchaseReturnItems).where(eq(schema.purchaseReturnItems.organizationId, data.orgId));
-        await tx.delete(schema.salesReturnItems).where(eq(schema.salesReturnItems.organizationId, data.orgId));
+        await tx
+          .delete(schema.heldInvoices)
+          .where(eq(schema.heldInvoices.organizationId, data.orgId));
+        await tx
+          .delete(schema.salesReturns)
+          .where(eq(schema.salesReturns.organizationId, data.orgId));
+        await tx
+          .delete(schema.purchaseReturns)
+          .where(eq(schema.purchaseReturns.organizationId, data.orgId));
+        await tx
+          .delete(schema.purchaseReturnItems)
+          .where(eq(schema.purchaseReturnItems.organizationId, data.orgId));
+        await tx
+          .delete(schema.salesReturnItems)
+          .where(eq(schema.salesReturnItems.organizationId, data.orgId));
         await tx.delete(schema.saleItems).where(eq(schema.saleItems.organizationId, data.orgId));
-        await tx.delete(schema.salePayments).where(eq(schema.salePayments.organizationId, data.orgId));
-        await tx.delete(schema.purchaseItems).where(eq(schema.purchaseItems.organizationId, data.orgId));
+        await tx
+          .delete(schema.salePayments)
+          .where(eq(schema.salePayments.organizationId, data.orgId));
+        await tx
+          .delete(schema.purchaseItems)
+          .where(eq(schema.purchaseItems.organizationId, data.orgId));
         await tx.delete(schema.shifts).where(eq(schema.shifts.organizationId, data.orgId));
-        await tx.delete(schema.cashMovements).where(eq(schema.cashMovements.organizationId, data.orgId));
-        await tx.delete(schema.activityLog).where(eq(schema.activityLog.organizationId, data.orgId));
-        await tx.delete(schema.notifications).where(eq(schema.notifications.organizationId, data.orgId));
-        await tx.delete(schema.customerLedgers).where(eq(schema.customerLedgers.organizationId, data.orgId));
-        await tx.delete(schema.supplierLedgers).where(eq(schema.supplierLedgers.organizationId, data.orgId));
+        await tx
+          .delete(schema.cashMovements)
+          .where(eq(schema.cashMovements.organizationId, data.orgId));
+        await tx
+          .delete(schema.activityLog)
+          .where(eq(schema.activityLog.organizationId, data.orgId));
+        await tx
+          .delete(schema.notifications)
+          .where(eq(schema.notifications.organizationId, data.orgId));
+        await tx
+          .delete(schema.customerLedgers)
+          .where(eq(schema.customerLedgers.organizationId, data.orgId));
+        await tx
+          .delete(schema.supplierLedgers)
+          .where(eq(schema.supplierLedgers.organizationId, data.orgId));
         await tx.delete(schema.accounts).where(eq(schema.accounts.organizationId, data.orgId));
         await tx.delete(schema.vouchers).where(eq(schema.vouchers.organizationId, data.orgId));
-        await tx.delete(schema.subscriptions).where(eq(schema.subscriptions.organizationId, data.orgId));
-        await tx.delete(schema.subscriptionPayments).where(eq(schema.subscriptionPayments.organizationId, data.orgId));
-        await tx.delete(schema.invitations).where(eq(schema.invitations.organizationId, data.orgId));
-        await tx.delete(schema.adminMenuGrants).where(eq(schema.adminMenuGrants.organizationId, data.orgId));
+        await tx
+          .delete(schema.subscriptions)
+          .where(eq(schema.subscriptions.organizationId, data.orgId));
+        await tx
+          .delete(schema.subscriptionPayments)
+          .where(eq(schema.subscriptionPayments.organizationId, data.orgId));
+        await tx
+          .delete(schema.invitations)
+          .where(eq(schema.invitations.organizationId, data.orgId));
+        await tx
+          .delete(schema.adminMenuGrants)
+          .where(eq(schema.adminMenuGrants.organizationId, data.orgId));
 
         // Finally delete the organization
         await tx.delete(schema.organizations).where(eq(schema.organizations.id, data.orgId));

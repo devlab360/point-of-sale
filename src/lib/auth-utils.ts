@@ -152,4 +152,3 @@ export async function requirePermission(
   }
   throw new Error(`Unauthorized: Missing permission for '${permissionKey}'`);
 }
-

@@ -117,8 +117,7 @@ function ExpensesPage() {
       const lower = debouncedSearch.toLowerCase();
       result = result.filter(
         (e) =>
-          e.description?.toLowerCase().includes(lower) ||
-          e.category?.toLowerCase().includes(lower),
+          e.description?.toLowerCase().includes(lower) || e.category?.toLowerCase().includes(lower),
       );
     }
     if (filters.category) {
@@ -352,46 +351,46 @@ function ExpensesPage() {
             </div>
           </div>
         )}
-      topContent={
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
-              <div className="rounded-xl border border-border/80 bg-card p-4 shadow-soft flex flex-col gap-1 card-interactive">
-                <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
-                  Total Expenses
-                </span>
-                <span className="text-xl sm:text-2xl font-black text-foreground">
-                  {formatCurrency(metrics.total)}
-                </span>
-              </div>
-
-              <div className="rounded-xl border border-border/80 bg-card p-4 shadow-soft flex flex-col gap-1 card-interactive">
-                <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
-                  Paid Out
-                </span>
-                <span className="text-xl sm:text-2xl font-black text-success">
-                  {formatCurrency(metrics.paid)}
-                </span>
-              </div>
-
-              <div className="rounded-xl border border-border/80 bg-card p-4 shadow-soft flex flex-col gap-1 card-interactive">
-                <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
-                  Pending Bills
-                </span>
-                <span className="text-xl sm:text-2xl font-black text-warning">
-                  {formatCurrency(metrics.pending)}
-                </span>
-              </div>
-
-              <div className="rounded-xl border border-border/80 bg-card p-4 shadow-soft flex flex-col gap-1 card-interactive">
-                <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
-                  Top Category
-                </span>
-                <span className="text-lg sm:text-xl font-black text-info truncate">
-                  {metrics.maxCat}
-                </span>
-              </div>
+        topContent={
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
+            <div className="rounded-xl border border-border/80 bg-card p-4 shadow-soft flex flex-col gap-1 card-interactive">
+              <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
+                Total Expenses
+              </span>
+              <span className="text-xl sm:text-2xl font-black text-foreground">
+                {formatCurrency(metrics.total)}
+              </span>
             </div>
-          }
-        >
+
+            <div className="rounded-xl border border-border/80 bg-card p-4 shadow-soft flex flex-col gap-1 card-interactive">
+              <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
+                Paid Out
+              </span>
+              <span className="text-xl sm:text-2xl font-black text-success">
+                {formatCurrency(metrics.paid)}
+              </span>
+            </div>
+
+            <div className="rounded-xl border border-border/80 bg-card p-4 shadow-soft flex flex-col gap-1 card-interactive">
+              <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
+                Pending Bills
+              </span>
+              <span className="text-xl sm:text-2xl font-black text-warning">
+                {formatCurrency(metrics.pending)}
+              </span>
+            </div>
+
+            <div className="rounded-xl border border-border/80 bg-card p-4 shadow-soft flex flex-col gap-1 card-interactive">
+              <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
+                Top Category
+              </span>
+              <span className="text-lg sm:text-xl font-black text-info truncate">
+                {metrics.maxCat}
+              </span>
+            </div>
+          </div>
+        }
+      >
         {isExpensesLoading ? (
           <TableSkeleton columns={6} rows={6} showHeaderAction={false} showFilters={false} />
         ) : isExpensesError ? (
@@ -404,12 +403,24 @@ function ExpensesPage() {
                 <Table className="min-w-[750px]">
                   <TableHeader className="bg-muted/40">
                     <TableRow>
-                      <TableHead className="font-bold text-xs uppercase tracking-wider">Date</TableHead>
-                      <TableHead className="font-bold text-xs uppercase tracking-wider">Category</TableHead>
-                      <TableHead className="font-bold text-xs uppercase tracking-wider">Expense Description</TableHead>
-                      <TableHead className="font-bold text-xs uppercase tracking-wider">Payment Status</TableHead>
-                      <TableHead className="font-bold text-xs uppercase tracking-wider text-right">Amount</TableHead>
-                      <TableHead className="font-bold text-xs uppercase tracking-wider text-right">Actions</TableHead>
+                      <TableHead className="font-bold text-xs uppercase tracking-wider">
+                        Date
+                      </TableHead>
+                      <TableHead className="font-bold text-xs uppercase tracking-wider">
+                        Category
+                      </TableHead>
+                      <TableHead className="font-bold text-xs uppercase tracking-wider">
+                        Expense Description
+                      </TableHead>
+                      <TableHead className="font-bold text-xs uppercase tracking-wider">
+                        Payment Status
+                      </TableHead>
+                      <TableHead className="font-bold text-xs uppercase tracking-wider text-right">
+                        Amount
+                      </TableHead>
+                      <TableHead className="font-bold text-xs uppercase tracking-wider text-right">
+                        Actions
+                      </TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody className="divide-y divide-border/60">
@@ -505,7 +516,9 @@ function ExpensesPage() {
                         <Badge variant="outline" className="text-[9px] font-bold bg-muted/60">
                           {e.category}
                         </Badge>
-                        <span className="text-[10px] text-muted-foreground">{formatDate(e.date)}</span>
+                        <span className="text-[10px] text-muted-foreground">
+                          {formatDate(e.date)}
+                        </span>
                       </div>
                       <div className="font-bold text-xs sm:text-sm text-foreground mt-1 truncate">
                         {e.description}
@@ -518,12 +531,24 @@ function ExpensesPage() {
                     </div>
 
                     <div className="text-right shrink-0 pl-2">
-                      <div className="text-sm font-black text-foreground">{formatCurrency(Number(e.amount) || 0)}</div>
+                      <div className="text-sm font-black text-foreground">
+                        {formatCurrency(Number(e.amount) || 0)}
+                      </div>
                       <div className="flex gap-1 justify-end mt-1">
-                        <Button size="icon" variant="ghost" className="size-7" onClick={() => handleOpenAdd(e)}>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="size-7"
+                          onClick={() => handleOpenAdd(e)}
+                        >
                           <Edit2 className="size-3.5" />
                         </Button>
-                        <Button size="icon" variant="ghost" className="size-7 text-destructive" onClick={() => setDeleteId(e.id)}>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="size-7 text-destructive"
+                          onClick={() => setDeleteId(e.id)}
+                        >
                           <Trash2 className="size-3.5" />
                         </Button>
                       </div>
@@ -599,7 +624,9 @@ function ExpensesPage() {
                     name="category"
                     defaultValue={editItem?.category}
                     placeholder="e.g. Utilities / Office Rent"
-                    className={expErrors.category ? "border-destructive focus-visible:ring-destructive" : ""}
+                    className={
+                      expErrors.category ? "border-destructive focus-visible:ring-destructive" : ""
+                    }
                     onChange={() => clearExpError("category")}
                   />
                   <FieldError message={expErrors.category} />
@@ -615,7 +642,9 @@ function ExpensesPage() {
                   name="description"
                   placeholder="e.g. Paid showroom internet & electricity bill"
                   defaultValue={editItem?.description}
-                  className={expErrors.description ? "border-destructive focus-visible:ring-destructive" : ""}
+                  className={
+                    expErrors.description ? "border-destructive focus-visible:ring-destructive" : ""
+                  }
                   onChange={() => clearExpError("description")}
                 />
                 <FieldError message={expErrors.description} />
@@ -673,7 +702,11 @@ function ExpensesPage() {
               >
                 Cancel
               </Button>
-              <Button type="submit" disabled={isSaving} className="min-w-[140px] font-bold shadow-soft">
+              <Button
+                type="submit"
+                disabled={isSaving}
+                className="min-w-[140px] font-bold shadow-soft"
+              >
                 {isSaving && <Loader2 className="size-4 animate-spin mr-2" />}
                 Save Expense
               </Button>
@@ -688,12 +721,16 @@ function ExpensesPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Expense Record?</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete this expense entry? This will permanently remove the audit record.
+              Are you sure you want to delete this expense entry? This will permanently remove the
+              audit record.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+            <AlertDialogAction
+              onClick={handleDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
               Delete
             </AlertDialogAction>
           </AlertDialogFooter>

@@ -59,7 +59,8 @@ export function LogoutConfirmDialog({
           </div>
 
           <DialogDescription className="text-xs text-muted-foreground leading-relaxed pt-1">
-            Are you sure you want to end your current session? You will need to enter your credentials to log back in.
+            Are you sure you want to end your current session? You will need to enter your
+            credentials to log back in.
           </DialogDescription>
         </DialogHeader>
 

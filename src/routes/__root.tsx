@@ -110,7 +110,8 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
             Something went wrong
           </h1>
           <p className="mt-2 text-xs sm:text-sm text-muted-foreground leading-relaxed">
-            {error?.message || "The application encountered an unexpected error while loading this page."}
+            {error?.message ||
+              "The application encountered an unexpected error while loading this page."}
           </p>
         </div>
 
@@ -277,8 +278,10 @@ function RootComponent() {
       console.error("[Global Unhandled Rejection]", event.reason);
       try {
         reportLovableError(
-          event.reason instanceof Error ? event.reason : new Error(String(event.reason || "Unhandled Promise Rejection")),
-          { boundary: "window_unhandled_rejection" }
+          event.reason instanceof Error
+            ? event.reason
+            : new Error(String(event.reason || "Unhandled Promise Rejection")),
+          { boundary: "window_unhandled_rejection" },
         );
       } catch {
         // Silently ignore

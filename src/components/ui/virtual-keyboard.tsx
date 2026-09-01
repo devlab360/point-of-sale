@@ -173,21 +173,12 @@ export function VirtualKeyboard({
               "{shift} Z X C V B N M {bksp}",
               "{space} {enter}",
             ],
-            numpad: [
-              "1 2 3",
-              "4 5 6",
-              "7 8 9",
-              ". 0 {bksp}",
-              "{clear} 00 {enter}",
-            ],
+            numpad: ["1 2 3", "4 5 6", "7 8 9", ". 0 {bksp}", "{clear} 00 {enter}"],
           }}
           onChange={onChange}
           onKeyPress={handleKeyPress}
           inputName={inputName}
-          theme={cn(
-            "hg-theme-default customKeyboardTheme",
-            isNumpadActive && "numpadGridTheme",
-          )}
+          theme={cn("hg-theme-default customKeyboardTheme", isNumpadActive && "numpadGridTheme")}
           display={{
             "{bksp}": "⌫ Del",
             "{enter}": "↵ Done",

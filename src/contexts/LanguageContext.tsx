@@ -1,19 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from "react";
 
 export type LanguageCode =
-  | "en"
-  | "es"
-  | "fr"
-  | "de"
-  | "pt"
-  | "ar"
-  | "hi"
-  | "bn"
-  | "zh"
-  | "ja"
-  | "ru"
-  | "id"
-  | "tr";
+  "en" | "es" | "fr" | "de" | "pt" | "ar" | "hi" | "bn" | "zh" | "ja" | "ru" | "id" | "tr";
 
 export interface LanguageOption {
   code: LanguageCode;

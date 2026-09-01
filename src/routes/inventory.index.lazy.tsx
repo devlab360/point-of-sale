@@ -11,7 +11,13 @@ import { cn } from "@/lib/utils";
 import { Download, Filter, Brain, PackageSearch } from "lucide-react";
 import { toast } from "sonner";
 import { useState, useMemo, useEffect } from "react";
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+} from "@/components/ui/sheet";
 import { DataPage } from "@/components/layout/DataPage";
 import { exportToCSV } from "@/lib/csv";
 import { useDebounce } from "@/hooks/useDebounce";
@@ -253,7 +259,9 @@ function StockList() {
               <div className="mt-2 text-2xl sm:text-3xl font-black text-primary">
                 {formatCurrency(inventorySummary?.totalRetailValue || 0)}
               </div>
-              <p className="text-xs text-muted-foreground mt-1 font-medium">Expected sales revenue</p>
+              <p className="text-xs text-muted-foreground mt-1 font-medium">
+                Expected sales revenue
+              </p>
             </div>
 
             <div className="rounded-xl border border-border/80 bg-card p-4 shadow-soft flex flex-col justify-between card-interactive">

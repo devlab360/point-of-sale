@@ -5,9 +5,12 @@ import { assertBranchLimit } from "@/lib/plan-limits";
 import { z } from "zod";
 import { v4 as uuidv4 } from "uuid";
 
-import { db } from "@/db";
-import * as schema from "@/db/schema";
-import { eq, and } from "drizzle-orm";
+async function getDb() {
+  const { db } = await import("@/db");
+  const schema = await import("@/db/schema");
+  const { eq, and } = await import("drizzle-orm");
+  return { db, schema, eq, and };
+}
 
 export const getLocationsFn = createServerFn({ method: "GET" })
   .validator(z.object({}).optional().default({}))
@@ -15,6 +18,7 @@ export const getLocationsFn = createServerFn({ method: "GET" })
     try {
       const session = await requireAuth();
       const orgId = session.orgId;
+      const { db, schema, eq } = await getDb();
       const res = await db
         .select()
         .from(schema.locations)
@@ -49,17 +53,34 @@ export const createLocationFn = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     try {
       const session = await requireAuth();
+      const orgId = session.orgId;
+      await assertBranchLimit(orgId);
 
-      // Enforce SaaS plan branch quota limit
-      await assertBranchLimit(session.orgId);
+      const { db, schema, eq } = await getDb();
 
+      const existing = await db
+        .select()
+        .from(schema.locations)
+        .where(
+          and(
+            eq(schema.locations.organizationId, orgId),
+            eq(schema.locations.code, data.location.code),
+          ),
+        )
+        .limit(1);
+      if (existing.length > 0) {
+        return { success: false, error: "Location with this code already exists" };
+      }
+
+      const newId = data.location.id || uuidv4();
       const inserted = await db
         .insert(schema.locations)
         .values({
-          id: data.location.id || uuidv4(),
+          id: newId,
+          organizationId: orgId,
           name: data.location.name,
-          type: data.location.type || "store",
-          status: data.location.status || "active",
+          type: data.location.type,
+          status: data.location.status,
           code: data.location.code,
           industryType: data.location.industryType,
           address: data.location.address,
@@ -67,10 +88,12 @@ export const createLocationFn = createServerFn({ method: "POST" })
           phone: data.location.phone,
           email: data.location.email,
           managerName: data.location.managerName,
-          isHeadOffice: data.location.isHeadOffice || false,
-          organizationId: session.orgId,
+          isHeadOffice: data.location.isHeadOffice,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
         })
         .returning();
+
       return { success: true, data: inserted[0], message: "Location created successfully" };
     } catch (e) {
       return handleApiError(e);
@@ -101,13 +124,52 @@ export const updateLocationFn = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     try {
       const session = await requireAuth();
-      const { organizationId: _omitted, ...safeUpdates } = data.updates;
+      const { db, schema, eq, and } = await getDb();
+
+      if (data.updates.code) {
+        const existing = await db
+          .select()
+          .from(schema.locations)
+          .where(
+            and(
+              eq(schema.locations.organizationId, session.orgId),
+              eq(schema.locations.code, data.updates.code),
+              // Exclude current location from check
+              // Note: We can't easily exclude by ID in Drizzle without a subquery, so we'll check in JS
+            ),
+          )
+          .limit(1);
+        if (existing.length > 0 && existing[0].id !== data.id) {
+          return { success: false, error: "Location with this code already exists" };
+        }
+      }
+
+      const now = new Date().toISOString();
+      const updatesObj: Record<string, any> = { updatedAt: now };
+
+      for (const key of [
+        "name",
+        "type",
+        "status",
+        "code",
+        "industryType",
+        "address",
+        "city",
+        "phone",
+        "email",
+        "managerName",
+        "isHeadOffice",
+      ]) {
+        if (data.updates[key] !== undefined) updatesObj[key] = data.updates[key];
+      }
+
       await db
         .update(schema.locations)
-        .set(safeUpdates as any)
+        .set(updatesObj)
         .where(
           and(eq(schema.locations.id, data.id), eq(schema.locations.organizationId, session.orgId)),
         );
+
       return { success: true, message: "Location updated successfully" };
     } catch (e) {
       return handleApiError(e);
@@ -123,6 +185,7 @@ export const deleteLocationFn = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     try {
       const session = await requireAuth();
+      const { db, schema, eq, and } = await getDb();
       await db
         .delete(schema.locations)
         .where(

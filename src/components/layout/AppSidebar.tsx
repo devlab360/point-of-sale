@@ -31,7 +31,10 @@ export function AppSidebar({ onNavigate }: { onNavigate?: () => void }) {
     const initial: Record<string, boolean> = {};
     APP_GROUPS.forEach((group) => {
       group.items.forEach((item) => {
-        if (item.children && item.children.some((c) => pathname === c.to || pathname.startsWith(c.to + "/"))) {
+        if (
+          item.children &&
+          item.children.some((c) => pathname === c.to || pathname.startsWith(c.to + "/"))
+        ) {
           initial[item.label] = true;
         }
       });
@@ -182,7 +185,11 @@ export function AppSidebar({ onNavigate }: { onNavigate?: () => void }) {
             >
               <div className="relative grid size-11 shrink-0 place-items-center rounded-lg bg-black text-[#B58D4C] border border-[#B58D4C]/30 shadow-xs overflow-hidden font-serif font-black text-sm tracking-wider group-hover:scale-105 transition-transform">
                 {settings?.logoUrl ? (
-                  <img src={settings.logoUrl} alt="Logo" className="size-full object-cover bg-white" />
+                  <img
+                    src={settings.logoUrl}
+                    alt="Logo"
+                    className="size-full object-cover bg-white"
+                  />
                 ) : (
                   <span>{initials}</span>
                 )}
@@ -233,7 +240,12 @@ export function AppSidebar({ onNavigate }: { onNavigate?: () => void }) {
                     : "bg-muted/30 text-foreground hover:bg-muted/60",
                 )}
               >
-                <LayoutGrid className={cn("size-5 shrink-0 stroke-[2]", isDashboardActive ? "text-white" : "text-foreground/80")} />
+                <LayoutGrid
+                  className={cn(
+                    "size-5 shrink-0 stroke-[2]",
+                    isDashboardActive ? "text-white" : "text-foreground/80",
+                  )}
+                />
               </Link>
             </TooltipTrigger>
             <TooltipContent side="right" className="font-bold text-xs">
@@ -251,7 +263,12 @@ export function AppSidebar({ onNavigate }: { onNavigate?: () => void }) {
                 : "bg-muted/30 text-foreground hover:bg-muted/60",
             )}
           >
-            <LayoutGrid className={cn("size-5 shrink-0 stroke-[2]", isDashboardActive ? "text-white" : "text-foreground/80")} />
+            <LayoutGrid
+              className={cn(
+                "size-5 shrink-0 stroke-[2]",
+                isDashboardActive ? "text-white" : "text-foreground/80",
+              )}
+            />
             <span>Dashboard</span>
           </Link>
         )}
@@ -272,7 +289,8 @@ export function AppSidebar({ onNavigate }: { onNavigate?: () => void }) {
                 {group.items.map((item) => {
                   const Icon = item.icon;
                   const hasChildren = item.children && item.children.length > 0;
-                  const isChildActive = hasChildren && item.children?.some((c) => isExactActive(c.to));
+                  const isChildActive =
+                    hasChildren && item.children?.some((c) => isExactActive(c.to));
                   const isItemActive = isExactActive(item.to);
                   const isOpen = openParents[item.label] ?? isChildActive;
 
@@ -291,16 +309,30 @@ export function AppSidebar({ onNavigate }: { onNavigate?: () => void }) {
                                   : "text-foreground/80 hover:bg-muted/40 hover:text-foreground",
                               )}
                             >
-                              <Icon className={cn("size-5 shrink-0 stroke-[1.6]", isChildActive ? "text-[#B58D4C]" : "text-foreground/75")} />
+                              <Icon
+                                className={cn(
+                                  "size-5 shrink-0 stroke-[1.6]",
+                                  isChildActive ? "text-[#B58D4C]" : "text-foreground/75",
+                                )}
+                              />
                             </button>
                           </TooltipTrigger>
-                          <TooltipContent side="right" className="flex flex-col gap-1 py-2 px-3 shadow-xl">
+                          <TooltipContent
+                            side="right"
+                            className="flex flex-col gap-1 py-2 px-3 shadow-xl"
+                          >
                             <div className="font-bold text-xs text-background border-b border-background/20 pb-1">
                               {t(item.tkey, item.label)}
                             </div>
                             <div className="flex flex-col gap-0.5 text-[11px] font-normal text-background/90">
                               {item.children?.map((c) => (
-                                <span key={c.to} className={cn("truncate", isExactActive(c.to) && "font-bold text-[#B58D4C]")}>
+                                <span
+                                  key={c.to}
+                                  className={cn(
+                                    "truncate",
+                                    isExactActive(c.to) && "font-bold text-[#B58D4C]",
+                                  )}
+                                >
                                   • {t(c.tkey, c.label)}
                                 </span>
                               ))}
@@ -323,7 +355,12 @@ export function AppSidebar({ onNavigate }: { onNavigate?: () => void }) {
                           )}
                         >
                           <div className="flex items-center gap-3 min-w-0">
-                            <Icon className={cn("size-5 shrink-0 stroke-[1.6]", isChildActive ? "text-[#B58D4C]" : "text-foreground/75")} />
+                            <Icon
+                              className={cn(
+                                "size-5 shrink-0 stroke-[1.6]",
+                                isChildActive ? "text-[#B58D4C]" : "text-foreground/75",
+                              )}
+                            />
                             <span className="truncate text-left">{t(item.tkey, item.label)}</span>
                           </div>
                           <ChevronDown
@@ -377,7 +414,12 @@ export function AppSidebar({ onNavigate }: { onNavigate?: () => void }) {
                                 : "text-foreground/80 hover:bg-muted/40 hover:text-foreground",
                             )}
                           >
-                            <Icon className={cn("size-5 shrink-0 stroke-[1.6]", isItemActive ? "text-white" : "text-foreground/75")} />
+                            <Icon
+                              className={cn(
+                                "size-5 shrink-0 stroke-[1.6]",
+                                isItemActive ? "text-white" : "text-foreground/75",
+                              )}
+                            />
                           </Link>
                         </TooltipTrigger>
                         <TooltipContent side="right" className="font-bold text-xs">
@@ -407,7 +449,12 @@ export function AppSidebar({ onNavigate }: { onNavigate?: () => void }) {
                       )}
                     >
                       <div className="flex items-center gap-3 min-w-0">
-                        <Icon className={cn("size-5 shrink-0 stroke-[1.6]", isItemActive ? "text-white" : "text-foreground/75")} />
+                        <Icon
+                          className={cn(
+                            "size-5 shrink-0 stroke-[1.6]",
+                            isItemActive ? "text-white" : "text-foreground/75",
+                          )}
+                        />
                         <span className="truncate text-left">{t(item.tkey, item.label)}</span>
                       </div>
                       {item.badge && (

@@ -60,12 +60,21 @@ function SuperAdminHelpPage() {
 
   // Modals
   const [isArticleModalOpen, setIsArticleModalOpen] = useState(false);
-  const [newArticle, setNewArticle] = useState({ title: "", type: "doc" as "doc" | "video", content: "" });
+  const [newArticle, setNewArticle] = useState({
+    title: "",
+    type: "doc" as "doc" | "video",
+    content: "",
+  });
 
   const [isFaqModalOpen, setIsFaqModalOpen] = useState(false);
   const [newFaq, setNewFaq] = useState({ question: "", answer: "" });
 
-  const { data: helpData, isLoading, refetch, isFetching } = useQuery({
+  const {
+    data: helpData,
+    isLoading,
+    refetch,
+    isFetching,
+  } = useQuery({
     queryKey: ["super-admin-help"],
     queryFn: () => getHelpArticlesAdminFn({ data: {} }),
   });
@@ -172,12 +181,20 @@ function SuperAdminHelpPage() {
                 <span>Export CSV</span>
               </Button>
               {activeTab === "articles" ? (
-                <Button onClick={() => setIsArticleModalOpen(true)} size="sm" className="gap-2 h-9 shadow-xs">
+                <Button
+                  onClick={() => setIsArticleModalOpen(true)}
+                  size="sm"
+                  className="gap-2 h-9 shadow-xs"
+                >
                   <Plus className="size-4" />
                   <span>New Guide / Video</span>
                 </Button>
               ) : (
-                <Button onClick={() => setIsFaqModalOpen(true)} size="sm" className="gap-2 h-9 shadow-xs">
+                <Button
+                  onClick={() => setIsFaqModalOpen(true)}
+                  size="sm"
+                  className="gap-2 h-9 shadow-xs"
+                >
                   <Plus className="size-4" />
                   <span>New FAQ Entry</span>
                 </Button>
@@ -279,7 +296,11 @@ function SuperAdminHelpPage() {
                         variant={art.type === "video" ? "default" : "secondary"}
                         className="text-[10px] gap-1 font-bold"
                       >
-                        {art.type === "video" ? <Video className="size-3" /> : <FileText className="size-3" />}
+                        {art.type === "video" ? (
+                          <Video className="size-3" />
+                        ) : (
+                          <FileText className="size-3" />
+                        )}
                         {art.type === "video" ? "Video Tutorial" : "Documentation"}
                       </Badge>
                       <span className="text-[10px] text-muted-foreground font-mono">
@@ -311,45 +332,43 @@ function SuperAdminHelpPage() {
               ))}
             </div>
           )
+        ) : filteredFaqs.length === 0 ? (
+          <div className="p-16 text-center rounded-2xl border bg-card space-y-3">
+            <HelpCircle className="size-8 mx-auto text-muted-foreground/40" />
+            <h4 className="font-bold text-sm text-foreground">No FAQs Configured</h4>
+            <p className="text-xs text-muted-foreground">
+              Add frequently asked questions for quick answers.
+            </p>
+          </div>
         ) : (
-          filteredFaqs.length === 0 ? (
-            <div className="p-16 text-center rounded-2xl border bg-card space-y-3">
-              <HelpCircle className="size-8 mx-auto text-muted-foreground/40" />
-              <h4 className="font-bold text-sm text-foreground">No FAQs Configured</h4>
-              <p className="text-xs text-muted-foreground">Add frequently asked questions for quick answers.</p>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {filteredFaqs.map((faq: any) => (
-                <div
-                  key={faq.id}
-                  className="p-4 rounded-2xl border bg-card shadow-xs flex items-start justify-between gap-4 hover:border-primary/40 transition-colors"
-                >
-                  <div className="space-y-1">
-                    <h4 className="font-bold text-sm text-foreground flex items-center gap-2">
-                      <HelpCircle className="size-4 text-primary shrink-0" />
-                      <span>{faq.question}</span>
-                    </h4>
-                    <p className="text-xs text-muted-foreground leading-relaxed pl-6">
-                      {faq.answer}
-                    </p>
-                  </div>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    className="h-8 text-xs text-destructive hover:bg-destructive/10 shrink-0"
-                    onClick={() => {
-                      if (confirm(`Delete FAQ "${faq.question}"?`)) {
-                        deleteFaqMutation.mutate(faq.id);
-                      }
-                    }}
-                  >
-                    <Trash2 className="size-3.5" />
-                  </Button>
+          <div className="space-y-3">
+            {filteredFaqs.map((faq: any) => (
+              <div
+                key={faq.id}
+                className="p-4 rounded-2xl border bg-card shadow-xs flex items-start justify-between gap-4 hover:border-primary/40 transition-colors"
+              >
+                <div className="space-y-1">
+                  <h4 className="font-bold text-sm text-foreground flex items-center gap-2">
+                    <HelpCircle className="size-4 text-primary shrink-0" />
+                    <span>{faq.question}</span>
+                  </h4>
+                  <p className="text-xs text-muted-foreground leading-relaxed pl-6">{faq.answer}</p>
                 </div>
-              ))}
-            </div>
-          )
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-8 text-xs text-destructive hover:bg-destructive/10 shrink-0"
+                  onClick={() => {
+                    if (confirm(`Delete FAQ "${faq.question}"?`)) {
+                      deleteFaqMutation.mutate(faq.id);
+                    }
+                  }}
+                >
+                  <Trash2 className="size-3.5" />
+                </Button>
+              </div>
+            ))}
+          </div>
         )}
 
         {/* Create Article Drawer */}
@@ -359,7 +378,9 @@ function SuperAdminHelpPage() {
             className="w-full sm:max-w-2xl md:max-w-3xl lg:max-w-4xl p-0 flex flex-col h-full bg-background border-l border-border"
           >
             <SheetHeader className="bg-muted/60 p-5 border-b pr-12 text-left">
-              <SheetTitle className="text-lg font-bold text-foreground">New Help Article or Video</SheetTitle>
+              <SheetTitle className="text-lg font-bold text-foreground">
+                New Help Article or Video
+              </SheetTitle>
               <SheetDescription className="text-xs text-muted-foreground mt-0.5">
                 Publish a guide or tutorial for all registered store merchants.
               </SheetDescription>
@@ -402,7 +423,9 @@ function SuperAdminHelpPage() {
 
                 <div className="space-y-1.5">
                   <Label htmlFor="art-content">
-                    {newArticle.type === "video" ? "Video URL (YouTube/Vimeo)" : "Guide Markdown Content"}
+                    {newArticle.type === "video"
+                      ? "Video URL (YouTube/Vimeo)"
+                      : "Guide Markdown Content"}
                   </Label>
                   <Textarea
                     id="art-content"
@@ -420,7 +443,11 @@ function SuperAdminHelpPage() {
               </div>
 
               <SheetFooter className="p-5 border-t bg-muted/20 flex sm:justify-end gap-2 shrink-0">
-                <Button type="button" variant="outline" onClick={() => setIsArticleModalOpen(false)}>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setIsArticleModalOpen(false)}
+                >
                   Cancel
                 </Button>
                 <Button type="submit" disabled={createArticleMutation.isPending}>
@@ -438,7 +465,9 @@ function SuperAdminHelpPage() {
             className="w-full sm:max-w-xl md:max-w-2xl lg:max-w-3xl p-0 flex flex-col h-full bg-background border-l border-border"
           >
             <SheetHeader className="bg-muted/60 p-5 border-b pr-12 text-left">
-              <SheetTitle className="text-lg font-bold text-foreground">Add New Merchant FAQ</SheetTitle>
+              <SheetTitle className="text-lg font-bold text-foreground">
+                Add New Merchant FAQ
+              </SheetTitle>
               <SheetDescription className="text-xs text-muted-foreground mt-0.5">
                 Provide instant answers for commonly encountered issues.
               </SheetDescription>

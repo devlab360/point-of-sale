@@ -16,8 +16,16 @@ export const STATUS_OPTIONS: OptionItem[] = [
   { value: "active", label: "Active", badge: "bg-success/15 text-success border-success/30" },
   { value: "inactive", label: "Inactive", badge: "bg-muted text-muted-foreground border-border" },
   { value: "pending", label: "Pending", badge: "bg-warning/15 text-warning border-warning/30" },
-  { value: "suspended", label: "Suspended", badge: "bg-destructive/15 text-destructive border-destructive/30" },
-  { value: "archived", label: "Archived", badge: "bg-muted/60 text-muted-foreground border-border" },
+  {
+    value: "suspended",
+    label: "Suspended",
+    badge: "bg-destructive/15 text-destructive border-destructive/30",
+  },
+  {
+    value: "archived",
+    label: "Archived",
+    badge: "bg-muted/60 text-muted-foreground border-border",
+  },
 ];
 
 export const DISCOUNT_TYPES: OptionItem[] = [

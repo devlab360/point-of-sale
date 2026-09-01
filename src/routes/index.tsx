@@ -203,17 +203,27 @@ function Dashboard() {
 
     // Dead Stock Calculation
     const soldProductIds = new Set(
-      activeSales.flatMap((s: any) => (s.saleItems || s.items || []).map((i: any) => i.productId || i.id).filter(Boolean)),
+      activeSales.flatMap((s: any) =>
+        (s.saleItems || s.items || []).map((i: any) => i.productId || i.id).filter(Boolean),
+      ),
     );
-    const deadStockItems = products.filter((p: any) => (Number(p.stock) || 0) > 0 && !soldProductIds.has(p.id));
-    const totalStockValue = products.reduce((sum: number, p: any) => sum + (Number(p.stock) || 0) * (Number(p.cost) || 0), 0);
+    const deadStockItems = products.filter(
+      (p: any) => (Number(p.stock) || 0) > 0 && !soldProductIds.has(p.id),
+    );
+    const totalStockValue = products.reduce(
+      (sum: number, p: any) => sum + (Number(p.stock) || 0) * (Number(p.cost) || 0),
+      0,
+    );
     const deadStockValue = deadStockItems.reduce(
       (sum: number, p: any) => sum + (Number(p.stock) || 0) * (Number(p.cost) || 0),
       0,
     );
 
     // Due Collection Health
-    const totalDue = customers.reduce((sum: number, c: any) => sum + (Number(c.credit || c.due || c.balance) || 0), 0);
+    const totalDue = customers.reduce(
+      (sum: number, c: any) => sum + (Number(c.credit || c.due || c.balance) || 0),
+      0,
+    );
     const overDueRatio = totalSalesRev > 0 ? (totalDue / totalSalesRev) * 100 : 0;
 
     // Score Calculation out of 100
@@ -253,7 +263,9 @@ function Dashboard() {
     return { score, grade, badgeClass };
   }, [activeSales, products, customers, expenses, productsMap]);
 
-  const lowStock = products.filter((p: any) => Number(p.stock) <= Number(p.reorderLevel)).slice(0, 5);
+  const lowStock = products
+    .filter((p: any) => Number(p.stock) <= Number(p.reorderLevel))
+    .slice(0, 5);
 
   const productSalesMap = new Map<string, number>();
   activeSales.forEach((sale: any) => {
@@ -900,7 +912,10 @@ function Dashboard() {
                 <TableBody>
                   {recentSales.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={5} className="py-8 text-center text-xs text-muted-foreground">
+                      <TableCell
+                        colSpan={5}
+                        className="py-8 text-center text-xs text-muted-foreground"
+                      >
                         No sales transactions recorded yet today.
                       </TableCell>
                     </TableRow>
@@ -1089,7 +1104,9 @@ function Dashboard() {
                     </Badge>
                   </div>
                 ) : (
-                  <p className="text-xs text-muted-foreground">No product sales recorded yet today.</p>
+                  <p className="text-xs text-muted-foreground">
+                    No product sales recorded yet today.
+                  </p>
                 )}
               </div>
             </div>

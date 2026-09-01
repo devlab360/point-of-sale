@@ -63,7 +63,9 @@ export const Route = createFileRoute("/admin/payments")({
 
 function SuperAdminPaymentsPage() {
   const queryClient = useQueryClient();
-  const [activeTab, setActiveTab] = useState<"pending" | "approved" | "rejected" | "all">("pending");
+  const [activeTab, setActiveTab] = useState<"pending" | "approved" | "rejected" | "all">(
+    "pending",
+  );
   const [searchQuery, setSearchQuery] = useState("");
 
   // Payment Config Modal State
@@ -80,7 +82,12 @@ function SuperAdminPaymentsPage() {
     instructions: "",
   });
 
-  const { data: paymentsData, isLoading, refetch, isFetching } = useQuery({
+  const {
+    data: paymentsData,
+    isLoading,
+    refetch,
+    isFetching,
+  } = useQuery({
     queryKey: ["subscription-payments"],
     queryFn: () => getPendingPaymentsFn({ data: {} }),
   });
@@ -368,7 +375,9 @@ function SuperAdminPaymentsPage() {
                           <p className="text-xs font-bold text-foreground font-mono">
                             {p.referenceNumber || p.utrNumber || p.transactionRef || "N/A"}
                           </p>
-                          <p className="text-[10px] text-muted-foreground">{p.paymentMethod || "Bank / UPI Transfer"}</p>
+                          <p className="text-[10px] text-muted-foreground">
+                            {p.paymentMethod || "Bank / UPI Transfer"}
+                          </p>
                         </div>
                       </TableCell>
 
@@ -435,7 +444,10 @@ function SuperAdminPaymentsPage() {
         </div>
 
         {/* View Payment Proof & Details Drawer */}
-        <Sheet open={!!selectedPaymentDetail} onOpenChange={(open) => !open && setSelectedPaymentDetail(null)}>
+        <Sheet
+          open={!!selectedPaymentDetail}
+          onOpenChange={(open) => !open && setSelectedPaymentDetail(null)}
+        >
           <SheetContent
             side="right"
             className="w-full sm:max-w-xl md:max-w-2xl lg:max-w-3xl p-0 flex flex-col h-full bg-background border-l border-border"
@@ -456,7 +468,8 @@ function SuperAdminPaymentsPage() {
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Store Organization:</span>
                       <span className="font-bold text-foreground">
-                        {selectedPaymentDetail.organizationName || selectedPaymentDetail.organizationId}
+                        {selectedPaymentDetail.organizationName ||
+                          selectedPaymentDetail.organizationId}
                       </span>
                     </div>
                     <div className="flex justify-between">
@@ -478,7 +491,9 @@ function SuperAdminPaymentsPage() {
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">UTR / Transaction Ref:</span>
                       <span className="font-mono font-bold text-foreground">
-                        {selectedPaymentDetail.referenceNumber || selectedPaymentDetail.utrNumber || "N/A"}
+                        {selectedPaymentDetail.referenceNumber ||
+                          selectedPaymentDetail.utrNumber ||
+                          "N/A"}
                       </span>
                     </div>
                     <div className="flex justify-between">
@@ -488,8 +503,8 @@ function SuperAdminPaymentsPage() {
                           selectedPaymentDetail.status === "approved"
                             ? "default"
                             : selectedPaymentDetail.status === "pending"
-                            ? "secondary"
-                            : "destructive"
+                              ? "secondary"
+                              : "destructive"
                         }
                         className="text-[10px] font-bold uppercase"
                       >
@@ -509,7 +524,11 @@ function SuperAdminPaymentsPage() {
                 </div>
 
                 <SheetFooter className="p-5 border-t bg-muted/20 flex sm:justify-end">
-                  <Button type="button" variant="outline" onClick={() => setSelectedPaymentDetail(null)}>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setSelectedPaymentDetail(null)}
+                  >
                     Close
                   </Button>
                 </SheetFooter>
@@ -530,7 +549,8 @@ function SuperAdminPaymentsPage() {
                 <span>Super Admin Payment & UPI QR Setup</span>
               </SheetTitle>
               <SheetDescription className="text-xs text-muted-foreground mt-0.5">
-                Configure your official bank and UPI QR details shown to tenant store merchants when upgrading plans.
+                Configure your official bank and UPI QR details shown to tenant store merchants when
+                upgrading plans.
               </SheetDescription>
             </SheetHeader>
 
@@ -548,7 +568,9 @@ function SuperAdminPaymentsPage() {
                     <Input
                       id="cfg-bank-name"
                       value={paymentConfig.bankName}
-                      onChange={(e) => setPaymentConfig({ ...paymentConfig, bankName: e.target.value })}
+                      onChange={(e) =>
+                        setPaymentConfig({ ...paymentConfig, bankName: e.target.value })
+                      }
                       placeholder="HDFC Bank / State Bank of India"
                     />
                   </div>
@@ -557,7 +579,9 @@ function SuperAdminPaymentsPage() {
                     <Input
                       id="cfg-acc-name"
                       value={paymentConfig.accountName}
-                      onChange={(e) => setPaymentConfig({ ...paymentConfig, accountName: e.target.value })}
+                      onChange={(e) =>
+                        setPaymentConfig({ ...paymentConfig, accountName: e.target.value })
+                      }
                       placeholder="OneDesk360 Cloud Technologies"
                     />
                   </div>
@@ -569,7 +593,9 @@ function SuperAdminPaymentsPage() {
                     <Input
                       id="cfg-acc-no"
                       value={paymentConfig.accountNo}
-                      onChange={(e) => setPaymentConfig({ ...paymentConfig, accountNo: e.target.value })}
+                      onChange={(e) =>
+                        setPaymentConfig({ ...paymentConfig, accountNo: e.target.value })
+                      }
                       placeholder="50200012345678"
                     />
                   </div>
@@ -578,7 +604,9 @@ function SuperAdminPaymentsPage() {
                     <Input
                       id="cfg-ifsc"
                       value={paymentConfig.ifscCode}
-                      onChange={(e) => setPaymentConfig({ ...paymentConfig, ifscCode: e.target.value })}
+                      onChange={(e) =>
+                        setPaymentConfig({ ...paymentConfig, ifscCode: e.target.value })
+                      }
                       placeholder="HDFC0001234"
                     />
                   </div>
@@ -590,7 +618,9 @@ function SuperAdminPaymentsPage() {
                     <Input
                       id="cfg-upi"
                       value={paymentConfig.upiId}
-                      onChange={(e) => setPaymentConfig({ ...paymentConfig, upiId: e.target.value })}
+                      onChange={(e) =>
+                        setPaymentConfig({ ...paymentConfig, upiId: e.target.value })
+                      }
                       placeholder="onedesk360@okaxis"
                     />
                   </div>
@@ -599,7 +629,9 @@ function SuperAdminPaymentsPage() {
                     <Input
                       id="cfg-qr"
                       value={paymentConfig.qrCodeUrl}
-                      onChange={(e) => setPaymentConfig({ ...paymentConfig, qrCodeUrl: e.target.value })}
+                      onChange={(e) =>
+                        setPaymentConfig({ ...paymentConfig, qrCodeUrl: e.target.value })
+                      }
                       placeholder="https://example.com/upi-qr.png"
                     />
                   </div>
@@ -611,7 +643,9 @@ function SuperAdminPaymentsPage() {
                     id="cfg-instructions"
                     rows={3}
                     value={paymentConfig.instructions}
-                    onChange={(e) => setPaymentConfig({ ...paymentConfig, instructions: e.target.value })}
+                    onChange={(e) =>
+                      setPaymentConfig({ ...paymentConfig, instructions: e.target.value })
+                    }
                     placeholder="Scan the QR code or transfer to the account above and submit your 12-digit UTR for immediate verification."
                   />
                 </div>

@@ -6,7 +6,14 @@ import { PaginationControls } from "@/components/ui/pagination-controls";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { DatePicker } from "@/components/ui/date-picker";
 import { useDebounce } from "@/hooks/useDebounce";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -403,33 +410,45 @@ function QuotationsPage() {
             </div>
           </div>
         )}
-      topContent={
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-              <div className="rounded-xl border border-border/80 bg-card p-3 shadow-2xs">
-                <div className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Total Quotes</div>
-                <div className="mt-1 text-xl sm:text-2xl font-black text-foreground">{rawQuotations.length}</div>
+        topContent={
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <div className="rounded-xl border border-border/80 bg-card p-3 shadow-2xs">
+              <div className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
+                Total Quotes
               </div>
-              <div className="rounded-xl border border-border/80 bg-card p-3 shadow-2xs">
-                <div className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Converted</div>
-                <div className="mt-1 text-xl sm:text-2xl font-black text-success">
-                  {rawQuotations.filter((q) => q.status === "converted").length}
-                </div>
-              </div>
-              <div className="rounded-xl border border-border/80 bg-card p-3 shadow-2xs">
-                <div className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Pending / Sent</div>
-                <div className="mt-1 text-xl sm:text-2xl font-black text-amber-500">
-                  {rawQuotations.filter((q) => q.status === "sent" || q.status === "draft").length}
-                </div>
-              </div>
-              <div className="rounded-xl border border-border/80 bg-card p-3 shadow-2xs">
-                <div className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Estimated Value</div>
-                <div className="mt-1 text-xl sm:text-2xl font-black text-primary truncate">
-                  {formatCurrency(rawQuotations.reduce((acc, q) => acc + (parseFloat(q.total) || 0), 0))}
-                </div>
+              <div className="mt-1 text-xl sm:text-2xl font-black text-foreground">
+                {rawQuotations.length}
               </div>
             </div>
-          }
-        >
+            <div className="rounded-xl border border-border/80 bg-card p-3 shadow-2xs">
+              <div className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
+                Converted
+              </div>
+              <div className="mt-1 text-xl sm:text-2xl font-black text-success">
+                {rawQuotations.filter((q) => q.status === "converted").length}
+              </div>
+            </div>
+            <div className="rounded-xl border border-border/80 bg-card p-3 shadow-2xs">
+              <div className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
+                Pending / Sent
+              </div>
+              <div className="mt-1 text-xl sm:text-2xl font-black text-amber-500">
+                {rawQuotations.filter((q) => q.status === "sent" || q.status === "draft").length}
+              </div>
+            </div>
+            <div className="rounded-xl border border-border/80 bg-card p-3 shadow-2xs">
+              <div className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
+                Estimated Value
+              </div>
+              <div className="mt-1 text-xl sm:text-2xl font-black text-primary truncate">
+                {formatCurrency(
+                  rawQuotations.reduce((acc, q) => acc + (parseFloat(q.total) || 0), 0),
+                )}
+              </div>
+            </div>
+          </div>
+        }
+      >
         <div className="space-y-4">
           <div className="overflow-hidden rounded-xl border border-border/80 bg-card shadow-soft">
             {/* Desktop Table View */}
@@ -637,8 +656,12 @@ function QuotationsPage() {
           className="w-full sm:max-w-3xl lg:max-w-4xl xl:max-w-5xl p-0 flex flex-col h-full bg-background border-l border-border"
         >
           <SheetHeader className="bg-muted/60 p-5 border-b pr-12 text-left">
-            <SheetTitle className="text-xl font-bold text-foreground">Create New Quotation / Estimate</SheetTitle>
-            <p className="text-xs text-muted-foreground mt-0.5">Generate formal estimates and convert them into sales invoices anytime.</p>
+            <SheetTitle className="text-xl font-bold text-foreground">
+              Create New Quotation / Estimate
+            </SheetTitle>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Generate formal estimates and convert them into sales invoices anytime.
+            </p>
           </SheetHeader>
           <form
             noValidate

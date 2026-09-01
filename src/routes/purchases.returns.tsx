@@ -298,59 +298,73 @@ function PurchaseReturnsPage() {
             </div>
           </div>
         )}
-      topContent={
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
-              <div className="rounded-xl border border-border/80 bg-card p-4 shadow-soft flex flex-col gap-1 card-interactive">
-                <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
-                  Total Returns
-                </span>
-                <span className="text-xl sm:text-2xl font-black text-foreground">
-                  {metrics.totalReturns}
-                </span>
-              </div>
-
-              <div className="rounded-xl border border-border/80 bg-card p-4 shadow-soft flex flex-col gap-1 card-interactive">
-                <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
-                  Returned Value
-                </span>
-                <span className="text-xl sm:text-2xl font-black text-info">
-                  {formatCurrency(metrics.totalValue)}
-                </span>
-              </div>
-
-              <div className="rounded-xl border border-border/80 bg-card p-4 shadow-soft flex flex-col gap-1 card-interactive">
-                <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
-                  Stock Restored
-                </span>
-                <span className="text-xl sm:text-2xl font-black text-success">
-                  {metrics.processedCount}
-                </span>
-              </div>
-
-              <div className="rounded-xl border border-border/80 bg-card p-4 shadow-soft flex flex-col gap-1 card-interactive">
-                <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
-                  Pending Adjustments
-                </span>
-                <span className="text-xl sm:text-2xl font-black text-warning">
-                  {metrics.pendingCount}
-                </span>
-              </div>
+        topContent={
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
+            <div className="rounded-xl border border-border/80 bg-card p-4 shadow-soft flex flex-col gap-1 card-interactive">
+              <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
+                Total Returns
+              </span>
+              <span className="text-xl sm:text-2xl font-black text-foreground">
+                {metrics.totalReturns}
+              </span>
             </div>
-          }
-        >
+
+            <div className="rounded-xl border border-border/80 bg-card p-4 shadow-soft flex flex-col gap-1 card-interactive">
+              <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
+                Returned Value
+              </span>
+              <span className="text-xl sm:text-2xl font-black text-info">
+                {formatCurrency(metrics.totalValue)}
+              </span>
+            </div>
+
+            <div className="rounded-xl border border-border/80 bg-card p-4 shadow-soft flex flex-col gap-1 card-interactive">
+              <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
+                Stock Restored
+              </span>
+              <span className="text-xl sm:text-2xl font-black text-success">
+                {metrics.processedCount}
+              </span>
+            </div>
+
+            <div className="rounded-xl border border-border/80 bg-card p-4 shadow-soft flex flex-col gap-1 card-interactive">
+              <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
+                Pending Adjustments
+              </span>
+              <span className="text-xl sm:text-2xl font-black text-warning">
+                {metrics.pendingCount}
+              </span>
+            </div>
+          </div>
+        }
+      >
         <div className="space-y-4">
           <div className="overflow-hidden rounded-xl border border-border/80 bg-card shadow-soft">
             <div className="table-desktop overflow-x-auto">
               <Table className="min-w-[750px]">
                 <TableHeader className="bg-muted/40">
                   <TableRow>
-                    <TableHead className="font-bold text-xs uppercase tracking-wider">Debit Note Ref</TableHead>
-                    <TableHead className="font-bold text-xs uppercase tracking-wider">Supplier</TableHead>
-                    <TableHead className="font-bold text-xs uppercase tracking-wider">Return Date</TableHead>
-                    <TableHead className="font-bold text-xs uppercase tracking-wider">Reason</TableHead>
-                    <TableHead className="font-bold text-xs uppercase tracking-wider">Status</TableHead>
-                    <TableHead className="font-bold text-xs uppercase tracking-wider text-right">Total Credit</TableHead>
-                    <TableHead className="font-bold text-xs uppercase tracking-wider text-right">Actions</TableHead>
+                    <TableHead className="font-bold text-xs uppercase tracking-wider">
+                      Debit Note Ref
+                    </TableHead>
+                    <TableHead className="font-bold text-xs uppercase tracking-wider">
+                      Supplier
+                    </TableHead>
+                    <TableHead className="font-bold text-xs uppercase tracking-wider">
+                      Return Date
+                    </TableHead>
+                    <TableHead className="font-bold text-xs uppercase tracking-wider">
+                      Reason
+                    </TableHead>
+                    <TableHead className="font-bold text-xs uppercase tracking-wider">
+                      Status
+                    </TableHead>
+                    <TableHead className="font-bold text-xs uppercase tracking-wider text-right">
+                      Total Credit
+                    </TableHead>
+                    <TableHead className="font-bold text-xs uppercase tracking-wider text-right">
+                      Actions
+                    </TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody className="divide-y divide-border/60">
@@ -367,7 +381,9 @@ function PurchaseReturnsPage() {
                           }
                           actionLabel="Create Return"
                           onAction={() => {
-                            setReturnItems([{ productId: "", productName: "", quantity: 1, cost: 0, total: 0 }]);
+                            setReturnItems([
+                              { productId: "", productName: "", quantity: 1, cost: 0, total: 0 },
+                            ]);
                             setIsAddOpen(true);
                           }}
                           className="border-none bg-transparent my-0 py-8 shadow-none"
@@ -439,15 +455,21 @@ function PurchaseReturnsPage() {
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
                       <span className="font-mono text-xs font-bold text-primary">{r.ref}</span>
-                      <span className="text-[10px] text-muted-foreground">{formatDate(r.date)}</span>
+                      <span className="text-[10px] text-muted-foreground">
+                        {formatDate(r.date)}
+                      </span>
                     </div>
                     <div className="font-bold text-xs sm:text-sm text-foreground mt-0.5 truncate">
                       {r.supplier}
                     </div>
-                    <div className="text-[11px] text-muted-foreground truncate mt-0.5">{r.reason}</div>
+                    <div className="text-[11px] text-muted-foreground truncate mt-0.5">
+                      {r.reason}
+                    </div>
                   </div>
                   <div className="text-right shrink-0 pl-2">
-                    <div className="text-sm font-black text-foreground">{formatCurrency(Number(r.total) || 0)}</div>
+                    <div className="text-sm font-black text-foreground">
+                      {formatCurrency(Number(r.total) || 0)}
+                    </div>
                     <Badge className="text-[9px] font-bold mt-1 bg-success/15 text-success border-success/30">
                       {r.status}
                     </Badge>
@@ -535,7 +557,12 @@ function PurchaseReturnsPage() {
             <div className="space-y-3 pt-2">
               <div className="flex items-center justify-between">
                 <Label className="font-bold text-sm">Return Line Items</Label>
-                <Button size="sm" variant="outline" onClick={addReturnItem} className="h-8 text-xs font-semibold">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={addReturnItem}
+                  className="h-8 text-xs font-semibold"
+                >
                   <Plus className="size-3.5 mr-1" /> Add Product
                 </Button>
               </div>
@@ -545,9 +572,15 @@ function PurchaseReturnsPage() {
                   <TableHeader className="bg-muted/40">
                     <TableRow>
                       <TableHead className="text-xs font-bold uppercase">Product</TableHead>
-                      <TableHead className="text-xs font-bold uppercase text-right w-24">Qty</TableHead>
-                      <TableHead className="text-xs font-bold uppercase text-right w-28">Unit Cost</TableHead>
-                      <TableHead className="text-xs font-bold uppercase text-right w-28">Total</TableHead>
+                      <TableHead className="text-xs font-bold uppercase text-right w-24">
+                        Qty
+                      </TableHead>
+                      <TableHead className="text-xs font-bold uppercase text-right w-28">
+                        Unit Cost
+                      </TableHead>
+                      <TableHead className="text-xs font-bold uppercase text-right w-28">
+                        Total
+                      </TableHead>
                       <TableHead className="w-10"></TableHead>
                     </TableRow>
                   </TableHeader>
@@ -571,7 +604,9 @@ function PurchaseReturnsPage() {
                             type="number"
                             min="1"
                             value={item.quantity}
-                            onChange={(e) => updateReturnItem(idx, "quantity", parseInt(e.target.value) || 1)}
+                            onChange={(e) =>
+                              updateReturnItem(idx, "quantity", parseInt(e.target.value) || 1)
+                            }
                             className="h-9 text-right font-bold text-sm"
                           />
                         </TableCell>
@@ -581,7 +616,9 @@ function PurchaseReturnsPage() {
                             step="0.01"
                             min="0"
                             value={item.cost}
-                            onChange={(e) => updateReturnItem(idx, "cost", parseFloat(e.target.value) || 0)}
+                            onChange={(e) =>
+                              updateReturnItem(idx, "cost", parseFloat(e.target.value) || 0)
+                            }
                             className="h-9 text-right font-bold text-sm"
                           />
                         </TableCell>
@@ -608,8 +645,12 @@ function PurchaseReturnsPage() {
             {/* Refund Total Summary */}
             <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 flex justify-between items-center">
               <div>
-                <span className="text-xs font-bold text-muted-foreground uppercase">Estimated Debit Total</span>
-                <p className="text-xs text-muted-foreground mt-0.5">Will be credited to your supplier ledger account.</p>
+                <span className="text-xs font-bold text-muted-foreground uppercase">
+                  Estimated Debit Total
+                </span>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Will be credited to your supplier ledger account.
+                </p>
               </div>
               <div className="text-xl font-black text-primary">
                 {formatCurrency(returnItems.reduce((s, i) => s + i.total, 0))}
@@ -652,7 +693,10 @@ function PurchaseReturnsPage() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+            <AlertDialogAction
+              onClick={handleDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
               Delete
             </AlertDialogAction>
           </AlertDialogFooter>

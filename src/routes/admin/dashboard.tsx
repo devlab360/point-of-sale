@@ -116,7 +116,9 @@ const COLORS = ["#3b82f6", "#10b981", "#f59e0b", "#8b5cf6", "#ec4899", "#06b6d4"
 function SuperAdminDashboardPage() {
   const queryClient = useQueryClient();
   const [chartMetric, setChartMetric] = useState<"revenue" | "growth">("revenue");
-  const [activeTab, setActiveTab] = useState<"pending" | "recent" | "expiring" | "support">("pending");
+  const [activeTab, setActiveTab] = useState<"pending" | "recent" | "expiring" | "support">(
+    "pending",
+  );
   const [isCreateStoreOpen, setIsCreateStoreOpen] = useState(false);
   const [quickExtendOrg, setQuickExtendOrg] = useState<any | null>(null);
   const [extendDays, setExtendDays] = useState("14");
@@ -232,15 +234,20 @@ function SuperAdminDashboardPage() {
       return acc + price;
     }, 0);
 
-  const avgReviewScore = reviews.length > 0
-    ? (reviews.reduce((acc: number, r: any) => acc + (r.rating || 0), 0) / reviews.length).toFixed(1)
-    : "5.0";
+  const avgReviewScore =
+    reviews.length > 0
+      ? (
+          reviews.reduce((acc: number, r: any) => acc + (r.rating || 0), 0) / reviews.length
+        ).toFixed(1)
+      : "5.0";
 
   // Plan distribution for donut chart
-  const planDistribution = plans.map((plan: any) => {
-    const count = organizations.filter((o: any) => o.currentPlanId === plan.id).length;
-    return { name: plan.name, count, price: plan.price || 0 };
-  }).filter((p) => p.count > 0);
+  const planDistribution = plans
+    .map((plan: any) => {
+      const count = organizations.filter((o: any) => o.currentPlanId === plan.id).length;
+      return { name: plan.name, count, price: plan.price || 0 };
+    })
+    .filter((p) => p.count > 0);
 
   // Expiring soon stores (within next 7 days)
   const now = new Date();
@@ -413,7 +420,9 @@ function SuperAdminDashboardPage() {
                 <p className="text-xs font-bold text-foreground group-hover:text-primary transition-colors">
                   Support Inbox
                 </p>
-                <p className="text-[10px] text-muted-foreground">{openTickets.length} open tickets</p>
+                <p className="text-[10px] text-muted-foreground">
+                  {openTickets.length} open tickets
+                </p>
               </div>
             </div>
             {openTickets.length > 0 && (
@@ -590,7 +599,10 @@ function SuperAdminDashboardPage() {
                   <ShieldCheck className="size-4 text-emerald-500" />
                   <h4 className="text-xs font-bold text-foreground">Infrastructure Status</h4>
                 </div>
-                <Badge variant="outline" className="text-[10px] text-emerald-600 bg-emerald-500/10 font-bold border-emerald-500/20">
+                <Badge
+                  variant="outline"
+                  className="text-[10px] text-emerald-600 bg-emerald-500/10 font-bold border-emerald-500/20"
+                >
                   99.99% Operational
                 </Badge>
               </div>
@@ -602,7 +614,9 @@ function SuperAdminDashboardPage() {
                 </div>
                 <div className="flex items-center justify-between p-2 rounded-xl bg-muted/20 border border-border/40">
                   <span className="text-muted-foreground">Primary Database</span>
-                  <span className="font-semibold text-emerald-600 dark:text-emerald-400">PostgreSQL (Healthy)</span>
+                  <span className="font-semibold text-emerald-600 dark:text-emerald-400">
+                    PostgreSQL (Healthy)
+                  </span>
                 </div>
                 <div className="flex items-center justify-between p-2 rounded-xl bg-muted/20 border border-border/40">
                   <span className="text-muted-foreground">Sync & PWA Engine</span>
@@ -666,7 +680,10 @@ function SuperAdminDashboardPage() {
                 <AlertTriangle className="size-3.5 text-amber-500" />
                 <span>Expiring Soon</span>
                 {expiringSoonTenants.length > 0 && (
-                  <Badge variant="outline" className="h-4 px-1 text-[9px] font-bold text-amber-500 border-amber-500/30">
+                  <Badge
+                    variant="outline"
+                    className="h-4 px-1 text-[9px] font-bold text-amber-500 border-amber-500/30"
+                  >
                     {expiringSoonTenants.length}
                   </Badge>
                 )}
@@ -691,8 +708,8 @@ function SuperAdminDashboardPage() {
                 activeTab === "pending"
                   ? "/admin/payments"
                   : activeTab === "support"
-                  ? "/admin/support"
-                  : "/admin/tenants"
+                    ? "/admin/support"
+                    : "/admin/tenants"
               }
               className="text-xs font-semibold text-primary hover:underline flex items-center gap-1 mt-2 sm:mt-0"
             >
@@ -796,7 +813,9 @@ function SuperAdminDashboardPage() {
                       <div className="font-bold text-xs text-foreground">{org.name}</div>
                       <div className="text-[10px] font-mono text-muted-foreground">{org.id}</div>
                     </TableCell>
-                    <TableCell className="text-xs text-muted-foreground">{org.ownerEmail || "N/A"}</TableCell>
+                    <TableCell className="text-xs text-muted-foreground">
+                      {org.ownerEmail || "N/A"}
+                    </TableCell>
                     <TableCell>
                       <Badge variant="outline" className="text-[10px] font-bold uppercase">
                         {org.currentPlanId || "basic"}
@@ -808,8 +827,8 @@ function SuperAdminDashboardPage() {
                           org.status === "active"
                             ? "default"
                             : org.status === "trial"
-                            ? "secondary"
-                            : "destructive"
+                              ? "secondary"
+                              : "destructive"
                         }
                         className="text-[10px] font-bold uppercase"
                       >
@@ -823,7 +842,11 @@ function SuperAdminDashboardPage() {
                     </TableCell>
                     <TableCell className="text-right">
                       <Link to="/admin/tenants">
-                        <Button size="sm" variant="outline" className="h-7 text-xs font-semibold gap-1">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-7 text-xs font-semibold gap-1"
+                        >
                           <Eye className="size-3" /> Manage
                         </Button>
                       </Link>
@@ -840,7 +863,9 @@ function SuperAdminDashboardPage() {
               {expiringSoonTenants.length === 0 ? (
                 <div className="p-12 text-center space-y-2">
                   <CheckCircle2 className="size-8 mx-auto text-emerald-500" />
-                  <h4 className="text-sm font-bold text-foreground">No Subscriptions Expiring Soon</h4>
+                  <h4 className="text-sm font-bold text-foreground">
+                    No Subscriptions Expiring Soon
+                  </h4>
                   <p className="text-xs text-muted-foreground">
                     All active merchant stores are well within their billing period.
                   </p>
@@ -861,9 +886,13 @@ function SuperAdminDashboardPage() {
                       <TableRow key={org.id} className="hover:bg-muted/30 transition-colors">
                         <TableCell>
                           <div className="font-bold text-xs text-foreground">{org.name}</div>
-                          <div className="text-[10px] font-mono text-muted-foreground">{org.id}</div>
+                          <div className="text-[10px] font-mono text-muted-foreground">
+                            {org.id}
+                          </div>
                         </TableCell>
-                        <TableCell className="text-xs text-muted-foreground">{org.ownerEmail}</TableCell>
+                        <TableCell className="text-xs text-muted-foreground">
+                          {org.ownerEmail}
+                        </TableCell>
                         <TableCell>
                           <Badge variant="outline" className="text-[10px] font-bold uppercase">
                             {org.currentPlanId || "trial"}
@@ -919,7 +948,9 @@ function SuperAdminDashboardPage() {
                           <div className="font-bold text-xs text-foreground">
                             {ticket.orgName || ticket.organizationId}
                           </div>
-                          <div className="text-[10px] text-muted-foreground">{ticket.userName || ticket.orgEmail}</div>
+                          <div className="text-[10px] text-muted-foreground">
+                            {ticket.userName || ticket.orgEmail}
+                          </div>
                         </TableCell>
                         <TableCell className="text-xs text-foreground font-medium max-w-xs truncate">
                           {ticket.subject || "Support Inquiry"}
@@ -930,8 +961,8 @@ function SuperAdminDashboardPage() {
                               ticket.status === "resolved"
                                 ? "default"
                                 : ticket.status === "in-progress"
-                                ? "secondary"
-                                : "outline"
+                                  ? "secondary"
+                                  : "outline"
                             }
                             className="text-[10px] font-bold capitalize"
                           >
@@ -943,7 +974,11 @@ function SuperAdminDashboardPage() {
                         </TableCell>
                         <TableCell className="text-right">
                           <Link to="/admin/support">
-                            <Button size="sm" variant="outline" className="h-7 text-xs font-semibold gap-1">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="h-7 text-xs font-semibold gap-1"
+                            >
                               View Ticket
                             </Button>
                           </Link>
@@ -968,7 +1003,8 @@ function SuperAdminDashboardPage() {
                 Provision New Tenant Store
               </SheetTitle>
               <SheetDescription className="text-xs text-muted-foreground mt-0.5">
-                Instantly provision a new merchant POS account with store credentials and assigned SaaS tier.
+                Instantly provision a new merchant POS account with store credentials and assigned
+                SaaS tier.
               </SheetDescription>
             </SheetHeader>
 

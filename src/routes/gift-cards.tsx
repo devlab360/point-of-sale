@@ -128,9 +128,7 @@ function GiftCardsPage() {
     if (debouncedSearch) {
       const lower = debouncedSearch.toLowerCase();
       list = list.filter(
-        (c) =>
-          c.code?.toLowerCase().includes(lower) ||
-          c.customer?.toLowerCase().includes(lower),
+        (c) => c.code?.toLowerCase().includes(lower) || c.customer?.toLowerCase().includes(lower),
       );
     }
     if (filters.status) {
@@ -207,11 +205,16 @@ function GiftCardsPage() {
     setIsSaving(true);
     try {
       const code = (formData.get("code") as string)?.trim();
-      const customer = selectedCustomerId || (formData.get("customer") as string) || "Walk-in Customer";
+      const customer =
+        selectedCustomerId || (formData.get("customer") as string) || "Walk-in Customer";
       const initialBalanceStr = (formData.get("initialBalance") as string)?.trim();
       const status = (formData.get("status") as string) || "active";
 
-      const isValid = validateGift({ code, initialBalance: initialBalanceStr, expires: expiresDate });
+      const isValid = validateGift({
+        code,
+        initialBalance: initialBalanceStr,
+        expires: expiresDate,
+      });
       if (!isValid) {
         setIsSaving(false);
         return;
@@ -406,66 +409,66 @@ function GiftCardsPage() {
             </div>
           </div>
         )}
-      topContent={
-            <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
-              <div className="rounded-xl border border-border/80 bg-card p-4 sm:p-5 shadow-soft transition-all hover:border-primary/40">
-                <div className="flex items-center justify-between">
-                  <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                    Total Issued
-                  </p>
-                  <div className="grid size-8 place-items-center rounded-lg bg-primary/10 text-primary">
-                    <Gift className="size-4" />
-                  </div>
-                </div>
-                <p className="mt-2 text-xl sm:text-2xl font-black text-foreground">
-                  {metrics.totalCount}
+        topContent={
+          <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+            <div className="rounded-xl border border-border/80 bg-card p-4 sm:p-5 shadow-soft transition-all hover:border-primary/40">
+              <div className="flex items-center justify-between">
+                <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                  Total Issued
                 </p>
-              </div>
-
-              <div className="rounded-xl border border-border/80 bg-card p-4 sm:p-5 shadow-soft transition-all hover:border-success/40">
-                <div className="flex items-center justify-between">
-                  <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                    Active Cards
-                  </p>
-                  <div className="grid size-8 place-items-center rounded-lg bg-success/15 text-success">
-                    <CheckCircle2 className="size-4" />
-                  </div>
+                <div className="grid size-8 place-items-center rounded-lg bg-primary/10 text-primary">
+                  <Gift className="size-4" />
                 </div>
-                <p className="mt-2 text-xl sm:text-2xl font-black text-success">
-                  {metrics.activeCount}
-                </p>
               </div>
-
-              <div className="rounded-xl border border-border/80 bg-card p-4 sm:p-5 shadow-soft transition-all hover:border-blue-500/40">
-                <div className="flex items-center justify-between">
-                  <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                    Total Issued Value
-                  </p>
-                  <div className="grid size-8 place-items-center rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400">
-                    <CreditCard className="size-4" />
-                  </div>
-                </div>
-                <p className="mt-2 text-xl sm:text-2xl font-black text-foreground">
-                  {formatCurrency(metrics.totalIssued)}
-                </p>
-              </div>
-
-              <div className="rounded-xl border border-border/80 bg-card p-4 sm:p-5 shadow-soft transition-all hover:border-primary/40">
-                <div className="flex items-center justify-between">
-                  <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                    Available Balance
-                  </p>
-                  <div className="grid size-8 place-items-center rounded-lg bg-primary/10 text-primary">
-                    <DollarSign className="size-4" />
-                  </div>
-                </div>
-                <p className="mt-2 text-xl sm:text-2xl font-black text-primary">
-                  {formatCurrency(metrics.totalBalance)}
-                </p>
-              </div>
+              <p className="mt-2 text-xl sm:text-2xl font-black text-foreground">
+                {metrics.totalCount}
+              </p>
             </div>
-          }
-        >
+
+            <div className="rounded-xl border border-border/80 bg-card p-4 sm:p-5 shadow-soft transition-all hover:border-success/40">
+              <div className="flex items-center justify-between">
+                <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                  Active Cards
+                </p>
+                <div className="grid size-8 place-items-center rounded-lg bg-success/15 text-success">
+                  <CheckCircle2 className="size-4" />
+                </div>
+              </div>
+              <p className="mt-2 text-xl sm:text-2xl font-black text-success">
+                {metrics.activeCount}
+              </p>
+            </div>
+
+            <div className="rounded-xl border border-border/80 bg-card p-4 sm:p-5 shadow-soft transition-all hover:border-blue-500/40">
+              <div className="flex items-center justify-between">
+                <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                  Total Issued Value
+                </p>
+                <div className="grid size-8 place-items-center rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400">
+                  <CreditCard className="size-4" />
+                </div>
+              </div>
+              <p className="mt-2 text-xl sm:text-2xl font-black text-foreground">
+                {formatCurrency(metrics.totalIssued)}
+              </p>
+            </div>
+
+            <div className="rounded-xl border border-border/80 bg-card p-4 sm:p-5 shadow-soft transition-all hover:border-primary/40">
+              <div className="flex items-center justify-between">
+                <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                  Available Balance
+                </p>
+                <div className="grid size-8 place-items-center rounded-lg bg-primary/10 text-primary">
+                  <DollarSign className="size-4" />
+                </div>
+              </div>
+              <p className="mt-2 text-xl sm:text-2xl font-black text-primary">
+                {formatCurrency(metrics.totalBalance)}
+              </p>
+            </div>
+          </div>
+        }
+      >
         <div className="space-y-6">
           {/* Table / Card Container */}
           <div className="rounded-xl border border-border bg-card shadow-soft overflow-hidden">
@@ -580,7 +583,11 @@ function GiftCardsPage() {
                                 </Button>
                                 <DropdownMenu>
                                   <DropdownMenuTrigger asChild>
-                                    <Button variant="ghost" size="icon" className="size-8 rounded-lg">
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="size-8 rounded-lg"
+                                    >
                                       <MoreVertical className="size-4 text-muted-foreground" />
                                     </Button>
                                   </DropdownMenuTrigger>
@@ -631,7 +638,9 @@ function GiftCardsPage() {
                               <Gift className="size-4" />
                             </div>
                             <div>
-                              <p className="font-mono font-bold text-sm text-foreground">{g.code}</p>
+                              <p className="font-mono font-bold text-sm text-foreground">
+                                {g.code}
+                              </p>
                               <p className="text-xs text-muted-foreground">
                                 {g.customer || "Walk-in Customer"}
                               </p>
@@ -747,11 +756,7 @@ function GiftCardsPage() {
               Issue stored-value customer gift cards or vouchers for store purchases.
             </p>
           </SheetHeader>
-          <form
-            noValidate
-            onSubmit={handleSave}
-            className="flex flex-col flex-1 overflow-hidden"
-          >
+          <form noValidate onSubmit={handleSave} className="flex flex-col flex-1 overflow-hidden">
             <div className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-4">
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
@@ -957,7 +962,8 @@ function GiftCardsPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Gift Card?</AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete the gift card record and its balance.
+              This action cannot be undone. This will permanently delete the gift card record and
+              its balance.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

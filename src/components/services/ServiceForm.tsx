@@ -219,7 +219,9 @@ export function ServiceForm({
                   </Label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <span className="text-muted-foreground text-xs font-bold font-mono">{currencySymbol}</span>
+                      <span className="text-muted-foreground text-xs font-bold font-mono">
+                        {currencySymbol}
+                      </span>
                     </div>
                     <Input
                       type="number"
@@ -237,10 +239,14 @@ export function ServiceForm({
                   <FieldError message={errors.price} />
                 </div>
                 <div className="grid gap-1.5">
-                  <Label className="text-xs font-bold">Cost / Service Overhead ({currencySymbol})</Label>
+                  <Label className="text-xs font-bold">
+                    Cost / Service Overhead ({currencySymbol})
+                  </Label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <span className="text-muted-foreground text-xs font-bold font-mono">{currencySymbol}</span>
+                      <span className="text-muted-foreground text-xs font-bold font-mono">
+                        {currencySymbol}
+                      </span>
                     </div>
                     <Input
                       type="number"

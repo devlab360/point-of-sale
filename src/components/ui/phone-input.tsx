@@ -16,10 +16,13 @@ export type PhoneInputProps = Omit<React.ComponentProps<"input">, "value" | "def
 
 // Sort countries with longest phone codes first for reliable prefix detection
 const SORTED_COUNTRIES_BY_CODE_LEN = [...COUNTRIES].sort(
-  (a, b) => b.phoneCode.length - a.phoneCode.length
+  (a, b) => b.phoneCode.length - a.phoneCode.length,
 );
 
-function extractPhonePrefix(rawPhone: string | null | undefined): { code: string | null; number: string } {
+function extractPhonePrefix(rawPhone: string | null | undefined): {
+  code: string | null;
+  number: string;
+} {
   if (!rawPhone) return { code: null, number: "" };
   const trimmed = rawPhone.trim();
   if (trimmed.startsWith("+")) {
@@ -46,14 +49,14 @@ export const PhoneInput = React.forwardRef<HTMLInputElement, PhoneInputProps>(
       onCountryCodeChange,
       ...props
     },
-    ref
+    ref,
   ) => {
     const preferences = usePreferences();
     const defaultSaaSCode = preferences.countryCode || "+1";
 
     const initialParsed = useMemo(
       () => extractPhonePrefix(value ?? defaultValue),
-      [value, defaultValue]
+      [value, defaultValue],
     );
 
     const [selectedCode, setSelectedCode] = useState<string>(() => {
@@ -81,7 +84,7 @@ export const PhoneInput = React.forwardRef<HTMLInputElement, PhoneInputProps>(
 
     const countryInfo = useMemo(
       () => getCountryByPhoneCode(selectedCode) || { flag: "🌐", phoneLength: 15 },
-      [selectedCode]
+      [selectedCode],
     );
 
     const maxLen = Array.isArray(countryInfo?.phoneLength)
@@ -142,7 +145,7 @@ export const PhoneInput = React.forwardRef<HTMLInputElement, PhoneInputProps>(
         (c) =>
           c.name.toLowerCase().includes(q) ||
           c.code.toLowerCase().includes(q) ||
-          c.phoneCode.includes(q)
+          c.phoneCode.includes(q),
       );
     }, [searchQuery]);
 
@@ -177,7 +180,9 @@ export const PhoneInput = React.forwardRef<HTMLInputElement, PhoneInputProps>(
               onWheel={(e) => e.stopPropagation()}
             >
               {filteredCountries.length === 0 ? (
-                <div className="text-center py-4 text-xs text-muted-foreground">No countries found</div>
+                <div className="text-center py-4 text-xs text-muted-foreground">
+                  No countries found
+                </div>
               ) : (
                 filteredCountries.map((c) => {
                   const isSelected = c.phoneCode === selectedCode;
@@ -188,7 +193,7 @@ export const PhoneInput = React.forwardRef<HTMLInputElement, PhoneInputProps>(
                       onClick={() => handleSelectCountry(c)}
                       className={cn(
                         "w-full flex items-center justify-between px-2 py-1.5 rounded text-xs text-left transition-colors hover:bg-accent hover:text-accent-foreground",
-                        isSelected && "bg-accent/50 font-semibold text-primary"
+                        isSelected && "bg-accent/50 font-semibold text-primary",
                       )}
                     >
                       <div className="flex items-center gap-2 truncate">
@@ -199,7 +204,9 @@ export const PhoneInput = React.forwardRef<HTMLInputElement, PhoneInputProps>(
                         </span>
                       </div>
                       <div className="flex items-center gap-1.5 shrink-0 ml-2">
-                        <span className="font-mono text-xs text-muted-foreground">{c.phoneCode}</span>
+                        <span className="font-mono text-xs text-muted-foreground">
+                          {c.phoneCode}
+                        </span>
                         {isSelected && <Check className="size-3 text-primary" />}
                       </div>
                     </button>
@@ -233,6 +240,6 @@ export const PhoneInput = React.forwardRef<HTMLInputElement, PhoneInputProps>(
         )}
       </div>
     );
-  }
+  },
 );
 PhoneInput.displayName = "PhoneInput";

@@ -44,7 +44,14 @@ import {
   Table as TableIcon,
 } from "lucide-react";
 import { useDebounce } from "@/hooks/useDebounce";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { PaginationControls } from "@/components/ui/pagination-controls";
 import { TableSkeleton } from "@/components/skeletons/TableSkeleton";
 import { CardGridSkeleton } from "@/components/skeletons/CardGridSkeleton";
@@ -88,18 +95,24 @@ function AdjustmentsPage() {
   // Selected product stock preview
   const selectedProduct = useMemo(
     () => products.find((p: any) => p.id === productId),
-    [products, productId]
+    [products, productId],
   );
 
   // KPI calculations
   const totalAdjustments = adjustments.length;
   const totalAdditions = useMemo(
-    () => adjustments.filter((a: any) => (a.net || 0) > 0).reduce((acc: number, a: any) => acc + (a.net || 0), 0),
-    [adjustments]
+    () =>
+      adjustments
+        .filter((a: any) => (a.net || 0) > 0)
+        .reduce((acc: number, a: any) => acc + (a.net || 0), 0),
+    [adjustments],
   );
   const totalDeductions = useMemo(
-    () => adjustments.filter((a: any) => (a.net || 0) < 0).reduce((acc: number, a: any) => acc + Math.abs(a.net || 0), 0),
-    [adjustments]
+    () =>
+      adjustments
+        .filter((a: any) => (a.net || 0) < 0)
+        .reduce((acc: number, a: any) => acc + Math.abs(a.net || 0), 0),
+    [adjustments],
   );
 
   const filtered = useMemo(() => {
@@ -108,8 +121,7 @@ function AdjustmentsPage() {
       const lower = debouncedSearch.toLowerCase();
       list = list.filter(
         (a: any) =>
-          a.productName?.toLowerCase().includes(lower) ||
-          a.reason?.toLowerCase().includes(lower)
+          a.productName?.toLowerCase().includes(lower) || a.reason?.toLowerCase().includes(lower),
       );
     }
     if (typeFilter === "additions") list = list.filter((a: any) => (a.net || 0) > 0);
@@ -247,8 +259,14 @@ function AdjustmentsPage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Adjustments ({totalAdjustments})</SelectItem>
-                <SelectItem value="additions">Additions ({totalAdjustments && adjustments.filter((a: any) => (a.net || 0) > 0).length})</SelectItem>
-                <SelectItem value="deductions">Deductions ({totalAdjustments && adjustments.filter((a: any) => (a.net || 0) < 0).length})</SelectItem>
+                <SelectItem value="additions">
+                  Additions (
+                  {totalAdjustments && adjustments.filter((a: any) => (a.net || 0) > 0).length})
+                </SelectItem>
+                <SelectItem value="deductions">
+                  Deductions (
+                  {totalAdjustments && adjustments.filter((a: any) => (a.net || 0) < 0).length})
+                </SelectItem>
               </SelectContent>
             </Select>
 
@@ -293,7 +311,9 @@ function AdjustmentsPage() {
             icon={ClipboardList}
             title="No adjustment records found"
             description={
-              search ? "Try adjusting your search criteria." : "No manual inventory adjustments have been recorded yet."
+              search
+                ? "Try adjusting your search criteria."
+                : "No manual inventory adjustments have been recorded yet."
             }
             actionLabel="New Adjustment"
             onAction={() => setOpen(true)}
@@ -434,11 +454,15 @@ function AdjustmentsPage() {
                 Record Stock Adjustment
               </SheetTitle>
               <SheetDescription className="text-xs text-muted-foreground mt-0.5">
-                Adjust on-hand inventory levels for physical audit reconciliation, wastage, or counts.
+                Adjust on-hand inventory levels for physical audit reconciliation, wastage, or
+                counts.
               </SheetDescription>
             </SheetHeader>
 
-            <form onSubmit={handleSave} className="flex-1 flex flex-col justify-between overflow-hidden">
+            <form
+              onSubmit={handleSave}
+              className="flex-1 flex flex-col justify-between overflow-hidden"
+            >
               <div className="flex-1 overflow-y-auto p-5 space-y-4">
                 <div className="space-y-1.5">
                   <Label className="text-xs font-semibold">Select Target Product *</Label>
@@ -456,7 +480,8 @@ function AdjustmentsPage() {
                 {selectedProduct && (
                   <div className="p-3 rounded-xl bg-muted/40 border border-border/60 text-xs space-y-1">
                     <div className="text-muted-foreground">
-                      Current On-Hand Stock: <strong className="text-foreground">{selectedProduct.stock} units</strong>
+                      Current On-Hand Stock:{" "}
+                      <strong className="text-foreground">{selectedProduct.stock} units</strong>
                     </div>
                     <div className="text-muted-foreground">
                       After Adjustment:{" "}
@@ -464,7 +489,9 @@ function AdjustmentsPage() {
                         {Math.max(
                           0,
                           (Number(selectedProduct.stock) || 0) +
-                            (adjustmentType === "addition" ? parseInt(qty || "0", 10) : -parseInt(qty || "0", 10))
+                            (adjustmentType === "addition"
+                              ? parseInt(qty || "0", 10)
+                              : -parseInt(qty || "0", 10)),
                         )}{" "}
                         units
                       </strong>
@@ -501,7 +528,9 @@ function AdjustmentsPage() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label htmlFor="qty" className="text-xs font-semibold">Quantity Delta *</Label>
+                  <Label htmlFor="qty" className="text-xs font-semibold">
+                    Quantity Delta *
+                  </Label>
                   <Input
                     id="qty"
                     type="number"
@@ -520,10 +549,14 @@ function AdjustmentsPage() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="Audit Reconciliation">Physical Count Reconciliation</SelectItem>
+                      <SelectItem value="Audit Reconciliation">
+                        Physical Count Reconciliation
+                      </SelectItem>
                       <SelectItem value="Damaged Goods">Damaged / Broken in Transit</SelectItem>
                       <SelectItem value="Expired Product">Expired / Perished</SelectItem>
-                      <SelectItem value="Stock Shrinkage / Theft">Shrinkage / Unaccounted</SelectItem>
+                      <SelectItem value="Stock Shrinkage / Theft">
+                        Shrinkage / Unaccounted
+                      </SelectItem>
                       <SelectItem value="Found Surplus Stock">Found Unrecorded Stock</SelectItem>
                       <SelectItem value="Internal Consumption">Internal Testing / Demo</SelectItem>
                     </SelectContent>
@@ -531,7 +564,9 @@ function AdjustmentsPage() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label htmlFor="notes" className="text-xs font-semibold">Audit Notes</Label>
+                  <Label htmlFor="notes" className="text-xs font-semibold">
+                    Audit Notes
+                  </Label>
                   <Input
                     id="notes"
                     value={notes}
@@ -542,18 +577,10 @@ function AdjustmentsPage() {
               </div>
 
               <SheetFooter className="p-4 border-t border-border/60 bg-muted/20 flex flex-row items-center justify-end gap-2 shrink-0">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setOpen(false)}
-                >
+                <Button type="button" variant="outline" onClick={() => setOpen(false)}>
                   Cancel
                 </Button>
-                <Button
-                  type="submit"
-                  disabled={isSaving}
-                  className="font-semibold shadow-sm"
-                >
+                <Button type="submit" disabled={isSaving} className="font-semibold shadow-sm">
                   {isSaving && <Loader2 className="size-4 animate-spin mr-2" />}
                   Save Adjustment
                 </Button>

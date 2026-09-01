@@ -85,11 +85,7 @@ export function ErrorState({
 
       <div className="mt-5 flex flex-wrap items-center justify-center gap-2.5">
         {onRetry && (
-          <Button
-            onClick={onRetry}
-            disabled={isRetrying}
-            className="gap-2 font-semibold shadow-sm"
-          >
+          <Button onClick={onRetry} disabled={isRetrying} className="gap-2 font-semibold shadow-sm">
             <RefreshCw className={cn("size-4", isRetrying && "animate-spin")} />
             {isRetrying ? "Retrying..." : "Retry Request"}
           </Button>

@@ -53,7 +53,14 @@ import { v4 as uuidv4 } from "uuid";
 import { toast } from "sonner";
 import { useFormValidation } from "@/hooks/useFormValidation";
 import { FieldError } from "@/components/ui/field-error";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { PaginationControls } from "@/components/ui/pagination-controls";
 import { TableSkeleton } from "@/components/skeletons/TableSkeleton";
 import { CardGridSkeleton } from "@/components/skeletons/CardGridSkeleton";
@@ -107,8 +114,14 @@ function BrandsPage() {
 
   // KPI Calculations
   const totalBrands = brandsWithCounts.length;
-  const inUseCount = useMemo(() => brandsWithCounts.filter((b) => b.products > 0).length, [brandsWithCounts]);
-  const totalLinkedItems = useMemo(() => brandsWithCounts.reduce((sum, b) => sum + b.products, 0), [brandsWithCounts]);
+  const inUseCount = useMemo(
+    () => brandsWithCounts.filter((b) => b.products > 0).length,
+    [brandsWithCounts],
+  );
+  const totalLinkedItems = useMemo(
+    () => brandsWithCounts.reduce((sum, b) => sum + b.products, 0),
+    [brandsWithCounts],
+  );
 
   const filteredBrands = useMemo(() => {
     let list = brandsWithCounts;
@@ -326,7 +339,9 @@ function BrandsPage() {
             icon={Tag}
             title="No brands found"
             description={
-              search ? "Try adjusting your search criteria." : "You haven't created any product brands yet."
+              search
+                ? "Try adjusting your search criteria."
+                : "You haven't created any product brands yet."
             }
             actionLabel="Add Brand"
             onAction={openNew}
@@ -355,9 +370,7 @@ function BrandsPage() {
                         <h3 className="font-bold text-base text-foreground group-hover:text-primary transition-colors truncate">
                           {b.name}
                         </h3>
-                        <p className="text-xs text-muted-foreground mt-0.5">
-                          Trademark & Brand
-                        </p>
+                        <p className="text-xs text-muted-foreground mt-0.5">Trademark & Brand</p>
                       </div>
                     </div>
 
@@ -481,7 +494,10 @@ function BrandsPage() {
               </SheetDescription>
             </SheetHeader>
 
-            <form onSubmit={handleSave} className="flex-1 flex flex-col justify-between overflow-hidden">
+            <form
+              onSubmit={handleSave}
+              className="flex-1 flex flex-col justify-between overflow-hidden"
+            >
               <div className="flex-1 overflow-y-auto p-5 space-y-4">
                 <div className="space-y-1.5">
                   <Label htmlFor="brand-name" className="text-xs font-semibold">
@@ -502,18 +518,10 @@ function BrandsPage() {
               </div>
 
               <SheetFooter className="p-4 border-t border-border/60 bg-muted/20 flex flex-row items-center justify-end gap-2 shrink-0">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setModalOpen(false)}
-                >
+                <Button type="button" variant="outline" onClick={() => setModalOpen(false)}>
                   Cancel
                 </Button>
-                <Button
-                  type="submit"
-                  disabled={isSaving}
-                  className="font-semibold shadow-sm"
-                >
+                <Button type="submit" disabled={isSaving} className="font-semibold shadow-sm">
                   {isSaving && <Loader2 className="size-4 animate-spin mr-2" />}
                   {editingBrand ? "Update Brand" : "Create Brand"}
                 </Button>
@@ -536,24 +544,17 @@ function BrandsPage() {
                   Delete Brand
                 </DialogTitle>
                 <DialogDescription className="text-xs text-muted-foreground mt-0.5">
-                  Are you sure you want to delete this brand? Products linked to this brand will remain intact.
+                  Are you sure you want to delete this brand? Products linked to this brand will
+                  remain intact.
                 </DialogDescription>
               </div>
             </div>
           </DialogHeader>
           <DialogFooter className="mt-4 flex flex-row items-center justify-end gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setDeleteId(null)}
-            >
+            <Button type="button" variant="outline" onClick={() => setDeleteId(null)}>
               Cancel
             </Button>
-            <Button
-              type="button"
-              variant="destructive"
-              onClick={handleDelete}
-            >
+            <Button type="button" variant="destructive" onClick={handleDelete}>
               Delete
             </Button>
           </DialogFooter>

@@ -789,9 +789,7 @@ export function CartPanel({
                       <div className="font-extrabold text-primary text-xs sm:text-sm group-hover:underline">
                         {r.ticketNo}
                       </div>
-                      <div className="text-xs font-bold text-foreground">
-                        {r.customerName}
-                      </div>
+                      <div className="text-xs font-bold text-foreground">{r.customerName}</div>
                       <div className="text-[11px] text-muted-foreground flex items-center gap-1">
                         <span>{r.deviceName}</span>
                         {r.serialNo && <span>• SN: {r.serialNo}</span>}
@@ -844,7 +842,11 @@ export function CartPanel({
 
           <div className="p-5 space-y-2">
             <p className="text-xs text-muted-foreground leading-relaxed">
-              This will permanently clear all <strong className="text-foreground font-bold">{lines.length} {lines.length === 1 ? "item" : "items"}</strong> from the checkout cart and reset discounts. This action cannot be reversed.
+              This will permanently clear all{" "}
+              <strong className="text-foreground font-bold">
+                {lines.length} {lines.length === 1 ? "item" : "items"}
+              </strong>{" "}
+              from the checkout cart and reset discounts. This action cannot be reversed.
             </p>
           </div>
 

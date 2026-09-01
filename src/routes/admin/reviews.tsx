@@ -3,7 +3,17 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { SuperAdminLayout } from "@/components/admin/SuperAdminLayout";
 import { PageHeader } from "@/components/layout/PageHeader";
-import { Star, RefreshCw, MessageSquare, TrendingUp, Store, User, Filter, Award, Download } from "lucide-react";
+import {
+  Star,
+  RefreshCw,
+  MessageSquare,
+  TrendingUp,
+  Store,
+  User,
+  Filter,
+  Award,
+  Download,
+} from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -18,14 +28,22 @@ export const Route = createFileRoute("/admin/reviews")({
 function SuperAdminReviewsPage() {
   const [selectedRating, setSelectedRating] = useState<number | "all">("all");
 
-  const { data: reviewsData, isLoading, refetch } = useQuery({
+  const {
+    data: reviewsData,
+    isLoading,
+    refetch,
+  } = useQuery({
     queryKey: ["super-admin-reviews"],
     queryFn: () => getAllReviewsAdminFn({ data: {} }),
   });
 
   const reviews = (reviewsData?.data?.reviews as any[]) || [];
   const total = reviewsData?.data?.total || reviews.length;
-  const avgRating = reviewsData?.data?.avgRating || (total > 0 ? (reviews.reduce((acc: number, r: any) => acc + (r.rating || 0), 0) / total).toFixed(1) : "5.0");
+  const avgRating =
+    reviewsData?.data?.avgRating ||
+    (total > 0
+      ? (reviews.reduce((acc: number, r: any) => acc + (r.rating || 0), 0) / total).toFixed(1)
+      : "5.0");
 
   const starCounts = [5, 4, 3, 2, 1].map((stars) => {
     const count = reviews.filter((r: any) => r.rating === stars).length;
@@ -109,7 +127,9 @@ function SuperAdminReviewsPage() {
                   type="button"
                   onClick={() => setSelectedRating(selectedRating === sc.stars ? "all" : sc.stars)}
                   className={`flex items-center gap-1 w-12 font-bold transition-colors ${
-                    selectedRating === sc.stars ? "text-primary" : "text-muted-foreground hover:text-foreground"
+                    selectedRating === sc.stars
+                      ? "text-primary"
+                      : "text-muted-foreground hover:text-foreground"
                   }`}
                 >
                   <span>{sc.stars}</span>
@@ -184,8 +204,12 @@ function SuperAdminReviewsPage() {
                       {rev.orgName?.slice(0, 2)?.toUpperCase() || "ST"}
                     </div>
                     <div>
-                      <p className="font-bold text-xs text-foreground">{rev.orgName || "Store Merchant"}</p>
-                      <p className="text-[10px] text-muted-foreground">{rev.userName || rev.userEmail || "Store Owner"}</p>
+                      <p className="font-bold text-xs text-foreground">
+                        {rev.orgName || "Store Merchant"}
+                      </p>
+                      <p className="text-[10px] text-muted-foreground">
+                        {rev.userName || rev.userEmail || "Store Owner"}
+                      </p>
                     </div>
                   </div>
 
@@ -219,4 +243,3 @@ function SuperAdminReviewsPage() {
     </SuperAdminLayout>
   );
 }
-

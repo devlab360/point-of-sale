@@ -73,12 +73,7 @@ export async function assertInvoiceLimit(orgId: string): Promise<void> {
   const countRes = await db
     .select({ count: sql<number>`count(*)` })
     .from(schema.sales)
-    .where(
-      and(
-        eq(schema.sales.organizationId, orgId),
-        gte(schema.sales.date, startOfMonth),
-      ),
-    );
+    .where(and(eq(schema.sales.organizationId, orgId), gte(schema.sales.date, startOfMonth)));
 
   const currentCount = Number(countRes[0]?.count || 0);
   if (currentCount >= limits.maxInvoicesPerMonth) {
@@ -99,7 +94,9 @@ export async function assertPlanActive(orgId: string): Promise<void> {
   const org = orgs[0];
 
   if (org.status === "suspended") {
-    throw new Error("Store Suspended: Your store account is currently suspended. Please contact platform support.");
+    throw new Error(
+      "Store Suspended: Your store account is currently suspended. Please contact platform support.",
+    );
   }
 }
 
@@ -108,7 +105,9 @@ async function getOrgLimits(orgId: string): Promise<PlanLimits | null> {
   return info ? info.limits : null;
 }
 
-export async function getOrgLimitsWithQuota(orgId: string): Promise<{ limits: PlanLimits | null; extraUsersQuota: number } | null> {
+export async function getOrgLimitsWithQuota(
+  orgId: string,
+): Promise<{ limits: PlanLimits | null; extraUsersQuota: number } | null> {
   const orgs = await db
     .select()
     .from(schema.organizations)

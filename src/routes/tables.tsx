@@ -4,7 +4,22 @@ import { DataPage } from "@/components/layout/DataPage";
 import { CardGridSkeleton } from "@/components/skeletons/CardGridSkeleton";
 import { EmptyState } from "@/components/ui/empty-state";
 import { useDebounce } from "@/hooks/useDebounce";
-import { Utensils, Plus, Loader2, Users, CheckCircle2, AlertCircle, Clock, Trash2, BedDouble, DoorOpen, Receipt, Calendar, CreditCard, ArrowRight } from "lucide-react";
+import {
+  Utensils,
+  Plus,
+  Loader2,
+  Users,
+  CheckCircle2,
+  AlertCircle,
+  Clock,
+  Trash2,
+  BedDouble,
+  DoorOpen,
+  Receipt,
+  Calendar,
+  CreditCard,
+  ArrowRight,
+} from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getTablesFn, createTableFn, updateTableStatusFn, deleteTableFn } from "@/api/restaurant";
 import { useCurrency } from "@/lib/currency";
@@ -105,7 +120,10 @@ function TablesPage() {
     const available = rawTables.filter((t: any) => t.status === "available").length;
     const occupied = rawTables.filter((t: any) => t.status === "occupied").length;
     const reserved = rawTables.filter((t: any) => t.status === "reserved").length;
-    const totalCapacity = rawTables.reduce((sum: number, t: any) => sum + (Number(t.capacity) || 0), 0);
+    const totalCapacity = rawTables.reduce(
+      (sum: number, t: any) => sum + (Number(t.capacity) || 0),
+      0,
+    );
     return { total, available, occupied, reserved, totalCapacity };
   }, [rawTables]);
 
@@ -197,66 +215,69 @@ function TablesPage() {
             </div>
           </div>
         )}
-      topContent={
-            <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
-              <div className="rounded-xl border border-border/80 bg-card p-4 sm:p-5 shadow-soft transition-all hover:border-primary/40">
-                <div className="flex items-center justify-between">
-                  <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                    Total Tables
-                  </p>
-                  <div className="grid size-8 place-items-center rounded-lg bg-primary/10 text-primary">
-                    <Utensils className="size-4" />
-                  </div>
-                </div>
-                <p className="mt-2 text-xl sm:text-2xl font-black text-foreground">
-                  {metrics.total} <span className="text-xs font-normal text-muted-foreground">({metrics.totalCapacity} seats)</span>
+        topContent={
+          <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+            <div className="rounded-xl border border-border/80 bg-card p-4 sm:p-5 shadow-soft transition-all hover:border-primary/40">
+              <div className="flex items-center justify-between">
+                <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                  Total Tables
                 </p>
-              </div>
-
-              <div className="rounded-xl border border-border/80 bg-card p-4 sm:p-5 shadow-soft transition-all hover:border-success/40">
-                <div className="flex items-center justify-between">
-                  <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                    Available (Free)
-                  </p>
-                  <div className="grid size-8 place-items-center rounded-lg bg-success/15 text-success">
-                    <CheckCircle2 className="size-4" />
-                  </div>
+                <div className="grid size-8 place-items-center rounded-lg bg-primary/10 text-primary">
+                  <Utensils className="size-4" />
                 </div>
-                <p className="mt-2 text-xl sm:text-2xl font-black text-success">
-                  {metrics.available}
-                </p>
               </div>
-
-              <div className="rounded-xl border border-border/80 bg-card p-4 sm:p-5 shadow-soft transition-all hover:border-rose-500/40">
-                <div className="flex items-center justify-between">
-                  <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                    Occupied (Dining)
-                  </p>
-                  <div className="grid size-8 place-items-center rounded-lg bg-rose-500/10 text-rose-600 dark:text-rose-400">
-                    <Users className="size-4" />
-                  </div>
-                </div>
-                <p className="mt-2 text-xl sm:text-2xl font-black text-rose-600 dark:text-rose-400">
-                  {metrics.occupied}
-                </p>
-              </div>
-
-              <div className="rounded-xl border border-border/80 bg-card p-4 sm:p-5 shadow-soft transition-all hover:border-amber-500/40">
-                <div className="flex items-center justify-between">
-                  <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                    Reserved
-                  </p>
-                  <div className="grid size-8 place-items-center rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400">
-                    <Clock className="size-4" />
-                  </div>
-                </div>
-                <p className="mt-2 text-xl sm:text-2xl font-black text-amber-600 dark:text-amber-400">
-                  {metrics.reserved}
-                </p>
-              </div>
+              <p className="mt-2 text-xl sm:text-2xl font-black text-foreground">
+                {metrics.total}{" "}
+                <span className="text-xs font-normal text-muted-foreground">
+                  ({metrics.totalCapacity} seats)
+                </span>
+              </p>
             </div>
-          }
-        >
+
+            <div className="rounded-xl border border-border/80 bg-card p-4 sm:p-5 shadow-soft transition-all hover:border-success/40">
+              <div className="flex items-center justify-between">
+                <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                  Available (Free)
+                </p>
+                <div className="grid size-8 place-items-center rounded-lg bg-success/15 text-success">
+                  <CheckCircle2 className="size-4" />
+                </div>
+              </div>
+              <p className="mt-2 text-xl sm:text-2xl font-black text-success">
+                {metrics.available}
+              </p>
+            </div>
+
+            <div className="rounded-xl border border-border/80 bg-card p-4 sm:p-5 shadow-soft transition-all hover:border-rose-500/40">
+              <div className="flex items-center justify-between">
+                <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                  Occupied (Dining)
+                </p>
+                <div className="grid size-8 place-items-center rounded-lg bg-rose-500/10 text-rose-600 dark:text-rose-400">
+                  <Users className="size-4" />
+                </div>
+              </div>
+              <p className="mt-2 text-xl sm:text-2xl font-black text-rose-600 dark:text-rose-400">
+                {metrics.occupied}
+              </p>
+            </div>
+
+            <div className="rounded-xl border border-border/80 bg-card p-4 sm:p-5 shadow-soft transition-all hover:border-amber-500/40">
+              <div className="flex items-center justify-between">
+                <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                  Reserved
+                </p>
+                <div className="grid size-8 place-items-center rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400">
+                  <Clock className="size-4" />
+                </div>
+              </div>
+              <p className="mt-2 text-xl sm:text-2xl font-black text-amber-600 dark:text-amber-400">
+                {metrics.reserved}
+              </p>
+            </div>
+          </div>
+        }
+      >
         <div className="space-y-6">
           {/* Tables Grid Layout */}
           {isLoading ? (
@@ -346,7 +367,10 @@ function TablesPage() {
                           <SelectValue placeholder="Change Status" />
                         </SelectTrigger>
                         <SelectContent className="rounded-xl">
-                          <SelectItem value="available" className="text-xs font-bold text-emerald-500">
+                          <SelectItem
+                            value="available"
+                            className="text-xs font-bold text-emerald-500"
+                          >
                             Available (Free)
                           </SelectItem>
                           <SelectItem value="occupied" className="text-xs font-bold text-rose-500">
@@ -367,7 +391,7 @@ function TablesPage() {
                           setGuestPhone("");
                           setGuestNights(1);
                           setGuestRoomRate(120);
-                          setGuestRoomServiceAmt(table.status === "occupied" ? 45.50 : 0);
+                          setGuestRoomServiceAmt(table.status === "occupied" ? 45.5 : 0);
                         }}
                         title="Room Folio & Guest Details"
                       >
@@ -469,7 +493,10 @@ function TablesPage() {
       </AlertDialog>
 
       {/* 🏨 Hotel Room Folio & Check-In / Check-Out Management */}
-      <Dialog open={!!selectedRoomForFolio} onOpenChange={(open) => !open && setSelectedRoomForFolio(null)}>
+      <Dialog
+        open={!!selectedRoomForFolio}
+        onOpenChange={(open) => !open && setSelectedRoomForFolio(null)}
+      >
         <DialogContent className="sm:max-w-xl p-0 gap-0 overflow-hidden rounded-3xl border-border/80 shadow-2xl bg-card">
           <div className="p-5 border-b border-border/80 bg-blue-500/10 flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -503,24 +530,43 @@ function TablesPage() {
               <div className="space-y-4">
                 <div className="rounded-2xl border border-border/80 bg-muted/20 p-4 space-y-3">
                   <div className="flex items-center justify-between border-b border-border/60 pb-2.5">
-                    <span className="text-xs font-bold text-foreground">Current In-House Guest</span>
-                    <span className="text-xs font-mono font-bold text-primary">Folio #{String(selectedRoomForFolio.id).slice(0, 8).toUpperCase()}</span>
+                    <span className="text-xs font-bold text-foreground">
+                      Current In-House Guest
+                    </span>
+                    <span className="text-xs font-mono font-bold text-primary">
+                      Folio #{String(selectedRoomForFolio.id).slice(0, 8).toUpperCase()}
+                    </span>
                   </div>
                   <div className="grid grid-cols-2 gap-2 text-xs">
                     <div>
-                      <span className="text-[10px] text-muted-foreground uppercase font-bold block">Guest Name</span>
-                      <span className="font-bold text-foreground">{guestName || "Mr. Robert Vance"}</span>
+                      <span className="text-[10px] text-muted-foreground uppercase font-bold block">
+                        Guest Name
+                      </span>
+                      <span className="font-bold text-foreground">
+                        {guestName || "Mr. Robert Vance"}
+                      </span>
                     </div>
                     <div>
-                      <span className="text-[10px] text-muted-foreground uppercase font-bold block">Contact Phone</span>
-                      <span className="font-semibold text-foreground">{guestPhone || "+1 (555) 349-2910"}</span>
+                      <span className="text-[10px] text-muted-foreground uppercase font-bold block">
+                        Contact Phone
+                      </span>
+                      <span className="font-semibold text-foreground">
+                        {guestPhone || "+1 (555) 349-2910"}
+                      </span>
                     </div>
                     <div>
-                      <span className="text-[10px] text-muted-foreground uppercase font-bold block">Duration</span>
-                      <span className="font-semibold text-foreground">{guestNights} Night(s) @ {currencySymbol}{guestRoomRate}/night</span>
+                      <span className="text-[10px] text-muted-foreground uppercase font-bold block">
+                        Duration
+                      </span>
+                      <span className="font-semibold text-foreground">
+                        {guestNights} Night(s) @ {currencySymbol}
+                        {guestRoomRate}/night
+                      </span>
                     </div>
                     <div>
-                      <span className="text-[10px] text-muted-foreground uppercase font-bold block">Checked In</span>
+                      <span className="text-[10px] text-muted-foreground uppercase font-bold block">
+                        Checked In
+                      </span>
                       <span className="font-semibold text-foreground">Today, 02:30 PM</span>
                     </div>
                   </div>
@@ -532,17 +578,27 @@ function TablesPage() {
                     Itemized Room Folio Breakdown
                   </span>
                   <div className="flex justify-between text-muted-foreground">
-                    <span>Room Accommodation ({guestNights} Nights × {currencySymbol}{guestRoomRate}):</span>
-                    <span className="font-mono font-bold text-foreground">{currencySymbol}{(guestNights * guestRoomRate).toFixed(2)}</span>
+                    <span>
+                      Room Accommodation ({guestNights} Nights × {currencySymbol}
+                      {guestRoomRate}):
+                    </span>
+                    <span className="font-mono font-bold text-foreground">
+                      {currencySymbol}
+                      {(guestNights * guestRoomRate).toFixed(2)}
+                    </span>
                   </div>
                   <div className="flex justify-between text-muted-foreground">
                     <span>Restaurant / Room Service & Minibar KOTs:</span>
-                    <span className="font-mono font-bold text-foreground">{currencySymbol}{guestRoomServiceAmt.toFixed(2)}</span>
+                    <span className="font-mono font-bold text-foreground">
+                      {currencySymbol}
+                      {guestRoomServiceAmt.toFixed(2)}
+                    </span>
                   </div>
                   <div className="border-t border-border/60 pt-2 flex justify-between items-center text-sm font-black">
                     <span className="text-foreground">Total Folio Balance Outstanding:</span>
                     <span className="text-base font-black text-rose-600 dark:text-rose-400 font-mono">
-                      {currencySymbol}{(guestNights * guestRoomRate + guestRoomServiceAmt).toFixed(2)}
+                      {currencySymbol}
+                      {(guestNights * guestRoomRate + guestRoomServiceAmt).toFixed(2)}
                     </span>
                   </div>
                 </div>
@@ -574,7 +630,9 @@ function TablesPage() {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div className="space-y-1.5">
-                    <Label className="text-xs font-bold text-foreground">Nightly Rate ({currencySymbol})</Label>
+                    <Label className="text-xs font-bold text-foreground">
+                      Nightly Rate ({currencySymbol})
+                    </Label>
                     <Input
                       type="number"
                       min="0"
@@ -598,7 +656,8 @@ function TablesPage() {
                 <div className="rounded-2xl border border-blue-500/25 bg-blue-500/5 p-3.5 flex justify-between items-center text-xs">
                   <span className="text-muted-foreground font-medium">Estimated Stay Charges:</span>
                   <span className="font-mono font-black text-sm text-blue-600 dark:text-blue-400">
-                    {currencySymbol}{(guestNights * guestRoomRate).toFixed(2)}
+                    {currencySymbol}
+                    {(guestNights * guestRoomRate).toFixed(2)}
                   </span>
                 </div>
               </div>
@@ -606,14 +665,20 @@ function TablesPage() {
           </div>
 
           <div className="p-4 border-t border-border/80 bg-muted/20 flex items-center justify-between gap-3">
-            <Button variant="outline" onClick={() => setSelectedRoomForFolio(null)} className="h-11 rounded-xl text-xs font-semibold">
+            <Button
+              variant="outline"
+              onClick={() => setSelectedRoomForFolio(null)}
+              className="h-11 rounded-xl text-xs font-semibold"
+            >
               Cancel
             </Button>
             {selectedRoomForFolio?.status === "occupied" ? (
               <Button
                 onClick={() => {
                   updateStatus.mutate({ id: selectedRoomForFolio.id, status: "available" });
-                  toast.success(`✓ Room Folio settled & ${guestName || "Guest"} successfully checked out!`);
+                  toast.success(
+                    `✓ Room Folio settled & ${guestName || "Guest"} successfully checked out!`,
+                  );
                   setSelectedRoomForFolio(null);
                 }}
                 className="h-11 px-6 rounded-xl font-extrabold text-xs bg-emerald-600 hover:bg-emerald-700 text-white shadow-soft gap-2"

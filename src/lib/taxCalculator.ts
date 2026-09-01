@@ -80,7 +80,7 @@ export function calculateItemTax(params: TaxCalculationParams): TaxCalculationRe
     }
   } else {
     // Intra-state: CGST + SGST. Use explicit split rates if provided, else split evenly.
-    if (cgstRate !== undefined && sgstRate !== undefined && (cgstRate + sgstRate) > 0) {
+    if (cgstRate !== undefined && sgstRate !== undefined && cgstRate + sgstRate > 0) {
       cgstAmt = taxableValue * (cgstRate / 100);
       sgstAmt = taxableValue * (sgstRate / 100);
     } else {

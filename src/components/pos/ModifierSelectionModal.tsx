@@ -119,7 +119,9 @@ export function ModifierSelectionModal({
             </p>
           </div>
           <div className="text-right">
-            <div className="text-[10px] font-extrabold uppercase text-muted-foreground">Base Price</div>
+            <div className="text-[10px] font-extrabold uppercase text-muted-foreground">
+              Base Price
+            </div>
             <div className="text-sm font-black text-foreground number">
               {formatCurrency(Number(product.price || 0))}
             </div>
@@ -134,7 +136,10 @@ export function ModifierSelectionModal({
         ) : (
           <div className="p-5 space-y-5 max-h-[60vh] overflow-y-auto">
             {modifiers.map((group: any) => (
-              <div key={group.id} className="p-4 rounded-2xl border border-border/80 bg-muted/15 space-y-3 shadow-2xs">
+              <div
+                key={group.id}
+                className="p-4 rounded-2xl border border-border/80 bg-muted/15 space-y-3 shadow-2xs"
+              >
                 <div className="flex justify-between items-center">
                   <div className="flex items-center gap-2">
                     <Label className="text-xs font-extrabold uppercase tracking-wider text-foreground">
@@ -196,9 +201,7 @@ export function ModifierSelectionModal({
                               handleToggleMultiple(group, opt, checked as boolean)
                             }
                           />
-                          <span className="text-xs font-semibold text-foreground">
-                            {opt.name}
-                          </span>
+                          <span className="text-xs font-semibold text-foreground">{opt.name}</span>
                         </div>
                         {Number(opt.price) > 0 && (
                           <span className="text-xs font-bold text-primary number">

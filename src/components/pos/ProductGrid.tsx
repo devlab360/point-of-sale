@@ -1,4 +1,13 @@
-import { Search, ScanBarcode, Plus, Image as ImageIcon, MapPin, X, Gem, ShieldCheck } from "lucide-react";
+import {
+  Search,
+  ScanBarcode,
+  Plus,
+  Image as ImageIcon,
+  MapPin,
+  X,
+  Gem,
+  ShieldCheck,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -433,7 +442,10 @@ export function ProductGrid({ state }: { state: any }) {
                               </span>
                               <div className="flex items-center gap-1">
                                 {p.metadata?.hasWarranty && (
-                                  <span className="text-[9px] font-bold rounded-md bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 px-1.5 py-0.5 uppercase tracking-wider flex items-center gap-0.5" title="Warranty Protected">
+                                  <span
+                                    className="text-[9px] font-bold rounded-md bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 px-1.5 py-0.5 uppercase tracking-wider flex items-center gap-0.5"
+                                    title="Warranty Protected"
+                                  >
                                     <ShieldCheck className="size-2.5" />
                                     {p.metadata.warrantyMonths}M
                                   </span>

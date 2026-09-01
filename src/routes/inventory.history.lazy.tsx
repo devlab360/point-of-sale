@@ -101,15 +101,16 @@ function HistoryPage() {
   const totalEvents = rawMovements.length;
   const posSalesOut = useMemo(
     () => rawMovements.filter((m: any) => (m.action || "").toLowerCase().includes("sale")).length,
-    [rawMovements]
+    [rawMovements],
   );
   const inwardPurchases = useMemo(
-    () => rawMovements.filter((m: any) => (m.action || "").toLowerCase().includes("purchase")).length,
-    [rawMovements]
+    () =>
+      rawMovements.filter((m: any) => (m.action || "").toLowerCase().includes("purchase")).length,
+    [rawMovements],
   );
   const adjustmentsCount = useMemo(
     () => rawMovements.filter((m: any) => (m.action || "").toLowerCase().includes("adjust")).length,
-    [rawMovements]
+    [rawMovements],
   );
 
   const filtered = useMemo(() => {
@@ -120,7 +121,7 @@ function HistoryPage() {
         (m: any) =>
           m.productName?.toLowerCase().includes(lower) ||
           m.action?.toLowerCase().includes(lower) ||
-          m.notes?.toLowerCase().includes(lower)
+          m.notes?.toLowerCase().includes(lower),
       );
     }
     if (actionFilter !== "all") {
@@ -244,7 +245,9 @@ function HistoryPage() {
             icon={History}
             title="No inventory movement logs found"
             description={
-              search ? "Try adjusting your search criteria." : "Movement audit entries will automatically appear as POS sales and stock changes occur."
+              search
+                ? "Try adjusting your search criteria."
+                : "Movement audit entries will automatically appear as POS sales and stock changes occur."
             }
           />
         ) : viewMode === "table" ? (

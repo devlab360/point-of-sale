@@ -334,7 +334,8 @@ export function SplitCheckModal({
                   </div>
                   <div className="font-bold text-sm text-foreground">All Items Assigned!</div>
                   <p className="text-xs text-muted-foreground">
-                    All dishes and services have been allocated to guests. Ready to confirm split checks.
+                    All dishes and services have been allocated to guests. Ready to confirm split
+                    checks.
                   </p>
                 </div>
               ) : (
@@ -374,7 +375,9 @@ export function SplitCheckModal({
                             onClick={() => moveItem(item, null, c.id)}
                             title={`Move 1x to ${c.name}`}
                           >
-                            <span>{c.name.split(" ")[0]} {c.name.split(" ")[1] || ""}</span>
+                            <span>
+                              {c.name.split(" ")[0]} {c.name.split(" ")[1] || ""}
+                            </span>
                             <ArrowRight className="size-3 text-primary" />
                           </Button>
                         ))}
@@ -506,7 +509,8 @@ export function SplitCheckModal({
           <div className="text-xs text-muted-foreground flex items-center gap-1.5">
             <Sparkles className="size-3.5 text-primary" />
             <span>
-              Each split check will be saved as an independent parked invoice with its own seat identifier.
+              Each split check will be saved as an independent parked invoice with its own seat
+              identifier.
             </span>
           </div>
 

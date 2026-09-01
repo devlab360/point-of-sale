@@ -3,9 +3,6 @@ import { formatErrorResponse } from "@/lib/errors/errors";
 import { createServerFn } from "@tanstack/react-start";
 import { setCookie, deleteCookie } from "@tanstack/react-start/server";
 import { authService } from "@/services/auth.service";
-import { db } from "@/db";
-import * as schema from "@/db/schema";
-import { eq, and, desc } from "drizzle-orm";
 import { z } from "zod";
 import { requireAuth, createSessionToken } from "@/lib/auth-utils";
 import bcrypt from "bcryptjs";
@@ -29,6 +26,13 @@ export const loginFn = createServerFn({ method: "POST" })
     }
   });
 
+async function getDb() {
+  const { db } = await import("@/db");
+  const schema = await import("@/db/schema");
+  const { eq, and, desc } = await import("drizzle-orm");
+  return { db, schema, eq, and, desc };
+}
+
 export const getOrgDataFn = createServerFn({ method: "GET" })
   .validator((data: unknown) =>
     z
@@ -38,14 +42,13 @@ export const getOrgDataFn = createServerFn({ method: "GET" })
   )
   .handler(async ({ data }) => {
     try {
-      // C-3 fix: Require authentication. Verify requested orgId matches session orgId.
-      // Require authentication. Verify requested orgId matches session orgId.
       const session = await requireAuth();
       const requestedOrgId = data?.orgId;
       if (requestedOrgId && requestedOrgId !== session.orgId) {
         return { success: false, error: "Unauthorized access to another organization's data" };
       }
       const orgId = requestedOrgId || session.orgId;
+      const { db, schema, eq } = await getDb();
       const orgs = await db
         .select()
         .from(schema.organizations)
@@ -74,6 +77,7 @@ export const verifyUserEmailFn = createServerFn({ method: "POST" })
   )
   .handler(async ({ data }) => {
     try {
+      const { db, schema, eq } = await getDb();
       const users = await db
         .select()
         .from(schema.users)
@@ -110,7 +114,6 @@ export const verifyUserEmailFn = createServerFn({ method: "POST" })
         orgSettings = settings[0];
       }
 
-      // DO NOT RETURN PIN OR PASSWORDS to frontend
       const { pin: _, ...safeUser } = user;
 
       return {
@@ -167,7 +170,8 @@ export const registerOrgFn = createServerFn({ method: "POST" })
         timeZone,
       } = data;
 
-      // Check if user with this email already exists
+      const { db, schema, eq } = await getDb();
+
       const existingUsers = await db
         .select()
         .from(schema.users)
@@ -251,7 +255,7 @@ export const registerOrgFn = createServerFn({ method: "POST" })
         secure: process.env.NODE_ENV === "production",
         sameSite: "lax",
         path: "/",
-        maxAge: 7 * 24 * 60 * 60, // 7 days
+        maxAge: 7 * 24 * 60 * 60,
       });
 
       return { success: true, message: "Registration successful!" };
@@ -264,6 +268,7 @@ export const sendVerificationOtpFn = createServerFn({ method: "POST" })
   .validator((data: any) => data)
   .handler(async ({ data }) => {
     try {
+      const { db, schema, eq } = await getDb();
       await db
         .update(schema.users)
         .set({ emailVerificationToken: data.code })
@@ -278,6 +283,7 @@ export const verifyOtpFn = createServerFn({ method: "POST" })
   .validator((data: any) => data)
   .handler(async ({ data }) => {
     try {
+      const { db, schema, eq } = await getDb();
       const users = await db
         .select()
         .from(schema.users)
@@ -320,6 +326,7 @@ export const getInvitationFn = createServerFn({ method: "GET" })
   .validator((data: any) => data)
   .handler(async ({ data }) => {
     try {
+      const { db, schema, eq } = await getDb();
       const invs = await db
         .select()
         .from(schema.invitations)
@@ -348,7 +355,8 @@ export const acceptInvitationFn = createServerFn({ method: "POST" })
     try {
       const email = data.email.toLowerCase();
 
-      // Check if user with this email already exists
+      const { db, schema, eq } = await getDb();
+
       const existingUser = await db
         .select()
         .from(schema.users)
@@ -389,6 +397,7 @@ export const sendPasswordResetOtpFn = createServerFn({ method: "POST" })
   .validator((data: any) => data)
   .handler(async ({ data }) => {
     try {
+      const { db, schema, eq } = await getDb();
       await db
         .update(schema.users)
         .set({ emailVerificationToken: data.code })
@@ -409,6 +418,7 @@ export const resetPasswordFn = createServerFn({ method: "POST" })
   )
   .handler(async ({ data }) => {
     try {
+      const { db, schema, eq } = await getDb();
       const users = await db
         .select()
         .from(schema.users)
@@ -418,7 +428,6 @@ export const resetPasswordFn = createServerFn({ method: "POST" })
 
       const user = users[0];
 
-      // Verify OTP securely on the backend — strict match only, no backdoors
       if (!user.emailVerificationToken || user.emailVerificationToken.trim() !== data.otp?.trim()) {
         return { success: false, error: "Invalid OTP code" };
       }
@@ -426,7 +435,7 @@ export const resetPasswordFn = createServerFn({ method: "POST" })
       const hashedPin = await bcrypt.hash(data.newPassword, 10);
       await db
         .update(schema.users)
-        .set({ pin: hashedPin, emailVerificationToken: null }) // Clear the token after use
+        .set({ pin: hashedPin, emailVerificationToken: null })
         .where(eq(schema.users.id, user.id));
 
       return { success: true };
@@ -440,6 +449,7 @@ export const getCurrentUserFn = createServerFn({ method: "GET" })
   .handler(async () => {
     try {
       const session = await requireAuth();
+      const { db, schema, eq } = await getDb();
       const users = await db
         .select()
         .from(schema.users)
@@ -486,6 +496,7 @@ export const sendLoginOtpFn = createServerFn({ method: "POST" })
   .validator(z.object({ email: z.string().email(), otp: z.string() }))
   .handler(async ({ data }) => {
     try {
+      const { db, schema, eq } = await getDb();
       const users = await db
         .select()
         .from(schema.users)
@@ -511,6 +522,7 @@ export const loginWithOtpFn = createServerFn({ method: "POST" })
   .validator(z.object({ email: z.string().email(), otp: z.string() }))
   .handler(async ({ data }) => {
     try {
+      const { db, schema, eq } = await getDb();
       const users = await db
         .select()
         .from(schema.users)
@@ -540,12 +552,10 @@ export const loginWithOtpFn = createServerFn({ method: "POST" })
         };
       }
 
-      // Verify OTP securely — strict match only, no backdoors
       if (!user.emailVerificationToken || user.emailVerificationToken.trim() !== data.otp?.trim()) {
         return { success: false, error: "Invalid OTP code" };
       }
 
-      // Clear the token and update last active
       await db
         .update(schema.users)
         .set({ emailVerificationToken: null, lastActive: new Date().toISOString() })
@@ -584,7 +594,6 @@ export const loginWithGoogleFn = createServerFn({ method: "POST" })
   .validator(z.object({ accessToken: z.string() }))
   .handler(async ({ data }) => {
     try {
-      // 1. Verify token with Google
       const userInfoRes = await fetch(
         `https://www.googleapis.com/oauth2/v3/userinfo?access_token=${data.accessToken}`,
       );
@@ -601,7 +610,8 @@ export const loginWithGoogleFn = createServerFn({ method: "POST" })
 
       const email = googleUser.email.toLowerCase();
 
-      // 2. Check if user exists in DB
+      const { db, schema, eq } = await getDb();
+
       let users = await db
         .select()
         .from(schema.users)
@@ -610,7 +620,6 @@ export const loginWithGoogleFn = createServerFn({ method: "POST" })
 
       let user = users[0];
 
-      // 3. Create user and org if they don't exist
       if (!user) {
         const orgId = uuidv4();
         const userId = uuidv4();
@@ -621,7 +630,6 @@ export const loginWithGoogleFn = createServerFn({ method: "POST" })
         const storeName = (googleUser.name || "Google User") + "'s Store";
 
         const insertRes = await db.transaction(async (tx) => {
-          // Find starter plan
           const plans = await tx
             .select()
             .from(schema.saasPlans)
@@ -646,7 +654,7 @@ export const loginWithGoogleFn = createServerFn({ method: "POST" })
               email: email,
               name: googleUser.name || "Google User",
               role: "admin",
-              pin: "1234", // Dummy pin, won't be used since social login bypasses it
+              pin: "1234",
               status: "active",
               emailVerified: true,
               lastActive: new Date().toISOString(),
@@ -693,13 +701,11 @@ export const loginWithGoogleFn = createServerFn({ method: "POST" })
         };
       }
 
-      // Update last active
       await db
         .update(schema.users)
         .set({ lastActive: new Date().toISOString() })
         .where(eq(schema.users.id, user.id));
 
-      // 4. Create Session Token
       const token = await createSessionToken({
         userId: user.id,
         orgId: user.organizationId || "",
@@ -759,7 +765,8 @@ export const loginWithFirebasePhoneFn = createServerFn({ method: "POST" })
         return { success: false, error: "No phone number found in token" };
       }
 
-      // 2. Check if user exists in DB by phone
+      const { db, schema, eq } = await getDb();
+
       let users = await db
         .select()
         .from(schema.users)
@@ -768,7 +775,6 @@ export const loginWithFirebasePhoneFn = createServerFn({ method: "POST" })
 
       let user = users[0];
 
-      // 3. Create user and org if they don't exist
       if (!user) {
         const orgId = uuidv4();
         const userId = uuidv4();
@@ -800,7 +806,7 @@ export const loginWithFirebasePhoneFn = createServerFn({ method: "POST" })
             .values({
               id: userId,
               organizationId: orgId,
-              email: `phoneuser_${Date.now()}@temp.com`, // Email is required by schema
+              email: `phoneuser_${Date.now()}@temp.com`,
               phone: phone,
               name: "Phone User",
               role: "admin",
@@ -850,13 +856,11 @@ export const loginWithFirebasePhoneFn = createServerFn({ method: "POST" })
         };
       }
 
-      // Update last active
       await db
         .update(schema.users)
         .set({ lastActive: new Date().toISOString() })
         .where(eq(schema.users.id, user.id));
 
-      // 4. Create Session Token
       const token = await createSessionToken({
         userId: user.id,
         orgId: user.organizationId || "",

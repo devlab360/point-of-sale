@@ -347,15 +347,15 @@ export function ProductForm({
                   <div className="flex items-center gap-2">
                     <span className="text-xs text-muted-foreground font-semibold">Margin:</span>
                     <span
-                      className={`text-xs font-black px-2.5 py-0.5 rounded-full ${formData.price - formData.cost >= 0
-                        ? "bg-success/15 text-success border border-success/20"
-                        : "bg-destructive/15 text-destructive border border-destructive/20"
-                        }`}
+                      className={`text-xs font-black px-2.5 py-0.5 rounded-full ${
+                        formData.price - formData.cost >= 0
+                          ? "bg-success/15 text-success border border-success/20"
+                          : "bg-destructive/15 text-destructive border border-destructive/20"
+                      }`}
                     >
-                      {(
-                        ((formData.price - formData.cost) / (formData.price || 1)) *
-                        100
-                      ).toFixed(1)}
+                      {(((formData.price - formData.cost) / (formData.price || 1)) * 100).toFixed(
+                        1,
+                      )}
                       %
                     </span>
                   </div>
@@ -366,11 +366,14 @@ export function ProductForm({
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                 <div className="grid gap-1.5">
                   <Label className="text-xs font-bold">
-                    Retail Selling Price ({currencySymbol}) <span className="text-destructive">*</span>
+                    Retail Selling Price ({currencySymbol}){" "}
+                    <span className="text-destructive">*</span>
                   </Label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <span className="text-muted-foreground text-xs font-bold font-mono">{currencySymbol}</span>
+                      <span className="text-muted-foreground text-xs font-bold font-mono">
+                        {currencySymbol}
+                      </span>
                     </div>
                     <Input
                       type="number"
@@ -390,11 +393,14 @@ export function ProductForm({
                 </div>
                 <div className="grid gap-1.5">
                   <Label className="text-xs font-bold">
-                    Unit Cost / Purchase Price ({currencySymbol}) <span className="text-destructive">*</span>
+                    Unit Cost / Purchase Price ({currencySymbol}){" "}
+                    <span className="text-destructive">*</span>
                   </Label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <span className="text-muted-foreground text-xs font-bold font-mono">{currencySymbol}</span>
+                      <span className="text-muted-foreground text-xs font-bold font-mono">
+                        {currencySymbol}
+                      </span>
                     </div>
                     <Input
                       type="number"
@@ -417,8 +423,12 @@ export function ProductForm({
               {/* Real-time Profit Preview */}
               <div className="grid grid-cols-2 gap-3 p-3.5 rounded-xl bg-muted/40 border border-border/60 text-xs">
                 <div>
-                  <span className="text-muted-foreground text-[11px] block">Gross Profit Per Unit:</span>
-                  <span className={`font-black font-mono text-sm ${formData.price >= formData.cost ? "text-primary" : "text-destructive"}`}>
+                  <span className="text-muted-foreground text-[11px] block">
+                    Gross Profit Per Unit:
+                  </span>
+                  <span
+                    className={`font-black font-mono text-sm ${formData.price >= formData.cost ? "text-primary" : "text-destructive"}`}
+                  >
                     {formatCurrency(formData.price - formData.cost)}
                   </span>
                 </div>
@@ -900,7 +910,8 @@ export function ProductForm({
                   </SelectContent>
                 </Select>
                 <p className="text-[10px] text-muted-foreground">
-                  Rates are managed dynamically in Tax Master. If empty, use it to keep product tax in sync.
+                  Rates are managed dynamically in Tax Master. If empty, use it to keep product tax
+                  in sync.
                 </p>
               </div>
               <div className="flex items-center gap-3 pt-2">
@@ -1078,7 +1089,9 @@ export function ProductForm({
                           warrantyMonths: formData.metadata?.warrantyMonths ?? 12,
                           guaranteeMonths: formData.metadata?.guaranteeMonths ?? 0,
                           warrantyType: formData.metadata?.warrantyType ?? "carry-in",
-                          warrantyPolicy: formData.metadata?.warrantyPolicy ?? "Comprehensive coverage on manufacturing defects",
+                          warrantyPolicy:
+                            formData.metadata?.warrantyPolicy ??
+                            "Comprehensive coverage on manufacturing defects",
                         },
                       })
                     }
@@ -1156,7 +1169,9 @@ export function ProductForm({
                   </div>
                 </div>
                 <div className="space-y-1.5">
-                  <Label className="text-xs font-bold">Warranty Terms & Policy (Printed on Receipts)</Label>
+                  <Label className="text-xs font-bold">
+                    Warranty Terms & Policy (Printed on Receipts)
+                  </Label>
                   <Input
                     value={formData.metadata?.warrantyPolicy ?? ""}
                     onChange={(e) =>
@@ -1351,7 +1366,9 @@ export function ProductForm({
                             },
                           })
                         }
-                        placeholder={formData.metadata?.makingChargeType === "percent" ? "10%" : "₹500"}
+                        placeholder={
+                          formData.metadata?.makingChargeType === "percent" ? "10%" : "₹500"
+                        }
                         className="h-10 rounded-xl font-bold"
                       />
                     </div>
@@ -1403,7 +1420,10 @@ export function ProductForm({
                         onChange={(e) =>
                           setFormData({
                             ...formData,
-                            metadata: { ...formData.metadata, partNumber: e.target.value.toUpperCase() },
+                            metadata: {
+                              ...formData.metadata,
+                              partNumber: e.target.value.toUpperCase(),
+                            },
                           })
                         }
                         placeholder="e.g. 04465-02220"
@@ -1417,7 +1437,10 @@ export function ProductForm({
                         onChange={(e) =>
                           setFormData({
                             ...formData,
-                            metadata: { ...formData.metadata, oemNumber: e.target.value.toUpperCase() },
+                            metadata: {
+                              ...formData.metadata,
+                              oemNumber: e.target.value.toUpperCase(),
+                            },
                           })
                         }
                         placeholder="e.g. OEM-TY-8832"
@@ -1439,11 +1462,14 @@ export function ProductForm({
                       className="h-10 rounded-xl"
                     />
                     <p className="text-[11px] text-muted-foreground">
-                      Cashiers can search by vehicle make, model, or year in POS to locate this part instantly.
+                      Cashiers can search by vehicle make, model, or year in POS to locate this part
+                      instantly.
                     </p>
                   </div>
                   <div className="space-y-1.5">
-                    <Label className="text-xs font-bold">Cross-Reference / Alternate Part Numbers</Label>
+                    <Label className="text-xs font-bold">
+                      Cross-Reference / Alternate Part Numbers
+                    </Label>
                     <Input
                       value={formData.metadata?.alternatePartNumbers ?? ""}
                       onChange={(e) =>

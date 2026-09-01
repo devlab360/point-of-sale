@@ -99,7 +99,9 @@ function SuperAdminTenantsPage() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingTenant, setEditingTenant] = useState<any>(null);
   const [selectedGrants, setSelectedGrants] = useState<string[]>([]);
-  const [activeTab, setActiveTab] = useState<"general" | "subscription" | "modules" | "danger">("general");
+  const [activeTab, setActiveTab] = useState<"general" | "subscription" | "modules" | "danger">(
+    "general",
+  );
 
   // Create Tenant State
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -251,11 +253,15 @@ function SuperAdminTenantsPage() {
       return matchesSearch && matchesStatus && matchesPlan;
     })
     .sort((a: any, b: any) => {
-      if (sortBy === "newest") return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-      if (sortBy === "oldest") return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+      if (sortBy === "newest")
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      if (sortBy === "oldest")
+        return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
       if (sortBy === "name") return (a.name || "").localeCompare(b.name || "");
       if (sortBy === "expiry") {
-        return new Date(a.planExpiryDate || 0).getTime() - new Date(b.planExpiryDate || 0).getTime();
+        return (
+          new Date(a.planExpiryDate || 0).getTime() - new Date(b.planExpiryDate || 0).getTime()
+        );
       }
       return 0;
     });
@@ -269,7 +275,13 @@ function SuperAdminTenantsPage() {
           description="Manage registered merchant stores, subscription states, trial extensions, and granular module permissions."
           actions={
             <div className="flex flex-wrap items-center gap-2">
-              <Button onClick={() => refetch()} variant="outline" size="sm" className="gap-1.5 h-9" disabled={isFetching}>
+              <Button
+                onClick={() => refetch()}
+                variant="outline"
+                size="sm"
+                className="gap-1.5 h-9"
+                disabled={isFetching}
+              >
                 <RefreshCw className={`size-3.5 ${isFetching ? "animate-spin" : ""}`} />
                 <span>Refresh</span>
               </Button>
@@ -284,7 +296,9 @@ function SuperAdminTenantsPage() {
                     OwnerEmail: org.ownerEmail,
                     Status: org.status,
                     Plan: org.currentPlanId || "basic",
-                    ExpiresOn: org.planExpiryDate ? new Date(org.planExpiryDate).toLocaleDateString() : "Lifetime",
+                    ExpiresOn: org.planExpiryDate
+                      ? new Date(org.planExpiryDate).toLocaleDateString()
+                      : "Lifetime",
                     CreatedAt: new Date(org.createdAt).toLocaleDateString(),
                   }));
                   exportToCSV("SaaS_Tenant_Stores", exportRows);
@@ -293,7 +307,11 @@ function SuperAdminTenantsPage() {
                 <Download className="size-3.5" />
                 <span>Export CSV</span>
               </Button>
-              <Button onClick={() => setIsCreateModalOpen(true)} size="sm" className="gap-2 h-9 shadow-xs">
+              <Button
+                onClick={() => setIsCreateModalOpen(true)}
+                size="sm"
+                className="gap-2 h-9 shadow-xs"
+              >
                 <Plus className="size-4" />
                 <span>Provision Tenant Store</span>
               </Button>
@@ -394,7 +412,9 @@ function SuperAdminTenantsPage() {
           {isLoading ? (
             <div className="flex flex-col items-center justify-center p-16 space-y-3">
               <Loader2 className="size-8 animate-spin text-primary" />
-              <p className="text-xs text-muted-foreground font-medium">Loading tenant organizations…</p>
+              <p className="text-xs text-muted-foreground font-medium">
+                Loading tenant organizations…
+              </p>
             </div>
           ) : filteredOrgs.length === 0 ? (
             <div className="text-center p-16 space-y-3">
@@ -403,7 +423,8 @@ function SuperAdminTenantsPage() {
               </div>
               <h3 className="font-bold text-base text-foreground">No Tenant Stores Found</h3>
               <p className="text-xs text-muted-foreground max-w-sm mx-auto">
-                No stores match your current query. Try clearing filters or create a new store tenant.
+                No stores match your current query. Try clearing filters or create a new store
+                tenant.
               </p>
             </div>
           ) : (
@@ -424,7 +445,8 @@ function SuperAdminTenantsPage() {
                     const plan = plans.find((p: any) => p.id === org.currentPlanId);
                     const isExpiringSoon =
                       org.planExpiryDate &&
-                      new Date(org.planExpiryDate).getTime() - Date.now() < 3 * 24 * 60 * 60 * 1000 &&
+                      new Date(org.planExpiryDate).getTime() - Date.now() <
+                        3 * 24 * 60 * 60 * 1000 &&
                       new Date(org.planExpiryDate).getTime() > Date.now();
                     const isExpired =
                       org.planExpiryDate && new Date(org.planExpiryDate).getTime() < Date.now();
@@ -449,7 +471,10 @@ function SuperAdminTenantsPage() {
                         </TableCell>
 
                         <TableCell className="px-4 py-3.5">
-                          <Badge variant="outline" className="font-mono text-xs font-bold bg-muted/40 uppercase">
+                          <Badge
+                            variant="outline"
+                            className="font-mono text-xs font-bold bg-muted/40 uppercase"
+                          >
                             {plan?.name || org.currentPlanId || "Basic"}
                           </Badge>
                         </TableCell>
@@ -466,7 +491,10 @@ function SuperAdminTenantsPage() {
                             </Badge>
                           )}
                           {org.status === "suspended" && (
-                            <Badge variant="destructive" className="font-bold uppercase text-[10px]">
+                            <Badge
+                              variant="destructive"
+                              className="font-bold uppercase text-[10px]"
+                            >
                               Suspended
                             </Badge>
                           )}
@@ -481,7 +509,9 @@ function SuperAdminTenantsPage() {
                               {isExpired ? (
                                 <p className="text-[10px] font-bold text-destructive">Expired</p>
                               ) : isExpiringSoon ? (
-                                <p className="text-[10px] font-bold text-amber-500">Expiring Soon</p>
+                                <p className="text-[10px] font-bold text-amber-500">
+                                  Expiring Soon
+                                </p>
                               ) : null}
                             </div>
                           ) : (
@@ -526,7 +556,8 @@ function SuperAdminTenantsPage() {
                 <span>Manage Tenant: {editingTenant?.name}</span>
               </SheetTitle>
               <SheetDescription className="text-xs text-muted-foreground mt-0.5">
-                Configure store profile, subscription plan, trial periods, and granular module grants.
+                Configure store profile, subscription plan, trial periods, and granular module
+                grants.
               </SheetDescription>
             </SheetHeader>
 
@@ -572,7 +603,9 @@ function SuperAdminTenantsPage() {
                     type="button"
                     onClick={() => setActiveTab("danger")}
                     className={`px-3 py-1.5 rounded-lg transition-colors text-destructive hover:bg-destructive/10 ${
-                      activeTab === "danger" ? "bg-destructive text-destructive-foreground shadow-xs" : ""
+                      activeTab === "danger"
+                        ? "bg-destructive text-destructive-foreground shadow-xs"
+                        : ""
                     }`}
                   >
                     Danger Zone
@@ -611,7 +644,9 @@ function SuperAdminTenantsPage() {
                       <div className="p-3.5 rounded-xl border bg-muted/20 space-y-2 text-xs">
                         <div className="flex justify-between items-center">
                           <span className="text-muted-foreground">Tenant Organization ID:</span>
-                          <span className="font-mono font-bold text-foreground">{editingTenant.id}</span>
+                          <span className="font-mono font-bold text-foreground">
+                            {editingTenant.id}
+                          </span>
                         </div>
                         <div className="flex justify-between items-center">
                           <span className="text-muted-foreground">Device Sync Key:</span>
@@ -725,7 +760,9 @@ function SuperAdminTenantsPage() {
                             variant="outline"
                             className="h-8 text-xs font-bold gap-1"
                             disabled={addTrialMutation.isPending}
-                            onClick={() => addTrialMutation.mutate({ orgId: editingTenant.id, days: 7 })}
+                            onClick={() =>
+                              addTrialMutation.mutate({ orgId: editingTenant.id, days: 7 })
+                            }
                           >
                             +7 Days Trial
                           </Button>
@@ -735,7 +772,9 @@ function SuperAdminTenantsPage() {
                             variant="outline"
                             className="h-8 text-xs font-bold gap-1"
                             disabled={addTrialMutation.isPending}
-                            onClick={() => addTrialMutation.mutate({ orgId: editingTenant.id, days: 14 })}
+                            onClick={() =>
+                              addTrialMutation.mutate({ orgId: editingTenant.id, days: 14 })
+                            }
                           >
                             +14 Days Trial
                           </Button>
@@ -745,7 +784,9 @@ function SuperAdminTenantsPage() {
                             variant="outline"
                             className="h-8 text-xs font-bold gap-1"
                             disabled={addTrialMutation.isPending}
-                            onClick={() => addTrialMutation.mutate({ orgId: editingTenant.id, days: 30 })}
+                            onClick={() =>
+                              addTrialMutation.mutate({ orgId: editingTenant.id, days: 30 })
+                            }
                           >
                             +30 Days Month
                           </Button>
@@ -763,7 +804,8 @@ function SuperAdminTenantsPage() {
                             Granular Module & Menu Overrides
                           </h4>
                           <p className="text-[11px] text-muted-foreground">
-                            Grant or revoke specific feature access beyond the standard SaaS plan limits.
+                            Grant or revoke specific feature access beyond the standard SaaS plan
+                            limits.
                           </p>
                         </div>
                         <div className="flex items-center gap-2">
@@ -805,10 +847,14 @@ function SuperAdminTenantsPage() {
                                 checked={isChecked}
                                 onCheckedChange={() => handleGrantToggle(mod.key)}
                               />
-                              <Icon className={`size-4 ${isChecked ? "text-primary" : "text-muted-foreground"}`} />
+                              <Icon
+                                className={`size-4 ${isChecked ? "text-primary" : "text-muted-foreground"}`}
+                              />
                               <div className="min-w-0">
                                 <p className="text-xs font-semibold truncate">{mod.label}</p>
-                                <p className="text-[10px] text-muted-foreground/80">{mod.category}</p>
+                                <p className="text-[10px] text-muted-foreground/80">
+                                  {mod.category}
+                                </p>
                               </div>
                             </label>
                           );
@@ -838,7 +884,8 @@ function SuperAdminTenantsPage() {
                       <div>
                         <h4 className="text-sm font-bold text-destructive">Danger Zone</h4>
                         <p className="text-xs text-muted-foreground mt-1">
-                          Permanently delete this tenant store and all associated products, sales, and settings.
+                          Permanently delete this tenant store and all associated products, sales,
+                          and settings.
                         </p>
                       </div>
 
@@ -859,7 +906,9 @@ function SuperAdminTenantsPage() {
                           }}
                         >
                           <Trash2 className="size-4 mr-1.5" />
-                          {deleteOrgMutation.isPending ? "Deleting Tenant…" : "Delete Store Permanently"}
+                          {deleteOrgMutation.isPending
+                            ? "Deleting Tenant…"
+                            : "Delete Store Permanently"}
                         </Button>
                       </div>
                     </div>

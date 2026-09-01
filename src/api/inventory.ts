@@ -106,7 +106,10 @@ export const createInventoryAdjustmentFn = createServerFn({ method: "POST" })
               .update(schema.products)
               .set({ stock: updateSql })
               .where(
-                and(eq(schema.products.id, line.productId), eq(schema.products.organizationId, orgId)),
+                and(
+                  eq(schema.products.id, line.productId),
+                  eq(schema.products.organizationId, orgId),
+                ),
               );
 
             if (line.batchId) {
@@ -256,7 +259,10 @@ export const createInventoryTransferFn = createServerFn({ method: "POST" })
               .update(schema.products)
               .set({ stock: sql`GREATEST(0, ${schema.products.stock} - ${line.qty})` })
               .where(
-                and(eq(schema.products.id, line.productId), eq(schema.products.organizationId, orgId)),
+                and(
+                  eq(schema.products.id, line.productId),
+                  eq(schema.products.organizationId, orgId),
+                ),
               );
           }
         }

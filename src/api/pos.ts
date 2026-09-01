@@ -148,10 +148,7 @@ export const getHeldInvoicesFn = createServerFn({ method: "GET" })
           note: schema.heldInvoices.note,
         })
         .from(schema.heldInvoices)
-        .leftJoin(
-          schema.customers,
-          eq(schema.heldInvoices.customerId, schema.customers.id),
-        )
+        .leftJoin(schema.customers, eq(schema.heldInvoices.customerId, schema.customers.id))
         .where(eq(schema.heldInvoices.organizationId, session.orgId))
         .orderBy(desc(schema.heldInvoices.savedAt));
       return { success: true, data: res };
@@ -206,18 +203,17 @@ export const deleteHeldInvoiceFn = createServerFn({ method: "POST" })
     }
   });
 
-export const clearAllHeldInvoicesFn = createServerFn({ method: "POST" })
-  .handler(async () => {
-    try {
-      const session = await requireAuth();
-      await db
-        .delete(schema.heldInvoices)
-        .where(eq(schema.heldInvoices.organizationId, session.orgId));
-      return { success: true };
-    } catch (e) {
-      return handleApiError(e);
-    }
-  });
+export const clearAllHeldInvoicesFn = createServerFn({ method: "POST" }).handler(async () => {
+  try {
+    const session = await requireAuth();
+    await db
+      .delete(schema.heldInvoices)
+      .where(eq(schema.heldInvoices.organizationId, session.orgId));
+    return { success: true };
+  } catch (e) {
+    return handleApiError(e);
+  }
+});
 
 export const splitHeldInvoiceFn = createServerFn({ method: "POST" })
   .validator(
@@ -350,73 +346,77 @@ export const completePosSaleFn = createServerFn({ method: "POST" })
 
         // Fetch Inventory levels for the selected location (fallback to 'Main Store' if not provided)
         const locationId = data.sale.locationId;
-        const [productsList, servicesList, repairsList, inventoryList, bundlesList, batchesList, taxMastersList] =
-          await Promise.all([
-            tx
-              .select()
-              .from(schema.products)
-              .where(
-                and(
-                  inArray(schema.products.id, productIds),
-                  eq(schema.products.organizationId, orgId),
-                ),
+        const [
+          productsList,
+          servicesList,
+          repairsList,
+          inventoryList,
+          bundlesList,
+          batchesList,
+          taxMastersList,
+        ] = await Promise.all([
+          tx
+            .select()
+            .from(schema.products)
+            .where(
+              and(
+                inArray(schema.products.id, productIds),
+                eq(schema.products.organizationId, orgId),
               ),
-            tx
-              .select()
-              .from(schema.services)
-              .where(
-                and(
-                  inArray(schema.services.id, productIds),
-                  eq(schema.services.organizationId, orgId),
-                ),
+            ),
+          tx
+            .select()
+            .from(schema.services)
+            .where(
+              and(
+                inArray(schema.services.id, productIds),
+                eq(schema.services.organizationId, orgId),
               ),
-            repairIds.length > 0
-              ? tx
-                  .select()
-                  .from(schema.repairs)
-                  .where(
-                    and(
-                      inArray(schema.repairs.id, repairIds),
-                      eq(schema.repairs.organizationId, orgId),
-                    ),
-                  )
-              : Promise.resolve([]),
-            locationId
-              ? tx
-                  .select()
-                  .from(schema.productInventory)
-                  .where(
-                    and(
-                      inArray(schema.productInventory.productId, productIds),
-                      eq(schema.productInventory.locationId, locationId),
-                      eq(schema.productInventory.organizationId, orgId),
-                    ),
-                  )
-              : Promise.resolve([]),
-            tx
-              .select()
-              .from(schema.productBundles)
-              .where(
-                and(
-                  inArray(schema.productBundles.bundleProductId, productIds),
-                  eq(schema.productBundles.organizationId, orgId),
-                ),
+            ),
+          repairIds.length > 0
+            ? tx
+                .select()
+                .from(schema.repairs)
+                .where(
+                  and(
+                    inArray(schema.repairs.id, repairIds),
+                    eq(schema.repairs.organizationId, orgId),
+                  ),
+                )
+            : Promise.resolve([]),
+          locationId
+            ? tx
+                .select()
+                .from(schema.productInventory)
+                .where(
+                  and(
+                    inArray(schema.productInventory.productId, productIds),
+                    eq(schema.productInventory.locationId, locationId),
+                    eq(schema.productInventory.organizationId, orgId),
+                  ),
+                )
+            : Promise.resolve([]),
+          tx
+            .select()
+            .from(schema.productBundles)
+            .where(
+              and(
+                inArray(schema.productBundles.bundleProductId, productIds),
+                eq(schema.productBundles.organizationId, orgId),
               ),
-            tx
-              .select()
-              .from(schema.inventoryBatches)
-              .where(
-                and(
-                  inArray(schema.inventoryBatches.productId, productIds),
-                  eq(schema.inventoryBatches.organizationId, orgId),
-                ),
-              )
-              .orderBy(schema.inventoryBatches.receivedAt),
-            tx
-              .select()
-              .from(schema.taxMasters)
-              .where(eq(schema.taxMasters.organizationId, orgId)),
-          ]);
+            ),
+          tx
+            .select()
+            .from(schema.inventoryBatches)
+            .where(
+              and(
+                inArray(schema.inventoryBatches.productId, productIds),
+                eq(schema.inventoryBatches.organizationId, orgId),
+              ),
+            )
+            .orderBy(schema.inventoryBatches.receivedAt),
+          tx.select().from(schema.taxMasters).where(eq(schema.taxMasters.organizationId, orgId)),
+        ]);
 
         // If there are bundle components, we need to fetch their inventory and batches too
         let componentInventoryList: any[] = [];
@@ -851,7 +851,12 @@ export const completePosSaleFn = createServerFn({ method: "POST" })
             const custRes = await tx
               .select()
               .from(schema.customers)
-              .where(and(eq(schema.customers.id, customerId), eq(schema.customers.organizationId, orgId)))
+              .where(
+                and(
+                  eq(schema.customers.id, customerId),
+                  eq(schema.customers.organizationId, orgId),
+                ),
+              )
               .limit(1);
 
             if (custRes.length > 0) {
@@ -877,9 +882,11 @@ export const completePosSaleFn = createServerFn({ method: "POST" })
 
               // Calculate Loyalty Points (Earned & Redeemed)
               const redeemedPoints = Number(data.sale.loyaltyPointsRedeemed || 0);
-              const earnedPoints = Number(data.sale.loyaltyPointsEarned != null
-                ? data.sale.loyaltyPointsEarned
-                : Math.floor(serverTotal / 10));
+              const earnedPoints = Number(
+                data.sale.loyaltyPointsEarned != null
+                  ? data.sale.loyaltyPointsEarned
+                  : Math.floor(serverTotal / 10),
+              );
 
               const currentPoints = Number(c.loyaltyPoints || 0);
               const updatedPoints = Math.max(0, currentPoints - redeemedPoints + earnedPoints);
@@ -894,7 +901,10 @@ export const completePosSaleFn = createServerFn({ method: "POST" })
                     data.sale.paymentMethod === "credit" ? String(newCreditBalance) : c.credit,
                 })
                 .where(
-                  and(eq(schema.customers.id, customerId), eq(schema.customers.organizationId, orgId)),
+                  and(
+                    eq(schema.customers.id, customerId),
+                    eq(schema.customers.organizationId, orgId),
+                  ),
                 );
 
               // Also sync with loyaltyMembers table if member exists
@@ -984,7 +994,10 @@ export const voidPosSaleFn = createServerFn({ method: "POST" })
               .select()
               .from(schema.products)
               .where(
-                and(inArray(schema.products.id, productIds), eq(schema.products.organizationId, orgId)),
+                and(
+                  inArray(schema.products.id, productIds),
+                  eq(schema.products.organizationId, orgId),
+                ),
               )
           : [];
 
@@ -1070,7 +1083,12 @@ export const voidPosSaleFn = createServerFn({ method: "POST" })
             await tx
               .update(schema.products)
               .set({ stock: newStock })
-              .where(and(eq(schema.products.id, adj.productId), eq(schema.products.organizationId, orgId)));
+              .where(
+                and(
+                  eq(schema.products.id, adj.productId),
+                  eq(schema.products.organizationId, orgId),
+                ),
+              );
           }
           const rows = invByProduct.get(adj.productId) || [];
           for (const invRow of rows) {
@@ -1100,10 +1118,13 @@ export const voidPosSaleFn = createServerFn({ method: "POST" })
           const batch = await tx
             .select()
             .from(schema.inventoryBatches)
-.where(
-                and(eq(schema.inventoryBatches.id, c.batchId), eq(schema.inventoryBatches.organizationId, orgId)),
-              )
-              .limit(1);
+            .where(
+              and(
+                eq(schema.inventoryBatches.id, c.batchId),
+                eq(schema.inventoryBatches.organizationId, orgId),
+              ),
+            )
+            .limit(1);
           if (batch.length > 0) {
             const newRemaining = (
               Number(batch[0].quantityRemaining || 0) + Number(c.quantityConsumed || 0)
@@ -1112,7 +1133,10 @@ export const voidPosSaleFn = createServerFn({ method: "POST" })
               .update(schema.inventoryBatches)
               .set({ quantityRemaining: newRemaining })
               .where(
-                and(eq(schema.inventoryBatches.id, c.batchId), eq(schema.inventoryBatches.organizationId, orgId)),
+                and(
+                  eq(schema.inventoryBatches.id, c.batchId),
+                  eq(schema.inventoryBatches.organizationId, orgId),
+                ),
               );
           }
           await tx

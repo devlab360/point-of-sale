@@ -90,7 +90,9 @@ export const updateQuotationFn = createServerFn({ method: "POST" })
         await db
           .update(schema.quotations)
           .set(data.updates)
-          .where(and(eq(schema.quotations.id, data.id), eq(schema.quotations.organizationId, orgId)));
+          .where(
+            and(eq(schema.quotations.id, data.id), eq(schema.quotations.organizationId, orgId)),
+          );
         return { success: true };
       }
     } catch (e) {
@@ -115,7 +117,9 @@ export const deleteQuotationFn = createServerFn({ method: "POST" })
       if (schema.quotations) {
         await db
           .delete(schema.quotations)
-          .where(and(eq(schema.quotations.id, data.id), eq(schema.quotations.organizationId, orgId)));
+          .where(
+            and(eq(schema.quotations.id, data.id), eq(schema.quotations.organizationId, orgId)),
+          );
         return { success: true };
       }
     } catch (e) {

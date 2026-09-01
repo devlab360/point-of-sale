@@ -1,6 +1,14 @@
 import { createLazyFileRoute } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
-import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableFooter,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { DatePicker } from "@/components/ui/date-picker";
 import { PersistStore } from "@/lib/session-store";
 import { useQuery } from "@tanstack/react-query";
@@ -176,7 +184,8 @@ function ReportsPage() {
       cur.revenue += Number(s.total) || 0;
       cur.count += 1;
       const itemArr = s.saleItems || s.items || [];
-      cur.items += Number(s.items) || (Array.isArray(itemArr) && s.items == null ? itemArr.length : 0);
+      cur.items +=
+        Number(s.items) || (Array.isArray(itemArr) && s.items == null ? itemArr.length : 0);
       byBranch.set(locId, cur);
     });
     return [...byBranch.entries()]
@@ -216,13 +225,29 @@ function ReportsPage() {
   }, [activeSales, productsMap]);
 
   const grossProfit = totalRevenue - totalCOGS;
-  const totalExpenses = useMemo(() => expenses.reduce((acc, e) => acc + (Number(e.amount) || 0), 0), [expenses]);
+  const totalExpenses = useMemo(
+    () => expenses.reduce((acc, e) => acc + (Number(e.amount) || 0), 0),
+    [expenses],
+  );
   const netIncome = grossProfit - totalExpenses;
   const marginPercent = totalRevenue > 0 ? Math.round((grossProfit / totalRevenue) * 100) : 0;
 
   // Chart Data
   const monthlyRevenueTrend = useMemo(() => {
-    const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    const months = [
+      "Jan",
+      "Feb",
+      "Mar",
+      "Apr",
+      "May",
+      "Jun",
+      "Jul",
+      "Aug",
+      "Sep",
+      "Oct",
+      "Nov",
+      "Dec",
+    ];
     const currentMonthIdx = new Date().getMonth();
     return months.slice(Math.max(0, currentMonthIdx - 5), currentMonthIdx + 1).map((m, idx) => {
       const baseRev = totalRevenue > 0 ? (totalRevenue / 6) * (0.8 + idx * 0.1) : 4500 + idx * 600;
@@ -235,32 +260,80 @@ function ReportsPage() {
     });
   }, [totalRevenue]);
 
-  const reportCategories = useMemo(() => [
-    {
-      title: "Financial & PnL Audits",
-      items: [
-        { id: "profit", title: "Profit & Loss (P&L) Statement", desc: "Gross revenue, cost of goods, overheads, and net profit margins.", icon: TrendingUp },
-        { id: "sales", title: "Sales Revenue & Order Breakdown", desc: "Detailed breakdown of sales transactions by customer, items, and tax.", icon: DollarSign },
-        { id: "expense", title: "Operating Expenses Ledger", desc: "Categorized operating costs, utilities, vendor bills, and payroll.", icon: BarChart3 },
-      ],
-    },
-    {
-      title: "Inventory & Procurement",
-      items: [
-        { id: "purchase", title: "Purchases & Inward Goods", desc: "Vendor invoices, inward purchase orders, and wholesale acquisition costs.", icon: BookOpen },
-        { id: "inventory", title: "Stock Valuation & Asset Ledger", desc: "On-hand stock value, SKU turnover velocity, and low stock status.", icon: Package },
-        { id: "near-expiry", title: "Batch Expiry & Spoilage Alert", desc: "Batches nearing expiration dates and spoilage inventory risks.", icon: AlertTriangle },
-      ],
-    },
-    {
-      title: "Taxation & Compliance",
-      items: [
-        { id: "gstr1", title: "GSTR-1 Outward Supplies (Sales)", desc: "B2B, B2C invoices and output GST tax liabilities report.", icon: FileText },
-        { id: "gstr2", title: "GSTR-2 Inward Input Tax Credit", desc: "Input Tax Credit (ITC) eligibility from verified vendor purchases.", icon: FileText },
-        { id: "gstr3b", title: "GSTR-3B Monthly Net Tax Return", desc: "Consolidated monthly return with net payable tax calculations.", icon: FileText },
-      ],
-    },
-  ], []);
+  const reportCategories = useMemo(
+    () => [
+      {
+        title: "Financial & PnL Audits",
+        items: [
+          {
+            id: "profit",
+            title: "Profit & Loss (P&L) Statement",
+            desc: "Gross revenue, cost of goods, overheads, and net profit margins.",
+            icon: TrendingUp,
+          },
+          {
+            id: "sales",
+            title: "Sales Revenue & Order Breakdown",
+            desc: "Detailed breakdown of sales transactions by customer, items, and tax.",
+            icon: DollarSign,
+          },
+          {
+            id: "expense",
+            title: "Operating Expenses Ledger",
+            desc: "Categorized operating costs, utilities, vendor bills, and payroll.",
+            icon: BarChart3,
+          },
+        ],
+      },
+      {
+        title: "Inventory & Procurement",
+        items: [
+          {
+            id: "purchase",
+            title: "Purchases & Inward Goods",
+            desc: "Vendor invoices, inward purchase orders, and wholesale acquisition costs.",
+            icon: BookOpen,
+          },
+          {
+            id: "inventory",
+            title: "Stock Valuation & Asset Ledger",
+            desc: "On-hand stock value, SKU turnover velocity, and low stock status.",
+            icon: Package,
+          },
+          {
+            id: "near-expiry",
+            title: "Batch Expiry & Spoilage Alert",
+            desc: "Batches nearing expiration dates and spoilage inventory risks.",
+            icon: AlertTriangle,
+          },
+        ],
+      },
+      {
+        title: "Taxation & Compliance",
+        items: [
+          {
+            id: "gstr1",
+            title: "GSTR-1 Outward Supplies (Sales)",
+            desc: "B2B, B2C invoices and output GST tax liabilities report.",
+            icon: FileText,
+          },
+          {
+            id: "gstr2",
+            title: "GSTR-2 Inward Input Tax Credit",
+            desc: "Input Tax Credit (ITC) eligibility from verified vendor purchases.",
+            icon: FileText,
+          },
+          {
+            id: "gstr3b",
+            title: "GSTR-3B Monthly Net Tax Return",
+            desc: "Consolidated monthly return with net payable tax calculations.",
+            icon: FileText,
+          },
+        ],
+      },
+    ],
+    [],
+  );
 
   const filteredReportCategories = useMemo(() => {
     return reportCategories
@@ -268,7 +341,8 @@ function ReportsPage() {
         const items = cat.items.filter((item) => {
           if (item.id === "purchase") return hasCapability(businessType, "PURCHASES");
           if (item.id === "inventory") return hasCapability(businessType, "INVENTORY");
-          if (item.id === "near-expiry") return hasCapability(businessType, "BATCH_EXPIRY_TRACKING");
+          if (item.id === "near-expiry")
+            return hasCapability(businessType, "BATCH_EXPIRY_TRACKING");
           return true;
         });
         return { ...cat, items };
@@ -320,9 +394,7 @@ function ReportsPage() {
       <div className="rounded-2xl border border-border/80 bg-card p-5 shadow-soft space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-border/60 pb-3">
           <div>
-            <h3 className="font-bold text-base text-foreground">
-              Branch-Wise Sales Breakdown
-            </h3>
+            <h3 className="font-bold text-base text-foreground">Branch-Wise Sales Breakdown</h3>
             <p className="text-xs text-muted-foreground">
               Revenue, transactions, and revenue share grouped by branch (location).
             </p>
@@ -378,10 +450,10 @@ function ReportsPage() {
       <div className="rounded-2xl border border-border/80 bg-card p-5 shadow-soft space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-border/60 pb-3">
           <div>
-            <h3 className="font-bold text-base text-foreground">
-              Financial Performance Trends
-            </h3>
-            <p className="text-xs text-muted-foreground">Monthly revenue vs gross profit performance.</p>
+            <h3 className="font-bold text-base text-foreground">Financial Performance Trends</h3>
+            <p className="text-xs text-muted-foreground">
+              Monthly revenue vs gross profit performance.
+            </p>
           </div>
           <Badge variant="outline" className="text-xs font-semibold w-fit">
             6-Month Trajectory
@@ -390,7 +462,10 @@ function ReportsPage() {
 
         <div className="h-64 w-full">
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={monthlyRevenueTrend} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+            <BarChart
+              data={monthlyRevenueTrend}
+              margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
+            >
               <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.3} />
               <XAxis dataKey="month" tickLine={false} axisLine={false} tick={{ fontSize: 11 }} />
               <YAxis tickLine={false} axisLine={false} tick={{ fontSize: 11 }} />
@@ -416,13 +491,18 @@ function ReportsPage() {
             <h3 className="font-bold text-base text-foreground">
               Accounting & Operational Statements
             </h3>
-            <p className="text-xs text-muted-foreground">Select a report module to view full tabular statements and export data.</p>
+            <p className="text-xs text-muted-foreground">
+              Select a report module to view full tabular statements and export data.
+            </p>
           </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
           {filteredReportCategories.map((cat, idx) => (
-            <div key={idx} className="rounded-2xl border border-border/80 bg-card p-5 shadow-soft space-y-3">
+            <div
+              key={idx}
+              className="rounded-2xl border border-border/80 bg-card p-5 shadow-soft space-y-3"
+            >
               <h4 className="font-bold text-sm text-foreground pb-2 border-b border-border/60">
                 {cat.title}
               </h4>
@@ -498,45 +578,51 @@ function ReportsPage() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {selectedReport === "sales" ? (
-                        sales.slice(0, 15).map((s: any) => (
-                          <TableRow key={s.id}>
-                            <TableCell className="font-mono">{s.invoiceNo || s.id.slice(0, 8)}</TableCell>
-                            <TableCell>{formatDate(s.date || s.createdAt)}</TableCell>
-                            <TableCell>{s.customerName || "Walk-in Customer"}</TableCell>
-                            <TableCell className="font-bold text-right text-foreground">{formatCurrency(s.total)}</TableCell>
-                          </TableRow>
-                        ))
-                      ) : selectedReport === "expense" ? (
-                        expenses.slice(0, 15).map((e: any) => (
-                          <TableRow key={e.id}>
-                            <TableCell className="font-mono">{e.id.slice(0, 8)}</TableCell>
-                            <TableCell>{formatDate(e.date)}</TableCell>
-                            <TableCell>{e.category} - {e.note || "General"}</TableCell>
-                            <TableCell className="font-bold text-right text-destructive">{formatCurrency(e.amount)}</TableCell>
-                          </TableRow>
-                        ))
-                      ) : (
-                        purchases.slice(0, 15).map((p: any) => (
-                          <TableRow key={p.id}>
-                            <TableCell className="font-mono">{p.billNo || p.id.slice(0, 8)}</TableCell>
-                            <TableCell>{formatDate(p.date)}</TableCell>
-                            <TableCell>{p.supplierName || "Direct Purchase"}</TableCell>
-                            <TableCell className="font-bold text-right text-foreground">{formatCurrency(p.total)}</TableCell>
-                          </TableRow>
-                        ))
-                      )}
+                      {selectedReport === "sales"
+                        ? sales.slice(0, 15).map((s: any) => (
+                            <TableRow key={s.id}>
+                              <TableCell className="font-mono">
+                                {s.invoiceNo || s.id.slice(0, 8)}
+                              </TableCell>
+                              <TableCell>{formatDate(s.date || s.createdAt)}</TableCell>
+                              <TableCell>{s.customerName || "Walk-in Customer"}</TableCell>
+                              <TableCell className="font-bold text-right text-foreground">
+                                {formatCurrency(s.total)}
+                              </TableCell>
+                            </TableRow>
+                          ))
+                        : selectedReport === "expense"
+                          ? expenses.slice(0, 15).map((e: any) => (
+                              <TableRow key={e.id}>
+                                <TableCell className="font-mono">{e.id.slice(0, 8)}</TableCell>
+                                <TableCell>{formatDate(e.date)}</TableCell>
+                                <TableCell>
+                                  {e.category} - {e.note || "General"}
+                                </TableCell>
+                                <TableCell className="font-bold text-right text-destructive">
+                                  {formatCurrency(e.amount)}
+                                </TableCell>
+                              </TableRow>
+                            ))
+                          : purchases.slice(0, 15).map((p: any) => (
+                              <TableRow key={p.id}>
+                                <TableCell className="font-mono">
+                                  {p.billNo || p.id.slice(0, 8)}
+                                </TableCell>
+                                <TableCell>{formatDate(p.date)}</TableCell>
+                                <TableCell>{p.supplierName || "Direct Purchase"}</TableCell>
+                                <TableCell className="font-bold text-right text-foreground">
+                                  {formatCurrency(p.total)}
+                                </TableCell>
+                              </TableRow>
+                            ))}
                     </TableBody>
                   </Table>
                 </div>
               </div>
 
               <SheetFooter className="p-4 border-t border-border/60 bg-muted/20 flex flex-row items-center justify-end gap-2 shrink-0">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setSelectedReport(null)}
-                >
+                <Button type="button" variant="outline" onClick={() => setSelectedReport(null)}>
                   Close Statement
                 </Button>
               </SheetFooter>
