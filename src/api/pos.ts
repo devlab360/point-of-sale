@@ -537,6 +537,8 @@ export const completePosSaleFn = createServerFn({ method: "POST" })
             serialNumber: item.serialNumber || null,
             batchNo: item.batchNo || null,
             modifiers: item.modifiers && item.modifiers.length > 0 ? item.modifiers : null,
+            variantId: item.variantId || null,
+            locationId: locationId || null,
             referenceType:
               item.referenceType ||
               (p._type === "product" ? "PRODUCT" : p._type === "service" ? "SERVICE" : "REPAIR"),
@@ -701,6 +703,7 @@ export const completePosSaleFn = createServerFn({ method: "POST" })
             typeof data.sale.salesmanName === "string"
               ? data.sale.salesmanName
               : session.userName || "Cashier",
+          locationId: locationId || null,
         };
 
         // Create Sale

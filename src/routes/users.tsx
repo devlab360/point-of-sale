@@ -52,6 +52,7 @@ import {
   CreditCard,
   LayoutGrid,
   Table as TableIcon,
+  Building2,
   Mail,
   Percent,
   Target,
@@ -68,6 +69,7 @@ import {
   createInvitationFn,
   createUserFn,
 } from "@/api/users";
+import { getLocationsFn } from "@/api/locations";
 import { v4 as uuidv4 } from "uuid";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
@@ -147,6 +149,12 @@ function UsersPage() {
   });
   const ownerEmail = orgData?.org?.ownerEmail?.toLowerCase();
 
+  const { data: locationsRes } = useQuery({
+    queryKey: ["locations"],
+    queryFn: () => getLocationsFn(),
+  });
+  const locations: any[] = locationsRes?.data || [];
+
   const applicableModules = useMemo(() => {
     return SYSTEM_MODULES.filter((mod) => {
       const perm = hasPermissionForRoute(
@@ -195,12 +203,16 @@ function UsersPage() {
   const [editCommission, setEditCommission] = useState("");
   const [editTarget, setEditTarget] = useState("");
   const [editPermissions, setEditPermissions] = useState<string[]>([]);
+  const [editLocationIds, setEditLocationIds] = useState<string[]>([]);
+  const [editAllBranches, setEditAllBranches] = useState(false);
 
   // Direct User Add Form
   const [directName, setDirectName] = useState("");
   const [directEmail, setDirectEmail] = useState("");
   const [directPassword, setDirectPassword] = useState("");
   const [directRole, setDirectRole] = useState("cashier");
+  const [directLocationIds, setDirectLocationIds] = useState<string[]>([]);
+  const [directAllBranches, setDirectAllBranches] = useState(false);
 
   const { data: usersData, isLoading: isUsersLoading, isError: isUsersError, refetch: refetchUsers } = useQuery({
     queryKey: ["users", orgId],
@@ -254,6 +266,13 @@ function UsersPage() {
       ? u.permissions
       : DEFAULT_ROLE_PERMISSIONS[u.role || "cashier"] || [];
     setEditPermissions(initialPerms.filter((r) => applicableRoutes.includes(r)));
+    const locIds = Array.isArray(u.locationIds) ? u.locationIds : [];
+    setEditLocationIds(locIds);
+    setEditAllBranches(locIds.length === 0 && locations.length > 0); // if no specific branches but org has branches, treat as all
+  };
+
+  const toggleLocation = (setter: (updater: (prev: string[]) => string[]) => void, id: string) => {
+    setter((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
   };
 
   const handleRoleChangeInEdit = (newRole: string) => {
@@ -323,15 +342,16 @@ function UsersPage() {
     setIsSaving(true);
     try {
       const res = (await createUserFn({
-        data: {
-          user: {
-            name: directName.trim(),
-            email: directEmail.trim().toLowerCase(),
-            password: directPassword,
-            role: directRole,
-            permissions: DEFAULT_ROLE_PERMISSIONS[directRole] || [],
+data: {
+            user: {
+              name: directName.trim(),
+              email: directEmail.trim().toLowerCase(),
+              password: directPassword,
+              role: directRole,
+              permissions: DEFAULT_ROLE_PERMISSIONS[directRole] || [],
+              locationIds: directAllBranches ? [] : directLocationIds,
+            },
           },
-        },
       })) as any;
 
       if (res?.success) {
@@ -341,6 +361,8 @@ function UsersPage() {
         setDirectName("");
         setDirectEmail("");
         setDirectPassword("");
+        setDirectLocationIds([]);
+        setDirectAllBranches(false);
       } else throw new Error(res?.error || "Failed to create user");
     } catch (err: any) {
       toast.error(err?.message || "Failed to create staff account");
@@ -364,6 +386,7 @@ function UsersPage() {
             commissionRate: editCommission ? Number(editCommission) : 0,
             monthlyTarget: editTarget ? Number(editTarget) : 0,
             permissions: editPermissions,
+            locationIds: editAllBranches ? [] : editLocationIds,
           },
         },
       })) as any;
@@ -606,6 +629,28 @@ function UsersPage() {
                           </span>
                         </div>
                       </div>
+
+                      {(u.locationIds || []).length > 0 && (
+                        <div className="space-y-1.5">
+                          <span className="text-[10px] uppercase font-black tracking-wider text-muted-foreground flex items-center gap-1">
+                            <Building2 className="size-3" /> Branches
+                          </span>
+                          <div className="flex flex-wrap gap-1.5">
+                            {(u.locationIds || []).map((bid: string) => {
+                              const loc = locations.find((l) => l.id === bid);
+                              return loc ? (
+                                <Badge
+                                  key={bid}
+                                  variant="outline"
+                                  className="text-[10px] font-bold px-2 py-0.5 border-primary/30 text-primary bg-primary/5"
+                                >
+                                  {loc.name}
+                                </Badge>
+                              ) : null;
+                            })}
+                          </div>
+                        </div>
+                      )}
                     </div>
 
                     {/* Card Actions Footer */}
@@ -910,7 +955,77 @@ function UsersPage() {
                     </div>
                   </section>
 
-                  {/* 3. Granular Module Permission Matrix */}
+                  {/* 3. Branch Assignment */}
+                  <section className="rounded-2xl border border-border/80 bg-card p-4 sm:p-5 space-y-4 shadow-xs">
+                    <div>
+                      <p className="text-[11px] font-black uppercase tracking-[0.14em] text-muted-foreground flex items-center gap-2">
+                        <Building2 className="size-3.5 text-primary" /> Branch Assignment
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        Select one or more branches this staff member can work at. The first selected branch is treated
+                        as their default branch.
+                      </p>
+                    </div>
+                    {locations.length === 0 ? (
+                      <p className="text-xs text-muted-foreground">
+                        No branches configured yet. Add branches under Settings → Locations to assign staff.
+                      </p>
+                    ) : (
+                      <>
+                        <label className="flex items-center gap-2 rounded-xl border px-3 py-2 text-xs font-bold transition-all cursor-pointer mb-2
+                          {editAllBranches
+                            ? 'border-primary bg-primary/10 text-primary shadow-xs ring-1.5 ring-primary/50'
+                            : 'border-border/70 bg-muted/30 hover:bg-muted/50 text-muted-foreground'}">
+                          <input
+                            type="checkbox"
+                            checked={editAllBranches}
+                            onChange={(e) => {
+                              setEditAllBranches(e.target.checked);
+                              if (e.target.checked) setEditLocationIds([]);
+                            }}
+                            className="size-4 accent-primary"
+                          />
+                          <span className="flex items-center gap-2">
+                            <Building2 className="size-4" />
+                            <span>All Branches</span>
+                            <span className="text-[9px] font-black uppercase tracking-wider text-primary/70 bg-primary/10 px-1.5 py-0.5 rounded">All</span>
+                          </span>
+                        </label>
+                        {!editAllBranches && (
+                          <div className="flex flex-wrap gap-2">
+                            {locations.map((loc) => {
+                              const active = editLocationIds.includes(loc.id);
+                              return (
+                                <button
+                                  key={loc.id}
+                                  type="button"
+                                  onClick={() => toggleLocation(setEditLocationIds, loc.id)}
+                                  className={`flex items-center gap-2 rounded-xl border px-3 py-2 text-xs font-bold transition-all ${
+                                    active
+                                      ? "border-primary bg-primary/10 text-primary shadow-xs ring-1.5 ring-primary/50"
+                                      : "border-border/70 bg-muted/30 hover:bg-muted/50 text-muted-foreground"
+                                  }`}
+                                >
+                                  {active && <Check className="size-3.5 shrink-0" />}
+                                  {loc.name}
+                                  {loc.isHeadOffice && (
+                                    <span className="text-[9px] font-black uppercase tracking-wider text-muted-foreground bg-muted px-1.5 py-0.5 rounded">HQ</span>
+                                  )}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </>
+                    )}
+                    {(editAllBranches || editLocationIds.length > 0) && (
+                      <p className="text-[11px] text-muted-foreground">
+                        {editAllBranches ? "Access: All branches" : `Assigned branches: ${editLocationIds.length}`}
+                      </p>
+                    )}
+                  </section>
+
+                  {/* 4. Granular Module Permission Matrix */}
                   <section className="space-y-4">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-1 border-b border-border/60">
                       <div>
@@ -1109,6 +1224,72 @@ function UsersPage() {
                 <div className="space-y-2.5">
                   <Label className="text-xs font-bold text-foreground">Assigned Role Scope</Label>
                   <RoleSelectCards value={directRole} onChange={setDirectRole} />
+                </div>
+
+                <div className="space-y-2.5">
+                  <Label className="text-xs font-bold text-foreground flex items-center gap-1.5">
+                    <Building2 className="size-4 text-primary" /> Assign Branches
+                  </Label>
+                  <p className="text-[11px] text-muted-foreground -mt-1">
+                    Select one or more branches this employee can work at. The first is the default.
+                  </p>
+                  {locations.length === 0 ? (
+                    <p className="text-xs text-muted-foreground">
+                      No branches configured yet. Add branches under Settings → Locations.
+                    </p>
+                  ) : (
+                    <>
+                      <label className="flex items-center gap-2 rounded-xl border px-3 py-2 text-xs font-bold transition-all cursor-pointer mb-2
+                        {directAllBranches
+                          ? 'border-primary bg-primary/10 text-primary shadow-xs ring-1.5 ring-primary/50'
+                          : 'border-border/70 bg-muted/30 hover:bg-muted/50 text-muted-foreground'}">
+                        <input
+                          type="checkbox"
+                          checked={directAllBranches}
+                          onChange={(e) => {
+                            setDirectAllBranches(e.target.checked);
+                            if (e.target.checked) setDirectLocationIds([]);
+                          }}
+                          className="size-4 accent-primary"
+                        />
+                        <span className="flex items-center gap-2">
+                          <Building2 className="size-4" />
+                          <span>All Branches</span>
+                          <span className="text-[9px] font-black uppercase tracking-wider text-primary/70 bg-primary/10 px-1.5 py-0.5 rounded">All</span>
+                        </span>
+                      </label>
+                      {!directAllBranches && (
+                        <div className="flex flex-wrap gap-2">
+                          {locations.map((loc) => {
+                            const active = directLocationIds.includes(loc.id);
+                            return (
+                              <button
+                                key={loc.id}
+                                type="button"
+                                onClick={() => toggleLocation(setDirectLocationIds, loc.id)}
+                                className={`flex items-center gap-2 rounded-xl border px-3 py-2 text-xs font-bold transition-all ${
+                                  active
+                                    ? "border-primary bg-primary/10 text-primary shadow-xs ring-1.5 ring-primary/50"
+                                    : "border-border/70 bg-muted/30 hover:bg-muted/50 text-muted-foreground"
+                                }`}
+                              >
+                                {active && <Check className="size-3.5 shrink-0" />}
+                                {loc.name}
+                                {loc.isHeadOffice && (
+                                  <span className="text-[9px] font-black uppercase tracking-wider text-muted-foreground bg-muted px-1.5 py-0.5 rounded">HQ</span>
+                                )}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </>
+                  )}
+                  {(directAllBranches || directLocationIds.length > 0) && (
+                    <p className="text-[11px] text-muted-foreground">
+                      {directAllBranches ? "Access: All branches" : `Assigned branches: ${directLocationIds.length}`}
+                    </p>
+                  )}
                 </div>
 
                 <div className="rounded-2xl border border-primary/20 bg-primary/5 p-4 text-xs space-y-1">

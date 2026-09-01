@@ -21,6 +21,15 @@ import { getLocationsFn } from "@/api/locations";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Building2, ChevronsUpDown, Check, Plus, Loader2, Store, Trash2 } from "lucide-react";
+import {
+  Dialog,
+  DialogTrigger,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { useAuth } from "@/contexts/AuthContext";
 import { PersistStore } from "@/lib/session-store";
 import { SessionStore } from "@/lib/session-store";
@@ -44,6 +53,7 @@ export function BusinessSwitcher() {
   const [createOpen, setCreateOpen] = useState(false);
   const [name, setName] = useState("");
   const [industry, setIndustry] = useState("");
+  const [deleteOrgId, setDeleteOrgId] = useState<string | null>(null);
 
   const { data: orgsData, isLoading } = useQuery({
     queryKey: ["my-organizations", user?.email],
@@ -81,12 +91,12 @@ export function BusinessSwitcher() {
   const orgs: any[] = orgsData || [];
   const branches: any[] = branchesData || [];
   const activeOrgId = sessionData?.orgId || PersistStore.getOrgId();
-  const activeBranchId = sessionData?.branchId;
+  const activeLocationId = sessionData?.locationId;
   const activeOrg = orgs.find((o) => o.id === activeOrgId);
   const orgName = settings?.storeName || activeOrg?.name || "ONEDESK360";
 
   const switchMutation = useMutation({
-    mutationFn: (payload: { orgId: string; branchId?: string }) =>
+    mutationFn: (payload: { orgId: string; locationId?: string }) =>
       switchOrganizationFn({ data: payload }),
     onSuccess: async (res: any, vars) => {
       if (res && res.success) {
@@ -134,20 +144,19 @@ export function BusinessSwitcher() {
     onError: (e: any) => toast.error(e?.message || "Failed to delete organization"),
   });
 
-  const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
-
   const handleSwitchOrg = (orgId: string) => {
     if (orgId === activeOrgId) return;
     switchMutation.mutate({ orgId });
   };
 
-  const handleSwitchBranch = (branchId: string) => {
+  const handleSwitchBranch = (locationId: string) => {
     if (!activeOrgId) return;
-    switchMutation.mutate({ orgId: activeOrgId, branchId });
+    switchMutation.mutate({ orgId: activeOrgId, locationId });
   };
 
   return (
-    <Popover>
+    <>
+      <Popover>
       <PopoverTrigger asChild>
         <Button
           variant="ghost"
@@ -175,7 +184,6 @@ export function BusinessSwitcher() {
           {orgs.map((org) => {
             const isActive = org.id === activeOrgId;
             const canDelete = org.role === "owner" && orgs.length > 1;
-            const isDeleting = deleteConfirm === org.id;
             return (
               <div key={org.id} className="flex items-center gap-1">
                 <button
@@ -200,20 +208,13 @@ export function BusinessSwitcher() {
                 {canDelete && !isActive && (
                   <button
                     type="button"
-                    onClick={() => isDeleting ? deleteMutation.mutate(org.id) : setDeleteConfirm(org.id)}
-                    className={cn(
-                      "p-1.5 rounded transition-colors",
-                      isDeleting ? "bg-destructive/10 text-destructive" : "hover:bg-destructive/10 text-muted-foreground"
-                    )}
+                    onClick={() => setDeleteOrgId(org.id)}
+                    className="p-1.5 rounded transition-colors hover:bg-destructive/10 text-muted-foreground"
                     disabled={deleteMutation.isPending}
-                    title={isDeleting ? "Confirm delete" : "Delete business"}
+                    title="Delete business"
                   >
-                    {isDeleting ? (
-                      deleteMutation.isPending ? (
-                        <Loader2 className="size-3.5 animate-spin" />
-                      ) : (
-                        <Check className="size-3.5" />
-                      )
+                    {deleteMutation.isPending && deleteOrgId === org.id ? (
+                      <Loader2 className="size-3.5 animate-spin" />
                     ) : (
                       <Trash2 className="size-3.5" />
                     )}
@@ -233,7 +234,7 @@ export function BusinessSwitcher() {
               <div className="px-2 py-2 text-xs text-muted-foreground">No branches for this business</div>
             )}
             {branches.map((b) => {
-              const isActive = b.id === activeBranchId;
+              const isActive = b.id === activeLocationId;
               return (
                 <button
                   key={b.id}
@@ -297,7 +298,48 @@ export function BusinessSwitcher() {
             </div>
           )}
         </div>
-      </PopoverContent>
-    </Popover>
+</PopoverContent>
+      </Popover>
+
+      <Dialog open={!!deleteOrgId} onOpenChange={(open) => !open && setDeleteOrgId(null)}>
+        <DialogContent className="max-w-md rounded-2xl p-6 border border-border shadow-soft bg-card">
+          <DialogHeader className="space-y-2 text-left">
+            <div className="flex items-center gap-3">
+              <div className="grid size-10 place-items-center rounded-xl bg-destructive/10 text-destructive shrink-0">
+                <Trash2 className="size-5" />
+              </div>
+              <div>
+                <DialogTitle className="text-lg font-bold text-foreground">Delete Business</DialogTitle>
+                <DialogDescription className="text-xs text-muted-foreground mt-0.5">
+                  Are you sure you want to delete this business? This action cannot be undone.
+                  All data including branches, products, sales, and users will be permanently removed.
+                </DialogDescription>
+              </div>
+            </div>
+          </DialogHeader>
+          <DialogFooter className="mt-4 flex flex-row items-center justify-end gap-2">
+            <Button type="button" variant="outline" onClick={() => setDeleteOrgId(null)}>
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              onClick={() => {
+                if (deleteOrgId) deleteMutation.mutate(deleteOrgId);
+              }}
+              disabled={deleteMutation.isPending}
+            >
+              {deleteMutation.isPending ? (
+                <>
+                  <Loader2 className="size-3.5 animate-spin mr-2" /> Deleting...
+                </>
+              ) : (
+                "Delete"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
-}
+  }

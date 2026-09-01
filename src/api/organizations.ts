@@ -102,7 +102,7 @@ export const getMyOrganizationsFn = createServerFn({ method: "GET" })
 
 const SwitchOrganizationSchema = z.object({
   orgId: z.string().min(1, "Organization ID is required"),
-  branchId: z.string().optional(),
+  locationId: z.string().optional(),
 });
 
 // Switch the active business (and optionally active branch) for the session.
@@ -127,12 +127,12 @@ export const switchOrganizationFn = createServerFn({ method: "POST" })
         .limit(1);
       if (!target.length) throw new Error("You do not have access to this business");
 
-      if (data.branchId) {
+      if (data.locationId) {
         const branch = await db
           .select()
           .from(schema.locations)
           .where(
-            and(eq(schema.locations.id, data.branchId), eq(schema.locations.organizationId, data.orgId)),
+            and(eq(schema.locations.id, data.locationId), eq(schema.locations.organizationId, data.orgId)),
           )
           .limit(1);
         if (!branch.length) throw new Error("Branch not found in this business");
@@ -153,8 +153,8 @@ export const switchOrganizationFn = createServerFn({ method: "POST" })
         maxAge: 7 * 24 * 60 * 60,
       });
       setCookie("pos_session_org", data.orgId, { path: "/", maxAge: 7 * 24 * 60 * 60 });
-      if (data.branchId) {
-        setCookie("pos_session_branch", data.branchId, { path: "/", maxAge: 7 * 24 * 60 * 60 });
+      if (data.locationId) {
+        setCookie("pos_session_branch", data.locationId, { path: "/", maxAge: 7 * 24 * 60 * 60 });
       }
 
       return { success: true as const, message: "Switched business successfully" };
@@ -257,13 +257,13 @@ export const getActiveSessionFn = createServerFn({ method: "GET" })
   .handler(async () => {
     try {
       const session = await requireAuth();
-      const branchId =
+      const locationId =
         getCookie("pos_session_branch") && getCookie("pos_session_branch") !== "undefined"
           ? getCookie("pos_session_branch")
           : null;
       return {
         success: true as const,
-        data: { orgId: session.orgId, branchId: branchId || null },
+        data: { orgId: session.orgId, locationId: locationId || null },
       };
     } catch (e) {
       return handleApiError(e);

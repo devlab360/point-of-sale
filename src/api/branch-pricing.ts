@@ -26,18 +26,18 @@ export const toggleBranchPricingFn = createServerFn({ method: "POST" })
 
 // List price overrides for a branch.
 export const getBranchPriceOverridesFn = createServerFn({ method: "GET" })
-  .validator(z.object({ branchId: z.string() }).optional().default({ branchId: "" }))
+  .validator(z.object({ locationId: z.string() }).optional().default({ locationId: "" }))
   .handler(async ({ data }) => {
     try {
       const session = await requireAuth();
-      const rows = data.branchId
+      const rows = data.locationId
         ? await db
             .select()
             .from(schema.branchPriceOverrides)
             .where(
               and(
                 eq(schema.branchPriceOverrides.organizationId, session.orgId),
-                eq(schema.branchPriceOverrides.branchId, data.branchId),
+                eq(schema.branchPriceOverrides.locationId, data.locationId),
               ),
             )
         : await db
@@ -51,7 +51,7 @@ export const getBranchPriceOverridesFn = createServerFn({ method: "GET" })
   });
 
 const PriceOverrideSchema = z.object({
-  branchId: z.string().min(1),
+  locationId: z.string().min(1),
   entityType: z.string().default("product"),
   entityId: z.string().min(1),
   price: z.string().optional(),
@@ -73,7 +73,7 @@ export const upsertBranchPriceFn = createServerFn({ method: "POST" })
         .select()
         .from(schema.locations)
         .where(
-          and(eq(schema.locations.id, data.branchId), eq(schema.locations.organizationId, session.orgId)),
+          and(eq(schema.locations.id, data.locationId), eq(schema.locations.organizationId, session.orgId)),
         )
         .limit(1);
       if (!branch.length) throw new Error("Branch not found");
@@ -84,7 +84,7 @@ export const upsertBranchPriceFn = createServerFn({ method: "POST" })
         .where(
           and(
             eq(schema.branchPriceOverrides.organizationId, session.orgId),
-            eq(schema.branchPriceOverrides.branchId, data.branchId),
+            eq(schema.branchPriceOverrides.locationId, data.locationId),
             eq(schema.branchPriceOverrides.entityType, data.entityType),
             eq(schema.branchPriceOverrides.entityId, data.entityId),
           ),
@@ -109,7 +109,7 @@ export const upsertBranchPriceFn = createServerFn({ method: "POST" })
         await db.insert(schema.branchPriceOverrides).values({
           id: uuidv4(),
           organizationId: session.orgId,
-          branchId: data.branchId,
+          locationId: data.locationId,
           entityType: data.entityType,
           entityId: data.entityId,
           price: data.price,

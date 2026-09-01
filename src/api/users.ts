@@ -2,7 +2,7 @@ import { handleApiError } from "@/lib/error-utils";
 import { createServerFn } from "@tanstack/react-start";
 import { db } from "@/db";
 import * as schema from "@/db/schema";
-import { eq, and } from "drizzle-orm";
+import { eq, and, inArray } from "drizzle-orm";
 import { z } from "zod";
 import { requireAuth, requireAdmin, invalidateUserSessionCache } from "@/lib/auth-utils";
 import bcrypt from "bcryptjs";
@@ -40,8 +40,81 @@ const UserInputSchema = z
       .transform((v) => String(v))
       .nullable()
       .optional(),
+    locationIds: z.array(z.string()).optional(),
   })
   .passthrough();
+
+// Fetch the branch (location) ids a user is assigned to within an org.
+async function fetchUserLocationIds(orgId: string, userId: string): Promise<string[]> {
+  const rows = await db
+    .select({ locationId: schema.userBranches.locationId })
+    .from(schema.userBranches)
+    .where(
+      and(
+        eq(schema.userBranches.organizationId, orgId),
+        eq(schema.userBranches.userId, userId),
+      ),
+    );
+  return rows.map((r) => r.locationId);
+}
+
+// Filter a requested branch id list to only those belonging to the given org.
+// Returns null if the requested list contains a branch outside the org.
+async function validateOrgLocations(
+  orgId: string,
+  locationIds: string[],
+): Promise<string[] | null> {
+  if (!locationIds || locationIds.length === 0) return [];
+  const orgLocations = await db
+    .select({ id: schema.locations.id })
+    .from(schema.locations)
+    .where(
+      and(
+        eq(schema.locations.organizationId, orgId),
+        inArray(schema.locations.id, locationIds),
+      ),
+    );
+  const valid = orgLocations.map((l) => l.id);
+  if (valid.length !== new Set(locationIds).size) return null;
+  return valid;
+}
+
+// Replace a user's branch assignments (junction rows) and keep the single
+// `locationId` column in sync with the default branch (first item).
+async function replaceUserLocations(
+  orgId: string,
+  userId: string,
+  locationIds: string[],
+): Promise<void> {
+  await db
+    .delete(schema.userBranches)
+    .where(
+      and(
+        eq(schema.userBranches.organizationId, orgId),
+        eq(schema.userBranches.userId, userId),
+      ),
+    );
+
+  let idx = 0;
+  for (const locationId of locationIds) {
+    await db.insert(schema.userBranches).values({
+      id: `${userId}-${locationId}-${uuidv4().slice(0, 8)}`,
+      organizationId: orgId,
+      userId,
+      locationId,
+      isDefault: idx === 0,
+      createdAt: new Date().toISOString(),
+    });
+    idx++;
+  }
+
+  // Keep the scalar column as the default branch (or null if none assigned).
+  await db
+    .update(schema.users)
+    .set({ locationId: locationIds[0] || null })
+    .where(and(eq(schema.users.id, userId), eq(schema.users.organizationId, orgId)));
+}
+
 
 export const getUsersFn = createServerFn({ method: "GET" })
   .validator(z.object({}).optional().default({}))
@@ -53,7 +126,21 @@ export const getUsersFn = createServerFn({ method: "GET" })
         .from(schema.users)
         .where(eq(schema.users.organizationId, session.orgId));
 
-      const safeUsers = res.map(({ pin, ...u }) => u);
+      const assignments = await db
+        .select({ userId: schema.userBranches.userId, locationId: schema.userBranches.locationId })
+        .from(schema.userBranches)
+        .where(eq(schema.userBranches.organizationId, session.orgId));
+      const locationIdsByUser = new Map<string, string[]>();
+      for (const a of assignments) {
+        const list = locationIdsByUser.get(a.userId) || [];
+        list.push(a.locationId);
+        locationIdsByUser.set(a.userId, list);
+      }
+
+      const safeUsers = res.map(({ pin, ...u }) => ({
+        ...u,
+        locationIds: locationIdsByUser.get(u.id) || [],
+      }));
       return { success: true, data: safeUsers };
     } catch (e) {
       return handleApiError(e);
@@ -76,8 +163,9 @@ export const getUserFn = createServerFn({ method: "GET" })
         .limit(1);
       if (!res.length) return { success: false, error: "Not found" };
 
+      const locationIds = await fetchUserLocationIds(session.orgId, data.id);
       const { pin, ...safeUser } = res[0];
-      return { success: true, data: safeUser };
+      return { success: true, data: { ...safeUser, locationIds } };
     } catch (e) {
       return handleApiError(e);
     }
@@ -127,20 +215,36 @@ export const createUserFn = createServerFn({ method: "POST" })
         }
       }
 
+      const { locationIds, ...userRest } = data.user;
+      const validLocationIds = await validateOrgLocations(session.orgId, locationIds || []);
+      if (validLocationIds === null) {
+        return { success: false, error: "One or more selected branches are invalid." };
+      }
+
+      const userId = data.user.id || uuidv4();
       const inserted = await db
         .insert(schema.users)
         .values({
-          id: data.user.id || uuidv4(),
-          ...data.user,
+          id: userId,
+          ...userRest,
           email,
           pin,
           permissions: filteredPermissions,
           organizationId: session.orgId,
+          locationId: validLocationIds[0] || null,
         })
         .returning();
 
+      if (validLocationIds.length > 0) {
+        await replaceUserLocations(session.orgId, userId, validLocationIds);
+      }
+
       const { pin: _, ...safeUser } = inserted[0];
-      return { success: true, data: safeUser, message: "User created successfully" };
+      return {
+        success: true,
+        data: { ...safeUser, locationIds: validLocationIds },
+        message: "User created successfully",
+      };
     } catch (e) {
       return handleApiError(e);
     }
@@ -159,7 +263,17 @@ export const updateUserFn = createServerFn({ method: "POST" })
       if (session.role !== "admin" && session.userId !== data.id)
         return { success: false, error: "Forbidden" };
 
-      let updateData = { ...data.updates };
+      const { locationIds, ...updatesRest } = data.updates;
+      let updateData = { ...updatesRest };
+
+      // Validate requested branch changes before applying them.
+      let newLocationIds: string[] | null | undefined = undefined;
+      if (locationIds !== undefined) {
+        newLocationIds = await validateOrgLocations(session.orgId, locationIds);
+        if (newLocationIds === null) {
+          return { success: false, error: "One or more selected branches are invalid." };
+        }
+      }
 
       if (updateData.email) {
         updateData.email = updateData.email.toLowerCase();
@@ -191,10 +305,19 @@ export const updateUserFn = createServerFn({ method: "POST" })
         updateData.pin = await bcrypt.hash(updateData.pin, 10);
       }
 
+      if (newLocationIds !== undefined) {
+        updateData.locationId = newLocationIds[0] || null;
+      }
+
       await db
         .update(schema.users)
         .set(updateData)
         .where(and(eq(schema.users.id, data.id), eq(schema.users.organizationId, session.orgId)));
+
+      if (newLocationIds !== undefined) {
+        await replaceUserLocations(session.orgId, data.id, newLocationIds);
+      }
+
       invalidateUserSessionCache(data.id);
       return { success: true, message: "User updated successfully" };
     } catch (e) {

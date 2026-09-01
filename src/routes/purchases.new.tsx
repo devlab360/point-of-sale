@@ -604,9 +604,8 @@ function NewPurchasePage() {
                   </span>
                 </div>
                 <span
-                  className={`font-black text-base font-mono ${
-                    dueVal > 0 ? "text-amber-600 dark:text-amber-400" : "text-success"
-                  }`}
+                  className={`font-black text-base font-mono ${dueVal > 0 ? "text-amber-600 dark:text-amber-400" : "text-success"
+                    }`}
                 >
                   {formatCurrency(dueVal)}
                 </span>

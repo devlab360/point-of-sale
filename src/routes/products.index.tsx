@@ -344,11 +344,10 @@ function ProductsPage() {
               <button
                 type="button"
                 onClick={() => setView("list")}
-                className={`grid size-8 place-items-center rounded-md transition-all ${
-                  view === "list"
+                className={`grid size-8 place-items-center rounded-md transition-all ${view === "list"
                     ? "bg-card text-foreground shadow-sm font-bold"
                     : "text-muted-foreground hover:text-foreground"
-                }`}
+                  }`}
                 title="Table View"
               >
                 <List className="size-4" />
@@ -356,11 +355,10 @@ function ProductsPage() {
               <button
                 type="button"
                 onClick={() => setView("grid")}
-                className={`grid size-8 place-items-center rounded-md transition-all ${
-                  view === "grid"
+                className={`grid size-8 place-items-center rounded-md transition-all ${view === "grid"
                     ? "bg-card text-foreground shadow-sm font-bold"
                     : "text-muted-foreground hover:text-foreground"
-                }`}
+                  }`}
                 title="Grid View"
               >
                 <LayoutGrid className="size-4" />
@@ -618,7 +616,7 @@ function ProductsPage() {
               </div>
               <div>
                 <DialogTitle className="text-lg font-bold text-foreground">
-                  Delete Product SKU
+                  Delete Product
                 </DialogTitle>
                 <DialogDescription className="text-xs text-muted-foreground mt-0.5">
                   Are you sure you want to delete this product? All catalog mappings will be removed.

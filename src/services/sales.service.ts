@@ -142,6 +142,7 @@ export class SalesService {
         status: input.status || "completed",
         paymentMethod: input.paymentMethod || "cash",
         payments: Array.isArray(input.payments) ? input.payments : null,
+        locationId: (input as any).locationId || null,
       } as any);
 
       if (input.payments && Array.isArray(input.payments) && input.payments.length > 0) {

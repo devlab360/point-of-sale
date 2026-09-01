@@ -221,7 +221,7 @@ export function ProductForm({
       <div className="sticky top-0 z-20 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-background/90 backdrop-blur-xl pb-3 pt-2 border-b border-border/80 shadow-sm -mx-4 px-4 sm:-mx-6 sm:px-6">
         <div>
           <h1 className="text-xl sm:text-2xl font-semibold tracking-tight text-foreground">
-            {initialData ? "Edit Product SKU" : "Create New Product"}
+            {initialData ? "Edit Product" : "Create New Product"}
           </h1>
           <p className="text-xs text-muted-foreground hidden sm:block">
             {initialData
@@ -348,8 +348,8 @@ export function ProductForm({
                     <span className="text-xs text-muted-foreground font-semibold">Margin:</span>
                     <span
                       className={`text-xs font-black px-2.5 py-0.5 rounded-full ${formData.price - formData.cost >= 0
-                          ? "bg-success/15 text-success border border-success/20"
-                          : "bg-destructive/15 text-destructive border border-destructive/20"
+                        ? "bg-success/15 text-success border border-success/20"
+                        : "bg-destructive/15 text-destructive border border-destructive/20"
                         }`}
                     >
                       {(

@@ -10,6 +10,7 @@ import { getExpensesFn } from "@/api/expenses";
 import { getPurchasesFn } from "@/api/purchases";
 import { getInventoryBatchesFn } from "@/api/inventory";
 import { getCategoriesFn } from "@/api/categories";
+import { getLocationsFn } from "@/api/locations";
 import { useCurrency } from "@/lib/currency";
 import { useState, useMemo } from "react";
 import {
@@ -129,6 +130,12 @@ function ReportsPage() {
   });
   const batches: any[] = Array.isArray(batchesData) ? batchesData : [];
 
+  const { data: locationsData } = useQuery({
+    queryKey: ["locations", orgId],
+    queryFn: async () => ((await getLocationsFn({ data: {} })) as any)?.data || [],
+  });
+  const locationsList: any[] = Array.isArray(locationsData) ? locationsData : [];
+
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [selectedReport, setSelectedReport] = useState<ReportType>(null);
@@ -153,6 +160,39 @@ function ReportsPage() {
     products.forEach((p: any) => map.set(p.id, p));
     return map;
   }, [products]);
+
+  const branchesMap = useMemo(() => {
+    const map = new Map<string, any>();
+    locationsList.forEach((l: any) => map.set(l.id, l));
+    return map;
+  }, [locationsList]);
+
+  const branchSales = useMemo(() => {
+    const UNASSIGNED = "__unassigned__";
+    const byBranch = new Map<string, { revenue: number; count: number; items: number }>();
+    activeSales.forEach((s: any) => {
+      const locId = s.locationId || UNASSIGNED;
+      const cur = byBranch.get(locId) || { revenue: 0, count: 0, items: 0 };
+      cur.revenue += Number(s.total) || 0;
+      cur.count += 1;
+      const itemArr = s.saleItems || s.items || [];
+      cur.items += Number(s.items) || (Array.isArray(itemArr) && s.items == null ? itemArr.length : 0);
+      byBranch.set(locId, cur);
+    });
+    return [...byBranch.entries()]
+      .map(([id, v]) => ({
+        id,
+        name:
+          id === UNASSIGNED
+            ? "Unassigned / Unknown"
+            : branchesMap.get(id)?.name || "Unknown Branch",
+        isHeadOffice: id !== UNASSIGNED && !!branchesMap.get(id)?.isHeadOffice,
+        ...v,
+      }))
+      .sort((a, b) => b.revenue - a.revenue);
+  }, [activeSales, branchesMap]);
+
+  const maxBranchRevenue = branchSales.length > 0 ? branchSales[0].revenue : 0;
 
   const totalRevenue = useMemo(
     () => activeSales.reduce((acc, s) => acc + (Number(s.total) || 0), 0),
@@ -274,6 +314,64 @@ function ReportsPage() {
           icon={TrendingUp}
           accent={netIncome >= 0 ? "success" : "destructive"}
         />
+      </div>
+
+      {/* Branch-Wise Sales Breakdown */}
+      <div className="rounded-2xl border border-border/80 bg-card p-5 shadow-soft space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-border/60 pb-3">
+          <div>
+            <h3 className="font-bold text-base text-foreground">
+              Branch-Wise Sales Breakdown
+            </h3>
+            <p className="text-xs text-muted-foreground">
+              Revenue, transactions, and revenue share grouped by branch (location).
+            </p>
+          </div>
+          <Badge variant="outline" className="text-xs font-semibold w-fit">
+            {branchSales.length} Branches
+          </Badge>
+        </div>
+
+        {branchSales.length === 0 ? (
+          <div className="text-sm text-muted-foreground py-6 text-center">
+            No sales recorded yet. Completed POS sales will appear here grouped by branch.
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {branchSales.map((b: any) => {
+              const share = totalRevenue > 0 ? Math.round((b.revenue / totalRevenue) * 100) : 0;
+              const pct = maxBranchRevenue > 0 ? (b.revenue / maxBranchRevenue) * 100 : 0;
+              return (
+                <div key={b.id} className="space-y-1.5">
+                  <div className="flex items-center justify-between gap-3 text-xs">
+                    <div className="flex items-center gap-1.5 min-w-0 font-bold text-foreground">
+                      <span className="truncate">{b.name}</span>
+                      {b.isHeadOffice && (
+                        <span className="text-[9px] font-black uppercase tracking-wider text-primary bg-primary/10 px-1.5 py-0.5 rounded">
+                          HQ
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-3 shrink-0 font-mono">
+                      <span className="text-muted-foreground">
+                        {b.count} txns
+                        <span className="mx-1.5 text-muted-foreground/40">·</span>
+                        {formatCurrency(b.revenue)}
+                      </span>
+                      <span className="font-black text-primary w-12 text-right">{share}%</span>
+                    </div>
+                  </div>
+                  <div className="h-2 w-full rounded-full bg-muted/40 overflow-hidden">
+                    <div
+                      className="h-full rounded-full bg-gradient-to-r from-primary to-[#B58D4C] transition-all"
+                      style={{ width: `${Math.min(100, pct)}%` }}
+                    />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {/* Financial Chart Overview */}

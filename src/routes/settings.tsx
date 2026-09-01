@@ -3232,7 +3232,8 @@ function LocationsTab() {
     isHeadOffice: false,
   });
   const [isSaving, setIsSaving] = useState(false);
-  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [deleteLocationId, setDeleteLocationId] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const { data: locationsRes, isLoading } = useQuery({
     queryKey: ["locations"],
@@ -3296,8 +3297,8 @@ function LocationsTab() {
     }
   };
 
-  const handleDelete = async (id: string) => {
-    setDeletingId(id);
+  const confirmDelete = async (id: string) => {
+    setIsDeleting(true);
     try {
       const res = await deleteLocationFn({ data: { id } });
       if (!res.success) throw new Error((res as any).error);
@@ -3306,7 +3307,8 @@ function LocationsTab() {
     } catch (e: any) {
       toast.error(e.message || "Failed to delete location.");
     } finally {
-      setDeletingId(null);
+      setIsDeleting(false);
+      setDeleteLocationId(null);
     }
   };
 
@@ -3562,10 +3564,10 @@ function LocationsTab() {
                           size="sm"
                           variant="ghost"
                           className="h-7 w-7 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
-                          onClick={() => handleDelete(loc.id)}
-                          disabled={deletingId === loc.id}
+                          onClick={() => setDeleteLocationId(loc.id)}
+                          disabled={deleteLocationId === loc.id}
                         >
-                          {deletingId === loc.id ? (
+                          {deleteLocationId === loc.id ? (
                             <Loader2 className="size-3.5 animate-spin" />
                           ) : (
                             <Trash2 className="size-3.5" />
@@ -3575,14 +3577,54 @@ function LocationsTab() {
                     </td>
                   </tr>
                 ))}
-              </tbody>
+</tbody>
             </table>
           )}
-</div>
+        </div>
       </div>
+
+      {/* Delete Location Confirmation Dialog */}
+      <Dialog open={!!deleteLocationId} onOpenChange={(open) => !open && setDeleteLocationId(null)}>
+        <DialogContent className="max-w-md rounded-2xl p-6 border border-border shadow-soft bg-card">
+          <DialogHeader className="space-y-2 text-left">
+            <div className="flex items-center gap-3">
+              <div className="grid size-10 place-items-center rounded-xl bg-destructive/10 text-destructive shrink-0">
+                <Trash2 className="size-5" />
+              </div>
+              <div>
+                <DialogTitle className="text-lg font-bold text-foreground">Delete Location</DialogTitle>
+                <DialogDescription className="text-xs text-muted-foreground mt-0.5">
+                  Are you sure you want to delete this location? This action cannot be undone.
+                </DialogDescription>
+              </div>
+            </div>
+          </DialogHeader>
+          <DialogFooter className="mt-4 flex flex-row items-center justify-end gap-2">
+            <Button type="button" variant="outline" onClick={() => setDeleteLocationId(null)}>
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              onClick={() => {
+                if (deleteLocationId) confirmDelete(deleteLocationId);
+              }}
+              disabled={isDeleting}
+            >
+              {isDeleting ? (
+                <>
+                  <Loader2 className="size-3.5 animate-spin mr-2" /> Deleting...
+                </>
+              ) : (
+                "Delete"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </SettingsCard>
   );
-}
+  }
 
 function BranchPricingTab() {
   const queryClient = useQueryClient();
@@ -3615,7 +3657,7 @@ function BranchPricingTab() {
   const { data: overridesData } = useQuery({
     queryKey: ["branchPriceOverrides", orgId],
     queryFn: async () => {
-      const res = await getBranchPriceOverridesFn({ data: { branchId: "" } });
+      const res = await getBranchPriceOverridesFn({ data: { locationId: "" } });
       return (res as any)?.data || [];
     },
     staleTime: 30 * 1000,
@@ -3685,12 +3727,12 @@ function BranchPricingTab() {
     onError: (e: any) => toast.error(e?.message || "Failed"),
   });
 
-  const getOverride = (branchId: string, entityType: string, entityId: string) =>
-    overrides.find((o) => o.branchId === branchId && o.entityType === entityType && o.entityId === entityId);
+  const getOverride = (locationId: string, entityType: string, entityId: string) =>
+    overrides.find((o) => o.locationId === locationId && o.entityType === entityType && o.entityId === entityId);
 
-  const handleUpsert = (branchId: string, entityType: string, entityId: string, price: string) => {
+  const handleUpsert = (locationId: string, entityType: string, entityId: string, price: string) => {
     if (!price.trim()) return;
-    upsertMutation.mutate({ branchId, entityType, entityId, price });
+    upsertMutation.mutate({ locationId, entityType, entityId, price });
   };
 
   const handleDelete = (id: string) => {

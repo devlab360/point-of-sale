@@ -184,7 +184,7 @@ export const users = pgTable(
   {
     id: text("id").primaryKey(),
     organizationId: text("organization_id").references(() => organizations.id),
-    branchId: text("branch_id").references(() => locations.id, { onDelete: "set null" }),
+    locationId: text("location_id").references(() => locations.id, { onDelete: "set null" }),
     name: text("name").notNull(),
     role: text("role").notNull(),
     email: text("email").notNull(),
@@ -211,6 +211,30 @@ export const users = pgTable(
   (t) => ({
     userEmailIdx: unique("user_email_idx").on(t.email, t.organizationId),
     orgIdx: index("users_org_idx").on(t.organizationId),
+  }),
+);
+
+// Many-to-many assignment of users (employees/staff) to branches (locations).
+// A user can belong to multiple branches; `isDefault` marks the primary one.
+export const userBranches = pgTable(
+  "user_branches",
+  {
+    id: text("id").primaryKey(),
+    organizationId: text("organization_id")
+      .notNull()
+      .references(() => organizations.id, { onDelete: "cascade" }),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    locationId: text("location_id")
+      .notNull()
+      .references(() => locations.id, { onDelete: "cascade" }),
+    isDefault: boolean("is_default").notNull().default(false),
+    createdAt: timestamp("created_at", { mode: "string" }).defaultNow().notNull(),
+  },
+  (t) => ({
+    userBranchIdx: index("user_branches_user_idx").on(t.userId),
+    userBranchOrgIdx: index("user_branches_org_idx").on(t.organizationId),
   }),
 );
 
@@ -447,7 +471,7 @@ export const branchPriceOverrides = pgTable(
     organizationId: text("organization_id")
       .notNull()
       .references(() => organizations.id, { onDelete: "cascade" }),
-    branchId: text("branch_id")
+    locationId: text("location_id")
       .notNull()
       .references(() => locations.id, { onDelete: "cascade" }),
     entityType: text("entity_type").notNull().default("product"), // product | service | service_variant | product_variant
@@ -462,9 +486,9 @@ export const branchPriceOverrides = pgTable(
   },
   (t) => ({
     orgIdx: index("branch_price_overrides_org_idx").on(t.organizationId),
-    branchIdx: index("branch_price_overrides_branch_idx").on(t.branchId),
+    locationIdx: index("branch_price_overrides_branch_idx").on(t.locationId),
     branchEntityUniqueIdx: unique("branch_price_override_branch_entity_idx").on(
-      t.branchId,
+      t.locationId,
       t.entityType,
       t.entityId,
     ),
@@ -512,6 +536,7 @@ export const sales = pgTable(
       .references(() => organizations.id),
     customerId: text("customer_id").references(() => customers.id),
     customerName: text("customer_name"),
+    locationId: text("location_id").references(() => locations.id, { onDelete: "set null" }),
     date: timestamp("date", { mode: "string" }).defaultNow().notNull(),
     items: integer("items").notNull(),
     total: numeric("total", { precision: 12, scale: 2 }).notNull(),
@@ -536,6 +561,7 @@ export const sales = pgTable(
     orgDateIdx: index("sales_org_date_idx").on(t.organizationId, t.date),
     customerIdx: index("sales_cust_idx").on(t.customerId),
     salesmanIdx: index("sales_salesman_idx").on(t.salesmanId),
+    locationIdx: index("sales_location_idx").on(t.locationId),
   }),
 );
 
@@ -599,6 +625,7 @@ export const purchases = pgTable(
       .references(() => organizations.id),
     supplierId: text("supplier_id").references(() => suppliers.id),
     supplier: text("supplier").notNull(),
+    locationId: text("location_id").references(() => locations.id, { onDelete: "set null" }),
     date: timestamp("date", { mode: "string" }).notNull(),
     invoiceNo: text("invoice_no"),
     items: integer("items").notNull(),
@@ -617,6 +644,7 @@ export const purchases = pgTable(
   (t) => ({
     orgDateIdx: index("purchases_org_date_idx").on(t.organizationId, t.date),
     supplierIdx: index("purchases_supplier_idx").on(t.supplierId),
+    locationIdx: index("purchases_location_idx").on(t.locationId),
   }),
 );
 
@@ -730,7 +758,7 @@ export const expenses = pgTable(
     organizationId: text("organization_id")
       .notNull()
       .references(() => organizations.id),
-    branchId: text("branch_id").references(() => locations.id, { onDelete: "set null" }),
+    locationId: text("location_id").references(() => locations.id, { onDelete: "set null" }),
     date: timestamp("date", { mode: "string" }).notNull(),
     category: text("category").notNull(),
     description: text("description").notNull(),
@@ -739,7 +767,7 @@ export const expenses = pgTable(
   },
   (t) => ({
     orgIdx: index("expenses_org_idx").on(t.organizationId),
-    branchIdx: index("expenses_branch_idx").on(t.branchId),
+    locationIdx: index("expenses_branch_idx").on(t.locationId),
   }),
 );
 
@@ -867,7 +895,9 @@ export const salesReturns = pgTable(
       .notNull()
       .references(() => organizations.id),
     ref: text("ref").notNull(),
-    saleId: text("sale_id").notNull(),
+    saleId: text("sale_id")
+      .notNull()
+      .references(() => sales.id, { onDelete: "cascade" }),
     customerName: text("customer_name"),
     reason: text("reason").notNull(),
     total: numeric("total", { precision: 12, scale: 2 }).notNull(),
@@ -893,7 +923,7 @@ export const salesReturnItems = pgTable(
       .references(() => salesReturns.id, { onDelete: "cascade" }),
     productId: text("product_id").notNull(),
     productName: text("product_name").notNull(),
-    quantity: integer("quantity").notNull(),
+    quantity: numeric("quantity", { precision: 10, scale: 3 }).notNull(),
     price: numeric("price", { precision: 10, scale: 2 }).notNull(),
     total: numeric("total", { precision: 10, scale: 2 }).notNull(),
     batchId: text("batch_id"),
@@ -1014,7 +1044,9 @@ export const customerLedgers = pgTable(
     organizationId: text("organization_id")
       .notNull()
       .references(() => organizations.id),
-    customerId: text("customer_id").notNull(),
+    customerId: text("customer_id")
+      .notNull()
+      .references(() => customers.id, { onDelete: "cascade" }),
     date: timestamp("date", { mode: "string" }).notNull(),
     type: text("type").notNull(),
     amount: numeric("amount", { precision: 12, scale: 2 }).notNull(),
@@ -1034,7 +1066,9 @@ export const supplierLedgers = pgTable(
     organizationId: text("organization_id")
       .notNull()
       .references(() => organizations.id),
-    supplierId: text("supplier_id").notNull(),
+    supplierId: text("supplier_id")
+      .notNull()
+      .references(() => suppliers.id, { onDelete: "cascade" }),
     date: timestamp("date", { mode: "string" }).notNull(),
     type: text("type").notNull(),
     amount: numeric("amount", { precision: 12, scale: 2 }).notNull(),
@@ -1055,7 +1089,7 @@ export const quotations = pgTable(
       .notNull()
       .references(() => organizations.id),
     quotationNo: text("quotation_no").notNull(),
-    customerId: text("customer_id"),
+    customerId: text("customer_id").references(() => customers.id, { onDelete: "set null" }),
     customerName: text("customer_name").notNull(),
     customerPhone: text("customer_phone"),
     date: timestamp("date", { mode: "string" }).notNull(),
@@ -1081,7 +1115,7 @@ export const deliveryChallans = pgTable(
       .notNull()
       .references(() => organizations.id),
     challanNo: text("challan_no").notNull(),
-    customerId: text("customer_id"),
+    customerId: text("customer_id").references(() => customers.id, { onDelete: "set null" }),
     customerName: text("customer_name").notNull(),
     date: timestamp("date", { mode: "string" }).notNull(),
     items: jsonb("items").$type<Record<string, any>[]>().notNull(),
@@ -1189,7 +1223,7 @@ export const rentals = pgTable(
     organizationId: text("organization_id")
       .notNull()
       .references(() => organizations.id),
-    branchId: text("branch_id").references(() => locations.id, { onDelete: "set null" }),
+    locationId: text("location_id").references(() => locations.id, { onDelete: "set null" }),
     rentalNo: text("rental_no").notNull(),
     customerName: text("customer_name").notNull(),
     itemName: text("item_name").notNull(),
@@ -1202,7 +1236,7 @@ export const rentals = pgTable(
   },
   (t) => ({
     orgIdx: index("rentals_org_idx").on(t.organizationId),
-    branchIdx: index("rentals_branch_idx").on(t.branchId),
+    locationIdx: index("rentals_branch_idx").on(t.locationId),
   }),
 );
 
@@ -1286,7 +1320,7 @@ export const reviews = pgTable("reviews", {
 export const appointments = pgTable("appointments", {
   id: text("id").primaryKey(),
   organizationId: text("organization_id").notNull(),
-  branchId: text("branch_id").references(() => locations.id, { onDelete: "set null" }),
+  locationId: text("location_id").references(() => locations.id, { onDelete: "set null" }),
   customerId: text("customer_id"),
   customerName: text("customer_name").notNull(),
   customerPhone: text("customer_phone"),
@@ -1305,7 +1339,7 @@ export const appointments = pgTable("appointments", {
 export const restaurantTables = pgTable("restaurant_tables", {
   id: text("id").primaryKey(),
   organizationId: text("organization_id").notNull(),
-  branchId: text("branch_id").references(() => locations.id, { onDelete: "set null" }),
+  locationId: text("location_id").references(() => locations.id, { onDelete: "set null" }),
   name: text("name").notNull(),
   capacity: integer("capacity").notNull().default(4),
   status: text("status").notNull().default("available"), // available, occupied, reserved
@@ -1317,7 +1351,7 @@ export const restaurantTables = pgTable("restaurant_tables", {
 export const kitchenOrderTickets = pgTable("kitchen_order_tickets", {
   id: text("id").primaryKey(),
   organizationId: text("organization_id").notNull(),
-  branchId: text("branch_id").references(() => locations.id, { onDelete: "set null" }),
+  locationId: text("location_id").references(() => locations.id, { onDelete: "set null" }),
   tableId: text("table_id"),
   waiterId: text("waiter_id"),
   items: jsonb("items").$type<any[]>().notNull(),
