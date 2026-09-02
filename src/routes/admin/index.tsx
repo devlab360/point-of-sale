@@ -176,7 +176,7 @@ function AdminLoginPage() {
               <Shield className="size-8 stroke-[2.2]" />
             </div>
             <h1 className="text-2xl sm:text-3xl font-black text-foreground tracking-tight font-display">
-              OneDesk360 Super Admin
+              {appName} Super Admin
             </h1>
             <p className="text-sm text-muted-foreground">
               Master control plane for multi-tenant store provisioning

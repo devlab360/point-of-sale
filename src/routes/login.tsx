@@ -22,7 +22,7 @@ import { validateEmail, validatePassword, sanitizeInput } from "@/lib/validation
 import { checkRateLimit } from "@/lib/api-response";
 import { useFormValidation } from "@/hooks/useFormValidation";
 import { FieldError } from "@/components/ui/field-error";
-import { appName } from "@/lib/env";
+import { isProduction, appName } from "@/lib/env";
 
 export const Route = createFileRoute("/login")({
   head: () => ({ meta: [{ title: `Sign In · ${appName} SaaS` }] }),
@@ -408,43 +408,45 @@ function LoginPage() {
                 </Button>
 
                 {/* Development Mode Instant Quick Login Panel */}
-                <div className="pt-2.5 border-t border-border/80 space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[11px] font-black uppercase tracking-wider text-primary flex items-center gap-1.5">
-                      <span>⚡</span> 1-Click Dev / Demo Logins
-                    </span>
-                    <Link
-                      to="/admin"
-                      className="text-[11px] font-bold text-muted-foreground hover:text-foreground hover:underline"
-                    >
-                      🛡️ Super Admin Portal →
-                    </Link>
-                  </div>
+                {!isProduction && (
+                  <div className="pt-2.5 border-t border-border/80 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11px] font-black uppercase tracking-wider text-primary flex items-center gap-1.5">
+                        <span>⚡</span> 1-Click Dev / Demo Logins
+                      </span>
+                      <Link
+                        to="/admin"
+                        className="text-[11px] font-bold text-muted-foreground hover:text-foreground hover:underline"
+                      >
+                        🛡️ Super Admin Portal →
+                      </Link>
+                    </div>
 
-                  <div className="space-y-2 max-h-36 sm:max-h-40 overflow-y-auto pr-1">
-                    {QUICK_DEMO_GROUPS.map((grp) => (
-                      <div key={grp.group} className="space-y-1">
-                        <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/80 px-1">
-                          {grp.group}
+                    <div className="space-y-2 max-h-36 sm:max-h-40 overflow-y-auto pr-1">
+                      {QUICK_DEMO_GROUPS.map((grp) => (
+                        <div key={grp.group} className="space-y-1">
+                          <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/80 px-1">
+                            {grp.group}
+                          </div>
+                          <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
+                            {grp.items.map((item) => (
+                              <button
+                                key={item.email}
+                                type="button"
+                                disabled={isLoggingIn}
+                                onClick={() => handleQuickLogin(item.email, item.label)}
+                                className="text-[11px] font-semibold py-1.5 px-2 rounded-lg border border-border/70 bg-muted/25 hover:bg-primary/10 hover:border-primary/40 hover:text-primary transition-all text-left truncate active:scale-95 disabled:opacity-50 cursor-pointer"
+                                title={`Instant 1-Click login as ${item.email}`}
+                              >
+                                {item.label}
+                              </button>
+                            ))}
+                          </div>
                         </div>
-                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
-                          {grp.items.map((item) => (
-                            <button
-                              key={item.email}
-                              type="button"
-                              disabled={isLoggingIn}
-                              onClick={() => handleQuickLogin(item.email, item.label)}
-                              className="text-[11px] font-semibold py-1.5 px-2 rounded-lg border border-border/70 bg-muted/25 hover:bg-primary/10 hover:border-primary/40 hover:text-primary transition-all text-left truncate active:scale-95 disabled:opacity-50 cursor-pointer"
-                              title={`Instant 1-Click login as ${item.email}`}
-                            >
-                              {item.label}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
                   </div>
-                </div>
+                )}
               </form>
             ) : (
               /* Forgot Password Flow */

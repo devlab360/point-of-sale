@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { appName } from "@/lib/env";
 import { DataPage } from "@/components/layout/DataPage";
 import { EmptyState } from "@/components/ui/empty-state";
 import { SearchableSelect } from "@/components/ui/searchable-select";
@@ -59,7 +60,7 @@ import {
 } from "@/components/ui/table";
 
 export const Route = createFileRoute("/sales/returns")({
-  head: () => ({ meta: [{ title: "Sales Returns · OneDesk360" }] }),
+  head: () => ({ meta: [{ title: `Sales Returns · ${appName}` }] }),
   component: SalesReturnsPage,
 });
 

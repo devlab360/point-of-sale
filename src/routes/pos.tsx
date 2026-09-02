@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useRef, useCallback } from "react";
 import { cn } from "@/lib/utils";
+import { appName } from "@/lib/env";
 import { toast } from "sonner";
 import { v4 as uuidv4 } from "uuid";
 import {
@@ -31,7 +32,7 @@ import { ErrorState } from "@/components/ui/error-state";
 export const Route = createFileRoute("/pos")({
   head: () => ({
     meta: [
-      { title: "POS Terminal · OneDesk360" },
+      { title: `POS Terminal · ${appName}` },
       {
         name: "description",
         content:
@@ -448,7 +449,7 @@ function PosScreen() {
       if (activeCustomer.id !== "walkin" && activeCustomer.phone) {
         // Run asynchronously without blocking the checkout UI
         sendAutomatedReceipt(
-          state.settings?.storeName || "OneDesk360",
+          state.settings?.storeName || appName,
           activeCustomer.name,
           activeCustomer.phone,
           invNum,

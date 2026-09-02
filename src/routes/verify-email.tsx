@@ -94,7 +94,7 @@ function VerifyEmailPage() {
       console.log("Verify OTP response:", res);
 
       if (res?.success) {
-        toast.success("Email verified successfully! Welcome to OneDesk360.");
+        toast.success(`Email verified successfully! Welcome to ${appName}.`);
         // Reload window to update auth state across app
         window.location.href = "/";
       } else {

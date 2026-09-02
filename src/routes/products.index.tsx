@@ -1,4 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { appName } from "@/lib/env";
 import { exportToCSV, parseCSV } from "@/lib/csv";
 import {
   List,
@@ -80,7 +81,7 @@ import { getUnitsFn } from "@/api/units";
 
 export const Route = createFileRoute("/products/")({
   head: () => ({
-    meta: [{ title: "Products & SKU Catalog · OneDesk360" }],
+    meta: [{ title: `Products & SKU Catalog · ${appName}` }],
   }),
   component: ProductsPage,
 });

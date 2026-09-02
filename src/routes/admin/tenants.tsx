@@ -85,7 +85,7 @@ import { exportToCSV } from "@/lib/export-utils";
 import { SYSTEM_MODULES as ALL_SYSTEM_MODULES } from "@/constants";
 
 export const Route = createFileRoute("/admin/tenants")({
-  head: () => ({ meta: [{ title: "Tenants & Stores · Super Admin OneDesk360" }] }),
+  head: () => ({ meta: [{ title: `Tenants & Stores · Super Admin ${appName}` }] }),
   component: SuperAdminTenantsPage,
 });
 
