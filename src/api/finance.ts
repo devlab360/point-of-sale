@@ -12,8 +12,8 @@ import { v4 as uuidv4 } from "uuid";
 
 // --- Expenses ---
 export const getExpensesFn = createServerFn({ method: "GET" })
-  .validator((data: any) => data)
-  .handler(async ({ data }) => {
+  .validator(z.object({}).optional().default({}))
+  .handler(async () => {
     try {
       const session = await requireAuth();
       const orgId = session.orgId;
@@ -28,7 +28,15 @@ export const getExpensesFn = createServerFn({ method: "GET" })
   });
 
 export const createExpenseFn = createServerFn({ method: "POST" })
-  .validator((data: any) => data)
+  .validator(
+    z.object({
+      date: z.string(),
+      category: z.string(),
+      description: z.string().default(""),
+      amount: z.union([z.string(), z.number()]),
+      status: z.string().optional().default("approved"),
+    }),
+  )
   .handler(async ({ data }) => {
     try {
       const session = await requireAuth();
@@ -38,9 +46,9 @@ export const createExpenseFn = createServerFn({ method: "POST" })
         organizationId: orgId,
         date: new Date(data.date).toISOString(),
         category: data.category,
-        description: data.description,
+        description: data.description || "",
         amount: data.amount.toString(),
-        status: data.status,
+        status: data.status || "approved",
       });
       return { success: true };
     } catch (e) {
@@ -49,7 +57,16 @@ export const createExpenseFn = createServerFn({ method: "POST" })
   });
 
 export const updateExpenseFn = createServerFn({ method: "POST" })
-  .validator((data: any) => data)
+  .validator(
+    z.object({
+      id: z.string(),
+      date: z.string(),
+      category: z.string(),
+      description: z.string().optional(),
+      amount: z.union([z.string(), z.number()]),
+      status: z.string().optional(),
+    }),
+  )
   .handler(async ({ data }) => {
     try {
       const session = await requireAuth();
@@ -71,7 +88,7 @@ export const updateExpenseFn = createServerFn({ method: "POST" })
   });
 
 export const deleteExpenseFn = createServerFn({ method: "POST" })
-  .validator((data: any) => data)
+  .validator(z.object({ id: z.string() }))
   .handler(async ({ data }) => {
     try {
       const session = await requireAuth();
@@ -87,8 +104,8 @@ export const deleteExpenseFn = createServerFn({ method: "POST" })
 
 // --- Accounts ---
 export const getAccountsFn = createServerFn({ method: "GET" })
-  .validator((data: any) => data)
-  .handler(async ({ data }) => {
+  .validator(z.object({}).optional().default({}))
+  .handler(async () => {
     try {
       const session = await requireAuth();
       const orgId = session.orgId;
@@ -103,7 +120,15 @@ export const getAccountsFn = createServerFn({ method: "GET" })
   });
 
 export const createAccountFn = createServerFn({ method: "POST" })
-  .validator((data: any) => data)
+  .validator(
+    z.object({
+      code: z.string(),
+      name: z.string(),
+      type: z.string(),
+      balance: z.union([z.string(), z.number()]).optional().default("0"),
+      isSystem: z.boolean().optional(),
+    }),
+  )
   .handler(async ({ data }) => {
     try {
       const session = await requireAuth();
@@ -124,7 +149,15 @@ export const createAccountFn = createServerFn({ method: "POST" })
   });
 
 export const updateAccountFn = createServerFn({ method: "POST" })
-  .validator((data: any) => data)
+  .validator(
+    z.object({
+      id: z.string(),
+      code: z.string().optional(),
+      name: z.string().optional(),
+      type: z.string().optional(),
+      balance: z.union([z.string(), z.number()]).optional(),
+    }),
+  )
   .handler(async ({ data }) => {
     try {
       const session = await requireAuth();
@@ -135,7 +168,7 @@ export const updateAccountFn = createServerFn({ method: "POST" })
           code: data.code,
           name: data.name,
           type: data.type,
-          balance: data.balance.toString(),
+          balance: data.balance != null ? data.balance.toString() : undefined,
         })
         .where(and(eq(schema.accounts.id, data.id), eq(schema.accounts.organizationId, orgId)));
       return { success: true };
@@ -145,7 +178,7 @@ export const updateAccountFn = createServerFn({ method: "POST" })
   });
 
 export const deleteAccountFn = createServerFn({ method: "POST" })
-  .validator((data: any) => data)
+  .validator(z.object({ id: z.string() }))
   .handler(async ({ data }) => {
     try {
       const session = await requireAuth();
@@ -160,7 +193,7 @@ export const deleteAccountFn = createServerFn({ method: "POST" })
   });
 
 export const seedDefaultAccountsFn = createServerFn({ method: "POST" })
-  .validator((data: any) => data)
+  .validator(z.object({}).optional().default({}))
   .handler(async () => {
     try {
       const session = await requireAuth();
@@ -303,8 +336,8 @@ export const seedDefaultAccountsFn = createServerFn({ method: "POST" })
 
 // --- Vouchers ---
 export const getVouchersFn = createServerFn({ method: "GET" })
-  .validator((data: any) => data)
-  .handler(async ({ data }) => {
+  .validator(z.object({}).optional().default({}))
+  .handler(async () => {
     try {
       const session = await requireAuth();
       const orgId = session.orgId;
@@ -319,7 +352,20 @@ export const getVouchersFn = createServerFn({ method: "GET" })
   });
 
 export const createVoucherFn = createServerFn({ method: "POST" })
-  .validator((data: any) => data)
+  .validator(
+    z.object({
+      voucherNo: z.string(),
+      date: z.string(),
+      type: z.string(),
+      amount: z.union([z.string(), z.number()]),
+      debitAccountId: z.string(),
+      debitAccountName: z.string(),
+      creditAccountId: z.string(),
+      creditAccountName: z.string(),
+      narration: z.string().optional(),
+      reference: z.string().optional(),
+    }),
+  )
   .handler(async ({ data }) => {
     try {
       const session = await requireAuth();
@@ -351,7 +397,7 @@ export const createVoucherFn = createServerFn({ method: "POST" })
           )
           .limit(1);
         if (debitAcc.length > 0) {
-          const newDebitBalance = parseFloat(debitAcc[0].balance.toString()) + data.amount;
+          const newDebitBalance = parseFloat(debitAcc[0].balance.toString()) + Number(data.amount);
           await tx
             .update(schema.accounts)
             .set({ balance: newDebitBalance.toString() })
@@ -371,7 +417,7 @@ export const createVoucherFn = createServerFn({ method: "POST" })
         if (creditAcc.length > 0) {
           const newCreditBalance = Math.max(
             0,
-            parseFloat(creditAcc[0].balance.toString()) - data.amount,
+            parseFloat(creditAcc[0].balance.toString()) - Number(data.amount),
           );
           await tx
             .update(schema.accounts)

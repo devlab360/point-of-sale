@@ -1,5 +1,4 @@
 import { handleApiError } from "@/lib/error-utils";
-import { formatErrorResponse } from "@/lib/errors/errors";
 import { createServerFn } from "@tanstack/react-start";
 import { customerService } from "@/services/customer.service";
 import { db } from "@/db";
@@ -26,7 +25,7 @@ export const getCustomersFn = createServerFn({ method: "GET" })
       const customers = await customerService.getCustomers(session.orgId, data.query);
       return { success: true, data: customers, total: customers.length };
     } catch (e) {
-      return formatErrorResponse(e);
+      return handleApiError(e);
     }
   });
 

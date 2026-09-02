@@ -171,13 +171,14 @@ function TransfersPage() {
         data: {
           transfer: {
             id: uuidv4(),
+            ref: `TRF-${Date.now().toString().slice(-6)}`,
             productId,
             productName: prod?.name || "Product",
             supplierId,
             supplierName: supp?.name || "Branch / Vendor",
             quantity: q,
-            totalAmount,
-            paidAmount,
+            totalAmount: Number(totalAmount) || 0,
+            paidAmount: Number(paidAmount) || 0,
             paymentMethod,
             date: new Date().toISOString(),
           },

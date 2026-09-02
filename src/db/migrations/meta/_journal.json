@@ -5,22 +5,8 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1788067244216,
-      "tag": "0000_short_warbound",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "7",
-      "when": 1788153010250,
-      "tag": "0001_whole_deathbird",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1788166084069,
-      "tag": "0002_acoustic_boom_boom",
+      "when": 1788281177304,
+      "tag": "0000_common_valeria_richards",
       "breakpoints": true
     }
   ]

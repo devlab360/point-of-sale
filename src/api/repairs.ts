@@ -5,9 +5,10 @@ import { db } from "@/db";
 import * as schema from "@/db/schema";
 import { eq, and } from "drizzle-orm";
 import { v4 as uuidv4 } from "uuid";
+import { z } from "zod";
 
 export const getRepairsFn = createServerFn({ method: "GET" })
-  .validator((data: any) => data)
+  .validator(z.object({}).optional().default({}))
   .handler(async () => {
     const session = await requireAuth();
     const orgId = session.orgId;
@@ -23,11 +24,31 @@ export const getRepairsFn = createServerFn({ method: "GET" })
   });
 
 export const createRepairFn = createServerFn({ method: "POST" })
-  .validator((data: any) => data)
+  .validator(
+    z.object({
+      repair: z
+        .object({
+          id: z.string().optional(),
+          ticketNo: z.string().optional(),
+          customerName: z.string().optional(),
+          customerPhone: z.string().optional(),
+          deviceName: z.string().optional(),
+          serialOrImei: z.string().nullable().optional(),
+          problemDescription: z.string().optional(),
+          estimatedCost: z.union([z.string(), z.number()]).optional(),
+          advancePaid: z.union([z.string(), z.number()]).optional(),
+          status: z.string().optional(),
+          date: z.string().optional(),
+          createdAt: z.string().optional(),
+          notes: z.string().nullable().optional(),
+        })
+        .optional(),
+    }).passthrough(),
+  )
   .handler(async ({ data }) => {
     const session = await requireAuth();
     const orgId = session.orgId;
-    const r = data?.repair || data || {};
+    const r: any = (data as any)?.repair || (data as any) || {};
     try {
       const repairData = {
         id: r.id || uuidv4(),
@@ -42,9 +63,9 @@ export const createRepairFn = createServerFn({ method: "POST" })
         advancePaid: (Number(r.advancePaid) || 0).toFixed(2),
         status: r.status || "pending",
         date: r.date
-          ? new Date(r.date).toISOString()
+          ? new Date(r.date as string).toISOString()
           : r.createdAt
-            ? new Date(r.createdAt).toISOString()
+            ? new Date(r.createdAt as string).toISOString()
             : new Date().toISOString(),
         notes: r.notes || null,
       };
@@ -57,7 +78,12 @@ export const createRepairFn = createServerFn({ method: "POST" })
   });
 
 export const updateRepairStatusFn = createServerFn({ method: "POST" })
-  .validator((data: any) => data)
+  .validator(
+    z.object({
+      id: z.string(),
+      status: z.string(),
+    }),
+  )
   .handler(async ({ data }) => {
     const session = await requireAuth();
     const orgId = session.orgId;
@@ -73,7 +99,27 @@ export const updateRepairStatusFn = createServerFn({ method: "POST" })
   });
 
 export const updateRepairFn = createServerFn({ method: "POST" })
-  .validator((data: any) => data)
+  .validator(
+    z.object({
+      id: z.string().optional(),
+      updates: z
+        .object({
+          ticketNo: z.string().optional(),
+          customerName: z.string().optional(),
+          customerPhone: z.string().optional(),
+          deviceName: z.string().optional(),
+          serialOrImei: z.string().nullable().optional(),
+          problemDescription: z.string().optional(),
+          estimatedCost: z.union([z.string(), z.number()]).optional(),
+          advancePaid: z.union([z.string(), z.number()]).optional(),
+          status: z.string().optional(),
+          notes: z.string().nullable().optional(),
+        })
+        .passthrough()
+        .optional(),
+      repair: z.any().optional(),
+    }).passthrough(),
+  )
   .handler(async ({ data }) => {
     const session = await requireAuth();
     const orgId = session.orgId;
@@ -110,7 +156,7 @@ export const updateRepairFn = createServerFn({ method: "POST" })
   });
 
 export const deleteRepairFn = createServerFn({ method: "POST" })
-  .validator((data: any) => data)
+  .validator(z.object({ id: z.string() }))
   .handler(async ({ data }) => {
     const session = await requireAuth();
     const orgId = session.orgId;

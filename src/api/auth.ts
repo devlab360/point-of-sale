@@ -1,5 +1,4 @@
 import { handleApiError } from "@/lib/error-utils";
-import { formatErrorResponse } from "@/lib/errors/errors";
 import { createServerFn } from "@tanstack/react-start";
 import { setCookie, deleteCookie } from "@tanstack/react-start/server";
 import { authService } from "@/services/auth.service";
@@ -22,7 +21,7 @@ export const loginFn = createServerFn({ method: "POST" })
       const user = await authService.login(data);
       return { success: true, user, message: "Login successful!" };
     } catch (e) {
-      return formatErrorResponse(e);
+      return handleApiError(e);
     }
   });
 

@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSuperAdminSession } from "@/lib/admin/auth-utils";
 import { adminService } from "@/services/admin.service";
-import { formatErrorResponse } from "@/lib/errors/errors";
+import { handleApiError } from "@/lib/error-utils";
 import { z } from "zod";
 
 // ─── Organizations & Tenants ──────────────────────────────────
@@ -19,7 +19,7 @@ export const getAllOrganizationsFn = createServerFn({ method: "GET" })
       const result = await adminService.getAllOrganizations();
       return { success: true as const, data: JSON.parse(JSON.stringify(result)) };
     } catch (e) {
-      return formatErrorResponse(e);
+      return handleApiError(e);
     }
   });
 
@@ -42,7 +42,7 @@ export const updateOrganizationFn = createServerFn({ method: "POST" })
       await adminService.updateOrganization(orgId, updateData as any);
       return { success: true as const };
     } catch (e) {
-      return formatErrorResponse(e);
+      return handleApiError(e);
     }
   });
 
@@ -54,7 +54,7 @@ export const deleteOrganizationFn = createServerFn({ method: "POST" })
       await adminService.deleteOrganization(data.orgId);
       return { success: true as const };
     } catch (e) {
-      return formatErrorResponse(e);
+      return handleApiError(e);
     }
   });
 
@@ -66,7 +66,7 @@ export const resetTenantSyncKeyFn = createServerFn({ method: "POST" })
       const newSyncKey = await adminService.resetTenantSyncKey(data.orgId);
       return { success: true as const, syncKey: newSyncKey };
     } catch (e) {
-      return formatErrorResponse(e);
+      return handleApiError(e);
     }
   });
 
@@ -78,7 +78,7 @@ export const addTrialDaysFn = createServerFn({ method: "POST" })
       await adminService.addTrialDays(data.orgId, data.days);
       return { success: true as const };
     } catch (e) {
-      return formatErrorResponse(e);
+      return handleApiError(e);
     }
   });
 
@@ -90,7 +90,7 @@ export const toggleOrgStatusFn = createServerFn({ method: "POST" })
       await adminService.toggleOrgStatus(data.orgId, data.status);
       return { success: true as const };
     } catch (e) {
-      return formatErrorResponse(e);
+      return handleApiError(e);
     }
   });
 
@@ -113,7 +113,7 @@ export const createTenantUserFn = createServerFn({ method: "POST" })
       const result = await adminService.createTenantUser(data);
       return { success: true as const, ...result };
     } catch (e) {
-      return formatErrorResponse(e);
+      return handleApiError(e);
     }
   });
 
@@ -132,7 +132,7 @@ export const getAllPlansFn = createServerFn({ method: "GET" })
       const plans = await adminService.getAllPlans();
       return { success: true as const, data: JSON.parse(JSON.stringify(plans)) };
     } catch (e) {
-      return formatErrorResponse(e);
+      return handleApiError(e);
     }
   });
 
@@ -167,7 +167,7 @@ export const createOrUpdatePlanFn = createServerFn({ method: "POST" })
       const result = await adminService.createOrUpdatePlan(data);
       return { success: true as const, ...result };
     } catch (e) {
-      return formatErrorResponse(e);
+      return handleApiError(e);
     }
   });
 
@@ -179,7 +179,7 @@ export const deletePlanFn = createServerFn({ method: "POST" })
       await adminService.deletePlan(data.planId);
       return { success: true as const };
     } catch (e) {
-      return formatErrorResponse(e);
+      return handleApiError(e);
     }
   });
 
@@ -195,7 +195,7 @@ export const getAdminMenuGrantsFn = createServerFn({ method: "GET" })
       const menuKeys = await adminService.getAdminMenuGrants(data.orgId);
       return { success: true as const, data: menuKeys };
     } catch (e) {
-      return formatErrorResponse(e);
+      return handleApiError(e);
     }
   });
 
@@ -207,7 +207,7 @@ export const setAdminMenuGrantsFn = createServerFn({ method: "POST" })
       await adminService.setAdminMenuGrants(data.orgId, data.menuKeys, userId);
       return { success: true as const };
     } catch (e) {
-      return formatErrorResponse(e);
+      return handleApiError(e);
     }
   });
 
@@ -226,7 +226,7 @@ export const getSuperAdminUsersFn = createServerFn({ method: "GET" })
       const users = await adminService.getSuperAdminUsers();
       return { success: true as const, data: JSON.parse(JSON.stringify(users)) };
     } catch (e) {
-      return formatErrorResponse(e);
+      return handleApiError(e);
     }
   });
 
@@ -245,7 +245,7 @@ export const createSuperAdminUserFn = createServerFn({ method: "POST" })
       const result = await adminService.createSuperAdminUser(data);
       return { success: true as const, ...result };
     } catch (e) {
-      return formatErrorResponse(e);
+      return handleApiError(e);
     }
   });
 
@@ -265,7 +265,7 @@ export const updateSuperAdminUserPermissionsFn = createServerFn({ method: "POST"
       await adminService.updateSuperAdminUserPermissions(data.userId, data.adminPermissions);
       return { success: true as const };
     } catch (e) {
-      return formatErrorResponse(e);
+      return handleApiError(e);
     }
   });
 
@@ -277,7 +277,7 @@ export const deleteSuperAdminUserFn = createServerFn({ method: "POST" })
       await adminService.deleteSuperAdminUser(data.userId, currentUserId);
       return { success: true as const };
     } catch (e) {
-      return formatErrorResponse(e);
+      return handleApiError(e);
     }
   });
 
@@ -296,7 +296,7 @@ export const updateSuperAdminProfileAdminFn = createServerFn({ method: "POST" })
       const result = await adminService.updateSuperAdminProfile(userId, data);
       return result;
     } catch (e) {
-      return formatErrorResponse(e);
+      return handleApiError(e);
     }
   });
 
@@ -313,7 +313,7 @@ export const getSuperAdminSessionsFn = createServerFn({ method: "GET" })
       const sessions = await adminService.getSuperAdminSessions();
       return { success: true as const, data: JSON.parse(JSON.stringify(sessions)) };
     } catch (e) {
-      return formatErrorResponse(e);
+      return handleApiError(e);
     }
   });
 
@@ -325,7 +325,7 @@ export const revokeSuperAdminSessionFn = createServerFn({ method: "POST" })
       await adminService.revokeSuperAdminSession(data.sessionId);
       return { success: true as const };
     } catch (e) {
-      return formatErrorResponse(e);
+      return handleApiError(e);
     }
   });
 
@@ -344,7 +344,7 @@ export const getSuperAdminPaymentConfigFn = createServerFn({ method: "GET" })
       const config = await adminService.getPaymentConfig();
       return { success: true as const, data: config };
     } catch (e) {
-      return formatErrorResponse(e);
+      return handleApiError(e);
     }
   });
 
@@ -366,7 +366,7 @@ export const saveSuperAdminPaymentConfigFn = createServerFn({ method: "POST" })
       await adminService.savePaymentConfig(data);
       return { success: true as const };
     } catch (e) {
-      return formatErrorResponse(e);
+      return handleApiError(e);
     }
   });
 
@@ -385,7 +385,7 @@ export const getAllSupportTicketsAdminFn = createServerFn({ method: "GET" })
       const tickets = await adminService.getAllSupportTickets();
       return { success: true as const, data: JSON.parse(JSON.stringify(tickets)) };
     } catch (e) {
-      return formatErrorResponse(e);
+      return handleApiError(e);
     }
   });
 
@@ -397,7 +397,7 @@ export const updateSupportTicketStatusAdminFn = createServerFn({ method: "POST" 
       await adminService.updateSupportTicketStatus(data.ticketId, data.status);
       return { success: true as const };
     } catch (e) {
-      return formatErrorResponse(e);
+      return handleApiError(e);
     }
   });
 
@@ -416,7 +416,7 @@ export const getAllReviewsAdminFn = createServerFn({ method: "GET" })
       const result = await adminService.getAllReviews();
       return { success: true as const, data: JSON.parse(JSON.stringify(result)) };
     } catch (e) {
-      return formatErrorResponse(e);
+      return handleApiError(e);
     }
   });
 
@@ -435,7 +435,7 @@ export const getHelpArticlesAdminFn = createServerFn({ method: "GET" })
       const result = await adminService.getHelpArticles();
       return { success: true as const, data: JSON.parse(JSON.stringify(result)) };
     } catch (e) {
-      return formatErrorResponse(e);
+      return handleApiError(e);
     }
   });
 
@@ -453,7 +453,7 @@ export const createHelpArticleAdminFn = createServerFn({ method: "POST" })
       const result = await adminService.createHelpArticle(data);
       return { success: true as const, ...result };
     } catch (e) {
-      return formatErrorResponse(e);
+      return handleApiError(e);
     }
   });
 
@@ -465,7 +465,7 @@ export const deleteHelpArticleAdminFn = createServerFn({ method: "POST" })
       await adminService.deleteHelpArticle(data.id);
       return { success: true as const };
     } catch (e) {
-      return formatErrorResponse(e);
+      return handleApiError(e);
     }
   });
 
@@ -477,7 +477,7 @@ export const createFaqAdminFn = createServerFn({ method: "POST" })
       const result = await adminService.createFaq(data);
       return { success: true as const, ...result };
     } catch (e) {
-      return formatErrorResponse(e);
+      return handleApiError(e);
     }
   });
 
@@ -489,7 +489,7 @@ export const deleteFaqAdminFn = createServerFn({ method: "POST" })
       await adminService.deleteFaq(data.id);
       return { success: true as const };
     } catch (e) {
-      return formatErrorResponse(e);
+      return handleApiError(e);
     }
   });
 
@@ -508,7 +508,7 @@ export const getBroadcastAnnouncementsAdminFn = createServerFn({ method: "GET" }
       const list = await adminService.getBroadcastAnnouncements();
       return { success: true as const, data: list };
     } catch (e) {
-      return formatErrorResponse(e);
+      return handleApiError(e);
     }
   });
 
@@ -528,7 +528,7 @@ export const saveBroadcastAnnouncementAdminFn = createServerFn({ method: "POST" 
       const result = await adminService.saveBroadcastAnnouncement(data);
       return { success: true as const, data: result };
     } catch (e) {
-      return formatErrorResponse(e);
+      return handleApiError(e);
     }
   });
 
@@ -540,7 +540,7 @@ export const toggleBroadcastAnnouncementAdminFn = createServerFn({ method: "POST
       await adminService.toggleBroadcastAnnouncement(data.id, data.active);
       return { success: true as const };
     } catch (e) {
-      return formatErrorResponse(e);
+      return handleApiError(e);
     }
   });
 
@@ -552,7 +552,7 @@ export const deleteBroadcastAnnouncementAdminFn = createServerFn({ method: "POST
       await adminService.deleteBroadcastAnnouncement(data.id);
       return { success: true as const };
     } catch (e) {
-      return formatErrorResponse(e);
+      return handleApiError(e);
     }
   });
 
@@ -568,6 +568,6 @@ export const getActiveBroadcastForStoreFn = createServerFn({ method: "GET" })
       const announcement = await adminService.getActiveBroadcastForStore(data?.orgStatus);
       return { success: true as const, data: announcement };
     } catch (e) {
-      return formatErrorResponse(e);
+      return handleApiError(e);
     }
   });

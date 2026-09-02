@@ -56,7 +56,7 @@ export const createLocationFn = createServerFn({ method: "POST" })
       const orgId = session.orgId;
       await assertBranchLimit(orgId);
 
-      const { db, schema, eq } = await getDb();
+      const { db, schema, eq, and } = await getDb();
 
       const existing = await db
         .select()
@@ -64,7 +64,7 @@ export const createLocationFn = createServerFn({ method: "POST" })
         .where(
           and(
             eq(schema.locations.organizationId, orgId),
-            eq(schema.locations.code, data.location.code),
+            data.location.code ? eq(schema.locations.code, data.location.code) : undefined,
           ),
         )
         .limit(1);
@@ -89,8 +89,6 @@ export const createLocationFn = createServerFn({ method: "POST" })
           email: data.location.email,
           managerName: data.location.managerName,
           isHeadOffice: data.location.isHeadOffice,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
         })
         .returning();
 

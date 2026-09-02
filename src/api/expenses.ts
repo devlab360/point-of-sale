@@ -1,4 +1,4 @@
-import { formatErrorResponse } from "@/lib/errors/errors";
+import { handleApiError } from "@/lib/error-utils";
 import { createServerFn } from "@tanstack/react-start";
 import { expenseService } from "@/services/expense.service";
 import { requireAuth, requireAdmin } from "@/lib/auth-utils";
@@ -24,7 +24,7 @@ export const getExpensesFn = createServerFn({ method: "GET" })
       );
       return { success: true, data: expenses, total: totalCount, totalAmount };
     } catch (e) {
-      return formatErrorResponse(e);
+      return handleApiError(e);
     }
   });
 
@@ -51,7 +51,7 @@ export const createExpenseFn = createServerFn({ method: "POST" })
       });
       return { success: true, data: created, message: "Expense record created" };
     } catch (e) {
-      return formatErrorResponse(e);
+      return handleApiError(e);
     }
   });
 
@@ -75,7 +75,7 @@ export const updateExpenseFn = createServerFn({ method: "POST" })
       });
       return { success: true, data: updated, message: "Expense updated" };
     } catch (e) {
-      return formatErrorResponse(e);
+      return handleApiError(e);
     }
   });
 
@@ -87,6 +87,6 @@ export const deleteExpenseFn = createServerFn({ method: "POST" })
       await expenseService.deleteExpense(session.orgId, data.id);
       return { success: true, message: "Expense record deleted" };
     } catch (e) {
-      return formatErrorResponse(e);
+      return handleApiError(e);
     }
   });

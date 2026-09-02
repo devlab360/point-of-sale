@@ -231,10 +231,12 @@ function SalesReturnsPage() {
           });
           await createInventoryMovementFn({
             data: {
-              productId: item.productId,
-              productName: item.productName,
-              action: "sale_return",
-              quantity: item.quantity,
+              movement: {
+                productId: item.productId,
+                productName: item.productName,
+                action: "sale_return",
+                quantity: item.quantity,
+              },
             },
           });
         }

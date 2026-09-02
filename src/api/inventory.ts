@@ -1,7 +1,6 @@
 import { handleApiError } from "@/lib/error-utils";
 import { createServerFn } from "@tanstack/react-start";
 import { requireAuth } from "@/lib/auth-utils";
-import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 import { z } from "zod";
 
 import { db } from "@/db";
@@ -10,7 +9,7 @@ import * as schema from "@/db/schema";
 import { eq, and, sql, desc } from "drizzle-orm";
 
 export const getInventoryMovementsFn = createServerFn({ method: "GET" })
-  .validator((data: any) => data)
+  .validator(z.object({}).optional().default({}))
   .handler(async ({ data }) => {
     const session = await requireAuth();
     const orgId = session.orgId;
@@ -27,17 +26,32 @@ export const getInventoryMovementsFn = createServerFn({ method: "GET" })
   });
 
 export const createInventoryMovementFn = createServerFn({ method: "POST" })
-  .validator((data: any) => data)
+  .validator(
+    z.object({
+      movement: z
+        .object({
+          id: z.string().optional(),
+          productId: z.string().optional(),
+          productName: z.string().optional(),
+          action: z.string(),
+          quantity: z.union([z.string(), z.number()]),
+        })
+        .passthrough(),
+    }),
+  )
   .handler(async ({ data }) => {
     const session = await requireAuth();
     const orgId = session.orgId;
     try {
-      const { id, ...movementWithoutId } = data.movement || {};
+      const m = data.movement;
       const inserted = await db
         .insert(schema.inventoryMovements)
         .values({
-          ...movementWithoutId,
-          organizationId: session.orgId,
+          organizationId: orgId,
+          productId: m.productId,
+          productName: m.productName || "Unknown Product",
+          action: m.action,
+          quantity: m.quantity.toString(),
         })
         .returning();
       return { success: true, data: inserted[0] };
@@ -48,11 +62,11 @@ export const createInventoryMovementFn = createServerFn({ method: "POST" })
 
 // --- Inventory Adjustments ---
 export const getInventoryAdjustmentsFn = createServerFn({ method: "GET" })
-  .validator((data: any) => data)
-  .handler(async ({ data }) => {
-    const session = await requireAuth();
-    const orgId = session.orgId;
+  .validator(z.object({}).optional().default({}))
+  .handler(async () => {
     try {
+      const session = await requireAuth();
+      const orgId = session.orgId;
       const res = await db
         .select()
         .from(schema.inventoryAdjustments)
@@ -64,27 +78,46 @@ export const getInventoryAdjustmentsFn = createServerFn({ method: "GET" })
   });
 
 export const createInventoryAdjustmentFn = createServerFn({ method: "POST" })
-  .validator((data: any) => data)
+  .validator(
+    z.object({
+      adjustment: z
+        .object({
+          id: z.string(),
+          ref: z.string(),
+          date: z.string().optional(),
+          reason: z.string().optional(),
+          items: z.any().optional(),
+          net: z.union([z.string(), z.number()]),
+          status: z.string().optional(),
+        })
+        .passthrough(),
+      lines: z
+        .array(
+          z.object({
+            productId: z.string(),
+            productName: z.string(),
+            qty: z.number(),
+            type: z.enum(["addition", "deduction"]),
+            batchId: z.string().optional(),
+          }),
+        )
+        .optional(),
+    }),
+  )
   .handler(async ({ data }) => {
     const session = await requireAuth();
     const orgId = session.orgId;
     try {
       await db.transaction(async (tx) => {
-        await tx.insert(schema.inventoryAdjustments).values({
+         await tx.insert(schema.inventoryAdjustments).values({
           id: data.adjustment.id,
           organizationId: orgId,
           ref: data.adjustment.ref,
-          date: new Date(
-            data.adjustment
-              ? data.adjustment.date
-              : data.transfer
-                ? data.transfer.date
-                : Date.now(),
-          ).toISOString(),
-          reason: data.adjustment.reason,
-          items: data.adjustment.items,
+          date: new Date(data.adjustment.date || Date.now()).toISOString(),
+          reason: data.adjustment.reason || "Manual Adjustment",
+          items: Array.isArray(data.lines) ? data.lines.length : 0,
           net: data.adjustment.net.toString(),
-          status: data.adjustment.status,
+          status: data.adjustment.status || "completed",
         });
 
         if (data.lines && data.lines.length > 0) {
@@ -92,7 +125,7 @@ export const createInventoryAdjustmentFn = createServerFn({ method: "POST" })
             organizationId: orgId,
             productName: line.productName,
             action: line.type === "addition" ? "adjustment_add" : "adjustment_deduct",
-            quantity: line.type === "addition" ? line.qty : -line.qty,
+            quantity: (line.type === "addition" ? line.qty : -line.qty).toString(),
             createdAt: new Date().toISOString(),
           }));
           await tx.insert(schema.inventoryMovements).values(movements);
@@ -137,7 +170,7 @@ export const createInventoryAdjustmentFn = createServerFn({ method: "POST" })
   });
 
 export const deleteInventoryAdjustmentFn = createServerFn({ method: "POST" })
-  .validator((data: any) => data)
+  .validator(z.object({ id: z.string() }))
   .handler(async ({ data }) => {
     const session = await requireAuth();
     const orgId = session.orgId;
@@ -158,11 +191,11 @@ export const deleteInventoryAdjustmentFn = createServerFn({ method: "POST" })
 
 // --- Inventory Transfers ---
 export const getInventoryTransfersFn = createServerFn({ method: "GET" })
-  .validator((data: any) => data)
-  .handler(async ({ data }) => {
-    const session = await requireAuth();
-    const orgId = session.orgId;
+  .validator(z.object({}).optional().default({}))
+  .handler(async () => {
     try {
+      const session = await requireAuth();
+      const orgId = session.orgId;
       const res = await db
         .select()
         .from(schema.inventoryTransfers)
@@ -174,7 +207,33 @@ export const getInventoryTransfersFn = createServerFn({ method: "GET" })
   });
 
 export const createInventoryTransferFn = createServerFn({ method: "POST" })
-  .validator((data: any) => data)
+  .validator(
+    z.object({
+      transfer: z
+        .object({
+          id: z.string(),
+          ref: z.string(),
+          date: z.string().optional(),
+          destination: z.string().optional(),
+          items: z.any().optional(),
+          status: z.string().optional(),
+          supplierId: z.string().optional(),
+          totalAmount: z.number().optional(),
+          paidAmount: z.number().optional(),
+          paymentMethod: z.string().optional(),
+        })
+        .passthrough(),
+      lines: z
+        .array(
+          z.object({
+            productId: z.string(),
+            productName: z.string(),
+            qty: z.number(),
+          }),
+        )
+        .optional(),
+    }),
+  )
   .handler(async ({ data }) => {
     const session = await requireAuth();
     const orgId = session.orgId;
@@ -185,16 +244,17 @@ export const createInventoryTransferFn = createServerFn({ method: "POST" })
           organizationId: orgId,
           ref: data.transfer.ref,
           date: new Date(data.transfer.date || Date.now()).toISOString(),
-          destination: data.transfer.destination,
-          items: data.transfer.items,
-          status: data.transfer.status,
+          destination: data.transfer.destination || "",
+          items: Number(data.transfer.items) || (data as any).lines?.length || 0,
+          status: data.transfer.status || "completed",
         });
 
         // Khatabook integration (Supplier Ledger)
-        if (data.transfer.supplierId && data.transfer.totalAmount > 0) {
+        if (data.transfer.supplierId && (data.transfer.totalAmount ?? 0) > 0) {
+          const supplierId = data.transfer.supplierId;
           const supp = await tx.query.suppliers.findFirst({
             where: (s, { eq, and }) =>
-              and(eq(s.id, data.transfer.supplierId), eq(s.organizationId, orgId)),
+              and(eq(s.id, supplierId), eq(s.organizationId, orgId)),
           });
 
           if (supp) {
@@ -249,7 +309,7 @@ export const createInventoryTransferFn = createServerFn({ method: "POST" })
             organizationId: orgId,
             productName: line.productName,
             action: "transfer_out",
-            quantity: -line.qty,
+            quantity: (-line.qty).toString(),
             createdAt: new Date().toISOString(),
           }));
           await tx.insert(schema.inventoryMovements).values(movements);
@@ -274,7 +334,7 @@ export const createInventoryTransferFn = createServerFn({ method: "POST" })
   });
 
 export const deleteInventoryTransferFn = createServerFn({ method: "POST" })
-  .validator((data: any) => data)
+  .validator(z.object({ id: z.string() }))
   .handler(async ({ data }) => {
     const session = await requireAuth();
     const orgId = session.orgId;
@@ -295,11 +355,11 @@ export const deleteInventoryTransferFn = createServerFn({ method: "POST" })
 
 // --- Batches ---
 export const getInventoryBatchesFn = createServerFn({ method: "GET" })
-  .validator((data: any) => data)
-  .handler(async ({ data }) => {
-    const session = await requireAuth();
-    const orgId = session.orgId;
+  .validator(z.object({}).optional().default({}))
+  .handler(async () => {
     try {
+      const session = await requireAuth();
+      const orgId = session.orgId;
       const res = await db
         .select()
         .from(schema.inventoryBatches)
@@ -311,7 +371,23 @@ export const getInventoryBatchesFn = createServerFn({ method: "GET" })
   });
 
 export const bulkImportBatchesFn = createServerFn({ method: "POST" })
-  .validator((data: any) => data)
+  .validator(
+    z.object({
+      batches: z.array(
+        z.object({
+          id: z.string().optional(),
+          productId: z.string(),
+          batchNo: z.string().nullable().optional(),
+          expiryDate: z.string().nullable().optional(),
+          mfgDate: z.string().nullable().optional(),
+          purchaseCost: z.union([z.string(), z.number()]).optional(),
+          mrp: z.union([z.string(), z.number()]).nullable().optional(),
+          sellingPrice: z.union([z.string(), z.number()]).nullable().optional(),
+          quantity: z.union([z.string(), z.number()]),
+        }).passthrough(),
+      ),
+    }),
+  )
   .handler(async ({ data }) => {
     const session = await requireAuth();
     const orgId = session.orgId;

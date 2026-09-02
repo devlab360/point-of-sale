@@ -30,6 +30,7 @@ CREATE TABLE "admin_menu_grants" (
 CREATE TABLE "appointments" (
 	"id" text PRIMARY KEY NOT NULL,
 	"organization_id" text NOT NULL,
+	"location_id" text,
 	"customer_id" text,
 	"customer_name" text NOT NULL,
 	"customer_phone" text,
@@ -43,6 +44,22 @@ CREATE TABLE "appointments" (
 	"notes" text,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "branch_price_overrides" (
+	"id" text PRIMARY KEY NOT NULL,
+	"organization_id" text NOT NULL,
+	"location_id" text NOT NULL,
+	"entity_type" text DEFAULT 'product' NOT NULL,
+	"entity_id" text NOT NULL,
+	"price" numeric(10, 2),
+	"cost" numeric(10, 2),
+	"wholesale_price" numeric(10, 2),
+	"dealer_price" numeric(10, 2),
+	"mrp" numeric(10, 2),
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"updated_at" timestamp DEFAULT now() NOT NULL,
+	CONSTRAINT "branch_price_override_branch_entity_idx" UNIQUE("location_id","entity_type","entity_id")
 );
 --> statement-breakpoint
 CREATE TABLE "brands" (
@@ -67,8 +84,8 @@ CREATE TABLE "categories" (
 	"id" text PRIMARY KEY NOT NULL,
 	"organization_id" text NOT NULL,
 	"name" text NOT NULL,
-	"color" text DEFAULT 'oklch(0.7 0.1 200)' NOT NULL,
-	"icon" text DEFAULT '📦' NOT NULL,
+	"color" text DEFAULT 'oklch(0.7 0.1 200)',
+	"icon" text DEFAULT '📦',
 	"count" integer DEFAULT 0 NOT NULL,
 	CONSTRAINT "cat_name_idx" UNIQUE("name","organization_id")
 );
@@ -138,6 +155,7 @@ CREATE TABLE "delivery_challans" (
 CREATE TABLE "expenses" (
 	"id" text PRIMARY KEY NOT NULL,
 	"organization_id" text NOT NULL,
+	"location_id" text,
 	"date" timestamp NOT NULL,
 	"category" text NOT NULL,
 	"description" text NOT NULL,
@@ -260,6 +278,7 @@ CREATE TABLE "invitations" (
 CREATE TABLE "kitchen_order_tickets" (
 	"id" text PRIMARY KEY NOT NULL,
 	"organization_id" text NOT NULL,
+	"location_id" text,
 	"table_id" text,
 	"waiter_id" text,
 	"items" jsonb NOT NULL,
@@ -275,7 +294,15 @@ CREATE TABLE "locations" (
 	"organization_id" text NOT NULL,
 	"name" text NOT NULL,
 	"type" text NOT NULL,
-	"status" text NOT NULL
+	"status" text NOT NULL,
+	"code" text,
+	"industry_type" text,
+	"address" text,
+	"city" text,
+	"phone" text,
+	"email" text,
+	"manager_name" text,
+	"is_head_office" boolean DEFAULT false NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "loyalty_members" (
@@ -315,6 +342,16 @@ CREATE TABLE "org_subscriptions" (
 	"updated_at" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
+CREATE TABLE "organization_memberships" (
+	"id" text PRIMARY KEY NOT NULL,
+	"organization_id" text NOT NULL,
+	"user_id" text NOT NULL,
+	"role" text DEFAULT 'owner' NOT NULL,
+	"status" text DEFAULT 'active' NOT NULL,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	CONSTRAINT "org_membership_org_user_idx" UNIQUE("organization_id","user_id")
+);
+--> statement-breakpoint
 CREATE TABLE "organizations" (
 	"id" text PRIMARY KEY NOT NULL,
 	"name" text NOT NULL,
@@ -325,6 +362,8 @@ CREATE TABLE "organizations" (
 	"plan_expiry_date" timestamp,
 	"sync_key" text DEFAULT 'default-sync-key' NOT NULL,
 	"is_online" boolean DEFAULT true NOT NULL,
+	"industry_type" text,
+	"branch_pricing_enabled" boolean DEFAULT false NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
@@ -488,6 +527,7 @@ CREATE TABLE "purchases" (
 	"organization_id" text NOT NULL,
 	"supplier_id" text,
 	"supplier" text NOT NULL,
+	"location_id" text,
 	"date" timestamp NOT NULL,
 	"invoice_no" text,
 	"items" integer NOT NULL,
@@ -525,6 +565,7 @@ CREATE TABLE "quotations" (
 CREATE TABLE "rentals" (
 	"id" text PRIMARY KEY NOT NULL,
 	"organization_id" text NOT NULL,
+	"location_id" text,
 	"rental_no" text NOT NULL,
 	"customer_name" text NOT NULL,
 	"item_name" text NOT NULL,
@@ -555,6 +596,7 @@ CREATE TABLE "repairs" (
 CREATE TABLE "restaurant_tables" (
 	"id" text PRIMARY KEY NOT NULL,
 	"organization_id" text NOT NULL,
+	"location_id" text,
 	"name" text NOT NULL,
 	"capacity" integer DEFAULT 4 NOT NULL,
 	"status" text DEFAULT 'available' NOT NULL,
@@ -637,6 +679,7 @@ CREATE TABLE "sales" (
 	"organization_id" text NOT NULL,
 	"customer_id" text,
 	"customer_name" text,
+	"location_id" text,
 	"date" timestamp DEFAULT now() NOT NULL,
 	"items" integer NOT NULL,
 	"total" numeric(12, 2) NOT NULL,
@@ -664,7 +707,7 @@ CREATE TABLE "sales_return_items" (
 	"return_id" text NOT NULL,
 	"product_id" text NOT NULL,
 	"product_name" text NOT NULL,
-	"quantity" integer NOT NULL,
+	"quantity" numeric(10, 3) NOT NULL,
 	"price" numeric(10, 2) NOT NULL,
 	"total" numeric(10, 2) NOT NULL,
 	"batch_id" text
@@ -888,9 +931,19 @@ CREATE TABLE "units" (
 	"allow_fractional" boolean DEFAULT false NOT NULL
 );
 --> statement-breakpoint
+CREATE TABLE "user_branches" (
+	"id" text PRIMARY KEY NOT NULL,
+	"organization_id" text NOT NULL,
+	"user_id" text NOT NULL,
+	"location_id" text NOT NULL,
+	"is_default" boolean DEFAULT false NOT NULL,
+	"created_at" timestamp DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
 CREATE TABLE "users" (
 	"id" text PRIMARY KEY NOT NULL,
 	"organization_id" text,
+	"location_id" text,
 	"name" text NOT NULL,
 	"role" text NOT NULL,
 	"email" text NOT NULL,
@@ -933,14 +986,20 @@ CREATE TABLE "vouchers" (
 ALTER TABLE "accounts" ADD CONSTRAINT "accounts_organization_id_organizations_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "activity_log" ADD CONSTRAINT "activity_log_organization_id_organizations_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "admin_menu_grants" ADD CONSTRAINT "admin_menu_grants_organization_id_organizations_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "appointments" ADD CONSTRAINT "appointments_location_id_locations_id_fk" FOREIGN KEY ("location_id") REFERENCES "public"."locations"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "branch_price_overrides" ADD CONSTRAINT "branch_price_overrides_organization_id_organizations_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "branch_price_overrides" ADD CONSTRAINT "branch_price_overrides_location_id_locations_id_fk" FOREIGN KEY ("location_id") REFERENCES "public"."locations"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "brands" ADD CONSTRAINT "brands_organization_id_organizations_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "cash_movements" ADD CONSTRAINT "cash_movements_organization_id_organizations_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "categories" ADD CONSTRAINT "categories_organization_id_organizations_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "coupons" ADD CONSTRAINT "coupons_organization_id_organizations_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "customer_ledgers" ADD CONSTRAINT "customer_ledgers_organization_id_organizations_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "customer_ledgers" ADD CONSTRAINT "customer_ledgers_customer_id_customers_id_fk" FOREIGN KEY ("customer_id") REFERENCES "public"."customers"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "customers" ADD CONSTRAINT "customers_organization_id_organizations_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "delivery_challans" ADD CONSTRAINT "delivery_challans_organization_id_organizations_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "delivery_challans" ADD CONSTRAINT "delivery_challans_customer_id_customers_id_fk" FOREIGN KEY ("customer_id") REFERENCES "public"."customers"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "expenses" ADD CONSTRAINT "expenses_organization_id_organizations_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "expenses" ADD CONSTRAINT "expenses_location_id_locations_id_fk" FOREIGN KEY ("location_id") REFERENCES "public"."locations"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "faqs" ADD CONSTRAINT "faqs_organization_id_organizations_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "gift_cards" ADD CONSTRAINT "gift_cards_organization_id_organizations_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "held_invoices" ADD CONSTRAINT "held_invoices_organization_id_organizations_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
@@ -955,11 +1014,14 @@ ALTER TABLE "inventory_batches" ADD CONSTRAINT "inventory_batches_supplier_id_su
 ALTER TABLE "inventory_movements" ADD CONSTRAINT "inventory_movements_organization_id_organizations_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "inventory_transfers" ADD CONSTRAINT "inventory_transfers_organization_id_organizations_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "invitations" ADD CONSTRAINT "invitations_organization_id_organizations_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "kitchen_order_tickets" ADD CONSTRAINT "kitchen_order_tickets_location_id_locations_id_fk" FOREIGN KEY ("location_id") REFERENCES "public"."locations"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "locations" ADD CONSTRAINT "locations_organization_id_organizations_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "loyalty_members" ADD CONSTRAINT "loyalty_members_organization_id_organizations_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "notifications" ADD CONSTRAINT "notifications_organization_id_organizations_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "org_subscriptions" ADD CONSTRAINT "org_subscriptions_organization_id_organizations_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "org_subscriptions" ADD CONSTRAINT "org_subscriptions_plan_id_saas_plans_id_fk" FOREIGN KEY ("plan_id") REFERENCES "public"."saas_plans"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "organization_memberships" ADD CONSTRAINT "organization_memberships_organization_id_organizations_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "organization_memberships" ADD CONSTRAINT "organization_memberships_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "product_bundles" ADD CONSTRAINT "product_bundles_organization_id_organizations_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "product_bundles" ADD CONSTRAINT "product_bundles_bundle_product_id_products_id_fk" FOREIGN KEY ("bundle_product_id") REFERENCES "public"."products"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "product_bundles" ADD CONSTRAINT "product_bundles_component_product_id_products_id_fk" FOREIGN KEY ("component_product_id") REFERENCES "public"."products"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
@@ -985,9 +1047,13 @@ ALTER TABLE "purchase_return_items" ADD CONSTRAINT "purchase_return_items_return
 ALTER TABLE "purchase_returns" ADD CONSTRAINT "purchase_returns_organization_id_organizations_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "purchases" ADD CONSTRAINT "purchases_organization_id_organizations_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "purchases" ADD CONSTRAINT "purchases_supplier_id_suppliers_id_fk" FOREIGN KEY ("supplier_id") REFERENCES "public"."suppliers"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "purchases" ADD CONSTRAINT "purchases_location_id_locations_id_fk" FOREIGN KEY ("location_id") REFERENCES "public"."locations"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "quotations" ADD CONSTRAINT "quotations_organization_id_organizations_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "quotations" ADD CONSTRAINT "quotations_customer_id_customers_id_fk" FOREIGN KEY ("customer_id") REFERENCES "public"."customers"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "rentals" ADD CONSTRAINT "rentals_organization_id_organizations_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "rentals" ADD CONSTRAINT "rentals_location_id_locations_id_fk" FOREIGN KEY ("location_id") REFERENCES "public"."locations"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "repairs" ADD CONSTRAINT "repairs_organization_id_organizations_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "restaurant_tables" ADD CONSTRAINT "restaurant_tables_location_id_locations_id_fk" FOREIGN KEY ("location_id") REFERENCES "public"."locations"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "reviews" ADD CONSTRAINT "reviews_organization_id_organizations_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "reviews" ADD CONSTRAINT "reviews_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "sale_items" ADD CONSTRAINT "sale_items_organization_id_organizations_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
@@ -996,10 +1062,12 @@ ALTER TABLE "sale_payments" ADD CONSTRAINT "sale_payments_organization_id_organi
 ALTER TABLE "sale_payments" ADD CONSTRAINT "sale_payments_sale_id_sales_id_fk" FOREIGN KEY ("sale_id") REFERENCES "public"."sales"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "sales" ADD CONSTRAINT "sales_organization_id_organizations_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "sales" ADD CONSTRAINT "sales_customer_id_customers_id_fk" FOREIGN KEY ("customer_id") REFERENCES "public"."customers"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "sales" ADD CONSTRAINT "sales_location_id_locations_id_fk" FOREIGN KEY ("location_id") REFERENCES "public"."locations"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "sales" ADD CONSTRAINT "sales_salesman_id_users_id_fk" FOREIGN KEY ("salesman_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "sales_return_items" ADD CONSTRAINT "sales_return_items_organization_id_organizations_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "sales_return_items" ADD CONSTRAINT "sales_return_items_return_id_sales_returns_id_fk" FOREIGN KEY ("return_id") REFERENCES "public"."sales_returns"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "sales_returns" ADD CONSTRAINT "sales_returns_organization_id_organizations_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "sales_returns" ADD CONSTRAINT "sales_returns_sale_id_sales_id_fk" FOREIGN KEY ("sale_id") REFERENCES "public"."sales"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "service_variant_attributes" ADD CONSTRAINT "service_variant_attributes_variant_id_service_variants_id_fk" FOREIGN KEY ("variant_id") REFERENCES "public"."service_variants"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "service_variants" ADD CONSTRAINT "service_variants_organization_id_organizations_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "service_variants" ADD CONSTRAINT "service_variants_service_id_services_id_fk" FOREIGN KEY ("service_id") REFERENCES "public"."services"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
@@ -1012,16 +1080,23 @@ ALTER TABLE "subscription_payments" ADD CONSTRAINT "subscription_payments_plan_i
 ALTER TABLE "subscriptions" ADD CONSTRAINT "subscriptions_organization_id_organizations_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "super_admin_sessions" ADD CONSTRAINT "super_admin_sessions_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "supplier_ledgers" ADD CONSTRAINT "supplier_ledgers_organization_id_organizations_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "supplier_ledgers" ADD CONSTRAINT "supplier_ledgers_supplier_id_suppliers_id_fk" FOREIGN KEY ("supplier_id") REFERENCES "public"."suppliers"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "suppliers" ADD CONSTRAINT "suppliers_organization_id_organizations_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "support_tickets" ADD CONSTRAINT "support_tickets_organization_id_organizations_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "support_tickets" ADD CONSTRAINT "support_tickets_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "tax_masters" ADD CONSTRAINT "tax_masters_organization_id_organizations_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "units" ADD CONSTRAINT "units_organization_id_organizations_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "user_branches" ADD CONSTRAINT "user_branches_organization_id_organizations_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "user_branches" ADD CONSTRAINT "user_branches_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "user_branches" ADD CONSTRAINT "user_branches_location_id_locations_id_fk" FOREIGN KEY ("location_id") REFERENCES "public"."locations"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "users" ADD CONSTRAINT "users_organization_id_organizations_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "users" ADD CONSTRAINT "users_location_id_locations_id_fk" FOREIGN KEY ("location_id") REFERENCES "public"."locations"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "vouchers" ADD CONSTRAINT "vouchers_organization_id_organizations_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 CREATE INDEX "accounts_org_idx" ON "accounts" USING btree ("organization_id");--> statement-breakpoint
 CREATE INDEX "activity_log_org_time_idx" ON "activity_log" USING btree ("organization_id","timestamp");--> statement-breakpoint
 CREATE INDEX "admin_menu_grants_org_idx" ON "admin_menu_grants" USING btree ("organization_id");--> statement-breakpoint
+CREATE INDEX "branch_price_overrides_org_idx" ON "branch_price_overrides" USING btree ("organization_id");--> statement-breakpoint
+CREATE INDEX "branch_price_overrides_branch_idx" ON "branch_price_overrides" USING btree ("location_id");--> statement-breakpoint
 CREATE INDEX "brands_org_idx" ON "brands" USING btree ("organization_id");--> statement-breakpoint
 CREATE INDEX "cash_move_org_shift_idx" ON "cash_movements" USING btree ("organization_id","shift_id");--> statement-breakpoint
 CREATE INDEX "categories_org_idx" ON "categories" USING btree ("organization_id");--> statement-breakpoint
@@ -1031,6 +1106,7 @@ CREATE INDEX "customers_org_idx" ON "customers" USING btree ("organization_id");
 CREATE INDEX "customers_phone_idx" ON "customers" USING btree ("phone");--> statement-breakpoint
 CREATE INDEX "delivery_challans_org_idx" ON "delivery_challans" USING btree ("organization_id");--> statement-breakpoint
 CREATE INDEX "expenses_org_idx" ON "expenses" USING btree ("organization_id");--> statement-breakpoint
+CREATE INDEX "expenses_branch_idx" ON "expenses" USING btree ("location_id");--> statement-breakpoint
 CREATE INDEX "gift_cards_org_idx" ON "gift_cards" USING btree ("organization_id");--> statement-breakpoint
 CREATE INDEX "held_invoices_org_idx" ON "held_invoices" USING btree ("organization_id");--> statement-breakpoint
 CREATE INDEX "inv_batch_cons_batch_idx" ON "inventory_batch_consumptions" USING btree ("batch_id");--> statement-breakpoint
@@ -1046,6 +1122,8 @@ CREATE INDEX "locations_org_idx" ON "locations" USING btree ("organization_id");
 CREATE INDEX "notifications_org_time_idx" ON "notifications" USING btree ("organization_id","timestamp");--> statement-breakpoint
 CREATE INDEX "org_subs_org_idx" ON "org_subscriptions" USING btree ("organization_id");--> statement-breakpoint
 CREATE INDEX "org_subs_status_idx" ON "org_subscriptions" USING btree ("status");--> statement-breakpoint
+CREATE INDEX "org_memberships_user_idx" ON "organization_memberships" USING btree ("user_id");--> statement-breakpoint
+CREATE INDEX "org_memberships_org_idx" ON "organization_memberships" USING btree ("organization_id");--> statement-breakpoint
 CREATE INDEX "bundle_product_idx" ON "product_bundles" USING btree ("bundle_product_id");--> statement-breakpoint
 CREATE INDEX "bundle_component_idx" ON "product_bundles" USING btree ("component_product_id");--> statement-breakpoint
 CREATE INDEX "bundle_org_idx" ON "product_bundles" USING btree ("organization_id");--> statement-breakpoint
@@ -1066,8 +1144,10 @@ CREATE INDEX "purchase_return_items_org_idx" ON "purchase_return_items" USING bt
 CREATE INDEX "purchase_return_items_ret_idx" ON "purchase_return_items" USING btree ("return_id");--> statement-breakpoint
 CREATE INDEX "purchases_org_date_idx" ON "purchases" USING btree ("organization_id","date");--> statement-breakpoint
 CREATE INDEX "purchases_supplier_idx" ON "purchases" USING btree ("supplier_id");--> statement-breakpoint
+CREATE INDEX "purchases_location_idx" ON "purchases" USING btree ("location_id");--> statement-breakpoint
 CREATE INDEX "quotations_org_idx" ON "quotations" USING btree ("organization_id");--> statement-breakpoint
 CREATE INDEX "rentals_org_idx" ON "rentals" USING btree ("organization_id");--> statement-breakpoint
+CREATE INDEX "rentals_branch_idx" ON "rentals" USING btree ("location_id");--> statement-breakpoint
 CREATE INDEX "repairs_org_idx" ON "repairs" USING btree ("organization_id");--> statement-breakpoint
 CREATE INDEX "saas_sessions_user_idx" ON "saas_sessions" USING btree ("user_id");--> statement-breakpoint
 CREATE INDEX "sale_items_org_idx" ON "sale_items" USING btree ("organization_id");--> statement-breakpoint
@@ -1078,6 +1158,7 @@ CREATE INDEX "sale_payments_sale_idx" ON "sale_payments" USING btree ("sale_id")
 CREATE INDEX "sales_org_date_idx" ON "sales" USING btree ("organization_id","date");--> statement-breakpoint
 CREATE INDEX "sales_cust_idx" ON "sales" USING btree ("customer_id");--> statement-breakpoint
 CREATE INDEX "sales_salesman_idx" ON "sales" USING btree ("salesman_id");--> statement-breakpoint
+CREATE INDEX "sales_location_idx" ON "sales" USING btree ("location_id");--> statement-breakpoint
 CREATE INDEX "sales_return_items_org_idx" ON "sales_return_items" USING btree ("organization_id");--> statement-breakpoint
 CREATE INDEX "sales_return_items_ret_idx" ON "sales_return_items" USING btree ("return_id");--> statement-breakpoint
 CREATE INDEX "sales_returns_org_idx" ON "sales_returns" USING btree ("organization_id");--> statement-breakpoint
@@ -1099,5 +1180,7 @@ CREATE INDEX "supp_ledg_org_supp_idx" ON "supplier_ledgers" USING btree ("organi
 CREATE INDEX "suppliers_org_idx" ON "suppliers" USING btree ("organization_id");--> statement-breakpoint
 CREATE INDEX "tax_masters_org_idx" ON "tax_masters" USING btree ("organization_id");--> statement-breakpoint
 CREATE INDEX "units_org_idx" ON "units" USING btree ("organization_id");--> statement-breakpoint
+CREATE INDEX "user_branches_user_idx" ON "user_branches" USING btree ("user_id");--> statement-breakpoint
+CREATE INDEX "user_branches_org_idx" ON "user_branches" USING btree ("organization_id");--> statement-breakpoint
 CREATE INDEX "users_org_idx" ON "users" USING btree ("organization_id");--> statement-breakpoint
 CREATE INDEX "vouchers_org_date_idx" ON "vouchers" USING btree ("organization_id","date");

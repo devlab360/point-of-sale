@@ -1,5 +1,4 @@
 import { handleApiError } from "@/lib/error-utils";
-import { formatErrorResponse } from "@/lib/errors/errors";
 import { createServerFn } from "@tanstack/react-start";
 import { productService } from "@/services/product.service";
 import { db } from "@/db";
@@ -32,7 +31,7 @@ export const getProductsFn = createServerFn({ method: "GET" })
 
       return { success: true, data: products, total: totalCount, summary };
     } catch (e) {
-      return formatErrorResponse(e);
+      return handleApiError(e);
     }
   });
 
@@ -44,7 +43,7 @@ export const getProductByIdFn = createServerFn({ method: "GET" })
       const product = await productService.getProductById(session.orgId, data.id);
       return { success: true, data: product };
     } catch (e) {
-      return formatErrorResponse(e);
+      return handleApiError(e);
     }
   });
 

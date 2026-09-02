@@ -1,4 +1,4 @@
-import { formatErrorResponse } from "@/lib/errors/errors";
+import { handleApiError } from "@/lib/error-utils";
 import { createServerFn } from "@tanstack/react-start";
 import { salesService } from "@/services/sales.service";
 import { requireAuth } from "@/lib/auth-utils";
@@ -22,7 +22,7 @@ export const getSalesFn = createServerFn({ method: "GET" })
       const { sales, totalCount } = await salesService.getSales(session.orgId, data);
       return { success: true, data: sales, total: totalCount };
     } catch (e) {
-      return formatErrorResponse(e);
+      return handleApiError(e);
     }
   });
 
@@ -38,7 +38,7 @@ export const getSaleItemsFn = createServerFn({ method: "GET" })
       }));
       return { success: true, data: safeItems };
     } catch (e) {
-      return formatErrorResponse(e);
+      return handleApiError(e);
     }
   });
 
@@ -94,6 +94,6 @@ export const createSaleFn = createServerFn({ method: "POST" })
       );
       return { success: true, ...result, message: "Sale transaction recorded successfully" };
     } catch (e) {
-      return formatErrorResponse(e);
+      return handleApiError(e);
     }
   });

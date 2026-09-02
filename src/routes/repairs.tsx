@@ -245,7 +245,7 @@ function RepairsPage() {
             estimatedCost: Number(estimatedCost) || 0,
             advancePaid: Number(advancePaid) || 0,
             status: "pending",
-            technicianNotes: technicianNotes.trim() || null,
+            notes: technicianNotes.trim() || null,
             createdAt: new Date().toISOString(),
           },
         },

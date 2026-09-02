@@ -70,7 +70,7 @@ type LocalizedContent = {
   }[];
 };
 
-const I18N_AI: Record<LanguageCode, LocalizedContent> = {
+const I18N_AI: Partial<Record<LanguageCode, LocalizedContent>> & { en: LocalizedContent } = {
   en: {
     advisorTitle: "OneDesk360 AI Advisor",
     liveBadge: "Live",

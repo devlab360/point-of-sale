@@ -7,166 +7,121 @@ import { eq, inArray, and, desc } from "drizzle-orm";
 import { v4 as uuidv4 } from "uuid";
 import { z } from "zod";
 
-const inMemoryNotifications: Record<string, any[]> = {
-  default: [
-    {
-      id: "notif-1",
-      organizationId: "default",
-      title: "Low Stock Alert: Wireless Headset",
-      message: "Only 2 units remaining in stock. Threshold is 5 units.",
-      timestamp: new Date(Date.now() - 30 * 60000).toISOString(),
-      type: "warning",
-      read: false,
-      link: "/inventory",
-    },
-    {
-      id: "notif-2",
-      organizationId: "default",
-      title: "Payment Received: $340.00",
-      message: "Customer Emma Watson settled invoice #INV-1092 in full.",
-      timestamp: new Date(Date.now() - 2 * 3600000).toISOString(),
-      type: "success",
-      read: false,
-      link: "/sales",
-    },
-    {
-      id: "notif-3",
-      organizationId: "default",
-      title: "Khata Credit Due Tomorrow",
-      message: "Apex Media Works has an overdue balance of $520.00.",
-      timestamp: new Date(Date.now() - 10 * 3600000).toISOString(),
-      type: "info",
-      read: true,
-      link: "/customers",
-    },
-  ],
-};
-
 export const getNotificationsFn = createServerFn({ method: "GET" })
-  .validator((data: any) => data)
+  .validator(z.object({}).optional().default({}))
   .handler(async () => {
-    const session = await requireAuth();
-    const orgId = session.orgId;
-
     try {
-      if (schema.notifications) {
-        const all = await db
-          .select()
-          .from(schema.notifications)
-          .where(eq(schema.notifications.organizationId, orgId))
-          .orderBy(desc(schema.notifications.timestamp))
-          .limit(100);
-        if (all) return { success: true, data: all };
-      }
+      const session = await requireAuth();
+      const orgId = session.orgId;
+      const all = await db
+        .select()
+        .from(schema.notifications)
+        .where(eq(schema.notifications.organizationId, orgId))
+        .orderBy(desc(schema.notifications.timestamp))
+        .limit(100);
+      return { success: true, data: all };
     } catch (e) {
-      console.warn("DB getNotifications fallback:", e);
+      return handleApiError(e);
     }
-    return { success: true, data: inMemoryNotifications[orgId] || [] };
   });
 
 export const markNotificationReadFn = createServerFn({ method: "POST" })
-  .validator((data: any) => data)
+  .validator(
+    z.union([
+      z.object({ id: z.string() }),
+      z.string(),
+    ]),
+  )
   .handler(async ({ data }) => {
-    const session = await requireAuth();
-    const orgId = session.orgId;
-
-    const targetId = data?.id || data;
-
-    // Update in-memory fallback stores
-    for (const key of [orgId]) {
-      if (inMemoryNotifications[key]) {
-        const item = inMemoryNotifications[key].find((n) => n.id === targetId);
-        if (item) item.read = true;
-      }
-    }
-
     try {
-      if (schema.notifications && targetId) {
+      const session = await requireAuth();
+      const orgId = session.orgId;
+      const targetId = typeof data === "string" ? data : (data as any).id;
+
+      if (!targetId) return { success: true };
+
+      await db
+        .update(schema.notifications)
+        .set({ read: true })
+        .where(
+          and(
+            eq(schema.notifications.id, targetId),
+            eq(schema.notifications.organizationId, orgId),
+          ),
+        );
+      return { success: true };
+    } catch (e) {
+      return handleApiError(e);
+    }
+  });
+
+export const markAllNotificationsReadFn = createServerFn({ method: "POST" })
+  .validator(
+    z.object({
+      ids: z.array(z.string()).optional(),
+    }).optional().default({}),
+  )
+  .handler(async ({ data }) => {
+    try {
+      const session = await requireAuth();
+      const orgId = session.orgId;
+
+      if (data?.ids && Array.isArray(data.ids) && data.ids.length > 0) {
         await db
           .update(schema.notifications)
           .set({ read: true })
           .where(
             and(
-              eq(schema.notifications.id, targetId),
+              inArray(schema.notifications.id, data.ids),
               eq(schema.notifications.organizationId, orgId),
             ),
           );
+      } else {
+        await db
+          .update(schema.notifications)
+          .set({ read: true })
+          .where(eq(schema.notifications.organizationId, orgId));
       }
       return { success: true };
     } catch (e) {
-      console.warn("DB markNotificationRead fallback:", e);
-      return { success: true };
-    }
-  });
-
-export const markAllNotificationsReadFn = createServerFn({ method: "POST" })
-  .validator((data: any) => data)
-  .handler(async ({ data }) => {
-    const session = await requireAuth();
-    const orgId = session.orgId;
-
-    // Update in-memory fallback stores
-    for (const key of [orgId]) {
-      if (inMemoryNotifications[key]) {
-        inMemoryNotifications[key].forEach((n) => {
-          n.read = true;
-        });
-      }
-    }
-
-    try {
-      if (schema.notifications) {
-        if (data?.ids && Array.isArray(data.ids) && data.ids.length > 0) {
-          await db
-            .update(schema.notifications)
-            .set({ read: true })
-            .where(
-              and(
-                inArray(schema.notifications.id, data.ids),
-                eq(schema.notifications.organizationId, orgId),
-              ),
-            );
-        } else {
-          await db
-            .update(schema.notifications)
-            .set({ read: true })
-            .where(eq(schema.notifications.organizationId, orgId));
-        }
-      }
-      return { success: true };
-    } catch (e) {
-      console.warn("DB markAllNotificationsRead fallback:", e);
-      return { success: true };
+      return handleApiError(e);
     }
   });
 
 export const createNotificationFn = createServerFn({ method: "POST" })
-  .validator((data: any) => data)
+  .validator(
+    z.object({
+      notification: z
+        .object({
+          id: z.string().optional(),
+          title: z.string().optional(),
+          message: z.string().optional(),
+          type: z.string().optional(),
+          read: z.boolean().optional(),
+          link: z.string().nullable().optional(),
+        })
+        .optional(),
+    }),
+  )
   .handler(async ({ data }) => {
-    const session = await requireAuth();
-    const orgId = session.orgId;
-
-    const newNotif = {
-      id: data.notification?.id || uuidv4(),
-      organizationId: orgId,
-      title: data.notification?.title || "System Alert",
-      message: data.notification?.message || "",
-      timestamp: new Date().toISOString(),
-      type: data.notification?.type || "info",
-      read: false,
-      link: data.notification?.link || null,
-    };
-
-    if (!inMemoryNotifications[orgId]) inMemoryNotifications[orgId] = [];
-    inMemoryNotifications[orgId].unshift(newNotif);
-
     try {
-      if (schema.notifications) {
-        await db.insert(schema.notifications).values(newNotif);
-      }
+      const session = await requireAuth();
+      const orgId = session.orgId;
+
+      const newNotif = {
+        id: data.notification?.id || uuidv4(),
+        organizationId: orgId,
+        title: data.notification?.title || "System Alert",
+        message: data.notification?.message || "",
+        timestamp: new Date().toISOString(),
+        type: data.notification?.type || "info",
+        read: false,
+        link: data.notification?.link || null,
+      };
+
+      await db.insert(schema.notifications).values(newNotif);
       return { success: true };
     } catch (e) {
-      console.warn("DB createNotification fallback:", e);
-      return { success: true };
+      return handleApiError(e);
     }
   });

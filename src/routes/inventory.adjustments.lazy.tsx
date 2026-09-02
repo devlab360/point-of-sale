@@ -157,6 +157,7 @@ function AdjustmentsPage() {
         data: {
           adjustment: {
             id: uuidv4(),
+            ref: `ADJ-${Date.now().toString().slice(-6)}`,
             productId,
             productName: prod?.name || "Product",
             net: calculatedNet,
