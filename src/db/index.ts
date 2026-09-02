@@ -13,7 +13,11 @@ const clientOptions = {
   max: Number(process.env.DB_POOL_MAX || 25),
   idle_timeout: 30,
   connect_timeout: 10,
-  // ssl: isLocalHost ? false : process.env.DATABASE_SSL === "true" ? ("require" as const) : false,
+  ssl: isLocalHost
+    ? false
+    : connectionString.includes("sslmode=require") || process.env.DATABASE_SSL === "true"
+      ? ("require" as const)
+      : false,
   max_lifetime: 60 * 30,
   max_retries: 3,
   backoff: (retries: number) => Math.min(200 * Math.pow(2, retries), 2000),
