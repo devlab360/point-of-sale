@@ -15,6 +15,7 @@ import {
   X,
 } from "lucide-react";
 import { EmptyState } from "@/components/ui/empty-state";
+import { appName } from "@/lib/env";
 import { IconPicker } from "@/components/ui/icon-picker";
 import { PersistStore } from "@/lib/session-store";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -74,7 +75,7 @@ import { CardGridSkeleton } from "@/components/skeletons/CardGridSkeleton";
 import { ErrorState } from "@/components/ui/error-state";
 
 export const Route = createFileRoute("/categories")({
-  head: () => ({ meta: [{ title: "Product Categories · OneDesk360" }] }),
+  head: () => ({ meta: [{ title: `Product Categories · ${appName}` }] }),
   component: CategoriesPage,
 });
 

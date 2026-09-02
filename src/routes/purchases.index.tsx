@@ -1,6 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { exportToCSV } from "@/lib/csv";
 import { Badge } from "@/components/ui/badge";
+import { appName } from "@/lib/env";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
@@ -61,7 +62,7 @@ import {
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/purchases/")({
-  head: () => ({ meta: [{ title: "Purchases & Inbound Inventory · OneDesk360" }] }),
+  head: () => ({ meta: [{ title: `Purchases & Inbound Inventory · ${appName}` }] }),
   component: PurchasesPage,
 });
 

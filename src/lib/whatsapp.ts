@@ -2,6 +2,7 @@
  * WhatsApp CRM Utility Helper
  * Formats invoice summaries and Khata due reminders for 1-click WhatsApp messaging worldwide.
  */
+import { appName } from "@/lib/env";
 
 export function formatWhatsAppPhone(phone: string, defaultCallingCode: string = "+1"): string {
   let cleaned = phone.replace(/[^0-9]/g, "");
@@ -38,7 +39,7 @@ export function sendWhatsAppInvoice(
     )
     .join("\n");
 
-  const message = `🧾 *INVOICE ACKNOWLEDGEMENT - OneDesk360*\n\nDear *${customerName}*,\nThank you for shopping with us!\n\n*Invoice No:* #${invoiceNo}\n*Date:* ${new Date().toLocaleDateString()}\n\n*Purchased Items:*\n${itemListText}\n\n*Total Paid:* *${currencySymbol}${totalAmount}*\n\nThank you for your business! 🙏`;
+  const message = `🧾 *INVOICE ACKNOWLEDGEMENT - ${appName}*\n\nDear *${customerName}*,\nThank you for shopping with us!\n\n*Invoice No:* #${invoiceNo}\n*Date:* ${new Date().toLocaleDateString()}\n\n*Purchased Items:*\n${itemListText}\n\n*Total Paid:* *${currencySymbol}${totalAmount}*\n\nThank you for your business! 🙏`;
 
   const url = cleanPhone
     ? `https://api.whatsapp.com/send?phone=${cleanPhone}&text=${encodeURIComponent(message)}`

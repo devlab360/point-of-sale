@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { DataPage } from "@/components/layout/DataPage";
+import { appName } from "@/lib/env";
 import { exportToCSV, parseCSV } from "@/lib/csv";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -64,7 +65,7 @@ import { FieldError } from "@/components/ui/field-error";
 import { usePreferences } from "@/contexts/PreferencesContext";
 
 export const Route = createFileRoute("/accounts")({
-  head: () => ({ meta: [{ title: "Chart of Accounts & Vouchers · OneDesk360" }] }),
+  head: () => ({ meta: [{ title: `Chart of Accounts & Vouchers · ${appName}` }] }),
   component: AccountsPage,
 });
 

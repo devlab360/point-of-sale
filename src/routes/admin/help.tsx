@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { appName } from "@/lib/env";
 import { SuperAdminLayout } from "@/components/admin/SuperAdminLayout";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { StatCard } from "@/components/layout/StatCard";
@@ -49,7 +50,7 @@ import {
 import { exportToCSV } from "@/lib/export-utils";
 
 export const Route = createFileRoute("/admin/help")({
-  head: () => ({ meta: [{ title: "Help Center · Super Admin OneDesk360" }] }),
+  head: () => ({ meta: [{ title: `Help Center · Super Admin ${appName}` }] }),
   component: SuperAdminHelpPage,
 });
 

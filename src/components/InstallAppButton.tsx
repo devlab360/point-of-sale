@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { appName } from "@/lib/env";
 import { Button } from "@/components/ui/button";
 import { Download, Monitor, Smartphone, CheckCircle, Info } from "lucide-react";
 import {
@@ -110,7 +111,7 @@ export function InstallAppButton() {
         <DialogContent className="sm:max-w-md rounded-2xl">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-primary font-bold">
-              <Download className="size-5" /> Install OneDesk360 POS
+              <Download className="size-5" /> Install ${appName} POS
             </DialogTitle>
             <DialogDescription>
               Install this app on your device for lightning-fast offline billing, dedicated desktop
@@ -125,7 +126,7 @@ export function InstallAppButton() {
               </div>
               <p className="text-muted-foreground">
                 Click the <strong>Install icon (⊕)</strong> on the right side of your browser
-                address bar, or click <strong>Menu (⋮) &rarr; Install OneDesk360</strong>.
+                address bar, or click <strong>Menu (⋮) &rarr; Install ${appName}</strong>.
               </p>
             </div>
 

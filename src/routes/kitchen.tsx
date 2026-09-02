@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { Card, CardContent } from "@/components/ui/card";
+import { appName } from "@/lib/env";
 import {
   ChefHat,
   Clock,
@@ -30,7 +31,7 @@ import { PageHeader } from "@/components/layout/PageHeader";
 import { StatCard } from "@/components/layout/StatCard";
 
 export const Route = createFileRoute("/kitchen")({
-  head: () => ({ meta: [{ title: "Kitchen Display System (KDS) · OneDesk360" }] }),
+  head: () => ({ meta: [{ title: `Kitchen Display System (KDS) · ${appName}` }] }),
   component: KitchenPage,
 });
 

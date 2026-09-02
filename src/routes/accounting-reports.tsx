@@ -2,6 +2,7 @@ import { useState, useMemo } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { getAccountsFn, getVouchersFn } from "@/api/finance";
+import { appName } from "@/lib/env";
 import { getSalesFn } from "@/api/sales";
 import { getExpensesFn } from "@/api/expenses";
 import { getPurchasesFn } from "@/api/purchases";
@@ -45,7 +46,7 @@ import { toast } from "sonner";
 import { DATE_PERIOD_OPTIONS } from "@/constants";
 
 export const Route = createFileRoute("/accounting-reports")({
-  head: () => ({ meta: [{ title: "Accounting Financial Reports · OneDesk360" }] }),
+  head: () => ({ meta: [{ title: `Accounting Financial Reports · ${appName}` }] }),
   component: AccountingReportsPage,
 });
 
@@ -226,7 +227,7 @@ function AccountingReportsPage() {
   };
 
   const handlePrint = () => {
-    const storeTitle = settings?.storeName || saasOrg?.name || "OneDesk360 Store";
+    const storeTitle = settings?.storeName || saasOrg?.name || `${appName} Store`;
     const periodStr = datePeriodLabels[dateRange] || "All Time";
     const currSym = currencySymbol || "₹";
 

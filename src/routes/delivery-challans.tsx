@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { DataPage } from "@/components/layout/DataPage";
+import { appName } from "@/lib/env";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PaginationControls } from "@/components/ui/pagination-controls";
 import { SearchableSelect } from "@/components/ui/searchable-select";
@@ -55,7 +56,7 @@ import { FieldError } from "@/components/ui/field-error";
 import { usePreferences } from "@/contexts/PreferencesContext";
 
 export const Route = createFileRoute("/delivery-challans")({
-  head: () => ({ meta: [{ title: "Delivery Challans · OneDesk360" }] }),
+  head: () => ({ meta: [{ title: `Delivery Challans · ${appName}` }] }),
   component: DeliveryChallansPage,
 });
 

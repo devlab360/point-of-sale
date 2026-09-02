@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { PageHeader } from "@/components/layout/PageHeader";
+import { appName } from "@/lib/env";
 import {
   Star,
   Users,
@@ -60,7 +61,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CUSTOMER_TYPES, CUSTOMER_STATUSES } from "@/constants";
 
 export const Route = createFileRoute("/loyalty")({
-  head: () => ({ meta: [{ title: "Loyalty & Rewards Program — OneDesk360" }] }),
+  head: () => ({ meta: [{ title: `Loyalty & Rewards Program — ${appName}` }] }),
   component: LoyaltyPage,
 });
 

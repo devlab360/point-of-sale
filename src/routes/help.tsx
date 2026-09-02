@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
+import { appName } from "@/lib/env";
 import {
   Book,
   Phone,
@@ -44,7 +45,7 @@ import { PageHeader } from "@/components/layout/PageHeader";
 import { StatCard } from "@/components/layout/StatCard";
 
 export const Route = createFileRoute("/help")({
-  head: () => ({ meta: [{ title: "Help & Knowledge Center · OneDesk360" }] }),
+  head: () => ({ meta: [{ title: `Help & Knowledge Center · ${appName}` }] }),
   component: HelpPage,
 });
 

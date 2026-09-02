@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { DataPage } from "@/components/layout/DataPage";
+import { appName } from "@/lib/env";
 import { exportToCSV, parseCSV } from "@/lib/csv";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PaginationControls } from "@/components/ui/pagination-controls";
@@ -72,7 +73,7 @@ import { TableSkeleton } from "@/components/skeletons/TableSkeleton";
 import { ErrorState } from "@/components/ui/error-state";
 
 export const Route = createFileRoute("/gift-cards")({
-  head: () => ({ meta: [{ title: "Gift Cards · OneDesk360" }] }),
+  head: () => ({ meta: [{ title: `Gift Cards · ${appName}` }] }),
   component: GiftCardsPage,
 });
 

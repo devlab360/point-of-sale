@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { PageHeader } from "@/components/layout/PageHeader";
+import { appName } from "@/lib/env";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -16,7 +17,7 @@ import { ProfileSkeleton } from "@/components/skeletons/ProfileSkeleton";
 import { ErrorState } from "@/components/ui/error-state";
 
 export const Route = createFileRoute("/profile")({
-  head: () => ({ meta: [{ title: "Profile · OneDesk360" }] }),
+  head: () => ({ meta: [{ title: `Profile · ${appName}` }] }),
   component: ProfilePage,
 });
 

@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { DataPage } from "@/components/layout/DataPage";
+import { appName } from "@/lib/env";
 import { CardGridSkeleton } from "@/components/skeletons/CardGridSkeleton";
 import { EmptyState } from "@/components/ui/empty-state";
 import { useDebounce } from "@/hooks/useDebounce";
@@ -59,7 +60,7 @@ import { ErrorState } from "@/components/ui/error-state";
 import { TABLE_STATUSES } from "@/constants";
 
 export const Route = createFileRoute("/tables")({
-  head: () => ({ meta: [{ title: "Restaurant Tables & Floor Plan · OneDesk360" }] }),
+  head: () => ({ meta: [{ title: `Restaurant Tables & Floor Plan · ${appName}` }] }),
   component: TablesPage,
 });
 

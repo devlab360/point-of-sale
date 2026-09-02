@@ -2,6 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { PersistStore } from "@/lib/session-store";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { exportToCSV } from "@/lib/csv";
+import { appName } from "@/lib/env";
 import { TableSkeleton } from "@/components/skeletons/TableSkeleton";
 import { ErrorState } from "@/components/ui/error-state";
 import { Badge } from "@/components/ui/badge";
@@ -46,7 +47,7 @@ import {
 import { ORDER_STATUSES, PAYMENT_METHOD_OPTIONS } from "@/constants";
 
 export const Route = createFileRoute("/sales/")({
-  head: () => ({ meta: [{ title: "Sales · OneDesk360" }] }),
+  head: () => ({ meta: [{ title: `Sales · ${appName}` }] }),
   loader: async ({ context: { queryClient } }) => {
     const orgId = PersistStore.getOrgId();
     if (!orgId) return;

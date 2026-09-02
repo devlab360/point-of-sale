@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { PersistStore } from "@/lib/session-store";
+import { appName } from "@/lib/env";
 import { EmptyState } from "@/components/ui/empty-state";
 import { TableSkeleton } from "@/components/skeletons/TableSkeleton";
 import { CardGridSkeleton } from "@/components/skeletons/CardGridSkeleton";
@@ -94,7 +95,7 @@ import {
 import { hasPermissionForRoute } from "@/lib/menu-config";
 
 export const Route = createFileRoute("/users")({
-  head: () => ({ meta: [{ title: "Employees & Access Control · OneDesk360" }] }),
+  head: () => ({ meta: [{ title: `Employees & Access Control · ${appName}` }] }),
   component: UsersPage,
 });
 

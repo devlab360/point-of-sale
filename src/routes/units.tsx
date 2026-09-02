@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { EmptyState } from "@/components/ui/empty-state";
+import { appName } from "@/lib/env";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getUnitsFn, createUnitFn, updateUnitFn, deleteUnitFn } from "@/api/units";
 import { getProductsFn } from "@/api/products";
@@ -68,7 +69,7 @@ import { ErrorState } from "@/components/ui/error-state";
 import { STANDARD_UNIT_PRESETS } from "@/constants";
 
 export const Route = createFileRoute("/units")({
-  head: () => ({ meta: [{ title: "Units of Measurement · OneDesk360" }] }),
+  head: () => ({ meta: [{ title: `Units of Measurement · ${appName}` }] }),
   component: UnitsPage,
 });
 

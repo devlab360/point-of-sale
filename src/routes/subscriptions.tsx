@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { DatePicker } from "@/components/ui/date-picker";
+import { appName } from "@/lib/env";
 import { useDebounce } from "@/hooks/useDebounce";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -91,7 +92,7 @@ import {
 import { PaginationControls } from "@/components/ui/pagination-controls";
 
 export const Route = createFileRoute("/subscriptions")({
-  head: () => ({ meta: [{ title: "Subscriptions & Recurring Billing · OneDesk360" }] }),
+  head: () => ({ meta: [{ title: `Subscriptions & Recurring Billing · ${appName}` }] }),
   component: SubscriptionsPage,
 });
 

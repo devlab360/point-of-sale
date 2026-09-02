@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { appName } from "@/lib/env";
 import { SuperAdminLayout } from "@/components/admin/SuperAdminLayout";
 import { PageHeader } from "@/components/layout/PageHeader";
 import {
@@ -21,7 +22,7 @@ import { getAllReviewsAdminFn } from "@/api/admin/super-admin";
 import { exportToCSV } from "@/lib/export-utils";
 
 export const Route = createFileRoute("/admin/reviews")({
-  head: () => ({ meta: [{ title: "Merchant Reviews · Super Admin OneDesk360" }] }),
+  head: () => ({ meta: [{ title: `Merchant Reviews · Super Admin ${appName}` }] }),
   component: SuperAdminReviewsPage,
 });
 

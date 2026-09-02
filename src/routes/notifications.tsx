@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { DataPage } from "@/components/layout/DataPage";
+import { appName } from "@/lib/env";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PaginationControls } from "@/components/ui/pagination-controls";
@@ -32,7 +33,7 @@ import { ErrorState } from "@/components/ui/error-state";
 import { NOTIFICATION_TYPE_OPTIONS } from "@/constants";
 
 export const Route = createFileRoute("/notifications")({
-  head: () => ({ meta: [{ title: "Notifications & System Alerts · OneDesk360" }] }),
+  head: () => ({ meta: [{ title: `Notifications & System Alerts · ${appName}` }] }),
   component: NotificationsPage,
 });
 

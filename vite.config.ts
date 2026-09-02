@@ -5,9 +5,20 @@
 //     error logger plugins, and sandbox detection (port/host/strictPort).
 // You can pass additional config via defineConfig({ vite: { ... }, etc... }) if needed.
 import { defineConfig } from "@lovable.dev/vite-tanstack-config";
+import { loadEnv } from "vite";
 import { VitePWA } from "vite-plugin-pwa";
+
+const envMode = process.env.NODE_ENV === "production" ? "production" : "development";
+const env = loadEnv(envMode, process.cwd(), "");
+
 export default defineConfig({
   vite: {
+    // Inject APP_* from .env into both server (SSR) and client bundles so
+    // src/lib/env.ts resolves the same value everywhere at build time.
+    define: {
+      "process.env.APP_NAME": JSON.stringify(env.APP_NAME || "OneDesk360"),
+      "process.env.APP_ENV": JSON.stringify(env.APP_ENV || "development"),
+    },
     server: {
       watch: {
         usePolling: false,

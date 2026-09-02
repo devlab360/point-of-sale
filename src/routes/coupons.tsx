@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useDebounce } from "@/hooks/useDebounce";
+import { appName } from "@/lib/env";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -80,7 +81,7 @@ import {
 import { PaginationControls } from "@/components/ui/pagination-controls";
 
 export const Route = createFileRoute("/coupons")({
-  head: () => ({ meta: [{ title: "Coupons & Promo Codes · OneDesk360" }] }),
+  head: () => ({ meta: [{ title: `Coupons & Promo Codes · ${appName}` }] }),
   component: CouponsPage,
 });
 

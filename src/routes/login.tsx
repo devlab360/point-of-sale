@@ -22,9 +22,10 @@ import { validateEmail, validatePassword, sanitizeInput } from "@/lib/validation
 import { checkRateLimit } from "@/lib/api-response";
 import { useFormValidation } from "@/hooks/useFormValidation";
 import { FieldError } from "@/components/ui/field-error";
+import { appName } from "@/lib/env";
 
 export const Route = createFileRoute("/login")({
-  head: () => ({ meta: [{ title: "Sign In · OneDesk360 SaaS" }] }),
+  head: () => ({ meta: [{ title: `Sign In · ${appName} SaaS` }] }),
   component: LoginPage,
 });
 
@@ -265,7 +266,7 @@ function LoginPage() {
           </div>
           <div>
             <h1 className="font-display text-2xl sm:text-3xl font-bold tracking-tight text-primary-foreground">
-              OneDesk360
+              {appName}
             </h1>
             <p className="text-xs sm:text-sm text-primary-foreground/90 font-bold uppercase tracking-wider">
               Own the counter

@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { exportToCSV, parseCSV } from "@/lib/csv";
+import { appName } from "@/lib/env";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PaginationControls } from "@/components/ui/pagination-controls";
 import { SearchableSelect } from "@/components/ui/searchable-select";
@@ -76,7 +77,7 @@ import { FieldError } from "@/components/ui/field-error";
 import { CUSTOMER_TYPES, CUSTOMER_STATUSES } from "@/constants";
 
 export const Route = createFileRoute("/customers")({
-  head: () => ({ meta: [{ title: "Customers · OneDesk360" }] }),
+  head: () => ({ meta: [{ title: `Customers · ${appName}` }] }),
   component: CustomersPage,
 });
 
@@ -926,7 +927,7 @@ function CustomersPage() {
                   className="bg-success/10 text-success border-success/30 hover:bg-success/20 font-semibold flex-1 sm:flex-none"
                   onClick={() =>
                     sendAutomatedDueReminder(
-                      settings?.storeName || "OneDesk360",
+                      settings?.storeName || appName,
                       ledgerCustomer.name,
                       ledgerCustomer.phone || "",
                       ledgerCustomer.credit,

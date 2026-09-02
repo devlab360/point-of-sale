@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { appName } from "@/lib/env";
 import {
   Dialog,
   DialogContent,
@@ -471,7 +472,7 @@ export function PosDialogs({
       return;
     }
     const cleanPhone = phone.replace(/\D/g, "");
-    const text = `*${saleComplete.storeName || "OneDesk360"}*\nReceipt: #${saleComplete.id}\nDate: ${saleComplete.date}\nTotal: ${currencySymbol}${(Number(saleComplete.total) || 0).toFixed(2)}\n\nThank you for shopping with us!`;
+    const text = `*${saleComplete.storeName || appName}*\nReceipt: #${saleComplete.id}\nDate: ${saleComplete.date}\nTotal: ${currencySymbol}${(Number(saleComplete.total) || 0).toFixed(2)}\n\nThank you for shopping with us!`;
     const url = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(text)}`;
     window.open(url, "_blank");
   };

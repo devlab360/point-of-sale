@@ -2,6 +2,7 @@ import { handleApiError } from "@/lib/error-utils";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireAuth } from "@/lib/auth-utils";
+import { appName } from "@/lib/env";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
 const aiQuerySchema = z.object({
@@ -23,8 +24,8 @@ export const askAiCopilotFn = createServerFn({ method: "POST" })
       const genAI = new GoogleGenerativeAI(apiKey);
       const model = genAI.getGenerativeModel({ model: "gemini-3.5-flash" });
 
-      const systemPrompt = `You are the OneDesk360 AI Business Advisor, an expert retail and business consultant.
-You are assisting a store owner who is using the OneDesk360 system.
+      const systemPrompt = `You are the ${appName} AI Business Advisor, an expert retail and business consultant.
+You are assisting a store owner who is using the ${appName} system.
 
 CRITICAL INSTRUCTIONS:
 1. ALWAYS respond in valid JSON format ONLY. No markdown wrappers around the JSON, no plain text outside the JSON. Just the raw JSON object.

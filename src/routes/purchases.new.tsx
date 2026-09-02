@@ -1,5 +1,6 @@
 import { createFileRoute, useNavigate, useSearch } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
+import { appName } from "@/lib/env";
 import {
   Plus,
   Trash2,
@@ -44,7 +45,7 @@ import { DatePicker } from "@/components/ui/date-picker";
 import { PAYMENT_METHOD_OPTIONS } from "@/constants";
 
 export const Route = createFileRoute("/purchases/new")({
-  head: () => ({ meta: [{ title: "Purchase Order · OneDesk360" }] }),
+  head: () => ({ meta: [{ title: `Purchase Order · ${appName}` }] }),
   validateSearch: (search: Record<string, unknown>): { editId?: string } => ({
     editId: typeof search.editId === "string" ? search.editId : undefined,
   }),

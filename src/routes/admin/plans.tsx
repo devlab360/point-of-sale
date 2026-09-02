@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { SuperAdminLayout } from "@/components/admin/SuperAdminLayout";
 import { PageHeader } from "@/components/layout/PageHeader";
+import { appName } from "@/lib/env";
 import { StatCard } from "@/components/layout/StatCard";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -59,7 +60,7 @@ import { exportToCSV } from "@/lib/export-utils";
 import { SYSTEM_MODULES as AVAILABLE_MODULES } from "@/constants";
 
 export const Route = createFileRoute("/admin/plans")({
-  head: () => ({ meta: [{ title: "SaaS Plans · Super Admin OneDesk360" }] }),
+  head: () => ({ meta: [{ title: `SaaS Plans · Super Admin ${appName}` }] }),
   component: SuperAdminPlansPage,
 });
 

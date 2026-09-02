@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { appName } from "@/lib/env";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -17,7 +18,7 @@ import { useFormValidation } from "@/hooks/useFormValidation";
 import { FieldError } from "@/components/ui/field-error";
 
 export const Route = createFileRoute("/verify-email")({
-  head: () => ({ meta: [{ title: "Email Verification · OneDesk360 SaaS" }] }),
+  head: () => ({ meta: [{ title: `Email Verification · ${appName} SaaS` }] }),
   component: VerifyEmailPage,
 });
 

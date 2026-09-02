@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState, useMemo } from "react";
+import { appName } from "@/lib/env";
 import {
   Area,
   AreaChart,
@@ -72,7 +73,7 @@ import { useAppFormatter } from "@/hooks/useAppFormatter";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Dashboard · OneDesk360" },
+      { title: `Dashboard · ${appName}` },
       {
         name: "description",
         content: "Real-time sales, revenue, low-stock alerts and operational KPIs for your store.",

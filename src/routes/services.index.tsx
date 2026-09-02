@@ -14,6 +14,7 @@ import {
   CheckCircle2,
   Wrench,
 } from "lucide-react";
+import { appName } from "@/lib/env";
 import { useState, useMemo } from "react";
 import { exportToCSV } from "@/lib/csv";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -59,9 +60,7 @@ import {
 } from "@/components/ui/table";
 
 export const Route = createFileRoute("/services/")({
-  head: () => ({
-    meta: [{ title: "Services Catalog · OneDesk360" }],
-  }),
+  head: () => ({ meta: [{ title: `Services Catalog · ${appName}` }] }),
   component: ServicesPage,
 });
 

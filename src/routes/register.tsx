@@ -24,9 +24,10 @@ import { getTrialDaysFromEnv } from "@/lib/email-service";
 import { validateEmail, validatePassword, sanitizeInput } from "@/lib/validation";
 
 import { getCountryOptionList, getCountryByIso } from "@/lib/countries";
+import { appName } from "@/lib/env";
 
 export const Route = createFileRoute("/register")({
-  head: () => ({ meta: [{ title: "Start Free Trial · OneDesk360 SaaS" }] }),
+  head: () => ({ meta: [{ title: `Start Free Trial · ${appName} SaaS` }] }),
   component: RegisterPage,
 });
 
@@ -168,7 +169,7 @@ function RegisterPage() {
         throw new Error(res?.error || "Registration failed.");
       }
 
-      toast.success("Welcome to OneDesk360! Your 7-day trial store is ready.");
+      toast.success(`Welcome to ${appName}! Your 7-day trial store is ready.`);
       navigate({ to: "/" });
     } catch (err: any) {
       toast.error(err.message || "Registration failed. Please try again.");
@@ -192,7 +193,7 @@ function RegisterPage() {
           </div>
           <div>
             <h1 className="font-display text-2xl sm:text-3xl font-bold tracking-tight text-primary-foreground">
-              OneDesk360
+              {appName}
             </h1>
             <p className="text-xs sm:text-sm text-primary-foreground/90 font-bold uppercase tracking-wider">
               Own the counter

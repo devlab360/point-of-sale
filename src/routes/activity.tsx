@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { DataPage } from "@/components/layout/DataPage";
+import { appName } from "@/lib/env";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PaginationControls } from "@/components/ui/pagination-controls";
 import { useDebounce } from "@/hooks/useDebounce";
@@ -28,7 +29,7 @@ import { ErrorState } from "@/components/ui/error-state";
 import { AUDIT_EVENT_TYPES } from "@/constants";
 
 export const Route = createFileRoute("/activity")({
-  head: () => ({ meta: [{ title: "Store Activity & Audit Log · OneDesk360" }] }),
+  head: () => ({ meta: [{ title: `Store Activity & Audit Log · ${appName}` }] }),
   component: ActivityPage,
 });
 

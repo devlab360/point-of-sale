@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { DataPage } from "@/components/layout/DataPage";
+import { appName } from "@/lib/env";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -63,7 +64,7 @@ import { cn } from "@/lib/utils";
 import { usePreferences } from "@/contexts/PreferencesContext";
 
 export const Route = createFileRoute("/purchases/returns")({
-  head: () => ({ meta: [{ title: "Purchase Returns (Debit Notes) · OneDesk360" }] }),
+  head: () => ({ meta: [{ title: `Purchase Returns (Debit Notes) · ${appName}` }] }),
   component: PurchaseReturnsPage,
 });
 

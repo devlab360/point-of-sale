@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { exportToCSV, parseCSV } from "@/lib/csv";
+import { appName } from "@/lib/env";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PaginationControls } from "@/components/ui/pagination-controls";
 import { useDebounce } from "@/hooks/useDebounce";
@@ -94,7 +95,7 @@ import { ErrorState } from "@/components/ui/error-state";
 import { usePreferences } from "@/contexts/PreferencesContext";
 
 export const Route = createFileRoute("/suppliers")({
-  head: () => ({ meta: [{ title: "Suppliers & Vendor Khata · OneDesk360" }] }),
+  head: () => ({ meta: [{ title: `Suppliers & Vendor Khata · ${appName}` }] }),
   component: SuppliersPage,
 });
 

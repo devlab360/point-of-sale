@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { useAdminAuth } from "@/contexts/AdminAuthContext";
+import { appName } from "@/lib/env";
 import {
   Shield,
   Eye,
@@ -31,7 +32,7 @@ import { toast } from "sonner";
 export const Route = createFileRoute("/admin/")({
   head: () => ({
     meta: [
-      { title: "Super Admin Command Center · OneDesk360 Cloud POS" },
+      { title: `Super Admin Command Center · ${appName} Cloud POS` },
       {
         name: "description",
         content:

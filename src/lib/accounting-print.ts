@@ -5,13 +5,14 @@ export interface AccountingPrintData {
   currencySymbol?: string;
   data: any;
 }
+import { appName } from "@/lib/env";
 
 export function printAccountingStatement(params: AccountingPrintData) {
   if (typeof document === "undefined") return;
 
   const {
     reportType,
-    storeName = "OneDesk360 Store",
+    storeName = `${appName} Store`,
     periodLabel = "All Time",
     currencySymbol = "$",
     data,
@@ -558,7 +559,7 @@ export function printAccountingStatement(params: AccountingPrintData) {
       </div>
 
       <div class="statement-footer">
-        <div>OneDesk360 Cloud POS & Enterprise Accounting Engine</div>
+        <div>${appName} Cloud POS & Enterprise Accounting Engine</div>
         <div>Page 1 of 1</div>
       </div>
     </body>

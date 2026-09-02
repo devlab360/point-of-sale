@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { SuperAdminLayout } from "@/components/admin/SuperAdminLayout";
 import { PageHeader } from "@/components/layout/PageHeader";
+import { appName } from "@/lib/env";
 import { StatCard } from "@/components/layout/StatCard";
 import {
   MessageCircle,
@@ -48,7 +49,7 @@ import {
 import { exportToCSV } from "@/lib/export-utils";
 
 export const Route = createFileRoute("/admin/support")({
-  head: () => ({ meta: [{ title: "Support Inbox · Super Admin OneDesk360" }] }),
+  head: () => ({ meta: [{ title: `Support Inbox · Super Admin ${appName}` }] }),
   component: SuperAdminSupportPage,
 });
 

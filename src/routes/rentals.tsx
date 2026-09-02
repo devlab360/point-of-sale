@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { DataPage } from "@/components/layout/DataPage";
+import { appName } from "@/lib/env";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PaginationControls } from "@/components/ui/pagination-controls";
 import { DatePicker } from "@/components/ui/date-picker";
@@ -62,7 +63,7 @@ import { TableSkeleton } from "@/components/skeletons/TableSkeleton";
 import { ErrorState } from "@/components/ui/error-state";
 
 export const Route = createFileRoute("/rentals")({
-  head: () => ({ meta: [{ title: "Equipment Rentals & Booking · OneDesk360" }] }),
+  head: () => ({ meta: [{ title: `Equipment Rentals & Booking · ${appName}` }] }),
   component: RentalsPage,
 });
 

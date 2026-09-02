@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import nodemailer from "nodemailer";
+import { appName } from "@/lib/env";
 
 import { z } from "zod";
 
@@ -41,10 +42,10 @@ export const sendEmailFn = createServerFn({ method: "POST" })
       let html = "";
 
       if (data.actionType === "VERIFY") {
-        subject = "Your OneDesk360 Verification Code";
+        subject = `Your ${appName} Verification Code`;
         html = `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eaeaec; border-radius: 10px;">
-            <h2 style="color: #4f46e5; text-align: center;">OneDesk360 SaaS</h2>
+            <h2 style="color: #4f46e5; text-align: center;">${appName} SaaS</h2>
             <p style="font-size: 16px; color: #333;">Hello,</p>
             <p style="font-size: 16px; color: #333;">Your email verification code is:</p>
             <div style="background-color: #f3f4f6; padding: 15px; text-align: center; border-radius: 8px; margin: 20px 0;">
@@ -56,10 +57,10 @@ export const sendEmailFn = createServerFn({ method: "POST" })
           </div>
         `;
       } else if (data.actionType === "RESET_PASSWORD") {
-        subject = "Reset Your Password - OneDesk360 SaaS";
+        subject = `Reset Your Password - ${appName} SaaS`;
         html = `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eaeaec; border-radius: 10px;">
-            <h2 style="color: #4f46e5; text-align: center;">OneDesk360 SaaS</h2>
+            <h2 style="color: #4f46e5; text-align: center;">${appName} SaaS</h2>
             <p style="font-size: 16px; color: #333;">Hello,</p>
             <p style="font-size: 16px; color: #333;">We received a request to reset your password. Your verification OTP code is:</p>
             <div style="background-color: #f3f4f6; padding: 15px; text-align: center; border-radius: 8px; margin: 20px 0;">

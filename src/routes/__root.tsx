@@ -6,6 +6,7 @@ if (typeof window !== "undefined" && !(window as any).Buffer) {
   (window as any).Buffer = Buffer;
 }
 
+import { appName } from "@/lib/env";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
   Outlet,
@@ -183,20 +184,20 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "OneDesk360 — Advanced Universal POS" },
+      { title: `${appName} — Advanced Universal POS` },
       {
         name: "description",
         content:
           "Premium POS and inventory management for grocery, daily goods, and retail chains.",
       },
-      { property: "og:title", content: "OneDesk360 — Advanced Universal POS" },
+      { property: "og:title", content: `${appName} — Advanced Universal POS` },
       {
         property: "og:description",
         content: "Premium POS and inventory management for grocery and retail.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
-      { name: "twitter:title", content: "OneDesk360 — Advanced Universal POS" },
+      { name: "twitter:title", content: `${appName} — Advanced Universal POS` },
       {
         name: "description",
         content:

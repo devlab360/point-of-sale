@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { DataPage } from "@/components/layout/DataPage";
+import { appName } from "@/lib/env";
 import { DatePicker } from "@/components/ui/date-picker";
 import { PaginationControls } from "@/components/ui/pagination-controls";
 import { SearchableSelect } from "@/components/ui/searchable-select";
@@ -66,7 +67,7 @@ import { useFormValidation } from "@/hooks/useFormValidation";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/expenses")({
-  head: () => ({ meta: [{ title: "Operating Expenses · OneDesk360" }] }),
+  head: () => ({ meta: [{ title: `Operating Expenses · ${appName}` }] }),
   component: ExpensesPage,
 });
 

@@ -1,4 +1,5 @@
 import { useEffect, useState, useMemo } from "react";
+import { appName } from "@/lib/env";
 import {
   Bell,
   Command,
@@ -225,7 +226,7 @@ export function AppHeader() {
 
   const profile = user || {
     name: "Admin",
-    email: "admin@OneDesk360.com",
+    email: `admin@${appName.toLowerCase().replace(/\s+/g, "")}.com`,
   };
   const initials = (profile.name || "U")
     .split(" ")

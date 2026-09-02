@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PersistStore } from "@/lib/session-store";
+import { appName } from "@/lib/env";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getBrandsFn, createBrandFn, updateBrandFn, deleteBrandFn } from "@/api/brands";
 import { getProductsFn } from "@/api/products";
@@ -67,7 +68,7 @@ import { CardGridSkeleton } from "@/components/skeletons/CardGridSkeleton";
 import { ErrorState } from "@/components/ui/error-state";
 
 export const Route = createFileRoute("/brands")({
-  head: () => ({ meta: [{ title: "Product Brands · OneDesk360" }] }),
+  head: () => ({ meta: [{ title: `Product Brands · ${appName}` }] }),
   component: BrandsPage,
 });
 

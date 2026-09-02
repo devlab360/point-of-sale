@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { SuperAdminLayout } from "@/components/admin/SuperAdminLayout";
 import { PageHeader } from "@/components/layout/PageHeader";
+import { appName } from "@/lib/env";
 import { StatCard } from "@/components/layout/StatCard";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -96,7 +97,7 @@ import {
 } from "@/components/ui/select";
 
 export const Route = createFileRoute("/admin/dashboard")({
-  head: () => ({ meta: [{ title: "Super Admin Dashboard · OneDesk360" }] }),
+  head: () => ({ meta: [{ title: `Super Admin Dashboard · ${appName}` }] }),
   component: SuperAdminDashboardPage,
 });
 

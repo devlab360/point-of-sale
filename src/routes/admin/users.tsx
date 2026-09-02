@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { appName } from "@/lib/env";
 import { SuperAdminLayout } from "@/components/admin/SuperAdminLayout";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { StatCard } from "@/components/layout/StatCard";
@@ -65,7 +66,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { exportToCSV } from "@/lib/export-utils";
 
 export const Route = createFileRoute("/admin/users")({
-  head: () => ({ meta: [{ title: "Super Admin Personnel · OneDesk360" }] }),
+  head: () => ({ meta: [{ title: `Super Admin Personnel · ${appName}` }] }),
   component: SuperAdminUsersPage,
 });
 

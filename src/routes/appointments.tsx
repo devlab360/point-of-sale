@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { DataPage } from "@/components/layout/DataPage";
+import { appName } from "@/lib/env";
 import { TableSkeleton } from "@/components/skeletons/TableSkeleton";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PaginationControls } from "@/components/ui/pagination-controls";
@@ -68,7 +69,7 @@ import { PersistStore } from "@/lib/session-store";
 import { ErrorState } from "@/components/ui/error-state";
 
 export const Route = createFileRoute("/appointments")({
-  head: () => ({ meta: [{ title: "Appointments & Bookings · OneDesk360" }] }),
+  head: () => ({ meta: [{ title: `Appointments & Bookings · ${appName}` }] }),
   component: AppointmentsPage,
 });
 

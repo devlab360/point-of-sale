@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { Badge } from "@/components/ui/badge";
+import { appName } from "@/lib/env";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -35,7 +36,7 @@ import {
 import { usePreferences } from "@/contexts/PreferencesContext";
 
 export const Route = createFileRoute("/portal")({
-  head: () => ({ meta: [{ title: "Customer Statement & Warranty Portal · OneDesk360" }] }),
+  head: () => ({ meta: [{ title: `Customer Statement & Warranty Portal · ${appName}` }] }),
   component: CustomerPortalPage,
 });
 
