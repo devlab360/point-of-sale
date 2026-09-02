@@ -1,6 +1,6 @@
-import { put } from "@vercel/blob";
 import { sanitizeInput } from "./validation";
-import { uploadFileServerFn } from "@/api/upload";
+import { put } from "@vercel/blob/client";
+import { getUploadCredentialsFn } from "@/api/upload";
 
 export interface BlobUploadOptions {
   folder?: string;
@@ -84,40 +84,13 @@ export function validateFileBeforeUpload(
 }
 
 /**
- * Helper: read a File as base64 DataURL (reliable client-side fallback).
- */
-function readFileAsDataURL(
-  file: File,
-  options: BlobUploadOptions,
-  filename: string,
-): Promise<BlobUploadResult> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onloadstart = () => options.onProgress?.(10);
-    reader.onprogress = (e) => {
-      if (e.lengthComputable) {
-        const percent = Math.round((e.loaded / e.total) * 100);
-        options.onProgress?.(Math.min(90, percent));
-      }
-    };
-    reader.onloadend = () => {
-      options.onProgress?.(100);
-      resolve({
-        url: reader.result as string,
-        pathname: filename,
-        contentType: file.type,
-        size: file.size,
-        name: file.name,
-      });
-    };
-    reader.onerror = () => reject(new Error("Failed to read file locally."));
-    reader.readAsDataURL(file);
-  });
-}
-
-/**
- * Centralized Vercel Blob File Upload Service.
- * Falls back to base64 DataURL if Vercel Blob upload fails or times out.
+ * Centralized Vercel Blob direct-upload service.
+ *
+ * The file is sent straight from the browser to Vercel Blob (bypassing the
+ * server function body limit). The server only issues a short-lived, pathname
+ * scoped client token via getUploadCredentialsFn — the actual bytes never
+ * pass through the function, so files far larger than the 4.5 MB function
+ * limit can be uploaded with real progress reporting.
  */
 export async function uploadToVercelBlob(
   file: File,
@@ -128,46 +101,43 @@ export async function uploadToVercelBlob(
     throw new Error(validation.error || "File validation failed.");
   }
 
-  // Sanitize filename & create unique path
-  const sanitizedOriginalName = sanitizeInput(file.name.replace(/[^a-zA-Z0-9.\-_]/g, "_"));
   const folder = options.folder ? sanitizeInput(options.folder) : "uploads";
-  const filename = `${folder}/${Date.now()}_${sanitizedOriginalName}`;
+  const sanitizedOriginalName = sanitizeInput(file.name.replace(/[^a-zA-Z0-9.\-_]/g, "_"));
 
-  // Attempt Vercel Blob upload with a 10-second timeout via our safe Server Function
-  try {
-    options.onProgress?.(10);
+  // 1. Exchange auth for a scoped client token from our server.
+  const credentials = await getUploadCredentialsFn({
+    data: {
+      filename: sanitizedOriginalName,
+      folder,
+      allowedContentTypes: options.allowedTypes,
+      maxSizeMB: options.maxSizeMB,
+    },
+  });
 
-    const formData = new FormData();
-    formData.append("file", file);
-    formData.append("filename", filename);
-
-    const blobUpload = uploadFileServerFn({ data: formData }).then((res) => {
-      const result = res as any;
-      if (!result || result.error) throw new Error(result?.error || "Unknown server error");
-      return result;
-    });
-
-    const timeout = new Promise<never>((_, reject) =>
-      setTimeout(
-        () =>
-          reject(new Error("Vercel Blob upload timed out (10s). Falling back to local storage.")),
-        10000,
-      ),
-    );
-
-    const blob: any = await Promise.race([blobUpload, timeout]);
-    options.onProgress?.(100);
-
-    return {
-      url: blob.url || blob.data?.url || "",
-      pathname: blob.pathname || blob.data?.pathname || filename,
-      contentType: file.type,
-      size: file.size,
-      name: file.name,
-    };
-  } catch (err: any) {
-    console.warn("[Vercel Blob] Failed, falling back to base64:", err?.message || err);
-    // Fall back to local base64 so the upload never hangs
-    return readFileAsDataURL(file, options, filename);
+  const cred = credentials as any;
+  if (!cred?.success || !cred.clientToken || !cred.pathname) {
+    throw new Error(cred?.error || "Failed to get upload credentials from server.");
   }
+
+  const { clientToken, pathname } = cred;
+
+  // 2. PUT the file directly to Vercel Blob with the scoped token.
+  const blob = await put(pathname, file, {
+    access: "public",
+    token: clientToken,
+    contentType: file.type,
+    onUploadProgress: (progress) => {
+      options.onProgress?.(Math.round(progress.percentage ?? 0));
+    },
+  });
+
+  options.onProgress?.(100);
+
+  return {
+    url: blob.url,
+    pathname: blob.pathname,
+    contentType: blob.contentType || file.type,
+    size: file.size,
+    name: file.name,
+  };
 }
