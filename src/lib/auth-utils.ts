@@ -1,10 +1,11 @@
 import { getCookie, deleteCookie } from "@tanstack/react-start/server";
+import { isProduction } from "@/lib/env";
 import { SignJWT, jwtVerify } from "jose";
 import { db } from "@/db";
 import * as schema from "@/db/schema";
 import { eq } from "drizzle-orm";
 
-if (process.env.NODE_ENV === "production" && !process.env.JWT_SECRET) {
+if (isProduction && !process.env.JWT_SECRET) {
   throw new Error(
     "FATAL ERROR: JWT_SECRET environment variable is missing in production. Authentication is disabled to prevent security vulnerabilities.",
   );

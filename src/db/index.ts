@@ -1,6 +1,7 @@
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 import * as schema from "./schema";
+import { isDev } from "@/lib/env";
 
 const connectionString = process.env.DATABASE_URL || "postgres://postgres:@localhost:5432/pos_db";
 
@@ -24,7 +25,7 @@ const globalForPostgres = globalThis as unknown as {
 
 const client = globalForPostgres.postgresClient ?? postgres(connectionString, clientOptions);
 
-if (process.env.NODE_ENV !== "production") {
+if (isDev) {
   globalForPostgres.postgresClient = client;
 }
 

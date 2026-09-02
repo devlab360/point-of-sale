@@ -1,4 +1,5 @@
 import { handleApiError } from "@/lib/error-utils";
+import { isProduction } from "@/lib/env";
 import { createServerFn } from "@tanstack/react-start";
 import { requireAuth, createSessionToken } from "@/lib/auth-utils";
 import { getCookie, setCookie } from "@tanstack/react-start/server";
@@ -143,7 +144,7 @@ export const switchOrganizationFn = createServerFn({ method: "POST" })
 
       setCookie("pos_auth_token", token, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
+        secure: isProduction,
         sameSite: "lax",
         path: "/",
         maxAge: 7 * 24 * 60 * 60,
@@ -463,7 +464,7 @@ export const deleteOrganizationFn = createServerFn({ method: "POST" })
           });
           setCookie("pos_auth_token", token, {
             httpOnly: true,
-            secure: process.env.NODE_ENV === "production",
+            secure: isProduction,
             sameSite: "lax",
             path: "/",
             maxAge: 7 * 24 * 60 * 60,

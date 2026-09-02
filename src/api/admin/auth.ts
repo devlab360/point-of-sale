@@ -7,6 +7,7 @@ import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { signSaToken, verifySaToken, requireSuperAdminSession } from "@/lib/admin/auth-utils";
 import { handleApiError } from "@/lib/error-utils";
+import { isProduction } from "@/lib/env";
 
 const SA_COOKIE = "sa_auth_token";
 const SESSION_EXPIRY_HOURS = 24;
@@ -52,7 +53,7 @@ export const loginSuperAdminFn = createServerFn({ method: "POST" })
 
       setCookie(SA_COOKIE, token, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
+        secure: isProduction,
         sameSite: "lax",
         path: "/",
         maxAge: SESSION_EXPIRY_HOURS * 60 * 60,

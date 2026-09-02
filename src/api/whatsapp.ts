@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { handleApiError } from "@/lib/error-utils";
 import { requireAuth } from "@/lib/auth-utils";
+import { isDev } from "@/lib/env";
 
 const getWaHeaders = () => {
   // Use secure server-side env vars, without VITE_ prefix if available, fallback to VITE_
@@ -60,7 +61,7 @@ export const sendWhatsAppTextFn = createServerFn({ method: "POST" })
       const resData = await res.json();
 
       if (!res.ok) {
-        if (process.env.NODE_ENV !== "production") console.error("[WA API Error]", resData);
+        if (isDev) console.error("[WA API Error]", resData);
         const errorMsg = resData.error?.message || "Failed to send WhatsApp message";
         const errorDetails = resData.error?.error_user_msg || resData.error?.type || "";
         return {
@@ -72,7 +73,7 @@ export const sendWhatsAppTextFn = createServerFn({ method: "POST" })
 
       return { success: true as const, data: resData };
     } catch (error: any) {
-      if (process.env.NODE_ENV !== "production") console.error("[sendWhatsAppTextFn]", error);
+      if (isDev) console.error("[sendWhatsAppTextFn]", error);
       // If it's our own thrown error (like Missing token), return it directly so user can debug
       if (error.message?.includes("Missing WA_")) {
         return { success: false as const, code: 500, error: error.message };
@@ -119,7 +120,7 @@ export const sendWhatsAppDocumentFn = createServerFn({ method: "POST" })
       const resData = await res.json();
 
       if (!res.ok) {
-        if (process.env.NODE_ENV !== "production") console.error("[WA API Error]", resData);
+        if (isDev) console.error("[WA API Error]", resData);
         const errorMsg = resData.error?.message || "Failed to send WhatsApp document";
         return {
           success: false as const,

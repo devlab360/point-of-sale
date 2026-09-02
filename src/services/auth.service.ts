@@ -4,6 +4,7 @@ import { eq } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 import { v4 as uuidv4 } from "uuid";
 import { createSessionToken } from "@/lib/auth-utils";
+import { isProduction } from "@/lib/env";
 import { setCookie } from "@tanstack/react-start/server";
 import {
   UnauthorizedError,
@@ -87,7 +88,7 @@ export class AuthService {
     try {
       setCookie("pos_auth_token", token, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
+        secure: isProduction,
         sameSite: "lax",
         path: "/",
         maxAge: 7 * 24 * 60 * 60,
@@ -214,7 +215,7 @@ export class AuthService {
     try {
       setCookie("pos_auth_token", token, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
+        secure: isProduction,
         sameSite: "lax",
         path: "/",
         maxAge: 7 * 24 * 60 * 60,

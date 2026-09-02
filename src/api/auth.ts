@@ -4,6 +4,7 @@ import { setCookie, deleteCookie } from "@tanstack/react-start/server";
 import { authService } from "@/services/auth.service";
 import { z } from "zod";
 import { requireAuth, createSessionToken } from "@/lib/auth-utils";
+import { isProduction } from "@/lib/env";
 import bcrypt from "bcryptjs";
 import { v4 as uuidv4 } from "uuid";
 
@@ -251,7 +252,7 @@ export const registerOrgFn = createServerFn({ method: "POST" })
 
       setCookie("pos_auth_token", token, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
+        secure: isProduction,
         sameSite: "lax",
         path: "/",
         maxAge: 7 * 24 * 60 * 60,
@@ -569,7 +570,7 @@ export const loginWithOtpFn = createServerFn({ method: "POST" })
 
       setCookie("pos_auth_token", token, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
+        secure: isProduction,
         sameSite: "lax",
         path: "/",
         maxAge: 7 * 24 * 60 * 60,
@@ -714,7 +715,7 @@ export const loginWithGoogleFn = createServerFn({ method: "POST" })
 
       setCookie("pos_auth_token", token, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
+        secure: isProduction,
         sameSite: "lax",
         path: "/",
         maxAge: 7 * 24 * 60 * 60,
@@ -869,7 +870,7 @@ export const loginWithFirebasePhoneFn = createServerFn({ method: "POST" })
 
       setCookie("pos_auth_token", token, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
+        secure: isProduction,
         sameSite: "lax",
         path: "/",
         maxAge: 7 * 24 * 60 * 60,

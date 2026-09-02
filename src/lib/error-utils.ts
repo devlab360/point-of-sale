@@ -1,6 +1,7 @@
 import { ApiResponse } from "@/types/api";
 import { ZodError } from "zod";
 import { AppError, cleanErrorMessage } from "./errors/errors";
+import { isDev } from "@/lib/env";
 
 export function handleApiError(
   e: unknown,
@@ -39,7 +40,7 @@ export function handleApiError(
       return { success: false, code: 404, error: e.message };
     }
 
-    if (process.env.NODE_ENV !== "production") {
+    if (isDev) {
       console.error("API Error:", e.stack || e.message);
     }
 

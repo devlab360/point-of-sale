@@ -3,6 +3,7 @@
  * Handles sending automated text messages and media (PDFs, CSVs) via WhatsApp using secure server functions.
  */
 import { sendWhatsAppTextFn, sendWhatsAppDocumentFn } from "@/api/whatsapp";
+import { isDev } from "@/lib/env";
 
 /**
  * Sends a plain text message to a WhatsApp number.
@@ -11,12 +12,12 @@ export const sendWhatsAppText = async (phone: string, text: string) => {
   try {
     const res = await sendWhatsAppTextFn({ data: { phone, text } });
     if (!res || !res.success) {
-      if (process.env.NODE_ENV !== "production") console.error("[WA API Error]", res);
+      if (isDev) console.error("[WA API Error]", res);
       throw new Error(res?.error || "Failed to send WhatsApp message");
     }
     return res;
   } catch (error: any) {
-    if (process.env.NODE_ENV !== "production") console.error("[sendWhatsAppText]", error);
+    if (isDev) console.error("[sendWhatsAppText]", error);
     return { success: false, error: error.message };
   }
 };
@@ -36,12 +37,12 @@ export const sendWhatsAppDocument = async (
       data: { phone, documentUrl, filename, caption },
     });
     if (!res || !res.success) {
-      if (process.env.NODE_ENV !== "production") console.error("[WA API Error]", res);
+      if (isDev) console.error("[WA API Error]", res);
       throw new Error(res?.error || "Failed to send WhatsApp document");
     }
     return res;
   } catch (error: any) {
-    if (process.env.NODE_ENV !== "production") console.error("[sendWhatsAppDocument]", error);
+    if (isDev) console.error("[sendWhatsAppDocument]", error);
     return { success: false, error: error.message };
   }
 };
