@@ -369,16 +369,16 @@ export function AppHeader() {
           </ol>
         </nav>
 
-        <div className="flex flex-1 items-center justify-end gap-2.5 md:flex-none">
+        <div className="flex min-w-0 items-center justify-end gap-1.5 sm:gap-2.5 md:flex-none">
           <div
             onClick={() => setSearchOpen(true)}
-            className="relative hidden md:block cursor-pointer shrink-1 min-w-0 group"
+            className="relative hidden md:block cursor-pointer shrink min-w-0 group"
           >
             <Search className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground group-hover:text-primary transition-colors" />
-            <div className="flex items-center h-10 w-48 lg:w-64 xl:w-80 rounded-xl border border-border/80 bg-card/80 backdrop-blur-sm pl-10 pr-3 lg:pr-12 text-xs font-medium text-muted-foreground select-none hover:border-primary/50 hover:bg-card shadow-xs transition-all overflow-hidden">
+            <div className="flex items-center h-10 md:w-40 xl:w-64 rounded-xl border border-border/80 bg-card/80 backdrop-blur-sm pl-10 pr-3 xl:pr-10 text-xs font-medium text-muted-foreground select-none hover:border-primary/50 hover:bg-card shadow-xs transition-all overflow-hidden">
               <span className="truncate">Search modules, products, sales...</span>
             </div>
-            <kbd className="pointer-events-none absolute right-2.5 top-1/2 hidden -translate-y-1/2 items-center gap-1 rounded-lg border border-border/60 bg-muted/60 px-2 py-0.5 text-[10px] font-extrabold text-muted-foreground/80 lg:inline-flex shadow-2xs">
+            <kbd className="pointer-events-none absolute right-2.5 top-1/2 hidden -translate-y-1/2 items-center gap-1 rounded-lg border border-border/60 bg-muted/60 px-2 py-0.5 text-[10px] font-extrabold text-muted-foreground/80 xl:inline-flex shadow-2xs">
               <Command className="size-3" />K
             </kbd>
           </div>
