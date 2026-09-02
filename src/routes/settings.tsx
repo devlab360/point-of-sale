@@ -90,13 +90,11 @@ import {
 } from "@/api/locations";
 import {
   getBranchPriceOverridesFn,
+  getBranchPricingCatalogFn,
   toggleBranchPricingFn,
   upsertBranchPriceFn,
   deleteBranchPriceFn,
 } from "@/api/branch-pricing";
-import { db } from "@/db";
-import * as schema from "@/db/schema";
-import { eq } from "drizzle-orm";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import {
@@ -3939,29 +3937,17 @@ function BranchPricingTab() {
     staleTime: 30 * 1000,
   });
 
-  const { data: productsData } = useQuery({
-    queryKey: ["products", orgId],
+  const { data: catalogData } = useQuery({
+    queryKey: ["branchPricingCatalog", orgId],
     queryFn: async () => {
-      const res = await db
-        .select()
-        .from(schema.products)
-        .where(eq(schema.products.organizationId, orgId));
-      return res;
+      const res = await getBranchPricingCatalogFn({ data: { orgId } });
+      return (res as any)?.data || { products: [], services: [] };
     },
     staleTime: 60 * 1000,
   });
 
-  const { data: servicesData } = useQuery({
-    queryKey: ["services", orgId],
-    queryFn: async () => {
-      const res = await db
-        .select()
-        .from(schema.services)
-        .where(eq(schema.services.organizationId, orgId));
-      return res;
-    },
-    staleTime: 60 * 1000,
-  });
+  const productsData = catalogData?.products;
+  const servicesData = catalogData?.services;
 
   const branchPricingEnabled = orgData?.branchPricingEnabled || false;
   const branches: any[] = branchesData || [];

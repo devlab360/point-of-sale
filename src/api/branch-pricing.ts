@@ -134,6 +134,23 @@ export const upsertBranchPriceFn = createServerFn({ method: "POST" })
     }
   });
 
+// Fetch products and services for the branch pricing catalog.
+export const getBranchPricingCatalogFn = createServerFn({ method: "GET" })
+  .validator(z.object({ orgId: z.string().min(1) }))
+  .handler(async ({ data }) => {
+    try {
+      await requireAuth();
+      const { db, schema, eq } = await getDb();
+      const [products, services] = await Promise.all([
+        db.select().from(schema.products).where(eq(schema.products.organizationId, data.orgId)),
+        db.select().from(schema.services).where(eq(schema.services.organizationId, data.orgId)),
+      ]);
+      return { success: true as const, data: { products, services } };
+    } catch (e) {
+      return handleApiError(e);
+    }
+  });
+
 // Delete a branch price override (falls back to default pricing).
 export const deleteBranchPriceFn = createServerFn({ method: "POST" })
   .validator(z.object({ id: z.string().min(1) }))
