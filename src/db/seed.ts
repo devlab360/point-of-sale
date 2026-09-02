@@ -405,19 +405,33 @@ export async function seedDatabase() {
         ` - Created Industry Login: ${acc.ownerEmail} / password123 [${acc.businessType}]`,
       );
     } else {
-      await db
-        .update(schema.users)
-        .set({
-          organizationId: acc.orgId,
-          role: "admin",
-          status: "active",
-          pin: hashedDefaultPassword,
-          permissions: ["all"],
-        })
-        .where(eq(schema.users.email, acc.ownerEmail));
-      console.log(
-        ` - Verified Industry Login: ${acc.ownerEmail} / password123 [${acc.businessType}]`,
-      );
+      // Only update fields that don't participate in the unique (email, organization_id) index
+      // to avoid duplicate key violations on idempotent re-runs
+      const existingOrgId = existingUser[0].organizationId;
+      if (existingOrgId !== acc.orgId) {
+        // Different org — skip to avoid constraint violation; user belongs to another org
+        console.log(
+          ` - Skipped (org mismatch): ${acc.ownerEmail} [${acc.businessType}]`,
+        );
+      } else {
+        await db
+          .update(schema.users)
+          .set({
+            role: "admin",
+            status: "active",
+            pin: hashedDefaultPassword,
+            permissions: ["all"],
+          })
+          .where(
+            and(
+              eq(schema.users.email, acc.ownerEmail),
+              eq(schema.users.organizationId, acc.orgId),
+            ),
+          );
+        console.log(
+          ` - Verified Industry Login: ${acc.ownerEmail} / password123 [${acc.businessType}]`,
+        );
+      }
     }
   }
 
