@@ -4,7 +4,6 @@ import {
   Pencil,
   Plus,
   Trash2,
-  PackageSearch,
   Clock,
   Layers,
   DollarSign,
@@ -315,7 +314,7 @@ function ServicesPage() {
         ) : viewMode === "grid" ? (
           /* Grid View */
           <div className="space-y-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
               {paginatedServices.map((s: any) => {
                 const catObj = categories.find((c: any) => c.id === s.category);
                 const sVariants = allVariants.filter((v) => v.serviceId === s.id);
@@ -323,51 +322,51 @@ function ServicesPage() {
                 return (
                   <div
                     key={s.id}
-                    className="rounded-2xl border border-border/80 bg-card p-5 shadow-soft flex flex-col justify-between space-y-4 hover:border-border transition-all group"
+                    className="rounded-2xl border border-border/80 bg-card p-4 shadow-soft flex flex-col justify-between space-y-3 hover:border-border transition-all group"
                   >
-                    <div className="space-y-3">
-                      <div className="flex items-start justify-between">
+                    <div className="space-y-2.5">
+                      <div className="relative aspect-video w-full rounded-xl bg-muted/40 overflow-hidden border border-border/50 grid place-items-center">
                         {isImageUrl(s.image) ? (
-                          <div className="size-11 rounded-xl border border-border/80 bg-muted/30 overflow-hidden">
-                            <img
-                              src={s.image}
-                              alt={s.name}
-                              loading="lazy"
-                              className="size-full object-cover"
-                            />
-                          </div>
+                          <img
+                            src={s.image}
+                            alt={s.name}
+                            loading="lazy"
+                            className="size-full object-cover"
+                          />
                         ) : (
-                          <div className="grid size-11 place-items-center rounded-xl bg-primary/10 text-primary font-bold text-base">
-                            <Wrench className="size-5" />
-                          </div>
+                          <Wrench className="size-8 text-muted-foreground/40" />
                         )}
-                        <Badge variant="outline" className="text-xs font-semibold">
-                          <Clock className="size-3 mr-1 text-muted-foreground" />
-                          {s.duration || "30"} mins
-                        </Badge>
+                        <div className="absolute top-2 left-2">
+                          <Badge variant="outline" className="bg-background/80 backdrop-blur text-[10px] font-bold">
+                            <Clock className="size-3 mr-1" />
+                            {s.duration || "30"} mins
+                          </Badge>
+                        </div>
                       </div>
 
                       <div>
-                        <span className="text-[10px] font-bold text-primary block">
-                          {catObj?.name || "General Service"}
-                        </span>
+                        <div className="flex items-center justify-between gap-1">
+                          <span className="text-[10px] font-bold text-primary truncate">
+                            {catObj?.name || "General Service"}
+                          </span>
+                          {sVariants.length > 0 && (
+                            <span className="text-[10px] text-muted-foreground font-semibold truncate">
+                              {sVariants.length} variants
+                            </span>
+                          )}
+                        </div>
                         <h3
                           onClick={() => navigate({ to: `/services/${s.id}` })}
-                          className="font-bold text-base text-foreground group-hover:text-primary transition-colors cursor-pointer truncate mt-0.5"
+                          className="font-bold text-sm text-foreground hover:text-primary transition-colors cursor-pointer truncate mt-0.5"
                         >
                           {s.name}
                         </h3>
-                        {sVariants.length > 0 && (
-                          <p className="text-xs text-muted-foreground mt-0.5">
-                            {sVariants.length} pricing variants
-                          </p>
-                        )}
                       </div>
                     </div>
 
-                    <div className="pt-3 border-t border-border/60 flex items-center justify-between">
+                    <div className="pt-2.5 border-t border-border/60 flex items-center justify-between">
                       <div>
-                        <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground block">
+                        <span className="text-[10px] font-semibold text-muted-foreground uppercase block">
                           Base Price
                         </span>
                         <span className="text-base font-bold text-foreground">
@@ -378,17 +377,19 @@ function ServicesPage() {
                       <div className="flex items-center gap-1">
                         <Button
                           variant="ghost"
-                          size="sm"
+                          size="icon"
                           onClick={() => navigate({ to: `/services/${s.id}` })}
-                          className="h-8 text-xs font-semibold"
+                          className="size-7 rounded-lg text-muted-foreground hover:text-foreground"
+                          title="Edit"
                         >
-                          <Pencil className="size-3.5 mr-1" /> Edit
+                          <Pencil className="size-3.5" />
                         </Button>
                         <Button
                           variant="ghost"
-                          size="sm"
+                          size="icon"
                           onClick={() => setDeleteId(s.id)}
-                          className="h-8 text-xs text-muted-foreground hover:text-destructive"
+                          className="size-7 rounded-lg text-muted-foreground hover:text-destructive"
+                          title="Delete"
                         >
                           <Trash2 className="size-3.5" />
                         </Button>
@@ -434,9 +435,23 @@ function ServicesPage() {
                         <TableCell>
                           <div
                             onClick={() => navigate({ to: `/services/${s.id}` })}
-                            className="font-semibold text-foreground hover:text-primary cursor-pointer transition-colors"
+                            className="flex items-center gap-3 cursor-pointer"
                           >
-                            {s.name}
+                            <div className="grid size-9 place-items-center rounded-lg bg-muted/60 overflow-hidden shrink-0 border border-border/50">
+                              {isImageUrl(s.image) ? (
+                                <img
+                                  src={s.image}
+                                  alt={s.name}
+                                  loading="lazy"
+                                  className="size-full object-cover"
+                                />
+                              ) : (
+                                <Wrench className="size-4 text-muted-foreground/50" />
+                              )}
+                            </div>
+                            <span className="font-semibold text-foreground hover:text-primary transition-colors">
+                              {s.name}
+                            </span>
                           </div>
                         </TableCell>
                         <TableCell className="text-xs">{catObj?.name || "General"}</TableCell>
