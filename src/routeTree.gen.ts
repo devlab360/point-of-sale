@@ -65,6 +65,7 @@ import { Route as InviteTokenRouteImport } from './routes/invite/$token'
 import { Route as InventoryTransfersRouteImport } from './routes/inventory.transfers'
 import { Route as InventoryHistoryRouteImport } from './routes/inventory.history'
 import { Route as InventoryAdjustmentsRouteImport } from './routes/inventory.adjustments'
+import { Route as ApiBlobRouteImport } from './routes/api/blob'
 import { Route as AdminUsersRouteImport } from './routes/admin/users'
 import { Route as AdminTenantsRouteImport } from './routes/admin/tenants'
 import { Route as AdminSupportRouteImport } from './routes/admin/support'
@@ -363,6 +364,11 @@ const InventoryAdjustmentsRoute = InventoryAdjustmentsRouteImport.update({
 } as any).lazy(() =>
   import('./routes/inventory.adjustments.lazy').then((d) => d.Route),
 )
+const ApiBlobRoute = ApiBlobRouteImport.update({
+  id: '/api/blob',
+  path: '/api/blob',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminUsersRoute = AdminUsersRouteImport.update({
   id: '/admin/users',
   path: '/admin/users',
@@ -458,6 +464,7 @@ export interface FileRoutesByFullPath {
   '/admin/support': typeof AdminSupportRoute
   '/admin/tenants': typeof AdminTenantsRoute
   '/admin/users': typeof AdminUsersRoute
+  '/api/blob': typeof ApiBlobRoute
   '/inventory/adjustments': typeof InventoryAdjustmentsRoute
   '/inventory/history': typeof InventoryHistoryRoute
   '/inventory/transfers': typeof InventoryTransfersRoute
@@ -520,6 +527,7 @@ export interface FileRoutesByTo {
   '/admin/support': typeof AdminSupportRoute
   '/admin/tenants': typeof AdminTenantsRoute
   '/admin/users': typeof AdminUsersRoute
+  '/api/blob': typeof ApiBlobRoute
   '/inventory/adjustments': typeof InventoryAdjustmentsRoute
   '/inventory/history': typeof InventoryHistoryRoute
   '/inventory/transfers': typeof InventoryTransfersRoute
@@ -588,6 +596,7 @@ export interface FileRoutesById {
   '/admin/support': typeof AdminSupportRoute
   '/admin/tenants': typeof AdminTenantsRoute
   '/admin/users': typeof AdminUsersRoute
+  '/api/blob': typeof ApiBlobRoute
   '/inventory/adjustments': typeof InventoryAdjustmentsRoute
   '/inventory/history': typeof InventoryHistoryRoute
   '/inventory/transfers': typeof InventoryTransfersRoute
@@ -657,6 +666,7 @@ export interface FileRouteTypes {
     | '/admin/support'
     | '/admin/tenants'
     | '/admin/users'
+    | '/api/blob'
     | '/inventory/adjustments'
     | '/inventory/history'
     | '/inventory/transfers'
@@ -719,6 +729,7 @@ export interface FileRouteTypes {
     | '/admin/support'
     | '/admin/tenants'
     | '/admin/users'
+    | '/api/blob'
     | '/inventory/adjustments'
     | '/inventory/history'
     | '/inventory/transfers'
@@ -786,6 +797,7 @@ export interface FileRouteTypes {
     | '/admin/support'
     | '/admin/tenants'
     | '/admin/users'
+    | '/api/blob'
     | '/inventory/adjustments'
     | '/inventory/history'
     | '/inventory/transfers'
@@ -854,6 +866,7 @@ export interface RootRouteChildren {
   AdminSupportRoute: typeof AdminSupportRoute
   AdminTenantsRoute: typeof AdminTenantsRoute
   AdminUsersRoute: typeof AdminUsersRoute
+  ApiBlobRoute: typeof ApiBlobRoute
   InviteTokenRoute: typeof InviteTokenRoute
   AdminIndexRoute: typeof AdminIndexRoute
 }
@@ -1252,6 +1265,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof InventoryAdjustmentsRouteImport
       parentRoute: typeof InventoryRoute
     }
+    '/api/blob': {
+      id: '/api/blob'
+      path: '/api/blob'
+      fullPath: '/api/blob'
+      preLoaderRoute: typeof ApiBlobRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/users': {
       id: '/admin/users'
       path: '/admin/users'
@@ -1445,6 +1465,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminSupportRoute: AdminSupportRoute,
   AdminTenantsRoute: AdminTenantsRoute,
   AdminUsersRoute: AdminUsersRoute,
+  ApiBlobRoute: ApiBlobRoute,
   InviteTokenRoute: InviteTokenRoute,
   AdminIndexRoute: AdminIndexRoute,
 }

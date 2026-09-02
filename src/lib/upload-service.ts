@@ -84,6 +84,16 @@ export function validateFileBeforeUpload(
 }
 
 /**
+ * Builds a stable delivery URL for a blob pathname. The blob is stored with
+ * PRIVATE access, so it can't be fetched directly by <img> tags. This URL
+ * points at our server proxy (/api/blob) which signs and streams the bytes on
+ * every request — the stored URL never expires.
+ */
+export function buildBlobDeliveryUrl(pathname: string): string {
+  return `/api/blob?path=${encodeURIComponent(pathname)}`;
+}
+
+/**
  * Centralized Vercel Blob direct-upload service.
  *
  * The file is sent straight from the browser to Vercel Blob (bypassing the
@@ -91,6 +101,10 @@ export function validateFileBeforeUpload(
  * scoped client token via getUploadCredentialsFn — the actual bytes never
  * pass through the function, so files far larger than the 4.5 MB function
  * limit can be uploaded with real progress reporting.
+ *
+ * Blobs are stored with PRIVATE access; the returned URL is our delivery
+ * proxy (/api/blob) rather than the raw blob URL, so images remain viewable
+ * via <img> while the underlying store stays private.
  */
 export async function uploadToVercelBlob(
   file: File,
@@ -121,9 +135,9 @@ export async function uploadToVercelBlob(
 
   const { clientToken, pathname } = cred;
 
-  // 2. PUT the file directly to Vercel Blob with the scoped token.
+  // 2. PUT the file directly to Vercel Blob with the scoped token (private).
   const blob = await put(pathname, file, {
-    access: "public",
+    access: "private",
     token: clientToken,
     contentType: file.type,
     onUploadProgress: (progress) => {
@@ -134,7 +148,7 @@ export async function uploadToVercelBlob(
   options.onProgress?.(100);
 
   return {
-    url: blob.url,
+    url: buildBlobDeliveryUrl(blob.pathname),
     pathname: blob.pathname,
     contentType: blob.contentType || file.type,
     size: file.size,

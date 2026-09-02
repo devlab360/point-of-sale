@@ -50,6 +50,10 @@ export const getUploadCredentialsFn = createServerFn({ method: "POST" })
         allowOverwrite: false,
         allowedContentTypes: data.allowedContentTypes,
         maximumSizeInBytes: data.maxSizeMB ? Math.floor(data.maxSizeMB * 1024 * 1024) : undefined,
+        // This SDK version defaults validUntil to only 30s, which is too short
+        // for a real browser upload (round-trips + slow connections easily blow
+        // past it). Set an explicit, still short-lived window (10 minutes).
+        validUntil: Date.now() + 10 * 60 * 1000,
       });
 
       return {
