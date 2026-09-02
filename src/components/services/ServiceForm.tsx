@@ -94,7 +94,8 @@ export function ServiceForm({
       required: "Retail price is required",
       positive: "Price must be a valid positive number",
     },
-    cost: { positive: "Cost cannot be negative" },
+    // cost is optional — 0 overhead is valid for many services
+    cost: {},
   });
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -112,6 +113,7 @@ export function ServiceForm({
     let durationMins = rawDuration;
     if (formData.durationUnit === "hours") durationMins = rawDuration * 60;
     if (formData.durationUnit === "days") durationMins = rawDuration * 1440;
+    // "session" is stored as-is (1 session = 1 unit, no minute conversion)
 
     const payload = {
       ...formData,
@@ -229,6 +231,7 @@ export function ServiceForm({
                       step="0.01"
                       placeholder="0.00"
                       value={formData.price}
+                      onFocus={(e) => e.target.select()}
                       onChange={(e) => {
                         setFormData({ ...formData, price: e.target.value });
                         clearError("price");
@@ -254,6 +257,7 @@ export function ServiceForm({
                       step="0.01"
                       placeholder="0.00"
                       value={formData.cost}
+                      onFocus={(e) => e.target.select()}
                       onChange={(e) => {
                         setFormData({ ...formData, cost: e.target.value });
                         clearError("cost");

@@ -188,12 +188,11 @@ export function ProductForm({
       required: "Retail price is required",
       positive: "Price must be a valid positive number",
     },
-    cost: { required: "Cost price is required", positive: "Cost must be a valid positive number" },
-    stock: { required: "Stock is required", positive: "Stock cannot be negative" },
-    reorderLevel: {
-      required: "Reorder level is required",
-      positive: "Reorder level cannot be negative",
-    },
+    // cost is optional — 0 is valid for free / bundled items
+    cost: {},
+    // stock and reorderLevel allow 0 — only block negative values
+    stock: { required: "Stock quantity is required" },
+    reorderLevel: {},
   });
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -451,6 +450,7 @@ export function ProductForm({
                     step="0.01"
                     placeholder="e.g. 45.00"
                     value={formData.wholesalePrice || ""}
+                    onFocus={(e) => e.target.select()}
                     onChange={(e) =>
                       setFormData({ ...formData, wholesalePrice: parseFloat(e.target.value) || 0 })
                     }
@@ -465,6 +465,7 @@ export function ProductForm({
                     step="0.01"
                     placeholder="e.g. 40.00"
                     value={formData.dealerPrice || ""}
+                    onFocus={(e) => e.target.select()}
                     onChange={(e) =>
                       setFormData({ ...formData, dealerPrice: parseFloat(e.target.value) || 0 })
                     }
