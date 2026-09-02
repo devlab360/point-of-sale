@@ -185,6 +185,7 @@ export const createServiceItemFn = createServerFn({ method: "POST" })
         cost: String(data.cost || 0),
         duration: data.duration ? Number(data.duration) : null,
         hasVariants: Boolean(data.hasVariants),
+        image: data.image || null,
         status: data.status || "active",
       };
 
@@ -240,6 +241,7 @@ export const updateServiceItemFn = createServerFn({ method: "POST" })
         payload.duration = data.duration ? Number(data.duration) : null;
       if (data.status !== undefined) payload.status = data.status;
       if (data.hasVariants !== undefined) payload.hasVariants = Boolean(data.hasVariants);
+      if (data.image !== undefined) payload.image = data.image || null;
       payload.updatedAt = new Date().toISOString();
 
       await db.transaction(async (tx) => {

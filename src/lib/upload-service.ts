@@ -94,6 +94,20 @@ export function buildBlobDeliveryUrl(pathname: string): string {
 }
 
 /**
+ * Returns true when a stored URL points at an image, either a blob delivery
+ * URL (/api/blob?path=...) or a conventional image URL (data URL or a URL
+ * ending in a common image extension).
+ */
+export function isImageUrl(url?: string | null): boolean {
+  if (!url) return false;
+  if (url.startsWith("/api/blob?")) return true;
+  return (
+    url.startsWith("data:image/") ||
+    /\.(jpg|jpeg|png|webp|gif|svg)(\?.*)?$/i.test(url)
+  );
+}
+
+/**
  * Centralized Vercel Blob direct-upload service.
  *
  * The file is sent straight from the browser to Vercel Blob (bypassing the

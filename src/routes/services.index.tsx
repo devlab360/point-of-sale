@@ -48,6 +48,7 @@ import { CardGridSkeleton } from "@/components/skeletons/CardGridSkeleton";
 import { ErrorState } from "@/components/ui/error-state";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getServicesListFn, deleteServiceItemFn, getAllServiceVariantsFn } from "@/api/services";
+import { isImageUrl } from "@/lib/upload-service";
 import { getCategoriesFn } from "@/api/categories";
 import {
   Table,
@@ -326,9 +327,20 @@ function ServicesPage() {
                   >
                     <div className="space-y-3">
                       <div className="flex items-start justify-between">
-                        <div className="grid size-11 place-items-center rounded-xl bg-primary/10 text-primary font-bold text-base">
-                          <Wrench className="size-5" />
-                        </div>
+                        {isImageUrl(s.image) ? (
+                          <div className="size-11 rounded-xl border border-border/80 bg-muted/30 overflow-hidden">
+                            <img
+                              src={s.image}
+                              alt={s.name}
+                              loading="lazy"
+                              className="size-full object-cover"
+                            />
+                          </div>
+                        ) : (
+                          <div className="grid size-11 place-items-center rounded-xl bg-primary/10 text-primary font-bold text-base">
+                            <Wrench className="size-5" />
+                          </div>
+                        )}
                         <Badge variant="outline" className="text-xs font-semibold">
                           <Clock className="size-3 mr-1 text-muted-foreground" />
                           {s.duration || "30"} mins

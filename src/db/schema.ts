@@ -417,6 +417,7 @@ export const services = pgTable(
     cost: numeric("cost", { precision: 10, scale: 2 }).notNull().default("0"),
     duration: integer("duration"), // in minutes
     hasVariants: boolean("has_variants").default(false),
+    image: text("image"),
     status: text("status").notNull().default("active"),
     createdAt: timestamp("created_at", { mode: "string" }).defaultNow().notNull(),
     updatedAt: timestamp("updated_at", { mode: "string" }).defaultNow().notNull(),

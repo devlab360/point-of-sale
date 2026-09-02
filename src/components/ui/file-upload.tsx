@@ -14,7 +14,11 @@ import {
 import { Button } from "./button";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import { uploadToVercelBlob, validateFileBeforeUpload } from "@/lib/upload-service";
+import {
+  uploadToVercelBlob,
+  validateFileBeforeUpload,
+  isImageUrl,
+} from "@/lib/upload-service";
 
 export interface FileUploadProps {
   value?: string | string[];
@@ -58,10 +62,7 @@ export function FileUpload({
 
   // For single-image mode: the currently selected image
   const singleUrl = !multiple && urls.length > 0 ? urls[0] : null;
-  const isSingleImage = singleUrl
-    ? singleUrl.startsWith("data:image/") ||
-      /\.(jpg|jpeg|png|webp|gif|svg)(\?.*)?$/i.test(singleUrl)
-    : false;
+  const isSingleImage = singleUrl ? isImageUrl(singleUrl) : false;
 
   /** Simulate smooth upload progress that slows down as it approaches the cap. */
   const startSimulatedProgress = () => {
@@ -385,8 +386,7 @@ export function FileUpload({
       {multiple && urls.length > 0 && (
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 pt-1">
           {urls.map((url, idx) => {
-            const isImg =
-              url.startsWith("data:image/") || /\.(jpg|jpeg|png|webp|gif|svg)(\?.*)?$/i.test(url);
+            const isImg = isImageUrl(url);
             return (
               <div
                 key={idx}
