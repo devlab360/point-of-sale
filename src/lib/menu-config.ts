@@ -457,8 +457,15 @@ export function hasPermissionForRoute(
 ): { allowed: boolean; reason?: string } {
   const userRole = String(user?.role || "").toLowerCase();
 
-  // 1. Root Super Admin Authorization (Global Master Access)
-  if (isSuperAdminUser || userRole === "super_admin") return { allowed: true };
+  // 1. Root Super Admin & Store Admin Authorization (Global Master Access)
+  if (
+    isSuperAdminUser ||
+    userRole === "super_admin" ||
+    userRole === "admin" ||
+    userRole === "owner"
+  ) {
+    return { allowed: true };
+  }
 
   // Block non-super admins from accessing super admin dashboard
   if (routePath.startsWith("/super-admin") || routePath.startsWith("/admin")) {
@@ -496,59 +503,7 @@ export function hasPermissionForRoute(
   const label = matchedItem ? matchedItem.label : targetPath;
   const cleanTarget = targetPath.replace(/^\//, "");
 
-  // 3.5. Business Type Capability Check
-  const routeCapabilities = ROUTE_CAPABILITY_MAP[targetPath] || [];
-  if (routeCapabilities.length > 0 && businessType) {
-    const hasAnyRequiredCapability = routeCapabilities.some((cap) =>
-      hasCapability(businessType, cap),
-    );
-    if (!hasAnyRequiredCapability) {
-      return {
-        allowed: false,
-        reason: `The "${label}" module is not applicable to your business type (${businessType}).`,
-      };
-    }
-  }
-
-  // 4. SaaS Subscription Plan Authorization (Applies to both Store Admins & Staff)
-  if (saasPlan) {
-    const planFeatures: string[] = Array.isArray(saasPlan.features) ? saasPlan.features : [];
-    const planMenus: string[] = Array.isArray(saasPlan.menus) ? saasPlan.menus : [];
-    const combinedPlanGrants = [...planFeatures, ...planMenus];
-
-    if (combinedPlanGrants.length > 0 && !combinedPlanGrants.includes("all")) {
-      // Find matching module key in PERMISSION_ROUTE_MAP
-      const requiredModuleEntry = Object.entries(PERMISSION_ROUTE_MAP).find(([_, paths]) =>
-        paths.some((p) => targetPath === p || targetPath.startsWith(p + "/")),
-      );
-      const moduleKey = requiredModuleEntry ? requiredModuleEntry[0] : cleanTarget;
-
-      const planAllowsRoute = combinedPlanGrants.some((grant: string) => {
-        const cleanGrant = grant.replace(/^\//, "");
-        return (
-          grant === targetPath ||
-          grant === cleanTarget ||
-          cleanGrant === moduleKey ||
-          targetPath.startsWith(grant + "/") ||
-          targetPath === `/${cleanGrant}`
-        );
-      });
-
-      if (!planAllowsRoute) {
-        return {
-          allowed: false,
-          reason: `The "${label}" feature is not included in your current subscription plan (${saasPlan.name || "Current Plan"}). Please upgrade your plan in Store Settings to access this module.`,
-        };
-      }
-    }
-  }
-
-  // 5. If user is Store Administrator, they have full access to all plan-allowed features
-  if (userRole === "admin") {
-    return { allowed: true };
-  }
-
-  // 6. Role-Based Authorization on Menu Items
+  // 4. Role-Based Authorization on Menu Items
   if (matchedItem?.roles && matchedItem.roles.length > 0) {
     if (!matchedItem.roles.includes(userRole)) {
       return {

@@ -637,8 +637,8 @@ function AppLayout() {
                 </svg>
               </div>
             ) : (
-              <div className="page-enter">
-                <ErrorBoundary scopeName="main_dashboard_outlet">
+              <div className="page-enter" key={location.pathname}>
+                <ErrorBoundary key={location.pathname} scopeName="main_dashboard_outlet">
                   <Outlet />
                 </ErrorBoundary>
               </div>
