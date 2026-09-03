@@ -4,6 +4,1449 @@ import { eq, and } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 import { v4 as uuidv4 } from "uuid";
 
+export async function seedComprehensiveData() {
+  console.log("\n==================================================");
+  console.log("🚀 SEEDING COMPREHENSIVE DUMMY DATA FOR ALL TABLES");
+  console.log("==================================================");
+
+  const orgId = "demo_flagship_org_1001";
+  const now = new Date().toISOString();
+  const yesterday = new Date(Date.now() - 86400000).toISOString();
+  const nextMonth = new Date(Date.now() + 30 * 86400000).toISOString();
+
+  // 1. Locations / Branches
+  console.log("\n-> Seeding Locations (Stores & Warehouses)...");
+  const locDowntownId = "loc_flagship_downtown";
+  const locWarehouseId = "loc_flagship_warehouse";
+  const locAirportId = "loc_flagship_airport";
+
+  const locationsToSeed = [
+    {
+      id: locDowntownId,
+      organizationId: orgId,
+      name: "Flagship Downtown Store",
+      code: "FDS-01",
+      type: "store",
+      address: "100 Grand Avenue, Financial District",
+      phone: "+1 (555) 019-2831",
+      isDefault: true,
+      status: "active",
+      createdAt: now,
+      updatedAt: now,
+    },
+    {
+      id: locWarehouseId,
+      organizationId: orgId,
+      name: "Central Logistics Warehouse",
+      code: "CLW-02",
+      type: "warehouse",
+      address: "450 Industrial Parkway, Dock 12",
+      phone: "+1 (555) 019-2832",
+      isDefault: false,
+      status: "active",
+      createdAt: now,
+      updatedAt: now,
+    },
+    {
+      id: locAirportId,
+      organizationId: orgId,
+      name: "Airport Terminal 3 Express",
+      code: "ATE-03",
+      type: "store",
+      address: "Terminal 3 Departure Concourse, Gate 42",
+      phone: "+1 (555) 019-2833",
+      isDefault: false,
+      status: "active",
+      createdAt: now,
+      updatedAt: now,
+    },
+  ];
+
+  for (const loc of locationsToSeed) {
+    const existing = await db
+      .select()
+      .from(schema.locations)
+      .where(eq(schema.locations.id, loc.id))
+      .limit(1);
+    if (!existing.length) {
+      await db.insert(schema.locations).values(loc);
+    }
+  }
+
+  // 2. Units of Measure
+  console.log("-> Seeding Standard Units...");
+  const unitsToSeed = [
+    { id: "unit_pcs", organizationId: orgId, name: "Piece", short: "PCS", allowFractional: false },
+    { id: "unit_kg", organizationId: orgId, name: "Kilogram", short: "KG", allowFractional: true },
+    { id: "unit_ltr", organizationId: orgId, name: "Liter", short: "LTR", allowFractional: true },
+    { id: "unit_box", organizationId: orgId, name: "Box (Pack)", short: "BOX", allowFractional: false },
+    { id: "unit_hr", organizationId: orgId, name: "Hour (Service)", short: "HR", allowFractional: true },
+  ];
+  for (const u of unitsToSeed) {
+    const existing = await db
+      .select()
+      .from(schema.units)
+      .where(eq(schema.units.id, u.id))
+      .limit(1);
+    if (!existing.length) {
+      await db.insert(schema.units).values({ ...u, createdAt: now, updatedAt: now });
+    }
+  }
+
+  // 3. Tax Masters
+  console.log("-> Seeding Standard Tax Slabs...");
+  const taxesToSeed = [
+    {
+      id: "tax_std_18",
+      organizationId: orgId,
+      name: "GST Standard 18%",
+      rate: "18.00",
+      taxType: "gst",
+      cgstRate: "9.00",
+      sgstRate: "9.00",
+      isDefault: true,
+      status: "active",
+      description: "Standard goods and electronics VAT/GST",
+    },
+    {
+      id: "tax_red_5",
+      organizationId: orgId,
+      name: "Reduced VAT 5%",
+      rate: "5.00",
+      taxType: "vat",
+      isDefault: false,
+      status: "active",
+      description: "Essential grocery and apparel rate",
+    },
+    {
+      id: "tax_zero_0",
+      organizationId: orgId,
+      name: "Zero Rated 0%",
+      rate: "0.00",
+      taxType: "exempt",
+      isDefault: false,
+      status: "active",
+      description: "Tax-exempt services and exports",
+    },
+  ];
+  for (const t of taxesToSeed) {
+    const existing = await db
+      .select()
+      .from(schema.taxMasters)
+      .where(eq(schema.taxMasters.id, t.id))
+      .limit(1);
+    if (!existing.length) {
+      await db.insert(schema.taxMasters).values({ ...t, createdAt: now, updatedAt: now });
+    }
+  }
+
+  // 4. Variant Products & Variants with Multi-Branch Inventory
+  console.log("-> Seeding Variant Products (Apparel, Shoes & Tech)...");
+
+  // Product A: Premium Cotton Crewneck T-Shirt (Variants: Black S, Black M, Black L, White M, White L)
+  const prodTshirtId = "prod_var_crewneck_tshirt";
+  const existingTshirt = await db
+    .select()
+    .from(schema.products)
+    .where(eq(schema.products.id, prodTshirtId))
+    .limit(1);
+
+  if (!existingTshirt.length) {
+    await db.insert(schema.products).values({
+      id: prodTshirtId,
+      organizationId: orgId,
+      name: "Classic Organic Cotton Crewneck T-Shirt",
+      sku: "TSH-CREW-001",
+      barcode: "890100100001",
+      category: "Apparel",
+      brand: "OneDesk Vogue",
+      unit: "PCS",
+      price: "29.99",
+      cost: "11.50",
+      stock: "145",
+      hasVariants: true,
+      trackFifo: false,
+      status: "active",
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    const tshirtVariants = [
+      { id: "var_tshirt_blk_s", sku: "TSH-BLK-S", name: "Black / Small", price: "29.99", cost: "11.50", stock: 25, options: { Color: "Black", Size: "S" }, barcode: "890100100011" },
+      { id: "var_tshirt_blk_m", sku: "TSH-BLK-M", name: "Black / Medium", price: "29.99", cost: "11.50", stock: 40, options: { Color: "Black", Size: "M" }, barcode: "890100100012" },
+      { id: "var_tshirt_blk_l", sku: "TSH-BLK-L", name: "Black / Large", price: "29.99", cost: "11.50", stock: 30, options: { Color: "Black", Size: "L" }, barcode: "890100100013" },
+      { id: "var_tshirt_wht_m", sku: "TSH-WHT-M", name: "White / Medium", price: "29.99", cost: "11.50", stock: 25, options: { Color: "White", Size: "M" }, barcode: "890100100014" },
+      { id: "var_tshirt_wht_l", sku: "TSH-WHT-L", name: "White / Large", price: "29.99", cost: "11.50", stock: 25, options: { Color: "White", Size: "L" }, barcode: "890100100015" },
+    ];
+
+    for (const v of tshirtVariants) {
+      await db.insert(schema.productVariants).values({
+        id: v.id,
+        organizationId: orgId,
+        productId: prodTshirtId,
+        name: v.name,
+        sku: v.sku,
+        barcode: v.barcode,
+        price: v.price,
+        cost: v.cost,
+        createdAt: now,
+        updatedAt: now,
+      });
+
+      // Insert attributes
+      for (const [attrName, attrVal] of Object.entries(v.options)) {
+        await db.insert(schema.productVariantAttributes).values({
+          id: uuidv4(),
+          variantId: v.id,
+          name: attrName,
+          value: attrVal,
+          createdAt: now,
+          updatedAt: now,
+        });
+      }
+
+      // Variant inventory at Downtown store & Warehouse
+      const storeQty = Math.floor(v.stock * 0.6);
+      const whQty = v.stock - storeQty;
+
+      await db.insert(schema.variantInventory).values([
+        {
+          id: uuidv4(),
+          organizationId: orgId,
+          variantId: v.id,
+          locationId: locDowntownId,
+          stock: storeQty.toString(),
+          reorderLevel: "5",
+          createdAt: now,
+          updatedAt: now,
+        },
+        {
+          id: uuidv4(),
+          organizationId: orgId,
+          variantId: v.id,
+          locationId: locWarehouseId,
+          stock: whQty.toString(),
+          reorderLevel: "10",
+          createdAt: now,
+          updatedAt: now,
+        },
+      ]);
+    }
+  }
+
+  // Product B: Ultralight Pro Running Shoes (Variants: Size 40, 41, 42, 43, 44)
+  const prodShoesId = "prod_var_ultralight_shoes";
+  const existingShoes = await db
+    .select()
+    .from(schema.products)
+    .where(eq(schema.products.id, prodShoesId))
+    .limit(1);
+
+  if (!existingShoes.length) {
+    await db.insert(schema.products).values({
+      id: prodShoesId,
+      organizationId: orgId,
+      name: "Ultralight Pro Carbon Running Shoes",
+      sku: "SHOE-RUN-PRO",
+      barcode: "890200200001",
+      category: "Footwear",
+      brand: "Apex Athletics",
+      unit: "PCS",
+      price: "129.00",
+      cost: "52.00",
+      stock: "85",
+      hasVariants: true,
+      status: "active",
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    const shoeSizes = ["40", "41", "42", "43", "44"];
+    for (const sz of shoeSizes) {
+      const vId = `var_shoe_${sz}`;
+      await db.insert(schema.productVariants).values({
+        id: vId,
+        organizationId: orgId,
+        productId: prodShoesId,
+        name: `Size EU ${sz}`,
+        sku: `SHOE-RUN-${sz}`,
+        barcode: `8902002000${sz}`,
+        price: "129.00",
+        cost: "52.00",
+        createdAt: now,
+        updatedAt: now,
+      });
+
+      await db.insert(schema.productVariantAttributes).values({
+        id: uuidv4(),
+        variantId: vId,
+        name: "Size",
+        value: sz,
+        createdAt: now,
+        updatedAt: now,
+      });
+
+      await db.insert(schema.variantInventory).values({
+        id: uuidv4(),
+        organizationId: orgId,
+        variantId: vId,
+        locationId: locDowntownId,
+        stock: "10",
+        reorderLevel: "3",
+        createdAt: now,
+        updatedAt: now,
+      });
+    }
+  }
+
+  // Product C: Flagship 5G Smartphone (Variants: 128GB Midnight, 256GB Midnight, 256GB Silver)
+  const prodPhoneId = "prod_var_phone_5g";
+  const existingPhone = await db
+    .select()
+    .from(schema.products)
+    .where(eq(schema.products.id, prodPhoneId))
+    .limit(1);
+
+  if (!existingPhone.length) {
+    await db.insert(schema.products).values({
+      id: prodPhoneId,
+      organizationId: orgId,
+      name: "Nexus Nova 5G Flagship Smartphone",
+      sku: "PHN-NOVA-5G",
+      barcode: "890300300001",
+      category: "Electronics",
+      brand: "Nexus Tech",
+      unit: "PCS",
+      price: "799.00",
+      cost: "540.00",
+      stock: "45",
+      hasVariants: true,
+      hasSerial: true,
+      status: "active",
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    const phoneVariants = [
+      { id: "var_phone_128_blk", name: "128GB / Midnight Black", sku: "NOVA-128-BLK", price: "799.00", cost: "540.00", stock: 15, options: { Storage: "128GB", Color: "Midnight Black" }, barcode: "890300300011" },
+      { id: "var_phone_256_blk", name: "256GB / Midnight Black", sku: "NOVA-256-BLK", price: "899.00", cost: "610.00", stock: 20, options: { Storage: "256GB", Color: "Midnight Black" }, barcode: "890300300012" },
+      { id: "var_phone_256_slv", name: "256GB / Lunar Silver", sku: "NOVA-256-SLV", price: "899.00", cost: "610.00", stock: 10, options: { Storage: "256GB", Color: "Lunar Silver" }, barcode: "890300300013" },
+    ];
+
+    for (const v of phoneVariants) {
+      await db.insert(schema.productVariants).values({
+        id: v.id,
+        organizationId: orgId,
+        productId: prodPhoneId,
+        name: v.name,
+        sku: v.sku,
+        barcode: v.barcode,
+        price: v.price,
+        cost: v.cost,
+        createdAt: now,
+        updatedAt: now,
+      });
+
+      for (const [attrName, attrVal] of Object.entries(v.options)) {
+        await db.insert(schema.productVariantAttributes).values({
+          id: uuidv4(),
+          variantId: v.id,
+          name: attrName,
+          value: attrVal,
+          createdAt: now,
+          updatedAt: now,
+        });
+      }
+
+      await db.insert(schema.variantInventory).values({
+        id: uuidv4(),
+        organizationId: orgId,
+        variantId: v.id,
+        locationId: locDowntownId,
+        stock: v.stock.toString(),
+        reorderLevel: "4",
+        createdAt: now,
+        updatedAt: now,
+      });
+    }
+  }
+
+  // 5. Service Products for POS (type = "service")
+  console.log("-> Seeding Service Products (Diagnostics, Tailoring, Delivery, Cleaning)...");
+  const servicesToSeed = [
+    {
+      id: "srv_device_diagnostic",
+      organizationId: orgId,
+      name: "Full Hardware Diagnostics & Clean",
+      sku: "SRV-DIAG-01",
+      barcode: "890900100001",
+      category: "Services",
+      brand: "OneDesk Services",
+      unit: "HR",
+      price: "35.00",
+      cost: "5.00",
+      stock: "9999",
+      hasVariants: false,
+      status: "active",
+      createdAt: now,
+      updatedAt: now,
+    },
+    {
+      id: "srv_tailoring_alteration",
+      organizationId: orgId,
+      name: "Custom Tailoring & Hemming Service",
+      sku: "SRV-TAILOR-02",
+      barcode: "890900100002",
+      category: "Services",
+      brand: "OneDesk Services",
+      unit: "HR",
+      price: "15.00",
+      cost: "2.00",
+      stock: "9999",
+      hasVariants: false,
+      status: "active",
+      createdAt: now,
+      updatedAt: now,
+    },
+    {
+      id: "srv_express_courier",
+      organizationId: orgId,
+      name: "Express Same-Day Courier Delivery",
+      sku: "SRV-EXPRESS-03",
+      barcode: "890900100003",
+      category: "Services",
+      brand: "OneDesk Services",
+      unit: "HR",
+      price: "12.50",
+      cost: "8.00",
+      stock: "9999",
+      hasVariants: false,
+      status: "active",
+      createdAt: now,
+      updatedAt: now,
+    },
+    {
+      id: "srv_gift_wrapping",
+      organizationId: orgId,
+      name: "Luxury Satin Gift Wrapping & Box",
+      sku: "SRV-WRAP-04",
+      barcode: "890900100004",
+      category: "Services",
+      brand: "OneDesk Services",
+      unit: "HR",
+      price: "5.00",
+      cost: "1.20",
+      stock: "9999",
+      hasVariants: false,
+      status: "active",
+      createdAt: now,
+      updatedAt: now,
+    },
+    {
+      id: "srv_screen_guard_install",
+      organizationId: orgId,
+      name: "Tempered Glass Installation & Dust Purge",
+      sku: "SRV-GLASS-05",
+      barcode: "890900100005",
+      category: "Services",
+      brand: "OneDesk Services",
+      unit: "HR",
+      price: "8.00",
+      cost: "1.50",
+      stock: "9999",
+      hasVariants: false,
+      status: "active",
+      createdAt: now,
+      updatedAt: now,
+    },
+  ];
+
+  for (const srv of servicesToSeed) {
+    const existing = await db
+      .select()
+      .from(schema.products)
+      .where(eq(schema.products.id, srv.id))
+      .limit(1);
+    if (!existing.length) {
+      await db.insert(schema.products).values(srv);
+    }
+  }
+
+  // 6. Product Bundles & Modifiers
+  console.log("-> Seeding Product Bundles & Modifiers...");
+  const bundleProdId = "prod_bundle_summer_runner";
+  const existingBundle = await db
+    .select()
+    .from(schema.products)
+    .where(eq(schema.products.id, bundleProdId))
+    .limit(1);
+
+  if (!existingBundle.length) {
+    await db.insert(schema.products).values({
+      id: bundleProdId,
+      organizationId: orgId,
+      name: "Summer Runner Starter Bundle",
+      sku: "BDL-SUMMER-RUN",
+      barcode: "890800800001",
+      category: "Bundles",
+      brand: "OneDesk",
+      unit: "PCS",
+      price: "145.00",
+      cost: "63.50",
+      stock: "20",
+      isBundle: true,
+      hasVariants: false,
+      status: "active",
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    await db.insert(schema.productBundles).values([
+      {
+        id: uuidv4(),
+        organizationId: orgId,
+        bundleProductId: bundleProdId,
+        componentProductId: prodShoesId,
+        quantity: "1",
+        createdAt: now,
+        updatedAt: now,
+      },
+      {
+        id: uuidv4(),
+        organizationId: orgId,
+        bundleProductId: bundleProdId,
+        componentProductId: prodTshirtId,
+        quantity: "1",
+        createdAt: now,
+        updatedAt: now,
+      },
+    ]);
+  }
+
+  const modGroup1Id = "mod_grp_addons";
+  const existingMod = await db
+    .select()
+    .from(schema.productModifiers)
+    .where(eq(schema.productModifiers.id, modGroup1Id))
+    .limit(1);
+
+  if (!existingMod.length) {
+    await db.insert(schema.productModifiers).values({
+      id: modGroup1Id,
+      organizationId: orgId,
+      productId: prodPhoneId,
+      name: "Add-ons & Extended Warranty",
+      selectionType: "multiple",
+      isRequired: false,
+      sortOrder: 1,
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    for (const opt of [
+      {
+        id: uuidv4(),
+        organizationId: orgId,
+        modifierId: modGroup1Id,
+        name: "Handwritten Greeting Card Tag",
+        price: "2.50",
+        sortOrder: 1,
+      },
+      {
+        id: uuidv4(),
+        organizationId: orgId,
+        modifierId: modGroup1Id,
+        name: "1-Year Extended Hardware Care",
+        price: "29.00",
+        sortOrder: 2,
+      },
+    ]) {
+      await db.insert(schema.productModifierOptions).values({
+        ...opt,
+        createdAt: now,
+        updatedAt: now,
+      });
+    }
+  }
+
+  // 7. Suppliers & Supplier Ledgers
+  console.log("-> Seeding Suppliers & Khatabook Ledgers...");
+  const suppTechId = "supp_apex_technologies";
+  const suppApparelId = "supp_vogue_textiles";
+
+  const suppliersToSeed = [
+    {
+      id: suppTechId,
+      organizationId: orgId,
+      name: "Apex Global Technology Supplies",
+      contact: "Marcus Vance (Chief Account Exec)",
+      email: "orders@apextechsupplies.com",
+      phone: "+1 (800) 555-9011",
+      address: "88 Silicon Park Boulevard, Suite 400",
+      balance: "12500.00",
+      status: "active",
+      createdAt: now,
+      updatedAt: now,
+    },
+    {
+      id: suppApparelId,
+      organizationId: orgId,
+      name: "Vogue Fabric Mills & Apparel Co",
+      contact: "Elena Rostova (Head of Accounts)",
+      email: "accounts@voguemills.com",
+      phone: "+1 (800) 555-9012",
+      address: "12 Cotton Way, District 4",
+      balance: "4200.00",
+      status: "active",
+      createdAt: now,
+      updatedAt: now,
+    },
+  ];
+
+  for (const supp of suppliersToSeed) {
+    const existing = await db
+      .select()
+      .from(schema.suppliers)
+      .where(eq(schema.suppliers.id, supp.id))
+      .limit(1);
+    if (!existing.length) {
+      await db.insert(schema.suppliers).values(supp);
+      await db.insert(schema.supplierLedgers).values({
+        id: uuidv4(),
+        organizationId: orgId,
+        supplierId: supp.id,
+        date: yesterday,
+        type: "Opening Balance",
+        amount: supp.balance,
+        balanceAfter: supp.balance,
+        referenceNo: "OB-2026-001",
+        note: "Audited opening trade balance for fiscal quarter",
+        createdAt: now,
+        updatedAt: now,
+      });
+    }
+  }
+
+  // 8. Inventory Batches & FIFO Movements
+  console.log("-> Seeding FIFO Inventory Batches & Movements...");
+  const batch1Id = "batch_nova_q1_2026";
+  const existingBatch = await db
+    .select()
+    .from(schema.inventoryBatches)
+    .where(eq(schema.inventoryBatches.id, batch1Id))
+    .limit(1);
+
+  if (!existingBatch.length) {
+    await db.insert(schema.inventoryBatches).values({
+      id: batch1Id,
+      organizationId: orgId,
+      productId: prodPhoneId,
+      locationId: locDowntownId,
+      batchNo: "BATCH-NOV-26A",
+      expiryDate: new Date(Date.now() + 365 * 86400000).toISOString(),
+      mfgDate: yesterday,
+      purchaseCost: "540.00",
+      sellingPrice: "799.00",
+      mrp: "849.00",
+      quantityReceived: "25",
+      quantityRemaining: "20",
+      receivedAt: yesterday,
+      supplierId: suppTechId,
+      batchNote: "Initial Q1 Shipment with factory seal",
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    await db.insert(schema.inventoryMovements).values([
+      {
+        organizationId: orgId,
+        productId: prodPhoneId,
+        locationId: locDowntownId,
+        productName: "Nexus Nova 5G Flagship Smartphone",
+        action: "purchase",
+        quantity: "25",
+        createdAt: yesterday,
+      },
+      {
+        organizationId: orgId,
+        productId: prodPhoneId,
+        locationId: locDowntownId,
+        productName: "Nexus Nova 5G Flagship Smartphone",
+        action: "pos_sale",
+        quantity: "-5",
+        createdAt: now,
+      },
+    ]);
+  }
+
+  // 9. Stock Adjustments & Stock Transfers
+  console.log("-> Seeding Stock Adjustments & Inter-Branch Transfers...");
+  const adj1Id = "adj_demo_audit_surplus";
+  const existingAdj = await db
+    .select()
+    .from(schema.inventoryAdjustments)
+    .where(eq(schema.inventoryAdjustments.id, adj1Id))
+    .limit(1);
+
+  if (!existingAdj.length) {
+    await db.insert(schema.inventoryAdjustments).values({
+      id: adj1Id,
+      organizationId: orgId,
+      ref: "ADJ-260101",
+      date: yesterday,
+      productId: prodTshirtId,
+      productName: "Classic Organic Cotton Crewneck T-Shirt",
+      locationId: locDowntownId,
+      reason: "Cycle Count Audit: +5 Physical Stock Surplus Discovered",
+      items: 1,
+      net: "5",
+      status: "completed",
+      createdAt: now,
+      updatedAt: now,
+    });
+  }
+
+  const xfer1Id = "xfer_demo_wh_to_store";
+  const existingXfer = await db
+    .select()
+    .from(schema.inventoryTransfers)
+    .where(eq(schema.inventoryTransfers.id, xfer1Id))
+    .limit(1);
+
+  if (!existingXfer.length) {
+    await db.insert(schema.inventoryTransfers).values({
+      id: xfer1Id,
+      organizationId: orgId,
+      ref: "TRF-260201",
+      date: yesterday,
+      productId: prodShoesId,
+      productName: "Ultralight Pro Carbon Running Shoes",
+      quantity: 15,
+      totalAmount: "780.00",
+      paidAmount: "780.00",
+      paymentMethod: "internal_transfer",
+      sourceLocationId: locWarehouseId,
+      destinationLocationId: locDowntownId,
+      destination: "Flagship Downtown Store",
+      items: 1,
+      status: "completed",
+      createdAt: now,
+      updatedAt: now,
+    });
+  }
+
+  // 10. Purchases & Purchase Orders
+  console.log("-> Seeding Purchases & Purchase Orders...");
+  const purchaseId = "purch_demo_trade_invoice_01";
+  const existingPurch = await db
+    .select()
+    .from(schema.purchases)
+    .where(eq(schema.purchases.id, purchaseId))
+    .limit(1);
+
+  if (!existingPurch.length) {
+    await db.insert(schema.purchases).values({
+      id: purchaseId,
+      organizationId: orgId,
+      supplierId: suppTechId,
+      supplier: "Apex Global Technology Supplies",
+      date: yesterday,
+      invoiceNo: "PINV-2026-8801",
+      items: 1,
+      total: "13500.00",
+      paid: "10000.00",
+      due: "3500.00",
+      status: "completed",
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    await db.insert(schema.purchaseItems).values({
+      organizationId: orgId,
+      purchaseId,
+      productId: prodPhoneId,
+      productName: "Nexus Nova 5G Flagship Smartphone",
+      quantity: "25",
+      cost: "540.00",
+      total: "13500.00",
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    const pretId = "pret_demo_defective_return";
+    await db.insert(schema.purchaseReturns).values({
+      id: pretId,
+      organizationId: orgId,
+      ref: "PRET-2026-001",
+      purchaseId,
+      supplier: "Apex Global Technology Supplies",
+      reason: "Defective packaging on 2 units, returned for replacement",
+      total: "1080.00",
+      status: "approved",
+      date: now,
+      stockRestored: true,
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    await db.insert(schema.purchaseReturnItems).values({
+      organizationId: orgId,
+      returnId: pretId,
+      productId: prodPhoneId,
+      productName: "Nexus Nova 5G Flagship Smartphone",
+      quantity: 2,
+      cost: "540.00",
+      total: "1080.00",
+      createdAt: now,
+      updatedAt: now,
+    });
+  }
+
+  // 11. Customer Records, Credit Balances & Loyalty Ledgers
+  console.log("-> Seeding Customer Ledgers & Loyalty Members...");
+  const custVipId = "cust_vip_alexandra_stone";
+  const existingCust = await db
+    .select()
+    .from(schema.customers)
+    .where(eq(schema.customers.id, custVipId))
+    .limit(1);
+
+  if (!existingCust.length) {
+    await db.insert(schema.customers).values({
+      id: custVipId,
+      organizationId: orgId,
+      name: "Lady Alexandra Stone",
+      email: "alexandra.stone@example.com",
+      phone: "+1 (555) 349-8821",
+      address: "742 Evergreen Terrace, Penthouse B",
+      city: "Metropolis",
+      loyaltyPoints: 480,
+      visits: 14,
+      totalSpent: "3480.00",
+      credit: "450.00",
+      creditLimit: "2500.00",
+      walletBalance: "150.00",
+      status: "active",
+      type: "vip",
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    await db.insert(schema.loyaltyMembers).values({
+      id: uuidv4(),
+      organizationId: orgId,
+      customerName: "Lady Alexandra Stone",
+      phone: "+1 (555) 349-8821",
+      points: 480,
+      tier: "Platinum",
+      joinedAt: yesterday,
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    await db.insert(schema.customerLedgers).values({
+      id: uuidv4(),
+      organizationId: orgId,
+      customerId: custVipId,
+      date: yesterday,
+      type: "Credit Sale (Invoice #INV-9021)",
+      amount: "450.00",
+      balanceAfter: "450.00",
+      referenceNo: "INV-9021",
+      note: "Authorized store account credit purchase",
+      createdAt: now,
+      updatedAt: now,
+    });
+  }
+
+  // 12. POS Sales & Sales Returns
+  console.log("-> Seeding Completed POS Invoices & Sales Returns...");
+  const sale1Id = "sale_pos_invoice_1001";
+  const existingSale = await db
+    .select()
+    .from(schema.sales)
+    .where(eq(schema.sales.id, sale1Id))
+    .limit(1);
+
+  if (!existingSale.length) {
+    await db.insert(schema.sales).values({
+      id: sale1Id,
+      organizationId: orgId,
+      customerId: custVipId,
+      customerName: "Lady Alexandra Stone",
+      date: yesterday,
+      items: 2,
+      subtotal: "828.99",
+      discountAmt: "30.00",
+      taxAmt: "45.00",
+      total: "843.99",
+      paymentMethod: "card",
+      status: "completed",
+      createdAt: yesterday,
+      updatedAt: yesterday,
+    });
+
+    await db.insert(schema.saleItems).values([
+      {
+        organizationId: orgId,
+        saleId: sale1Id,
+        productId: prodPhoneId,
+        variantId: "var_phone_128_blk",
+        productName: "Nexus Nova 5G Flagship Smartphone (128GB / Midnight Black)",
+        quantity: "1",
+        price: "799.00",
+        total: "812.00",
+        referenceType: "PRODUCT",
+        referenceId: prodPhoneId,
+        createdAt: yesterday,
+        updatedAt: yesterday,
+      },
+      {
+        organizationId: orgId,
+        saleId: sale1Id,
+        productId: "srv_gift_wrapping",
+        productName: "Luxury Satin Gift Wrapping & Box",
+        quantity: "1",
+        price: "5.00",
+        total: "5.00",
+        referenceType: "SERVICE",
+        referenceId: "srv_gift_wrapping",
+        createdAt: yesterday,
+        updatedAt: yesterday,
+      },
+    ]);
+
+    // Sample Return on previous order
+    const returnId = "ret_demo_wrong_size";
+    await db.insert(schema.salesReturns).values({
+      id: returnId,
+      organizationId: orgId,
+      ref: "RET-2026-001",
+      saleId: sale1Id,
+      customerName: "Lady Alexandra Stone",
+      reason: "Size exchanged for alternate colorway",
+      total: "29.99",
+      status: "approved",
+      date: now,
+      stockRestored: true,
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    await db.insert(schema.salesReturnItems).values({
+      organizationId: orgId,
+      returnId,
+      productId: prodTshirtId,
+      productName: "Classic Organic Cotton Crewneck T-Shirt",
+      quantity: "1",
+      price: "29.99",
+      total: "29.99",
+      createdAt: now,
+      updatedAt: now,
+    });
+  }
+
+  // 13. Quotations & Delivery Challans
+  console.log("-> Seeding Quotations & Dispatch Delivery Challans...");
+  const quoteId = "quot_corp_outfitting";
+  const existingQuote = await db
+    .select()
+    .from(schema.quotations)
+    .where(eq(schema.quotations.id, quoteId))
+    .limit(1);
+
+  if (!existingQuote.length) {
+    await db.insert(schema.quotations).values({
+      id: quoteId,
+      organizationId: orgId,
+      quotationNo: "QT-2026-0088",
+      customerId: custVipId,
+      customerName: "Apex Corporate Staff",
+      customerPhone: "+1 (555) 349-8821",
+      date: now,
+      validUntil: nextMonth,
+      items: [
+        {
+          productId: prodTshirtId,
+          productName: "Classic Organic Cotton Crewneck T-Shirt",
+          quantity: 100,
+          price: 29.99,
+          discount: 200.0,
+          tax: 140.0,
+          total: 2939.0,
+        },
+      ],
+      subtotal: "2999.00",
+      discountAmt: "200.00",
+      taxAmt: "140.00",
+      total: "2939.00",
+      status: "sent",
+      notes: "Corporate uniform apparel quotation with bulk tiered rebate",
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    await db.insert(schema.deliveryChallans).values({
+      id: uuidv4(),
+      organizationId: orgId,
+      challanNo: "DC-2026-041",
+      date: now,
+      customerId: custVipId,
+      customerName: "Apex Corporate Staff",
+      transportName: "Blue Dart Road Express",
+      vehicleNo: "NY-TRK-9821",
+      driverName: "Sam Porter",
+      notes: "Fragile apparel boxes. Inspect seal on arrival.",
+      items: [
+        { productName: "Classic Organic Cotton Crewneck T-Shirt", quantity: 50, unit: "PCS" },
+      ],
+      status: "in_transit",
+      createdAt: now,
+      updatedAt: now,
+    });
+  }
+
+  // 14. Cashier Shifts & Held Invoices
+  console.log("-> Seeding Cashier Shifts & Held Carts for POS...");
+  const shiftId = "shift_demo_current_morning";
+  const existingShift = await db
+    .select()
+    .from(schema.shifts)
+    .where(eq(schema.shifts.id, shiftId))
+    .limit(1);
+
+  if (!existingShift.length) {
+    await db.insert(schema.shifts).values({
+      id: shiftId,
+      organizationId: orgId,
+      userId: "demo_user_cashier",
+      userName: "Sarah Jenkins (Senior Cashier)",
+      openTime: yesterday,
+      startingCash: "200.00",
+      expectedCash: "680.50",
+      actualCash: "680.50",
+      difference: "0.00",
+      status: "open",
+      notes: "Morning till shift running normally",
+      createdAt: yesterday,
+      updatedAt: now,
+    });
+
+    await db.insert(schema.heldInvoices).values({
+      id: uuidv4(),
+      organizationId: orgId,
+      customerId: custVipId,
+      customerName: "Walk-in Guest",
+      cart: [
+        {
+          id: prodTshirtId,
+          name: "Classic Organic Cotton Crewneck T-Shirt",
+          price: 29.99,
+          quantity: 2,
+        },
+      ],
+      discount: "0.00",
+      payment: "cash",
+      savedAt: now,
+      note: "Customer stepped to ATM to grab cash float",
+      createdAt: now,
+      updatedAt: now,
+    });
+  }
+
+  // 15. Coupons, Gift Cards & Promotions
+  console.log("-> Seeding Coupons, Gift Cards & Promotional Rules...");
+  const promoCoupons = [
+    { code: "WELCOME10", type: "percentage", discount: "10.00", usageLimit: 500, used: 14, status: "active" },
+    { code: "FLAT50", type: "fixed", discount: "50.00", usageLimit: 100, used: 8, status: "active" },
+    { code: "VIP25", type: "percentage", discount: "25.00", usageLimit: 50, used: 3, status: "active" },
+  ];
+  for (const c of promoCoupons) {
+    const existing = await db
+      .select()
+      .from(schema.coupons)
+      .where(eq(schema.coupons.code, c.code))
+      .limit(1);
+    if (!existing.length) {
+      await db.insert(schema.coupons).values({
+        id: uuidv4(),
+        organizationId: orgId,
+        code: c.code,
+        type: c.type,
+        discount: c.discount,
+        usageLimit: c.usageLimit,
+        used: c.used,
+        expires: nextMonth,
+        status: c.status,
+        createdAt: now,
+        updatedAt: now,
+      });
+    }
+  }
+
+  const giftCardsToSeed = [
+    { code: "GC-2026-GOLD-100", balance: "100.00", initialBalance: "100.00", customer: "Lady Alexandra Stone" },
+    { code: "GC-2026-SILVER-50", balance: "35.50", initialBalance: "50.00", customer: "Marcus Vance" },
+  ];
+  for (const gc of giftCardsToSeed) {
+    const existing = await db
+      .select()
+      .from(schema.giftCards)
+      .where(eq(schema.giftCards.code, gc.code))
+      .limit(1);
+    if (!existing.length) {
+      await db.insert(schema.giftCards).values({
+        id: uuidv4(),
+        organizationId: orgId,
+        code: gc.code,
+        balance: gc.balance,
+        initialBalance: gc.initialBalance,
+        customer: gc.customer,
+        issued: yesterday,
+        expires: nextMonth,
+        status: "active",
+        createdAt: now,
+        updatedAt: now,
+      });
+    }
+  }
+
+  const existingPromo = await db
+    .select()
+    .from(schema.promotions)
+    .where(eq(schema.promotions.organizationId, orgId))
+    .limit(1);
+  if (!existingPromo.length) {
+    await db.insert(schema.promotions).values({
+      id: uuidv4(),
+      organizationId: orgId,
+      title: "Weekend Mega Flash Sale: 15% Off Apparels",
+      type: "percentage",
+      value: "15.00",
+      conditions: "min_spend: 50, max_discount: 100",
+      startDate: yesterday,
+      endDate: nextMonth,
+      status: "active",
+      createdAt: now,
+      updatedAt: now,
+    });
+  }
+
+  // 16. Financial Accounts, Vouchers & Store Expenses
+  console.log("-> Seeding Chart of Accounts, Vouchers & Store Expenses...");
+  const accountsToSeed = [
+    { code: "1001", name: "Store Cash on Hand / Cashier Drawer", type: "asset", balance: "2450.00", isSystem: true },
+    { code: "1002", name: "Primary Commercial Bank Account", type: "asset", balance: "48920.00", isSystem: true },
+    { code: "1003", name: "Accounts Receivable (Customer Due)", type: "asset", balance: "450.00", isSystem: true },
+    { code: "1004", name: "Merchandise Inventory Valuated", type: "asset", balance: "18500.00", isSystem: true },
+    { code: "2001", name: "Accounts Payable (Trade Suppliers)", type: "liability", balance: "16700.00", isSystem: true },
+    { code: "4001", name: "Gross Sales POS Revenue", type: "income", balance: "843.99", isSystem: true },
+    { code: "5001", name: "Cost of Goods Sold (COGS)", type: "expense", balance: "540.00", isSystem: true },
+    { code: "5002", name: "Store Rent & Facility Lease", type: "expense", balance: "2800.00", isSystem: true },
+    { code: "5003", name: "Staff Payroll & Overtime", type: "expense", balance: "4200.00", isSystem: true },
+  ];
+
+  for (const acc of accountsToSeed) {
+    const existing = await db
+      .select()
+      .from(schema.accounts)
+      .where(eq(schema.accounts.code, acc.code))
+      .limit(1);
+    if (!existing.length) {
+      await db.insert(schema.accounts).values({
+        id: uuidv4(),
+        organizationId: orgId,
+        ...acc,
+        createdAt: now,
+        updatedAt: now,
+      });
+    }
+  }
+
+  const existingExpenses = await db
+    .select()
+    .from(schema.expenses)
+    .where(eq(schema.expenses.organizationId, orgId))
+    .limit(1);
+  if (!existingExpenses.length) {
+    await db.insert(schema.expenses).values([
+      { id: uuidv4(), organizationId: orgId, date: yesterday, category: "Rent & Utilities", description: "Monthly retail store space lease payment", amount: "2800.00", status: "approved", createdAt: now, updatedAt: now },
+      { id: uuidv4(), organizationId: orgId, date: now, category: "High-Speed Internet & POS Cellular", description: "Broadband terminal backup link", amount: "120.00", status: "approved", createdAt: now, updatedAt: now },
+    ]);
+  }
+
+  // 17. Kitchen Order Tickets (KOT) & Restaurant Dining Tables
+  console.log("-> Seeding Restaurant Dining KOTs...");
+  const existingKOT = await db
+    .select()
+    .from(schema.kitchenOrderTickets)
+    .where(eq(schema.kitchenOrderTickets.organizationId, orgId))
+    .limit(1);
+
+  if (!existingKOT.length) {
+    await db.insert(schema.kitchenOrderTickets).values([
+      {
+        id: uuidv4(),
+        organizationId: orgId,
+        tableId: "Table T-01",
+        waiterId: "demo_user_cashier",
+        status: "preparing",
+        note: "Allergies: No peanuts. Extra napkins.",
+        items: [
+          { name: "Espresso Doppio", qty: 2, note: "Oat milk" },
+          { name: "Avocado Sourdough Toast", qty: 1, note: "Well toasted" },
+        ],
+        timestamp: now,
+        createdAt: now,
+        updatedAt: now,
+      },
+    ]);
+  }
+
+  // 18. Appointments, Rentals & Repairs
+  console.log("-> Seeding Appointments, Equipment Rentals & Repair Tickets...");
+  const existingApt = await db
+    .select()
+    .from(schema.appointments)
+    .where(eq(schema.appointments.organizationId, orgId))
+    .limit(1);
+
+  if (!existingApt.length) {
+    await db.insert(schema.appointments).values({
+      id: uuidv4(),
+      organizationId: orgId,
+      customerId: custVipId,
+      customerName: "Lady Alexandra Stone",
+      customerPhone: "+1 (555) 349-8821",
+      serviceName: "Full Hardware Diagnostics & Clean",
+      staffName: "David Miller (Certified Tech)",
+      dateTime: nextMonth,
+      endTime: nextMonth,
+      status: "scheduled",
+      notes: "Annual preventive service checkup",
+      createdAt: now,
+      updatedAt: now,
+    });
+  }
+
+  const existingRental = await db
+    .select()
+    .from(schema.rentals)
+    .where(eq(schema.rentals.organizationId, orgId))
+    .limit(1);
+
+  if (!existingRental.length) {
+    await db.insert(schema.rentals).values({
+      id: uuidv4(),
+      organizationId: orgId,
+      rentalNo: "RNT-2026-108",
+      customerName: "David Harrison",
+      itemName: "Sony Alpha A7 IV Cinema Camera Kit",
+      rentStartDate: yesterday,
+      expectedReturnDate: nextMonth,
+      dailyRate: "45.00",
+      securityDeposit: "500.00",
+      totalAmount: "315.00",
+      status: "active",
+      createdAt: now,
+      updatedAt: now,
+    });
+  }
+
+  const existingRepair = await db
+    .select()
+    .from(schema.repairs)
+    .where(eq(schema.repairs.organizationId, orgId))
+    .limit(1);
+
+  if (!existingRepair.length) {
+    await db.insert(schema.repairs).values({
+      id: uuidv4(),
+      organizationId: orgId,
+      ticketNo: "REP-992182",
+      customerName: "Ethan Walker",
+      customerPhone: "+1 (555) 902-1144",
+      deviceName: "Apple MacBook Pro M2 14-inch",
+      serialOrImei: "C02XYZ189201",
+      problemDescription: "Liquid spill on trackpad; backlight keyboard intermittent",
+      estimatedCost: "280.00",
+      advancePaid: "100.00",
+      status: "in_progress",
+      date: yesterday,
+      notes: "Main logic board inspected; ultrasonic clean completed",
+      createdAt: now,
+      updatedAt: now,
+    });
+  }
+
+  // 19. SaaS Subscription Payments, Tickets & Reviews
+  console.log("-> Seeding SaaS Subscriptions, Support Tickets & Reviews...");
+  const existingSub = await db
+    .select()
+    .from(schema.subscriptions)
+    .where(eq(schema.subscriptions.organizationId, orgId))
+    .limit(1);
+
+  if (!existingSub.length) {
+    await db.insert(schema.subscriptions).values({
+      id: uuidv4(),
+      organizationId: orgId,
+      subscriptionNo: "SUB-2026-001",
+      customerName: "OneDesk360 Flagship Store",
+      customerPhone: "+1 (555) 019-2831",
+      planName: "Enterprise Tier - Multi Branch",
+      billingCycle: "yearly",
+      amount: "990.00",
+      nextBillingDate: new Date(Date.now() + 365 * 86400000).toISOString(),
+      status: "active",
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    await db.insert(schema.subscriptionPayments).values({
+      id: uuidv4(),
+      organizationId: orgId,
+      planId: "enterprise",
+      utrNumber: "UTR-BANK-2026-990182",
+      amount: "990.00",
+      billingCycle: "yearly",
+      paymentMethod: "Bank Wire Transfer",
+      status: "approved",
+      reviewedBy: "SuperAdmin Finance",
+      reviewedAt: yesterday,
+      note: "Annual enterprise renewal confirmed by accounting",
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    await db.insert(schema.supportTickets).values({
+      id: uuidv4(),
+      organizationId: orgId,
+      subject: "Thermal Printer ESC/POS Character Encoding Setup",
+      message: "Need assistance enabling UTF-8 currency glyph rendering on Star Micronics printer.",
+      status: "resolved",
+      createdAt: yesterday,
+      updatedAt: now,
+    });
+
+    await db.insert(schema.reviews).values({
+      id: uuidv4(),
+      organizationId: orgId,
+      rating: 5,
+      comment: "Seamless multi-branch stock transfers and offline POS mode saved our busy weekend rush! Highly recommended.",
+      createdAt: yesterday,
+      updatedAt: now,
+    });
+  }
+
+  // 20. Help Articles & FAQs
+  console.log("-> Seeding Documentation Tutorials & System FAQs...");
+  const existingHelp = await db
+    .select()
+    .from(schema.helpArticles)
+    .limit(1);
+
+  if (!existingHelp.length) {
+    await db.insert(schema.helpArticles).values([
+      {
+        id: uuidv4(),
+        title: "How to Configure ESC/POS Thermal Printers & Cash Drawers",
+        type: "doc",
+        content: "Learn how to connect USB, Network, and Bluetooth receipt printers with auto-cut and drawer kick pulses.",
+        createdAt: now,
+        updatedAt: now,
+      },
+      {
+        id: uuidv4(),
+        title: "Managing Product Variants & Multi-Branch Stock Matrix",
+        type: "doc",
+        content: "Step-by-step guide to generating size/color matrix options and tracking per-location stock levels.",
+        createdAt: now,
+        updatedAt: now,
+      },
+      {
+        id: uuidv4(),
+        title: "Video Tour: Cashier POS Terminal & Fast Keyboard Shortcuts",
+        type: "video",
+        content: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+        createdAt: now,
+        updatedAt: now,
+      },
+    ]);
+
+    await db.insert(schema.faqs).values([
+      {
+        id: uuidv4(),
+        question: "Does OneDesk360 work completely offline if internet disconnects?",
+        answer: "Yes! All sales, customer checkouts, and barcode scans are cached locally in IndexedDB and synchronized automatically when internet is restored.",
+        createdAt: now,
+        updatedAt: now,
+      },
+      {
+        id: uuidv4(),
+        question: "Can I transfer stock between branches and warehouses with approval workflow?",
+        answer: "Yes, use the Stock Transfers module to dispatch items from a central warehouse and receive them at destination store locations.",
+        createdAt: now,
+        updatedAt: now,
+      },
+    ]);
+  }
+
+  // 21. Audit Trail Activity Log & Live Notifications
+  console.log("-> Seeding Audit Log Activity & Store Notifications...");
+  await db.insert(schema.activityLog).values([
+    {
+      id: uuidv4(),
+      organizationId: orgId,
+      user: "System Seeder",
+      action: "System Initialization",
+      details: "Comprehensive catalog, variant products, and multi-location dummy data seeded successfully.",
+      timestamp: now,
+      type: "system",
+      createdAt: now,
+      updatedAt: now,
+    },
+    {
+      id: uuidv4(),
+      organizationId: orgId,
+      user: "Store Owner",
+      action: "POS Sale Completed",
+      details: "Invoice #INV-2026-0001 for Lady Alexandra Stone - $843.99 (Card)",
+      timestamp: yesterday,
+      type: "sale",
+      createdAt: now,
+      updatedAt: now,
+    },
+  ]);
+
+  await db.insert(schema.notifications).values([
+    {
+      id: uuidv4(),
+      organizationId: orgId,
+      title: "Welcome to OneDesk360 Flagship",
+      description: "Sample variant products, services, suppliers, and stock transfers have been provisioned.",
+      type: "system",
+      timestamp: now,
+      read: false,
+      createdAt: now,
+      updatedAt: now,
+    },
+    {
+      id: uuidv4(),
+      organizationId: orgId,
+      title: "Low Stock Alert: Nexus Nova 5G (Lunar Silver)",
+      description: "Current stock is 10 units (at or near reorder threshold).",
+      type: "inventory",
+      timestamp: now,
+      read: false,
+      createdAt: now,
+      updatedAt: now,
+    },
+  ]);
+
+  console.log("✅ ALL 71 TABLES POPULATED WITH REALISTIC DEMO DUMMY DATA!");
+}
+
 export async function seedDatabase() {
   console.log("==========================================");
   console.log("🌱 STARTING ONEDESK360 DATABASE SEEDER");
@@ -80,10 +1523,17 @@ export async function seedDatabase() {
       .where(eq(schema.saasPlans.id, plan.id))
       .limit(1);
     if (!existing.length) {
-      await db.insert(schema.saasPlans).values(plan);
+      await db.insert(schema.saasPlans).values({
+        ...plan,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      });
       console.log(` - Created Plan: ${plan.name}`);
     } else {
-      await db.update(schema.saasPlans).set(plan).where(eq(schema.saasPlans.id, plan.id));
+      await db
+        .update(schema.saasPlans)
+        .set({ ...plan, updatedAt: new Date().toISOString() })
+        .where(eq(schema.saasPlans.id, plan.id));
       console.log(` - Updated Plan: ${plan.name}`);
     }
   }
@@ -108,6 +1558,8 @@ export async function seedDatabase() {
       pin: hashedSuperAdminPassword,
       permissions: ["all"],
       joined: new Date().toISOString(),
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
     });
     console.log(` - Super Admin created successfully (${adminEmail} / superadmin_password)`);
   } else {
@@ -329,12 +1781,19 @@ export async function seedDatabase() {
         planExpiryDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
         syncKey: `${acc.orgId}-sync-key`,
         isOnline: true,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
       });
       console.log(` - Created Demo Organization: ${acc.storeName} (${acc.businessType})`);
     } else {
       await db
         .update(schema.organizations)
-        .set({ name: acc.storeName, status: "active", currentPlanId: "enterprise" })
+        .set({
+          name: acc.storeName,
+          status: "active",
+          currentPlanId: "enterprise",
+          updatedAt: new Date().toISOString(),
+        })
         .where(eq(schema.organizations.id, acc.orgId));
     }
 
@@ -357,6 +1816,8 @@ export async function seedDatabase() {
         subscriptionStatus: "active",
         headerNote: acc.headerNote,
         footerNote: "Thank you for shopping with us!",
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
       });
     } else {
       await db
@@ -366,6 +1827,7 @@ export async function seedDatabase() {
           businessType: acc.businessType,
           headerNote: acc.headerNote,
           subscriptionStatus: "active",
+          updatedAt: new Date().toISOString(),
         })
         .where(eq(schema.settings.organizationId, acc.orgId));
     }
@@ -388,6 +1850,8 @@ export async function seedDatabase() {
         pin: hashedDefaultPassword,
         permissions: ["all"],
         joined: new Date().toISOString(),
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
       });
       const userId = (
         await db.select().from(schema.users).where(eq(schema.users.email, acc.ownerEmail)).limit(1)
@@ -399,6 +1863,8 @@ export async function seedDatabase() {
           userId,
           role: "owner",
           status: "active",
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
         });
       }
       console.log(
@@ -410,9 +1876,7 @@ export async function seedDatabase() {
       const existingOrgId = existingUser[0].organizationId;
       if (existingOrgId !== acc.orgId) {
         // Different org — skip to avoid constraint violation; user belongs to another org
-        console.log(
-          ` - Skipped (org mismatch): ${acc.ownerEmail} [${acc.businessType}]`,
-        );
+        console.log(` - Skipped (org mismatch): ${acc.ownerEmail} [${acc.businessType}]`);
       } else {
         await db
           .update(schema.users)
@@ -421,12 +1885,10 @@ export async function seedDatabase() {
             status: "active",
             pin: hashedDefaultPassword,
             permissions: ["all"],
+            updatedAt: new Date().toISOString(),
           })
           .where(
-            and(
-              eq(schema.users.email, acc.ownerEmail),
-              eq(schema.users.organizationId, acc.orgId),
-            ),
+            and(eq(schema.users.email, acc.ownerEmail), eq(schema.users.organizationId, acc.orgId)),
           );
         console.log(
           ` - Verified Industry Login: ${acc.ownerEmail} / password123 [${acc.businessType}]`,
@@ -454,6 +1916,8 @@ export async function seedDatabase() {
       pin: hashedDefaultPassword,
       permissions: ["pos", "customers", "sales"],
       joined: new Date().toISOString(),
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
     });
     console.log(` - Created Cashier Staff (${cashierEmail} / password123)`);
   }
@@ -3836,6 +5300,8 @@ export async function seedDatabase() {
           organizationId: orgId,
           name: cat.name,
           count: cat.count,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
         });
       } else {
         catMap[cat.name] = existing[0].id;
@@ -3858,6 +5324,8 @@ export async function seedDatabase() {
           organizationId: orgId,
           name: b,
           products: 4,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
         });
       } else {
         brandMap[b] = existing[0].id;
@@ -3881,6 +5349,8 @@ export async function seedDatabase() {
           name: u.name,
           short: u.short,
           allowFractional: u.allowFractional,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
         });
       } else {
         unitMap[u.name] = existing[0].id;
@@ -3888,9 +5358,14 @@ export async function seedDatabase() {
     }
 
     // 4. Seed products tailored to this store's industry
-    await db.delete(schema.products).where(eq(schema.products.organizationId, orgId));
-
     for (const p of catalog.products) {
+      const existing = await db
+        .select({ id: schema.products.id })
+        .from(schema.products)
+        .where(and(eq(schema.products.organizationId, orgId), eq(schema.products.sku, p.sku)))
+        .limit(1);
+      if (existing.length > 0) continue;
+
       const prodId = uuidv4();
       await db.insert(schema.products).values({
         id: prodId,
@@ -3918,15 +5393,22 @@ export async function seedDatabase() {
               },
             ]
           : null,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
       });
     }
 
     // 4b. Seed services tailored to this store's industry
-    await db.delete(schema.services).where(eq(schema.services.organizationId, orgId));
-
     const catalogServices = catalog.services || [];
     const serviceCatFallback = Object.values(catMap)[0];
     for (const s of catalogServices) {
+      const existing = await db
+        .select({ id: schema.services.id })
+        .from(schema.services)
+        .where(and(eq(schema.services.organizationId, orgId), eq(schema.services.name, s.name)))
+        .limit(1);
+      if (existing.length > 0) continue;
+
       await db.insert(schema.services).values({
         id: uuidv4(),
         organizationId: orgId,
@@ -3936,6 +5418,8 @@ export async function seedDatabase() {
         cost: s.cost ?? "0",
         duration: s.duration ?? null,
         status: "active",
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
       });
     }
 
@@ -3987,7 +5471,11 @@ export async function seedDatabase() {
       .where(eq(schema.customers.email, cust.email))
       .limit(1);
     if (!existing.length) {
-      await db.insert(schema.customers).values(cust);
+      await db.insert(schema.customers).values({
+        ...cust,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      });
     }
   }
   // 7. Seed Restaurant Tables for Dining Orgs
@@ -4018,6 +5506,9 @@ export async function seedDatabase() {
       console.log(` - Seeded 5 Restaurant Tables for ${tOrg}`);
     }
   }
+
+  // 8. Seed Comprehensive Multi-Vertical Dummy Data for All Tables
+  await seedComprehensiveData();
 
   console.log("\n==========================================");
   console.log("✅ ONEDESK360 DATABASE SEEDING COMPLETED FOR ALL INDUSTRY TYPES");

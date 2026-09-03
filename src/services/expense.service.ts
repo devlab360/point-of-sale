@@ -3,6 +3,7 @@ import * as schema from "@/db/schema";
 import { eq, and, desc, sql, ilike, or } from "drizzle-orm";
 import { v4 as uuidv4 } from "uuid";
 import { NotFoundError } from "@/lib/errors/errors";
+import { notDeleted } from "@/lib/soft-delete";
 
 export interface ExpenseDTO {
   id?: string;
@@ -11,6 +12,7 @@ export interface ExpenseDTO {
   description?: string | null;
   date?: string | null;
   status?: string | null;
+  locationId?: string | null;
 }
 
 export interface ExpenseQueryFilters {
@@ -18,6 +20,7 @@ export interface ExpenseQueryFilters {
   pageSize?: number;
   query?: string;
   category?: string;
+  locationId?: string;
 }
 
 export class ExpenseService {
@@ -25,7 +28,10 @@ export class ExpenseService {
     const page = filters.page || 1;
     const pageSize = filters.pageSize || 50;
 
-    let conditions = [eq(schema.expenses.organizationId, orgId)];
+    let conditions = [
+      eq(schema.expenses.organizationId, orgId),
+      notDeleted(schema.expenses.deletedAt),
+    ];
 
     if (filters.query) {
       const searchCond = or(
@@ -36,6 +42,9 @@ export class ExpenseService {
     }
     if (filters.category) {
       conditions.push(eq(schema.expenses.category, filters.category));
+    }
+    if (filters.locationId && filters.locationId !== "all") {
+      conditions.push(eq(schema.expenses.locationId, filters.locationId));
     }
 
     const whereClause = and(...conditions);
@@ -69,6 +78,7 @@ export class ExpenseService {
       .values({
         id: expenseId,
         organizationId: orgId,
+        locationId: dto.locationId || null,
         category: dto.category,
         amount: dto.amount.toString(),
         description: dto.description || `${dto.category} Expense`,
@@ -84,7 +94,13 @@ export class ExpenseService {
     const existing = await db
       .select()
       .from(schema.expenses)
-      .where(and(eq(schema.expenses.id, expenseId), eq(schema.expenses.organizationId, orgId)))
+      .where(
+        and(
+          eq(schema.expenses.id, expenseId),
+          eq(schema.expenses.organizationId, orgId),
+          notDeleted(schema.expenses.deletedAt),
+        ),
+      )
       .limit(1);
 
     if (!existing.length) {
@@ -92,7 +108,8 @@ export class ExpenseService {
     }
 
     await db
-      .delete(schema.expenses)
+      .update(schema.expenses)
+      .set({ deletedAt: new Date().toISOString() })
       .where(and(eq(schema.expenses.id, expenseId), eq(schema.expenses.organizationId, orgId)));
   }
 }

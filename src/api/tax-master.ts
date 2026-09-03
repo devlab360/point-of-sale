@@ -3,6 +3,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireAuth } from "@/lib/auth-utils";
 import { z } from "zod";
 import { v4 as uuidv4 } from "uuid";
+import { notDeleted } from "@/lib/soft-delete";
 
 export interface TaxSlabTemplate {
   name: string;
@@ -268,12 +269,14 @@ async function getDb() {
 }
 
 export async function ensureDefaultTaxMasters(orgId: string) {
-  const { db, schema, eq } = await getDb();
+  const { db, schema, eq, and } = await getDb();
 
   const existing = await db
     .select({ id: schema.taxMasters.id })
     .from(schema.taxMasters)
-    .where(eq(schema.taxMasters.organizationId, orgId))
+    .where(
+      and(eq(schema.taxMasters.organizationId, orgId), notDeleted(schema.taxMasters.deletedAt)),
+    )
     .limit(1);
   if (existing.length > 0) return;
 
@@ -281,7 +284,7 @@ export async function ensureDefaultTaxMasters(orgId: string) {
   const settingsRows = await db
     .select({ countryCode: schema.settings.countryCode, config: schema.settings.config })
     .from(schema.settings)
-    .where(eq(schema.settings.organizationId, orgId))
+    .where(and(eq(schema.settings.organizationId, orgId), notDeleted(schema.settings.deletedAt)))
     .limit(1);
 
   const country = (settingsRows[0]?.config as any)?.country || "IN";
@@ -326,11 +329,13 @@ export const getTaxMastersFn = createServerFn({ method: "GET" })
       const session = await requireAuth();
       const orgId = session.orgId;
       await ensureDefaultTaxMasters(orgId);
-      const { db, schema, eq } = await getDb();
+      const { db, schema, eq, and } = await getDb();
       const res = await db
         .select()
         .from(schema.taxMasters)
-        .where(eq(schema.taxMasters.organizationId, orgId))
+        .where(
+          and(eq(schema.taxMasters.organizationId, orgId), notDeleted(schema.taxMasters.deletedAt)),
+        )
         .orderBy(schema.taxMasters.rate);
       return { success: true, data: res };
     } catch (e) {
@@ -500,7 +505,8 @@ export const deleteTaxMasterFn = createServerFn({ method: "POST" })
       const session = await requireAuth();
       const { db, schema, eq, and } = await getDb();
       await db
-        .delete(schema.taxMasters)
+        .update(schema.taxMasters)
+        .set({ deletedAt: new Date().toISOString() })
         .where(
           and(
             eq(schema.taxMasters.id, data.id),

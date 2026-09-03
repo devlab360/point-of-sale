@@ -9,6 +9,8 @@ import * as schema from "@/db/schema";
 import { eq, and, sql, inArray, desc } from "drizzle-orm";
 import { v4 as uuidv4 } from "uuid";
 
+import { notDeleted } from "@/lib/soft-delete";
+
 const insertSchema = schema.shifts
   ? createInsertSchema(schema.shifts).omit({ id: true }).partial()
   : z.any();
@@ -28,12 +30,27 @@ export const getPosItemsFn = createServerFn({ method: "GET" })
 
       // Parallelize DB queries
       const [products, batches, services] = await Promise.all([
-        db.select().from(schema.products).where(eq(schema.products.organizationId, orgId)),
+        db
+          .select()
+          .from(schema.products)
+          .where(
+            and(eq(schema.products.organizationId, orgId), notDeleted(schema.products.deletedAt)),
+          ),
         db
           .select()
           .from(schema.inventoryBatches)
-          .where(eq(schema.inventoryBatches.organizationId, orgId)),
-        db.select().from(schema.services).where(eq(schema.services.organizationId, orgId)),
+          .where(
+            and(
+              eq(schema.inventoryBatches.organizationId, orgId),
+              notDeleted(schema.inventoryBatches.deletedAt),
+            ),
+          ),
+        db
+          .select()
+          .from(schema.services)
+          .where(
+            and(eq(schema.services.organizationId, orgId), notDeleted(schema.services.deletedAt)),
+          ),
       ]);
 
       // O(1) batch lookup map
@@ -83,7 +100,9 @@ export const getShiftsFn = createServerFn({ method: "GET" })
       const res = await db
         .select()
         .from(schema.shifts)
-        .where(eq(schema.shifts.organizationId, session.orgId));
+        .where(
+          and(eq(schema.shifts.organizationId, session.orgId), notDeleted(schema.shifts.deletedAt)),
+        );
       return { success: true, data: res };
     } catch (e) {
       return handleApiError(e);
@@ -149,7 +168,12 @@ export const getHeldInvoicesFn = createServerFn({ method: "GET" })
         })
         .from(schema.heldInvoices)
         .leftJoin(schema.customers, eq(schema.heldInvoices.customerId, schema.customers.id))
-        .where(eq(schema.heldInvoices.organizationId, session.orgId))
+        .where(
+          and(
+            eq(schema.heldInvoices.organizationId, session.orgId),
+            notDeleted(schema.heldInvoices.deletedAt),
+          ),
+        )
         .orderBy(desc(schema.heldInvoices.savedAt));
       return { success: true, data: res };
     } catch (e) {
@@ -165,7 +189,8 @@ export const createHeldInvoiceFn = createServerFn({ method: "POST" })
       // Prevent duplicate multiple held records for the same customer
       if (data.invoice.customerId) {
         await db
-          .delete(schema.heldInvoices)
+          .update(schema.heldInvoices)
+          .set({ deletedAt: new Date().toISOString() })
           .where(
             and(
               eq(schema.heldInvoices.customerId, data.invoice.customerId),
@@ -190,7 +215,8 @@ export const deleteHeldInvoiceFn = createServerFn({ method: "POST" })
     try {
       const session = await requireAuth();
       await db
-        .delete(schema.heldInvoices)
+        .update(schema.heldInvoices)
+        .set({ deletedAt: new Date().toISOString() })
         .where(
           and(
             eq(schema.heldInvoices.id, data.id),
@@ -207,7 +233,8 @@ export const clearAllHeldInvoicesFn = createServerFn({ method: "POST" }).handler
   try {
     const session = await requireAuth();
     await db
-      .delete(schema.heldInvoices)
+      .update(schema.heldInvoices)
+      .set({ deletedAt: new Date().toISOString() })
       .where(eq(schema.heldInvoices.organizationId, session.orgId));
     return { success: true };
   } catch (e) {
@@ -233,9 +260,10 @@ export const splitHeldInvoiceFn = createServerFn({ method: "POST" })
     try {
       const session = await requireAuth();
       return await db.transaction(async (tx) => {
-        // Delete the original held invoice
+        // Soft delete the original held invoice
         await tx
-          .delete(schema.heldInvoices)
+          .update(schema.heldInvoices)
+          .set({ deletedAt: new Date().toISOString() })
           .where(
             and(
               eq(schema.heldInvoices.id, data.originalInvoiceId),
@@ -280,6 +308,7 @@ const SaleItemInput = z
     serialNumber: z.string().optional().nullable(),
     batchNo: z.string().optional().nullable(),
     batchId: z.string().optional().nullable(), // Added batchId for explicit selection
+    variantId: z.string().optional().nullable(),
     modifiers: z.array(z.any()).optional().nullable(),
   })
   .passthrough();
@@ -478,6 +507,7 @@ export const completePosSaleFn = createServerFn({ method: "POST" })
 
         const lowStockNotifications: any[] = [];
         const stockUpdates: { productId: string; newStock: number }[] = [];
+        const variantStockUpdates: { variantId: string; quantity: number }[] = [];
         const batchConsumptionsToInsert: any[] = [];
         const batchUpdates: any[] = [];
         const saleId = data.sale.id || uuidv4();
@@ -544,6 +574,13 @@ export const completePosSaleFn = createServerFn({ method: "POST" })
               (p._type === "product" ? "PRODUCT" : p._type === "service" ? "SERVICE" : "REPAIR"),
             referenceId: item.referenceId || p.id,
           });
+
+          if (item.variantId) {
+            variantStockUpdates.push({
+              variantId: item.variantId,
+              quantity: Number(item.quantity || 1),
+            });
+          }
 
           if (p._type === "product") {
             if (p.isBundle) {
@@ -767,6 +804,45 @@ export const completePosSaleFn = createServerFn({ method: "POST" })
                 );
             }
 
+            if (locationId && variantStockUpdates.length > 0) {
+              for (const vu of variantStockUpdates) {
+                const existingVarInv = await tx
+                  .select()
+                  .from(schema.variantInventory)
+                  .where(
+                    and(
+                      eq(schema.variantInventory.variantId, vu.variantId),
+                      eq(schema.variantInventory.locationId, locationId),
+                      eq(schema.variantInventory.organizationId, orgId),
+                    ),
+                  )
+                  .limit(1);
+
+                if (existingVarInv.length > 0) {
+                  const currentVarStock = Number(existingVarInv[0].stock || 0);
+                  const newVarStock = Math.max(0, currentVarStock - vu.quantity);
+                  await tx
+                    .update(schema.variantInventory)
+                    .set({ stock: newVarStock.toString() })
+                    .where(
+                      and(
+                        eq(schema.variantInventory.variantId, vu.variantId),
+                        eq(schema.variantInventory.locationId, locationId),
+                        eq(schema.variantInventory.organizationId, orgId),
+                      ),
+                    );
+                } else {
+                  await tx.insert(schema.variantInventory).values({
+                    id: uuidv4(),
+                    organizationId: orgId,
+                    variantId: vu.variantId,
+                    locationId: locationId,
+                    stock: "0",
+                  });
+                }
+              }
+            }
+
             if (batchConsumptionsToInsert.length > 0) {
               await tx.insert(schema.inventoryBatchConsumptions).values(batchConsumptionsToInsert);
             }
@@ -804,20 +880,39 @@ export const completePosSaleFn = createServerFn({ method: "POST" })
           }
         }
 
-        // Inventory movements
-        if (
-          safeSale.status !== "quotation" &&
-          data.inventoryMovements &&
-          data.inventoryMovements.length > 0
-        ) {
-          const safeMovements = data.inventoryMovements.map((m: any) => ({
-            organizationId: orgId,
-            productName: m.productName,
-            action: m.action,
-            quantity: m.quantity,
-            createdAt: new Date().toISOString(),
-          }));
-          await tx.insert(schema.inventoryMovements).values(safeMovements);
+        // Inventory movements: automatically record for all physical products sold
+        if (safeSale.status !== "quotation") {
+          const autoMovements = verifiedItems
+            .filter((item) => item.referenceType === "PRODUCT")
+            .map((item) => ({
+              organizationId: orgId,
+              productId: item.productId,
+              variantId: item.variantId || null,
+              locationId: locationId || null,
+              productName: item.productName,
+              action: "pos_sale",
+              quantity: (-Math.abs(Number(item.quantity))).toString(),
+              createdAt: new Date().toISOString(),
+            }));
+
+          const extraMovements =
+            data.inventoryMovements && data.inventoryMovements.length > 0
+              ? data.inventoryMovements.map((m: any) => ({
+                  organizationId: orgId,
+                  productId: m.productId || null,
+                  variantId: m.variantId || null,
+                  locationId: locationId || null,
+                  productName: m.productName,
+                  action: m.action,
+                  quantity: m.quantity.toString(),
+                  createdAt: new Date().toISOString(),
+                }))
+              : [];
+
+          const allMovements = [...autoMovements, ...extraMovements];
+          if (allMovements.length > 0) {
+            await tx.insert(schema.inventoryMovements).values(allMovements);
+          }
         }
 
         // Auto-generate Activity Log & Notification for POS Sale
@@ -1140,7 +1235,8 @@ export const voidPosSaleFn = createServerFn({ method: "POST" })
               );
           }
           await tx
-            .delete(schema.inventoryBatchConsumptions)
+            .update(schema.inventoryBatchConsumptions)
+            .set({ deletedAt: new Date().toISOString() })
             .where(eq(schema.inventoryBatchConsumptions.id, c.id));
         }
 

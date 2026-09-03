@@ -5,6 +5,7 @@ import { z } from "zod";
 import { v4 as uuidv4 } from "uuid";
 import { db } from "@/db";
 import * as schema from "@/db/schema";
+import { notDeleted } from "@/lib/soft-delete";
 import { eq, and } from "drizzle-orm";
 
 export const getProductModifiersFn = createServerFn({ method: "GET" })
@@ -19,13 +20,19 @@ export const getProductModifiersFn = createServerFn({ method: "GET" })
           and(
             eq(schema.productModifiers.productId, data.productId),
             eq(schema.productModifiers.organizationId, session.orgId),
+            notDeleted(schema.productModifiers.deletedAt),
           ),
         );
 
       const options = await db
         .select()
         .from(schema.productModifierOptions)
-        .where(eq(schema.productModifierOptions.organizationId, session.orgId));
+        .where(
+          and(
+            eq(schema.productModifierOptions.organizationId, session.orgId),
+            notDeleted(schema.productModifierOptions.deletedAt),
+          ),
+        );
 
       const result = modifiers.map((mod) => ({
         ...mod,
@@ -70,7 +77,8 @@ export const saveProductModifiersFn = createServerFn({ method: "POST" })
       await db.transaction(async (tx) => {
         // Clear existing modifiers for this product
         await tx
-          .delete(schema.productModifiers)
+          .update(schema.productModifiers)
+          .set({ deletedAt: new Date().toISOString() })
           .where(
             and(
               eq(schema.productModifiers.productId, data.productId),

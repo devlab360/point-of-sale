@@ -13,6 +13,7 @@ export const getSalesFn = createServerFn({ method: "GET" })
         query: z.string().optional(),
         status: z.string().optional(),
         payment: z.string().optional(),
+        locationId: z.string().optional(),
       })
       .passthrough(),
   )

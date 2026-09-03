@@ -13,6 +13,7 @@ const insertSchema = schema.brands
   : z.any();
 const updateSchema = schema.brands ? createInsertSchema(schema.brands).partial() : z.any();
 import { eq, and } from "drizzle-orm";
+import { notDeleted } from "@/lib/soft-delete";
 
 export const getBrandsFn = createServerFn({ method: "GET" })
   .validator(z.object({}).optional().default({}))
@@ -23,7 +24,7 @@ export const getBrandsFn = createServerFn({ method: "GET" })
       const res = await db
         .select()
         .from(schema.brands)
-        .where(eq(schema.brands.organizationId, orgId));
+        .where(and(eq(schema.brands.organizationId, orgId), notDeleted(schema.brands.deletedAt)));
       return { success: true, data: res };
     } catch (e) {
       return handleApiError(e);
@@ -97,7 +98,8 @@ export const deleteBrandFn = createServerFn({ method: "POST" })
     try {
       const session = await requireAuth();
       await db
-        .delete(schema.brands)
+        .update(schema.brands)
+        .set({ deletedAt: new Date().toISOString() })
         .where(and(eq(schema.brands.id, data.id), eq(schema.brands.organizationId, session.orgId)));
       return { success: true, message: "Brand deleted successfully" };
     } catch (e) {

@@ -4,6 +4,7 @@ import { requireAuth } from "@/lib/auth-utils";
 import { assertBranchLimit } from "@/lib/plan-limits";
 import { z } from "zod";
 import { v4 as uuidv4 } from "uuid";
+import { notDeleted } from "@/lib/soft-delete";
 
 async function getDb() {
   const { db } = await import("@/db");
@@ -18,11 +19,13 @@ export const getLocationsFn = createServerFn({ method: "GET" })
     try {
       const session = await requireAuth();
       const orgId = session.orgId;
-      const { db, schema, eq } = await getDb();
+      const { db, schema, eq, and } = await getDb();
       const res = await db
         .select()
         .from(schema.locations)
-        .where(eq(schema.locations.organizationId, orgId));
+        .where(
+          and(eq(schema.locations.organizationId, orgId), notDeleted(schema.locations.deletedAt)),
+        );
       return { success: true, data: res };
     } catch (e) {
       return handleApiError(e);
@@ -65,6 +68,7 @@ export const createLocationFn = createServerFn({ method: "POST" })
           and(
             eq(schema.locations.organizationId, orgId),
             data.location.code ? eq(schema.locations.code, data.location.code) : undefined,
+            notDeleted(schema.locations.deletedAt),
           ),
         )
         .limit(1);
@@ -132,8 +136,7 @@ export const updateLocationFn = createServerFn({ method: "POST" })
             and(
               eq(schema.locations.organizationId, session.orgId),
               eq(schema.locations.code, data.updates.code),
-              // Exclude current location from check
-              // Note: We can't easily exclude by ID in Drizzle without a subquery, so we'll check in JS
+              notDeleted(schema.locations.deletedAt),
             ),
           )
           .limit(1);
@@ -185,7 +188,8 @@ export const deleteLocationFn = createServerFn({ method: "POST" })
       const session = await requireAuth();
       const { db, schema, eq, and } = await getDb();
       await db
-        .delete(schema.locations)
+        .update(schema.locations)
+        .set({ deletedAt: new Date().toISOString() })
         .where(
           and(eq(schema.locations.id, data.id), eq(schema.locations.organizationId, session.orgId)),
         );

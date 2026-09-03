@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { db } from "@/db";
 import * as schema from "@/db/schema";
+import { notDeleted } from "@/lib/soft-delete";
 import { eq, and } from "drizzle-orm";
 import { requireAuth } from "@/lib/auth-utils";
 
@@ -19,7 +20,12 @@ export const getEffectiveMenusFn = createServerFn({ method: "GET" })
       const orgs = await db
         .select()
         .from(schema.organizations)
-        .where(eq(schema.organizations.id, session.orgId))
+        .where(
+          and(
+            eq(schema.organizations.id, session.orgId),
+            notDeleted(schema.organizations.deletedAt),
+          ),
+        )
         .limit(1);
       if (!orgs.length) return { success: false as const, error: "Org not found" };
       const org = orgs[0];
@@ -32,7 +38,9 @@ export const getEffectiveMenusFn = createServerFn({ method: "GET" })
       const plans = await db
         .select()
         .from(schema.saasPlans)
-        .where(eq(schema.saasPlans.id, org.currentPlanId))
+        .where(
+          and(eq(schema.saasPlans.id, org.currentPlanId), notDeleted(schema.saasPlans.deletedAt)),
+        )
         .limit(1);
       const plan = plans[0];
       let allowedMenus: string[] = [];
@@ -50,7 +58,12 @@ export const getEffectiveMenusFn = createServerFn({ method: "GET" })
       const grants = await db
         .select()
         .from(schema.adminMenuGrants)
-        .where(eq(schema.adminMenuGrants.organizationId, session.orgId));
+        .where(
+          and(
+            eq(schema.adminMenuGrants.organizationId, session.orgId),
+            notDeleted(schema.adminMenuGrants.deletedAt),
+          ),
+        );
       if (grants.length > 0) {
         const grantedKeys = grants.map((g) => g.menuKey);
         allowedMenus = Array.from(new Set([...allowedMenus, ...grantedKeys]));
@@ -73,7 +86,12 @@ export const getOrgSubscriptionFn = createServerFn({ method: "GET" })
       const subs = await db
         .select()
         .from(schema.orgSubscriptions)
-        .where(eq(schema.orgSubscriptions.organizationId, session.orgId))
+        .where(
+          and(
+            eq(schema.orgSubscriptions.organizationId, session.orgId),
+            notDeleted(schema.orgSubscriptions.deletedAt),
+          ),
+        )
         .limit(1);
       const sub = subs[0];
       if (!sub) {

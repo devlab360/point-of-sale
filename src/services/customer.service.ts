@@ -3,6 +3,7 @@ import * as schema from "@/db/schema";
 import { eq, and, desc, ilike, or } from "drizzle-orm";
 import { v4 as uuidv4 } from "uuid";
 import { NotFoundError } from "@/lib/errors/errors";
+import { notDeleted } from "@/lib/soft-delete";
 
 export interface CustomerDTO {
   id?: string;
@@ -20,7 +21,10 @@ export interface CustomerDTO {
 
 export class CustomerService {
   async getCustomers(orgId: string, query?: string) {
-    let conditions = [eq(schema.customers.organizationId, orgId)];
+    let conditions = [
+      eq(schema.customers.organizationId, orgId),
+      notDeleted(schema.customers.deletedAt),
+    ];
 
     if (query) {
       const searchCond = or(
@@ -65,7 +69,13 @@ export class CustomerService {
     const existing = await db
       .select()
       .from(schema.customers)
-      .where(and(eq(schema.customers.id, customerId), eq(schema.customers.organizationId, orgId)))
+      .where(
+        and(
+          eq(schema.customers.id, customerId),
+          eq(schema.customers.organizationId, orgId),
+          notDeleted(schema.customers.deletedAt),
+        ),
+      )
       .limit(1);
 
     if (!existing.length) {
@@ -94,7 +104,13 @@ export class CustomerService {
     const existing = await db
       .select()
       .from(schema.customers)
-      .where(and(eq(schema.customers.id, customerId), eq(schema.customers.organizationId, orgId)))
+      .where(
+        and(
+          eq(schema.customers.id, customerId),
+          eq(schema.customers.organizationId, orgId),
+          notDeleted(schema.customers.deletedAt),
+        ),
+      )
       .limit(1);
 
     if (!existing.length) {
@@ -102,7 +118,8 @@ export class CustomerService {
     }
 
     await db
-      .delete(schema.customers)
+      .update(schema.customers)
+      .set({ deletedAt: new Date().toISOString() })
       .where(and(eq(schema.customers.id, customerId), eq(schema.customers.organizationId, orgId)));
   }
 }

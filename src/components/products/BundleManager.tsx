@@ -111,7 +111,7 @@ export function BundleManager({
                 <div className="flex-1 space-y-1">
                   <Label className="text-xs text-muted-foreground">Product</Label>
                   <SearchableSelect
-                    options={sellableProducts.map((p: any) => ({ label: p.name, value: p.id }))}
+                    options={(sellableProducts || []).map((p: any) => ({ label: p.name, value: p.id }))}
                     value={comp.componentProductId}
                     onChange={(val) => {
                       updateComponent(index, "componentProductId", val);
@@ -121,11 +121,11 @@ export function BundleManager({
                   />
                 </div>
 
-                {selectedProduct?.hasVariants && (
+                {selectedProduct?.hasVariants && (selectedProduct.variants?.length ?? 0) > 0 && (
                   <div className="flex-1 space-y-1">
                     <Label className="text-xs text-muted-foreground">Variant</Label>
                     <SearchableSelect
-                      options={selectedProduct.variants.map((v: any) => ({
+                      options={(selectedProduct.variants || []).map((v: any) => ({
                         label: v.name,
                         value: v.id,
                       }))}

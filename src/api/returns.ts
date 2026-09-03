@@ -9,6 +9,7 @@ import * as schema from "@/db/schema";
 
 import { eq, and, sql } from "drizzle-orm";
 import { v4 as uuidv4 } from "uuid";
+import { notDeleted } from "@/lib/soft-delete";
 
 // SALES RETURNS
 export const getSalesReturnsFn = createServerFn({ method: "GET" })
@@ -20,7 +21,12 @@ export const getSalesReturnsFn = createServerFn({ method: "GET" })
       const all = await db
         .select()
         .from(schema.salesReturns)
-        .where(eq(schema.salesReturns.organizationId, orgId));
+        .where(
+          and(
+            eq(schema.salesReturns.organizationId, orgId),
+            notDeleted(schema.salesReturns.deletedAt),
+          ),
+        );
       const allItems = await db
         .select()
         .from(schema.salesReturnItems)
@@ -53,6 +59,7 @@ export const createSalesReturnFn = createServerFn({ method: "POST" })
       const newReturn = {
         id: data.returnData.id || uuidv4(),
         organizationId: orgId,
+        locationId: data.returnData.locationId || null,
         ref: data.returnData.ref || `RET-${Date.now()}`,
         saleId: data.returnData.saleId,
         customerName: data.returnData.customerName,
@@ -98,6 +105,38 @@ export const createSalesReturnFn = createServerFn({ method: "POST" })
                 ),
               );
 
+            if (newReturn.locationId) {
+              await tx
+                .insert(schema.productInventory)
+                .values({
+                  id: uuidv4(),
+                  organizationId: orgId,
+                  productId: item.productId,
+                  locationId: newReturn.locationId,
+                  stock: item.quantity.toString(),
+                })
+                .onConflictDoUpdate({
+                  target: [schema.productInventory.productId, schema.productInventory.locationId],
+                  set: { stock: sql`${schema.productInventory.stock} + ${item.quantity}` },
+                });
+
+              if (item.variantId) {
+                await tx
+                  .insert(schema.variantInventory)
+                  .values({
+                    id: uuidv4(),
+                    organizationId: orgId,
+                    variantId: item.variantId,
+                    locationId: newReturn.locationId,
+                    stock: item.quantity.toString(),
+                  })
+                  .onConflictDoUpdate({
+                    target: [schema.variantInventory.variantId, schema.variantInventory.locationId],
+                    set: { stock: sql`${schema.variantInventory.stock} + ${item.quantity}` },
+                  });
+              }
+            }
+
             if (item.batchId) {
               await tx
                 .update(schema.inventoryBatches)
@@ -111,6 +150,17 @@ export const createSalesReturnFn = createServerFn({ method: "POST" })
                   ),
                 );
             }
+
+            await tx.insert(schema.inventoryMovements).values({
+              organizationId: orgId,
+              productId: item.productId,
+              variantId: item.variantId || null,
+              locationId: newReturn.locationId || null,
+              productName: item.productName || "Product",
+              action: "sales_return",
+              quantity: Math.abs(Number(item.quantity)).toString(),
+              createdAt: new Date().toISOString(),
+            });
           }
         }
 
@@ -152,7 +202,8 @@ export const deleteSalesReturnFn = createServerFn({ method: "POST" })
     const orgId = session.orgId;
     try {
       await db
-        .delete(schema.salesReturns)
+        .update(schema.salesReturns)
+        .set({ deletedAt: new Date().toISOString() })
         .where(
           and(eq(schema.salesReturns.id, data.id), eq(schema.salesReturns.organizationId, orgId)),
         );
@@ -172,7 +223,12 @@ export const getPurchaseReturnsFn = createServerFn({ method: "GET" })
       const all = await db
         .select()
         .from(schema.purchaseReturns)
-        .where(eq(schema.purchaseReturns.organizationId, orgId));
+        .where(
+          and(
+            eq(schema.purchaseReturns.organizationId, orgId),
+            notDeleted(schema.purchaseReturns.deletedAt),
+          ),
+        );
       return { success: true, data: all };
     } catch (e) {
       return handleApiError(e);
@@ -250,6 +306,15 @@ export const createPurchaseReturnFn = createServerFn({ method: "POST" })
                   ),
                 );
             }
+
+            await tx.insert(schema.inventoryMovements).values({
+              organizationId: orgId,
+              productId: item.productId,
+              productName: item.productName || "Product",
+              action: "purchase_return",
+              quantity: (-Math.abs(Number(item.quantity))).toString(),
+              createdAt: new Date().toISOString(),
+            });
           }
         }
       });
@@ -266,7 +331,8 @@ export const deletePurchaseReturnFn = createServerFn({ method: "POST" })
     const orgId = session.orgId;
     try {
       await db
-        .delete(schema.purchaseReturns)
+        .update(schema.purchaseReturns)
+        .set({ deletedAt: new Date().toISOString() })
         .where(
           and(
             eq(schema.purchaseReturns.id, data.id),

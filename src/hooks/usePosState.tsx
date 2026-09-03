@@ -27,6 +27,9 @@ import {
 import { getTablesFn } from "@/api/restaurant";
 import { getRepairsFn } from "@/api/repairs";
 import { getPosBootstrapFn } from "@/api/bootstrap";
+import { getLocationsFn } from "@/api/locations";
+import { getActiveSessionFn } from "@/api/organizations";
+import { getActiveBranchPriceBookFn } from "@/api/price-books";
 
 export type CartLine = {
   id: string;
@@ -52,6 +55,63 @@ export function usePosState() {
   const orgId = PersistStore.getOrgId() || "default";
 
   const STALE_TIME = 5 * 60 * 1000; // 5 minutes
+
+  const { data: locationsRes } = useQuery({
+    queryKey: ["locations", orgId],
+    queryFn: async () => {
+      const res = await getLocationsFn({ data: {} });
+      return (res as any)?.data || [];
+    },
+    staleTime: STALE_TIME,
+  });
+  const locations: any[] = locationsRes || [];
+
+  const { data: activeSessionRes } = useQuery({
+    queryKey: ["active-session"],
+    queryFn: async () => {
+      const res = await getActiveSessionFn({ data: {} });
+      return (res as any)?.data || null;
+    },
+    staleTime: 30 * 1000,
+  });
+
+  const [selectedLocationId, setSelectedLocationIdState] = useState<string>(() => {
+    return (
+      (typeof window !== "undefined" ? localStorage.getItem("pos_selected_location") : null) || ""
+    );
+  });
+
+  // Sync selectedLocationId from activeSession or default location
+  useEffect(() => {
+    if (activeSessionRes?.locationId && !selectedLocationId) {
+      setSelectedLocationIdState(activeSessionRes.locationId);
+    } else if (locations.length > 0 && !selectedLocationId) {
+      const defaultLoc =
+        locations.find((l: any) => l.isHeadOffice || l.name === "Main Store") || locations[0];
+      if (defaultLoc) setSelectedLocationIdState(defaultLoc.id);
+    }
+  }, [activeSessionRes, locations, selectedLocationId]);
+
+  const setSelectedLocationId = useCallback((locId: string) => {
+    setSelectedLocationIdState(locId);
+    if (typeof window !== "undefined") {
+      localStorage.setItem("pos_selected_location", locId);
+      document.cookie = `pos_session_branch=${locId}; path=/; max-age=${7 * 24 * 60 * 60}`;
+    }
+  }, []);
+
+  const { data: branchPriceBookRes } = useQuery({
+    queryKey: ["activeBranchPriceBook", orgId, selectedLocationId],
+    queryFn: async () => {
+      const res = await getActiveBranchPriceBookFn({
+        data: { locationId: selectedLocationId || null },
+      });
+      return (res as any)?.data || null;
+    },
+    staleTime: STALE_TIME,
+  });
+  const activePriceBook = branchPriceBookRes?.priceBook || null;
+  const priceBookRules = branchPriceBookRes?.rules || null;
 
   const {
     data: productsData,
@@ -170,7 +230,6 @@ export function usePosState() {
   const [activeCat, setActiveCat] = useState<string>("all");
   const [query, setQuery] = useState("");
   const [cart, setCart] = useState<CartLine[]>([]);
-  const [selectedLocationId, setSelectedLocationId] = useState<string | null>(null);
   const [discountPct, setDiscountPct] = useState(0);
   const [discountInput, setDiscountInput] = useState("0");
   const [payment, setPayment] = useState<PaymentMode>("card");
@@ -444,12 +503,45 @@ export function usePosState() {
             ? l.variantPrice
             : p.price;
 
+      let priceTierLabel = l.variantName ? l.variantName : "";
+
+      // Multi-Branch Rate Chart Price Resolution
+      if (l.customPrice === undefined && priceBookRules) {
+        const ruleKey = l.variantId ? `var_${l.variantId}` : `prod_${p.id}`;
+        const rule = priceBookRules[ruleKey];
+        if (rule) {
+          const baseForAdj = Number(
+            l.variantPrice !== undefined ? l.variantPrice : p.price || 0,
+          );
+          if (rule.pricingType === "fixed" && rule.customPrice != null) {
+            unitPrice = rule.customPrice;
+            priceTierLabel = l.variantName
+              ? `${l.variantName} (${activePriceBook?.code || "Rate Chart"})`
+              : activePriceBook?.code || "Rate Chart";
+          } else if (rule.pricingType === "percentage_markup" && rule.adjustmentValue) {
+            unitPrice = Number(
+              (baseForAdj * (1 + Number(rule.adjustmentValue) / 100)).toFixed(2),
+            );
+            priceTierLabel = l.variantName
+              ? `${l.variantName} (+${rule.adjustmentValue}%)`
+              : `+${rule.adjustmentValue}%`;
+          } else if (rule.pricingType === "percentage_discount" && rule.adjustmentValue) {
+            unitPrice = Math.max(
+              0,
+              Number((baseForAdj * (1 - Number(rule.adjustmentValue) / 100)).toFixed(2)),
+            );
+            priceTierLabel = l.variantName
+              ? `${l.variantName} (-${rule.adjustmentValue}%)`
+              : `-${rule.adjustmentValue}%`;
+          }
+        }
+      }
+
       if (l.modifiers) {
         const modifiersTotal = l.modifiers.reduce((sum, m) => sum + m.price, 0);
         unitPrice += modifiersTotal;
       }
 
-      let priceTierLabel = l.variantName ? l.variantName : "";
       const minQty = p.minWholesaleQty || 1;
 
       if (!l.variantId && l.customPrice === undefined) {
@@ -567,6 +659,7 @@ export function usePosState() {
         invoice: {
           id: uuidv4(),
           organizationId: orgId,
+          locationId: selectedLocationId || null,
           customerId: activeCustomer.id !== "walkin" ? activeCustomer.id : null,
           customerName: activeCustomer.name,
           cart: JSON.stringify(cart),
@@ -600,6 +693,7 @@ export function usePosState() {
     discountPct,
     payment,
     orgId,
+    selectedLocationId,
     queryClient,
     setSelectedCustomer,
     setSelectedTableId,
@@ -897,5 +991,9 @@ export function usePosState() {
     t,
     user,
     queryClient,
+    locations,
+    selectedLocation: locations.find((l: any) => l.id === selectedLocationId) || null,
+    activePriceBook,
+    priceBookRules,
   };
 }

@@ -4,6 +4,7 @@ import { eq, and, desc, sql, ilike, or } from "drizzle-orm";
 import { v4 as uuidv4 } from "uuid";
 import bcrypt from "bcryptjs";
 import { NotFoundError, ConflictError } from "@/lib/errors/errors";
+import { notDeleted } from "@/lib/soft-delete";
 
 export interface CreateUserInput {
   name: string;
@@ -16,7 +17,7 @@ export interface CreateUserInput {
 
 export class UserService {
   async getUsers(orgId: string, search?: string) {
-    let conditions = [eq(schema.users.organizationId, orgId)];
+    let conditions = [eq(schema.users.organizationId, orgId), notDeleted(schema.users.deletedAt)];
 
     if (search) {
       const searchCond = or(
@@ -40,7 +41,13 @@ export class UserService {
     const existing = await db
       .select()
       .from(schema.users)
-      .where(and(eq(schema.users.email, email), eq(schema.users.organizationId, orgId)))
+      .where(
+        and(
+          eq(schema.users.email, email),
+          eq(schema.users.organizationId, orgId),
+          notDeleted(schema.users.deletedAt),
+        ),
+      )
       .limit(1);
 
     if (existing.length) {
@@ -74,7 +81,13 @@ export class UserService {
     const existing = await db
       .select()
       .from(schema.users)
-      .where(and(eq(schema.users.id, userId), eq(schema.users.organizationId, orgId)))
+      .where(
+        and(
+          eq(schema.users.id, userId),
+          eq(schema.users.organizationId, orgId),
+          notDeleted(schema.users.deletedAt),
+        ),
+      )
       .limit(1);
 
     if (!existing.length) {
@@ -82,7 +95,8 @@ export class UserService {
     }
 
     await db
-      .delete(schema.users)
+      .update(schema.users)
+      .set({ deletedAt: new Date().toISOString() })
       .where(and(eq(schema.users.id, userId), eq(schema.users.organizationId, orgId)));
   }
 }

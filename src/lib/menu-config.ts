@@ -75,6 +75,7 @@ export const APP_GROUPS: MenuGroup[] = [
         roles: ["admin", "manager"],
         children: [
           { to: "/products", label: "Products Catalog", tkey: "productsCatalog" },
+          { to: "/price-books", label: "Price Books & Rates", tkey: "priceBooks" },
           { to: "/categories", label: "Categories", tkey: "categories" },
           { to: "/brands", label: "Brands", tkey: "brands" },
           { to: "/units", label: "Units", tkey: "units" },

@@ -15,6 +15,7 @@ export interface Variant {
   duration?: number | string;
   image?: string;
   attributes: { name: string; value: string }[];
+  locationStocks?: { locationId: string; stock: number }[];
 }
 
 interface VariantOption {
@@ -26,43 +27,67 @@ interface VariantManagerProps {
   variants: Variant[];
   onChange: (variants: Variant[]) => void;
   mode?: "product" | "service";
+  locations?: Array<{ id: string; name: string }>;
+  basePrice?: string | number;
+  baseCost?: string | number;
 }
 
 // Helper to generate cartesian product of arrays
 const cartesian = (...a: any[][]) =>
   a.reduce((a, b) => a.flatMap((d) => b.map((e) => [d, e].flat())));
 
-export function VariantManager({ variants, onChange, mode = "product" }: VariantManagerProps) {
+function extractOptionsFromVariants(varList: Variant[]): VariantOption[] {
+  if (!varList || varList.length === 0) return [];
+  const optsMap = new Map<string, Set<string>>();
+  varList.forEach((v) => {
+    v.attributes?.forEach((attr) => {
+      if (!optsMap.has(attr.name)) optsMap.set(attr.name, new Set());
+      if (attr.value) optsMap.get(attr.name)?.add(attr.value);
+    });
+  });
+
+  const opts: VariantOption[] = [];
+  optsMap.forEach((valSet, name) => {
+    opts.push({ name, values: Array.from(valSet) });
+  });
+  return opts;
+}
+
+export function VariantManager({
+  variants,
+  onChange,
+  mode = "product",
+  locations = [],
+  basePrice,
+  baseCost,
+}: VariantManagerProps) {
   const { currencySymbol } = useCurrency();
-  // Try to reconstruct options from existing variants
-  const initialOptions = useMemo(() => {
-    if (!variants || variants.length === 0) return [{ name: "Size", values: [] }];
-
-    const optsMap = new Map<string, Set<string>>();
-    variants.forEach((v) => {
-      v.attributes?.forEach((attr) => {
-        if (!optsMap.has(attr.name)) optsMap.set(attr.name, new Set());
-        if (attr.value) optsMap.get(attr.name)?.add(attr.value);
-      });
-    });
-
-    const opts: VariantOption[] = [];
-    optsMap.forEach((valSet, name) => {
-      opts.push({ name, values: Array.from(valSet) });
-    });
-    return opts.length > 0 ? opts : [{ name: "Size", values: [] }];
-  }, []); // Only compute once on mount
-
-  const [options, setOptions] = useState<VariantOption[]>(initialOptions);
+  const [options, setOptions] = useState<VariantOption[]>(() => {
+    const extracted = extractOptionsFromVariants(variants);
+    return extracted.length > 0 ? extracted : [{ name: "Size", values: [] }];
+  });
   const [newOptionName, setNewOptionName] = useState("");
   const [inputValue, setInputValue] = useState<Record<number, string>>({});
+  const [userInteracted, setUserInteracted] = useState(false);
 
-  // When options change, automatically generate the variant matrix
+  // Sync options from incoming variants if not yet interacted with
   useEffect(() => {
+    if (!userInteracted && variants && variants.length > 0) {
+      const extracted = extractOptionsFromVariants(variants);
+      if (extracted.length > 0) {
+        setOptions(extracted);
+      }
+    }
+  }, [variants, userInteracted]);
+
+  // When options change by user, automatically generate/update the variant matrix
+  useEffect(() => {
+    if (!userInteracted) return;
+
     const validOptions = options.filter((o) => o.values.length > 0);
 
     if (validOptions.length === 0) {
-      if (variants.length > 0) onChange([]);
+      onChange([]);
       return;
     }
 
@@ -77,16 +102,13 @@ export function VariantManager({ variants, onChange, mode = "product" }: Variant
 
     // Map combinations to Variant objects, preserving existing data if name matches
     const newVariants: Variant[] = combinations.map((combo) => {
-      // combo is an array of {name, value}
       const comboName = combo.map((c: any) => c.value).join(" / ");
-
-      // Look for existing variant to preserve price/sku
       const existing = variants.find((v) => v.name === comboName);
 
       if (existing) {
         return {
           ...existing,
-          attributes: combo, // ensure attributes are exactly matched
+          attributes: combo,
         };
       }
 
@@ -95,31 +117,33 @@ export function VariantManager({ variants, onChange, mode = "product" }: Variant
         sku: mode === "product" ? "" : undefined,
         barcode: mode === "product" ? "" : undefined,
         duration: mode === "service" ? "" : undefined,
-        price: "",
-        cost: "",
+        price:
+          basePrice !== undefined && basePrice !== null && String(basePrice).trim() !== ""
+            ? String(basePrice)
+            : "",
+        cost:
+          baseCost !== undefined && baseCost !== null && String(baseCost).trim() !== ""
+            ? String(baseCost)
+            : "",
         attributes: combo,
+        locationStocks: locations.map((l) => ({ locationId: l.id, stock: 0 })),
       };
     });
 
-    // Only trigger onChange if the generated variants are structurally different
-    const isDifferent =
-      newVariants.length !== variants.length ||
-      newVariants.some((nv, i) => nv.name !== variants[i]?.name);
-
-    if (isDifferent) {
       onChange(newVariants);
-    }
-  }, [options]);
+  }, [options, userInteracted]);
 
   const addOption = () => {
     if (!newOptionName.trim()) return;
     if (options.some((o) => o.name.toLowerCase() === newOptionName.trim().toLowerCase())) return;
 
+    setUserInteracted(true);
     setOptions([...options, { name: newOptionName.trim(), values: [] }]);
     setNewOptionName("");
   };
 
   const removeOption = (index: number) => {
+    setUserInteracted(true);
     const newOptions = [...options];
     newOptions.splice(index, 1);
     setOptions(newOptions);
@@ -129,6 +153,7 @@ export function VariantManager({ variants, onChange, mode = "product" }: Variant
     const val = inputValue[optIndex]?.trim();
     if (!val) return;
 
+    setUserInteracted(true);
     const newOptions = [...options];
     if (!newOptions[optIndex].values.includes(val)) {
       newOptions[optIndex].values.push(val);
@@ -138,6 +163,7 @@ export function VariantManager({ variants, onChange, mode = "product" }: Variant
   };
 
   const removeValueFromOption = (optIndex: number, valIndex: number) => {
+    setUserInteracted(true);
     const newOptions = [...options];
     newOptions[optIndex].values.splice(valIndex, 1);
     setOptions(newOptions);
@@ -146,6 +172,21 @@ export function VariantManager({ variants, onChange, mode = "product" }: Variant
   const updateVariant = (index: number, field: keyof Variant, value: any) => {
     const newVariants = [...variants];
     newVariants[index] = { ...newVariants[index], [field]: value };
+    onChange(newVariants);
+  };
+
+  const updateVariantLocationStock = (vIndex: number, locationId: string, stock: number) => {
+    const newVariants = [...variants];
+    const currentStocks = newVariants[vIndex].locationStocks
+      ? [...newVariants[vIndex].locationStocks!]
+      : [];
+    const existingIdx = currentStocks.findIndex((s) => s.locationId === locationId);
+    if (existingIdx >= 0) {
+      currentStocks[existingIdx] = { locationId, stock };
+    } else {
+      currentStocks.push({ locationId, stock });
+    }
+    newVariants[vIndex] = { ...newVariants[vIndex], locationStocks: currentStocks };
     onChange(newVariants);
   };
 
@@ -267,6 +308,13 @@ export function VariantManager({ variants, onChange, mode = "product" }: Variant
                     <th className="px-4 py-3 w-40">Cost ({currencySymbol})</th>
                     {mode === "product" && <th className="px-4 py-3 w-48">SKU (Optional)</th>}
                     {mode === "service" && <th className="px-4 py-3 w-48">Duration (Mins)</th>}
+                    {mode === "product" &&
+                      locations.length > 0 &&
+                      locations.map((loc) => (
+                        <th key={loc.id} className="px-3 py-3 w-32 whitespace-nowrap">
+                          {loc.name} Stock
+                        </th>
+                      ))}
                   </tr>
                 </thead>
                 <tbody className="divide-y bg-card">
@@ -312,6 +360,30 @@ export function VariantManager({ variants, onChange, mode = "product" }: Variant
                           />
                         </td>
                       )}
+                      {mode === "product" &&
+                        locations.length > 0 &&
+                        locations.map((loc) => {
+                          const currentStock =
+                            variant.locationStocks?.find((s) => s.locationId === loc.id)?.stock ??
+                            0;
+                          return (
+                            <td key={loc.id} className="px-3 py-2">
+                              <Input
+                                type="number"
+                                className="h-8 font-mono bg-background"
+                                placeholder="0"
+                                value={currentStock}
+                                onChange={(e) =>
+                                  updateVariantLocationStock(
+                                    vIndex,
+                                    loc.id,
+                                    Number(e.target.value) || 0,
+                                  )
+                                }
+                              />
+                            </td>
+                          );
+                        })}
                     </tr>
                   ))}
                 </tbody>

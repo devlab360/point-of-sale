@@ -6,6 +6,7 @@ import * as schema from "@/db/schema";
 import { eq, and, sql } from "drizzle-orm";
 import { v4 as uuidv4 } from "uuid";
 import { z } from "zod";
+import { notDeleted } from "@/lib/soft-delete";
 
 const GiftCardInputSchema = z
   .object({
@@ -32,7 +33,9 @@ export const getGiftCardsFn = createServerFn({ method: "GET" })
       const all = await db
         .select()
         .from(schema.giftCards)
-        .where(eq(schema.giftCards.organizationId, orgId));
+        .where(
+          and(eq(schema.giftCards.organizationId, orgId), notDeleted(schema.giftCards.deletedAt)),
+        );
       return { success: true, data: all };
     } catch (e) {
       return handleApiError(e);
@@ -41,10 +44,12 @@ export const getGiftCardsFn = createServerFn({ method: "GET" })
 
 export const createGiftCardFn = createServerFn({ method: "POST" })
   .validator(
-    z.object({
-      card: GiftCardInputSchema.optional(),
-      giftCard: GiftCardInputSchema.optional(),
-    }).passthrough(),
+    z
+      .object({
+        card: GiftCardInputSchema.optional(),
+        giftCard: GiftCardInputSchema.optional(),
+      })
+      .passthrough(),
   )
   .handler(async ({ data }) => {
     try {
@@ -93,11 +98,13 @@ export const createGiftCardFn = createServerFn({ method: "POST" })
 
 export const updateGiftCardFn = createServerFn({ method: "POST" })
   .validator(
-    z.object({
-      id: z.string().optional(),
-      card: GiftCardInputSchema.optional(),
-      giftCard: GiftCardInputSchema.optional(),
-    }).passthrough(),
+    z
+      .object({
+        id: z.string().optional(),
+        card: GiftCardInputSchema.optional(),
+        giftCard: GiftCardInputSchema.optional(),
+      })
+      .passthrough(),
   )
   .handler(async ({ data }) => {
     try {
@@ -157,7 +164,11 @@ export const addGiftCardBalanceFn = createServerFn({ method: "POST" })
           .select()
           .from(schema.giftCards)
           .where(
-            and(eq(schema.giftCards.id, data.id), eq(schema.giftCards.organizationId, orgId)),
+            and(
+              eq(schema.giftCards.id, data.id),
+              eq(schema.giftCards.organizationId, orgId),
+              notDeleted(schema.giftCards.deletedAt),
+            ),
           )
           .limit(1);
         if (card.length > 0) {
@@ -184,9 +195,87 @@ export const deleteGiftCardFn = createServerFn({ method: "POST" })
       const session = await requireAuth();
       const orgId = session.orgId;
       await db
-        .delete(schema.giftCards)
+        .update(schema.giftCards)
+        .set({ deletedAt: new Date().toISOString() })
         .where(and(eq(schema.giftCards.id, data.id), eq(schema.giftCards.organizationId, orgId)));
       return { success: true };
+    } catch (e) {
+      return handleApiError(e);
+    }
+  });
+
+export const redeemGiftCardFn = createServerFn({ method: "POST" })
+  .validator(
+    z.object({
+      code: z.string().min(1, "Gift card code is required"),
+      amount: z.union([z.string(), z.number()]),
+    }),
+  )
+  .handler(async ({ data }) => {
+    try {
+      const session = await requireAuth();
+      const orgId = session.orgId;
+      const redeemAmount = Number(data.amount) || 0;
+
+      if (redeemAmount <= 0) {
+        return { success: false, error: "Redemption amount must be greater than zero" };
+      }
+
+      let resultCard: any = null;
+      await db.transaction(async (tx) => {
+        const card = await tx
+          .select()
+          .from(schema.giftCards)
+          .where(
+            and(
+              eq(schema.giftCards.code, data.code.trim()),
+              eq(schema.giftCards.organizationId, orgId),
+              notDeleted(schema.giftCards.deletedAt),
+            ),
+          )
+          .limit(1);
+
+        if (card.length === 0) {
+          throw new Error("Gift card not found");
+        }
+
+        const gc = card[0];
+        if (gc.status !== "active") {
+          throw new Error(`Gift card is ${gc.status}`);
+        }
+
+        if (gc.expires && new Date(gc.expires) < new Date()) {
+          throw new Error("Gift card has expired");
+        }
+
+        const currentBalance = Number(gc.balance) || 0;
+        if (currentBalance < redeemAmount) {
+          throw new Error(
+            `Insufficient gift card balance. Available: ₹${currentBalance.toFixed(2)}`,
+          );
+        }
+
+        const newBalance = Math.max(0, currentBalance - redeemAmount);
+        const newStatus = newBalance === 0 ? "used" : "active";
+
+        const updated = await tx
+          .update(schema.giftCards)
+          .set({
+            balance: newBalance.toFixed(2),
+            status: newStatus,
+            updatedAt: new Date().toISOString(),
+          })
+          .where(eq(schema.giftCards.id, gc.id))
+          .returning();
+
+        resultCard = updated[0];
+      });
+
+      return {
+        success: true,
+        data: resultCard,
+        remainingBalance: Number(resultCard?.balance || 0),
+      };
     } catch (e) {
       return handleApiError(e);
     }

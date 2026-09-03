@@ -1,6 +1,7 @@
 import { db } from "@/db";
 import * as schema from "@/db/schema";
 import { eq, desc, and, isNull, or, sql } from "drizzle-orm";
+import { notDeleted } from "@/lib/soft-delete";
 import bcrypt from "bcryptjs";
 import { NotFoundError, ConflictError, BadRequestError } from "@/lib/errors/errors";
 
@@ -49,8 +50,12 @@ export class AdminService {
     const orgs = await db
       .select()
       .from(schema.organizations)
+      .where(notDeleted(schema.organizations.deletedAt))
       .orderBy(desc(schema.organizations.createdAt));
-    const rawPlans = await db.select().from(schema.saasPlans);
+    const rawPlans = await db
+      .select()
+      .from(schema.saasPlans)
+      .where(notDeleted(schema.saasPlans.deletedAt));
     const plans = rawPlans.filter((p) => p.id !== "super_admin_payment_config");
     return { orgs, plans };
   }
@@ -62,7 +67,7 @@ export class AdminService {
     const existing = await db
       .select()
       .from(schema.organizations)
-      .where(eq(schema.organizations.id, orgId))
+      .where(and(eq(schema.organizations.id, orgId), notDeleted(schema.organizations.deletedAt)))
       .limit(1);
 
     if (!existing.length) {
@@ -76,14 +81,17 @@ export class AdminService {
     const existing = await db
       .select()
       .from(schema.organizations)
-      .where(eq(schema.organizations.id, orgId))
+      .where(and(eq(schema.organizations.id, orgId), notDeleted(schema.organizations.deletedAt)))
       .limit(1);
 
     if (!existing.length) {
       throw new NotFoundError(`Organization with ID ${orgId} not found`);
     }
 
-    await db.delete(schema.organizations).where(eq(schema.organizations.id, orgId));
+    await db
+      .update(schema.organizations)
+      .set({ deletedAt: new Date().toISOString() })
+      .where(eq(schema.organizations.id, orgId));
   }
 
   async resetTenantSyncKey(orgId: string) {
@@ -99,7 +107,7 @@ export class AdminService {
     const orgs = await db
       .select()
       .from(schema.organizations)
-      .where(eq(schema.organizations.id, orgId))
+      .where(and(eq(schema.organizations.id, orgId), notDeleted(schema.organizations.deletedAt)))
       .limit(1);
 
     if (!orgs.length) {
@@ -128,7 +136,7 @@ export class AdminService {
     const existing = await db
       .select()
       .from(schema.users)
-      .where(eq(schema.users.email, email))
+      .where(and(eq(schema.users.email, email), notDeleted(schema.users.deletedAt)))
       .limit(1);
 
     if (existing.length) {
@@ -138,7 +146,7 @@ export class AdminService {
     const plan = await db
       .select()
       .from(schema.saasPlans)
-      .where(eq(schema.saasPlans.id, dto.planId))
+      .where(and(eq(schema.saasPlans.id, dto.planId), notDeleted(schema.saasPlans.deletedAt)))
       .limit(1);
 
     if (!plan.length) {
@@ -203,7 +211,10 @@ export class AdminService {
 
   // ─── SaaS Plans ───────────────────────────────────────────────
   async getAllPlans() {
-    const plans = await db.select().from(schema.saasPlans);
+    const plans = await db
+      .select()
+      .from(schema.saasPlans)
+      .where(notDeleted(schema.saasPlans.deletedAt));
     return plans.filter((p) => p.id !== "super_admin_payment_config");
   }
 
@@ -259,7 +270,10 @@ export class AdminService {
   }
 
   async deletePlan(planId: string) {
-    await db.delete(schema.saasPlans).where(eq(schema.saasPlans.id, planId));
+    await db
+      .update(schema.saasPlans)
+      .set({ deletedAt: new Date().toISOString() })
+      .where(eq(schema.saasPlans.id, planId));
   }
 
   // ─── Menu Access Overrides ─────────────────────────────────────
@@ -267,13 +281,21 @@ export class AdminService {
     const grants = await db
       .select()
       .from(schema.adminMenuGrants)
-      .where(eq(schema.adminMenuGrants.organizationId, orgId));
+      .where(
+        and(
+          eq(schema.adminMenuGrants.organizationId, orgId),
+          notDeleted(schema.adminMenuGrants.deletedAt),
+        ),
+      );
 
     return grants.map((g) => g.menuKey);
   }
 
   async setAdminMenuGrants(orgId: string, menuKeys: string[], grantedBy: string) {
-    await db.delete(schema.adminMenuGrants).where(eq(schema.adminMenuGrants.organizationId, orgId));
+    await db
+      .update(schema.adminMenuGrants)
+      .set({ deletedAt: new Date().toISOString() })
+      .where(eq(schema.adminMenuGrants.organizationId, orgId));
 
     if (menuKeys.length > 0) {
       await db.insert(schema.adminMenuGrants).values(
@@ -300,7 +322,12 @@ export class AdminService {
         joined: schema.users.joined,
       })
       .from(schema.users)
-      .where(or(eq(schema.users.role, "super_admin"), isNull(schema.users.organizationId)));
+      .where(
+        and(
+          or(eq(schema.users.role, "super_admin"), isNull(schema.users.organizationId)),
+          notDeleted(schema.users.deletedAt),
+        ),
+      );
 
     return adminUsers;
   }
@@ -315,7 +342,7 @@ export class AdminService {
     const existing = await db
       .select()
       .from(schema.users)
-      .where(eq(schema.users.email, email))
+      .where(and(eq(schema.users.email, email), notDeleted(schema.users.deletedAt)))
       .limit(1);
 
     if (existing.length) {
@@ -351,21 +378,36 @@ export class AdminService {
     const existing = await db
       .select()
       .from(schema.users)
-      .where(and(eq(schema.users.id, userId), eq(schema.users.role, "super_admin")))
+      .where(
+        and(
+          eq(schema.users.id, userId),
+          eq(schema.users.role, "super_admin"),
+          notDeleted(schema.users.deletedAt),
+        ),
+      )
       .limit(1);
 
     if (!existing.length) {
       throw new NotFoundError("Super Admin user not found");
     }
 
-    await db.delete(schema.users).where(eq(schema.users.id, userId));
+    await db
+      .update(schema.users)
+      .set({ deletedAt: new Date().toISOString() })
+      .where(eq(schema.users.id, userId));
   }
 
   async updateSuperAdminUserPermissions(userId: string, adminPermissions: string[] | null) {
     const existing = await db
       .select()
       .from(schema.users)
-      .where(and(eq(schema.users.id, userId), eq(schema.users.role, "super_admin")))
+      .where(
+        and(
+          eq(schema.users.id, userId),
+          eq(schema.users.role, "super_admin"),
+          notDeleted(schema.users.deletedAt),
+        ),
+      )
       .limit(1);
 
     if (!existing.length) {
@@ -388,7 +430,13 @@ export class AdminService {
     const existing = await db
       .select()
       .from(schema.users)
-      .where(and(eq(schema.users.id, userId), eq(schema.users.role, "super_admin")))
+      .where(
+        and(
+          eq(schema.users.id, userId),
+          eq(schema.users.role, "super_admin"),
+          notDeleted(schema.users.deletedAt),
+        ),
+      )
       .limit(1);
 
     if (!existing.length) {
@@ -408,7 +456,7 @@ export class AdminService {
         const emailConflict = await db
           .select()
           .from(schema.users)
-          .where(eq(schema.users.email, targetEmail))
+          .where(and(eq(schema.users.email, targetEmail), notDeleted(schema.users.deletedAt)))
           .limit(1);
         if (emailConflict.length) {
           throw new ConflictError("Email already in use by another account");
@@ -456,7 +504,13 @@ export class AdminService {
         createdAt: schema.superAdminSessions.createdAt,
       })
       .from(schema.superAdminSessions)
-      .leftJoin(schema.users, eq(schema.superAdminSessions.userId, schema.users.id))
+      .leftJoin(
+        schema.users,
+        and(
+          eq(schema.superAdminSessions.userId, schema.users.id),
+          notDeleted(schema.users.deletedAt),
+        ),
+      )
       .orderBy(desc(schema.superAdminSessions.createdAt))
       .limit(30);
 
@@ -475,7 +529,12 @@ export class AdminService {
     const plan = await db
       .select()
       .from(schema.saasPlans)
-      .where(eq(schema.saasPlans.id, "super_admin_payment_config"))
+      .where(
+        and(
+          eq(schema.saasPlans.id, "super_admin_payment_config"),
+          notDeleted(schema.saasPlans.deletedAt),
+        ),
+      )
       .limit(1);
 
     if (!plan.length || !plan[0].features) {
@@ -528,11 +587,18 @@ export class AdminService {
         createdAt: schema.supportTickets.createdAt,
       })
       .from(schema.supportTickets)
+      .where(notDeleted(schema.supportTickets.deletedAt))
       .leftJoin(
         schema.organizations,
-        eq(schema.supportTickets.organizationId, schema.organizations.id),
+        and(
+          eq(schema.supportTickets.organizationId, schema.organizations.id),
+          notDeleted(schema.organizations.deletedAt),
+        ),
       )
-      .leftJoin(schema.users, eq(schema.supportTickets.userId, schema.users.id))
+      .leftJoin(
+        schema.users,
+        and(eq(schema.supportTickets.userId, schema.users.id), notDeleted(schema.users.deletedAt)),
+      )
       .orderBy(desc(schema.supportTickets.createdAt));
 
     return tickets;
@@ -560,8 +626,18 @@ export class AdminService {
         createdAt: schema.reviews.createdAt,
       })
       .from(schema.reviews)
-      .leftJoin(schema.organizations, eq(schema.reviews.organizationId, schema.organizations.id))
-      .leftJoin(schema.users, eq(schema.reviews.userId, schema.users.id))
+      .where(notDeleted(schema.reviews.deletedAt))
+      .leftJoin(
+        schema.organizations,
+        and(
+          eq(schema.reviews.organizationId, schema.organizations.id),
+          notDeleted(schema.organizations.deletedAt),
+        ),
+      )
+      .leftJoin(
+        schema.users,
+        and(eq(schema.reviews.userId, schema.users.id), notDeleted(schema.users.deletedAt)),
+      )
       .orderBy(desc(schema.reviews.createdAt));
 
     const total = reviews.length;
@@ -576,8 +652,13 @@ export class AdminService {
     const articles = await db
       .select()
       .from(schema.helpArticles)
+      .where(notDeleted(schema.helpArticles.deletedAt))
       .orderBy(desc(schema.helpArticles.createdAt));
-    const faqs = await db.select().from(schema.faqs).orderBy(desc(schema.faqs.createdAt));
+    const faqs = await db
+      .select()
+      .from(schema.faqs)
+      .where(notDeleted(schema.faqs.deletedAt))
+      .orderBy(desc(schema.faqs.createdAt));
     return { articles, faqs };
   }
 
@@ -593,7 +674,10 @@ export class AdminService {
   }
 
   async deleteHelpArticle(id: string) {
-    await db.delete(schema.helpArticles).where(eq(schema.helpArticles.id, id));
+    await db
+      .update(schema.helpArticles)
+      .set({ deletedAt: new Date().toISOString() })
+      .where(eq(schema.helpArticles.id, id));
   }
 
   async createFaq(data: { question: string; answer: string }) {
@@ -607,7 +691,10 @@ export class AdminService {
   }
 
   async deleteFaq(id: string) {
-    await db.delete(schema.faqs).where(eq(schema.faqs.id, id));
+    await db
+      .update(schema.faqs)
+      .set({ deletedAt: new Date().toISOString() })
+      .where(eq(schema.faqs.id, id));
   }
 
   // ─── Global Broadcast Announcements ────────────────────────────
@@ -615,7 +702,12 @@ export class AdminService {
     const record = await db
       .select()
       .from(schema.saasPlans)
-      .where(eq(schema.saasPlans.id, "system_broadcast_announcements"))
+      .where(
+        and(
+          eq(schema.saasPlans.id, "system_broadcast_announcements"),
+          notDeleted(schema.saasPlans.deletedAt),
+        ),
+      )
       .limit(1);
 
     if (!record.length || !record[0].features) {

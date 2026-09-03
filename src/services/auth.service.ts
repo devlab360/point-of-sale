@@ -1,6 +1,6 @@
 import { db } from "@/db";
 import * as schema from "@/db/schema";
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 import { v4 as uuidv4 } from "uuid";
 import { createSessionToken } from "@/lib/auth-utils";
@@ -13,6 +13,7 @@ import {
   ConflictError,
   NotFoundError,
 } from "@/lib/errors/errors";
+import { notDeleted } from "@/lib/soft-delete";
 
 export interface LoginDTO {
   email?: string;
@@ -43,7 +44,7 @@ export class AuthService {
     const users = await db
       .select()
       .from(schema.users)
-      .where(eq(schema.users.email, email))
+      .where(and(eq(schema.users.email, email), notDeleted(schema.users.deletedAt)))
       .limit(1);
 
     if (!users.length) {
@@ -118,7 +119,7 @@ export class AuthService {
     const existingUser = await db
       .select()
       .from(schema.users)
-      .where(eq(schema.users.email, email))
+      .where(and(eq(schema.users.email, email), notDeleted(schema.users.deletedAt)))
       .limit(1);
 
     return {
@@ -133,7 +134,7 @@ export class AuthService {
     const existingUsers = await db
       .select()
       .from(schema.users)
-      .where(eq(schema.users.email, email))
+      .where(and(eq(schema.users.email, email), notDeleted(schema.users.deletedAt)))
       .limit(1);
 
     if (existingUsers.length > 0) {

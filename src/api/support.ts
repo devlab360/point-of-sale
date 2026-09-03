@@ -8,6 +8,7 @@ import { db } from "@/db";
 import * as schema from "@/db/schema";
 import { eq, and, isNull, or, desc } from "drizzle-orm";
 import { v4 as uuidv4 } from "uuid";
+import { notDeleted } from "@/lib/soft-delete";
 
 // ==========================================
 // Help Articles (Docs & Videos)
@@ -20,6 +21,7 @@ export const getHelpArticlesFn = createServerFn({ method: "GET" })
       const articles = await db
         .select()
         .from(schema.helpArticles)
+        .where(notDeleted(schema.helpArticles.deletedAt))
         .orderBy(desc(schema.helpArticles.createdAt));
       return { success: true, data: articles };
     } catch (e) {
@@ -35,7 +37,11 @@ export const getFaqsFn = createServerFn({ method: "GET" })
   .validator((data: any) => data)
   .handler(async ({ data }) => {
     try {
-      const faqsList = await db.select().from(schema.faqs).orderBy(desc(schema.faqs.createdAt));
+      const faqsList = await db
+        .select()
+        .from(schema.faqs)
+        .where(notDeleted(schema.faqs.deletedAt))
+        .orderBy(desc(schema.faqs.createdAt));
       return { success: true, data: faqsList };
     } catch (e) {
       return handleApiError(e);
@@ -54,7 +60,12 @@ export const getSupportTicketsFn = createServerFn({ method: "GET" })
       const tickets = await db
         .select()
         .from(schema.supportTickets)
-        .where(eq(schema.supportTickets.organizationId, session.orgId))
+        .where(
+          and(
+            eq(schema.supportTickets.organizationId, session.orgId),
+            notDeleted(schema.supportTickets.deletedAt),
+          ),
+        )
         .orderBy(desc(schema.supportTickets.createdAt));
       return { success: true, data: tickets };
     } catch (e) {
@@ -93,11 +104,20 @@ export const getReviewsFn = createServerFn({ method: "GET" })
       // Super admin sees all; everyone else only sees their own org's reviews
       const reviewsList =
         session.role === "super_admin"
-          ? await db.select().from(schema.reviews).orderBy(desc(schema.reviews.createdAt))
+          ? await db
+              .select()
+              .from(schema.reviews)
+              .where(notDeleted(schema.reviews.deletedAt))
+              .orderBy(desc(schema.reviews.createdAt))
           : await db
               .select()
               .from(schema.reviews)
-              .where(eq(schema.reviews.organizationId, session.orgId))
+              .where(
+                and(
+                  eq(schema.reviews.organizationId, session.orgId),
+                  notDeleted(schema.reviews.deletedAt),
+                ),
+              )
               .orderBy(desc(schema.reviews.createdAt));
       return { success: true, data: reviewsList };
     } catch (e) {

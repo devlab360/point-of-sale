@@ -1,4 +1,5 @@
 import { handleApiError } from "@/lib/error-utils";
+import { notDeleted } from "@/lib/soft-delete";
 import { createServerFn } from "@tanstack/react-start";
 import { setCookie, deleteCookie } from "@tanstack/react-start/server";
 import { authService } from "@/services/auth.service";
@@ -48,21 +49,29 @@ export const getOrgDataFn = createServerFn({ method: "GET" })
         return { success: false, error: "Unauthorized access to another organization's data" };
       }
       const orgId = requestedOrgId || session.orgId;
-      const { db, schema, eq } = await getDb();
+      const { db, schema, eq, and } = await getDb();
       const orgs = await db
         .select()
         .from(schema.organizations)
-        .where(eq(schema.organizations.id, orgId))
+        .where(and(eq(schema.organizations.id, orgId), notDeleted(schema.organizations.deletedAt)))
         .limit(1);
       if (!orgs.length) return { success: false, error: "Org not found" };
       const org = orgs[0];
 
       const [settings, plans] = await Promise.all([
-        db.select().from(schema.settings).where(eq(schema.settings.organizationId, orgId)).limit(1),
+        db
+          .select()
+          .from(schema.settings)
+          .where(
+            and(eq(schema.settings.organizationId, orgId), notDeleted(schema.settings.deletedAt)),
+          )
+          .limit(1),
         db
           .select()
           .from(schema.saasPlans)
-          .where(eq(schema.saasPlans.id, org.currentPlanId))
+          .where(
+            and(eq(schema.saasPlans.id, org.currentPlanId), notDeleted(schema.saasPlans.deletedAt)),
+          )
           .limit(1),
       ]);
       return { success: true, org, settings: settings[0], plan: plans[0] };
@@ -77,11 +86,13 @@ export const verifyUserEmailFn = createServerFn({ method: "POST" })
   )
   .handler(async ({ data }) => {
     try {
-      const { db, schema, eq } = await getDb();
+      const { db, schema, eq, and } = await getDb();
       const users = await db
         .select()
         .from(schema.users)
-        .where(eq(schema.users.email, data.email.toLowerCase()))
+        .where(
+          and(eq(schema.users.email, data.email.toLowerCase()), notDeleted(schema.users.deletedAt)),
+        )
         .limit(1);
       if (!users.length) return { success: false, error: "User not found" };
 
@@ -95,21 +106,30 @@ export const verifyUserEmailFn = createServerFn({ method: "POST" })
         const orgs = await db
           .select()
           .from(schema.organizations)
-          .where(eq(schema.organizations.id, orgId))
+          .where(
+            and(eq(schema.organizations.id, orgId), notDeleted(schema.organizations.deletedAt)),
+          )
           .limit(1);
         if (orgs.length > 0) {
           org = orgs[0];
           const plans = await db
             .select()
             .from(schema.saasPlans)
-            .where(eq(schema.saasPlans.id, org.currentPlanId))
+            .where(
+              and(
+                eq(schema.saasPlans.id, org.currentPlanId),
+                notDeleted(schema.saasPlans.deletedAt),
+              ),
+            )
             .limit(1);
           plan = plans[0];
         }
         const settings = await db
           .select()
           .from(schema.settings)
-          .where(eq(schema.settings.organizationId, orgId))
+          .where(
+            and(eq(schema.settings.organizationId, orgId), notDeleted(schema.settings.deletedAt)),
+          )
           .limit(1);
         orgSettings = settings[0];
       }
@@ -170,12 +190,12 @@ export const registerOrgFn = createServerFn({ method: "POST" })
         timeZone,
       } = data;
 
-      const { db, schema, eq } = await getDb();
+      const { db, schema, eq, and } = await getDb();
 
       const existingUsers = await db
         .select()
         .from(schema.users)
-        .where(eq(schema.users.email, email.toLowerCase()))
+        .where(and(eq(schema.users.email, email.toLowerCase()), notDeleted(schema.users.deletedAt)))
         .limit(1);
 
       if (existingUsers.length > 0) {
@@ -283,11 +303,11 @@ export const verifyOtpFn = createServerFn({ method: "POST" })
   .validator((data: any) => data)
   .handler(async ({ data }) => {
     try {
-      const { db, schema, eq } = await getDb();
+      const { db, schema, eq, and } = await getDb();
       const users = await db
         .select()
         .from(schema.users)
-        .where(eq(schema.users.id, data.userId))
+        .where(and(eq(schema.users.id, data.userId), notDeleted(schema.users.deletedAt)))
         .limit(1);
       if (!users.length) return { success: false, error: "User not found" };
       const user = users[0];
@@ -355,12 +375,12 @@ export const acceptInvitationFn = createServerFn({ method: "POST" })
     try {
       const email = data.email.toLowerCase();
 
-      const { db, schema, eq } = await getDb();
+      const { db, schema, eq, and } = await getDb();
 
       const existingUser = await db
         .select()
         .from(schema.users)
-        .where(eq(schema.users.email, email))
+        .where(and(eq(schema.users.email, email), notDeleted(schema.users.deletedAt)))
         .limit(1);
 
       if (existingUser.length > 0) {
@@ -449,11 +469,11 @@ export const getCurrentUserFn = createServerFn({ method: "GET" })
   .handler(async () => {
     try {
       const session = await requireAuth();
-      const { db, schema, eq } = await getDb();
+      const { db, schema, eq, and } = await getDb();
       const users = await db
         .select()
         .from(schema.users)
-        .where(eq(schema.users.id, session.userId))
+        .where(and(eq(schema.users.id, session.userId), notDeleted(schema.users.deletedAt)))
         .limit(1);
       if (!users.length) {
         deleteCookie("pos_auth_token", { path: "/" });
@@ -496,11 +516,13 @@ export const sendLoginOtpFn = createServerFn({ method: "POST" })
   .validator(z.object({ email: z.string().email(), otp: z.string() }))
   .handler(async ({ data }) => {
     try {
-      const { db, schema, eq } = await getDb();
+      const { db, schema, eq, and } = await getDb();
       const users = await db
         .select()
         .from(schema.users)
-        .where(eq(schema.users.email, data.email.toLowerCase()))
+        .where(
+          and(eq(schema.users.email, data.email.toLowerCase()), notDeleted(schema.users.deletedAt)),
+        )
         .limit(1);
 
       if (!users.length) {
@@ -522,11 +544,13 @@ export const loginWithOtpFn = createServerFn({ method: "POST" })
   .validator(z.object({ email: z.string().email(), otp: z.string() }))
   .handler(async ({ data }) => {
     try {
-      const { db, schema, eq } = await getDb();
+      const { db, schema, eq, and } = await getDb();
       const users = await db
         .select()
         .from(schema.users)
-        .where(eq(schema.users.email, data.email.toLowerCase()))
+        .where(
+          and(eq(schema.users.email, data.email.toLowerCase()), notDeleted(schema.users.deletedAt)),
+        )
         .limit(1);
 
       if (!users.length) return { success: false, error: "User not found" };
@@ -610,12 +634,12 @@ export const loginWithGoogleFn = createServerFn({ method: "POST" })
 
       const email = googleUser.email.toLowerCase();
 
-      const { db, schema, eq } = await getDb();
+      const { db, schema, eq, and } = await getDb();
 
       let users = await db
         .select()
         .from(schema.users)
-        .where(eq(schema.users.email, email))
+        .where(and(eq(schema.users.email, email), notDeleted(schema.users.deletedAt)))
         .limit(1);
 
       let user = users[0];
@@ -633,7 +657,12 @@ export const loginWithGoogleFn = createServerFn({ method: "POST" })
           const plans = await tx
             .select()
             .from(schema.saasPlans)
-            .where(eq(schema.saasPlans.isTrialDefault, true))
+            .where(
+              and(
+                eq(schema.saasPlans.isTrialDefault, true),
+                notDeleted(schema.saasPlans.deletedAt),
+              ),
+            )
             .limit(1);
           let assignedPlanId = plans.length > 0 ? plans[0].id : "starter";
 
@@ -765,12 +794,12 @@ export const loginWithFirebasePhoneFn = createServerFn({ method: "POST" })
         return { success: false, error: "No phone number found in token" };
       }
 
-      const { db, schema, eq } = await getDb();
+      const { db, schema, eq, and } = await getDb();
 
       let users = await db
         .select()
         .from(schema.users)
-        .where(eq(schema.users.phone, phone))
+        .where(and(eq(schema.users.phone, phone), notDeleted(schema.users.deletedAt)))
         .limit(1);
 
       let user = users[0];
@@ -788,7 +817,12 @@ export const loginWithFirebasePhoneFn = createServerFn({ method: "POST" })
           const plans = await tx
             .select()
             .from(schema.saasPlans)
-            .where(eq(schema.saasPlans.isTrialDefault, true))
+            .where(
+              and(
+                eq(schema.saasPlans.isTrialDefault, true),
+                notDeleted(schema.saasPlans.deletedAt),
+              ),
+            )
             .limit(1);
           let assignedPlanId = plans.length > 0 ? plans[0].id : "starter";
 

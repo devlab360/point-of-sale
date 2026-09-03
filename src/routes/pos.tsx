@@ -480,9 +480,9 @@ function PosScreen() {
 
       const printObj = {
         id: invNum,
-        storeName: state.settings?.storeName,
-        storeAddress: state.settings?.address,
-        storePhone: state.settings?.phone,
+        storeName: state.selectedLocation?.name || state.settings?.storeName,
+        storeAddress: state.selectedLocation?.address || state.settings?.address,
+        storePhone: state.selectedLocation?.phone || state.settings?.phone,
         receiptHeader: state.settings?.headerNote,
         receiptFooter: state.settings?.footerNote,
         receiptDeclaration: state.settings?.receiptDeclaration,
@@ -574,9 +574,9 @@ function PosScreen() {
     const totalVal = total;
     const printObj = {
       id: "PREVIEW",
-      storeName: state.settings?.storeName,
-      storeAddress: state.settings?.address,
-      storePhone: state.settings?.phone,
+      storeName: state.selectedLocation?.name || state.settings?.storeName,
+      storeAddress: state.selectedLocation?.address || state.settings?.address,
+      storePhone: state.selectedLocation?.phone || state.settings?.phone,
       receiptHeader: state.settings?.headerNote,
       receiptFooter: state.settings?.footerNote,
       receiptDeclaration: state.settings?.receiptDeclaration,

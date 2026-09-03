@@ -1,4 +1,5 @@
 import { handleApiError } from "@/lib/error-utils";
+import { notDeleted } from "@/lib/soft-delete";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireAuth, requireAdmin, invalidateUserSessionCache } from "@/lib/auth-utils";
@@ -55,7 +56,11 @@ async function fetchUserLocationIds(orgId: string, userId: string): Promise<stri
     .select({ locationId: schema.userBranches.locationId })
     .from(schema.userBranches)
     .where(
-      and(eq(schema.userBranches.organizationId, orgId), eq(schema.userBranches.userId, userId)),
+      and(
+        eq(schema.userBranches.organizationId, orgId),
+        eq(schema.userBranches.userId, userId),
+        notDeleted(schema.userBranches.deletedAt),
+      ),
     );
   return rows.map((r) => r.locationId);
 }
@@ -72,7 +77,11 @@ async function validateOrgLocations(
     .select({ id: schema.locations.id })
     .from(schema.locations)
     .where(
-      and(eq(schema.locations.organizationId, orgId), inArray(schema.locations.id, locationIds)),
+      and(
+        eq(schema.locations.organizationId, orgId),
+        inArray(schema.locations.id, locationIds),
+        notDeleted(schema.locations.deletedAt),
+      ),
     );
   const valid = orgLocations.map((l) => l.id);
   if (valid.length !== new Set(locationIds).size) return null;
@@ -88,7 +97,8 @@ async function replaceUserLocations(
 ): Promise<void> {
   const { db, schema, eq, and } = await getDb();
   await db
-    .delete(schema.userBranches)
+    .update(schema.userBranches)
+    .set({ deletedAt: new Date().toISOString() })
     .where(
       and(eq(schema.userBranches.organizationId, orgId), eq(schema.userBranches.userId, userId)),
     );
@@ -117,16 +127,23 @@ export const getUsersFn = createServerFn({ method: "GET" })
   .handler(async () => {
     try {
       const session = await requireAuth();
-      const { db, schema, eq } = await getDb();
+      const { db, schema, eq, and } = await getDb();
       const res = await db
         .select()
         .from(schema.users)
-        .where(eq(schema.users.organizationId, session.orgId));
+        .where(
+          and(eq(schema.users.organizationId, session.orgId), notDeleted(schema.users.deletedAt)),
+        );
 
       const assignments = await db
         .select({ userId: schema.userBranches.userId, locationId: schema.userBranches.locationId })
         .from(schema.userBranches)
-        .where(eq(schema.userBranches.organizationId, session.orgId));
+        .where(
+          and(
+            eq(schema.userBranches.organizationId, session.orgId),
+            notDeleted(schema.userBranches.deletedAt),
+          ),
+        );
       const locationIdsByUser = new Map<string, string[]>();
       for (const a of assignments) {
         const list = locationIdsByUser.get(a.userId) || [];
@@ -157,7 +174,13 @@ export const getUserFn = createServerFn({ method: "GET" })
       const res = await db
         .select()
         .from(schema.users)
-        .where(and(eq(schema.users.id, data.id), eq(schema.users.organizationId, session.orgId)))
+        .where(
+          and(
+            eq(schema.users.id, data.id),
+            eq(schema.users.organizationId, session.orgId),
+            notDeleted(schema.users.deletedAt),
+          ),
+        )
         .limit(1);
       if (!res.length) return { success: false, error: "Not found" };
 
@@ -182,14 +205,14 @@ export const createUserFn = createServerFn({ method: "POST" })
       if (!session.orgId) return { success: false, error: "Unauthorized" };
       await assertUserLimit(session.orgId);
 
-      const { db, schema, eq } = await getDb();
+      const { db, schema, eq, and } = await getDb();
 
       const email = data.user.email.toLowerCase();
 
       const existingUser = await db
         .select()
         .from(schema.users)
-        .where(eq(schema.users.email, email))
+        .where(and(eq(schema.users.email, email), notDeleted(schema.users.deletedAt)))
         .limit(1);
 
       if (existingUser.length > 0) {
@@ -279,7 +302,7 @@ export const updateUserFn = createServerFn({ method: "POST" })
         const existingUser = await db
           .select()
           .from(schema.users)
-          .where(and(eq(schema.users.email, updateData.email)))
+          .where(and(eq(schema.users.email, updateData.email), notDeleted(schema.users.deletedAt)))
           .limit(1);
 
         if (existingUser.length > 0 && existingUser[0].id !== data.id) {
@@ -336,7 +359,8 @@ export const deleteUserFn = createServerFn({ method: "POST" })
       const { db, schema, eq, and } = await getDb();
 
       await db
-        .delete(schema.users)
+        .update(schema.users)
+        .set({ deletedAt: new Date().toISOString() })
         .where(and(eq(schema.users.id, data.id), eq(schema.users.organizationId, session.orgId)));
       invalidateUserSessionCache(data.id);
       return { success: true, message: "User deleted successfully" };

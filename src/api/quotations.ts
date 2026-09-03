@@ -6,6 +6,7 @@ import { db } from "@/db";
 import * as schema from "@/db/schema";
 import { eq, and } from "drizzle-orm";
 import { v4 as uuidv4 } from "uuid";
+import { notDeleted } from "@/lib/soft-delete";
 
 const QuotationItemSchema = z
   .object({
@@ -46,7 +47,9 @@ export const getQuotationsFn = createServerFn({ method: "GET" })
       const all = await db
         .select()
         .from(schema.quotations)
-        .where(eq(schema.quotations.organizationId, orgId));
+        .where(
+          and(eq(schema.quotations.organizationId, orgId), notDeleted(schema.quotations.deletedAt)),
+        );
       return { success: true, data: all };
     } catch (e) {
       return handleApiError(e);
@@ -101,9 +104,7 @@ export const updateQuotationFn = createServerFn({ method: "POST" })
       await db
         .update(schema.quotations)
         .set({ ...data.updates })
-        .where(
-          and(eq(schema.quotations.id, data.id), eq(schema.quotations.organizationId, orgId)),
-        );
+        .where(and(eq(schema.quotations.id, data.id), eq(schema.quotations.organizationId, orgId)));
       return { success: true };
     } catch (e) {
       return handleApiError(e);
@@ -117,10 +118,9 @@ export const deleteQuotationFn = createServerFn({ method: "POST" })
       const session = await requireAuth();
       const orgId = session.orgId;
       await db
-        .delete(schema.quotations)
-        .where(
-          and(eq(schema.quotations.id, data.id), eq(schema.quotations.organizationId, orgId)),
-        );
+        .update(schema.quotations)
+        .set({ deletedAt: new Date().toISOString() })
+        .where(and(eq(schema.quotations.id, data.id), eq(schema.quotations.organizationId, orgId)));
       return { success: true };
     } catch (e) {
       return handleApiError(e);

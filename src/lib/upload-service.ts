@@ -101,10 +101,7 @@ export function buildBlobDeliveryUrl(pathname: string): string {
 export function isImageUrl(url?: string | null): boolean {
   if (!url) return false;
   if (url.startsWith("/api/blob?")) return true;
-  return (
-    url.startsWith("data:image/") ||
-    /\.(jpg|jpeg|png|webp|gif|svg)(\?.*)?$/i.test(url)
-  );
+  return url.startsWith("data:image/") || /\.(jpg|jpeg|png|webp|gif|svg)(\?.*)?$/i.test(url);
 }
 
 /**

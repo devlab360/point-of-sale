@@ -1,6 +1,7 @@
 import { db } from "@/db";
 import * as schema from "@/db/schema";
 import { eq, and, desc, sql, ilike, or, inArray } from "drizzle-orm";
+import { notDeleted } from "@/lib/soft-delete";
 import { v4 as uuidv4 } from "uuid";
 import { NotFoundError } from "@/lib/errors/errors";
 
@@ -14,10 +15,12 @@ export interface CreateSaleInput {
   paymentMethod: string;
   paid?: number | null;
   payments?: Array<{ amount: number; method: string; transactionRef?: string }>;
+  locationId?: string | null;
   items: Array<{
     referenceType?: string;
     referenceId: string;
     productId?: string;
+    variantId?: string | null;
     productName: string;
     quantity: number;
     price: number;
@@ -34,6 +37,7 @@ export interface SalesQueryFilters {
   query?: string;
   status?: string;
   payment?: string;
+  locationId?: string;
 }
 
 export class SalesService {
@@ -41,7 +45,7 @@ export class SalesService {
     const page = filters.page || 1;
     const pageSize = filters.pageSize || 50;
 
-    let conditions = [eq(schema.sales.organizationId, orgId)];
+    let conditions = [eq(schema.sales.organizationId, orgId), notDeleted(schema.sales.deletedAt)];
 
     if (filters.query) {
       const searchCond = or(
@@ -55,6 +59,9 @@ export class SalesService {
     }
     if (filters.payment) {
       conditions.push(eq(schema.sales.paymentMethod, filters.payment));
+    }
+    if (filters.locationId && filters.locationId !== "all") {
+      conditions.push(eq(schema.sales.locationId, filters.locationId));
     }
 
     const whereClause = and(...conditions);
@@ -97,7 +104,13 @@ export class SalesService {
     const sales = await db
       .select()
       .from(schema.sales)
-      .where(and(eq(schema.sales.id, saleId), eq(schema.sales.organizationId, orgId)))
+      .where(
+        and(
+          eq(schema.sales.id, saleId),
+          eq(schema.sales.organizationId, orgId),
+          notDeleted(schema.sales.deletedAt),
+        ),
+      )
       .limit(1);
 
     if (!sales.length) {
@@ -175,14 +188,53 @@ export class SalesService {
         }));
         await tx.insert(schema.saleItems).values(itemsWithSaleId as any);
 
-        // Deduct Inventory Stock
+        // Deduct Inventory Stock & Log Movements
+        const movementsToInsert: any[] = [];
         for (const item of input.items) {
           if (item.referenceType !== "SERVICE") {
             const targetProductId = item.productId || item.referenceId;
+            const targetVariantId = item.variantId || null;
+
+            movementsToInsert.push({
+              organizationId: orgId,
+              productId: targetProductId,
+              variantId: targetVariantId,
+              locationId: (input as any).locationId || null,
+              productName: item.productName || "Product",
+              action: "pos_sale",
+              quantity: (-Math.abs(Number(item.quantity || 1))).toString(),
+              createdAt: new Date().toISOString(),
+            });
+
+            // If variant, deduct variant inventory
+            if (targetVariantId) {
+              const varInvs = await tx
+                .select()
+                .from(schema.variantInventory)
+                .where(
+                  and(
+                    eq(schema.variantInventory.variantId, targetVariantId),
+                    eq(schema.variantInventory.organizationId, orgId),
+                    notDeleted(schema.variantInventory.deletedAt),
+                  ),
+                )
+                .limit(1);
+
+              if (varInvs.length > 0) {
+                const currentVarStock = Number(varInvs[0].stock || 0);
+                await tx
+                  .update(schema.variantInventory)
+                  .set({ stock: Math.max(0, currentVarStock - item.quantity).toString() })
+                  .where(eq(schema.variantInventory.id, varInvs[0].id));
+              }
+            }
+
             const existingProds = await tx
               .select()
               .from(schema.products)
-              .where(eq(schema.products.id, targetProductId))
+              .where(
+                and(eq(schema.products.id, targetProductId), notDeleted(schema.products.deletedAt)),
+              )
               .limit(1);
 
             if (existingProds.length > 0) {
@@ -195,6 +247,10 @@ export class SalesService {
             }
           }
         }
+
+        if (movementsToInsert.length > 0) {
+          await tx.insert(schema.inventoryMovements).values(movementsToInsert);
+        }
       }
 
       // Customer Loyalty & Spending Update
@@ -206,6 +262,7 @@ export class SalesService {
             and(
               eq(schema.customers.id, input.customerId),
               eq(schema.customers.organizationId, orgId),
+              notDeleted(schema.customers.deletedAt),
             ),
           )
           .limit(1);

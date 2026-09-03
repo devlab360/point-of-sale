@@ -5,6 +5,7 @@ import { z } from "zod";
 import { v4 as uuidv4 } from "uuid";
 import { db } from "@/db";
 import * as schema from "@/db/schema";
+import { notDeleted } from "@/lib/soft-delete";
 import { eq, and, inArray } from "drizzle-orm";
 
 // ─── Get bundle components for a product ──────────────────────────────────────
@@ -34,12 +35,14 @@ export const getBundleComponentsFn = createServerFn({ method: "GET" })
           and(
             eq(schema.productBundles.componentProductId, schema.products.id),
             eq(schema.products.organizationId, session.orgId),
+            notDeleted(schema.products.deletedAt),
           ),
         )
         .where(
           and(
             eq(schema.productBundles.bundleProductId, data.productId),
             eq(schema.productBundles.organizationId, session.orgId),
+            notDeleted(schema.productBundles.deletedAt),
           ),
         );
       return { success: true, data: components };
@@ -69,7 +72,8 @@ export const saveBundleComponentsFn = createServerFn({ method: "POST" })
       const session = await requireAuth();
       // Delete all existing components for this bundle
       await db
-        .delete(schema.productBundles)
+        .update(schema.productBundles)
+        .set({ deletedAt: new Date().toISOString() })
         .where(
           and(
             eq(schema.productBundles.bundleProductId, data.bundleProductId),
@@ -145,6 +149,7 @@ export const getInventoryBatchesFn = createServerFn({ method: "GET" })
           and(
             eq(schema.inventoryBatches.productId, data.productId),
             eq(schema.inventoryBatches.organizationId, session.orgId),
+            notDeleted(schema.inventoryBatches.deletedAt),
           ),
         )
         .orderBy(schema.inventoryBatches.receivedAt); // FIFO order — oldest first

@@ -13,6 +13,7 @@ const insertSchema = schema.categories
   : z.any();
 const updateSchema = schema.categories ? createInsertSchema(schema.categories).partial() : z.any();
 import { eq, and } from "drizzle-orm";
+import { notDeleted } from "@/lib/soft-delete";
 
 export const getCategoriesFn = createServerFn({ method: "GET" })
   .validator(z.object({}).optional().default({}))
@@ -23,7 +24,9 @@ export const getCategoriesFn = createServerFn({ method: "GET" })
       const res = await db
         .select()
         .from(schema.categories)
-        .where(eq(schema.categories.organizationId, orgId));
+        .where(
+          and(eq(schema.categories.organizationId, orgId), notDeleted(schema.categories.deletedAt)),
+        );
       return { success: true, data: res };
     } catch (e) {
       return handleApiError(e);
@@ -106,7 +109,8 @@ export const deleteCategoryFn = createServerFn({ method: "POST" })
     try {
       const session = await requireAuth();
       await db
-        .delete(schema.categories)
+        .update(schema.categories)
+        .set({ deletedAt: new Date().toISOString() })
         .where(
           and(
             eq(schema.categories.id, data.id),

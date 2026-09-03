@@ -3,9 +3,10 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireAuth } from "@/lib/auth-utils";
 import { db } from "@/db";
 import * as schema from "@/db/schema";
-import { eq, desc } from "drizzle-orm";
+import { eq, and, desc } from "drizzle-orm";
 import { v4 as uuidv4 } from "uuid";
 import { z } from "zod";
+import { notDeleted } from "@/lib/soft-delete";
 
 export const getActivityLogFn = createServerFn({ method: "GET" })
   .validator(z.object({}).optional().default({}))
@@ -16,7 +17,12 @@ export const getActivityLogFn = createServerFn({ method: "GET" })
       const all = await db
         .select()
         .from(schema.activityLog)
-        .where(eq(schema.activityLog.organizationId, orgId))
+        .where(
+          and(
+            eq(schema.activityLog.organizationId, orgId),
+            notDeleted(schema.activityLog.deletedAt),
+          ),
+        )
         .orderBy(desc(schema.activityLog.timestamp))
         .limit(200);
       return { success: true, data: all };

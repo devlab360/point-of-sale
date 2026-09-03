@@ -655,6 +655,9 @@ export function ProductForm({
                 <div className="pl-8">
                   <VariantManager
                     variants={formData.variants}
+                    locations={locations}
+                    basePrice={formData.price}
+                    baseCost={formData.cost}
                     onChange={(variants) => setFormData({ ...formData, variants })}
                   />
                 </div>

@@ -6,6 +6,7 @@ import * as schema from "@/db/schema";
 import { eq, inArray, and, desc } from "drizzle-orm";
 import { v4 as uuidv4 } from "uuid";
 import { z } from "zod";
+import { notDeleted } from "@/lib/soft-delete";
 
 export const getNotificationsFn = createServerFn({ method: "GET" })
   .validator(z.object({}).optional().default({}))
@@ -16,7 +17,12 @@ export const getNotificationsFn = createServerFn({ method: "GET" })
       const all = await db
         .select()
         .from(schema.notifications)
-        .where(eq(schema.notifications.organizationId, orgId))
+        .where(
+          and(
+            eq(schema.notifications.organizationId, orgId),
+            notDeleted(schema.notifications.deletedAt),
+          ),
+        )
         .orderBy(desc(schema.notifications.timestamp))
         .limit(100);
       return { success: true, data: all };
@@ -26,12 +32,7 @@ export const getNotificationsFn = createServerFn({ method: "GET" })
   });
 
 export const markNotificationReadFn = createServerFn({ method: "POST" })
-  .validator(
-    z.union([
-      z.object({ id: z.string() }),
-      z.string(),
-    ]),
-  )
+  .validator(z.union([z.object({ id: z.string() }), z.string()]))
   .handler(async ({ data }) => {
     try {
       const session = await requireAuth();
@@ -57,9 +58,12 @@ export const markNotificationReadFn = createServerFn({ method: "POST" })
 
 export const markAllNotificationsReadFn = createServerFn({ method: "POST" })
   .validator(
-    z.object({
-      ids: z.array(z.string()).optional(),
-    }).optional().default({}),
+    z
+      .object({
+        ids: z.array(z.string()).optional(),
+      })
+      .optional()
+      .default({}),
   )
   .handler(async ({ data }) => {
     try {

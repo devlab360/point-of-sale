@@ -336,7 +336,10 @@ function ServicesPage() {
                           <Wrench className="size-8 text-muted-foreground/40" />
                         )}
                         <div className="absolute top-2 left-2">
-                          <Badge variant="outline" className="bg-background/80 backdrop-blur text-[10px] font-bold">
+                          <Badge
+                            variant="outline"
+                            className="bg-background/80 backdrop-blur text-[10px] font-bold"
+                          >
                             <Clock className="size-3 mr-1" />
                             {s.duration || "30"} mins
                           </Badge>

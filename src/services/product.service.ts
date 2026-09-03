@@ -3,6 +3,7 @@ import * as schema from "@/db/schema";
 import { eq, and, desc, sql, ilike, or, inArray } from "drizzle-orm";
 import { v4 as uuidv4 } from "uuid";
 import { NotFoundError } from "@/lib/errors/errors";
+import { notDeleted } from "@/lib/soft-delete";
 
 export interface ProductQueryFilters {
   page?: number;
@@ -10,6 +11,7 @@ export interface ProductQueryFilters {
   query?: string;
   categoryId?: string;
   status?: string;
+  locationId?: string;
 }
 
 export interface CreateProductInput {
@@ -83,7 +85,10 @@ export class ProductService {
     const page = filters.page || 1;
     const pageSize = filters.pageSize || 50;
 
-    let conditions = [eq(schema.products.organizationId, orgId)];
+    let conditions = [
+      eq(schema.products.organizationId, orgId),
+      notDeleted(schema.products.deletedAt),
+    ];
 
     if (filters.query) {
       const searchCond = or(
@@ -127,7 +132,10 @@ export class ProductService {
         .from(schema.products)
         .leftJoin(
           schema.productInventory,
-          eq(schema.products.id, schema.productInventory.productId),
+          and(
+            eq(schema.products.id, schema.productInventory.productId),
+            notDeleted(schema.productInventory.deletedAt),
+          ),
         )
         .where(whereClause),
     ]);
@@ -141,7 +149,65 @@ export class ProductService {
       lowStockCount: Number(summaryRes[0]?.lowStockCount || 0),
     };
 
-    return { products, totalCount, summary };
+    let productsWithLocations = products as any[];
+    if (products.length > 0) {
+      const prodIds = products.map((p) => p.id);
+      const [inventories, variants] = await Promise.all([
+        db
+          .select({
+            productId: schema.productInventory.productId,
+            locationId: schema.productInventory.locationId,
+            stock: schema.productInventory.stock,
+            reorderLevel: schema.productInventory.reorderLevel,
+          })
+          .from(schema.productInventory)
+          .where(
+            and(
+              inArray(schema.productInventory.productId, prodIds),
+              eq(schema.productInventory.organizationId, orgId),
+              notDeleted(schema.productInventory.deletedAt),
+            ),
+          ),
+        db
+          .select()
+          .from(schema.productVariants)
+          .where(
+            and(
+              inArray(schema.productVariants.productId, prodIds),
+              eq(schema.productVariants.organizationId, orgId),
+              notDeleted(schema.productVariants.deletedAt),
+            ),
+          ),
+      ]);
+
+      const invMap = new Map<string, { locationId: string; stock: number; reorderLevel?: number }[]>();
+      inventories.forEach((inv) => {
+        if (!invMap.has(inv.productId)) {
+          invMap.set(inv.productId, []);
+        }
+        invMap.get(inv.productId)!.push({
+          locationId: inv.locationId,
+          stock: Number(inv.stock || 0),
+          reorderLevel: Number(inv.reorderLevel || 0),
+        });
+      });
+
+      const varMap = new Map<string, any[]>();
+      variants.forEach((v) => {
+        if (!varMap.has(v.productId)) {
+          varMap.set(v.productId, []);
+        }
+        varMap.get(v.productId)!.push(v);
+      });
+
+      productsWithLocations = products.map((p) => ({
+        ...p,
+        locationStocks: invMap.get(p.id) || [],
+        variants: varMap.get(p.id) || [],
+      }));
+    }
+
+    return { products: productsWithLocations, totalCount, summary };
   }
 
   async createProduct(orgId: string, input: CreateProductInput) {
@@ -183,6 +249,23 @@ export class ProductService {
     if (input.hasVariants && input.variants && input.variants.length > 0) {
       for (const variant of input.variants) {
         const variantId = variant.id || uuidv4();
+        const variantPrice =
+          variant.price !== undefined &&
+          variant.price !== null &&
+          String(variant.price).trim() !== ""
+            ? String(variant.price)
+            : cleanData.price
+              ? String(cleanData.price)
+              : "0";
+        const variantCost =
+          variant.cost !== undefined &&
+          variant.cost !== null &&
+          String(variant.cost).trim() !== ""
+            ? String(variant.cost)
+            : cleanData.cost
+              ? String(cleanData.cost)
+              : "0";
+
         await db.insert(schema.productVariants).values({
           id: variantId,
           organizationId: orgId,
@@ -190,8 +273,8 @@ export class ProductService {
           name: variant.name,
           sku: variant.sku || `${cleanData.sku}-${variant.name}`,
           barcode: variant.barcode || `${now}-${variant.name}`,
-          price: variant.price.toString(),
-          cost: variant.cost.toString(),
+          price: variantPrice,
+          cost: variantCost,
           image: variant.image || null,
         });
 
@@ -215,7 +298,12 @@ export class ProductService {
     const variants = await db
       .select()
       .from(schema.productVariants)
-      .where(eq(schema.productVariants.organizationId, orgId));
+      .where(
+        and(
+          eq(schema.productVariants.organizationId, orgId),
+          notDeleted(schema.productVariants.deletedAt),
+        ),
+      );
 
     if (!variants.length) return [];
 
@@ -235,7 +323,13 @@ export class ProductService {
     const existing = await db
       .select()
       .from(schema.products)
-      .where(and(eq(schema.products.id, productId), eq(schema.products.organizationId, orgId)))
+      .where(
+        and(
+          eq(schema.products.id, productId),
+          eq(schema.products.organizationId, orgId),
+          notDeleted(schema.products.deletedAt),
+        ),
+      )
       .limit(1);
 
     if (!existing.length) {
@@ -243,7 +337,8 @@ export class ProductService {
     }
 
     await db
-      .delete(schema.products)
+      .update(schema.products)
+      .set({ deletedAt: new Date().toISOString() })
       .where(and(eq(schema.products.id, productId), eq(schema.products.organizationId, orgId)));
   }
 
@@ -251,7 +346,13 @@ export class ProductService {
     const existing = await db
       .select()
       .from(schema.products)
-      .where(and(eq(schema.products.id, productId), eq(schema.products.organizationId, orgId)))
+      .where(
+        and(
+          eq(schema.products.id, productId),
+          eq(schema.products.organizationId, orgId),
+          notDeleted(schema.products.deletedAt),
+        ),
+      )
       .limit(1);
 
     if (!existing.length) {
@@ -267,8 +368,64 @@ export class ProductService {
         and(
           eq(schema.productVariants.productId, productId),
           eq(schema.productVariants.organizationId, orgId),
+          notDeleted(schema.productVariants.deletedAt),
         ),
       );
+
+    let variantsWithAttributes = variants as any[];
+    if (variants.length > 0) {
+      const variantIds = variants.map((v) => v.id);
+      const [attributes, variantInventories] = await Promise.all([
+        db
+          .select()
+          .from(schema.productVariantAttributes)
+          .where(
+            and(
+              inArray(schema.productVariantAttributes.variantId, variantIds),
+              notDeleted(schema.productVariantAttributes.deletedAt),
+            ),
+          ),
+        db
+          .select()
+          .from(schema.variantInventory)
+          .where(
+            and(
+              inArray(schema.variantInventory.variantId, variantIds),
+              notDeleted(schema.variantInventory.deletedAt),
+            ),
+          ),
+      ]);
+
+      variantsWithAttributes = variants.map((v) => {
+        const vAttrs = attributes
+          .filter((a) => a.variantId === v.id)
+          .map((a) => ({ name: a.name, value: a.value }));
+        const vStocks = variantInventories
+          .filter((vi) => vi.variantId === v.id)
+          .map((vi) => ({ locationId: vi.locationId, stock: Number(vi.stock) }));
+        return {
+          ...v,
+          attributes: vAttrs,
+          locationStocks: vStocks,
+        };
+      });
+    }
+
+    const productLocations = await db
+      .select()
+      .from(schema.productInventory)
+      .where(
+        and(
+          eq(schema.productInventory.productId, productId),
+          notDeleted(schema.productInventory.deletedAt),
+        ),
+      );
+
+    const locationStocks = productLocations.map((pl) => ({
+      locationId: pl.locationId,
+      stock: Number(pl.stock),
+      reorderLevel: Number(pl.reorderLevel),
+    }));
 
     const bundleComponents = await db
       .select()
@@ -277,6 +434,7 @@ export class ProductService {
         and(
           eq(schema.productBundles.bundleProductId, productId),
           eq(schema.productBundles.organizationId, orgId),
+          notDeleted(schema.productBundles.deletedAt),
         ),
       );
 
@@ -287,12 +445,14 @@ export class ProductService {
         and(
           eq(schema.productModifiers.productId, productId),
           eq(schema.productModifiers.organizationId, orgId),
+          notDeleted(schema.productModifiers.deletedAt),
         ),
       );
 
     return {
       ...product,
-      variants,
+      variants: variantsWithAttributes,
+      locationStocks,
       bundleComponents,
       modifiers,
     };

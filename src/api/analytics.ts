@@ -5,6 +5,7 @@ import * as schema from "@/db/schema";
 import { eq, and, sql, gte, lte } from "drizzle-orm";
 import { z } from "zod";
 import { requireAuth } from "@/lib/auth-utils";
+import { notDeleted } from "@/lib/soft-delete";
 
 export const getDashboardStatsFn = createServerFn({ method: "GET" })
   .validator(
@@ -24,8 +25,12 @@ export const getDashboardStatsFn = createServerFn({ method: "GET" })
       const salesConditions = [
         eq(schema.sales.organizationId, orgId),
         eq(schema.sales.status, "completed"),
+        notDeleted(schema.sales.deletedAt),
       ];
-      const expensesConditions = [eq(schema.expenses.organizationId, orgId)];
+      const expensesConditions = [
+        eq(schema.expenses.organizationId, orgId),
+        notDeleted(schema.expenses.deletedAt),
+      ];
 
       if (data?.startDate) {
         salesConditions.push(gte(schema.sales.date, data.startDate));
@@ -76,17 +81,23 @@ export const getDashboardStatsFn = createServerFn({ method: "GET" })
       const [customerStats] = await db
         .select({ count: sql`COUNT(*)` })
         .from(schema.customers)
-        .where(eq(schema.customers.organizationId, orgId));
+        .where(
+          and(eq(schema.customers.organizationId, orgId), notDeleted(schema.customers.deletedAt)),
+        );
 
       const [productStats] = await db
         .select({ count: sql`COUNT(*)` })
         .from(schema.products)
-        .where(eq(schema.products.organizationId, orgId));
+        .where(
+          and(eq(schema.products.organizationId, orgId), notDeleted(schema.products.deletedAt)),
+        );
 
       const [serviceStats] = await db
         .select({ count: sql`COUNT(*)` })
         .from(schema.services)
-        .where(eq(schema.services.organizationId, orgId));
+        .where(
+          and(eq(schema.services.organizationId, orgId), notDeleted(schema.services.deletedAt)),
+        );
 
       // 4. Low Stock Count
       const [lowStockStats] = await db
@@ -95,6 +106,7 @@ export const getDashboardStatsFn = createServerFn({ method: "GET" })
         .where(
           and(
             eq(schema.products.organizationId, orgId),
+            notDeleted(schema.products.deletedAt),
             sql`${schema.products.stock} <= COALESCE(${schema.products.reorderLevel}, 5)`,
           ),
         );

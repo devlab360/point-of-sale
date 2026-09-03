@@ -5,6 +5,7 @@ import { z } from "zod";
 import { db } from "@/db";
 import * as schema from "@/db/schema";
 import { eq, and } from "drizzle-orm";
+import { notDeleted } from "@/lib/soft-delete";
 import { v4 as uuidv4 } from "uuid";
 
 const ChallanItemSchema = z
@@ -44,7 +45,12 @@ export const getDeliveryChallansFn = createServerFn({ method: "GET" })
       const all = await db
         .select()
         .from(schema.deliveryChallans)
-        .where(eq(schema.deliveryChallans.organizationId, orgId));
+        .where(
+          and(
+            eq(schema.deliveryChallans.organizationId, orgId),
+            notDeleted(schema.deliveryChallans.deletedAt),
+          ),
+        );
       return { success: true, data: all };
     } catch (e) {
       return handleApiError(e);
@@ -77,10 +83,7 @@ export const createDeliveryChallanFn = createServerFn({ method: "POST" })
         updatedAt: new Date().toISOString(),
       };
 
-      const inserted = await db
-        .insert(schema.deliveryChallans)
-        .values(newChallan)
-        .returning();
+      const inserted = await db.insert(schema.deliveryChallans).values(newChallan).returning();
       return { success: true, data: inserted[0] || newChallan };
     } catch (e) {
       return handleApiError(e);
@@ -120,7 +123,8 @@ export const deleteDeliveryChallanFn = createServerFn({ method: "POST" })
       const session = await requireAuth();
       const orgId = session.orgId;
       await db
-        .delete(schema.deliveryChallans)
+        .update(schema.deliveryChallans)
+        .set({ deletedAt: new Date().toISOString() })
         .where(
           and(
             eq(schema.deliveryChallans.id, data.id),

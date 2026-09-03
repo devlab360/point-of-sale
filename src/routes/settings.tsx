@@ -89,13 +89,6 @@ import {
   updateLocationFn,
   deleteLocationFn,
 } from "@/api/locations";
-import {
-  getBranchPriceOverridesFn,
-  getBranchPricingCatalogFn,
-  toggleBranchPricingFn,
-  upsertBranchPriceFn,
-  deleteBranchPriceFn,
-} from "@/api/branch-pricing";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import {
@@ -461,8 +454,8 @@ function SettingsPage() {
       if (res.success) {
         toast.success(
           "Payment proof submitted successfully! Super Admin will verify UTR: " +
-          paymentForm.utrNumber +
-          " and activate your subscription within 2-4 hours.",
+            paymentForm.utrNumber +
+            " and activate your subscription within 2-4 hours.",
         );
         setSelectedPlanForUpgrade(null);
         setPaymentForm({
@@ -720,7 +713,7 @@ function SettingsPage() {
   const parseBankDetails = (str: string) => {
     try {
       if (str && str.trim().startsWith("{")) return JSON.parse(str);
-    } catch (e) { }
+    } catch (e) {}
     return {
       bankName: str || "",
       holderName: "",
@@ -948,13 +941,6 @@ function SettingsPage() {
       badge: null,
     },
     {
-      id: "branchPricing",
-      label: "Branch Pricing",
-      description: "Per-branch price overrides",
-      icon: Tag,
-      badge: null,
-    },
-    {
       id: "data",
       label: "Data & Storage",
       description: "Offline cache & database sync",
@@ -1036,16 +1022,18 @@ function SettingsPage() {
                   key={item.id}
                   type="button"
                   onClick={() => handleTabChange(item.id)}
-                  className={`w-full text-left flex items-start gap-3 p-3 rounded-xl transition-all duration-200 group relative ${isActive
-                    ? "bg-primary text-primary-foreground shadow-soft"
-                    : "hover:bg-muted/70 text-foreground"
-                    }`}
+                  className={`w-full text-left flex items-start gap-3 p-3 rounded-xl transition-all duration-200 group relative ${
+                    isActive
+                      ? "bg-primary text-primary-foreground shadow-soft"
+                      : "hover:bg-muted/70 text-foreground"
+                  }`}
                 >
                   <div
-                    className={`size-8 rounded-lg flex items-center justify-center shrink-0 transition-colors ${isActive
-                      ? "bg-white/20 text-white"
-                      : "bg-muted text-muted-foreground group-hover:text-foreground group-hover:bg-card border border-border/50"
-                      }`}
+                    className={`size-8 rounded-lg flex items-center justify-center shrink-0 transition-colors ${
+                      isActive
+                        ? "bg-white/20 text-white"
+                        : "bg-muted text-muted-foreground group-hover:text-foreground group-hover:bg-card border border-border/50"
+                    }`}
                   >
                     <Icon className="size-4" />
                   </div>
@@ -1054,20 +1042,22 @@ function SettingsPage() {
                       <span className="text-xs font-bold truncate block">{item.label}</span>
                       {item.badge && (
                         <span
-                          className={`text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded-full ${isActive
-                            ? "bg-white/25 text-white"
-                            : item.badgeVariant === "destructive"
-                              ? "bg-destructive/10 text-destructive border border-destructive/20"
-                              : "bg-primary/10 text-primary border border-primary/20"
-                            }`}
+                          className={`text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded-full ${
+                            isActive
+                              ? "bg-white/25 text-white"
+                              : item.badgeVariant === "destructive"
+                                ? "bg-destructive/10 text-destructive border border-destructive/20"
+                                : "bg-primary/10 text-primary border border-primary/20"
+                          }`}
                         >
                           {item.badge}
                         </span>
                       )}
                     </div>
                     <span
-                      className={`text-[11px] truncate block mt-0.5 ${isActive ? "text-white/80" : "text-muted-foreground"
-                        }`}
+                      className={`text-[11px] truncate block mt-0.5 ${
+                        isActive ? "text-white/80" : "text-muted-foreground"
+                      }`}
                     >
                       {item.description}
                     </span>
@@ -1117,10 +1107,11 @@ function SettingsPage() {
                   key={item.id}
                   type="button"
                   onClick={() => handleTabChange(item.id)}
-                  className={`shrink-0 flex items-center gap-2 px-3.5 py-2.5 rounded-xl text-xs font-bold border transition-all ${isActive
-                    ? "bg-primary text-primary-foreground border-primary shadow-soft"
-                    : "bg-card text-foreground border-border/80 hover:bg-muted"
-                    }`}
+                  className={`shrink-0 flex items-center gap-2 px-3.5 py-2.5 rounded-xl text-xs font-bold border transition-all ${
+                    isActive
+                      ? "bg-primary text-primary-foreground border-primary shadow-soft"
+                      : "bg-card text-foreground border-border/80 hover:bg-muted"
+                  }`}
                 >
                   <Icon className="size-3.5" />
                   <span>{item.label}</span>
@@ -1641,10 +1632,11 @@ function SettingsPage() {
                       return (
                         <div
                           key={plan.id}
-                          className={`rounded-2xl border p-5 flex flex-col justify-between relative transition-all bg-card shadow-card hover:shadow-card-hover ${isCurrent
-                            ? "border-primary ring-2 ring-primary/20 bg-gradient-to-b from-primary/5 to-card"
-                            : "border-border/80 hover:border-primary/40"
-                            }`}
+                          className={`rounded-2xl border p-5 flex flex-col justify-between relative transition-all bg-card shadow-card hover:shadow-card-hover ${
+                            isCurrent
+                              ? "border-primary ring-2 ring-primary/20 bg-gradient-to-b from-primary/5 to-card"
+                              : "border-border/80 hover:border-primary/40"
+                          }`}
                         >
                           {isCurrent && (
                             <Badge className="absolute -top-2.5 right-4 bg-primary text-primary-foreground text-[10px] font-bold">
@@ -2091,10 +2083,11 @@ function SettingsPage() {
                                 <TableCell>
                                   <Badge
                                     variant="outline"
-                                    className={`text-[10px] font-bold uppercase ${tm.status === "archived"
-                                      ? "text-muted-foreground"
-                                      : "text-success border-success/30 bg-success/10"
-                                      }`}
+                                    className={`text-[10px] font-bold uppercase ${
+                                      tm.status === "archived"
+                                        ? "text-muted-foreground"
+                                        : "text-success border-success/30 bg-success/10"
+                                    }`}
                                   >
                                     {tm.status === "archived" ? "Archived" : tm.status || "active"}
                                   </Badge>
@@ -2714,20 +2707,22 @@ function SettingsPage() {
                           <button
                             type="button"
                             onClick={() => setPreviewFormat("thermal")}
-                            className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${previewFormat === "thermal"
-                              ? "bg-card shadow-soft text-primary"
-                              : "text-muted-foreground hover:text-foreground"
-                              }`}
+                            className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${
+                              previewFormat === "thermal"
+                                ? "bg-card shadow-soft text-primary"
+                                : "text-muted-foreground hover:text-foreground"
+                            }`}
                           >
                             80mm Thermal
                           </button>
                           <button
                             type="button"
                             onClick={() => setPreviewFormat("a4")}
-                            className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${previewFormat === "a4"
-                              ? "bg-card shadow-soft text-primary"
-                              : "text-muted-foreground hover:text-foreground"
-                              }`}
+                            className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${
+                              previewFormat === "a4"
+                                ? "bg-card shadow-soft text-primary"
+                                : "text-muted-foreground hover:text-foreground"
+                            }`}
                           >
                             A4 Invoice
                           </button>
@@ -2800,14 +2795,7 @@ function SettingsPage() {
             </div>
           )}
 
-          {/* TAB 7: Branch Pricing */}
-          {activeTab === "branchPricing" && (
-            <div className="space-y-6 animate-in fade-in duration-200">
-              <BranchPricingTab />
-            </div>
-          )}
-
-          {/* TAB 8: Data & Diagnostics */}
+          {/* TAB 7: Data & Diagnostics */}
           {activeTab === "data" && (
             <div className="space-y-6 animate-in fade-in duration-200">
               <SettingsCard
@@ -3069,10 +3057,11 @@ function SettingsPage() {
                       <div
                         key={method.id}
                         onClick={() => setPaymentForm({ ...paymentForm, paymentMethod: method.id })}
-                        className={`cursor-pointer rounded-xl border p-3 flex flex-col items-center justify-center text-center transition-all select-none ${isSelected
-                          ? "border-primary bg-primary/10 shadow-soft ring-2 ring-primary/20 text-primary font-bold"
-                          : "border-border/80 bg-card hover:bg-muted/50 text-foreground"
-                          }`}
+                        className={`cursor-pointer rounded-xl border p-3 flex flex-col items-center justify-center text-center transition-all select-none ${
+                          isSelected
+                            ? "border-primary bg-primary/10 shadow-soft ring-2 ring-primary/20 text-primary font-bold"
+                            : "border-border/80 bg-card hover:bg-muted/50 text-foreground"
+                        }`}
                       >
                         <Icon
                           className={`size-4 mb-1.5 ${isSelected ? "text-primary" : "text-muted-foreground"}`}
@@ -3158,8 +3147,8 @@ function SettingsPage() {
                           ? Number(selectedPlanForUpgrade.monthlyPrice)
                           : Number(selectedPlanForUpgrade?.price || 0)) +
                       (paymentForm.extraSeats || 0) *
-                      Number(selectedPlanForUpgrade?.perExtraUserPrice || 0) *
-                      (paymentForm.billingCycle === "yearly" ? 12 : 1)
+                        Number(selectedPlanForUpgrade?.perExtraUserPrice || 0) *
+                        (paymentForm.billingCycle === "yearly" ? 12 : 1)
                     ).toLocaleString()}`}
                     disabled
                     className="mt-1 font-mono font-bold bg-muted text-primary"
@@ -3888,294 +3877,6 @@ function LocationsTab() {
         </DialogContent>
       </Dialog>
     </SettingsCard>
-  );
-}
-
-function BranchPricingTab() {
-  const queryClient = useQueryClient();
-  const { user, settings, refetchOrgData } = useAuth() as any;
-  const orgId = user?.organizationId || PersistStore.getOrgId();
-
-  const formatCurrency = (amount: string | number | null | undefined) => {
-    const n = Number(amount || 0);
-    return n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  };
-
-  const { data: orgData } = useQuery({
-    queryKey: ["organization", orgId],
-    queryFn: async () => {
-      const res = await getOrgDataFn({ data: { orgId } });
-      return res.success ? res.org : null;
-    },
-    staleTime: 60 * 1000,
-  });
-
-  const { data: branchesData } = useQuery({
-    queryKey: ["branches", orgId],
-    queryFn: async () => {
-      const res = await getLocationsFn({ data: {} });
-      return (res as any)?.data || [];
-    },
-    staleTime: 60 * 1000,
-  });
-
-  const { data: overridesData } = useQuery({
-    queryKey: ["branchPriceOverrides", orgId],
-    queryFn: async () => {
-      const res = await getBranchPriceOverridesFn({ data: { locationId: "" } });
-      return (res as any)?.data || [];
-    },
-    staleTime: 30 * 1000,
-  });
-
-  const { data: catalogData } = useQuery({
-    queryKey: ["branchPricingCatalog", orgId],
-    queryFn: async () => {
-      const res = await getBranchPricingCatalogFn({ data: { orgId } });
-      return (res as any)?.data || { products: [], services: [] };
-    },
-    staleTime: 60 * 1000,
-  });
-
-  const productsData = catalogData?.products;
-  const servicesData = catalogData?.services;
-
-  const branchPricingEnabled = orgData?.branchPricingEnabled || false;
-  const branches: any[] = branchesData || [];
-  const overrides: any[] = overridesData || [];
-  const products: any[] = productsData || [];
-  const services: any[] = servicesData || [];
-
-  const toggleMutation = useMutation({
-    mutationFn: (enabled: boolean) => toggleBranchPricingFn({ data: { enabled } }),
-    onSuccess: async (res: any) => {
-      if (res?.success) {
-        toast.success(res.message || "Updated");
-        queryClient.invalidateQueries({ queryKey: ["organization", orgId] });
-        await refetchOrgData?.();
-      } else {
-        toast.error(res?.error || "Failed");
-      }
-    },
-    onError: (e: any) => toast.error(e?.message || "Failed"),
-  });
-
-  const upsertMutation = useMutation({
-    mutationFn: (data: any) => upsertBranchPriceFn({ data }),
-    onSuccess: async (res: any) => {
-      if (res?.success) {
-        toast.success("Price saved");
-        queryClient.invalidateQueries({ queryKey: ["branchPriceOverrides", orgId] });
-      } else {
-        toast.error(res?.error || "Failed");
-      }
-    },
-    onError: (e: any) => toast.error(e?.message || "Failed"),
-  });
-
-  const deleteMutation = useMutation({
-    mutationFn: (id: string) => deleteBranchPriceFn({ data: { id } }),
-    onSuccess: async (res: any) => {
-      if (res?.success) {
-        toast.success("Override removed");
-        queryClient.invalidateQueries({ queryKey: ["branchPriceOverrides", orgId] });
-      } else {
-        toast.error(res?.error || "Failed");
-      }
-    },
-    onError: (e: any) => toast.error(e?.message || "Failed"),
-  });
-
-  const getOverride = (locationId: string, entityType: string, entityId: string) =>
-    overrides.find(
-      (o) => o.locationId === locationId && o.entityType === entityType && o.entityId === entityId,
-    );
-
-  const handleUpsert = (
-    locationId: string,
-    entityType: string,
-    entityId: string,
-    price: string,
-  ) => {
-    if (!price.trim()) return;
-    upsertMutation.mutate({ locationId, entityType, entityId, price });
-  };
-
-  const handleDelete = (id: string) => {
-    deleteMutation.mutate(id);
-  };
-
-  return (
-    <div className="space-y-6">
-      <SettingsCard
-        icon={Tag}
-        title="Branch-Wise Pricing"
-        desc="Enable per-branch price overrides. When enabled, products/services can have different prices at each branch. Overrides take priority over default prices in POS and sales."
-        headerRight={
-          <Switch
-            checked={branchPricingEnabled}
-            onCheckedChange={(checked) => toggleMutation.mutate(checked)}
-            disabled={toggleMutation.isPending}
-            className="shrink-0"
-          />
-        }
-      >
-        <div className="space-y-4">
-          {!branchPricingEnabled && (
-            <div className="p-4 rounded-xl border border-border/80 bg-muted/20 text-center space-y-2">
-              <p className="text-sm text-muted-foreground">
-                Branch pricing is disabled. Enable the toggle above to set per-branch prices for
-                products and services.
-              </p>
-            </div>
-          )}
-
-          {branchPricingEnabled && branches.length === 0 && (
-            <div className="p-4 rounded-xl border border-border/80 bg-muted/20 text-center space-y-2">
-              <p className="text-sm text-muted-foreground">
-                No branches configured. Add branches in the <strong>Multi-Location</strong> tab
-                first.
-              </p>
-            </div>
-          )}
-
-          {branchPricingEnabled && branches.length > 0 && (
-            <div className="space-y-4">
-              <div className="p-4 rounded-xl border border-primary/30 bg-primary/5 space-y-2">
-                <p className="text-xs font-bold text-primary">
-                  How it works: Enter a price for a product/service at a specific branch. Leave
-                  empty to use the default price.
-                </p>
-              </div>
-
-              {products.length > 0 && (
-                <div className="space-y-3">
-                  <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
-                    <Package className="size-3.5" /> Products
-                  </h4>
-                  <div className="rounded-xl border border-border/80 bg-card overflow-hidden">
-                    <table className="w-full text-xs">
-                      <thead className="bg-muted/40 border-b border-border/60">
-                        <tr>
-                          <th className="text-left px-4 py-3 font-bold text-muted-foreground uppercase tracking-wider w-48">
-                            Product
-                          </th>
-                          {branches.map((b) => (
-                            <th
-                              key={b.id}
-                              className="text-center px-2 py-3 font-bold text-muted-foreground uppercase tracking-wider"
-                            >
-                              {b.name}{" "}
-                              {b.isHeadOffice && (
-                                <span className="ml-1 text-[10px] bg-primary/20 text-primary px-1 rounded">
-                                  HQ
-                                </span>
-                              )}
-                            </th>
-                          ))}
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-border/60">
-                        {products.slice(0, 50).map((p) => (
-                          <tr key={p.id} className="hover:bg-muted/30 transition-colors">
-                            <td className="px-4 py-2 font-medium text-foreground truncate max-w-[180px]">
-                              {p.name}{" "}
-                              <span className="text-muted-foreground ml-2">
-                                {formatCurrency(p.price)}
-                              </span>
-                            </td>
-                            {branches.map((b) => {
-                              const override = getOverride(b.id, "product", p.id);
-                              return (
-                                <td key={b.id} className="px-2 py-2 text-center">
-                                  <Input
-                                    type="text"
-                                    placeholder="—"
-                                    value={override?.price || ""}
-                                    onChange={(e) =>
-                                      handleUpsert(b.id, "product", p.id, e.target.value)
-                                    }
-                                    className="w-full h-7 text-center text-xs font-mono"
-                                    disabled={upsertMutation.isPending}
-                                  />
-                                </td>
-                              );
-                            })}
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              )}
-
-              {services.length > 0 && (
-                <div className="space-y-3 mt-6">
-                  <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
-                    <Sparkles className="size-3.5" /> Services
-                  </h4>
-                  <div className="rounded-xl border border-border/80 bg-card overflow-hidden">
-                    <table className="w-full text-xs">
-                      <thead className="bg-muted/40 border-b border-border/60">
-                        <tr>
-                          <th className="text-left px-4 py-3 font-bold text-muted-foreground uppercase tracking-wider w-48">
-                            Service
-                          </th>
-                          {branches.map((b) => (
-                            <th
-                              key={b.id}
-                              className="text-center px-2 py-3 font-bold text-muted-foreground uppercase tracking-wider"
-                            >
-                              {b.name}
-                            </th>
-                          ))}
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-border/60">
-                        {services.slice(0, 50).map((s) => (
-                          <tr key={s.id} className="hover:bg-muted/30 transition-colors">
-                            <td className="px-4 py-2 font-medium text-foreground truncate max-w-[180px]">
-                              {s.name}{" "}
-                              <span className="text-muted-foreground ml-2">
-                                {formatCurrency(s.price)}
-                              </span>
-                            </td>
-                            {branches.map((b) => {
-                              const override = getOverride(b.id, "service", s.id);
-                              return (
-                                <td key={b.id} className="px-2 py-2 text-center">
-                                  <Input
-                                    type="text"
-                                    placeholder="—"
-                                    value={override?.price || ""}
-                                    onChange={(e) =>
-                                      handleUpsert(b.id, "service", s.id, e.target.value)
-                                    }
-                                    className="w-full h-7 text-center text-xs font-mono"
-                                    disabled={upsertMutation.isPending}
-                                  />
-                                </td>
-                              );
-                            })}
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              )}
-
-              {products.length === 0 && services.length === 0 && (
-                <div className="p-8 text-center text-muted-foreground">
-                  <Package className="size-12 mx-auto mb-2 opacity-50" />
-                  <p>No products or services found. Add catalog items first.</p>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-      </SettingsCard>
-    </div>
   );
 }
 

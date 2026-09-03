@@ -3,6 +3,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { db } from "@/db";
 import * as schema from "@/db/schema";
 import { eq, and, desc } from "drizzle-orm";
+import { notDeleted } from "@/lib/soft-delete";
 import { z } from "zod";
 import { requireAuth } from "@/lib/auth-utils";
 import { v4 as uuidv4 } from "uuid";
@@ -16,7 +17,12 @@ export const getAppointmentsFn = createServerFn({ method: "GET" })
       const res = await db
         .select()
         .from(schema.appointments)
-        .where(eq(schema.appointments.organizationId, orgId))
+        .where(
+          and(
+            eq(schema.appointments.organizationId, orgId),
+            notDeleted(schema.appointments.deletedAt),
+          ),
+        )
         .orderBy(desc(schema.appointments.dateTime));
       return { success: true, data: res };
     } catch (e) {
@@ -100,7 +106,8 @@ export const deleteAppointmentFn = createServerFn({ method: "POST" })
       const session = await requireAuth();
       const orgId = session.orgId;
       await db
-        .delete(schema.appointments)
+        .update(schema.appointments)
+        .set({ deletedAt: new Date().toISOString() })
         .where(
           and(eq(schema.appointments.id, data.id), eq(schema.appointments.organizationId, orgId)),
         );

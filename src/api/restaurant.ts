@@ -6,6 +6,7 @@ import { eq, and, desc } from "drizzle-orm";
 import { z } from "zod";
 import { requireAuth } from "@/lib/auth-utils";
 import { v4 as uuidv4 } from "uuid";
+import { notDeleted } from "@/lib/soft-delete";
 
 // ---------------- Tables API ----------------
 
@@ -18,7 +19,12 @@ export const getTablesFn = createServerFn({ method: "GET" })
       const res = await db
         .select()
         .from(schema.restaurantTables)
-        .where(eq(schema.restaurantTables.organizationId, orgId));
+        .where(
+          and(
+            eq(schema.restaurantTables.organizationId, orgId),
+            notDeleted(schema.restaurantTables.deletedAt),
+          ),
+        );
       return { success: true, data: res };
     } catch (e) {
       return handleApiError(e);
@@ -92,7 +98,8 @@ export const deleteTableFn = createServerFn({ method: "POST" })
       const session = await requireAuth();
       const orgId = session.orgId;
       await db
-        .delete(schema.restaurantTables)
+        .update(schema.restaurantTables)
+        .set({ deletedAt: new Date().toISOString() })
         .where(
           and(
             eq(schema.restaurantTables.id, data.id),
@@ -115,7 +122,12 @@ export const getKOTsFn = createServerFn({ method: "GET" })
       const res = await db
         .select()
         .from(schema.kitchenOrderTickets)
-        .where(eq(schema.kitchenOrderTickets.organizationId, session.orgId))
+        .where(
+          and(
+            eq(schema.kitchenOrderTickets.organizationId, session.orgId),
+            notDeleted(schema.kitchenOrderTickets.deletedAt),
+          ),
+        )
         .orderBy(desc(schema.kitchenOrderTickets.timestamp));
       return { success: true, data: res };
     } catch (e) {

@@ -335,6 +335,8 @@ export function ServiceForm({
                   <VariantManager
                     mode="service"
                     variants={formData.variants}
+                    basePrice={formData.price}
+                    baseCost={formData.cost}
                     onChange={(variants) => setFormData({ ...formData, variants })}
                   />
                 </div>

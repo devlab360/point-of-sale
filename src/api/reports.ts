@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireAuth } from "@/lib/auth-utils";
 import { db } from "@/db";
 import * as schema from "@/db/schema";
+import { notDeleted } from "@/lib/soft-delete";
 import { eq, and, sql, gte, lte, inArray, desc } from "drizzle-orm";
 import { z } from "zod";
 
@@ -11,6 +12,7 @@ export const getProfitabilityReportFn = createServerFn({ method: "GET" })
       .object({
         startDate: z.string().optional(),
         endDate: z.string().optional(),
+        locationId: z.string().optional(),
       })
       .passthrough(),
   )
@@ -22,12 +24,16 @@ export const getProfitabilityReportFn = createServerFn({ method: "GET" })
       let salesConditions = [
         eq(schema.sales.organizationId, orgId),
         eq(schema.sales.status, "completed"),
+        notDeleted(schema.sales.deletedAt),
       ];
       if (data.startDate) {
         salesConditions.push(gte(schema.sales.date, data.startDate));
       }
       if (data.endDate) {
         salesConditions.push(lte(schema.sales.date, data.endDate + "T23:59:59.999Z"));
+      }
+      if (data.locationId && data.locationId !== "all") {
+        salesConditions.push(eq(schema.sales.locationId, data.locationId));
       }
 
       // Fetch all completed sales in range
@@ -60,6 +66,7 @@ export const getProfitabilityReportFn = createServerFn({ method: "GET" })
         string,
         { quantitySold: number; revenue: number; cogs: number }
       > = {};
+      let topProducts: any[] = [];
 
       if (saleIds.length > 0) {
         // Fetch all sale items to get revenue per product
@@ -100,31 +107,52 @@ export const getProfitabilityReportFn = createServerFn({ method: "GET" })
             and(
               inArray(schema.inventoryBatchConsumptions.saleId, saleIds),
               eq(schema.inventoryBatches.organizationId, orgId),
+              notDeleted(schema.inventoryBatches.deletedAt),
             ),
           );
 
+        const consumedProductIds = new Set<string>();
         for (const cons of consumptions) {
           const cost = (Number(cons.quantityConsumed) || 0) * (Number(cons.purchaseCost) || 0);
           totalCogs += cost;
 
           if (cons.productId && productBreakdown[cons.productId]) {
             productBreakdown[cons.productId].cogs += cost;
+            consumedProductIds.add(cons.productId);
           }
         }
-      }
 
-      const grossProfit = netRevenue - totalCogs;
-      const marginPct = netRevenue > 0 ? (grossProfit / netRevenue) * 100 : 0;
-
-      let topProducts: any[] = [];
-      if (Object.keys(productBreakdown).length > 0) {
         const productIds = Object.keys(productBreakdown);
-        const productsInfo = await db
-          .select({ id: schema.products.id, name: schema.products.name })
-          .from(schema.products)
-          .where(
-            and(inArray(schema.products.id, productIds), eq(schema.products.organizationId, orgId)),
-          );
+        let productsInfo: Array<{ id: string; name: string; cost: string | null }> = [];
+        if (productIds.length > 0) {
+          productsInfo = await db
+            .select({
+              id: schema.products.id,
+              name: schema.products.name,
+              cost: schema.products.cost,
+            })
+            .from(schema.products)
+            .where(
+              and(
+                inArray(schema.products.id, productIds),
+                eq(schema.products.organizationId, orgId),
+                notDeleted(schema.products.deletedAt),
+              ),
+            );
+
+          const productMap = new Map(productsInfo.map((p) => [p.id, p]));
+
+          // For products without batch consumptions, fall back to product.cost * quantitySold
+          for (const [pid, data] of Object.entries(productBreakdown)) {
+            if (!consumedProductIds.has(pid)) {
+              const p = productMap.get(pid);
+              const unitCost = Number(p?.cost) || 0;
+              const fallbackCost = unitCost * data.quantitySold;
+              data.cogs += fallbackCost;
+              totalCogs += fallbackCost;
+            }
+          }
+        }
 
         const nameMap = productsInfo.reduce(
           (acc, p) => ({ ...acc, [p.id]: p.name }),
@@ -143,6 +171,9 @@ export const getProfitabilityReportFn = createServerFn({ method: "GET" })
           }))
           .sort((a, b) => b.profit - a.profit);
       }
+
+      const grossProfit = netRevenue - totalCogs;
+      const marginPct = netRevenue > 0 ? (grossProfit / netRevenue) * 100 : 0;
 
       return {
         success: true,

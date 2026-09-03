@@ -8,6 +8,7 @@ import { db } from "@/db";
 import * as schema from "@/db/schema";
 
 import { eq, and } from "drizzle-orm";
+import { notDeleted } from "@/lib/soft-delete";
 import { v4 as uuidv4 } from "uuid";
 
 // --- Expenses ---
@@ -20,7 +21,9 @@ export const getExpensesFn = createServerFn({ method: "GET" })
       const all = await db
         .select()
         .from(schema.expenses)
-        .where(eq(schema.expenses.organizationId, orgId));
+        .where(
+          and(eq(schema.expenses.organizationId, orgId), notDeleted(schema.expenses.deletedAt)),
+        );
       return { success: true, data: all };
     } catch (e) {
       return handleApiError(e);
@@ -94,7 +97,8 @@ export const deleteExpenseFn = createServerFn({ method: "POST" })
       const session = await requireAuth();
       const orgId = session.orgId;
       await db
-        .delete(schema.expenses)
+        .update(schema.expenses)
+        .set({ deletedAt: new Date().toISOString() })
         .where(and(eq(schema.expenses.id, data.id), eq(schema.expenses.organizationId, orgId)));
       return { success: true };
     } catch (e) {
@@ -112,7 +116,9 @@ export const getAccountsFn = createServerFn({ method: "GET" })
       const all = await db
         .select()
         .from(schema.accounts)
-        .where(eq(schema.accounts.organizationId, orgId));
+        .where(
+          and(eq(schema.accounts.organizationId, orgId), notDeleted(schema.accounts.deletedAt)),
+        );
       return { success: true, data: all };
     } catch (e) {
       return handleApiError(e);
@@ -184,7 +190,8 @@ export const deleteAccountFn = createServerFn({ method: "POST" })
       const session = await requireAuth();
       const orgId = session.orgId;
       await db
-        .delete(schema.accounts)
+        .update(schema.accounts)
+        .set({ deletedAt: new Date().toISOString() })
         .where(and(eq(schema.accounts.id, data.id), eq(schema.accounts.organizationId, orgId)));
       return { success: true };
     } catch (e) {
@@ -201,7 +208,9 @@ export const seedDefaultAccountsFn = createServerFn({ method: "POST" })
       const existing = await db
         .select()
         .from(schema.accounts)
-        .where(eq(schema.accounts.organizationId, orgId));
+        .where(
+          and(eq(schema.accounts.organizationId, orgId), notDeleted(schema.accounts.deletedAt)),
+        );
 
       const existingCodes = new Set(existing.map((a) => a.code));
 
@@ -344,7 +353,9 @@ export const getVouchersFn = createServerFn({ method: "GET" })
       const all = await db
         .select()
         .from(schema.vouchers)
-        .where(eq(schema.vouchers.organizationId, orgId));
+        .where(
+          and(eq(schema.vouchers.organizationId, orgId), notDeleted(schema.vouchers.deletedAt)),
+        );
       return { success: true, data: all };
     } catch (e) {
       return handleApiError(e);
@@ -393,6 +404,7 @@ export const createVoucherFn = createServerFn({ method: "POST" })
             and(
               eq(schema.accounts.id, data.debitAccountId),
               eq(schema.accounts.organizationId, orgId),
+              notDeleted(schema.accounts.deletedAt),
             ),
           )
           .limit(1);
@@ -411,6 +423,7 @@ export const createVoucherFn = createServerFn({ method: "POST" })
             and(
               eq(schema.accounts.id, data.creditAccountId),
               eq(schema.accounts.organizationId, orgId),
+              notDeleted(schema.accounts.deletedAt),
             ),
           )
           .limit(1);

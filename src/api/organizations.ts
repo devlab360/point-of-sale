@@ -1,4 +1,5 @@
 import { handleApiError } from "@/lib/error-utils";
+import { notDeleted } from "@/lib/soft-delete";
 import { isProduction } from "@/lib/env";
 import { createServerFn } from "@tanstack/react-start";
 import { requireAuth, createSessionToken } from "@/lib/auth-utils";
@@ -20,13 +21,16 @@ export const getMyOrganizationsFn = createServerFn({ method: "GET" })
       const users = await db
         .select()
         .from(schema.users)
-        .where(eq(schema.users.id, session.userId))
+        .where(and(eq(schema.users.id, session.userId), notDeleted(schema.users.deletedAt)))
         .limit(1);
       if (!users.length) return { success: true as const, data: [] };
       const email = users[0].email;
 
       // Match by email across orgs (each org has its own user row for this owner).
-      const myUserRows = await db.select().from(schema.users).where(eq(schema.users.email, email));
+      const myUserRows = await db
+        .select()
+        .from(schema.users)
+        .where(and(eq(schema.users.email, email), notDeleted(schema.users.deletedAt)));
       const orgIds = myUserRows
         .map((u) => u.organizationId)
         .filter((id): id is string => Boolean(id));
@@ -35,7 +39,12 @@ export const getMyOrganizationsFn = createServerFn({ method: "GET" })
         ? await db
             .select()
             .from(schema.organizations)
-            .where(or(...orgIds.map((id) => eq(schema.organizations.id, id))))
+            .where(
+              and(
+                or(...orgIds.map((id) => eq(schema.organizations.id, id))),
+                notDeleted(schema.organizations.deletedAt),
+              ),
+            )
         : [];
 
       // Get memberships for these orgs, matching by email (join with users)
@@ -52,6 +61,7 @@ export const getMyOrganizationsFn = createServerFn({ method: "GET" })
               and(
                 or(...orgIds.map((id) => eq(schema.organizationMemberships.organizationId, id))),
                 eq(schema.users.email, email),
+                notDeleted(schema.organizationMemberships.deletedAt),
               ),
             )
         : [];
@@ -60,7 +70,12 @@ export const getMyOrganizationsFn = createServerFn({ method: "GET" })
         ? await db
             .select()
             .from(schema.locations)
-            .where(or(...orgIds.map((id) => eq(schema.locations.organizationId, id))))
+            .where(
+              and(
+                or(...orgIds.map((id) => eq(schema.locations.organizationId, id))),
+                notDeleted(schema.locations.deletedAt),
+              ),
+            )
         : [];
 
       // Map each org with its user row role and branch list.
@@ -108,7 +123,7 @@ export const switchOrganizationFn = createServerFn({ method: "POST" })
       const users = await db
         .select()
         .from(schema.users)
-        .where(eq(schema.users.id, session.userId))
+        .where(and(eq(schema.users.id, session.userId), notDeleted(schema.users.deletedAt)))
         .limit(1);
       if (!users.length) throw new Error("User not found");
       const email = users[0].email;
@@ -117,7 +132,13 @@ export const switchOrganizationFn = createServerFn({ method: "POST" })
       const target = await db
         .select()
         .from(schema.users)
-        .where(and(eq(schema.users.email, email), eq(schema.users.organizationId, data.orgId)))
+        .where(
+          and(
+            eq(schema.users.email, email),
+            eq(schema.users.organizationId, data.orgId),
+            notDeleted(schema.users.deletedAt),
+          ),
+        )
         .limit(1);
       if (!target.length) throw new Error("You do not have access to this business");
 
@@ -129,10 +150,46 @@ export const switchOrganizationFn = createServerFn({ method: "POST" })
             and(
               eq(schema.locations.id, data.locationId),
               eq(schema.locations.organizationId, data.orgId),
+              notDeleted(schema.locations.deletedAt),
             ),
           )
           .limit(1);
         if (!branch.length) throw new Error("Branch not found in this business");
+      }
+
+      let activeLocationId = data.locationId;
+      if (!activeLocationId) {
+        // Try user's default branch
+        const defaultUserBranch = await db
+          .select({ locationId: schema.userBranches.locationId })
+          .from(schema.userBranches)
+          .where(
+            and(
+              eq(schema.userBranches.organizationId, data.orgId),
+              eq(schema.userBranches.userId, target[0].id),
+              eq(schema.userBranches.isDefault, true),
+              notDeleted(schema.userBranches.deletedAt),
+            ),
+          )
+          .limit(1);
+        if (defaultUserBranch.length > 0) {
+          activeLocationId = defaultUserBranch[0].locationId;
+        } else {
+          // Fall back to first active location of the org
+          const firstLoc = await db
+            .select({ id: schema.locations.id })
+            .from(schema.locations)
+            .where(
+              and(
+                eq(schema.locations.organizationId, data.orgId),
+                notDeleted(schema.locations.deletedAt),
+              ),
+            )
+            .limit(1);
+          if (firstLoc.length > 0) {
+            activeLocationId = firstLoc[0].id;
+          }
+        }
       }
 
       const token = await createSessionToken({
@@ -140,6 +197,7 @@ export const switchOrganizationFn = createServerFn({ method: "POST" })
         orgId: data.orgId,
         role: target[0].role,
         userName: target[0].name,
+        locationId: activeLocationId || null,
       });
 
       setCookie("pos_auth_token", token, {
@@ -150,8 +208,8 @@ export const switchOrganizationFn = createServerFn({ method: "POST" })
         maxAge: 7 * 24 * 60 * 60,
       });
       setCookie("pos_session_org", data.orgId, { path: "/", maxAge: 7 * 24 * 60 * 60 });
-      if (data.locationId) {
-        setCookie("pos_session_branch", data.locationId, { path: "/", maxAge: 7 * 24 * 60 * 60 });
+      if (activeLocationId) {
+        setCookie("pos_session_branch", activeLocationId, { path: "/", maxAge: 7 * 24 * 60 * 60 });
       }
 
       return { success: true as const, message: "Switched business successfully" };
@@ -254,10 +312,28 @@ export const getActiveSessionFn = createServerFn({ method: "GET" })
   .handler(async () => {
     try {
       const session = await requireAuth();
-      const locationId =
+      let locationId =
         getCookie("pos_session_branch") && getCookie("pos_session_branch") !== "undefined"
           ? getCookie("pos_session_branch")
-          : null;
+          : session.locationId || null;
+
+      if (!locationId) {
+        const firstLoc = await db
+          .select({ id: schema.locations.id })
+          .from(schema.locations)
+          .where(
+            and(
+              eq(schema.locations.organizationId, session.orgId),
+              notDeleted(schema.locations.deletedAt),
+            ),
+          )
+          .limit(1);
+        if (firstLoc.length > 0) {
+          locationId = firstLoc[0].id;
+          setCookie("pos_session_branch", locationId, { path: "/", maxAge: 7 * 24 * 60 * 60 });
+        }
+      }
+
       return {
         success: true as const,
         data: { orgId: session.orgId, locationId: locationId || null },
@@ -281,7 +357,7 @@ export const deleteOrganizationFn = createServerFn({ method: "POST" })
       const currentUserRows = await db
         .select()
         .from(schema.users)
-        .where(eq(schema.users.id, session.userId))
+        .where(and(eq(schema.users.id, session.userId), notDeleted(schema.users.deletedAt)))
         .limit(1);
       if (!currentUserRows.length) throw new Error("User not found");
       const currentUser = currentUserRows[0];
@@ -299,6 +375,7 @@ export const deleteOrganizationFn = createServerFn({ method: "POST" })
           and(
             eq(schema.organizationMemberships.organizationId, data.orgId),
             eq(schema.users.email, email),
+            notDeleted(schema.organizationMemberships.deletedAt),
           ),
         )
         .limit(1);
@@ -312,7 +389,11 @@ export const deleteOrganizationFn = createServerFn({ method: "POST" })
         .from(schema.organizationMemberships)
         .innerJoin(schema.users, eq(schema.organizationMemberships.userId, schema.users.id))
         .where(
-          and(eq(schema.users.email, email), eq(schema.organizationMemberships.role, "owner")),
+          and(
+            eq(schema.users.email, email),
+            eq(schema.organizationMemberships.role, "owner"),
+            notDeleted(schema.organizationMemberships.deletedAt),
+          ),
         );
       if (userMemberships.length <= 1) {
         throw new Error(
@@ -328,113 +409,24 @@ export const deleteOrganizationFn = createServerFn({ method: "POST" })
       const org = await db
         .select()
         .from(schema.organizations)
-        .where(eq(schema.organizations.id, data.orgId))
+        .where(
+          and(eq(schema.organizations.id, data.orgId), notDeleted(schema.organizations.deletedAt)),
+        )
         .limit(1);
       if (!org.length) throw new Error("Organization not found");
 
-      // Delete in transaction (cascades handle most, but we clean up explicitly)
+      // Soft-delete organization and its memberships (preserves data lifecycle)
       await db.transaction(async (tx) => {
-        // Delete related data
-        await tx.delete(schema.locations).where(eq(schema.locations.organizationId, data.orgId));
-        await tx.delete(schema.settings).where(eq(schema.settings.organizationId, data.orgId));
-        await tx.delete(schema.users).where(eq(schema.users.organizationId, data.orgId));
+        const now = new Date().toISOString();
         await tx
-          .delete(schema.organizationMemberships)
+          .update(schema.organizationMemberships)
+          .set({ deletedAt: now })
           .where(eq(schema.organizationMemberships.organizationId, data.orgId));
-        await tx
-          .delete(schema.branchPriceOverrides)
-          .where(eq(schema.branchPriceOverrides.organizationId, data.orgId));
-        await tx.delete(schema.products).where(eq(schema.products.organizationId, data.orgId));
-        await tx.delete(schema.services).where(eq(schema.services.organizationId, data.orgId));
-        await tx.delete(schema.categories).where(eq(schema.categories.organizationId, data.orgId));
-        await tx.delete(schema.brands).where(eq(schema.brands.organizationId, data.orgId));
-        await tx.delete(schema.units).where(eq(schema.units.organizationId, data.orgId));
-        await tx.delete(schema.customers).where(eq(schema.customers.organizationId, data.orgId));
-        await tx.delete(schema.suppliers).where(eq(schema.suppliers.organizationId, data.orgId));
-        await tx.delete(schema.taxMasters).where(eq(schema.taxMasters.organizationId, data.orgId));
-        await tx.delete(schema.expenses).where(eq(schema.expenses.organizationId, data.orgId));
-        await tx
-          .delete(schema.appointments)
-          .where(eq(schema.appointments.organizationId, data.orgId));
-        await tx.delete(schema.rentals).where(eq(schema.rentals.organizationId, data.orgId));
-        await tx
-          .delete(schema.restaurantTables)
-          .where(eq(schema.restaurantTables.organizationId, data.orgId));
-        await tx
-          .delete(schema.kitchenOrderTickets)
-          .where(eq(schema.kitchenOrderTickets.organizationId, data.orgId));
-        await tx.delete(schema.sales).where(eq(schema.sales.organizationId, data.orgId));
-        await tx.delete(schema.purchases).where(eq(schema.purchases.organizationId, data.orgId));
-        await tx
-          .delete(schema.inventoryMovements)
-          .where(eq(schema.inventoryMovements.organizationId, data.orgId));
-        await tx
-          .delete(schema.inventoryAdjustments)
-          .where(eq(schema.inventoryAdjustments.organizationId, data.orgId));
-        await tx
-          .delete(schema.inventoryTransfers)
-          .where(eq(schema.inventoryTransfers.organizationId, data.orgId));
-        await tx
-          .delete(schema.productInventory)
-          .where(eq(schema.productInventory.organizationId, data.orgId));
-        await tx.delete(schema.coupons).where(eq(schema.coupons.organizationId, data.orgId));
-        await tx.delete(schema.giftCards).where(eq(schema.giftCards.organizationId, data.orgId));
-        await tx.delete(schema.promotions).where(eq(schema.promotions.organizationId, data.orgId));
-        await tx
-          .delete(schema.heldInvoices)
-          .where(eq(schema.heldInvoices.organizationId, data.orgId));
-        await tx
-          .delete(schema.salesReturns)
-          .where(eq(schema.salesReturns.organizationId, data.orgId));
-        await tx
-          .delete(schema.purchaseReturns)
-          .where(eq(schema.purchaseReturns.organizationId, data.orgId));
-        await tx
-          .delete(schema.purchaseReturnItems)
-          .where(eq(schema.purchaseReturnItems.organizationId, data.orgId));
-        await tx
-          .delete(schema.salesReturnItems)
-          .where(eq(schema.salesReturnItems.organizationId, data.orgId));
-        await tx.delete(schema.saleItems).where(eq(schema.saleItems.organizationId, data.orgId));
-        await tx
-          .delete(schema.salePayments)
-          .where(eq(schema.salePayments.organizationId, data.orgId));
-        await tx
-          .delete(schema.purchaseItems)
-          .where(eq(schema.purchaseItems.organizationId, data.orgId));
-        await tx.delete(schema.shifts).where(eq(schema.shifts.organizationId, data.orgId));
-        await tx
-          .delete(schema.cashMovements)
-          .where(eq(schema.cashMovements.organizationId, data.orgId));
-        await tx
-          .delete(schema.activityLog)
-          .where(eq(schema.activityLog.organizationId, data.orgId));
-        await tx
-          .delete(schema.notifications)
-          .where(eq(schema.notifications.organizationId, data.orgId));
-        await tx
-          .delete(schema.customerLedgers)
-          .where(eq(schema.customerLedgers.organizationId, data.orgId));
-        await tx
-          .delete(schema.supplierLedgers)
-          .where(eq(schema.supplierLedgers.organizationId, data.orgId));
-        await tx.delete(schema.accounts).where(eq(schema.accounts.organizationId, data.orgId));
-        await tx.delete(schema.vouchers).where(eq(schema.vouchers.organizationId, data.orgId));
-        await tx
-          .delete(schema.subscriptions)
-          .where(eq(schema.subscriptions.organizationId, data.orgId));
-        await tx
-          .delete(schema.subscriptionPayments)
-          .where(eq(schema.subscriptionPayments.organizationId, data.orgId));
-        await tx
-          .delete(schema.invitations)
-          .where(eq(schema.invitations.organizationId, data.orgId));
-        await tx
-          .delete(schema.adminMenuGrants)
-          .where(eq(schema.adminMenuGrants.organizationId, data.orgId));
 
-        // Finally delete the organization
-        await tx.delete(schema.organizations).where(eq(schema.organizations.id, data.orgId));
+        await tx
+          .update(schema.organizations)
+          .set({ deletedAt: now, status: "deleted" })
+          .where(eq(schema.organizations.id, data.orgId));
       });
 
       // If the deleted org was the active one, switch to the first remaining org
@@ -445,6 +437,7 @@ export const deleteOrganizationFn = createServerFn({ method: "POST" })
           and(
             eq(schema.organizationMemberships.userId, currentUser.id),
             eq(schema.organizationMemberships.role, "owner"),
+            notDeleted(schema.organizationMemberships.deletedAt),
           ),
         );
       let message = "Organization deleted successfully";
@@ -453,7 +446,13 @@ export const deleteOrganizationFn = createServerFn({ method: "POST" })
         const firstUser = await db
           .select()
           .from(schema.users)
-          .where(and(eq(schema.users.email, email), eq(schema.users.organizationId, firstOrg)))
+          .where(
+            and(
+              eq(schema.users.email, email),
+              eq(schema.users.organizationId, firstOrg),
+              notDeleted(schema.users.deletedAt),
+            ),
+          )
           .limit(1);
         if (firstUser.length) {
           const token = await createSessionToken({

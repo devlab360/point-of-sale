@@ -13,6 +13,7 @@ const insertSchema = schema.units
   : z.any();
 const updateSchema = schema.units ? createInsertSchema(schema.units).partial() : z.any();
 import { eq, and } from "drizzle-orm";
+import { notDeleted } from "@/lib/soft-delete";
 
 export const getUnitsFn = createServerFn({ method: "GET" })
   .validator(z.object({}).optional().default({}))
@@ -23,7 +24,7 @@ export const getUnitsFn = createServerFn({ method: "GET" })
       const res = await db
         .select()
         .from(schema.units)
-        .where(eq(schema.units.organizationId, orgId));
+        .where(and(eq(schema.units.organizationId, orgId), notDeleted(schema.units.deletedAt)));
       return { success: true, data: res };
     } catch (e) {
       return handleApiError(e);
@@ -103,7 +104,8 @@ export const deleteUnitFn = createServerFn({ method: "POST" })
     try {
       const session = await requireAuth();
       await db
-        .delete(schema.units)
+        .update(schema.units)
+        .set({ deletedAt: new Date().toISOString() })
         .where(and(eq(schema.units.id, data.id), eq(schema.units.organizationId, session.orgId)));
       return { success: true, message: "Unit deleted successfully" };
     } catch (e) {

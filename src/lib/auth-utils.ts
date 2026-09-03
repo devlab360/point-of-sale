@@ -3,7 +3,8 @@ import { isProduction } from "@/lib/env";
 import { SignJWT, jwtVerify } from "jose";
 import { db } from "@/db";
 import * as schema from "@/db/schema";
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
+import { notDeleted } from "@/lib/soft-delete";
 
 if (isProduction && !process.env.JWT_SECRET) {
   throw new Error(
@@ -20,6 +21,7 @@ export interface SessionPayload {
   orgId: string;
   role: string;
   userName?: string;
+  locationId?: string | null;
 }
 
 export async function createSessionToken(payload: SessionPayload): Promise<string> {
@@ -60,6 +62,12 @@ export async function requireAuth(): Promise<SessionPayload> {
     throw new Error("Unauthorized: Invalid session token");
   }
 
+  // Populate active branch from cookie if present
+  const branchCookie = getCookie("pos_session_branch");
+  if (branchCookie && branchCookie !== "undefined" && branchCookie !== "null") {
+    payload.locationId = branchCookie;
+  }
+
   // Check 15-second TTL cache for active user verification
   const cached = userStatusCache.get(payload.userId);
   if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
@@ -73,7 +81,7 @@ export async function requireAuth(): Promise<SessionPayload> {
   const users = await db
     .select()
     .from(schema.users)
-    .where(eq(schema.users.id, payload.userId))
+    .where(and(eq(schema.users.id, payload.userId), notDeleted(schema.users.deletedAt)))
     .limit(1);
 
   if (

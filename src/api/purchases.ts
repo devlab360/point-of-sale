@@ -6,6 +6,7 @@ import { eq, and, desc, sql, ilike, or } from "drizzle-orm";
 import { z } from "zod";
 import { v4 as uuidv4 } from "uuid";
 import { requireAuth, requireAdmin } from "@/lib/auth-utils";
+import { notDeleted } from "@/lib/soft-delete";
 
 export const getPurchasesFn = createServerFn({ method: "GET" })
   .validator(
@@ -39,6 +40,8 @@ export const getPurchasesFn = createServerFn({ method: "GET" })
         conditions.push(eq(schema.purchases.supplierId, data.supplierId));
       }
 
+      conditions.push(notDeleted(schema.purchases.deletedAt));
+
       const whereClause = and(...conditions);
 
       const [all, totalCountRes] = await Promise.all([
@@ -49,7 +52,10 @@ export const getPurchasesFn = createServerFn({ method: "GET" })
           .orderBy(desc(schema.purchases.date))
           .limit(data.pageSize)
           .offset((data.page - 1) * data.pageSize),
-        db.select({ count: sql`count(*)` }).from(schema.purchases).where(whereClause),
+        db
+          .select({ count: sql`count(*)` })
+          .from(schema.purchases)
+          .where(whereClause),
       ]);
 
       return { success: true, data: all, total: Number(totalCountRes[0].count) };
@@ -69,7 +75,13 @@ export const getPurchaseByIdFn = createServerFn({ method: "GET" })
         db
           .select()
           .from(schema.purchases)
-          .where(and(eq(schema.purchases.id, data.id), eq(schema.purchases.organizationId, orgId)))
+          .where(
+            and(
+              eq(schema.purchases.id, data.id),
+              eq(schema.purchases.organizationId, orgId),
+              notDeleted(schema.purchases.deletedAt),
+            ),
+          )
           .limit(1),
         db
           .select()
@@ -126,6 +138,7 @@ export const createPurchaseFn = createServerFn({ method: "POST" })
         const safePurchase = {
           id: purchaseId,
           organizationId: session.orgId,
+          locationId: data.purchase?.locationId || null,
           supplierId: data.purchase?.supplierId || null,
           supplier: data.purchase?.supplier || "Unknown Supplier",
           date: data.purchase?.date
@@ -157,11 +170,15 @@ export const createPurchaseFn = createServerFn({ method: "POST" })
         await tx.insert(schema.purchases).values(safePurchase as any);
 
         if (rawItems.length > 0) {
-          const movements = rawItems.map((line: any) => ({
+          const originalLines = data.items || data.lines || [];
+          const movements = rawItems.map((line: any, idx: number) => ({
             organizationId: session.orgId,
+            productId: line.productId,
+            variantId: originalLines[idx]?.variantId || null,
+            locationId: originalLines[idx]?.locationId || data.purchase?.locationId || null,
             productName: line.productName,
             action: "purchase",
-            quantity: line.quantity,
+            quantity: line.quantity.toString(),
             createdAt: new Date().toISOString(),
           }));
 
@@ -178,7 +195,11 @@ export const createPurchaseFn = createServerFn({ method: "POST" })
           await tx.insert(schema.inventoryMovements).values(movements);
           await tx.insert(schema.purchaseItems).values(pItems);
 
-          for (const line of rawItems) {
+          for (let i = 0; i < rawItems.length; i++) {
+            const line = rawItems[i];
+            const originalLine = originalLines[i] || {};
+            const locId = originalLine.locationId || data.purchase?.locationId || null;
+
             await tx
               .update(schema.products)
               .set({
@@ -191,9 +212,40 @@ export const createPurchaseFn = createServerFn({ method: "POST" })
                   eq(schema.products.organizationId, session.orgId),
                 ),
               );
+
+            if (locId) {
+              await tx
+                .insert(schema.productInventory)
+                .values({
+                  id: uuidv4(),
+                  organizationId: session.orgId,
+                  productId: line.productId,
+                  locationId: locId,
+                  stock: line.quantity.toString(),
+                })
+                .onConflictDoUpdate({
+                  target: [schema.productInventory.productId, schema.productInventory.locationId],
+                  set: { stock: sql`${schema.productInventory.stock} + ${line.quantity}` },
+                });
+
+              if (originalLine.variantId) {
+                await tx
+                  .insert(schema.variantInventory)
+                  .values({
+                    id: uuidv4(),
+                    organizationId: session.orgId,
+                    variantId: originalLine.variantId,
+                    locationId: locId,
+                    stock: line.quantity.toString(),
+                  })
+                  .onConflictDoUpdate({
+                    target: [schema.variantInventory.variantId, schema.variantInventory.locationId],
+                    set: { stock: sql`${schema.variantInventory.stock} + ${line.quantity}` },
+                  });
+              }
+            }
           }
 
-          const originalLines = data.items || data.lines || [];
           for (let i = 0; i < rawItems.length; i++) {
             const line = rawItems[i];
             const originalLine = originalLines[i] || {};
@@ -341,10 +393,9 @@ export const deletePurchaseFn = createServerFn({ method: "POST" })
       const session = await requireAuth();
       const orgId = session.orgId;
       await db
-        .delete(schema.purchases)
-        .where(
-          and(eq(schema.purchases.id, data.id), eq(schema.purchases.organizationId, orgId)),
-        );
+        .update(schema.purchases)
+        .set({ deletedAt: new Date().toISOString() })
+        .where(and(eq(schema.purchases.id, data.id), eq(schema.purchases.organizationId, orgId)));
       return { success: true };
     } catch (e) {
       return handleApiError(e);
@@ -360,7 +411,12 @@ export const getPurchaseReturnsFn = createServerFn({ method: "GET" })
         db
           .select()
           .from(schema.purchaseReturns)
-          .where(eq(schema.purchaseReturns.organizationId, session.orgId)),
+          .where(
+            and(
+              eq(schema.purchaseReturns.organizationId, session.orgId),
+              notDeleted(schema.purchaseReturns.deletedAt),
+            ),
+          ),
         db
           .select()
           .from(schema.purchaseReturnItems)
@@ -469,7 +525,8 @@ export const deletePurchaseReturnFn = createServerFn({ method: "POST" })
     try {
       const session = await requireAdmin();
       await db
-        .delete(schema.purchaseReturns)
+        .update(schema.purchaseReturns)
+        .set({ deletedAt: new Date().toISOString() })
         .where(
           and(
             eq(schema.purchaseReturns.id, data.id),

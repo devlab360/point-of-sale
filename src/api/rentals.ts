@@ -6,6 +6,7 @@ import * as schema from "@/db/schema";
 import { eq, and } from "drizzle-orm";
 import { v4 as uuidv4 } from "uuid";
 import { z } from "zod";
+import { notDeleted } from "@/lib/soft-delete";
 
 const RentalInputSchema = z
   .object({
@@ -31,7 +32,7 @@ export const getRentalsFn = createServerFn({ method: "GET" })
       const all = await db
         .select()
         .from(schema.rentals)
-        .where(eq(schema.rentals.organizationId, orgId));
+        .where(and(eq(schema.rentals.organizationId, orgId), notDeleted(schema.rentals.deletedAt)));
       return { success: true, data: all };
     } catch (e) {
       return handleApiError(e);
@@ -40,9 +41,11 @@ export const getRentalsFn = createServerFn({ method: "GET" })
 
 export const createRentalFn = createServerFn({ method: "POST" })
   .validator(
-    z.object({
-      rental: RentalInputSchema.optional(),
-    }).passthrough(),
+    z
+      .object({
+        rental: RentalInputSchema.optional(),
+      })
+      .passthrough(),
   )
   .handler(async ({ data }) => {
     try {
@@ -105,11 +108,13 @@ export const updateRentalStatusFn = createServerFn({ method: "POST" })
 
 export const updateRentalFn = createServerFn({ method: "POST" })
   .validator(
-    z.object({
-      id: z.string().optional(),
-      updates: RentalInputSchema.optional(),
-      rental: RentalInputSchema.optional(),
-    }).passthrough(),
+    z
+      .object({
+        id: z.string().optional(),
+        updates: RentalInputSchema.optional(),
+        rental: RentalInputSchema.optional(),
+      })
+      .passthrough(),
   )
   .handler(async ({ data }) => {
     try {
@@ -152,7 +157,8 @@ export const deleteRentalFn = createServerFn({ method: "POST" })
       const session = await requireAuth();
       const orgId = session.orgId;
       await db
-        .delete(schema.rentals)
+        .update(schema.rentals)
+        .set({ deletedAt: new Date().toISOString() })
         .where(and(eq(schema.rentals.id, data.id), eq(schema.rentals.organizationId, orgId)));
       return { success: true };
     } catch (e) {

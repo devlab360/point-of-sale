@@ -15,6 +15,13 @@
       "when": 1788354911430,
       "tag": "0001_military_morlocks",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1788419020983,
+      "tag": "0002_tan_ares",
+      "breakpoints": true
     }
   ]
 }

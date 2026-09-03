@@ -9,6 +9,7 @@ import * as schema from "@/db/schema";
 
 import { eq, and } from "drizzle-orm";
 import { v4 as uuidv4 } from "uuid";
+import { notDeleted } from "@/lib/soft-delete";
 
 export const getLoyaltyMembersFn = createServerFn({ method: "GET" })
   .validator((data: any) => data)
@@ -19,7 +20,12 @@ export const getLoyaltyMembersFn = createServerFn({ method: "GET" })
       const all = await db
         .select()
         .from(schema.loyaltyMembers)
-        .where(eq(schema.loyaltyMembers.organizationId, orgId));
+        .where(
+          and(
+            eq(schema.loyaltyMembers.organizationId, orgId),
+            notDeleted(schema.loyaltyMembers.deletedAt),
+          ),
+        );
       return { success: true, data: all };
     } catch (e) {
       return handleApiError(e);
@@ -82,7 +88,8 @@ export const deleteLoyaltyMemberFn = createServerFn({ method: "POST" })
     const orgId = session.orgId;
     try {
       await db
-        .delete(schema.loyaltyMembers)
+        .update(schema.loyaltyMembers)
+        .set({ deletedAt: new Date().toISOString() })
         .where(
           and(
             eq(schema.loyaltyMembers.id, data.id),

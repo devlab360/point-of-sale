@@ -6,6 +6,7 @@ import { eq, and } from "drizzle-orm";
 import { z } from "zod";
 import { v4 as uuidv4 } from "uuid";
 import { requireAuth } from "@/lib/auth-utils";
+import { notDeleted } from "@/lib/soft-delete";
 
 const SupplierInputSchema = z
   .object({
@@ -44,7 +45,12 @@ export const getSuppliersFn = createServerFn({ method: "GET" })
       const all = await db
         .select()
         .from(schema.suppliers)
-        .where(eq(schema.suppliers.organizationId, session.orgId));
+        .where(
+          and(
+            eq(schema.suppliers.organizationId, session.orgId),
+            notDeleted(schema.suppliers.deletedAt),
+          ),
+        );
       return { success: true, data: all };
     } catch (e) {
       return handleApiError(e);
@@ -129,7 +135,8 @@ export const deleteSupplierFn = createServerFn({ method: "POST" })
     try {
       const session = await requireAuth();
       await db
-        .delete(schema.suppliers)
+        .update(schema.suppliers)
+        .set({ deletedAt: new Date().toISOString() })
         .where(
           and(eq(schema.suppliers.id, data.id), eq(schema.suppliers.organizationId, session.orgId)),
         );
@@ -155,6 +162,7 @@ export const getSupplierLedgersFn = createServerFn({ method: "GET" })
           and(
             eq(schema.suppliers.id, data.supplierId),
             eq(schema.suppliers.organizationId, session.orgId),
+            notDeleted(schema.suppliers.deletedAt),
           ),
         )
         .limit(1);
@@ -167,6 +175,7 @@ export const getSupplierLedgersFn = createServerFn({ method: "GET" })
           and(
             eq(schema.supplierLedgers.supplierId, data.supplierId),
             eq(schema.supplierLedgers.organizationId, session.orgId),
+            notDeleted(schema.supplierLedgers.deletedAt),
           ),
         );
       return { success: true, data: all };
@@ -201,15 +210,34 @@ export const createSupplierLedgerFn = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     try {
       const session = await requireAuth();
-      const inserted = await db
-        .insert(schema.supplierLedgers)
-        .values({
-          id: data.ledger.id || uuidv4(),
-          ...(data.ledger as any),
-          organizationId: session.orgId,
-        })
-        .returning();
-      return { success: true, data: inserted[0], message: "Ledger entry recorded successfully" };
+      let insertedRow;
+      await db.transaction(async (tx) => {
+        const inserted = await tx
+          .insert(schema.supplierLedgers)
+          .values({
+            id: data.ledger.id || uuidv4(),
+            ...(data.ledger as any),
+            organizationId: session.orgId,
+          })
+          .returning();
+        insertedRow = inserted[0];
+
+        if (data.ledger.supplierId) {
+          const balanceAfterNum = parseFloat(data.ledger.balanceAfter);
+          if (!isNaN(balanceAfterNum)) {
+            await tx
+              .update(schema.suppliers)
+              .set({ balance: balanceAfterNum.toString() })
+              .where(
+                and(
+                  eq(schema.suppliers.id, data.ledger.supplierId),
+                  eq(schema.suppliers.organizationId, session.orgId),
+                ),
+              );
+          }
+        }
+      });
+      return { success: true, data: insertedRow, message: "Ledger entry recorded successfully" };
     } catch (e) {
       return handleApiError(e);
     }

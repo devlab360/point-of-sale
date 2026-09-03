@@ -24,6 +24,7 @@ import { useState, useMemo, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getSalesFn } from "@/api/sales";
 import { voidPosSaleFn } from "@/api/pos";
+import { getLocationsFn } from "@/api/locations";
 import { hasPermissionForRoute } from "@/lib/menu-config";
 import { getSettingsFn } from "@/api/settings";
 import { useAuth } from "@/contexts/AuthContext";
@@ -77,10 +78,27 @@ function SalesPage() {
   const debouncedQuery = useDebounce(query, 300);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
-  const [filters, setFilters] = useState({ status: "", payment: "", sync: "" });
-  const [draftFilters, setDraftFilters] = useState({ status: "", payment: "", sync: "" });
+  const [filters, setFilters] = useState({ status: "", payment: "", sync: "", location: "" });
+  const [draftFilters, setDraftFilters] = useState({
+    status: "",
+    payment: "",
+    sync: "",
+    location: "",
+  });
   const activeFilterCount =
-    (filters.status ? 1 : 0) + (filters.payment ? 1 : 0) + (filters.sync ? 1 : 0);
+    (filters.status ? 1 : 0) +
+    (filters.payment ? 1 : 0) +
+    (filters.sync ? 1 : 0) +
+    (filters.location ? 1 : 0);
+
+  const { data: locationsRes } = useQuery({
+    queryKey: ["locations", orgId],
+    queryFn: async () => {
+      const res = await getLocationsFn({ data: {} });
+      return (res as any)?.data || [];
+    },
+  });
+  const locations: any[] = locationsRes || [];
 
   const queryClient = useQueryClient();
   const canVoid = hasPermissionForRoute(
@@ -122,6 +140,7 @@ function SalesPage() {
       filters.status,
       filters.payment,
       filters.sync,
+      filters.location,
     ],
     queryFn: async () =>
       ((await getSalesFn({
@@ -132,6 +151,7 @@ function SalesPage() {
           status: filters.status,
           payment: filters.payment,
           sync: filters.sync,
+          locationId: filters.location || undefined,
         },
       })) as any) || {},
   });
@@ -179,8 +199,8 @@ function SalesPage() {
   // States moved up
 
   const handleResetFilters = () => {
-    setFilters({ status: "", payment: "", sync: "" });
-    setDraftFilters({ status: "", payment: "", sync: "" });
+    setFilters({ status: "", payment: "", sync: "", location: "" });
+    setDraftFilters({ status: "", payment: "", sync: "", location: "" });
   };
   const [viewSale, setViewSale] = useState<any | null>(null);
 
@@ -353,6 +373,18 @@ function SalesPage() {
                   value={draftFilters.sync}
                   onChange={(val) => setDraftFilters((prev) => ({ ...prev, sync: val }))}
                   placeholder="Filter by Sync"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Store Branch</Label>
+                <SearchableSelect
+                  options={[
+                    { value: "", label: "All Branches" },
+                    ...locations.map((loc: any) => ({ value: loc.id, label: loc.name })),
+                  ]}
+                  value={draftFilters.location}
+                  onChange={(val) => setDraftFilters((prev) => ({ ...prev, location: val }))}
+                  placeholder="Filter by Branch"
                 />
               </div>
             </div>
@@ -789,11 +821,19 @@ function SalesPage() {
       {viewSale && (
         <div className="pos-sales-print-receipt hidden print:block fixed inset-0 z-[200] bg-white text-black text-[12px] font-mono leading-tight p-4">
           <div className="max-w-[300px] mx-auto">
-            <div className="text-center mb-3">
-              <h1 className="text-xl font-bold">{storeName}</h1>
-              <p>{storeAddress}</p>
-              <p>Tel: {storePhone}</p>
-            </div>
+            {(() => {
+              const saleBranch = locations.find((l: any) => l.id === viewSale.locationId);
+              const branchName = saleBranch?.name || storeName;
+              const branchAddress = saleBranch?.address || storeAddress;
+              const branchPhone = saleBranch?.phone || storePhone;
+              return (
+                <div className="text-center mb-3">
+                  <h1 className="text-xl font-bold">{branchName}</h1>
+                  {branchAddress && <p>{branchAddress}</p>}
+                  {branchPhone && <p>Tel: {branchPhone}</p>}
+                </div>
+              );
+            })()}
             <div className="border-t border-black pt-2 mb-2 text-[11px]">
               <div className="flex justify-between">
                 <span>Receipt #:</span>

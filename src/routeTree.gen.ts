@@ -27,6 +27,7 @@ import { Route as PurchasesRouteImport } from './routes/purchases'
 import { Route as PromotionsRouteImport } from './routes/promotions'
 import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as ProductsRouteImport } from './routes/products'
+import { Route as PriceBooksRouteImport } from './routes/price-books'
 import { Route as PosRouteImport } from './routes/pos'
 import { Route as PortalRouteImport } from './routes/portal'
 import { Route as NotificationsRouteImport } from './routes/notifications'
@@ -163,6 +164,11 @@ const ProfileRoute = ProfileRouteImport.update({
 const ProductsRoute = ProductsRouteImport.update({
   id: '/products',
   path: '/products',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PriceBooksRoute = PriceBooksRouteImport.update({
+  id: '/price-books',
+  path: '/price-books',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PosRoute = PosRouteImport.update({
@@ -431,6 +437,7 @@ export interface FileRoutesByFullPath {
   '/notifications': typeof NotificationsRoute
   '/portal': typeof PortalRoute
   '/pos': typeof PosRoute
+  '/price-books': typeof PriceBooksRoute
   '/products': typeof ProductsRouteWithChildren
   '/profile': typeof ProfileRoute
   '/promotions': typeof PromotionsRoute
@@ -497,6 +504,7 @@ export interface FileRoutesByTo {
   '/notifications': typeof NotificationsRoute
   '/portal': typeof PortalRoute
   '/pos': typeof PosRoute
+  '/price-books': typeof PriceBooksRoute
   '/profile': typeof ProfileRoute
   '/promotions': typeof PromotionsRoute
   '/quotations': typeof QuotationsRoute
@@ -561,6 +569,7 @@ export interface FileRoutesById {
   '/notifications': typeof NotificationsRoute
   '/portal': typeof PortalRoute
   '/pos': typeof PosRoute
+  '/price-books': typeof PriceBooksRoute
   '/products': typeof ProductsRouteWithChildren
   '/profile': typeof ProfileRoute
   '/promotions': typeof PromotionsRoute
@@ -630,6 +639,7 @@ export interface FileRouteTypes {
     | '/notifications'
     | '/portal'
     | '/pos'
+    | '/price-books'
     | '/products'
     | '/profile'
     | '/promotions'
@@ -696,6 +706,7 @@ export interface FileRouteTypes {
     | '/notifications'
     | '/portal'
     | '/pos'
+    | '/price-books'
     | '/profile'
     | '/promotions'
     | '/quotations'
@@ -759,6 +770,7 @@ export interface FileRouteTypes {
     | '/notifications'
     | '/portal'
     | '/pos'
+    | '/price-books'
     | '/products'
     | '/profile'
     | '/promotions'
@@ -827,6 +839,7 @@ export interface RootRouteChildren {
   NotificationsRoute: typeof NotificationsRoute
   PortalRoute: typeof PortalRoute
   PosRoute: typeof PosRoute
+  PriceBooksRoute: typeof PriceBooksRoute
   ProductsRoute: typeof ProductsRouteWithChildren
   ProfileRoute: typeof ProfileRoute
   PromotionsRoute: typeof PromotionsRoute
@@ -984,6 +997,13 @@ declare module '@tanstack/react-router' {
       path: '/products'
       fullPath: '/products'
       preLoaderRoute: typeof ProductsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/price-books': {
+      id: '/price-books'
+      path: '/price-books'
+      fullPath: '/price-books'
+      preLoaderRoute: typeof PriceBooksRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/pos': {
@@ -1418,6 +1438,7 @@ const rootRouteChildren: RootRouteChildren = {
   NotificationsRoute: NotificationsRoute,
   PortalRoute: PortalRoute,
   PosRoute: PosRoute,
+  PriceBooksRoute: PriceBooksRoute,
   ProductsRoute: ProductsRouteWithChildren,
   ProfileRoute: ProfileRoute,
   PromotionsRoute: PromotionsRoute,

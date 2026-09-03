@@ -5,6 +5,7 @@ import * as schema from "@/db/schema";
 import { eq, and, ilike, or, desc } from "drizzle-orm";
 import { z } from "zod";
 import { requireAuth } from "@/lib/auth-utils";
+import { notDeleted } from "@/lib/soft-delete";
 
 export const getGlobalSearchFn = createServerFn({ method: "GET" })
   .validator(
@@ -27,6 +28,7 @@ export const getGlobalSearchFn = createServerFn({ method: "GET" })
         .where(
           and(
             eq(schema.products.organizationId, orgId),
+            notDeleted(schema.products.deletedAt),
             or(
               ilike(schema.products.name, q),
               ilike(schema.products.sku, q),
@@ -43,6 +45,7 @@ export const getGlobalSearchFn = createServerFn({ method: "GET" })
         .where(
           and(
             eq(schema.customers.organizationId, orgId),
+            notDeleted(schema.customers.deletedAt),
             or(
               ilike(schema.customers.name, q),
               ilike(schema.customers.phone, q),
@@ -59,6 +62,7 @@ export const getGlobalSearchFn = createServerFn({ method: "GET" })
         .where(
           and(
             eq(schema.sales.organizationId, orgId),
+            notDeleted(schema.sales.deletedAt),
             or(ilike(schema.sales.id, q), ilike(schema.sales.customerName, q)),
           ),
         )
@@ -72,6 +76,7 @@ export const getGlobalSearchFn = createServerFn({ method: "GET" })
         .where(
           and(
             eq(schema.expenses.organizationId, orgId),
+            notDeleted(schema.expenses.deletedAt),
             or(ilike(schema.expenses.category, q), ilike(schema.expenses.description, q)),
           ),
         )
@@ -85,6 +90,7 @@ export const getGlobalSearchFn = createServerFn({ method: "GET" })
         .where(
           and(
             eq(schema.suppliers.organizationId, orgId),
+            notDeleted(schema.suppliers.deletedAt),
             or(
               ilike(schema.suppliers.name, q),
               ilike(schema.suppliers.phone, q),

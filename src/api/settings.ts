@@ -3,12 +3,13 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireAuth, requireAdmin } from "@/lib/auth-utils";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 import { z } from "zod";
+import { notDeleted } from "@/lib/soft-delete";
 
 async function getDb() {
   const { db } = await import("@/db");
   const schema = await import("@/db/schema");
-  const { eq } = await import("drizzle-orm");
-  return { db, schema, eq };
+  const { eq, and } = await import("drizzle-orm");
+  return { db, schema, eq, and };
 }
 
 async function getSchemas() {
@@ -26,11 +27,13 @@ export const getSettingsFn = createServerFn({ method: "GET" })
     try {
       const session = await requireAuth();
       const orgId = session.orgId;
-      const { db, schema, eq } = await getDb();
+      const { db, schema, eq, and } = await getDb();
       const res = await db
         .select()
         .from(schema.settings)
-        .where(eq(schema.settings.organizationId, orgId))
+        .where(
+          and(eq(schema.settings.organizationId, orgId), notDeleted(schema.settings.deletedAt)),
+        )
         .limit(1);
       if (res.length > 0) return { success: true, data: res[0] };
       return { success: false, error: "Settings not found" };
@@ -46,11 +49,13 @@ export const updateSettingsFn = createServerFn({ method: "POST" })
       const session = await requireAdmin();
       const orgId = session.orgId;
       const payload = data.settings || data.updates || {};
-      const { db, schema, eq } = await getDb();
+      const { db, schema, eq, and } = await getDb();
       const existing = await db
         .select()
         .from(schema.settings)
-        .where(eq(schema.settings.organizationId, orgId))
+        .where(
+          and(eq(schema.settings.organizationId, orgId), notDeleted(schema.settings.deletedAt)),
+        )
         .limit(1);
 
       if (existing.length === 0) {
@@ -78,7 +83,10 @@ export const getAllSaasPlansFn = createServerFn({ method: "GET" })
   .handler(async () => {
     try {
       const { db, schema } = await getDb();
-      const plans = await db.select().from(schema.saasPlans);
+      const plans = await db
+        .select()
+        .from(schema.saasPlans)
+        .where(notDeleted(schema.saasPlans.deletedAt));
       return { success: true, data: plans };
     } catch (e) {
       return handleApiError(e);

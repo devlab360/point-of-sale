@@ -5,6 +5,7 @@ import { db } from "@/db";
 import * as schema from "@/db/schema";
 import { eq, and } from "drizzle-orm";
 import { v4 as uuidv4 } from "uuid";
+import { notDeleted } from "@/lib/soft-delete";
 
 export const getPromotionsFn = createServerFn({ method: "GET" })
   .validator((data: any) => data)
@@ -15,7 +16,9 @@ export const getPromotionsFn = createServerFn({ method: "GET" })
       const all = await db
         .select()
         .from(schema.promotions)
-        .where(eq(schema.promotions.organizationId, orgId));
+        .where(
+          and(eq(schema.promotions.organizationId, orgId), notDeleted(schema.promotions.deletedAt)),
+        );
       return { success: true, data: all };
     } catch (e) {
       return handleApiError(e);
@@ -94,7 +97,8 @@ export const deletePromotionFn = createServerFn({ method: "POST" })
     const orgId = session.orgId;
     try {
       await db
-        .delete(schema.promotions)
+        .update(schema.promotions)
+        .set({ deletedAt: new Date().toISOString() })
         .where(and(eq(schema.promotions.id, data.id), eq(schema.promotions.organizationId, orgId)));
       return { success: true };
     } catch (e) {

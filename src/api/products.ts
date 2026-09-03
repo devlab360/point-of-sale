@@ -8,6 +8,7 @@ import { v4 as uuidv4 } from "uuid";
 import { assertProductLimit } from "@/lib/plan-limits";
 import { z } from "zod";
 import { requireAuth, requireAdmin } from "@/lib/auth-utils";
+import { notDeleted } from "@/lib/soft-delete";
 
 export const getProductsFn = createServerFn({ method: "GET" })
   .validator(
@@ -214,6 +215,23 @@ export const createProductFn = createServerFn({ method: "POST" })
       if (product.hasVariants && variants && variants.length > 0) {
         for (const variant of variants) {
           const variantId = variant.id || uuidv4();
+          const variantPrice =
+            variant.price !== undefined &&
+            variant.price !== null &&
+            String(variant.price).trim() !== ""
+              ? String(variant.price)
+              : product.price
+                ? String(product.price)
+                : "0";
+          const variantCost =
+            variant.cost !== undefined &&
+            variant.cost !== null &&
+            String(variant.cost).trim() !== ""
+              ? String(variant.cost)
+              : product.cost
+                ? String(product.cost)
+                : "0";
+
           await db.insert(schema.productVariants).values({
             id: variantId,
             organizationId: session.orgId,
@@ -221,8 +239,8 @@ export const createProductFn = createServerFn({ method: "POST" })
             name: variant.name,
             sku: variant.sku || `${restProductData.sku}-${variant.name}`,
             barcode: variant.barcode || `${now}-${variant.name}`,
-            price: variant.price.toString(),
-            cost: variant.cost.toString(),
+            price: variantPrice,
+            cost: variantCost,
             image: variant.image || null,
           });
 
@@ -234,6 +252,21 @@ export const createProductFn = createServerFn({ method: "POST" })
                 name: attr.name,
                 value: attr.value,
               });
+            }
+          }
+
+          if (variant.locationStocks && Array.isArray(variant.locationStocks)) {
+            for (const ls of variant.locationStocks) {
+              if (ls.stock > 0) {
+                await db.insert(schema.variantInventory).values({
+                  id: uuidv4(),
+                  organizationId: session.orgId,
+                  variantId,
+                  locationId: ls.locationId,
+                  stock: ls.stock.toString(),
+                  reorderLevel: "10",
+                });
+              }
             }
           }
         }
@@ -262,7 +295,12 @@ export const createProductFn = createServerFn({ method: "POST" })
           const orgLocations = await db
             .select()
             .from(schema.locations)
-            .where(eq(schema.locations.organizationId, session.orgId));
+            .where(
+              and(
+                eq(schema.locations.organizationId, session.orgId),
+                notDeleted(schema.locations.deletedAt),
+              ),
+            );
           if (orgLocations.length > 0) {
             const mainLocation =
               orgLocations.find((l) => l.name === "Main Store") || orgLocations[0];
@@ -393,38 +431,149 @@ export const updateProductFn = createServerFn({ method: "POST" })
         );
 
       if (updatesObj.hasVariants && variants) {
-        // This is a naive implementation: delete all existing variants and recreate them
-        await db
-          .delete(schema.productVariants)
+        const existingVariants = await db
+          .select()
+          .from(schema.productVariants)
           .where(
             and(
               eq(schema.productVariants.productId, data.id),
               eq(schema.productVariants.organizationId, session.orgId),
             ),
           );
+
+        const existingMapById = new Map(existingVariants.map((v) => [v.id, v]));
+        const incomingIds = new Set(variants.filter((v) => v.id).map((v) => v.id!));
+
+        // 1. Soft-delete variants removed by the user
+        for (const ev of existingVariants) {
+          if (!incomingIds.has(ev.id) && !ev.deletedAt) {
+            await db
+              .update(schema.productVariants)
+              .set({ deletedAt: new Date().toISOString() })
+              .where(eq(schema.productVariants.id, ev.id));
+          }
+        }
+
         const now = Date.now();
         for (const variant of variants) {
-          const variantId = variant.id || uuidv4();
-          await db.insert(schema.productVariants).values({
-            id: variantId,
-            organizationId: session.orgId,
-            productId: data.id,
-            name: variant.name,
-            sku: variant.sku || `VAR-${now}-${variant.name}`,
-            barcode: variant.barcode || `${now}-${variant.name}`,
-            price: variant.price.toString(),
-            cost: variant.cost.toString(),
-            image: variant.image || null,
-          });
+          let variantId = variant.id;
+          const existingVariant = variantId ? existingMapById.get(variantId) : null;
 
-          if (variant.attributes && variant.attributes.length > 0) {
-            for (const attr of variant.attributes) {
-              await db.insert(schema.productVariantAttributes).values({
-                id: uuidv4(),
-                variantId: variantId,
-                name: attr.name,
-                value: attr.value,
-              });
+          if (existingVariant) {
+            // 2. Update existing variant in place (avoids duplicate SKU / barcode conflicts)
+            const variantPrice =
+              variant.price !== undefined &&
+              variant.price !== null &&
+              String(variant.price).trim() !== ""
+                ? String(variant.price)
+                : existingVariant.price || (updatesObj.price ? String(updatesObj.price) : "0");
+            const variantCost =
+              variant.cost !== undefined &&
+              variant.cost !== null &&
+              String(variant.cost).trim() !== ""
+                ? String(variant.cost)
+                : existingVariant.cost || (updatesObj.cost ? String(updatesObj.cost) : "0");
+
+            await db
+              .update(schema.productVariants)
+              .set({
+                name: variant.name,
+                sku: variant.sku || existingVariant.sku,
+                barcode: variant.barcode || existingVariant.barcode,
+                price: variantPrice,
+                cost: variantCost,
+                image: variant.image !== undefined ? variant.image : existingVariant.image,
+                deletedAt: null,
+              })
+              .where(eq(schema.productVariants.id, variantId!));
+
+            // Sync attributes
+            if (variant.attributes && variant.attributes.length > 0) {
+              await db
+                .update(schema.productVariantAttributes)
+                .set({ deletedAt: new Date().toISOString() })
+                .where(eq(schema.productVariantAttributes.variantId, variantId!));
+
+              for (const attr of variant.attributes) {
+                await db.insert(schema.productVariantAttributes).values({
+                  id: uuidv4(),
+                  variantId: variantId!,
+                  name: attr.name,
+                  value: attr.value,
+                });
+              }
+            }
+          } else {
+            // 3. Insert new variant
+            variantId = variantId || uuidv4();
+            const variantPrice =
+              variant.price !== undefined &&
+              variant.price !== null &&
+              String(variant.price).trim() !== ""
+                ? String(variant.price)
+                : (updatesObj.price ? String(updatesObj.price) : "0");
+            const variantCost =
+              variant.cost !== undefined &&
+              variant.cost !== null &&
+              String(variant.cost).trim() !== ""
+                ? String(variant.cost)
+                : (updatesObj.cost ? String(updatesObj.cost) : "0");
+
+            await db.insert(schema.productVariants).values({
+              id: variantId,
+              organizationId: session.orgId,
+              productId: data.id,
+              name: variant.name,
+              sku: variant.sku || `VAR-${now}-${variant.name}`,
+              barcode: variant.barcode || `${now}-${variant.name}`,
+              price: variantPrice,
+              cost: variantCost,
+              image: variant.image || null,
+            });
+
+            if (variant.attributes && variant.attributes.length > 0) {
+              for (const attr of variant.attributes) {
+                await db.insert(schema.productVariantAttributes).values({
+                  id: uuidv4(),
+                  variantId,
+                  name: attr.name,
+                  value: attr.value,
+                });
+              }
+            }
+          }
+
+          // 4. Update variant_inventory for locationStocks
+          if (variant.locationStocks && Array.isArray(variant.locationStocks)) {
+            for (const ls of variant.locationStocks) {
+              const existingInv = await db
+                .select()
+                .from(schema.variantInventory)
+                .where(
+                  and(
+                    eq(schema.variantInventory.variantId, variantId!),
+                    eq(schema.variantInventory.locationId, ls.locationId),
+                  ),
+                )
+                .limit(1);
+
+              if (existingInv.length > 0) {
+                await db
+                  .update(schema.variantInventory)
+                  .set({
+                    stock: ls.stock.toString(),
+                    deletedAt: null,
+                  })
+                  .where(eq(schema.variantInventory.id, existingInv[0].id));
+              } else {
+                await db.insert(schema.variantInventory).values({
+                  id: uuidv4(),
+                  organizationId: session.orgId,
+                  variantId: variantId!,
+                  locationId: ls.locationId,
+                  stock: ls.stock.toString(),
+                });
+              }
             }
           }
         }
@@ -435,7 +584,12 @@ export const updateProductFn = createServerFn({ method: "POST" })
         const locations = await db
           .select()
           .from(schema.locations)
-          .where(eq(schema.locations.organizationId, session.orgId));
+          .where(
+            and(
+              eq(schema.locations.organizationId, session.orgId),
+              notDeleted(schema.locations.deletedAt),
+            ),
+          );
         if (locations.length > 0) {
           const mainLocation = locations.find((l) => l.name === "Main Store") || locations[0];
 
@@ -504,7 +658,8 @@ export const deleteProductFn = createServerFn({ method: "POST" })
     try {
       const session = await requireAdmin();
       await db
-        .delete(schema.products)
+        .update(schema.products)
+        .set({ deletedAt: new Date().toISOString() })
         .where(
           and(eq(schema.products.id, data.id), eq(schema.products.organizationId, session.orgId)),
         );
@@ -538,6 +693,7 @@ export const getProductVariantsFn = createServerFn({ method: "GET" })
           and(
             eq(schema.productVariants.productId, data.productId),
             eq(schema.productVariants.organizationId, session.orgId),
+            notDeleted(schema.productVariants.deletedAt),
           ),
         );
 
@@ -546,7 +702,12 @@ export const getProductVariantsFn = createServerFn({ method: "GET" })
           const attributes = await db
             .select()
             .from(schema.productVariantAttributes)
-            .where(eq(schema.productVariantAttributes.variantId, v.id));
+            .where(
+              and(
+                eq(schema.productVariantAttributes.variantId, v.id),
+                notDeleted(schema.productVariantAttributes.deletedAt),
+              ),
+            );
           return { ...v, attributes };
         }),
       );
@@ -565,7 +726,12 @@ export const getAllProductVariantsFn = createServerFn({ method: "GET" })
       const variants = await db
         .select()
         .from(schema.productVariants)
-        .where(eq(schema.productVariants.organizationId, session.orgId));
+        .where(
+          and(
+            eq(schema.productVariants.organizationId, session.orgId),
+            notDeleted(schema.productVariants.deletedAt),
+          ),
+        );
 
       if (!variants.length) return { success: true, data: [] };
 
@@ -573,7 +739,12 @@ export const getAllProductVariantsFn = createServerFn({ method: "GET" })
       const attributes = await db
         .select()
         .from(schema.productVariantAttributes)
-        .where(inArray(schema.productVariantAttributes.variantId, variantIds));
+        .where(
+          and(
+            inArray(schema.productVariantAttributes.variantId, variantIds),
+            notDeleted(schema.productVariantAttributes.deletedAt),
+          ),
+        );
 
       const variantsWithAttributes = variants.map((v) => {
         const vAttrs = attributes.filter((a) => a.variantId === v.id);

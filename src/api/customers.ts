@@ -7,6 +7,7 @@ import { eq, and, desc } from "drizzle-orm";
 import { v4 as uuidv4 } from "uuid";
 import { z } from "zod";
 import { requireAuth } from "@/lib/auth-utils";
+import { notDeleted } from "@/lib/soft-delete";
 
 export const getCustomersFn = createServerFn({ method: "GET" })
   .validator(
@@ -178,7 +179,8 @@ export const deleteCustomerFn = createServerFn({ method: "POST" })
     try {
       const session = await requireAuth();
       await db
-        .delete(schema.customers)
+        .update(schema.customers)
+        .set({ deletedAt: new Date().toISOString() })
         .where(
           and(eq(schema.customers.id, data.id), eq(schema.customers.organizationId, session.orgId)),
         );
@@ -204,6 +206,7 @@ export const getCustomerLedgersFn = createServerFn({ method: "GET" })
           and(
             eq(schema.customerLedgers.customerId, data.customerId),
             eq(schema.customerLedgers.organizationId, session.orgId),
+            notDeleted(schema.customerLedgers.deletedAt),
           ),
         );
       return { success: true, data: res };
@@ -238,15 +241,34 @@ export const createCustomerLedgerFn = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     try {
       const session = await requireAuth();
-      const inserted = await db
-        .insert(schema.customerLedgers)
-        .values({
-          id: data.ledger.id || uuidv4(),
-          ...(data.ledger as any),
-          organizationId: session.orgId,
-        })
-        .returning();
-      return { success: true, data: inserted[0], message: "Ledger entry recorded successfully" };
+      let insertedRow;
+      await db.transaction(async (tx) => {
+        const inserted = await tx
+          .insert(schema.customerLedgers)
+          .values({
+            id: data.ledger.id || uuidv4(),
+            ...(data.ledger as any),
+            organizationId: session.orgId,
+          })
+          .returning();
+        insertedRow = inserted[0];
+
+        if (data.ledger.customerId) {
+          const balanceAfterNum = parseFloat(data.ledger.balanceAfter);
+          if (!isNaN(balanceAfterNum)) {
+            await tx
+              .update(schema.customers)
+              .set({ credit: balanceAfterNum.toString() })
+              .where(
+                and(
+                  eq(schema.customers.id, data.ledger.customerId),
+                  eq(schema.customers.organizationId, session.orgId),
+                ),
+              );
+          }
+        }
+      });
+      return { success: true, data: insertedRow, message: "Ledger entry recorded successfully" };
     } catch (e) {
       return handleApiError(e);
     }

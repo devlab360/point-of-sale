@@ -5,6 +5,7 @@ import { db } from "@/db";
 import * as schema from "@/db/schema";
 import { eq, and, inArray } from "drizzle-orm";
 import { v4 as uuidv4 } from "uuid";
+import { notDeleted } from "@/lib/soft-delete";
 
 export {
   getRentalsFn,
@@ -31,7 +32,12 @@ export const getSubscriptionsFn = createServerFn({ method: "GET" })
       const all = await db
         .select()
         .from(schema.subscriptions)
-        .where(eq(schema.subscriptions.organizationId, orgId));
+        .where(
+          and(
+            eq(schema.subscriptions.organizationId, orgId),
+            notDeleted(schema.subscriptions.deletedAt),
+          ),
+        );
       return { success: true, data: all };
     } catch (e) {
       return handleApiError(e);
@@ -113,7 +119,8 @@ export const deleteSubscriptionFn = createServerFn({ method: "POST" })
     const orgId = session.orgId;
     try {
       await db
-        .delete(schema.subscriptions)
+        .update(schema.subscriptions)
+        .set({ deletedAt: new Date().toISOString() })
         .where(
           and(eq(schema.subscriptions.id, data.id), eq(schema.subscriptions.organizationId, orgId)),
         );
@@ -136,7 +143,10 @@ export const getServicesListFn = createServerFn({ method: "GET" })
       const page = data.page || 1;
       const pageSize = data.pageSize || 50;
 
-      const conditions = [eq(schema.services.organizationId, orgId)];
+      const conditions = [
+        eq(schema.services.organizationId, orgId),
+        notDeleted(schema.services.deletedAt),
+      ];
       if (data.query) {
         conditions.push(ilike(schema.services.name, `%${data.query}%`));
       }
@@ -252,7 +262,8 @@ export const updateServiceItemFn = createServerFn({ method: "POST" })
 
         if (data.hasVariants !== undefined) {
           await tx
-            .delete(schema.serviceVariants)
+            .update(schema.serviceVariants)
+            .set({ deletedAt: new Date().toISOString() })
             .where(
               and(
                 eq(schema.serviceVariants.serviceId, data.id),
@@ -306,6 +317,7 @@ export const getServiceVariantsFn = createServerFn({ method: "GET" })
           and(
             eq(schema.serviceVariants.serviceId, serviceId),
             eq(schema.serviceVariants.organizationId, session.orgId),
+            notDeleted(schema.serviceVariants.deletedAt),
           ),
         );
 
@@ -333,7 +345,8 @@ export const deleteServiceItemFn = createServerFn({ method: "POST" })
       const orgId = session.orgId;
 
       await db
-        .delete(schema.services)
+        .update(schema.services)
+        .set({ deletedAt: new Date().toISOString() })
         .where(and(eq(schema.services.id, data.id), eq(schema.services.organizationId, orgId)));
 
       return { success: true };
@@ -350,7 +363,12 @@ export const getAllServiceVariantsFn = createServerFn({ method: "GET" })
       const variants = await db
         .select()
         .from(schema.serviceVariants)
-        .where(eq(schema.serviceVariants.organizationId, session.orgId));
+        .where(
+          and(
+            eq(schema.serviceVariants.organizationId, session.orgId),
+            notDeleted(schema.serviceVariants.deletedAt),
+          ),
+        );
 
       if (variants.length === 0) {
         return { success: true, data: [] };

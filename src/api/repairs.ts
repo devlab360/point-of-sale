@@ -6,6 +6,7 @@ import * as schema from "@/db/schema";
 import { eq, and } from "drizzle-orm";
 import { v4 as uuidv4 } from "uuid";
 import { z } from "zod";
+import { notDeleted } from "@/lib/soft-delete";
 
 export const getRepairsFn = createServerFn({ method: "GET" })
   .validator(z.object({}).optional().default({}))
@@ -16,7 +17,7 @@ export const getRepairsFn = createServerFn({ method: "GET" })
       const all = await db
         .select()
         .from(schema.repairs)
-        .where(eq(schema.repairs.organizationId, orgId));
+        .where(and(eq(schema.repairs.organizationId, orgId), notDeleted(schema.repairs.deletedAt)));
       return { success: true, data: all };
     } catch (e) {
       return handleApiError(e);
@@ -25,25 +26,27 @@ export const getRepairsFn = createServerFn({ method: "GET" })
 
 export const createRepairFn = createServerFn({ method: "POST" })
   .validator(
-    z.object({
-      repair: z
-        .object({
-          id: z.string().optional(),
-          ticketNo: z.string().optional(),
-          customerName: z.string().optional(),
-          customerPhone: z.string().optional(),
-          deviceName: z.string().optional(),
-          serialOrImei: z.string().nullable().optional(),
-          problemDescription: z.string().optional(),
-          estimatedCost: z.union([z.string(), z.number()]).optional(),
-          advancePaid: z.union([z.string(), z.number()]).optional(),
-          status: z.string().optional(),
-          date: z.string().optional(),
-          createdAt: z.string().optional(),
-          notes: z.string().nullable().optional(),
-        })
-        .optional(),
-    }).passthrough(),
+    z
+      .object({
+        repair: z
+          .object({
+            id: z.string().optional(),
+            ticketNo: z.string().optional(),
+            customerName: z.string().optional(),
+            customerPhone: z.string().optional(),
+            deviceName: z.string().optional(),
+            serialOrImei: z.string().nullable().optional(),
+            problemDescription: z.string().optional(),
+            estimatedCost: z.union([z.string(), z.number()]).optional(),
+            advancePaid: z.union([z.string(), z.number()]).optional(),
+            status: z.string().optional(),
+            date: z.string().optional(),
+            createdAt: z.string().optional(),
+            notes: z.string().nullable().optional(),
+          })
+          .optional(),
+      })
+      .passthrough(),
   )
   .handler(async ({ data }) => {
     const session = await requireAuth();
@@ -100,25 +103,27 @@ export const updateRepairStatusFn = createServerFn({ method: "POST" })
 
 export const updateRepairFn = createServerFn({ method: "POST" })
   .validator(
-    z.object({
-      id: z.string().optional(),
-      updates: z
-        .object({
-          ticketNo: z.string().optional(),
-          customerName: z.string().optional(),
-          customerPhone: z.string().optional(),
-          deviceName: z.string().optional(),
-          serialOrImei: z.string().nullable().optional(),
-          problemDescription: z.string().optional(),
-          estimatedCost: z.union([z.string(), z.number()]).optional(),
-          advancePaid: z.union([z.string(), z.number()]).optional(),
-          status: z.string().optional(),
-          notes: z.string().nullable().optional(),
-        })
-        .passthrough()
-        .optional(),
-      repair: z.any().optional(),
-    }).passthrough(),
+    z
+      .object({
+        id: z.string().optional(),
+        updates: z
+          .object({
+            ticketNo: z.string().optional(),
+            customerName: z.string().optional(),
+            customerPhone: z.string().optional(),
+            deviceName: z.string().optional(),
+            serialOrImei: z.string().nullable().optional(),
+            problemDescription: z.string().optional(),
+            estimatedCost: z.union([z.string(), z.number()]).optional(),
+            advancePaid: z.union([z.string(), z.number()]).optional(),
+            status: z.string().optional(),
+            notes: z.string().nullable().optional(),
+          })
+          .passthrough()
+          .optional(),
+        repair: z.any().optional(),
+      })
+      .passthrough(),
   )
   .handler(async ({ data }) => {
     const session = await requireAuth();
@@ -162,7 +167,8 @@ export const deleteRepairFn = createServerFn({ method: "POST" })
     const orgId = session.orgId;
     try {
       await db
-        .delete(schema.repairs)
+        .update(schema.repairs)
+        .set({ deletedAt: new Date().toISOString() })
         .where(and(eq(schema.repairs.id, data.id), eq(schema.repairs.organizationId, orgId)));
       return { success: true };
     } catch (e) {

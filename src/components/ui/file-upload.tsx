@@ -14,11 +14,7 @@ import {
 import { Button } from "./button";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import {
-  uploadToVercelBlob,
-  validateFileBeforeUpload,
-  isImageUrl,
-} from "@/lib/upload-service";
+import { uploadToVercelBlob, validateFileBeforeUpload, isImageUrl } from "@/lib/upload-service";
 
 export interface FileUploadProps {
   value?: string | string[];

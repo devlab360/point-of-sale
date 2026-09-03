@@ -260,6 +260,17 @@ export function ProductGrid({ state }: { state: any }) {
             ))}
           </SelectContent>
         </Select>
+
+        {/* Active Branch Rate Chart Badge */}
+        {state.activePriceBook && (
+          <div
+            className="hidden lg:flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-primary/10 border border-primary/20 text-primary text-[11px] font-bold tracking-tight shrink-0 shadow-2xs"
+            title={`Active Rate Chart: ${state.activePriceBook.name}`}
+          >
+            <span className="size-2 rounded-full bg-primary animate-pulse" />
+            <span className="truncate max-w-[130px] font-mono">{state.activePriceBook.code}</span>
+          </div>
+        )}
       </div>
 
       {/* Horizontal Category Filter Pills */}

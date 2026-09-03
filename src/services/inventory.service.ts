@@ -3,6 +3,7 @@ import * as schema from "@/db/schema";
 import { eq, and, desc, sql, ilike, or } from "drizzle-orm";
 import { v4 as uuidv4 } from "uuid";
 import { NotFoundError } from "@/lib/errors/errors";
+import { notDeleted } from "@/lib/soft-delete";
 
 export interface StockAdjustmentInput {
   productId: string;
@@ -25,7 +26,10 @@ export class InventoryService {
     const page = filters.page || 1;
     const pageSize = filters.pageSize || 50;
 
-    let conditions = [eq(schema.products.organizationId, orgId)];
+    let conditions = [
+      eq(schema.products.organizationId, orgId),
+      notDeleted(schema.products.deletedAt),
+    ];
 
     if (filters.query) {
       const searchCond = or(
@@ -64,7 +68,11 @@ export class InventoryService {
       .select()
       .from(schema.products)
       .where(
-        and(eq(schema.products.id, input.productId), eq(schema.products.organizationId, orgId)),
+        and(
+          eq(schema.products.id, input.productId),
+          eq(schema.products.organizationId, orgId),
+          notDeleted(schema.products.deletedAt),
+        ),
       )
       .limit(1);
 
@@ -103,7 +111,10 @@ export class InventoryService {
   }
 
   async getMovements(orgId: string, productId?: string) {
-    let conditions = [eq(schema.inventoryMovements.organizationId, orgId)];
+    let conditions = [
+      eq(schema.inventoryMovements.organizationId, orgId),
+      notDeleted(schema.inventoryMovements.deletedAt),
+    ];
     if (productId) {
       conditions.push(eq(schema.inventoryMovements.productId, productId));
     }

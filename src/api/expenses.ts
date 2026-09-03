@@ -12,6 +12,7 @@ export const getExpensesFn = createServerFn({ method: "GET" })
         pageSize: z.number().optional().default(50),
         query: z.string().optional(),
         category: z.string().optional(),
+        locationId: z.string().optional(),
       })
       .passthrough(),
   )
@@ -35,6 +36,7 @@ const ExpenseInputSchema = z.object({
   description: z.string().nullable().optional(),
   date: z.string().nullable().optional(),
   status: z.string().nullable().optional(),
+  locationId: z.string().nullable().optional(),
 });
 
 export const createExpenseFn = createServerFn({ method: "POST" })
@@ -48,6 +50,7 @@ export const createExpenseFn = createServerFn({ method: "POST" })
         description: data.expense.description || undefined,
         date: data.expense.date || undefined,
         status: data.expense.status || undefined,
+        locationId: data.expense.locationId || undefined,
       });
       return { success: true, data: created, message: "Expense record created" };
     } catch (e) {
