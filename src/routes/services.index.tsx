@@ -70,7 +70,7 @@ function ServicesPage() {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
 
-  const [viewMode, setViewMode] = useState<"grid" | "table">("grid");
+  const [viewMode, setViewMode] = useState<"grid" | "table">("table");
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search, 300);
   const [page, setPage] = useState(1);
@@ -133,13 +133,17 @@ function ServicesPage() {
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
   const deleteMutation = useMutation({
-    mutationFn: async (id: string) => await deleteServiceItemFn({ data: { id } }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["services", orgId] });
-      toast.success("Service deleted successfully");
-      setDeleteId(null);
+    mutationFn: async (id: string) => (await deleteServiceItemFn({ data: { id } })) as any,
+    onSuccess: (res: any) => {
+      if (res?.success) {
+        queryClient.invalidateQueries({ queryKey: ["services", orgId] });
+        toast.success(res.message || "Service deleted successfully");
+        setDeleteId(null);
+      } else {
+        toast.error(res?.error || "Failed to delete service");
+      }
     },
-    onError: () => toast.error("Failed to delete service"),
+    onError: (e: any) => toast.error(e?.message || "Failed to delete service"),
   });
 
   const handleExport = () => {
@@ -263,18 +267,6 @@ function ServicesPage() {
             <div className="inline-flex rounded-lg border border-border/80 bg-muted/30 p-0.5 shadow-sm">
               <button
                 type="button"
-                onClick={() => setViewMode("grid")}
-                className={`grid size-8 place-items-center rounded-md transition-all ${
-                  viewMode === "grid"
-                    ? "bg-card text-foreground shadow-sm font-bold"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-                title="Grid View"
-              >
-                <LayoutGrid className="size-4" />
-              </button>
-              <button
-                type="button"
                 onClick={() => setViewMode("table")}
                 className={`grid size-8 place-items-center rounded-md transition-all ${
                   viewMode === "table"
@@ -284,6 +276,18 @@ function ServicesPage() {
                 title="Table View"
               >
                 <TableIcon className="size-4" />
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewMode("grid")}
+                className={`grid size-8 place-items-center rounded-md transition-all ${
+                  viewMode === "grid"
+                    ? "bg-card text-foreground shadow-sm font-bold"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+                title="Grid View"
+              >
+                <LayoutGrid className="size-4" />
               </button>
             </div>
           </div>

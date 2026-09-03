@@ -49,7 +49,7 @@ export function StatCard({ label, value, delta, hint, icon: Icon, accent = "prim
   return (
     <div
       className={cn(
-        "group relative overflow-hidden rounded-2xl border border-border/80 bg-card p-5 shadow-soft transition-shadow duration-300 card-interactive",
+        "group relative overflow-hidden rounded-2xl border border-border/80 bg-card p-4 sm:p-5 shadow-soft transition-shadow duration-300 card-interactive",
         style.ringHover,
       )}
     >
@@ -58,19 +58,19 @@ export function StatCard({ label, value, delta, hint, icon: Icon, accent = "prim
           <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/80">
             {label}
           </p>
-          <p className="number mt-2 text-2xl font-semibold tracking-tight text-foreground sm:text-[30px] leading-none">
+          <p className="number mt-1.5 sm:mt-2 text-xl sm:text-2xl font-semibold tracking-tight text-foreground lg:text-[28px] leading-none break-words">
             {value}
           </p>
         </div>
         {Icon && (
           <div
             className={cn(
-              "grid size-12 shrink-0 place-items-center rounded-2xl border",
+              "grid size-10 sm:size-12 shrink-0 place-items-center rounded-xl sm:rounded-2xl border",
               style.iconBg,
               style.iconColor,
             )}
           >
-            <Icon className="size-5" strokeWidth={2} />
+            <Icon className="size-4 sm:size-5" strokeWidth={2} />
           </div>
         )}
       </div>

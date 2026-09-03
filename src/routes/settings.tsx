@@ -471,8 +471,8 @@ function SettingsPage() {
       if (res.success) {
         toast.success(
           "Payment proof submitted successfully! Super Admin will verify UTR: " +
-            paymentForm.utrNumber +
-            " and activate your subscription within 2-4 hours.",
+          paymentForm.utrNumber +
+          " and activate your subscription within 2-4 hours.",
         );
         setSelectedPlanForUpgrade(null);
         setPaymentForm({
@@ -730,7 +730,7 @@ function SettingsPage() {
   const parseBankDetails = (str: string) => {
     try {
       if (str && str.trim().startsWith("{")) return JSON.parse(str);
-    } catch (e) {}
+    } catch (e) { }
     return {
       bankName: str || "",
       holderName: "",
@@ -1032,18 +1032,16 @@ function SettingsPage() {
                   key={item.id}
                   type="button"
                   onClick={() => handleTabChange(item.id)}
-                  className={`w-full text-left flex items-start gap-3 p-3 rounded-xl transition-all duration-200 group relative ${
-                    isActive
-                      ? "bg-primary text-primary-foreground shadow-soft"
-                      : "hover:bg-muted/70 text-foreground"
-                  }`}
+                  className={`w-full text-left flex items-start gap-3 p-3 rounded-xl transition-all duration-200 group relative ${isActive
+                    ? "bg-primary text-primary-foreground shadow-soft"
+                    : "hover:bg-muted/70 text-foreground"
+                    }`}
                 >
                   <div
-                    className={`size-8 rounded-lg flex items-center justify-center shrink-0 transition-colors ${
-                      isActive
-                        ? "bg-white/20 text-white"
-                        : "bg-muted text-muted-foreground group-hover:text-foreground group-hover:bg-card border border-border/50"
-                    }`}
+                    className={`size-8 rounded-lg flex items-center justify-center shrink-0 transition-colors ${isActive
+                      ? "bg-white/20 text-white"
+                      : "bg-muted text-muted-foreground group-hover:text-foreground group-hover:bg-card border border-border/50"
+                      }`}
                   >
                     <Icon className="size-4" />
                   </div>
@@ -1052,22 +1050,20 @@ function SettingsPage() {
                       <span className="text-xs font-bold truncate block">{item.label}</span>
                       {item.badge && (
                         <span
-                          className={`text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded-full ${
-                            isActive
-                              ? "bg-white/25 text-white"
-                              : item.badgeVariant === "destructive"
-                                ? "bg-destructive/10 text-destructive border border-destructive/20"
-                                : "bg-primary/10 text-primary border border-primary/20"
-                          }`}
+                          className={`text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded-full ${isActive
+                            ? "bg-white/25 text-white"
+                            : item.badgeVariant === "destructive"
+                              ? "bg-destructive/10 text-destructive border border-destructive/20"
+                              : "bg-primary/10 text-primary border border-primary/20"
+                            }`}
                         >
                           {item.badge}
                         </span>
                       )}
                     </div>
                     <span
-                      className={`text-[11px] truncate block mt-0.5 ${
-                        isActive ? "text-white/80" : "text-muted-foreground"
-                      }`}
+                      className={`text-[11px] truncate block mt-0.5 ${isActive ? "text-white/80" : "text-muted-foreground"
+                        }`}
                     >
                       {item.description}
                     </span>
@@ -1126,11 +1122,10 @@ function SettingsPage() {
                   key={item.id}
                   type="button"
                   onClick={() => handleTabChange(item.id)}
-                  className={`shrink-0 flex items-center gap-2 px-3.5 py-2.5 rounded-xl text-xs font-bold border transition-all ${
-                    isActive
-                      ? "bg-primary text-primary-foreground border-primary shadow-soft"
-                      : "bg-card text-foreground border-border/80 hover:bg-muted"
-                  }`}
+                  className={`shrink-0 flex items-center gap-2 px-3.5 py-2.5 rounded-xl text-xs font-bold border transition-all ${isActive
+                    ? "bg-primary text-primary-foreground border-primary shadow-soft"
+                    : "bg-card text-foreground border-border/80 hover:bg-muted"
+                    }`}
                 >
                   <Icon className="size-3.5" />
                   <span>{item.label}</span>
@@ -1180,7 +1175,7 @@ function SettingsPage() {
                     </p>
                     <div className="flex items-center gap-3 text-[11px] text-muted-foreground mt-1.5 font-medium">
                       <span>Phone: {settings.phone || "Not set"}</span>
-                      <span>ΓÇó</span>
+                      <span>·</span>
                       <span>
                         Currency: {settings.currencySymbol} ({settings.currencyCode})
                       </span>
@@ -1580,7 +1575,7 @@ function SettingsPage() {
                               if (days <= 0 || isTrialExpired)
                                 return (
                                   <span className="text-destructive font-bold">
-                                    Trial Expired ΓÇó Please upgrade to continue
+                                    Trial Expired · Please upgrade to continue
                                   </span>
                                 );
                               return (
@@ -1651,11 +1646,10 @@ function SettingsPage() {
                       return (
                         <div
                           key={plan.id}
-                          className={`rounded-2xl border p-5 flex flex-col justify-between relative transition-all bg-card shadow-card hover:shadow-card-hover ${
-                            isCurrent
-                              ? "border-primary ring-2 ring-primary/20 bg-gradient-to-b from-primary/5 to-card"
-                              : "border-border/80 hover:border-primary/40"
-                          }`}
+                          className={`rounded-2xl border p-5 flex flex-col justify-between relative transition-all bg-card shadow-card hover:shadow-card-hover ${isCurrent
+                            ? "border-primary ring-2 ring-primary/20 bg-gradient-to-b from-primary/5 to-card"
+                            : "border-border/80 hover:border-primary/40"
+                            }`}
                         >
                           {isCurrent && (
                             <Badge className="absolute -top-2.5 right-4 bg-primary text-primary-foreground text-[10px] font-bold">
@@ -2102,11 +2096,10 @@ function SettingsPage() {
                                 <TableCell>
                                   <Badge
                                     variant="outline"
-                                    className={`text-[10px] font-bold uppercase ${
-                                      tm.status === "archived"
-                                        ? "text-muted-foreground"
-                                        : "text-success border-success/30 bg-success/10"
-                                    }`}
+                                    className={`text-[10px] font-bold uppercase ${tm.status === "archived"
+                                      ? "text-muted-foreground"
+                                      : "text-success border-success/30 bg-success/10"
+                                      }`}
                                   >
                                     {tm.status === "archived" ? "Archived" : tm.status || "active"}
                                   </Badge>
@@ -2465,23 +2458,25 @@ function SettingsPage() {
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="GB">
-                            ≡ƒç¼≡ƒçº United Kingdom (Standard VAT 20%, 5%, 0%)
+                            🇬🇧 United Kingdom (Standard VAT 20%, 5%, 0%)
                           </SelectItem>
                           <SelectItem value="US">
-                            ≡ƒç║≡ƒç╕ United States (Sales Tax 7.5%, 8.25%, 10%)
+                            🇺🇸 United States (Sales Tax 7.5%, 8.25%, 10%)
                           </SelectItem>
                           <SelectItem value="AE">
-                            ≡ƒçª≡ƒç¬ United Arab Emirates (VAT 5%, 0%)
+                            🇦🇪 United Arab Emirates (VAT 5%, 0%)
                           </SelectItem>
                           <SelectItem value="SA">
-                            ≡ƒç╕≡ƒçª Saudi Arabia (ZATCA VAT 15%, 0%)
+                            🇸🇦 Saudi Arabia (ZATCA VAT 15%, 0%)
                           </SelectItem>
                           <SelectItem value="CA">
-                            ≡ƒç¿≡ƒçª Canada (GST / HST / PST 5%, 13%, 12%)
+                            🇨🇦 Canada (GST / HST / PST 5%, 13%, 12%)
                           </SelectItem>
-                          <SelectItem value="AU">≡ƒçª≡ƒç║ Australia (GST 10%, 0%)</SelectItem>
+                          <SelectItem value="AU">
+                            🇦🇺 Australia (GST 10%, 0%)
+                          </SelectItem>
                           <SelectItem value="IN">
-                            ≡ƒç«≡ƒç│ India (GST 0%, 5%, 12%, 18%, 28%)
+                            🇮🇳 India (GST 0%, 5%, 12%, 18%, 28%)
                           </SelectItem>
                         </SelectContent>
                       </Select>
@@ -2726,22 +2721,20 @@ function SettingsPage() {
                           <button
                             type="button"
                             onClick={() => setPreviewFormat("thermal")}
-                            className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${
-                              previewFormat === "thermal"
-                                ? "bg-card shadow-soft text-primary"
-                                : "text-muted-foreground hover:text-foreground"
-                            }`}
+                            className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${previewFormat === "thermal"
+                              ? "bg-card shadow-soft text-primary"
+                              : "text-muted-foreground hover:text-foreground"
+                              }`}
                           >
                             80mm Thermal
                           </button>
                           <button
                             type="button"
                             onClick={() => setPreviewFormat("a4")}
-                            className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${
-                              previewFormat === "a4"
-                                ? "bg-card shadow-soft text-primary"
-                                : "text-muted-foreground hover:text-foreground"
-                            }`}
+                            className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${previewFormat === "a4"
+                              ? "bg-card shadow-soft text-primary"
+                              : "text-muted-foreground hover:text-foreground"
+                              }`}
                           >
                             A4 Invoice
                           </button>
@@ -3101,11 +3094,10 @@ function SettingsPage() {
                       <div
                         key={method.id}
                         onClick={() => setPaymentForm({ ...paymentForm, paymentMethod: method.id })}
-                        className={`cursor-pointer rounded-xl border p-3 flex flex-col items-center justify-center text-center transition-all select-none ${
-                          isSelected
-                            ? "border-primary bg-primary/10 shadow-soft ring-2 ring-primary/20 text-primary font-bold"
-                            : "border-border/80 bg-card hover:bg-muted/50 text-foreground"
-                        }`}
+                        className={`cursor-pointer rounded-xl border p-3 flex flex-col items-center justify-center text-center transition-all select-none ${isSelected
+                          ? "border-primary bg-primary/10 shadow-soft ring-2 ring-primary/20 text-primary font-bold"
+                          : "border-border/80 bg-card hover:bg-muted/50 text-foreground"
+                          }`}
                       >
                         <Icon
                           className={`size-4 mb-1.5 ${isSelected ? "text-primary" : "text-muted-foreground"}`}
@@ -3191,8 +3183,8 @@ function SettingsPage() {
                           ? Number(selectedPlanForUpgrade.monthlyPrice)
                           : Number(selectedPlanForUpgrade?.price || 0)) +
                       (paymentForm.extraSeats || 0) *
-                        Number(selectedPlanForUpgrade?.perExtraUserPrice || 0) *
-                        (paymentForm.billingCycle === "yearly" ? 12 : 1)
+                      Number(selectedPlanForUpgrade?.perExtraUserPrice || 0) *
+                      (paymentForm.billingCycle === "yearly" ? 12 : 1)
                     ).toLocaleString()}`}
                     disabled
                     className="mt-1 font-mono font-bold bg-muted text-primary"

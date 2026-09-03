@@ -94,7 +94,7 @@ function PromotionsPage() {
   const orgId = PersistStore.getOrgId() || "default";
   const queryClient = useQueryClient();
 
-  const [viewMode, setViewMode] = useState<"grid" | "table">("grid");
+  const [viewMode, setViewMode] = useState<"grid" | "table">("table");
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [editItem, setEditItem] = useState<any | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
@@ -368,18 +368,6 @@ function PromotionsPage() {
             <div className="inline-flex rounded-lg border border-border/80 bg-muted/30 p-0.5 shadow-sm">
               <button
                 type="button"
-                onClick={() => setViewMode("grid")}
-                className={`grid size-8 place-items-center rounded-md transition-all ${
-                  viewMode === "grid"
-                    ? "bg-card text-foreground shadow-sm font-bold"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-                title="Grid View"
-              >
-                <LayoutGrid className="size-4" />
-              </button>
-              <button
-                type="button"
                 onClick={() => setViewMode("table")}
                 className={`grid size-8 place-items-center rounded-md transition-all ${
                   viewMode === "table"
@@ -389,6 +377,18 @@ function PromotionsPage() {
                 title="Table View"
               >
                 <TableIcon className="size-4" />
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewMode("grid")}
+                className={`grid size-8 place-items-center rounded-md transition-all ${
+                  viewMode === "grid"
+                    ? "bg-card text-foreground shadow-sm font-bold"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+                title="Grid View"
+              >
+                <LayoutGrid className="size-4" />
               </button>
             </div>
           </div>

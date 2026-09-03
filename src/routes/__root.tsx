@@ -345,11 +345,6 @@ function AppLayout() {
   const location = useRouterState({ select: (s) => s.location });
   const router = useRouter();
 
-  const publicRoutes = ["/login", "/register", "/verify-email"];
-  const isPublicRoute =
-    publicRoutes.includes(location.pathname) ||
-    location.pathname.startsWith("/invite") ||
-    location.pathname.startsWith("/admin");
 
   useEffect(() => {
     const hash = window.location.hash;
@@ -368,17 +363,31 @@ function AppLayout() {
     }
   }, [loginWithGoogleToken]);
 
+  const authRoutes = ["/login", "/register"];
+  const isAuthRoute = authRoutes.includes(location.pathname);
+  const isPublicRoute =
+    isAuthRoute ||
+    location.pathname === "/verify-email" ||
+    location.pathname.startsWith("/invite") ||
+    location.pathname.startsWith("/admin") ||
+    location.pathname.startsWith("/portal");
+
   useEffect(() => {
     if (!isLoading) {
       if (!isAuthenticated && !isPublicRoute) {
         router.navigate({ to: "/login", replace: true });
-      } else if (isAuthenticated && !isEmailVerified && location.pathname !== "/verify-email") {
+      } else if (
+        isAuthenticated &&
+        !isEmailVerified &&
+        location.pathname !== "/verify-email" &&
+        !location.pathname.startsWith("/admin")
+      ) {
         router.navigate({ to: "/verify-email", replace: true });
-      } else if (isAuthenticated && isPublicRoute && isEmailVerified) {
+      } else if (isAuthenticated && isAuthRoute && isEmailVerified) {
         router.navigate({ to: "/", replace: true });
       }
     }
-  }, [isLoading, isAuthenticated, isEmailVerified, isPublicRoute, location.pathname]);
+  }, [isLoading, isAuthenticated, isEmailVerified, isAuthRoute, isPublicRoute, location.pathname]);
 
   if (isLoading || isGoogleLoggingIn) {
     return (

@@ -187,7 +187,7 @@ function UsersPage() {
     [applicableModules],
   );
 
-  const [viewMode, setViewMode] = useState<"grid" | "table">("grid");
+  const [viewMode, setViewMode] = useState<"grid" | "table">("table");
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search, 300);
   const [roleFilter, setRoleFilter] = useState("all");
@@ -544,18 +544,6 @@ function UsersPage() {
             <div className="inline-flex rounded-xl border border-border/80 bg-muted/30 p-0.5 shadow-sm">
               <button
                 type="button"
-                onClick={() => setViewMode("grid")}
-                className={`grid size-8.5 place-items-center rounded-lg transition-all ${
-                  viewMode === "grid"
-                    ? "bg-card text-primary shadow-xs font-bold"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-                title="Grid View"
-              >
-                <LayoutGrid className="size-4" />
-              </button>
-              <button
-                type="button"
                 onClick={() => setViewMode("table")}
                 className={`grid size-8.5 place-items-center rounded-lg transition-all ${
                   viewMode === "table"
@@ -565,6 +553,18 @@ function UsersPage() {
                 title="Table View"
               >
                 <TableIcon className="size-4" />
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewMode("grid")}
+                className={`grid size-8.5 place-items-center rounded-lg transition-all ${
+                  viewMode === "grid"
+                    ? "bg-card text-primary shadow-xs font-bold"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+                title="Grid View"
+              >
+                <LayoutGrid className="size-4" />
               </button>
             </div>
           </div>

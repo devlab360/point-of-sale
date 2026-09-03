@@ -192,11 +192,16 @@ function AppointmentsPage() {
 
   const deleteAppointment = useMutation({
     mutationFn: (id: string) => deleteAppointmentFn({ data: { id } }),
-    onSuccess: () => {
-      toast.success("Appointment removed");
-      queryClient.invalidateQueries({ queryKey: ["appointments"] });
-      setDeleteId(null);
+    onSuccess: (res: any) => {
+      if (res?.success) {
+        toast.success(res.message || "Appointment removed");
+        queryClient.invalidateQueries({ queryKey: ["appointments"] });
+        setDeleteId(null);
+      } else {
+        toast.error(res?.error || "Failed to remove appointment");
+      }
     },
+    onError: (e: any) => toast.error(e?.message || "Failed to remove appointment"),
   });
 
   const handleCreate = () => {

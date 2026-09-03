@@ -230,10 +230,15 @@ function PriceBooksComponent() {
 
   const deleteMutation = useMutation({
     mutationFn: (id: string) => deletePriceBookFn({ data: { id } }),
-    onSuccess: () => {
-      toast.success("Rate chart deleted");
-      queryClient.invalidateQueries({ queryKey: ["priceBooks", orgId] });
+    onSuccess: (res: any) => {
+      if (res?.success) {
+        toast.success(res.message || "Rate chart deleted");
+        queryClient.invalidateQueries({ queryKey: ["priceBooks", orgId] });
+      } else {
+        toast.error(res?.error || "Failed to delete rate chart");
+      }
     },
+    onError: (e: any) => toast.error(e?.message || "Failed to delete rate chart"),
   });
 
   const saveBranchMappingsMutation = useMutation({

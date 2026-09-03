@@ -158,11 +158,16 @@ function TablesPage() {
 
   const deleteTable = useMutation({
     mutationFn: (id: string) => deleteTableFn({ data: { id } }),
-    onSuccess: () => {
-      toast.success("Table removed");
-      queryClient.invalidateQueries({ queryKey: ["tables"] });
-      setDeleteId(null);
+    onSuccess: (res: any) => {
+      if (res?.success) {
+        toast.success(res.message || "Table removed");
+        queryClient.invalidateQueries({ queryKey: ["tables"] });
+        setDeleteId(null);
+      } else {
+        toast.error(res?.error || "Failed to remove table");
+      }
     },
+    onError: (e: any) => toast.error(e?.message || "Failed to remove table"),
   });
 
   const handleCreate = () => {

@@ -150,10 +150,14 @@ function SuperAdminTenantsPage() {
 
   const updateOrgMutation = useMutation({
     mutationFn: (org: any) => updateOrganizationFn({ data: org }),
-    onSuccess: () => {
-      toast.success("Tenant store updated successfully");
-      setIsEditModalOpen(false);
-      queryClient.invalidateQueries({ queryKey: ["saas-organizations"] });
+    onSuccess: (res: any) => {
+      if (res?.success) {
+        toast.success("Tenant store updated successfully");
+        setIsEditModalOpen(false);
+        queryClient.invalidateQueries({ queryKey: ["saas-organizations"] });
+      } else {
+        toast.error(res?.error || "Update failed");
+      }
     },
     onError: (err: any) => toast.error(err.message || "Update failed"),
   });
@@ -161,8 +165,12 @@ function SuperAdminTenantsPage() {
   const saveGrantsMutation = useMutation({
     mutationFn: ({ orgId, menuKeys }: { orgId: string; menuKeys: string[] }) =>
       setAdminMenuGrantsFn({ data: { orgId, menuKeys } }),
-    onSuccess: () => {
-      toast.success("Module access grants updated!");
+    onSuccess: (res: any) => {
+      if (res?.success) {
+        toast.success("Module access grants updated!");
+      } else {
+        toast.error(res?.error || "Failed to save grants");
+      }
     },
     onError: (err: any) => toast.error(err.message || "Failed to save grants"),
   });
@@ -170,13 +178,13 @@ function SuperAdminTenantsPage() {
   const createTenantMutation = useMutation({
     mutationFn: (tenant: any) => createTenantUserFn({ data: tenant }),
     onSuccess: (res: any) => {
-      if (res.success) {
+      if (res?.success) {
         toast.success("Tenant store provisioned successfully!");
         setIsCreateModalOpen(false);
         setNewTenant({ storeName: "", ownerName: "", email: "", password: "", planId: "basic" });
         queryClient.invalidateQueries({ queryKey: ["saas-organizations"] });
       } else {
-        toast.error(res.error || "Failed to create tenant");
+        toast.error(res?.error || "Failed to create tenant");
       }
     },
     onError: (err: any) => toast.error(err.message || "Creation failed"),
@@ -185,19 +193,23 @@ function SuperAdminTenantsPage() {
   const addTrialMutation = useMutation({
     mutationFn: ({ orgId, days }: { orgId: string; days: number }) =>
       addTrialDaysFn({ data: { orgId, days } }),
-    onSuccess: (_, variables) => {
-      toast.success(`Added +${variables.days} trial days`);
-      queryClient.invalidateQueries({ queryKey: ["saas-organizations"] });
-      if (editingTenant) {
-        refetch().then((res) => {
-          const updated = res.data?.data?.orgs?.find((o: any) => o.id === editingTenant.id);
-          if (updated) {
-            setEditingTenant({
-              ...updated,
-              planExpiryDate: updated.planExpiryDate ? updated.planExpiryDate.split("T")[0] : "",
-            });
-          }
-        });
+    onSuccess: (res: any, variables) => {
+      if (res?.success) {
+        toast.success(`Added +${variables.days} trial days`);
+        queryClient.invalidateQueries({ queryKey: ["saas-organizations"] });
+        if (editingTenant) {
+          refetch().then((r: any) => {
+            const updated = r.data?.data?.orgs?.find((o: any) => o.id === editingTenant.id);
+            if (updated) {
+              setEditingTenant({
+                ...updated,
+                planExpiryDate: updated.planExpiryDate ? updated.planExpiryDate.split("T")[0] : "",
+              });
+            }
+          });
+        }
+      } else {
+        toast.error(res?.error || "Failed to add trial days");
       }
     },
   });
@@ -205,22 +217,28 @@ function SuperAdminTenantsPage() {
   const resetSyncKeyMutation = useMutation({
     mutationFn: (orgId: string) => resetTenantSyncKeyFn({ data: { orgId } }),
     onSuccess: (res: any) => {
-      if (res.success) {
+      if (res?.success) {
         toast.success("Device sync key regenerated!");
         if (editingTenant) {
           setEditingTenant({ ...editingTenant, syncKey: res.syncKey });
         }
         queryClient.invalidateQueries({ queryKey: ["saas-organizations"] });
+      } else {
+        toast.error(res?.error || "Failed to reset sync key");
       }
     },
   });
 
   const deleteOrgMutation = useMutation({
     mutationFn: (orgId: string) => deleteOrganizationFn({ data: { orgId } }),
-    onSuccess: () => {
-      toast.success("Tenant store deleted permanently");
-      setIsEditModalOpen(false);
-      queryClient.invalidateQueries({ queryKey: ["saas-organizations"] });
+    onSuccess: (res: any) => {
+      if (res?.success) {
+        toast.success("Tenant store deleted permanently");
+        setIsEditModalOpen(false);
+        queryClient.invalidateQueries({ queryKey: ["saas-organizations"] });
+      } else {
+        toast.error(res?.error || "Delete failed");
+      }
     },
     onError: (err: any) => toast.error(err.message || "Delete failed"),
   });

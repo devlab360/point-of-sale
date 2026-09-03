@@ -2,7 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { appName } from "@/lib/env";
 import { exportToCSV, parseCSV } from "@/lib/csv";
 import {
-  List,
+  Table as TableIcon,
   LayoutGrid,
   MoreHorizontal,
   Pencil,
@@ -194,13 +194,17 @@ function ProductsPage() {
   };
 
   const deleteMutation = useMutation({
-    mutationFn: async (id: string) => await deleteProductFn({ data: { id } }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["products"] });
-      toast.success("Product deleted successfully");
-      setDeleteId(null);
+    mutationFn: async (id: string) => (await deleteProductFn({ data: { id } })) as any,
+    onSuccess: (res: any) => {
+      if (res?.success) {
+        queryClient.invalidateQueries({ queryKey: ["products"] });
+        toast.success(res.message || "Product deleted successfully");
+        setDeleteId(null);
+      } else {
+        toast.error(res?.error || "Failed to delete product");
+      }
     },
-    onError: () => toast.error("Failed to delete product"),
+    onError: (e: any) => toast.error(e?.message || "Failed to delete product"),
   });
 
   const confirmDelete = () => {
@@ -356,7 +360,7 @@ function ProductsPage() {
                 }`}
                 title="Table View"
               >
-                <List className="size-4" />
+                <TableIcon className="size-4" />
               </button>
               <button
                 type="button"
