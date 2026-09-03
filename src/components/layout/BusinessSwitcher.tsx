@@ -157,20 +157,20 @@ export function BusinessSwitcher() {
         <PopoverTrigger asChild>
           <Button
             variant="ghost"
-            className="h-9 gap-2 rounded-xl border border-border/70 bg-card/70 px-2.5 text-sm font-semibold text-foreground hover:bg-card shadow-xs"
+            className="h-8 sm:h-9 gap-1.5 sm:gap-2 rounded-xl border border-border/70 bg-card/70 px-2 sm:px-2.5 text-xs sm:text-sm font-semibold text-foreground hover:bg-card shadow-xs shrink min-w-0 cursor-pointer"
             title="Switch business or branch"
           >
-            <Building2 className="size-4 text-primary shrink-0" />
+            <Building2 className="size-3.5 sm:size-4 text-primary shrink-0" />
             <div className="flex items-center gap-1.5 min-w-0 text-left">
-              <span className="max-w-[120px] truncate">{orgName}</span>
+              <span className="max-w-[75px] xs:max-w-[95px] sm:max-w-[130px] truncate">{orgName}</span>
               {activeBranch && (
-                <span className="hidden sm:inline-flex items-center gap-1 text-[11px] font-normal text-muted-foreground bg-muted/60 px-1.5 py-0.5 rounded-md border border-border/40">
+                <span className="hidden md:inline-flex items-center gap-1 text-[11px] font-normal text-muted-foreground bg-muted/60 px-1.5 py-0.5 rounded-md border border-border/40">
                   <span className="size-1.5 rounded-full bg-emerald-500 shrink-0" />
-                  <span className="max-w-[90px] truncate">{activeBranch.name}</span>
+                  <span className="max-w-[85px] truncate">{activeBranch.name}</span>
                 </span>
               )}
             </div>
-            <ChevronsUpDown className="size-3.5 text-muted-foreground" />
+            <ChevronsUpDown className="size-3 sm:size-3.5 text-muted-foreground shrink-0" />
           </Button>
         </PopoverTrigger>
         <PopoverContent className="w-80 p-2" align="start" sideOffset={8}>

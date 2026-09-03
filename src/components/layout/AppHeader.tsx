@@ -25,6 +25,9 @@ import {
   Megaphone,
   X,
   Building2,
+  MoreHorizontal,
+  Globe,
+  Layers,
 } from "lucide-react";
 import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
@@ -78,6 +81,7 @@ function pathToCrumbs(pathname: string) {
 export function AppHeader() {
   const { formatAppDate } = useAppFormatter();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [mobileToolsOpen, setMobileToolsOpen] = useState(false);
   const [theme, setTheme] = useState<Theme>("light");
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -393,16 +397,22 @@ export function AppHeader() {
             <Search className="size-5" />
           </Button>
 
-          <InstallAppButton />
-          <SyncStatus />
           <BusinessSwitcher />
+
+          <div className="hidden lg:block">
+            <InstallAppButton />
+          </div>
+
+          <div className="hidden md:block">
+            <SyncStatus />
+          </div>
 
           {canAccessPos && (
             <Button
               asChild
               size="sm"
               variant="gradient"
-              className="hidden sm:inline-flex shadow-sm"
+              className="hidden sm:inline-flex shadow-sm text-xs font-bold"
             >
               <Link to="/pos">
                 <Plus className="size-4" /> New Sale
@@ -410,71 +420,81 @@ export function AppHeader() {
             </Button>
           )}
 
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-9 px-2 text-xs font-semibold gap-1"
-                title="Select Language"
-              >
-                <span>{activeLanguageObj.flag}</span>
-                <span className="hidden sm:inline">{activeLanguageObj.code.toUpperCase()}</span>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuLabel className="text-xs">Select Language</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              {LANGUAGES.map((l) => (
-                <DropdownMenuItem
-                  key={l.code}
-                  onClick={() => setLanguage(l.code)}
-                  className={`flex items-center justify-between text-xs cursor-pointer ${language === l.code ? "font-bold text-primary bg-primary/10" : ""}`}
+          <div className="hidden md:block">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-9 px-2 text-xs font-semibold gap-1 cursor-pointer"
+                  title="Select Language"
                 >
-                  <span>
-                    {l.flag} {l.nativeName} ({l.label})
-                  </span>
-                  {language === l.code && <span className="text-primary font-bold">✓</span>}
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
+                  <span>{activeLanguageObj.flag}</span>
+                  <span className="hidden sm:inline">{activeLanguageObj.code.toUpperCase()}</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuLabel className="text-xs">Select Language</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                {LANGUAGES.map((l) => (
+                  <DropdownMenuItem
+                    key={l.code}
+                    onClick={() => setLanguage(l.code)}
+                    className={`flex items-center justify-between text-xs cursor-pointer ${language === l.code ? "font-bold text-primary bg-primary/10" : ""}`}
+                  >
+                    <span>
+                      {l.flag} {l.nativeName} ({l.label})
+                    </span>
+                    {language === l.code && <span className="text-primary font-bold">✓</span>}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
 
           {/* Fullscreen Mode Toggle */}
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={toggleFullscreen}
-            tooltip={isFullscreen ? "Exit Fullscreen (F11)" : "Full Screen (F11)"}
-            aria-label="Toggle Fullscreen"
-          >
-            {isFullscreen ? <Minimize className="size-5" /> : <Maximize className="size-5" />}
-          </Button>
+          <div className="hidden lg:block">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={toggleFullscreen}
+              tooltip={isFullscreen ? "Exit Fullscreen (F11)" : "Full Screen (F11)"}
+              aria-label="Toggle Fullscreen"
+              className="cursor-pointer"
+            >
+              {isFullscreen ? <Minimize className="size-5" /> : <Maximize className="size-5" />}
+            </Button>
+          </div>
 
           {/* AI Copilot / Chatbot Launcher */}
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => {
-              window.dispatchEvent(new CustomEvent("open-ai-copilot"));
-            }}
-            tooltip="AI Copilot Assistant (Ctrl+J)"
-            aria-label="Open AI Copilot"
-            className="text-primary hover:bg-primary/10"
-          >
-            <Sparkles className="size-5" />
-          </Button>
+          <div className="hidden md:block">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => {
+                window.dispatchEvent(new CustomEvent("open-ai-copilot"));
+              }}
+              tooltip="AI Copilot Assistant (Ctrl+J)"
+              aria-label="Open AI Copilot"
+              className="text-primary hover:bg-primary/10 cursor-pointer"
+            >
+              <Sparkles className="size-5" />
+            </Button>
+          </div>
 
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={toggleTheme}
-            tooltip="Toggle Dark / Light Theme"
-            aria-label="Toggle theme"
-          >
-            <Sun className="size-5 dark:hidden" />
-            <Moon className="hidden size-5 dark:block" />
-          </Button>
+          <div className="hidden sm:block">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={toggleTheme}
+              tooltip="Toggle Dark / Light Theme"
+              aria-label="Toggle theme"
+              className="cursor-pointer"
+            >
+              <Sun className="size-5 dark:hidden" />
+              <Moon className="hidden size-5 dark:block" />
+            </Button>
+          </div>
 
           {hasPermissionForRoute(user, "/notifications", user?.role === "super_admin", saasPlan)
             .allowed && (
@@ -568,8 +588,20 @@ export function AppHeader() {
             </DropdownMenu>
           )}
 
+          {/* Mobile Quick Tools Button (Phone-friendly access to all tools) */}
+          <Button
+            variant="ghost"
+            size="icon"
+            className="md:hidden rounded-xl h-9 w-9 text-foreground hover:text-primary hover:bg-primary/10 cursor-pointer shrink-0"
+            onClick={() => setMobileToolsOpen(true)}
+            title="Quick Tools & Actions"
+            aria-label="Quick Tools & Actions"
+          >
+            <MoreHorizontal className="size-5" />
+          </Button>
+
           <DropdownMenu>
-            <DropdownMenuTrigger className="ml-1 flex size-9 items-center justify-center rounded-full bg-primary text-sm font-semibold text-primary-foreground overflow-hidden">
+            <DropdownMenuTrigger className="ml-0.5 sm:ml-1 flex size-8 sm:size-9 items-center justify-center rounded-full bg-primary text-xs sm:text-sm font-semibold text-primary-foreground overflow-hidden cursor-pointer shrink-0">
               {(profile as any).avatar ? (
                 <img
                   src={(profile as any).avatar}
@@ -587,7 +619,6 @@ export function AppHeader() {
               </DropdownMenuLabel>
 
               <DropdownMenuSeparator />
-              <DropdownMenuSeparator />
               <DropdownMenuItem asChild>
                 <Link to="/profile">{t("profile") || "Profile"}</Link>
               </DropdownMenuItem>
@@ -600,6 +631,19 @@ export function AppHeader() {
               <DropdownMenuItem asChild>
                 <Link to="/help">{t("help") || "Help center"}</Link>
               </DropdownMenuItem>
+
+              <DropdownMenuItem
+                onClick={toggleTheme}
+                className="flex sm:hidden items-center justify-between cursor-pointer"
+              >
+                <span className="flex items-center gap-2">
+                  <Sun className="size-4 dark:hidden" />
+                  <Moon className="hidden size-4 dark:block" />
+                  <span>Appearance</span>
+                </span>
+                <span className="text-xs text-muted-foreground capitalize">{theme}</span>
+              </DropdownMenuItem>
+
               <DropdownMenuSeparator />
               {activeShift && (
                 <DropdownMenuItem
@@ -629,6 +673,137 @@ export function AppHeader() {
             userEmail={profile.email}
           />
         </div>
+
+        {/* Mobile Quick Tools Bottom Sheet (Phone Hub for all tools) */}
+        <Sheet open={mobileToolsOpen} onOpenChange={setMobileToolsOpen}>
+          <SheetContent side="bottom" className="rounded-t-3xl p-5 bg-card border-t border-border shadow-2xl max-h-[85vh] overflow-y-auto">
+            <div className="flex items-center justify-between pb-3 border-b border-border/60 mb-4">
+              <div className="flex items-center gap-2">
+                <div className="size-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
+                  <Layers className="size-4" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-foreground">Quick Tools & Controls</h3>
+                  <p className="text-[11px] text-muted-foreground">Access all POS terminal shortcuts</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Primary Action: New Sale */}
+            {canAccessPos && (
+              <Button
+                asChild
+                size="lg"
+                variant="gradient"
+                className="w-full shadow-soft font-bold text-sm h-12 mb-3.5 rounded-xl cursor-pointer"
+                onClick={() => setMobileToolsOpen(false)}
+              >
+                <Link to="/pos" className="flex items-center justify-center gap-2">
+                  <Plus className="size-5" />
+                  <span>Launch POS / New Sale</span>
+                </Link>
+              </Button>
+            )}
+
+            {/* 2-Column Grid for All Quick Tools */}
+            <div className="grid grid-cols-2 gap-2.5">
+              {/* 1. AI Copilot */}
+              <button
+                type="button"
+                onClick={() => {
+                  setMobileToolsOpen(false);
+                  window.dispatchEvent(new CustomEvent("open-ai-copilot"));
+                }}
+                className="flex items-center gap-2.5 p-3 rounded-xl border border-border/80 bg-muted/20 hover:bg-muted/40 transition-colors text-left cursor-pointer"
+              >
+                <div className="size-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                  <Sparkles className="size-4" />
+                </div>
+                <div className="min-w-0">
+                  <div className="text-xs font-bold text-foreground">AI Copilot</div>
+                  <div className="text-[10px] text-muted-foreground">Smart Assistant</div>
+                </div>
+              </button>
+
+              {/* 2. Theme Toggle */}
+              <button
+                type="button"
+                onClick={() => {
+                  toggleTheme();
+                }}
+                className="flex items-center gap-2.5 p-3 rounded-xl border border-border/80 bg-muted/20 hover:bg-muted/40 transition-colors text-left cursor-pointer"
+              >
+                <div className="size-8 rounded-lg bg-muted text-foreground flex items-center justify-center shrink-0">
+                  <Sun className="size-4 dark:hidden" />
+                  <Moon className="hidden size-4 dark:block" />
+                </div>
+                <div className="min-w-0">
+                  <div className="text-xs font-bold text-foreground capitalize">{theme} Mode</div>
+                  <div className="text-[10px] text-muted-foreground">Switch theme</div>
+                </div>
+              </button>
+
+              {/* 3. Fullscreen Mode */}
+              <button
+                type="button"
+                onClick={() => {
+                  toggleFullscreen();
+                  setMobileToolsOpen(false);
+                }}
+                className="flex items-center gap-2.5 p-3 rounded-xl border border-border/80 bg-muted/20 hover:bg-muted/40 transition-colors text-left cursor-pointer"
+              >
+                <div className="size-8 rounded-lg bg-muted text-foreground flex items-center justify-center shrink-0">
+                  {isFullscreen ? <Minimize className="size-4" /> : <Maximize className="size-4" />}
+                </div>
+                <div className="min-w-0">
+                  <div className="text-xs font-bold text-foreground">
+                    {isFullscreen ? "Exit Screen" : "Fullscreen"}
+                  </div>
+                  <div className="text-[10px] text-muted-foreground">Immersive view</div>
+                </div>
+              </button>
+
+              {/* 4. Cloud Sync Status */}
+              <div className="flex items-center gap-2.5 p-3 rounded-xl border border-border/80 bg-muted/20 text-left">
+                <div className="shrink-0 scale-90 -ml-1">
+                  <SyncStatus />
+                </div>
+              </div>
+            </div>
+
+            {/* Language Selector */}
+            <div className="mt-4 pt-3 border-t border-border/60">
+              <div className="flex items-center gap-1.5 text-xs font-bold text-muted-foreground uppercase mb-2">
+                <Globe className="size-3.5 text-primary" />
+                <span>Select Language ({activeLanguageObj.nativeName})</span>
+              </div>
+              <div className="grid grid-cols-2 gap-1.5 max-h-36 overflow-y-auto">
+                {LANGUAGES.map((l) => (
+                  <button
+                    key={l.code}
+                    type="button"
+                    onClick={() => {
+                      setLanguage(l.code);
+                    }}
+                    className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs transition-all cursor-pointer ${
+                      language === l.code
+                        ? "bg-primary text-primary-foreground font-bold shadow-xs"
+                        : "bg-muted/30 text-foreground border border-border/50 hover:bg-muted"
+                    }`}
+                  >
+                    <span>{l.flag}</span>
+                    <span className="truncate">{l.nativeName}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Install App Button if available */}
+            <div className="mt-4">
+              <InstallAppButton />
+            </div>
+          </SheetContent>
+        </Sheet>
 
         <Dialog open={searchOpen} onOpenChange={setSearchOpen}>
           <DialogContent className="sm:max-w-xl p-0 overflow-hidden [&>button]:hidden top-[20%] translate-y-0 shadow-2xl border-border/80">
