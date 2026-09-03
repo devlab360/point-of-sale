@@ -145,29 +145,6 @@ function CustomerPortalPage() {
           </Button>
         </form>
 
-        {/* Quick select chip pills */}
-        {customers.length > 0 && (
-          <div className="pt-2 border-t border-border/60">
-            <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider block mb-2">
-              Recent Clients:
-            </span>
-            <div className="flex flex-wrap gap-2">
-              {customers.slice(0, 5).map((c: any) => (
-                <button
-                  key={c.id}
-                  type="button"
-                  onClick={() => {
-                    setSearchQuery(c.phone || c.name);
-                    setActiveLookup(c.phone || c.name);
-                  }}
-                  className="rounded-lg bg-muted/60 hover:bg-primary/10 hover:text-primary px-2.5 py-1 text-xs font-semibold text-foreground border border-border/60 transition-colors"
-                >
-                  {c.name} {c.phone ? `(${c.phone})` : ""}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
       </div>
 
       {/* Statement Results */}
@@ -332,7 +309,7 @@ function CustomerPortalPage() {
         <div className="rounded-xl border border-border bg-card p-12 text-center text-sm text-muted-foreground shadow-soft max-w-3xl mx-auto">
           No customer found matching &ldquo;
           <strong className="text-foreground">{activeLookup}</strong>&rdquo;. Please verify the
-          phone number or select a client from the suggestions.
+          phone number or customer name entered.
         </div>
       ) : null}
     </div>
