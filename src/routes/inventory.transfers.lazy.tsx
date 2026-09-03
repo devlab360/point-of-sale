@@ -26,6 +26,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { getInventoryTransfersFn, createInventoryTransferFn } from "@/api/inventory";
 import { getProductsFn } from "@/api/products";
 import { getSuppliersFn } from "@/api/suppliers";
+import { getLocationsFn } from "@/api/locations";
 import { useAppFormatter } from "@/hooks/useAppFormatter";
 import { PersistStore } from "@/lib/session-store";
 import { v4 as uuidv4 } from "uuid";
@@ -87,8 +88,17 @@ function TransfersPage() {
   });
   const suppliers = Array.isArray(suppliersData) ? suppliersData : [];
 
+  const { data: locationsData } = useQuery({
+    queryKey: ["locations", orgId],
+    queryFn: async () => ((await getLocationsFn({ data: {} })) as any)?.data || [],
+  });
+  const locations: any[] = Array.isArray(locationsData) ? locationsData : [];
+
   const [viewMode, setViewMode] = useState<"grid" | "table">("grid");
   const [open, setOpen] = useState(false);
+  const [transferType, setTransferType] = useState<"branch" | "vendor">("branch");
+  const [sourceLocationId, setSourceLocationId] = useState("");
+  const [destinationLocationId, setDestinationLocationId] = useState("");
   const [productId, setProductId] = useState("");
   const [supplierId, setSupplierId] = useState("");
   const [transferQty, setTransferQty] = useState("1");
@@ -107,6 +117,17 @@ function TransfersPage() {
     () => products.find((p: any) => p.id === productId),
     [products, productId],
   );
+
+  // Set default source and destination locations when open
+  const handleOpenModal = () => {
+    if (locations.length > 0) {
+      if (!sourceLocationId) setSourceLocationId(locations[0].id);
+      if (locations.length > 1 && !destinationLocationId) {
+        setDestinationLocationId(locations[1].id);
+      }
+    }
+    setOpen(true);
+  };
 
   // KPI Calculations
   const totalTransferCount = transfers.length;
@@ -147,10 +168,23 @@ function TransfersPage() {
       toast.error("Please select a product");
       return;
     }
-    if (!supplierId) {
-      toast.error("Please select a destination vendor/branch");
-      return;
+
+    if (transferType === "branch") {
+      if (!destinationLocationId) {
+        toast.error("Please select a destination branch");
+        return;
+      }
+      if (sourceLocationId && sourceLocationId === destinationLocationId) {
+        toast.error("Source and destination branch cannot be the same");
+        return;
+      }
+    } else {
+      if (!supplierId) {
+        toast.error("Please select a supplier / vendor");
+        return;
+      }
     }
+
     const q = parseInt(transferQty, 10);
     if (!q || q <= 0) {
       toast.error("Quantity must be greater than 0");
@@ -158,6 +192,7 @@ function TransfersPage() {
     }
 
     const prod = products.find((p: any) => p.id === productId);
+    const destLoc = locations.find((l: any) => l.id === destinationLocationId);
     const supp = suppliers.find((s: any) => s.id === supplierId);
 
     if (prod && Number(prod.stock) < q) {
@@ -174,8 +209,18 @@ function TransfersPage() {
             ref: `TRF-${Date.now().toString().slice(-6)}`,
             productId,
             productName: prod?.name || "Product",
-            supplierId,
-            supplierName: supp?.name || "Branch / Vendor",
+            sourceLocationId: sourceLocationId || undefined,
+            destinationLocationId:
+              transferType === "branch" ? destinationLocationId || undefined : undefined,
+            supplierId: transferType === "vendor" ? supplierId || undefined : undefined,
+            supplierName:
+              transferType === "branch"
+                ? destLoc?.name || "Target Branch"
+                : supp?.name || "Vendor Return",
+            destination:
+              transferType === "branch"
+                ? destLoc?.name || "Target Branch"
+                : supp?.name || "Vendor",
             quantity: q,
             totalAmount: Number(totalAmount) || 0,
             paidAmount: Number(paidAmount) || 0,
@@ -186,7 +231,11 @@ function TransfersPage() {
       })) as any;
 
       if (res?.success) {
-        toast.success("Stock transfer registered");
+        toast.success(
+          transferType === "branch"
+            ? `Stock transferred to ${destLoc?.name || "Branch"}`
+            : "Stock return registered",
+        );
         setOpen(false);
         setProductId("");
         setSupplierId("");
@@ -215,7 +264,7 @@ function TransfersPage() {
         title="Stock Transfers & Branch Dispatches"
         description="Dispatch inventory between store locations, satellite warehouse nodes, and return items to suppliers."
         actions={
-          <Button size="sm" onClick={() => setOpen(true)} className="gap-1.5">
+          <Button size="sm" onClick={handleOpenModal} className="gap-1.5 cursor-pointer">
             <Plus className="size-4" /> New Transfer
           </Button>
         }
@@ -483,12 +532,94 @@ function TransfersPage() {
               className="flex-1 flex flex-col justify-between overflow-hidden"
             >
               <div className="flex-1 overflow-y-auto p-5 space-y-4">
+                {/* Transfer Type Pill Selector */}
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-semibold">Transfer Type</Label>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setTransferType("branch")}
+                      className={`flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl border text-xs font-bold transition-all cursor-pointer ${
+                        transferType === "branch"
+                          ? "bg-primary text-primary-foreground border-primary shadow-soft"
+                          : "bg-card text-muted-foreground border-border hover:bg-muted"
+                      }`}
+                    >
+                      <Building2 className="size-3.5" />
+                      <span>Branch to Branch</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setTransferType("vendor")}
+                      className={`flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl border text-xs font-bold transition-all cursor-pointer ${
+                        transferType === "vendor"
+                          ? "bg-primary text-primary-foreground border-primary shadow-soft"
+                          : "bg-card text-muted-foreground border-border hover:bg-muted"
+                      }`}
+                    >
+                      <Truck className="size-3.5" />
+                      <span>Vendor Return</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Origin Branch (Source) */}
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-semibold">Origin Location / Branch (Source) *</Label>
+                  <Select value={sourceLocationId} onValueChange={setSourceLocationId}>
+                    <SelectTrigger className="h-10 text-xs rounded-xl bg-card">
+                      <SelectValue placeholder="Select Origin Branch..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {locations.map((loc: any) => (
+                        <SelectItem key={loc.id} value={loc.id} className="text-xs">
+                          {loc.name} {loc.isHeadOffice ? "(Head Office / Central)" : ""}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Destination Branch OR Vendor */}
+                {transferType === "branch" ? (
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-semibold">Destination Branch (Target) *</Label>
+                    <Select value={destinationLocationId} onValueChange={setDestinationLocationId}>
+                      <SelectTrigger className="h-10 text-xs rounded-xl bg-card">
+                        <SelectValue placeholder="Select Target Branch..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {locations
+                          .filter((loc: any) => loc.id !== sourceLocationId)
+                          .map((loc: any) => (
+                            <SelectItem key={loc.id} value={loc.id} className="text-xs">
+                              {loc.name}
+                            </SelectItem>
+                          ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                ) : (
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-semibold">Destination Supplier / Vendor *</Label>
+                    <SearchableSelect
+                      options={suppliers.map((s: any) => ({
+                        value: s.id,
+                        label: s.name,
+                      }))}
+                      value={supplierId}
+                      onChange={setSupplierId}
+                      placeholder="Select vendor..."
+                    />
+                  </div>
+                )}
+
                 <div className="space-y-1.5">
                   <Label className="text-xs font-semibold">Select Product *</Label>
                   <SearchableSelect
                     options={products.map((p: any) => ({
                       value: p.id,
-                      label: `${p.name} (Stock: ${p.stock ?? 0})`,
+                      label: `${p.name} (Total Stock: ${p.stock ?? 0})`,
                     }))}
                     value={productId}
                     onChange={(val) => {
@@ -501,19 +632,6 @@ function TransfersPage() {
                       }
                     }}
                     placeholder="Search product SKU..."
-                  />
-                </div>
-
-                <div className="space-y-1.5">
-                  <Label className="text-xs font-semibold">Destination Partner / Branch *</Label>
-                  <SearchableSelect
-                    options={suppliers.map((s: any) => ({
-                      value: s.id,
-                      label: s.name,
-                    }))}
-                    value={supplierId}
-                    onChange={setSupplierId}
-                    placeholder="Select branch or supplier..."
                   />
                 </div>
 

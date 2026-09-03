@@ -4,6 +4,27 @@ import { eq, and } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 import { v4 as uuidv4 } from "uuid";
 
+// Deterministic RFC4122 compliant UUID v4 generator for seed records
+export function uuidFromSeed(key: string): string {
+  if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(key)) {
+    return key;
+  }
+  let h1 = 0xdeadbeef, h2 = 0x41c6ce57;
+  for (let i = 0; i < key.length; i++) {
+    const ch = key.charCodeAt(i);
+    h1 = Math.imul(h1 ^ ch, 2654435761);
+    h2 = Math.imul(h2 ^ ch, 1597334677);
+  }
+  h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909);
+  h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909);
+  const p1 = ((h1 >>> 0) + 0x100000000).toString(16).slice(1);
+  const p2 = ((h2 >>> 0) + 0x100000000).toString(16).slice(1);
+  const p3 = ((((h1 ^ h2) >>> 0) + 0x100000000).toString(16)).slice(1);
+  const p4 = ((((h1 + h2) >>> 0) + 0x100000000).toString(16)).slice(1);
+  const hex = (p1 + p2 + p3 + p4).slice(0, 32);
+  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-4${hex.slice(13, 16)}-a${hex.slice(17, 20)}-${hex.slice(20, 32)}`;
+}
+
 export async function seedComprehensiveData() {
   console.log("\n==================================================");
   console.log("🚀 SEEDING COMPREHENSIVE DUMMY DATA FOR ALL TABLES");

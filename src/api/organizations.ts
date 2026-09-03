@@ -84,6 +84,7 @@ export const getMyOrganizationsFn = createServerFn({ method: "GET" })
         const membership = memberships.find((m) => m.organizationId === org.id);
         return {
           id: org.id,
+          code: org.code || `ORG-${org.id.slice(0, 6).toUpperCase()}`,
           name: org.name,
           ownerEmail: org.ownerEmail,
           status: org.status,
@@ -242,10 +243,12 @@ export const createBusinessFn = createServerFn({ method: "POST" })
 
       const orgId = uuidv4();
       const ownerId = uuidv4();
+      const orgCode = `ORG-${Math.floor(1000 + Math.random() * 9000)}`;
 
       await db.transaction(async (tx) => {
         await tx.insert(schema.organizations).values({
           id: orgId,
+          code: orgCode,
           name: data.name,
           ownerEmail: email,
           status: "trial",

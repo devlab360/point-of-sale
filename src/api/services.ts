@@ -3,7 +3,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireAuth } from "@/lib/auth-utils";
 import { db } from "@/db";
 import * as schema from "@/db/schema";
-import { eq, and, inArray } from "drizzle-orm";
+import { eq, and, inArray, desc, ilike, or, sql } from "drizzle-orm";
 import { v4 as uuidv4 } from "uuid";
 import { notDeleted } from "@/lib/soft-delete";
 
@@ -132,8 +132,6 @@ export const deleteSubscriptionFn = createServerFn({ method: "POST" })
 
 // --- SERVICES TABLE CRUD ---
 
-import { desc, ilike, or, sql } from "drizzle-orm";
-
 export const getServicesListFn = createServerFn({ method: "GET" })
   .validator((data: any) => data || {})
   .handler(async ({ data }) => {
@@ -141,7 +139,8 @@ export const getServicesListFn = createServerFn({ method: "GET" })
       const session = await requireAuth();
       const orgId = session.orgId;
       const page = data.page || 1;
-      const pageSize = data.pageSize || 50;
+      const pageSize = data.pageSize || 100;
+      const locationId = data.locationId;
 
       const conditions = [
         eq(schema.services.organizationId, orgId),
@@ -173,7 +172,84 @@ export const getServicesListFn = createServerFn({ method: "GET" })
         .where(whereClause);
       const totalCount = Number(countRes[0].count);
 
-      return { success: true, data: items, total: totalCount };
+      if (items.length === 0) {
+        return { success: true, data: [], total: 0 };
+      }
+
+      const serviceIds = items.map((s) => s.id);
+
+      // Fetch variants and location-specific overrides in parallel
+      const [variants, locOverrides] = await Promise.all([
+        db
+          .select()
+          .from(schema.serviceVariants)
+          .where(
+            and(
+              inArray(schema.serviceVariants.serviceId, serviceIds),
+              eq(schema.serviceVariants.organizationId, orgId),
+              notDeleted(schema.serviceVariants.deletedAt),
+            ),
+          ),
+        locationId
+          ? db
+              .select()
+              .from(schema.serviceLocations)
+              .where(
+                and(
+                  eq(schema.serviceLocations.organizationId, orgId),
+                  eq(schema.serviceLocations.locationId, locationId),
+                  inArray(schema.serviceLocations.serviceId, serviceIds),
+                  notDeleted(schema.serviceLocations.deletedAt),
+                ),
+              )
+          : Promise.resolve([]),
+      ]);
+
+      const varMap = new Map<string, any[]>();
+      variants.forEach((v) => {
+        if (!varMap.has(v.serviceId)) varMap.set(v.serviceId, []);
+        varMap.get(v.serviceId)!.push(v);
+      });
+
+      const locMap = new Map<string, typeof schema.serviceLocations.$inferSelect>();
+      (locOverrides as any[]).forEach((lo) => {
+        const key = lo.serviceVariantId ? `${lo.serviceId}:${lo.serviceVariantId}` : `${lo.serviceId}:base`;
+        locMap.set(key, lo);
+      });
+
+      // Assemble enriched services with outlet price and availability
+      let enrichedItems = items.map((svc) => {
+        const baseLoc = locMap.get(`${svc.id}:base`);
+        const isAvailable = baseLoc ? baseLoc.isAvailable : true;
+        const effectivePrice = baseLoc?.price ? String(baseLoc.price) : svc.price;
+        const effectiveDuration = baseLoc?.duration ?? svc.duration;
+
+        const svcVariants = (varMap.get(svc.id) || []).map((v) => {
+          const varLoc = locMap.get(`${svc.id}:${v.id}`);
+          return {
+            ...v,
+            isAvailable: varLoc ? varLoc.isAvailable : true,
+            price: varLoc?.price ? String(varLoc.price) : v.price,
+            duration: varLoc?.duration ?? v.duration,
+          };
+        });
+
+        return {
+          ...svc,
+          isAvailable,
+          effectivePrice,
+          price: effectivePrice,
+          duration: effectiveDuration,
+          variants: svcVariants,
+        };
+      });
+
+      // If locationId specified, optionally filter out unavailable services
+      if (locationId && data.onlyAvailable) {
+        enrichedItems = enrichedItems.filter((s) => s.isAvailable);
+      }
+
+      return { success: true, data: enrichedItems, total: totalCount };
     } catch (e) {
       return handleApiError(e);
     }
@@ -199,14 +275,12 @@ export const createServiceItemFn = createServerFn({ method: "POST" })
         status: data.status || "active",
       };
 
-      const { variants, ...restPayload } = payload as any;
-
       await db.transaction(async (tx) => {
         await tx.insert(schema.services).values(payload);
 
         if (payload.hasVariants && data.variants && data.variants.length > 0) {
           for (const variant of data.variants) {
-            const variantId = uuidv4();
+            const variantId = variant.id || uuidv4();
             await tx.insert(schema.serviceVariants).values({
               id: variantId,
               organizationId: orgId,
@@ -226,6 +300,23 @@ export const createServiceItemFn = createServerFn({ method: "POST" })
               }));
               await tx.insert(schema.serviceVariantAttributes).values(attributes);
             }
+          }
+        }
+
+        // Outlet availability & custom pricing if supplied
+        if (data.locationSettings && Array.isArray(data.locationSettings)) {
+          for (const ls of data.locationSettings) {
+            await tx.insert(schema.serviceLocations).values({
+              id: uuidv4(),
+              organizationId: orgId,
+              serviceId: payload.id,
+              serviceVariantId: ls.serviceVariantId || null,
+              locationId: ls.locationId,
+              isAvailable: ls.isAvailable !== false,
+              price: ls.price ? String(ls.price) : null,
+              cost: ls.cost ? String(ls.cost) : null,
+              duration: ls.duration ? Number(ls.duration) : null,
+            });
           }
         }
       });
@@ -293,6 +384,52 @@ export const updateServiceItemFn = createServerFn({ method: "POST" })
                 }));
                 await tx.insert(schema.serviceVariantAttributes).values(attributes);
               }
+            }
+          }
+        }
+
+        // Outlet availability & custom pricing if supplied
+        if (data.locationSettings && Array.isArray(data.locationSettings)) {
+          for (const ls of data.locationSettings) {
+            const existing = await tx
+              .select({ id: schema.serviceLocations.id })
+              .from(schema.serviceLocations)
+              .where(
+                and(
+                  eq(schema.serviceLocations.organizationId, orgId),
+                  eq(schema.serviceLocations.serviceId, data.id),
+                  eq(schema.serviceLocations.locationId, ls.locationId),
+                  ls.serviceVariantId
+                    ? eq(schema.serviceLocations.serviceVariantId, ls.serviceVariantId)
+                    : sql`${schema.serviceLocations.serviceVariantId} IS NULL`,
+                ),
+              )
+              .limit(1);
+
+            if (existing.length > 0) {
+              await tx
+                .update(schema.serviceLocations)
+                .set({
+                  isAvailable: ls.isAvailable !== false,
+                  price: ls.price ? String(ls.price) : null,
+                  cost: ls.cost ? String(ls.cost) : null,
+                  duration: ls.duration ? Number(ls.duration) : null,
+                  deletedAt: null,
+                  updatedAt: new Date().toISOString(),
+                })
+                .where(eq(schema.serviceLocations.id, existing[0].id));
+            } else {
+              await tx.insert(schema.serviceLocations).values({
+                id: uuidv4(),
+                organizationId: orgId,
+                serviceId: data.id,
+                serviceVariantId: ls.serviceVariantId || null,
+                locationId: ls.locationId,
+                isAvailable: ls.isAvailable !== false,
+                price: ls.price ? String(ls.price) : null,
+                cost: ls.cost ? String(ls.cost) : null,
+                duration: ls.duration ? Number(ls.duration) : null,
+              });
             }
           }
         }
@@ -390,3 +527,108 @@ export const getAllServiceVariantsFn = createServerFn({ method: "GET" })
       return handleApiError(e);
     }
   });
+
+// ── OUTLET-WISE SERVICE PRICING & AVAILABILITY ──────────────────────
+
+export const getServiceLocationsFn = createServerFn({ method: "GET" })
+  .validator(
+    (data: { serviceId: string; locationId?: string }) => data,
+  )
+  .handler(async ({ data }) => {
+    try {
+      const session = await requireAuth();
+      const orgId = session.orgId;
+
+      const conds = [
+        eq(schema.serviceLocations.organizationId, orgId),
+        eq(schema.serviceLocations.serviceId, data.serviceId),
+        notDeleted(schema.serviceLocations.deletedAt),
+      ];
+      if (data.locationId) {
+        conds.push(eq(schema.serviceLocations.locationId, data.locationId));
+      }
+
+      const rows = await db
+        .select()
+        .from(schema.serviceLocations)
+        .where(and(...conds));
+
+      return { success: true as const, data: rows };
+    } catch (e) {
+      return handleApiError(e);
+    }
+  });
+
+export const updateServiceLocationsFn = createServerFn({ method: "POST" })
+  .validator(
+    (data: {
+      serviceId: string;
+      locations: {
+        locationId: string;
+        serviceVariantId?: string | null;
+        isAvailable: boolean;
+        price?: string | number | null;
+        cost?: string | number | null;
+        duration?: number | null;
+      }[];
+    }) => data,
+  )
+  .handler(async ({ data }) => {
+    try {
+      const session = await requireAuth();
+      const orgId = session.orgId;
+
+      await db.transaction(async (tx) => {
+        for (const loc of data.locations) {
+          const varId = loc.serviceVariantId || null;
+
+          // Check if exists
+          const existing = await tx
+            .select({ id: schema.serviceLocations.id })
+            .from(schema.serviceLocations)
+            .where(
+              and(
+                eq(schema.serviceLocations.organizationId, orgId),
+                eq(schema.serviceLocations.serviceId, data.serviceId),
+                eq(schema.serviceLocations.locationId, loc.locationId),
+                varId
+                  ? eq(schema.serviceLocations.serviceVariantId, varId)
+                  : sql`${schema.serviceLocations.serviceVariantId} IS NULL`,
+              ),
+            )
+            .limit(1);
+
+          if (existing.length > 0) {
+            await tx
+              .update(schema.serviceLocations)
+              .set({
+                isAvailable: loc.isAvailable,
+                price: loc.price ? String(loc.price) : null,
+                cost: loc.cost ? String(loc.cost) : null,
+                duration: loc.duration ? Number(loc.duration) : null,
+                deletedAt: null,
+                updatedAt: new Date().toISOString(),
+              })
+              .where(eq(schema.serviceLocations.id, existing[0].id));
+          } else {
+            await tx.insert(schema.serviceLocations).values({
+              id: uuidv4(),
+              organizationId: orgId,
+              serviceId: data.serviceId,
+              serviceVariantId: varId,
+              locationId: loc.locationId,
+              isAvailable: loc.isAvailable,
+              price: loc.price ? String(loc.price) : null,
+              cost: loc.cost ? String(loc.cost) : null,
+              duration: loc.duration ? Number(loc.duration) : null,
+            });
+          }
+        }
+      });
+
+      return { success: true as const, message: "Outlet service pricing and availability saved" };
+    } catch (e) {
+      return handleApiError(e);
+    }
+  });
+

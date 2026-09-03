@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 import { SearchableSelect } from "@/components/ui/searchable-select";
@@ -51,6 +52,8 @@ import {
   Shield,
   Award,
   Clock,
+  Search,
+  UtensilsCrossed,
 } from "lucide-react";
 
 export function ProductForm({
@@ -90,6 +93,16 @@ export function ProductForm({
     queryFn: () => getSettingsFn().then((res) => res.data),
   });
   const settings: any = settingsData;
+
+  const isRestaurantVertical =
+    settings?.businessType === "RESTAURANT" ||
+    settings?.businessType === "CAFE" ||
+    settings?.businessType === "HOTEL" ||
+    settings?.businessType === "BAKERY" ||
+    (typeof settings?.industryType === "string" &&
+      /restaurant|cafe|hotel|food|dining|bakery/i.test(settings.industryType)) ||
+    (typeof settings?.businessType === "string" &&
+      /restaurant|cafe|hotel|food|dining|bakery/i.test(settings.businessType));
 
   const { data: taxMastersRes } = useQuery({
     queryKey: ["taxMasters"],
@@ -173,6 +186,10 @@ export function ProductForm({
       metadata: {},
     };
   });
+
+  const [bulkFillQty, setBulkFillQty] = useState<string>("");
+  const [distributeTotalQty, setDistributeTotalQty] = useState<string>("");
+  const [locSearch, setLocSearch] = useState<string>("");
 
   const {
     errors: prodErrors,
@@ -476,58 +493,222 @@ export function ProductForm({
 
               {/* Stock Section */}
               {locations.length > 0 && !formData.hasVariants ? (
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between border-b pb-2">
+                <div className="space-y-4 pt-2">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-border/70 pb-3">
                     <div className="flex items-center gap-2">
                       <MapPin className="size-4 text-primary" />
-                      <Label className="text-sm font-semibold">Stock Per Location</Label>
+                      <div>
+                        <Label className="text-sm font-bold">Multi-Outlet Stock Allocation</Label>
+                        <p className="text-xs text-muted-foreground">
+                          Manage physical inventory across {locations.length} store locations & warehouses.
+                        </p>
+                      </div>
                     </div>
-                    <div className="px-3 py-1 bg-primary/10 text-primary text-xs font-bold rounded-full">
-                      Total: {totalLocationStock}
+                    <div className="flex items-center gap-2 self-start sm:self-center">
+                      <span className="px-3 py-1 bg-primary/10 text-primary text-xs font-black rounded-xl border border-primary/20">
+                        Total Network Stock: {totalLocationStock} units
+                      </span>
                     </div>
                   </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {locations.map((loc: any) => (
-                      <div
-                        key={loc.id}
-                        className="flex items-center gap-3 p-3 rounded-lg border bg-card shadow-sm hover:shadow-md transition-shadow"
+
+                  {/* Bulk Stock Helper Toolbar */}
+                  <div className="bg-muted/40 p-3.5 rounded-xl border border-border/60 space-y-3">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <span className="text-xs font-bold text-foreground flex items-center gap-1.5">
+                        <Sparkles className="size-3.5 text-primary" /> Quick Bulk Allocator
+                      </span>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 text-xs text-muted-foreground hover:text-destructive"
+                        onClick={() => {
+                          const reset: Record<string, number> = {};
+                          locations.forEach((l: any) => (reset[l.id] = 0));
+                          setLocationStock(reset);
+                          toast.info("All outlet stocks set to 0");
+                        }}
                       >
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium truncate">{loc.name}</p>
-                          <p className="text-xs text-muted-foreground capitalize">{loc.type}</p>
-                        </div>
+                        Reset All to 0
+                      </Button>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {/* Fill Same Qty */}
+                      <div className="flex items-center gap-2 bg-background p-2 rounded-lg border border-border/60">
                         <Input
                           type="number"
                           min="0"
-                          className="w-24 text-right font-medium"
-                          placeholder="0"
-                          value={locationStock[loc.id] ?? ""}
-                          onChange={(e) =>
-                            setLocationStock((prev) => ({
-                              ...prev,
-                              [loc.id]: parseInt(e.target.value) || 0,
-                            }))
-                          }
+                          placeholder="Qty (e.g. 50)"
+                          value={bulkFillQty}
+                          onChange={(e) => setBulkFillQty(e.target.value)}
+                          className="h-8 text-xs font-mono w-28"
                         />
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          size="sm"
+                          className="h-8 text-xs font-semibold flex-1"
+                          onClick={() => {
+                            const val = parseInt(bulkFillQty) || 0;
+                            const updated: Record<string, number> = {};
+                            locations.forEach((l: any) => (updated[l.id] = val));
+                            setLocationStock(updated);
+                            toast.success(`Applied ${val} units to all ${locations.length} outlets`);
+                          }}
+                        >
+                          Apply to All Outlets
+                        </Button>
                       </div>
-                    ))}
+
+                      {/* Distribute Total Equally */}
+                      <div className="flex items-center gap-2 bg-background p-2 rounded-lg border border-border/60">
+                        <Input
+                          type="number"
+                          min="0"
+                          placeholder="Total (e.g. 100)"
+                          value={distributeTotalQty}
+                          onChange={(e) => setDistributeTotalQty(e.target.value)}
+                          className="h-8 text-xs font-mono w-28"
+                        />
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          size="sm"
+                          className="h-8 text-xs font-semibold flex-1"
+                          onClick={() => {
+                            const total = parseInt(distributeTotalQty) || 0;
+                            if (locations.length === 0) return;
+                            const perLoc = Math.floor(total / locations.length);
+                            const remainder = total % locations.length;
+                            const updated: Record<string, number> = {};
+                            locations.forEach((l: any, idx: number) => {
+                              updated[l.id] = perLoc + (idx === 0 ? remainder : 0);
+                            });
+                            setLocationStock(updated);
+                            toast.success(`Distributed ${total} units evenly across ${locations.length} outlets`);
+                          }}
+                        >
+                          Split Total Evenly
+                        </Button>
+                      </div>
+                    </div>
                   </div>
-                  <div className="grid gap-1.5 mt-4">
+
+                  {/* Filter Search if many outlets */}
+                  {locations.length > 4 && (
+                    <div className="relative max-w-xs">
+                      <Search className="size-3.5 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2" />
+                      <Input
+                        placeholder="Search outlet..."
+                        value={locSearch}
+                        onChange={(e) => setLocSearch(e.target.value)}
+                        className="pl-8 h-8 text-xs rounded-lg bg-background"
+                      />
+                    </div>
+                  )}
+
+                  {/* Outlet Cards */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[380px] overflow-y-auto pr-1">
+                    {locations
+                      .filter(
+                        (loc: any) =>
+                          !locSearch ||
+                          loc.name.toLowerCase().includes(locSearch.toLowerCase()) ||
+                          loc.city?.toLowerCase().includes(locSearch.toLowerCase()),
+                      )
+                      .map((loc: any) => {
+                        const current = locationStock[loc.id] || 0;
+                        return (
+                          <div
+                            key={loc.id}
+                            className="flex flex-col p-3 rounded-xl border border-border/80 bg-card shadow-2xs hover:border-primary/40 transition-colors gap-2"
+                          >
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="min-w-0">
+                                <p className="text-xs font-bold truncate text-foreground">{loc.name}</p>
+                                <div className="flex items-center gap-1.5 mt-0.5">
+                                  {loc.isHeadOffice && (
+                                    <span className="text-[10px] font-black uppercase px-1 py-0.2 bg-primary/10 text-primary rounded">
+                                      HQ
+                                    </span>
+                                  )}
+                                  <span className="text-[10px] font-medium text-muted-foreground capitalize">
+                                    {loc.type} {loc.city ? `• ${loc.city}` : ""}
+                                  </span>
+                                </div>
+                              </div>
+                              <Input
+                                type="number"
+                                min="0"
+                                className="w-20 h-8 text-right font-mono font-bold text-xs bg-background"
+                                placeholder="0"
+                                value={locationStock[loc.id] ?? ""}
+                                onFocus={(e) => e.target.select()}
+                                onChange={(e) =>
+                                  setLocationStock((prev) => ({
+                                    ...prev,
+                                    [loc.id]: parseInt(e.target.value) || 0,
+                                  }))
+                                }
+                              />
+                            </div>
+
+                            {/* Quick Step Buttons */}
+                            <div className="flex items-center gap-1.5 pt-1 border-t border-border/40">
+                              <span className="text-[10px] font-semibold text-muted-foreground mr-1">Quick:</span>
+                              {[10, 50, 100].map((step) => (
+                                <button
+                                  key={step}
+                                  type="button"
+                                  onClick={() =>
+                                    setLocationStock((prev) => ({
+                                      ...prev,
+                                      [loc.id]: (prev[loc.id] || 0) + step,
+                                    }))
+                                  }
+                                  className="px-1.5 py-0.5 text-[10px] font-bold rounded bg-muted hover:bg-primary/20 hover:text-primary transition-colors cursor-pointer"
+                                >
+                                  +{step}
+                                </button>
+                              ))}
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  setLocationStock((prev) => ({
+                                    ...prev,
+                                    [loc.id]: Math.max(0, (prev[loc.id] || 0) - 10),
+                                  }))
+                                }
+                                className="px-1.5 py-0.5 text-[10px] font-bold rounded bg-muted hover:bg-destructive/20 hover:text-destructive transition-colors cursor-pointer ml-auto"
+                              >
+                                -10
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                  </div>
+
+                  <div className="grid gap-1.5 mt-4 pt-2 border-t border-border/60">
                     <Label className="text-sm font-semibold">
-                      Reorder Level <span className="text-destructive">*</span>
+                      Reorder Level Alert Threshold <span className="text-destructive">*</span>
                     </Label>
                     <Input
                       type="number"
                       min="0"
-                      placeholder="e.g. 5"
+                      placeholder="e.g. 10"
                       value={formData.reorderLevel === 0 ? "" : formData.reorderLevel}
                       onFocus={(e) => e.target.select()}
                       onChange={(e) => {
                         setFormData({ ...formData, reorderLevel: parseInt(e.target.value) || 0 });
                         clearProdError("reorderLevel");
                       }}
-                      className={`max-w-[200px] ${prodErrors.reorderLevel ? "border-destructive focus-visible:ring-destructive" : ""}`}
+                      className={`max-w-[220px] h-10 ${prodErrors.reorderLevel ? "border-destructive focus-visible:ring-destructive" : ""}`}
                     />
+                    <p className="text-xs text-muted-foreground">
+                      Triggers low-stock alerts when an outlet's inventory drops to or below this amount.
+                    </p>
                     <FieldError message={prodErrors.reorderLevel} />
                   </div>
                 </div>
@@ -749,26 +930,40 @@ export function ProductForm({
                 </Label>
               </div>
 
-              <div className="grid gap-2 pt-4 border-t">
-                <Label className="text-sm font-semibold">
-                  KOT Course Routing (Restaurant Mode)
-                </Label>
-                <Select
-                  value={formData.course}
-                  onValueChange={(val) => setFormData({ ...formData, course: val })}
-                >
-                  <SelectTrigger className="w-full max-w-sm">
-                    <SelectValue placeholder="Select Course" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Starters">Starters</SelectItem>
-                    <SelectItem value="Main Course">Main Course</SelectItem>
-                    <SelectItem value="Desserts">Desserts</SelectItem>
-                    <SelectItem value="Drinks">Drinks</SelectItem>
-                    <SelectItem value="Uncategorized">Uncategorized</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+              {isRestaurantVertical && (
+                <div className="grid gap-2 pt-4 border-t border-border/60">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-sm font-semibold flex items-center gap-2">
+                      <UtensilsCrossed className="size-4 text-primary" />
+                      <span>KOT Course Routing (Kitchen Sequencing)</span>
+                    </Label>
+                    <Badge
+                      variant="outline"
+                      className="text-[10px] font-bold bg-primary/10 text-primary border-primary/20"
+                    >
+                      Restaurant & Food
+                    </Badge>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Assign this item to a kitchen preparation course sequence (Starters, Mains, Desserts, Drinks).
+                  </p>
+                  <Select
+                    value={formData.course}
+                    onValueChange={(val) => setFormData({ ...formData, course: val })}
+                  >
+                    <SelectTrigger className="w-full max-w-sm">
+                      <SelectValue placeholder="Select Course" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Starters">Starters (Appetizers)</SelectItem>
+                      <SelectItem value="Main Course">Main Course</SelectItem>
+                      <SelectItem value="Desserts">Desserts</SelectItem>
+                      <SelectItem value="Drinks">Drinks & Beverages</SelectItem>
+                      <SelectItem value="Uncategorized">Uncategorized</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>

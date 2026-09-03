@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
@@ -10,6 +10,8 @@ import { SearchableSelect } from "@/components/ui/searchable-select";
 import { FileUpload } from "@/components/ui/file-upload";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { getCategoriesFn, createCategoryFn } from "@/api/categories";
+import { getLocationsFn } from "@/api/locations";
+import { getServiceLocationsFn } from "@/api/services";
 import { useCurrency } from "@/lib/currency";
 import { VariantManager } from "../products/VariantManager";
 import {
@@ -30,6 +32,10 @@ import {
   Layers,
   Image as ImageIcon,
   CheckCircle2,
+  Building2,
+  ToggleLeft,
+  ToggleRight,
+  Sparkles,
 } from "lucide-react";
 
 export function ServiceForm({
@@ -50,6 +56,40 @@ export function ServiceForm({
     queryKey: ["categories"],
     queryFn: () => getCategoriesFn().then((res) => res.data || []),
   });
+
+  const { data: locations = [] } = useQuery({
+    queryKey: ["locations"],
+    queryFn: () => getLocationsFn().then((res) => res.data || []),
+  });
+
+  const { data: initialLocSettings = [] } = useQuery({
+    queryKey: ["serviceLocations", initialData?.id],
+    queryFn: () =>
+      initialData?.id
+        ? getServiceLocationsFn({ data: { serviceId: initialData.id } }).then((res) => res.data || [])
+        : Promise.resolve([]),
+    enabled: Boolean(initialData?.id),
+  });
+
+  const [locationSettings, setLocationSettings] = useState<
+    Record<string, { isAvailable: boolean; price: string; duration: string }>
+  >({});
+
+  useEffect(() => {
+    if (initialLocSettings.length > 0) {
+      const map: Record<string, { isAvailable: boolean; price: string; duration: string }> = {};
+      initialLocSettings.forEach((ls: any) => {
+        if (!ls.serviceVariantId) {
+          map[ls.locationId] = {
+            isAvailable: ls.isAvailable !== false,
+            price: ls.price ? String(ls.price) : "",
+            duration: ls.duration ? String(ls.duration) : "",
+          };
+        }
+      });
+      setLocationSettings(map);
+    }
+  }, [initialLocSettings]);
 
   const [formData, setFormData] = useState(() => {
     if (initialData) {
@@ -115,11 +155,22 @@ export function ServiceForm({
     if (formData.durationUnit === "days") durationMins = rawDuration * 1440;
     // "session" is stored as-is (1 session = 1 unit, no minute conversion)
 
+    const locSettingsPayload = locations.map((loc: any) => {
+      const s = locationSettings[loc.id];
+      return {
+        locationId: loc.id,
+        isAvailable: s ? s.isAvailable !== false : true,
+        price: s?.price ? parseFloat(s.price) || null : null,
+        duration: s?.duration ? parseInt(s.duration) || null : null,
+      };
+    });
+
     const payload = {
       ...formData,
       price: priceNum,
       cost: costNum,
       duration: durationMins > 0 ? durationMins.toString() : "",
+      locationSettings: locSettingsPayload,
     };
 
     onSubmit(payload);
@@ -343,6 +394,152 @@ export function ServiceForm({
               )}
             </CardContent>
           </Card>
+
+          {/* Outlet Availability & Location Pricing */}
+          {locations.length > 0 && (
+            <Card className="shadow-card border-border/80 rounded-2xl overflow-hidden">
+              <CardHeader className="border-b border-border/60 bg-muted/20 pb-3.5 flex flex-row items-center justify-between">
+                <div>
+                  <CardTitle className="text-base font-bold flex items-center gap-2">
+                    <Building2 className="size-4 text-primary" /> Outlet Availability & Custom Branch Pricing
+                  </CardTitle>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    Control which outlets offer this service and configure location-specific pricing.
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-7 text-xs rounded-lg"
+                    onClick={() => {
+                      const updated: typeof locationSettings = {};
+                      locations.forEach((loc: any) => {
+                        updated[loc.id] = {
+                          isAvailable: true,
+                          price: locationSettings[loc.id]?.price || "",
+                          duration: locationSettings[loc.id]?.duration || "",
+                        };
+                      });
+                      setLocationSettings(updated);
+                      toast.success("Service enabled for all outlets");
+                    }}
+                  >
+                    Enable All
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent className="pt-4 space-y-3">
+                <div className="divide-y divide-border/60 rounded-xl border border-border/70 overflow-hidden bg-card">
+                  {locations.map((loc: any) => {
+                    const current = locationSettings[loc.id] || {
+                      isAvailable: true,
+                      price: "",
+                      duration: "",
+                    };
+                    const isAvail = current.isAvailable !== false;
+
+                    return (
+                      <div
+                        key={loc.id}
+                        className={`p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 transition-colors ${
+                          !isAvail ? "bg-muted/40 opacity-70" : "hover:bg-muted/15"
+                        }`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <input
+                            type="checkbox"
+                            id={`loc-avail-${loc.id}`}
+                            checked={isAvail}
+                            onChange={(e) => {
+                              setLocationSettings((prev) => ({
+                                ...prev,
+                                [loc.id]: {
+                                  ...(prev[loc.id] || { price: "", duration: "" }),
+                                  isAvailable: e.target.checked,
+                                },
+                              }));
+                            }}
+                            className="size-4 rounded border-primary/50 text-primary focus:ring-primary cursor-pointer"
+                          />
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <Label
+                                htmlFor={`loc-avail-${loc.id}`}
+                                className="text-sm font-bold cursor-pointer"
+                              >
+                                {loc.name}
+                              </Label>
+                              {loc.isHeadOffice && (
+                                <span className="text-[10px] uppercase font-bold px-1.5 py-0.5 bg-primary/10 text-primary rounded-md">
+                                  HQ
+                                </span>
+                              )}
+                              <span className="text-[10px] capitalize px-1.5 py-0.5 bg-muted text-muted-foreground rounded-md">
+                                {loc.type}
+                              </span>
+                            </div>
+                            <p className="text-xs text-muted-foreground">
+                              {isAvail ? "Active & Bookable at this outlet" : "Service Disabled at this outlet"}
+                            </p>
+                          </div>
+                        </div>
+
+                        {isAvail && (
+                          <div className="flex items-center gap-3 self-end sm:self-center">
+                            <div className="w-32">
+                              <Label className="text-[11px] font-semibold text-muted-foreground mb-1 block">
+                                Custom Price ({currencySymbol})
+                              </Label>
+                              <Input
+                                type="number"
+                                min="0"
+                                step="0.01"
+                                placeholder={formData.price ? String(formData.price) : "Default"}
+                                value={current.price}
+                                onChange={(e) => {
+                                  setLocationSettings((prev) => ({
+                                    ...prev,
+                                    [loc.id]: {
+                                      ...(prev[loc.id] || { isAvailable: true, duration: "" }),
+                                      price: e.target.value,
+                                    },
+                                  }));
+                                }}
+                                className="h-8 text-xs font-mono bg-background"
+                              />
+                            </div>
+                            <div className="w-28">
+                              <Label className="text-[11px] font-semibold text-muted-foreground mb-1 block">
+                                Duration (Mins)
+                              </Label>
+                              <Input
+                                type="number"
+                                min="0"
+                                placeholder={formData.durationValue ? String(formData.durationValue) : "Default"}
+                                value={current.duration}
+                                onChange={(e) => {
+                                  setLocationSettings((prev) => ({
+                                    ...prev,
+                                    [loc.id]: {
+                                      ...(prev[loc.id] || { isAvailable: true, price: "" }),
+                                      duration: e.target.value,
+                                    },
+                                  }));
+                                }}
+                                className="h-8 text-xs font-mono bg-background"
+                              />
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </div>
 
         {/* Right Column - Media */}

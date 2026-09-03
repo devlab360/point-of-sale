@@ -74,6 +74,7 @@ function InventoryDashboard() {
   const [search, setSearch] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [selectedLocationColumn, setSelectedLocationColumn] = useState("all");
+  const [stockFilter, setStockFilter] = useState<"all" | "low" | "out">("all");
 
   // Track modified cells: { [`${rowKey}:${locId}`]: { productId, variantId, locationId, newStock } }
   const [dirtyCells, setDirtyCells] = useState<
@@ -310,6 +311,21 @@ function InventoryDashboard() {
     return locations.filter((l) => l.id === selectedLocationColumn);
   }, [locations, selectedLocationColumn]);
 
+  const filteredRows = useMemo(() => {
+    if (stockFilter === "all") return rows;
+    return rows.filter((r) => {
+      const activeLocs = selectedLocationColumn === "all" ? locations : locations.filter((l) => l.id === selectedLocationColumn);
+      return activeLocs.some((loc) => {
+        const bs = r.branchStocks[loc.id];
+        const stock = bs ? bs.stock : 0;
+        const reorder = bs?.reorderLevel || 5;
+        if (stockFilter === "out") return stock === 0;
+        if (stockFilter === "low") return stock > 0 && stock <= reorder;
+        return true;
+      });
+    });
+  }, [rows, locations, stockFilter, selectedLocationColumn]);
+
   const dirtyCount = Object.keys(dirtyCells).length;
 
   return (
@@ -396,54 +412,95 @@ function InventoryDashboard() {
       </div>
 
       {/* Filter and Matrix Controls */}
-      <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3 bg-card p-4 rounded-2xl border border-border/80 shadow-soft">
-        <div className="flex flex-wrap items-center gap-3 flex-1">
-          {/* Search */}
-          <div className="relative flex-1 min-w-[220px] max-w-sm">
-            <Search className="size-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2" />
-            <Input
-              placeholder="Search product by name, SKU, barcode..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="pl-9 rounded-xl h-10 text-xs bg-background"
-            />
+      <div className="flex flex-col gap-3 bg-card p-4 rounded-2xl border border-border/80 shadow-soft">
+        <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3">
+          <div className="flex flex-wrap items-center gap-3 flex-1">
+            {/* Search */}
+            <div className="relative flex-1 min-w-[220px] max-w-sm">
+              <Search className="size-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2" />
+              <Input
+                placeholder="Search product by name, SKU, barcode..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="pl-9 rounded-xl h-10 text-xs bg-background"
+              />
+            </div>
+
+            {/* Category Filter */}
+            <div className="w-[180px]">
+              <Select value={selectedCategory} onValueChange={(val) => setSelectedCategory(val)}>
+                <SelectTrigger className="h-10 rounded-xl text-xs font-semibold bg-background shadow-2xs">
+                  <SelectValue placeholder="All Categories" />
+                </SelectTrigger>
+                <SelectContent className="rounded-xl shadow-soft">
+                  <SelectItem value="all">All Categories</SelectItem>
+                  {categories.map((c) => (
+                    <SelectItem key={c.id} value={c.id || c.name} className="text-xs">
+                      {c.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Branch Column Visibility */}
+            <div className="w-[220px]">
+              <Select
+                value={selectedLocationColumn}
+                onValueChange={(val) => setSelectedLocationColumn(val)}
+              >
+                <SelectTrigger className="h-10 rounded-xl text-xs font-semibold bg-background shadow-2xs">
+                  <SelectValue placeholder="All Store Branches" />
+                </SelectTrigger>
+                <SelectContent className="rounded-xl shadow-soft">
+                  <SelectItem value="all">View All Store Outlets</SelectItem>
+                  {locations.map((loc) => (
+                    <SelectItem key={loc.id} value={loc.id} className="text-xs">
+                      Focus: {loc.name} {loc.isHeadOffice ? "(HQ)" : ""}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
-          {/* Category Filter */}
-          <div className="w-[180px]">
-            <Select value={selectedCategory} onValueChange={(val) => setSelectedCategory(val)}>
-              <SelectTrigger className="h-10 rounded-xl text-xs font-semibold bg-background shadow-2xs">
-                <SelectValue placeholder="All Categories" />
-              </SelectTrigger>
-              <SelectContent className="rounded-xl shadow-soft">
-                <SelectItem value="all">All Categories</SelectItem>
-                {categories.map((c) => (
-                  <SelectItem key={c.id} value={c.id || c.name} className="text-xs">
-                    {c.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Branch Column Visibility */}
-          <div className="w-[220px]">
-            <Select
-              value={selectedLocationColumn}
-              onValueChange={(val) => setSelectedLocationColumn(val)}
+          {/* Stock Condition Quick Tabs */}
+          <div className="flex items-center gap-1.5 p-1 bg-muted/50 rounded-xl border border-border/60 self-start lg:self-auto">
+            <button
+              type="button"
+              onClick={() => setStockFilter("all")}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                stockFilter === "all"
+                  ? "bg-background text-foreground shadow-2xs"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
             >
-              <SelectTrigger className="h-10 rounded-xl text-xs font-semibold bg-background shadow-2xs">
-                <SelectValue placeholder="All Store Branches" />
-              </SelectTrigger>
-              <SelectContent className="rounded-xl shadow-soft">
-                <SelectItem value="all">View All Store Outlets</SelectItem>
-                {locations.map((loc) => (
-                  <SelectItem key={loc.id} value={loc.id} className="text-xs">
-                    Focus: {loc.name} {loc.isHeadOffice ? "(HQ)" : ""}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              All Items ({rows.length})
+            </button>
+            <button
+              type="button"
+              onClick={() => setStockFilter("low")}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                stockFilter === "low"
+                  ? "bg-amber-500/15 text-amber-600 dark:text-amber-400 shadow-2xs"
+                  : "text-muted-foreground hover:text-amber-500"
+              }`}
+            >
+              <AlertTriangle className="size-3 text-amber-500" />
+              <span>Low Stock ({lowStockCount})</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setStockFilter("out")}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                stockFilter === "out"
+                  ? "bg-rose-500/15 text-rose-600 dark:text-rose-400 shadow-2xs"
+                  : "text-muted-foreground hover:text-rose-500"
+              }`}
+            >
+              <span className="size-2 rounded-full bg-rose-500 inline-block" />
+              <span>Depleted</span>
+            </button>
           </div>
         </div>
 
@@ -510,7 +567,7 @@ function InventoryDashboard() {
                     <span>Loading multi-branch stock matrix...</span>
                   </TableCell>
                 </TableRow>
-              ) : rows.length === 0 ? (
+              ) : filteredRows.length === 0 ? (
                 <TableRow>
                   <TableCell
                     colSpan={4 + displayedLocations.length}
@@ -520,7 +577,7 @@ function InventoryDashboard() {
                   </TableCell>
                 </TableRow>
               ) : (
-                rows.map((row) => {
+                filteredRows.map((row) => {
                   return (
                     <TableRow key={row.key} className="hover:bg-muted/20 transition-colors group">
                       {/* Product Name & Variant */}

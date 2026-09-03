@@ -59,6 +59,7 @@ import {
   COUNTRY_TAX_TEMPLATES,
 } from "@/api/tax-master";
 import { getOrgDataFn } from "@/api/auth";
+import { getMyOrganizationsFn } from "@/api/organizations";
 import { useDebounce } from "@/hooks/useDebounce";
 import {
   Dialog,
@@ -238,6 +239,21 @@ function SettingsPage() {
       }
     },
   });
+
+  const { data: myOrgsData } = useQuery({
+    queryKey: ["myOrganizations"],
+    queryFn: async () => {
+      try {
+        const res = await getMyOrganizationsFn({ data: {} });
+        return (res as any)?.data || [];
+      } catch {
+        return [];
+      }
+    },
+  });
+  const currentOrg = myOrgsData?.find((o: any) => o.id === orgId) || saasOrg || null;
+  const storeCode = currentOrg?.code || user?.orgCode || user?.organizationCode || "ORG-1001";
+
   const rawSaasPlans: any[] = plansData || [];
   const saasPlans = rawSaasPlans.filter((p) => p.id !== "super_admin_payment_config");
   const cloudPaymentConfigPlan = rawSaasPlans.find((p) => p.id === "super_admin_payment_config");
@@ -255,6 +271,7 @@ function SettingsPage() {
   const [isSubmittingPayment, setIsSubmittingPayment] = useState(false);
   const [settings, setSettings] = useState(defaultSettings);
   const [confirmReset, setConfirmReset] = useState(false);
+  const [diagnosticsOpen, setDiagnosticsOpen] = useState(false);
   const search = Route.useSearch();
   const router = useRouter();
   const { t } = useLanguage();
@@ -940,13 +957,6 @@ function SettingsPage() {
       icon: MapPin,
       badge: null,
     },
-    {
-      id: "data",
-      label: "Data & Storage",
-      description: "Offline cache & database sync",
-      icon: Database,
-      badge: null,
-    },
   ];
 
   if (isSettingsLoading) {
@@ -1067,33 +1077,42 @@ function SettingsPage() {
             })}
 
             {/* Organization Info Footer Card */}
-            <div className="mt-4 pt-3 border-t border-border/60 px-3 py-2 bg-muted/30 rounded-xl">
+            <div className="mt-4 pt-3 border-t border-border/60 px-3 py-2.5 bg-muted/30 rounded-xl space-y-2">
               <div className="flex items-center justify-between">
                 <span className="text-[10px] font-bold text-muted-foreground uppercase">
-                  Tenant Code
+                  Store Code
                 </span>
                 <button
                   type="button"
-                  onClick={() => copyToClipboard(user?.orgId || orgId, "tenant")}
-                  className="flex items-center gap-1 text-[10px] font-mono font-bold text-primary hover:underline"
+                  onClick={() => copyToClipboard(storeCode, "storeCode")}
+                  className="flex items-center gap-1 text-[10px] font-mono font-bold text-primary hover:underline cursor-pointer"
+                  title="Copy Store Code"
                 >
-                  {copiedKey === "tenant" ? (
+                  {copiedKey === "storeCode" ? (
                     <>
                       <CheckCircle2 className="size-3 text-success" /> Copied
                     </>
                   ) : (
                     <>
-                      <Copy className="size-3" /> {user?.orgId || orgId}
+                      <Copy className="size-3" /> {storeCode}
                     </>
                   )}
                 </button>
               </div>
-              <div className="flex items-center gap-2 mt-2">
+              <div className="flex items-center gap-2">
                 <div className="size-2 rounded-full bg-success animate-pulse" />
-                <span className="text-xs font-semibold text-foreground">
+                <span className="text-xs font-semibold text-foreground truncate">
                   {settings.storeName || user?.name || `${appName} Store`}
                 </span>
               </div>
+              <button
+                type="button"
+                onClick={() => setDiagnosticsOpen(true)}
+                className="flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground hover:text-foreground pt-1.5 border-t border-border/50 w-full transition-colors cursor-pointer"
+              >
+                <Database className="size-3 text-primary" />
+                <span>Diagnostics & Cache</span>
+              </button>
             </div>
           </div>
 
@@ -2794,58 +2813,6 @@ function SettingsPage() {
               <LocationsTab />
             </div>
           )}
-
-          {/* TAB 7: Data & Diagnostics */}
-          {activeTab === "data" && (
-            <div className="space-y-6 animate-in fade-in duration-200">
-              <SettingsCard
-                icon={Database}
-                title="Data & Storage Diagnostics"
-                desc="Manage local storage caches, cloud sync state, and database maintenance."
-              >
-                <div className="space-y-5">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div className="p-4 rounded-xl border border-border/80 bg-muted/20 space-y-1">
-                      <span className="text-[11px] font-bold text-muted-foreground uppercase">
-                        Cloud Sync Status
-                      </span>
-                      <p className="text-sm font-bold text-success flex items-center gap-1.5">
-                        <CheckCircle2 className="size-4" /> Real-time Cloud Connected
-                      </p>
-                    </div>
-
-                    <div className="p-4 rounded-xl border border-border/80 bg-muted/20 space-y-1">
-                      <span className="text-[11px] font-bold text-muted-foreground uppercase">
-                        Active Tenant Org
-                      </span>
-                      <p className="text-sm font-mono font-bold text-foreground">
-                        {user?.orgId || orgId}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-5 border border-destructive/20 bg-destructive/5 rounded-2xl gap-4">
-                    <div>
-                      <h4 className="font-bold text-destructive text-sm">
-                        Wipe Local Database Cache
-                      </h4>
-                      <p className="text-xs text-muted-foreground mt-0.5">
-                        Clear offline product catalog, cache caches, and temporary sales drafts.
-                      </p>
-                    </div>
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      onClick={() => setConfirmReset(true)}
-                      className="font-bold text-xs shadow-soft shrink-0"
-                    >
-                      <Trash2 className="size-3.5 mr-1.5" /> Reset Cache
-                    </Button>
-                  </div>
-                </div>
-              </SettingsCard>
-            </div>
-          )}
         </div>
       </div>
 
@@ -2883,6 +2850,83 @@ function SettingsPage() {
           </div>
         </div>
       )}
+
+      {/* System & Storage Diagnostics Modal */}
+      <Dialog open={diagnosticsOpen} onOpenChange={setDiagnosticsOpen}>
+        <DialogContent className="max-w-md rounded-2xl p-6 border border-border/80 shadow-soft bg-card">
+          <DialogHeader className="space-y-2 text-left">
+            <div className="flex items-center gap-3">
+              <div className="grid size-10 place-items-center rounded-xl bg-primary/10 text-primary shrink-0 border border-primary/20">
+                <Database className="size-5" />
+              </div>
+              <div>
+                <DialogTitle className="text-base font-bold text-foreground">
+                  System & Storage Diagnostics
+                </DialogTitle>
+                <DialogDescription className="text-xs text-muted-foreground mt-0.5">
+                  Terminal cloud synchronization status and local offline cache maintenance.
+                </DialogDescription>
+              </div>
+            </div>
+          </DialogHeader>
+
+          <div className="space-y-3.5 py-3">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="p-3 rounded-xl border border-border/80 bg-muted/30 space-y-1">
+                <span className="text-[10px] font-bold text-muted-foreground uppercase">
+                  Cloud Sync
+                </span>
+                <p className="text-xs font-bold text-success flex items-center gap-1.5">
+                  <CheckCircle2 className="size-3.5" /> Connected
+                </p>
+              </div>
+
+              <div className="p-3 rounded-xl border border-border/80 bg-muted/30 space-y-1">
+                <span className="text-[10px] font-bold text-muted-foreground uppercase">
+                  Store Code
+                </span>
+                <p className="text-xs font-mono font-bold text-foreground truncate">
+                  {storeCode}
+                </p>
+              </div>
+            </div>
+
+            <div className="p-4 border border-destructive/20 bg-destructive/5 rounded-xl flex items-center justify-between gap-3">
+              <div className="space-y-0.5">
+                <h4 className="font-bold text-destructive text-xs">
+                  Reset Local Offline Cache
+                </h4>
+                <p className="text-[11px] text-muted-foreground">
+                  Clear stale register cache and reload from server.
+                </p>
+              </div>
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={() => {
+                  setDiagnosticsOpen(false);
+                  setConfirmReset(true);
+                }}
+                className="font-bold text-xs h-8 px-3 shrink-0 cursor-pointer"
+              >
+                <Trash2 className="size-3.5 mr-1" /> Reset Cache
+              </Button>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setDiagnosticsOpen(false)}
+              className="w-full text-xs font-semibold cursor-pointer"
+            >
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Wipe Database Modal */}
       <AlertDialog open={confirmReset} onOpenChange={setConfirmReset}>

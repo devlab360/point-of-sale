@@ -89,6 +89,7 @@ export function BusinessSwitcher() {
   const activeOrgId = sessionData?.orgId || PersistStore.getOrgId();
   const activeLocationId = sessionData?.locationId;
   const activeOrg = orgs.find((o) => o.id === activeOrgId);
+  const activeBranch = branches.find((b) => b.id === activeLocationId);
   const orgName = settings?.storeName || activeOrg?.name || "ONEDESK360";
 
   const switchMutation = useMutation({
@@ -160,7 +161,15 @@ export function BusinessSwitcher() {
             title="Switch business or branch"
           >
             <Building2 className="size-4 text-primary shrink-0" />
-            <span className="max-w-[140px] truncate">{orgName}</span>
+            <div className="flex items-center gap-1.5 min-w-0 text-left">
+              <span className="max-w-[120px] truncate">{orgName}</span>
+              {activeBranch && (
+                <span className="hidden sm:inline-flex items-center gap-1 text-[11px] font-normal text-muted-foreground bg-muted/60 px-1.5 py-0.5 rounded-md border border-border/40">
+                  <span className="size-1.5 rounded-full bg-emerald-500 shrink-0" />
+                  <span className="max-w-[90px] truncate">{activeBranch.name}</span>
+                </span>
+              )}
+            </div>
             <ChevronsUpDown className="size-3.5 text-muted-foreground" />
           </Button>
         </PopoverTrigger>

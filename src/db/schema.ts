@@ -24,6 +24,7 @@ const timestamps = {
 
 export const organizations = pgTable("organizations", {
   id: text("id").primaryKey(),
+  code: text("code").unique(), // Auto-generated unique Organization ID/Code (e.g. ORG-1001)
   name: text("name").notNull(),
   ownerEmail: text("owner_email").notNull(),
   status: text("status").notNull().default("trial"), // trial, active, suspended
@@ -595,6 +596,41 @@ export const serviceVariantAttributes = pgTable(
   },
   (t) => ({
     variantIdx: index("svc_variant_attr_idx").on(t.variantId),
+  }),
+);
+
+export const serviceLocations = pgTable(
+  "service_locations",
+  {
+    id: text("id").primaryKey(),
+    organizationId: text("organization_id")
+      .notNull()
+      .references(() => organizations.id, { onDelete: "cascade" }),
+    serviceId: text("service_id")
+      .notNull()
+      .references(() => services.id, { onDelete: "cascade" }),
+    serviceVariantId: text("service_variant_id").references(() => serviceVariants.id, {
+      onDelete: "cascade",
+    }),
+    locationId: text("location_id")
+      .notNull()
+      .references(() => locations.id, { onDelete: "cascade" }),
+    isAvailable: boolean("is_available").notNull().default(true),
+    price: numeric("price", { precision: 10, scale: 2 }), // Custom outlet price override
+    cost: numeric("cost", { precision: 10, scale: 2 }),
+    duration: integer("duration"), // Custom outlet duration
+    ...timestamps,
+  },
+  (t) => ({
+    orgIdx: index("svc_loc_org_idx").on(t.organizationId),
+    locationIdx: index("svc_loc_location_idx").on(t.locationId),
+    serviceIdx: index("svc_loc_service_idx").on(t.serviceId),
+    svcLocUniqueIdx: unique("svc_loc_unique_idx").on(
+      t.organizationId,
+      t.locationId,
+      t.serviceId,
+      t.serviceVariantId,
+    ),
   }),
 );
 

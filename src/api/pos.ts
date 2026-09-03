@@ -19,23 +19,47 @@ const updateSchema = schema.shifts ? createInsertSchema(schema.shifts).partial()
 export const getPosItemsFn = createServerFn({ method: "GET" })
   .validator((data: unknown) =>
     z
-      .object({})
+      .object({
+        locationId: z.string().optional().nullable(),
+      })
       .optional()
       .parse(data || {}),
   )
-  .handler(async () => {
+  .handler(async ({ data }) => {
     try {
       const session = await requireAuth();
       const orgId = session.orgId;
+      const locationId = data?.locationId || null;
 
       // Parallelize DB queries
-      const [products, batches, services] = await Promise.all([
+      const [products, variants, productInv, batches, services, serviceVars, serviceLocs] = await Promise.all([
         db
           .select()
           .from(schema.products)
           .where(
             and(eq(schema.products.organizationId, orgId), notDeleted(schema.products.deletedAt)),
           ),
+        db
+          .select()
+          .from(schema.productVariants)
+          .where(
+            and(
+              eq(schema.productVariants.organizationId, orgId),
+              notDeleted(schema.productVariants.deletedAt),
+            ),
+          ),
+        locationId
+          ? db
+              .select()
+              .from(schema.productInventory)
+              .where(
+                and(
+                  eq(schema.productInventory.organizationId, orgId),
+                  eq(schema.productInventory.locationId, locationId),
+                  notDeleted(schema.productInventory.deletedAt),
+                ),
+              )
+          : Promise.resolve([]),
         db
           .select()
           .from(schema.inventoryBatches)
@@ -51,9 +75,53 @@ export const getPosItemsFn = createServerFn({ method: "GET" })
           .where(
             and(eq(schema.services.organizationId, orgId), notDeleted(schema.services.deletedAt)),
           ),
+        db
+          .select()
+          .from(schema.serviceVariants)
+          .where(
+            and(
+              eq(schema.serviceVariants.organizationId, orgId),
+              notDeleted(schema.serviceVariants.deletedAt),
+            ),
+          ),
+        locationId
+          ? db
+              .select()
+              .from(schema.serviceLocations)
+              .where(
+                and(
+                  eq(schema.serviceLocations.organizationId, orgId),
+                  eq(schema.serviceLocations.locationId, locationId),
+                  notDeleted(schema.serviceLocations.deletedAt),
+                ),
+              )
+          : Promise.resolve([]),
       ]);
 
-      // O(1) batch lookup map
+      // Maps for fast lookup
+      const prodVarMap = new Map<string, any[]>();
+      variants.forEach((v) => {
+        if (!prodVarMap.has(v.productId)) prodVarMap.set(v.productId, []);
+        prodVarMap.get(v.productId)!.push(v);
+      });
+
+      const prodInvMap = new Map<string, number>();
+      (productInv as any[]).forEach((pi) => {
+        prodInvMap.set(pi.productId, Number(pi.stock) || 0);
+      });
+
+      const svcVarMap = new Map<string, any[]>();
+      serviceVars.forEach((sv) => {
+        if (!svcVarMap.has(sv.serviceId)) svcVarMap.set(sv.serviceId, []);
+        svcVarMap.get(sv.serviceId)!.push(sv);
+      });
+
+      const svcLocMap = new Map<string, typeof schema.serviceLocations.$inferSelect>();
+      (serviceLocs as any[]).forEach((sl) => {
+        const key = sl.serviceVariantId ? `${sl.serviceId}:${sl.serviceVariantId}` : `${sl.serviceId}:base`;
+        svcLocMap.set(key, sl);
+      });
+
       const batchMap = new Map<string, any[]>();
       batches.forEach((b) => {
         if (Number(b.quantityRemaining) > 0 && b.productId) {
@@ -66,20 +134,49 @@ export const getPosItemsFn = createServerFn({ method: "GET" })
       const unifiedItems = [
         ...products
           .filter((p) => !p.expiryDate || new Date(p.expiryDate) >= now)
-          .map((p) => ({
-            ...p,
-            batches: p.hasBatch ? batchMap.get(p.id) || [] : undefined,
-            referenceType: "PRODUCT",
-            referenceId: p.id,
-          })),
-        ...services.map((s) => ({
-          ...s,
-          referenceType: "SERVICE",
-          referenceId: s.id,
-          stock: Infinity,
-          hasSerial: false,
-          hasBatch: false,
-        })),
+          .map((p) => {
+            const branchStock = locationId ? (prodInvMap.has(p.id) ? prodInvMap.get(p.id)! : Number(p.stock) || 0) : Number(p.stock) || 0;
+            return {
+              ...p,
+              stock: branchStock,
+              variants: prodVarMap.get(p.id) || [],
+              batches: p.hasBatch ? batchMap.get(p.id) || [] : undefined,
+              referenceType: "PRODUCT",
+              referenceId: p.id,
+            };
+          }),
+        ...services
+          .filter((s) => {
+            if (!locationId) return true;
+            const locRule = svcLocMap.get(`${s.id}:base`);
+            return locRule ? locRule.isAvailable !== false : true;
+          })
+          .map((s) => {
+            const locRule = svcLocMap.get(`${s.id}:base`);
+            const effPrice = locRule?.price ? String(locRule.price) : s.price;
+            const effDuration = locRule?.duration ?? s.duration;
+            const sVariants = (svcVarMap.get(s.id) || []).map((sv) => {
+              const vRule = svcLocMap.get(`${s.id}:${sv.id}`);
+              return {
+                ...sv,
+                isAvailable: vRule ? vRule.isAvailable !== false : true,
+                price: vRule?.price ? String(vRule.price) : sv.price,
+                duration: vRule?.duration ?? sv.duration,
+              };
+            });
+
+            return {
+              ...s,
+              price: effPrice,
+              duration: effDuration,
+              variants: sVariants,
+              referenceType: "SERVICE",
+              referenceId: s.id,
+              stock: Infinity,
+              hasSerial: false,
+              hasBatch: false,
+            };
+          }),
       ];
       return { success: true, data: unifiedItems };
     } catch (e) {

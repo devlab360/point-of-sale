@@ -119,8 +119,10 @@ export function usePosState() {
     isError: isProductsError,
     refetch: refetchProducts,
   } = useQuery({
-    queryKey: ["posItems", orgId],
-    queryFn: async () => ((await getPosItemsFn({ data: {} })) as any)?.data || [],
+    queryKey: ["posItems", orgId, selectedLocationId],
+    queryFn: async () =>
+      ((await getPosItemsFn({ data: { locationId: selectedLocationId || null } })) as any)?.data ||
+      [],
     staleTime: STALE_TIME,
   });
   const products: any[] = productsData || [];

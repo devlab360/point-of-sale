@@ -381,15 +381,18 @@ export const createInventoryTransferFn = createServerFn({ method: "POST" })
             createdAt: new Date().toISOString(),
           });
 
-          await tx
-            .update(schema.products)
-            .set({ stock: sql`GREATEST(0, ${schema.products.stock} - ${qty})` })
-            .where(
-              and(
-                eq(schema.products.id, t.productId),
-                eq(schema.products.organizationId, orgId),
-              ),
-            );
+          // If returning externally to a vendor (no destination branch), deduct global company stock
+          if (!t.destinationLocationId) {
+            await tx
+              .update(schema.products)
+              .set({ stock: sql`GREATEST(0, ${schema.products.stock} - ${qty})` })
+              .where(
+                and(
+                  eq(schema.products.id, t.productId),
+                  eq(schema.products.organizationId, orgId),
+                ),
+              );
+          }
 
           if (t.sourceLocationId) {
             await tx
@@ -404,6 +407,16 @@ export const createInventoryTransferFn = createServerFn({ method: "POST" })
           }
 
           if (t.destinationLocationId) {
+            // Log transfer in movement
+            await tx.insert(schema.inventoryMovements).values({
+              organizationId: orgId,
+              productId: t.productId,
+              productName: t.productName || "Transferred Product",
+              action: "transfer_in",
+              quantity: qty.toString(),
+              createdAt: new Date().toISOString(),
+            });
+
             await tx
               .insert(schema.productInventory)
               .values({
