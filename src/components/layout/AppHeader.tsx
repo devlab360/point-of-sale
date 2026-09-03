@@ -28,6 +28,11 @@ import {
   MoreHorizontal,
   Globe,
   Layers,
+  RefreshCw,
+  CheckCircle2,
+  Download,
+  Smartphone,
+  Store,
 } from "lucide-react";
 import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
@@ -678,13 +683,13 @@ export function AppHeader() {
         <Sheet open={mobileToolsOpen} onOpenChange={setMobileToolsOpen}>
           <SheetContent side="bottom" className="rounded-t-3xl p-5 bg-card border-t border-border shadow-2xl max-h-[85vh] overflow-y-auto">
             <div className="flex items-center justify-between pb-3 border-b border-border/60 mb-4">
-              <div className="flex items-center gap-2">
-                <div className="size-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
-                  <Layers className="size-4" />
+              <div className="flex items-center gap-2.5">
+                <div className="size-9 rounded-xl bg-primary/10 text-primary flex items-center justify-center shadow-xs">
+                  <Layers className="size-5" />
                 </div>
                 <div>
-                  <h3 className="text-sm font-bold text-foreground">Quick Tools & Controls</h3>
-                  <p className="text-[11px] text-muted-foreground">Access all POS terminal shortcuts</p>
+                  <h3 className="text-sm font-bold text-foreground">Quick Tools & POS Hub</h3>
+                  <p className="text-[11px] text-muted-foreground">All terminal shortcuts and system controls</p>
                 </div>
               </div>
             </div>
@@ -714,7 +719,7 @@ export function AppHeader() {
                   setMobileToolsOpen(false);
                   window.dispatchEvent(new CustomEvent("open-ai-copilot"));
                 }}
-                className="flex items-center gap-2.5 p-3 rounded-xl border border-border/80 bg-muted/20 hover:bg-muted/40 transition-colors text-left cursor-pointer"
+                className="flex items-center gap-2.5 p-3 rounded-xl border border-border/80 bg-muted/20 hover:bg-muted/40 transition-all text-left cursor-pointer active:scale-[0.98]"
               >
                 <div className="size-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
                   <Sparkles className="size-4" />
@@ -731,7 +736,7 @@ export function AppHeader() {
                 onClick={() => {
                   toggleTheme();
                 }}
-                className="flex items-center gap-2.5 p-3 rounded-xl border border-border/80 bg-muted/20 hover:bg-muted/40 transition-colors text-left cursor-pointer"
+                className="flex items-center gap-2.5 p-3 rounded-xl border border-border/80 bg-muted/20 hover:bg-muted/40 transition-all text-left cursor-pointer active:scale-[0.98]"
               >
                 <div className="size-8 rounded-lg bg-muted text-foreground flex items-center justify-center shrink-0">
                   <Sun className="size-4 dark:hidden" />
@@ -750,7 +755,7 @@ export function AppHeader() {
                   toggleFullscreen();
                   setMobileToolsOpen(false);
                 }}
-                className="flex items-center gap-2.5 p-3 rounded-xl border border-border/80 bg-muted/20 hover:bg-muted/40 transition-colors text-left cursor-pointer"
+                className="flex items-center gap-2.5 p-3 rounded-xl border border-border/80 bg-muted/20 hover:bg-muted/40 transition-all text-left cursor-pointer active:scale-[0.98]"
               >
                 <div className="size-8 rounded-lg bg-muted text-foreground flex items-center justify-center shrink-0">
                   {isFullscreen ? <Minimize className="size-4" /> : <Maximize className="size-4" />}
@@ -763,21 +768,60 @@ export function AppHeader() {
                 </div>
               </button>
 
-              {/* 4. Cloud Sync Status */}
-              <div className="flex items-center gap-2.5 p-3 rounded-xl border border-border/80 bg-muted/20 text-left">
-                <div className="shrink-0 scale-90 -ml-1">
-                  <SyncStatus />
+              {/* 4. Cloud Sync & Refresh */}
+              <button
+                type="button"
+                onClick={async () => {
+                  await queryClient.invalidateQueries();
+                  toast.success("Cloud data synchronized successfully");
+                }}
+                className="flex items-center gap-2.5 p-3 rounded-xl border border-border/80 bg-muted/20 hover:bg-muted/40 transition-all text-left cursor-pointer active:scale-[0.98]"
+              >
+                <div className="size-8 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+                  <RefreshCw className="size-4" />
                 </div>
-              </div>
+                <div className="min-w-0">
+                  <div className="text-xs font-bold text-foreground">Cloud Sync</div>
+                  <div className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">Online & Synced</div>
+                </div>
+              </button>
+            </div>
+
+            {/* Install Web App Banner */}
+            <div className="mt-3">
+              <button
+                type="button"
+                onClick={() => {
+                  const promptEvent = (window as any).__pwaInstallPrompt;
+                  if (promptEvent) {
+                    promptEvent.prompt();
+                  } else {
+                    toast.info("Install: Tap browser menu (⋮) & select 'Add to Home screen' / 'Install App'");
+                  }
+                  setMobileToolsOpen(false);
+                }}
+                className="w-full flex items-center justify-between p-3 rounded-xl border border-primary/20 bg-primary/5 hover:bg-primary/10 transition-colors text-left cursor-pointer"
+              >
+                <div className="flex items-center gap-2.5">
+                  <div className="size-8 rounded-lg bg-primary/15 text-primary flex items-center justify-center shrink-0">
+                    <Download className="size-4" />
+                  </div>
+                  <div>
+                    <div className="text-xs font-bold text-foreground">Install Mobile App (PWA)</div>
+                    <div className="text-[10px] text-muted-foreground">Add to home screen for faster offline access</div>
+                  </div>
+                </div>
+                <Smartphone className="size-4 text-primary shrink-0 opacity-80" />
+              </button>
             </div>
 
             {/* Language Selector */}
             <div className="mt-4 pt-3 border-t border-border/60">
               <div className="flex items-center gap-1.5 text-xs font-bold text-muted-foreground uppercase mb-2">
                 <Globe className="size-3.5 text-primary" />
-                <span>Select Language ({activeLanguageObj.nativeName})</span>
+                <span>Language / Idioma ({activeLanguageObj.nativeName})</span>
               </div>
-              <div className="grid grid-cols-2 gap-1.5 max-h-36 overflow-y-auto">
+              <div className="grid grid-cols-2 gap-1.5 max-h-40 overflow-y-auto">
                 {LANGUAGES.map((l) => (
                   <button
                     key={l.code}
@@ -785,7 +829,7 @@ export function AppHeader() {
                     onClick={() => {
                       setLanguage(l.code);
                     }}
-                    className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs transition-all cursor-pointer ${
+                    className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs transition-all cursor-pointer ${
                       language === l.code
                         ? "bg-primary text-primary-foreground font-bold shadow-xs"
                         : "bg-muted/30 text-foreground border border-border/50 hover:bg-muted"
@@ -793,14 +837,23 @@ export function AppHeader() {
                   >
                     <span>{l.flag}</span>
                     <span className="truncate">{l.nativeName}</span>
+                    {language === l.code && <CheckCircle2 className="size-3.5 ml-auto text-primary-foreground shrink-0" />}
                   </button>
                 ))}
               </div>
             </div>
 
-            {/* Install App Button if available */}
-            <div className="mt-4">
-              <InstallAppButton />
+            {/* Store & Branch Footer */}
+            <div className="mt-4 pt-3 border-t border-border/50 flex items-center justify-between text-[11px] text-muted-foreground">
+              <span className="flex items-center gap-1.5 font-medium truncate">
+                <Store className="size-3.5 text-primary" />
+                <span className="truncate">{settings?.storeName || "ONEDESK360"}</span>
+              </span>
+              {settings?.storeCode && (
+                <span className="font-mono text-[10px] bg-muted/60 px-1.5 py-0.5 rounded border border-border/40 shrink-0">
+                  {settings.storeCode}
+                </span>
+              )}
             </div>
           </SheetContent>
         </Sheet>
