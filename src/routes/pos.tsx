@@ -28,6 +28,7 @@ import { printReceiptIframe } from "@/lib/printIframe";
 
 import { POSSkeleton } from "@/components/skeletons/POSSkeleton";
 import { ErrorState } from "@/components/ui/error-state";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 export const Route = createFileRoute("/pos")({
   head: () => ({
@@ -68,6 +69,7 @@ export const Route = createFileRoute("/pos")({
 });
 
 function PosScreen() {
+  const { t } = useLanguage();
   const state = usePosState();
   const {
     isPosLoading,
@@ -570,7 +572,7 @@ function PosScreen() {
   };
 
   const handlePrintBill = () => {
-    if (lines.length === 0) return toast.error("Cart is empty");
+    if (lines.length === 0) return toast.error(t("cartIsEmpty", "Cart is empty"));
 
     const totalVal = total;
     const printObj = {
@@ -650,8 +652,8 @@ function PosScreen() {
     return (
       <ErrorState
         onRetry={refetchPos}
-        title="Failed to load POS Terminal"
-        description="Unable to load product catalog or settings. Please check your connection and retry."
+        title={t("failedToLoadPOS", "Failed to load POS Terminal")}
+        description={t("failedToLoadPOSDesc", "Unable to load product catalog or settings. Please check your connection and retry.")}
       />
     );
   }
@@ -672,7 +674,7 @@ function PosScreen() {
               : "bg-muted/40 text-muted-foreground hover:bg-muted hover:text-foreground",
           )}
         >
-          Products
+          {t("products", "Products")}
         </button>
         <button
           type="button"
@@ -684,7 +686,7 @@ function PosScreen() {
               : "bg-muted/40 text-muted-foreground hover:bg-muted hover:text-foreground",
           )}
         >
-          <span>Cart</span>
+          <span>{t("cart", "Cart")}</span>
           {cartItemCount > 0 && (
             <span
               className={cn(
@@ -708,7 +710,7 @@ function PosScreen() {
         <div
           className="hidden md:block w-1.5 cursor-col-resize hover:bg-primary/50 active:bg-primary z-10 transition-colors bg-border/60 hover:w-2 shrink-0"
           onMouseDown={handleStartResizing}
-          title="Drag to resize cart panel"
+          title={t("dragToResizeCart", "Drag to resize cart panel")}
         />
 
         <CartPanel state={state} onCheckout={handleCheckout} onPrintBill={handlePrintBill} />
@@ -726,7 +728,7 @@ function PosScreen() {
               <span className="grid size-5 sm:size-6 place-items-center rounded-full bg-primary-foreground/20 text-[11px] sm:text-xs font-black">
                 {cartItemCount}
               </span>
-              <span>View Cart & Checkout</span>
+              <span>{t("viewCartAndCheckout", "View Cart & Checkout")}</span>
             </div>
             <div className="number text-xs sm:text-sm font-black tracking-tight flex items-center gap-1">
               <span>{state.formatCurrency(state.total)}</span>

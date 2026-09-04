@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
 import { toast } from "sonner";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 interface ErrorStateProps {
   title?: string;
@@ -16,8 +17,8 @@ interface ErrorStateProps {
 }
 
 export function ErrorState({
-  title = "Failed to load data",
-  description = "Something went wrong while fetching data from the server. Please check your connection and try again.",
+  title,
+  description,
   onRetry,
   isRetrying = false,
   className,
@@ -25,7 +26,16 @@ export function ErrorState({
   showHomeButton = false,
   showResetButton = false,
 }: ErrorStateProps) {
+  const { t } = useLanguage();
   const [copied, setCopied] = useState(false);
+
+  const displayTitle = title || t("failedToLoadData", "Failed to load data");
+  const displayDescription =
+    description ||
+    t(
+      "errorLoadingDesc",
+      "Something went wrong while fetching data from the server. Please check your connection and try again.",
+    );
 
   const errorString =
     typeof errorDetails === "string"
@@ -38,7 +48,7 @@ export function ErrorState({
     if (!errorString) return;
     navigator.clipboard.writeText(errorString);
     setCopied(true);
-    toast.success("Error message copied to clipboard");
+    toast.success(t("errorMessageCopied", "Error message copied to clipboard"));
     setTimeout(() => setCopied(false), 2000);
   };
 
@@ -46,7 +56,7 @@ export function ErrorState({
     try {
       sessionStorage.clear();
       localStorage.removeItem("query-cache");
-      toast.info("Cache refreshed. Reloading page...");
+      toast.info(t("cacheRefreshedReloading", "Cache refreshed. Reloading page..."));
       setTimeout(() => window.location.reload(), 500);
     } catch {
       window.location.reload();
@@ -64,9 +74,9 @@ export function ErrorState({
         <AlertTriangle className="size-6 sm:size-7" strokeWidth={2} />
       </div>
 
-      <h3 className="text-base sm:text-lg font-bold text-foreground">{title}</h3>
+      <h3 className="text-base sm:text-lg font-bold text-foreground">{displayTitle}</h3>
       <p className="mt-1.5 text-xs sm:text-sm text-muted-foreground max-w-md leading-relaxed">
-        {description}
+        {displayDescription}
       </p>
 
       {errorString && (
@@ -76,7 +86,7 @@ export function ErrorState({
             type="button"
             onClick={handleCopy}
             className="text-muted-foreground hover:text-foreground p-1 rounded transition-colors shrink-0"
-            title="Copy error"
+            title={t("copyError", "Copy error")}
           >
             {copied ? <Check className="size-3.5 text-success" /> : <Copy className="size-3.5" />}
           </button>
@@ -87,14 +97,14 @@ export function ErrorState({
         {onRetry && (
           <Button onClick={onRetry} disabled={isRetrying} className="gap-2 font-semibold shadow-sm">
             <RefreshCw className={cn("size-4", isRetrying && "animate-spin")} />
-            {isRetrying ? "Retrying..." : "Retry Request"}
+            {isRetrying ? t("retrying", "Retrying...") : t("retryRequest", "Retry Request")}
           </Button>
         )}
 
         {showHomeButton && (
           <Button asChild variant="outline" className="gap-2">
             <a href="/">
-              <Home className="size-4" /> Go Home
+              <Home className="size-4" /> {t("goHome", "Go Home")}
             </a>
           </Button>
         )}
@@ -104,7 +114,7 @@ export function ErrorState({
           variant="outline"
           className="text-xs font-semibold"
         >
-          Refresh Page
+          {t("refreshPage", "Refresh Page")}
         </Button>
 
         {showResetButton && (
@@ -113,7 +123,7 @@ export function ErrorState({
             variant="ghost"
             className="text-xs text-muted-foreground hover:text-destructive gap-1.5"
           >
-            <RotateCcw className="size-3.5" /> Clear Cache
+            <RotateCcw className="size-3.5" /> {t("clearCache", "Clear Cache")}
           </Button>
         )}
       </div>

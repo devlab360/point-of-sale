@@ -221,7 +221,7 @@ function CustomersPage() {
           },
         });
         if (res?.success) {
-          toast.success("Customer updated successfully");
+          toast.success(t("customerUpdatedSuccess", "Customer updated successfully"));
           setEditItem(null);
           queryClient.invalidateQueries({ queryKey: ["customers"] });
         } else throw new Error(res?.error);
@@ -242,7 +242,7 @@ function CustomersPage() {
           },
         });
         if (res?.success) {
-          toast.success("Customer added successfully");
+          toast.success(t("customerAddedSuccess", "Customer added successfully"));
           setIsAddOpen(false);
           queryClient.invalidateQueries({ queryKey: ["customers"] });
         } else throw new Error(res?.error);
@@ -260,7 +260,7 @@ function CustomersPage() {
       try {
         const res = await deleteCustomerFn({ data: { id: deleteId } });
         if (res?.success) {
-          toast.success("Customer deleted");
+          toast.success(t("customerDeleted", "Customer deleted"));
           setDeleteId(null);
           queryClient.invalidateQueries({ queryKey: ["customers"] });
         } else throw new Error(res?.error);
@@ -277,7 +277,7 @@ function CustomersPage() {
     if (!settleItem) return;
     const amount = parseFloat(settleAmount);
     if (isNaN(amount) || amount <= 0 || amount > settleItem.credit) {
-      toast.error("Please enter a valid amount up to the outstanding balance.");
+      toast.error(t("enterValidAmountBalance", "Please enter a valid amount up to the outstanding balance."));
       return;
     }
     setIsSettling(true);
@@ -339,7 +339,7 @@ function CustomersPage() {
     try {
       const data = await parseCSV(file);
       if (data.length === 0) {
-        toast.error("No data found in the CSV");
+        toast.error(t("noDataInCsv", "No data found in CSV"));
         return;
       }
 
@@ -366,7 +366,7 @@ function CustomersPage() {
       queryClient.invalidateQueries({ queryKey: ["customers"] });
       toast.success(`Successfully imported ${count} customers`);
     } catch {
-      toast.error("Failed to parse CSV file");
+      toast.error(t("failedToParseCsv", "Failed to parse CSV file"));
     }
   };
 
@@ -844,7 +844,7 @@ function CustomersPage() {
                 <Input
                   id="name"
                   name="name"
-                  placeholder="e.g. Customer Name"
+                  placeholder={t("customerNamePlaceholder", "e.g. Customer Name")}
                   defaultValue={editItem?.name || ""}
                   className={
                     custErrors.name ? "border-destructive focus-visible:ring-destructive" : ""
@@ -860,7 +860,7 @@ function CustomersPage() {
                     id="email"
                     name="email"
                     type="email"
-                    placeholder="e.g. email@example.com"
+                    placeholder={t("customerEmailPlaceholder", "e.g. email@example.com")}
                     defaultValue={editItem?.email || ""}
                     className={
                       custErrors.email ? "border-destructive focus-visible:ring-destructive" : ""
@@ -890,7 +890,7 @@ function CustomersPage() {
                 <Input
                   id="address"
                   name="address"
-                  placeholder="e.g. 123 Main St"
+                  placeholder={t("customerAddressPlaceholder", "e.g. 123 Main St")}
                   defaultValue={editItem?.address || ""}
                 />
               </div>

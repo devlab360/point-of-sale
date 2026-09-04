@@ -246,12 +246,12 @@ function QuotationsPage() {
     if (!isValid) return;
 
     if (lineItems.length === 0) {
-      toast.error("Please add at least one line item");
+      toast.error(t("addAtLeastOneLineItem", "Please add at least one line item"));
       return;
     }
 
     const cust = customers.find((c) => c.id === selectedCustomerId);
-    if (!cust) return toast.error("Please select a customer");
+    if (!cust) return toast.error(t("selectCustomer", "Please select a customer"));
 
     setIsSubmitting(true);
     await new Promise((resolve) => setTimeout(resolve, 500));
@@ -290,7 +290,7 @@ function QuotationsPage() {
       setLineItems([]);
       clearQuotAll();
     } catch (err) {
-      toast.error("Failed to create quotation");
+      toast.error(t("failedToCreateQuotation", "Failed to create quotation"));
     } finally {
       setIsSubmitting(false);
     }
@@ -339,22 +339,22 @@ function QuotationsPage() {
       toast.success(`Quotation ${quot.quotationNo} converted to Sales Invoice #${invNum}!`);
       setViewItem(null);
     } catch (err) {
-      toast.error("Failed to convert quotation to invoice");
+      toast.error(t("failedToConvertQuotation", "Failed to convert quotation to invoice"));
     }
   };
   const deleteQuotation = async (id: string) => {
     const res = await deleteQuotationFn({ data: { id } });
     if (res?.success) {
       queryClient.invalidateQueries({ queryKey: ["quotations"] });
-      toast.success("Quotation deleted");
+      toast.success(t("quotationDeleted", "Quotation deleted"));
     } else {
-      toast.error("Failed to delete quotation");
+      toast.error(t("failedToDeleteQuotation", "Failed to delete quotation"));
     }
   };
 
   const handleExport = () => {
     if (filteredQuotations.length === 0) {
-      toast.error("No quotations to export");
+      toast.info(t("noQuotationsToExport", "No quotations to export"));
       return;
     }
     const csvContent = [
@@ -378,7 +378,7 @@ function QuotationsPage() {
     link.download = `quotations_${Date.now()}.csv`;
     link.click();
     URL.revokeObjectURL(url);
-    toast.success("Quotations exported successfully");
+    toast.success(t("quotationsExportedSuccess", "Quotations exported successfully"));
   };
   return (
     <div className="page-container space-y-6">
@@ -752,7 +752,7 @@ function QuotationsPage() {
                         setSelectedCustomerId(val);
                         clearQuotError("selectedCustomerId");
                       }}
-                      placeholder="Search customer..."
+                      placeholder={t("searchCustomer", "Search customer...")}
                       onCreate={async (name) => {
                         const res = await createCustomerFn({ data: { customer: { name } } });
                         if (res?.success) {
@@ -765,7 +765,7 @@ function QuotationsPage() {
                   <FieldError message={quotErrors.selectedCustomerId} />
                 </div>
                 <div className="space-y-1.5">
-                  <Label>Valid Until</Label>
+                  <Label>{t("validUntil", "Valid Until")}</Label>
                   <div className="mt-1">
                     <DatePicker
                       date={validUntil ? new Date(validUntil) : undefined}
@@ -792,7 +792,7 @@ function QuotationsPage() {
                       clearQuotError("lineItems");
                     }
                   }}
-                  placeholder="Search products by name or code..."
+                  placeholder={t("searchProductsByNameOrCode", "Search products by name or code...")}
                 />
                 <FieldError message={quotErrors.lineItems} />
               </div>
@@ -867,15 +867,15 @@ function QuotationsPage() {
               {/* Summary */}
               <div className="rounded-xl bg-muted/40 border border-border/80 p-4 space-y-2 text-sm">
                 <div className="flex justify-between text-xs">
-                  <span className="text-muted-foreground">Subtotal:</span>
+                  <span className="text-muted-foreground">{t("subtotal", "Subtotal")}:</span>
                   <span className="font-semibold">{formatCurrency(quotationSubtotal)}</span>
                 </div>
                 <div className="flex justify-between text-xs">
-                  <span className="text-muted-foreground">Tax (8%):</span>
+                  <span className="text-muted-foreground">{t("tax", "Tax")}:</span>
                   <span className="font-semibold">{formatCurrency(quotationTax)}</span>
                 </div>
                 <div className="flex justify-between font-black text-lg border-t border-border pt-2 text-foreground">
-                  <span>Total Estimate:</span>
+                  <span>{t("totalEstimate", "Total Estimate")}:</span>
                   <span className="text-primary">{formatCurrency(quotationTotal)}</span>
                 </div>
               </div>
@@ -1003,15 +1003,15 @@ function QuotationsPage() {
               {/* Totals */}
               <div className="rounded-xl border bg-muted/40 p-4 space-y-1.5 text-sm">
                 <div className="flex justify-between text-xs">
-                  <span>Subtotal:</span>
+                  <span>{t("subtotal", "Subtotal")}:</span>
                   <span>{formatCurrency(viewItem.subtotal)}</span>
                 </div>
                 <div className="flex justify-between text-xs">
-                  <span>Tax Amount:</span>
+                  <span>{t("taxAmount", "Tax Amount")}:</span>
                   <span>{formatCurrency(viewItem.taxAmt)}</span>
                 </div>
                 <div className="flex justify-between font-bold text-lg border-t pt-2">
-                  <span>Total Estimate:</span>
+                  <span>{t("totalEstimate", "Total Estimate")}:</span>
                   <span>{formatCurrency(viewItem.total)}</span>
                 </div>
               </div>

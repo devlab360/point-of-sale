@@ -32,7 +32,7 @@ import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { AdminAuthProvider } from "@/contexts/AdminAuthContext";
 import { getTrialDaysLeft } from "@/lib/utils";
 import { X } from "lucide-react";
-import { LanguageProvider } from "@/contexts/LanguageContext";
+import { LanguageProvider, useLanguage, TRANSLATIONS, type LanguageCode } from "@/contexts/LanguageContext";
 import { PreferencesProvider } from "@/contexts/PreferencesContext";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AiCopilotDrawer } from "@/components/ai/AiCopilotDrawer";
@@ -51,17 +51,24 @@ import {
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { AlertTriangle, RefreshCw, Home, Copy, Check, Terminal, RotateCcw } from "lucide-react";
 
+function getRootTranslator() {
+  const lang = (typeof window !== "undefined" ? localStorage.getItem("pos_app_language") : "en") || "en";
+  return (key: string, fallback: string) =>
+    TRANSLATIONS[lang as LanguageCode]?.[key] || TRANSLATIONS["en"]?.[key] || fallback;
+}
+
 function NotFoundComponent() {
+  const t = getRootTranslator();
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="max-w-md text-center">
         <p className="text-[11px] font-bold uppercase tracking-widest text-primary">404</p>
-        <h1 className="mt-2 text-3xl font-bold tracking-tight text-foreground">Page not found</h1>
+        <h1 className="mt-2 text-3xl font-bold tracking-tight text-foreground">{t("pageNotFound", "Page not found")}</h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          We couldn't find what you were looking for. It may have been moved or removed.
+          {t("pageNotFoundDesc", "We couldn't find what you were looking for. It may have been moved or removed.")}
         </p>
         <Button asChild className="mt-6">
-          <a href="/">Back to dashboard</a>
+          <a href="/">{t("backToDashboard", "Back to dashboard")}</a>
         </Button>
       </div>
     </div>
@@ -69,6 +76,7 @@ function NotFoundComponent() {
 }
 
 function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
+  const t = getRootTranslator();
   const router = useRouter();
   const [showDetails, setShowDetails] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -108,11 +116,11 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
 
         <div>
           <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
-            Something went wrong
+            {t("somethingWentWrong", "Something went wrong")}
           </h1>
           <p className="mt-2 text-xs sm:text-sm text-muted-foreground leading-relaxed">
             {error?.message ||
-              "The application encountered an unexpected error while loading this page."}
+              t("genericErrorDesc", "The application encountered an unexpected error while loading this page.")}
           </p>
         </div>
 
@@ -124,11 +132,11 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
             }}
             className="gap-1.5 font-semibold shadow-sm"
           >
-            <RefreshCw className="size-4" /> Try Again
+            <RefreshCw className="size-4" /> {t("tryAgain", "Try Again")}
           </Button>
           <Button asChild variant="outline" className="gap-1.5">
             <a href="/">
-              <Home className="size-4" /> Go Home
+              <Home className="size-4" /> {t("goHome", "Go Home")}
             </a>
           </Button>
           <Button
@@ -138,7 +146,7 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
             className="text-xs text-muted-foreground hover:text-foreground gap-1"
           >
             <Terminal className="size-3.5" />
-            {showDetails ? "Hide Stack" : "View Stack"}
+            {showDetails ? t("hideDetails", "Hide Details") : t("errorDetails", "Error Details")}
           </Button>
         </div>
 
@@ -344,6 +352,7 @@ function AppLayout() {
   const [isGoogleLoggingIn, setIsGoogleLoggingIn] = useState(false);
   const location = useRouterState({ select: (s) => s.location });
   const router = useRouter();
+  const { t } = useLanguage();
 
 
   useEffect(() => {
@@ -481,10 +490,10 @@ function AppLayout() {
                   />
                 </svg>
               </div>
-              <h2 className="text-xl font-bold">Access Denied</h2>
+              <h2 className="text-xl font-bold">{t("accessDenied", "Access Denied")}</h2>
               <p className="text-muted-foreground">{unauthorizedMessage}</p>
               <Button onClick={() => router.navigate({ to: "/" })} className="mt-4">
-                Return to Dashboard
+                {t("returnToDashboard", "Return to Dashboard")}
               </Button>
             </div>
           </main>

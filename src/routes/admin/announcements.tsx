@@ -98,7 +98,7 @@ function SuperAdminAnnouncementsPage() {
     mutationFn: (data: typeof newAnnouncement) => saveBroadcastAnnouncementAdminFn({ data }),
     onSuccess: (res: any) => {
       if (res.success) {
-        toast.success("Broadcast announcement published to merchant stores!");
+        toast.success(t("admin.broadcastPublishedToast", "Broadcast announcement published to merchant stores!"));
         setIsCreateOpen(false);
         setNewAnnouncement({
           title: "",
@@ -109,7 +109,7 @@ function SuperAdminAnnouncementsPage() {
         });
         queryClient.invalidateQueries({ queryKey: ["super-admin-broadcast-announcements"] });
       } else {
-        toast.error(res.error || "Failed to publish announcement");
+        toast.error(res.error || t("admin.broadcastPublishFailedToast", "Failed to publish announcement"));
       }
     },
   });
@@ -118,7 +118,7 @@ function SuperAdminAnnouncementsPage() {
     mutationFn: ({ id, active }: { id: string; active: boolean }) =>
       toggleBroadcastAnnouncementAdminFn({ data: { id, active } }),
     onSuccess: () => {
-      toast.success("Broadcast visibility updated");
+      toast.success(t("admin.broadcastVisibilityToast", "Broadcast visibility updated"));
       queryClient.invalidateQueries({ queryKey: ["super-admin-broadcast-announcements"] });
     },
   });
@@ -126,7 +126,7 @@ function SuperAdminAnnouncementsPage() {
   const deleteMutation = useMutation({
     mutationFn: (id: string) => deleteBroadcastAnnouncementAdminFn({ data: { id } }),
     onSuccess: () => {
-      toast.success("Announcement deleted");
+      toast.success(t("admin.announcementDeletedToast", "Announcement deleted"));
       queryClient.invalidateQueries({ queryKey: ["super-admin-broadcast-announcements"] });
     },
   });
@@ -157,8 +157,8 @@ function SuperAdminAnnouncementsPage() {
       <div className="page-container space-y-6">
         {/* Header */}
         <PageHeader
-          title="Merchant Broadcasts & System Notices"
-          description="Send live broadcast banners, maintenance alerts, and new feature notices across all store merchant dashboards."
+          title={t("admin.announcementsTitle", "Merchant Broadcasts & System Notices")}
+          description={t("admin.announcementsDesc", "Send live broadcast banners, maintenance alerts, and new feature notices across all store merchant dashboards.")}
           actions={
             <div className="flex flex-wrap items-center gap-2">
               <Button
@@ -169,7 +169,7 @@ function SuperAdminAnnouncementsPage() {
                 disabled={isFetching}
               >
                 <RefreshCw className={`size-3.5 ${isFetching ? "animate-spin" : ""}`} />
-                <span>Refresh</span>
+                <span>{t("common.refresh", "Refresh")}</span>
               </Button>
               <Button
                 variant="outline"
@@ -189,7 +189,7 @@ function SuperAdminAnnouncementsPage() {
                 }}
               >
                 <Download className="size-3.5" />
-                <span>Export CSV</span>
+                <span>{t("common.exportCsv", "Export CSV")}</span>
               </Button>
               <Button
                 onClick={() => setIsCreateOpen(true)}
@@ -197,7 +197,7 @@ function SuperAdminAnnouncementsPage() {
                 className="gap-1.5 h-9 shadow-xs"
               >
                 <Plus className="size-4" />
-                <span>New Broadcast Notice</span>
+                <span>{t("admin.newBroadcastNotice", "New Broadcast Notice")}</span>
               </Button>
             </div>
           }
@@ -206,23 +206,23 @@ function SuperAdminAnnouncementsPage() {
         {/* Top StatCards KPI Strip */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <StatCard
-            label="Total Broadcasts Created"
+            label={t("admin.totalBroadcastsCreated", "Total Broadcasts Created")}
             value={String(announcements.length)}
-            hint="All recorded notices"
+            hint={t("admin.allRecordedNotices", "All recorded notices")}
             icon={Megaphone}
             accent="primary"
           />
           <StatCard
-            label="Live Active Broadcasts"
+            label={t("admin.liveActiveBroadcasts", "Live Active Broadcasts")}
             value={String(activeCount)}
-            hint={activeCount > 0 ? "Currently visible to merchants" : "No active banner"}
+            hint={activeCount > 0 ? t("admin.currentlyVisibleToMerchants", "Currently visible to merchants") : t("admin.noActiveBanner", "No active banner")}
             icon={Radio}
             accent={activeCount > 0 ? "success" : "info"}
           />
           <StatCard
-            label="Instant Cloud Broadcast"
-            value="Realtime Sync"
-            hint="Renders in merchant header banner"
+            label={t("admin.instantCloudBroadcast", "Instant Cloud Broadcast")}
+            value={t("admin.realtimeSync", "Realtime Sync")}
+            hint={t("admin.rendersInMerchantHeader", "Renders in merchant header banner")}
             icon={Sparkles}
             accent="warning"
           />
@@ -233,7 +233,7 @@ function SuperAdminAnnouncementsPage() {
           <div className="relative flex-1 w-full">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
             <Input
-              placeholder="Search title or message..."
+              placeholder={t("admin.searchTitleOrMessage", "Search title or message...")}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="pl-9 bg-background/50"
@@ -243,35 +243,35 @@ function SuperAdminAnnouncementsPage() {
           <div className="flex flex-wrap items-center gap-2.5 w-full md:w-auto">
             <Select value={typeFilter} onValueChange={setTypeFilter}>
               <SelectTrigger className="w-[130px] bg-background/50 text-xs">
-                <SelectValue placeholder="Type" />
+                <SelectValue placeholder={t("common.type", "Type")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Types ({announcements.length})</SelectItem>
-                <SelectItem value="info">Info</SelectItem>
-                <SelectItem value="warning">Warning</SelectItem>
-                <SelectItem value="success">Success</SelectItem>
-                <SelectItem value="update">Update</SelectItem>
+                <SelectItem value="all">{t("admin.allTypes", "All Types")} ({announcements.length})</SelectItem>
+                <SelectItem value="info">{t("admin.info", "Info")}</SelectItem>
+                <SelectItem value="warning">{t("admin.warning", "Warning")}</SelectItem>
+                <SelectItem value="success">{t("admin.success", "Success")}</SelectItem>
+                <SelectItem value="update">{t("admin.update", "Update")}</SelectItem>
               </SelectContent>
             </Select>
             <Select value={audienceFilter} onValueChange={setAudienceFilter}>
               <SelectTrigger className="w-[130px] bg-background/50 text-xs">
-                <SelectValue placeholder="Audience" />
+                <SelectValue placeholder={t("admin.audience", "Audience")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Stores (Active + Trial)</SelectItem>
-                <SelectItem value="trial">Trial Stores</SelectItem>
-                <SelectItem value="active">Active Paid Stores</SelectItem>
+                <SelectItem value="all">{t("admin.allStoresActiveTrial", "All Stores (Active + Trial)")}</SelectItem>
+                <SelectItem value="trial">{t("admin.trialStores", "Trial Stores")}</SelectItem>
+                <SelectItem value="active">{t("admin.activePaidStores", "Active Paid Stores")}</SelectItem>
               </SelectContent>
             </Select>
             <Select value={activeFilter} onValueChange={setActiveFilter}>
               <SelectTrigger className="w-[130px] bg-background/50 text-xs">
-                <SelectValue placeholder="Status" />
+                <SelectValue placeholder={t("common.status", "Status")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All ({announcements.length})</SelectItem>
-                <SelectItem value="active">Live ({activeCount})</SelectItem>
+                <SelectItem value="all">{t("common.all", "All")} ({announcements.length})</SelectItem>
+                <SelectItem value="active">{t("common.live", "Live")} ({activeCount})</SelectItem>
                 <SelectItem value="inactive">
-                  Hidden ({announcements.length - activeCount})
+                  {t("admin.hidden", "Hidden")} ({announcements.length - activeCount})
                 </SelectItem>
               </SelectContent>
             </Select>
@@ -281,37 +281,36 @@ function SuperAdminAnnouncementsPage() {
         {/* Announcements Catalog Table */}
         <div className="rounded-2xl border bg-card shadow-xs overflow-hidden">
           <div className="p-4 border-b bg-muted/20 flex items-center justify-between">
-            <h3 className="font-bold text-sm text-foreground">Broadcast Announcements Directory</h3>
+            <h3 className="font-bold text-sm text-foreground">{t("admin.broadcastDirectory", "Broadcast Announcements Directory")}</h3>
             <span className="text-xs text-muted-foreground">
-              {filteredAnnouncements.length} records
+              {filteredAnnouncements.length} {t("admin.records", "records")}
             </span>
           </div>
 
           {isLoading ? (
             <div className="p-16 text-center text-xs text-muted-foreground">
-              Loading broadcast announcements…
+              {t("admin.loadingAnnouncements", "Loading broadcast announcements…")}
             </div>
           ) : announcements.length === 0 ? (
             <div className="p-16 text-center space-y-2">
               <Megaphone className="size-8 mx-auto text-muted-foreground/40" />
-              <h4 className="font-bold text-sm text-foreground">No Broadcast Announcements Yet</h4>
+              <h4 className="font-bold text-sm text-foreground">{t("admin.noAnnouncementsYet", "No Broadcast Announcements Yet")}</h4>
               <p className="text-xs text-muted-foreground">
-                Create your first platform announcement to notify store merchants of updates or
-                maintenance.
+                {t("admin.noAnnouncementsDesc", "Create your first platform announcement to notify store merchants of updates or maintenance.")}
               </p>
               <Button onClick={() => setIsCreateOpen(true)} size="sm" className="mt-3 gap-1.5">
                 <Plus className="size-3.5" />
-                <span>Create Announcement</span>
+                <span>{t("admin.createAnnouncement", "Create Announcement")}</span>
               </Button>
             </div>
           ) : announcements.length > 0 && filteredAnnouncements.length === 0 ? (
             <div className="p-16 text-center space-y-2">
               <Search className="size-8 mx-auto text-muted-foreground/40" />
               <h4 className="font-bold text-sm text-foreground">
-                No announcements match your filters
+                {t("admin.noMatchingAnnouncements", "No announcements match your filters")}
               </h4>
               <p className="text-xs text-muted-foreground">
-                Try adjusting the search terms or clearing the type, audience, and status filters.
+                {t("admin.adjustFilterTip", "Try adjusting the search terms or clearing the type, audience, and status filters.")}
               </p>
             </div>
           ) : (
@@ -371,10 +370,10 @@ function SuperAdminAnnouncementsPage() {
                       <TableCell className="px-4 py-3.5">
                         <Badge variant="secondary" className="text-[10px] font-bold uppercase">
                           {item.audience === "all"
-                            ? "All Merchants"
+                            ? t("admin.allMerchants", "All Merchants")
                             : item.audience === "trial"
-                              ? "Trial Stores Only"
-                              : "Active Paid Stores"}
+                              ? t("admin.trialStoresOnly", "Trial Stores Only")
+                              : t("admin.activePaidStoresOnly", "Active Paid Stores")}
                         </Badge>
                       </TableCell>
 
@@ -387,7 +386,7 @@ function SuperAdminAnnouncementsPage() {
                             }
                           />
                           <span className="text-xs font-semibold text-muted-foreground">
-                            {item.active ? "Live" : "Hidden"}
+                            {item.active ? t("common.live", "Live") : t("admin.hidden", "Hidden")}
                           </span>
                         </div>
                       </TableCell>
@@ -402,7 +401,7 @@ function SuperAdminAnnouncementsPage() {
                           variant="ghost"
                           className="h-8 w-8 p-0 text-destructive hover:bg-destructive/10"
                           onClick={() => {
-                            if (confirm(`Delete announcement "${item.title}"?`)) {
+                            if (confirm(`${t("admin.deleteAnnouncementConfirm", "Delete announcement")} "${item.title}"?`)) {
                               deleteMutation.mutate(item.id);
                             }
                           }}
@@ -426,11 +425,10 @@ function SuperAdminAnnouncementsPage() {
           >
             <SheetHeader className="bg-muted/60 p-5 border-b pr-12 text-left">
               <SheetTitle className="text-lg font-bold text-foreground">
-                New Broadcast Announcement
+                {t("admin.newBroadcastAnnouncement", "New Broadcast Announcement")}
               </SheetTitle>
               <SheetDescription className="text-xs text-muted-foreground mt-0.5">
-                Publish a high-visibility alert banner displayed on all merchant store admin
-                dashboards.
+                {t("admin.broadcastDrawerDesc", "Publish a high-visibility alert banner displayed on all merchant store admin dashboards.")}
               </SheetDescription>
             </SheetHeader>
 
@@ -443,7 +441,7 @@ function SuperAdminAnnouncementsPage() {
             >
               <div className="flex-1 overflow-y-auto p-5 space-y-4">
                 <div className="space-y-1.5">
-                  <Label htmlFor="bc-title">Announcement Headline</Label>
+                  <Label htmlFor="bc-title">{t("admin.announcementHeadline", "Announcement Headline")}</Label>
                   <Input
                     id="bc-title"
                     required
@@ -451,12 +449,12 @@ function SuperAdminAnnouncementsPage() {
                     onChange={(e) =>
                       setNewAnnouncement({ ...newAnnouncement, title: e.target.value })
                     }
-                    placeholder="e.g. Scheduled System Upgrade at 2:00 AM"
+                    placeholder={t("admin.headlinePlaceholder", "e.g. Scheduled System Upgrade at 2:00 AM")}
                   />
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label htmlFor="bc-type">Banner Alert Type</Label>
+                  <Label htmlFor="bc-type">{t("admin.bannerAlertType", "Banner Alert Type")}</Label>
                   <Select
                     value={newAnnouncement.type}
                     onValueChange={(val: any) =>
@@ -467,16 +465,16 @@ function SuperAdminAnnouncementsPage() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="info">Info (Blue)</SelectItem>
-                      <SelectItem value="warning">Warning / Maintenance (Amber)</SelectItem>
-                      <SelectItem value="success">Success / Promo (Emerald)</SelectItem>
-                      <SelectItem value="update">New Feature Update (Purple)</SelectItem>
+                      <SelectItem value="info">{t("admin.infoBlue", "Info (Blue)")}</SelectItem>
+                      <SelectItem value="warning">{t("admin.warningAmber", "Warning / Maintenance (Amber)")}</SelectItem>
+                      <SelectItem value="success">{t("admin.successEmerald", "Success / Promo (Emerald)")}</SelectItem>
+                      <SelectItem value="update">{t("admin.updatePurple", "New Feature Update (Purple)")}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label htmlFor="bc-audience">Target Audience</Label>
+                  <Label htmlFor="bc-audience">{t("admin.targetAudience", "Target Audience")}</Label>
                   <Select
                     value={newAnnouncement.audience}
                     onValueChange={(val: any) =>
@@ -487,15 +485,15 @@ function SuperAdminAnnouncementsPage() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all">All Stores (Active + Trial)</SelectItem>
-                      <SelectItem value="trial">Trial Stores Only (Upsell/Tips)</SelectItem>
-                      <SelectItem value="active">Paid Active Stores Only</SelectItem>
+                      <SelectItem value="all">{t("admin.allStoresActiveTrial", "All Stores (Active + Trial)")}</SelectItem>
+                      <SelectItem value="trial">{t("admin.trialStoresOnlyTips", "Trial Stores Only (Upsell/Tips)")}</SelectItem>
+                      <SelectItem value="active">{t("admin.paidActiveStoresOnly", "Paid Active Stores Only")}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label htmlFor="bc-message">Announcement Message</Label>
+                  <Label htmlFor="bc-message">{t("admin.announcementMessage", "Announcement Message")}</Label>
                   <Textarea
                     id="bc-message"
                     required
@@ -504,17 +502,17 @@ function SuperAdminAnnouncementsPage() {
                     onChange={(e) =>
                       setNewAnnouncement({ ...newAnnouncement, message: e.target.value })
                     }
-                    placeholder="Describe the update, maintenance window, or announcement in detail..."
+                    placeholder={t("admin.announcementMsgPlaceholder", "Describe the update, maintenance window, or announcement in detail...")}
                   />
                 </div>
 
                 <div className="flex items-center justify-between p-3.5 rounded-xl border bg-muted/20">
                   <div>
                     <Label htmlFor="bc-active" className="text-xs font-bold text-foreground">
-                      Make Active Immediately
+                      {t("admin.makeActiveImmediately", "Make Active Immediately")}
                     </Label>
                     <p className="text-[11px] text-muted-foreground">
-                      Show in top store banners right after saving.
+                      {t("admin.makeActiveDesc", "Show in top store banners right after saving.")}
                     </p>
                   </div>
                   <Switch
@@ -529,10 +527,10 @@ function SuperAdminAnnouncementsPage() {
 
               <SheetFooter className="p-5 border-t bg-muted/20 flex sm:justify-end gap-2 shrink-0">
                 <Button type="button" variant="outline" onClick={() => setIsCreateOpen(false)}>
-                  Cancel
+                  {t("common.cancel", "Cancel")}
                 </Button>
                 <Button type="submit" disabled={createMutation.isPending}>
-                  {createMutation.isPending ? "Publishing…" : "Publish Announcement"}
+                  {createMutation.isPending ? t("admin.publishing", "Publishing…") : t("admin.publishAnnouncement", "Publish Announcement")}
                 </Button>
               </SheetFooter>
             </form>

@@ -10,6 +10,7 @@ import { v4 as uuidv4 } from "uuid";
 import { Store, CheckCircle2, Loader2 } from "lucide-react";
 import { useFormValidation } from "@/hooks/useFormValidation";
 import { FieldError } from "@/components/ui/field-error";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 export const Route = createFileRoute("/invite/$token")({
   head: () => ({ meta: [{ title: `Accept Invitation · ${appName} SaaS` }] }),
@@ -17,6 +18,7 @@ export const Route = createFileRoute("/invite/$token")({
 });
 
 function InvitePage() {
+  const { t } = useLanguage();
   const { token } = Route.useParams();
   const navigate = useNavigate();
 
@@ -127,11 +129,11 @@ function InvitePage() {
       <div className="flex h-screen items-center justify-center p-4 bg-muted/30">
         <div className="w-full max-w-md text-center p-8 bg-card border border-border shadow-soft rounded-2xl">
           <Store className="size-12 text-muted-foreground mx-auto mb-4" />
-          <h2 className="text-2xl font-bold mb-2">Invalid Invitation</h2>
+          <h2 className="text-2xl font-bold mb-2">{t("invalidInvitation", "Invalid Invitation")}</h2>
           <p className="text-muted-foreground mb-6">
-            This invitation link has expired or is invalid.
+            {t("invalidInvitationDesc", "This invitation link has expired or is invalid.")}
           </p>
-          <Button onClick={() => navigate({ to: "/login" })}>Go to Login</Button>
+          <Button onClick={() => navigate({ to: "/login" })}>{t("goToLogin", "Go to Login")}</Button>
         </div>
       </div>
     );
@@ -144,9 +146,9 @@ function InvitePage() {
           <div className="mx-auto flex size-12 items-center justify-center rounded-xl bg-primary shadow-sm mb-4">
             <Store className="size-6 text-primary-foreground" />
           </div>
-          <h1 className="text-xl font-bold">You've been invited!</h1>
+          <h1 className="text-xl font-bold">{t("youHaveBeenInvited", "You've been invited!")}</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Join your team as a{" "}
+            {t("joinYourTeamAs", "Join your team as a")}{" "}
             <span className="font-semibold text-foreground capitalize">{invitation?.role}</span>
           </p>
         </div>
@@ -155,13 +157,12 @@ function InvitePage() {
           {isSuccess ? (
             <div className="text-center animate-in fade-in zoom-in-95">
               <CheckCircle2 className="size-16 text-success mx-auto mb-4" />
-              <h2 className="text-xl font-bold mb-2">Registration Complete</h2>
+              <h2 className="text-xl font-bold mb-2">{t("registrationComplete", "Registration Complete")}</h2>
               <p className="text-muted-foreground text-sm mb-6">
-                Your account has been created and is awaiting approval from the store owner. You
-                will be able to log in once they approve it.
+                {t("registrationCompleteDesc", "Your account has been created and is awaiting approval from the store owner. You will be able to log in once they approve it.")}
               </p>
               <Button className="w-full" onClick={() => navigate({ to: "/login" })}>
-                Return to Login
+                {t("returnToLogin", "Return to Login")}
               </Button>
             </div>
           ) : (

@@ -266,7 +266,7 @@ function SubscriptionsPage() {
       const res = (await deleteSubscriptionFn({ data: { id } })) as any;
       if (res?.success) {
         queryClient.invalidateQueries({ queryKey: ["subscriptions", orgId] });
-        toast.success("Subscription removed");
+        toast.success(t("subscriptionRemoved", "Subscription removed"));
         setDeleteId(null);
       } else throw new Error(res?.error);
     } catch (err: any) {

@@ -256,7 +256,7 @@ function ProductsPage() {
         "products-catalog",
       );
     } catch (e) {
-      toast.error("Failed to export products");
+      toast.error(t("failedToExportProducts", "Failed to export products"));
     }
   };
 
@@ -360,7 +360,7 @@ function ProductsPage() {
                     ? "bg-card text-foreground shadow-sm font-bold"
                     : "text-muted-foreground hover:text-foreground"
                 }`}
-                title="Table View"
+                title={t("tableView", "Table View")}
               >
                 <TableIcon className="size-4" />
               </button>
@@ -372,7 +372,7 @@ function ProductsPage() {
                     ? "bg-card text-foreground shadow-sm font-bold"
                     : "text-muted-foreground hover:text-foreground"
                 }`}
-                title="Grid View"
+                title={t("gridView", "Grid View")}
               >
                 <LayoutGrid className="size-4" />
               </button>
@@ -476,7 +476,7 @@ function ProductsPage() {
                             setPrintCount(1);
                           }}
                           className="size-7 rounded-lg text-muted-foreground hover:text-foreground"
-                          title="Print Barcode Label"
+                          title={t("printBarcodeLabel", "Print Barcode Label")}
                         >
                           <Printer className="size-3.5" />
                         </Button>
@@ -684,7 +684,7 @@ function ProductsPage() {
               </div>
             </div>
             <div className="space-y-1.5">
-              <Label className="text-xs font-semibold">Number of Adhesive Labels</Label>
+              <Label className="text-xs font-semibold">{t("numberOfAdhesiveLabels", "Number of Adhesive Labels")}</Label>
               <Input
                 type="number"
                 min={1}

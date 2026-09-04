@@ -154,9 +154,9 @@ function StockList() {
   return (
     <div>
       <DataPage
-        title="Stock Inventory"
-        description="Monitor your current stock levels and AI forecasts."
-        searchPlaceholder="Search inventory by name or SKU..."
+        title={t("stockInventory", "Stock Inventory")}
+        description={t("stockInventoryDesc", "Monitor your current stock levels and AI forecasts.")}
+        searchPlaceholder={t("searchInventoryPlaceholder", "Search inventory by name or SKU...")}
         searchValue={search}
         onSearchChange={setSearch}
         hideToolbar={false}

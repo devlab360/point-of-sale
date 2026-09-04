@@ -186,15 +186,15 @@ function SalesReturnsPage() {
   const handleAdd = async () => {
     try {
       if (!saleId) {
-        toast.error("Please select an invoice");
+        toast.error(t("pleaseSelectInvoice", "Please select an invoice"));
         return;
       }
       if (!reason.trim()) {
-        toast.error("Reason is required");
+        toast.error(t("reasonRequired", "Reason is required"));
         return;
       }
       if (selectedItems.length === 0) {
-        toast.error("Select at least one item to return");
+        toast.error(t("selectAtLeastOneItemReturn", "Select at least one item to return"));
         return;
       }
 
@@ -280,12 +280,12 @@ function SalesReturnsPage() {
     try {
       const res = await deleteSalesReturnFn({ data: { id: deleteId } });
       if (res.success) {
-        toast.success("Return record deleted");
+        toast.success(t("returnRecordDeleted", "Return record deleted"));
         setDeleteId(null);
         queryClient.invalidateQueries({ queryKey: ["salesReturns"] });
       } else throw new Error(res.error);
     } catch {
-      toast.error("Failed to delete return");
+      toast.error(t("failedToDeleteReturn", "Failed to delete return"));
     }
   };
 
@@ -390,7 +390,7 @@ function SalesReturnsPage() {
                 </SheetHeader>
                 <div className="flex-1 overflow-y-auto p-5 space-y-4">
                   <div className="space-y-2">
-                    <Label className="text-xs font-semibold">Status</Label>
+                    <Label className="text-xs font-semibold">{t("status", "Status")}</Label>
                     <SearchableSelect
                       options={[
                         { value: "", label: "All Statuses" },
@@ -398,7 +398,7 @@ function SalesReturnsPage() {
                       ]}
                       value={draftFilters.status}
                       onChange={(val) => setDraftFilters((prev) => ({ ...prev, status: val }))}
-                      placeholder="Filter by Status"
+                      placeholder={t("filterByStatus", "Filter by Status")}
                     />
                   </div>
                 </div>
@@ -543,7 +543,7 @@ function SalesReturnsPage() {
           </SheetHeader>
           <div className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-5">
             <div className="space-y-1.5">
-              <Label>Select Invoice</Label>
+              <Label>{t("selectInvoice", "Select Invoice")}</Label>
               <SearchableSelect
                 options={sales.map((s) => ({
                   value: s.id,
@@ -555,13 +555,13 @@ function SalesReturnsPage() {
                   setSaleId(val);
                   setSelectedItems([]);
                 }}
-                placeholder="— choose an invoice —"
+                placeholder={t("chooseInvoicePlaceholder", "— choose an invoice —")}
               />
             </div>
 
             {selectedSale && (
               <div className="space-y-1.5">
-                <Label>Items to Return</Label>
+                <Label>{t("itemsToReturn", "Items to Return")}</Label>
                 <div className="space-y-2 rounded-xl border border-border bg-card p-3 max-h-60 overflow-y-auto">
                   {selectedSale.saleItems?.map((item) => {
                     const checked = selectedItems.some((i) => i.productId === item.productId);
@@ -588,11 +588,11 @@ function SalesReturnsPage() {
             )}
 
             <div className="space-y-1.5">
-              <Label>Return Reason</Label>
+              <Label>{t("returnReason", "Return Reason")}</Label>
               <Input
                 value={reason}
                 onChange={(e) => setReason(e.target.value)}
-                placeholder="e.g. Wrong item, Damaged, Customer changed mind"
+                placeholder={t("returnReasonPlaceholder", "e.g. Wrong item, Damaged, Customer changed mind")}
               />
             </div>
 
@@ -600,17 +600,17 @@ function SalesReturnsPage() {
               <div className="space-y-3 pt-2">
                 {selectedSale?.customerId && (
                   <div className="space-y-1.5">
-                    <Label>Refund Method</Label>
+                    <Label>{t("refundMethod", "Refund Method")}</Label>
                     <SearchableSelect
                       options={REFUND_METHODS.map((r) => ({ value: r.value, label: r.label }))}
                       value={refundMethod}
                       onChange={(val) => setRefundMethod(val as any)}
-                      placeholder="Select Refund Method"
+                      placeholder={t("selectRefundMethod", "Select Refund Method")}
                     />
                   </div>
                 )}
                 <div className="rounded-xl bg-muted/40 border border-border/80 p-4 text-sm flex justify-between items-center">
-                  <span className="text-muted-foreground font-semibold">Refund total:</span>
+                  <span className="text-muted-foreground font-semibold">{t("refundTotal", "Refund total:")}</span>
                   <span className="text-lg font-black text-destructive">
                     {formatCurrency(selectedItems.reduce((s, i) => s + i.total, 0))}
                   </span>
@@ -634,13 +634,13 @@ function SalesReturnsPage() {
       <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Return Record?</AlertDialogTitle>
+            <AlertDialogTitle>{t("deleteReturnRecordQ", "Delete Return Record?")}</AlertDialogTitle>
             <AlertDialogDescription>
               This will remove the return record. Stock will not be reversed.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{t("cancel", "Cancel")}</AlertDialogCancel>
             <AlertDialogAction
               className="bg-destructive text-destructive-foreground"
               onClick={handleDelete}

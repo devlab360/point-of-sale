@@ -293,21 +293,16 @@
   -webkit-tap-highlight-color: transparent;
 }
 
-/* Responsive table wrapper */
+/* Responsive table wrapper - ensures table view is always visible and smoothly horizontally scrollable on mobile */
 @utility table-desktop {
-  display: none;
-
-  @media (min-width: 768px) {
-    display: block;
-  }
+  display: block;
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 @utility table-mobile-cards {
-  display: block;
-
-  @media (min-width: 768px) {
-    display: none;
-  }
+  display: none;
 }
 
 /* Glassmorphism panel utility */

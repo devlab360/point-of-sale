@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { appName } from "@/lib/env";
 import { SuperAdminLayout } from "@/components/admin/SuperAdminLayout";
 import { PageHeader } from "@/components/layout/PageHeader";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { StatCard } from "@/components/layout/StatCard";
 import {
   BookOpen,
@@ -55,6 +56,7 @@ export const Route = createFileRoute("/admin/help")({
 });
 
 function SuperAdminHelpPage() {
+  const { t } = useLanguage();
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<"articles" | "faqs">("articles");
   const [searchQuery, setSearchQuery] = useState("");
@@ -89,7 +91,7 @@ function SuperAdminHelpPage() {
   const createArticleMutation = useMutation({
     mutationFn: (data: any) => createHelpArticleAdminFn({ data }),
     onSuccess: () => {
-      toast.success("Help article published!");
+      toast.success(t("admin.helpArticlePublishedToast", "Help article published!"));
       setIsArticleModalOpen(false);
       setNewArticle({ title: "", type: "doc", content: "" });
       queryClient.invalidateQueries({ queryKey: ["super-admin-help"] });
@@ -99,7 +101,7 @@ function SuperAdminHelpPage() {
   const deleteArticleMutation = useMutation({
     mutationFn: (id: string) => deleteHelpArticleAdminFn({ data: { id } }),
     onSuccess: () => {
-      toast.success("Article deleted");
+      toast.success(t("admin.articleDeletedToast", "Article deleted"));
       queryClient.invalidateQueries({ queryKey: ["super-admin-help"] });
     },
   });
@@ -107,7 +109,7 @@ function SuperAdminHelpPage() {
   const createFaqMutation = useMutation({
     mutationFn: (data: any) => createFaqAdminFn({ data }),
     onSuccess: () => {
-      toast.success("FAQ published!");
+      toast.success(t("admin.faqPublishedToast", "FAQ published!"));
       setIsFaqModalOpen(false);
       setNewFaq({ question: "", answer: "" });
       queryClient.invalidateQueries({ queryKey: ["super-admin-help"] });
@@ -117,7 +119,7 @@ function SuperAdminHelpPage() {
   const deleteFaqMutation = useMutation({
     mutationFn: (id: string) => deleteFaqAdminFn({ data: { id } }),
     onSuccess: () => {
-      toast.success("FAQ deleted");
+      toast.success(t("admin.faqDeletedToast", "FAQ deleted"));
       queryClient.invalidateQueries({ queryKey: ["super-admin-help"] });
     },
   });
@@ -139,8 +141,8 @@ function SuperAdminHelpPage() {
       <div className="page-container space-y-6">
         {/* Header */}
         <PageHeader
-          title="Help Center, Guides & Merchant FAQs"
-          description="Create and publish documentation guides, video tutorials, and interactive answers for merchant stores."
+          title={t("admin.helpTitle", "Help Center, Guides & Merchant FAQs")}
+          description={t("admin.helpDesc", "Create and publish documentation guides, video tutorials, and interactive answers for merchant stores.")}
           actions={
             <div className="flex flex-wrap items-center gap-2">
               <Button
@@ -151,7 +153,7 @@ function SuperAdminHelpPage() {
                 disabled={isFetching}
               >
                 <RefreshCw className={`size-3.5 ${isFetching ? "animate-spin" : ""}`} />
-                <span>Refresh</span>
+                <span>{t("common.refresh", "Refresh")}</span>
               </Button>
               <Button
                 variant="outline"
@@ -179,7 +181,7 @@ function SuperAdminHelpPage() {
                 }}
               >
                 <Download className="size-3.5" />
-                <span>Export CSV</span>
+                <span>{t("common.exportCsv", "Export CSV")}</span>
               </Button>
               {activeTab === "articles" ? (
                 <Button
@@ -188,7 +190,7 @@ function SuperAdminHelpPage() {
                   className="gap-2 h-9 shadow-xs"
                 >
                   <Plus className="size-4" />
-                  <span>New Guide / Video</span>
+                  <span>{t("admin.newGuideVideo", "New Guide / Video")}</span>
                 </Button>
               ) : (
                 <Button
@@ -197,7 +199,7 @@ function SuperAdminHelpPage() {
                   className="gap-2 h-9 shadow-xs"
                 >
                   <Plus className="size-4" />
-                  <span>New FAQ Entry</span>
+                  <span>{t("admin.newFaqEntry", "New FAQ Entry")}</span>
                 </Button>
               )}
             </div>
@@ -207,23 +209,23 @@ function SuperAdminHelpPage() {
         {/* Top KPI Metric Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <StatCard
-            label="Documentation Guides"
+            label={t("admin.documentationGuides", "Documentation Guides")}
             value={String(docArticlesCount)}
-            hint="Step-by-step written articles"
+            hint={t("admin.stepByStepArticles", "Step-by-step written articles")}
             icon={FileText}
             accent="primary"
           />
           <StatCard
-            label="Video Tutorials"
+            label={t("admin.videoTutorials", "Video Tutorials")}
             value={String(videoArticlesCount)}
-            hint="Visual onboarding videos"
+            hint={t("admin.visualOnboardingVideos", "Visual onboarding videos")}
             icon={Video}
             accent="info"
           />
           <StatCard
-            label="Merchant FAQs"
+            label={t("admin.merchantFaqs", "Merchant FAQs")}
             value={String(faqs.length)}
-            hint="Instant merchant answers"
+            hint={t("admin.instantMerchantAnswers", "Instant merchant answers")}
             icon={HelpCircle}
             accent="success"
           />
@@ -242,7 +244,7 @@ function SuperAdminHelpPage() {
               }`}
             >
               <BookOpen className="size-3.5" />
-              <span>Articles & Videos ({articles.length})</span>
+              <span>{t("admin.articlesAndVideos", "Articles & Videos")} ({articles.length})</span>
             </button>
             <button
               type="button"
@@ -254,14 +256,14 @@ function SuperAdminHelpPage() {
               }`}
             >
               <HelpCircle className="size-3.5" />
-              <span>Merchant FAQs ({faqs.length})</span>
+              <span>{t("admin.merchantFaqsTab", "Merchant FAQs")} ({faqs.length})</span>
             </button>
           </div>
 
           <div className="relative w-full sm:w-72">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
             <Input
-              placeholder="Search guides or FAQs..."
+              placeholder={t("admin.searchGuidesFaqs", "Search guides or FAQs...")}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-9 h-9 bg-background/50 text-xs"
@@ -273,15 +275,15 @@ function SuperAdminHelpPage() {
         {isLoading ? (
           <div className="flex flex-col items-center justify-center p-16 space-y-3">
             <Loader2 className="size-8 animate-spin text-primary" />
-            <p className="text-xs text-muted-foreground font-medium">Loading documentation…</p>
+            <p className="text-xs text-muted-foreground font-medium">{t("admin.loadingDocumentation", "Loading documentation…")}</p>
           </div>
         ) : activeTab === "articles" ? (
           filteredArticles.length === 0 ? (
             <div className="p-16 text-center rounded-2xl border bg-card space-y-3">
               <BookOpen className="size-8 mx-auto text-muted-foreground/40" />
-              <h4 className="font-bold text-sm text-foreground">No Help Articles Found</h4>
+              <h4 className="font-bold text-sm text-foreground">{t("admin.noArticlesFound", "No Help Articles Found")}</h4>
               <p className="text-xs text-muted-foreground">
-                Publish documentation guides or video tutorials to assist store staff.
+                {t("admin.noArticlesDesc", "Publish documentation guides or video tutorials to assist store staff.")}
               </p>
             </div>
           ) : (
@@ -302,7 +304,7 @@ function SuperAdminHelpPage() {
                         ) : (
                           <FileText className="size-3" />
                         )}
-                        {art.type === "video" ? "Video Tutorial" : "Documentation"}
+                        {art.type === "video" ? t("admin.videoTutorial", "Video Tutorial") : t("admin.documentation", "Documentation")}
                       </Badge>
                       <span className="text-[10px] text-muted-foreground font-mono">
                         {new Date(art.createdAt).toLocaleDateString()}
@@ -321,12 +323,12 @@ function SuperAdminHelpPage() {
                       variant="ghost"
                       className="h-7 text-xs text-destructive hover:bg-destructive/10"
                       onClick={() => {
-                        if (confirm(`Delete article "${art.title}"?`)) {
+                        if (confirm(`${t("admin.deleteArticleConfirm", "Delete article")} "${art.title}"?`)) {
                           deleteArticleMutation.mutate(art.id);
                         }
                       }}
                     >
-                      <Trash2 className="size-3.5 mr-1" /> Delete
+                      <Trash2 className="size-3.5 mr-1" /> {t("common.delete", "Delete")}
                     </Button>
                   </div>
                 </div>
@@ -336,9 +338,9 @@ function SuperAdminHelpPage() {
         ) : filteredFaqs.length === 0 ? (
           <div className="p-16 text-center rounded-2xl border bg-card space-y-3">
             <HelpCircle className="size-8 mx-auto text-muted-foreground/40" />
-            <h4 className="font-bold text-sm text-foreground">No FAQs Configured</h4>
+            <h4 className="font-bold text-sm text-foreground">{t("admin.noFaqsConfigured", "No FAQs Configured")}</h4>
             <p className="text-xs text-muted-foreground">
-              Add frequently asked questions for quick answers.
+              {t("admin.noFaqsDesc", "Add frequently asked questions for quick answers.")}
             </p>
           </div>
         ) : (
@@ -360,7 +362,7 @@ function SuperAdminHelpPage() {
                   variant="ghost"
                   className="h-8 text-xs text-destructive hover:bg-destructive/10 shrink-0"
                   onClick={() => {
-                    if (confirm(`Delete FAQ "${faq.question}"?`)) {
+                    if (confirm(`${t("admin.deleteFaqConfirm", "Delete FAQ")} "${faq.question}"?`)) {
                       deleteFaqMutation.mutate(faq.id);
                     }
                   }}
@@ -380,10 +382,10 @@ function SuperAdminHelpPage() {
           >
             <SheetHeader className="bg-muted/60 p-5 border-b pr-12 text-left">
               <SheetTitle className="text-lg font-bold text-foreground">
-                New Help Article or Video
+                {t("admin.newHelpArticleOrVideo", "New Help Article or Video")}
               </SheetTitle>
               <SheetDescription className="text-xs text-muted-foreground mt-0.5">
-                Publish a guide or tutorial for all registered store merchants.
+                {t("admin.helpArticleDrawerDesc", "Publish a guide or tutorial for all registered store merchants.")}
               </SheetDescription>
             </SheetHeader>
 
@@ -396,18 +398,18 @@ function SuperAdminHelpPage() {
             >
               <div className="flex-1 overflow-y-auto p-5 space-y-4">
                 <div className="space-y-1.5">
-                  <Label htmlFor="art-title">Article Title</Label>
+                  <Label htmlFor="art-title">{t("admin.articleTitle", "Article Title")}</Label>
                   <Input
                     id="art-title"
                     required
                     value={newArticle.title}
                     onChange={(e) => setNewArticle({ ...newArticle, title: e.target.value })}
-                    placeholder="e.g. Setting Up Receipt Printers"
+                    placeholder={t("admin.articleTitlePlaceholder", "e.g. Setting Up Receipt Printers")}
                   />
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label htmlFor="art-type">Content Format</Label>
+                  <Label htmlFor="art-type">{t("admin.contentFormat", "Content Format")}</Label>
                   <Select
                     value={newArticle.type}
                     onValueChange={(val: any) => setNewArticle({ ...newArticle, type: val })}
@@ -416,8 +418,8 @@ function SuperAdminHelpPage() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="doc">Text Documentation Guide</SelectItem>
-                      <SelectItem value="video">Embedded Video Tutorial</SelectItem>
+                      <SelectItem value="doc">{t("admin.textDocumentationGuide", "Text Documentation Guide")}</SelectItem>
+                      <SelectItem value="video">{t("admin.embeddedVideoTutorial", "Embedded Video Tutorial")}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -425,8 +427,8 @@ function SuperAdminHelpPage() {
                 <div className="space-y-1.5">
                   <Label htmlFor="art-content">
                     {newArticle.type === "video"
-                      ? "Video URL (YouTube/Vimeo)"
-                      : "Guide Markdown Content"}
+                      ? t("admin.videoUrlPlaceholder", "Video URL (YouTube/Vimeo)")
+                      : t("admin.guideMarkdownContent", "Guide Markdown Content")}
                   </Label>
                   <Textarea
                     id="art-content"
@@ -437,7 +439,7 @@ function SuperAdminHelpPage() {
                     placeholder={
                       newArticle.type === "video"
                         ? "https://www.youtube.com/watch?v=..."
-                        : "Describe the step-by-step instructions..."
+                        : t("admin.describeStepByStepPlaceholder", "Describe the step-by-step instructions...")
                     }
                   />
                 </div>
@@ -449,10 +451,10 @@ function SuperAdminHelpPage() {
                   variant="outline"
                   onClick={() => setIsArticleModalOpen(false)}
                 >
-                  Cancel
+                  {t("common.cancel", "Cancel")}
                 </Button>
                 <Button type="submit" disabled={createArticleMutation.isPending}>
-                  {createArticleMutation.isPending ? "Publishing…" : "Publish Guide"}
+                  {createArticleMutation.isPending ? t("admin.publishing", "Publishing…") : t("admin.publishGuide", "Publish Guide")}
                 </Button>
               </SheetFooter>
             </form>
@@ -467,10 +469,10 @@ function SuperAdminHelpPage() {
           >
             <SheetHeader className="bg-muted/60 p-5 border-b pr-12 text-left">
               <SheetTitle className="text-lg font-bold text-foreground">
-                Add New Merchant FAQ
+                {t("admin.addNewMerchantFaq", "Add New Merchant FAQ")}
               </SheetTitle>
               <SheetDescription className="text-xs text-muted-foreground mt-0.5">
-                Provide instant answers for commonly encountered issues.
+                {t("admin.merchantFaqDrawerDesc", "Provide instant answers for commonly encountered issues.")}
               </SheetDescription>
             </SheetHeader>
 
@@ -483,35 +485,35 @@ function SuperAdminHelpPage() {
             >
               <div className="flex-1 overflow-y-auto p-5 space-y-4">
                 <div className="space-y-1.5">
-                  <Label htmlFor="faq-q">Question</Label>
+                  <Label htmlFor="faq-q">{t("admin.question", "Question")}</Label>
                   <Input
                     id="faq-q"
                     required
                     value={newFaq.question}
                     onChange={(e) => setNewFaq({ ...newFaq, question: e.target.value })}
-                    placeholder="e.g. How do I enable multi-currency billing?"
+                    placeholder={t("admin.faqQuestionPlaceholder", "e.g. How do I enable multi-currency billing?")}
                   />
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label htmlFor="faq-a">Answer</Label>
+                  <Label htmlFor="faq-a">{t("admin.answer", "Answer")}</Label>
                   <Textarea
                     id="faq-a"
                     rows={5}
                     required
                     value={newFaq.answer}
                     onChange={(e) => setNewFaq({ ...newFaq, answer: e.target.value })}
-                    placeholder="Go to Settings > Store Profile > Currency and select your target currency..."
+                    placeholder={t("admin.faqAnswerPlaceholder", "Go to Settings > Store Profile > Currency and select your target currency...")}
                   />
                 </div>
               </div>
 
               <SheetFooter className="p-5 border-t bg-muted/20 flex sm:justify-end gap-2 shrink-0">
                 <Button type="button" variant="outline" onClick={() => setIsFaqModalOpen(false)}>
-                  Cancel
+                  {t("common.cancel", "Cancel")}
                 </Button>
                 <Button type="submit" disabled={createFaqMutation.isPending}>
-                  {createFaqMutation.isPending ? "Saving FAQ…" : "Save FAQ Entry"}
+                  {createFaqMutation.isPending ? t("admin.savingFaq", "Saving FAQ…") : t("admin.saveFaqEntry", "Save FAQ Entry")}
                 </Button>
               </SheetFooter>
             </form>

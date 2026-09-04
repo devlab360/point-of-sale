@@ -137,7 +137,7 @@ function SalesPage() {
         toast.error(res?.error || "Failed to void bill");
       }
     },
-    onError: () => toast.error("Failed to void bill"),
+    onError: () => toast.error(t("failedToVoidBill", "Failed to void bill")),
   });
 
   const {
@@ -391,57 +391,57 @@ function SalesPage() {
                     <span>{t("filterTransactions", "Filter Transactions")}</span>
                   </SheetTitle>
                   <SheetDescription className="text-xs text-muted-foreground mt-0.5">
-                    Filter by status, payment method, branch, or sync status.
+                    {t("filterSalesDesc", "Filter by status, payment method, branch, or sync status.")}
                   </SheetDescription>
                 </SheetHeader>
                 <div className="flex-1 overflow-y-auto p-5 space-y-4">
                   <div className="space-y-2">
-                    <Label className="text-xs font-semibold">Status</Label>
+                    <Label className="text-xs font-semibold">{t("status", "Status")}</Label>
                     <SearchableSelect
                       options={[
-                        { value: "", label: "All Statuses" },
+                        { value: "", label: t("allStatuses", "All Statuses") },
                         ...ORDER_STATUSES.map((s) => ({ value: s.value, label: s.label })),
                       ]}
                       value={draftFilters.status}
                       onChange={(val) => setDraftFilters((prev) => ({ ...prev, status: val }))}
-                      placeholder="Filter by Status"
+                      placeholder={t("filterByStatus", "Filter by Status")}
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label className="text-xs font-semibold">Payment Method</Label>
+                    <Label className="text-xs font-semibold">{t("paymentMethod", "Payment Method")}</Label>
                     <SearchableSelect
                       options={[
-                        { value: "", label: "All Methods" },
+                        { value: "", label: t("allMethods", "All Methods") },
                         ...PAYMENT_METHOD_OPTIONS.map((m) => ({ value: m.value, label: m.label })),
                       ]}
                       value={draftFilters.payment}
                       onChange={(val) => setDraftFilters((prev) => ({ ...prev, payment: val }))}
-                      placeholder="Filter by Payment"
+                      placeholder={t("filterByPayment", "Filter by Payment")}
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label className="text-xs font-semibold">Sync Status</Label>
+                    <Label className="text-xs font-semibold">{t("syncStatus", "Sync Status")}</Label>
                     <SearchableSelect
                       options={[
-                        { value: "", label: "All Sync Status" },
-                        { value: "synced", label: "Synced" },
-                        { value: "pending", label: "Pending Sync" },
+                        { value: "", label: t("allSyncStatus", "All Sync Status") },
+                        { value: "synced", label: t("synced", "Synced") },
+                        { value: "pending", label: t("pendingSync", "Pending Sync") },
                       ]}
                       value={draftFilters.sync}
                       onChange={(val) => setDraftFilters((prev) => ({ ...prev, sync: val }))}
-                      placeholder="Filter by Sync"
+                      placeholder={t("filterBySync", "Filter by Sync")}
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label className="text-xs font-semibold">Store Branch</Label>
+                    <Label className="text-xs font-semibold">{t("storeBranch", "Store Branch")}</Label>
                     <SearchableSelect
                       options={[
-                        { value: "", label: "All Branches" },
+                        { value: "", label: t("allBranches", "All Branches") },
                         ...locations.map((loc: any) => ({ value: loc.id, label: loc.name })),
                       ]}
                       value={draftFilters.location}
                       onChange={(val) => setDraftFilters((prev) => ({ ...prev, location: val }))}
-                      placeholder="Filter by Branch"
+                      placeholder={t("filterByBranch", "Filter by Branch")}
                     />
                   </div>
                 </div>
@@ -621,7 +621,7 @@ function SalesPage() {
                                 size="icon"
                                 className="size-8"
                                 onClick={() => setViewSale(s)}
-                                title="View Receipt"
+                                title={t("viewReceipt", "View Receipt")}
                               >
                                 <Eye className="size-4" />
                               </Button>
@@ -630,7 +630,7 @@ function SalesPage() {
                                 size="icon"
                                 className="size-8 text-primary"
                                 onClick={() => handlePrintDirect(s)}
-                                title="Quick Thermal Print"
+                                title={t("quickThermalPrint", "Quick Thermal Print")}
                               >
                                 <Printer className="size-4" />
                               </Button>
@@ -643,7 +643,7 @@ function SalesPage() {
                                     setVoidTarget(s);
                                     setVoidReason("");
                                   }}
-                                  title="Void this bill"
+                                  title={t("voidThisBill", "Void this bill")}
                                 >
                                   <Ban className="size-4" />
                                 </Button>
@@ -679,7 +679,7 @@ function SalesPage() {
                       </div>
                       <div className="flex items-center gap-1.5 mt-1">
                         <Badge variant="outline" className="text-[9px] font-bold uppercase py-0">
-                          {s.paymentMethod || "cash"}
+                          {s.paymentMethod === "split" ? t("split", "SPLIT") : (s.paymentMethod || "cash")}
                         </Badge>
                         <Badge
                           className={cn(
@@ -750,19 +750,19 @@ function SalesPage() {
                 <div className="flex-1 overflow-y-auto p-5 space-y-4">
                   <div className="grid grid-cols-2 gap-2 text-sm">
                     <div>
-                      <span className="text-muted-foreground">Customer:</span>{" "}
+                      <span className="text-muted-foreground">{t("customer", "Customer")}:</span>{" "}
                       <strong>{viewSale.customerName || "Walk-in"}</strong>
                     </div>
                     <div>
-                      <span className="text-muted-foreground">Date:</span>{" "}
+                      <span className="text-muted-foreground">{t("date", "Date")}:</span>{" "}
                       {formatDateTime(viewSale.date)}
                     </div>
                     <div>
-                      <span className="text-muted-foreground">Payment:</span>{" "}
+                      <span className="text-muted-foreground">{t("payment", "Payment")}:</span>{" "}
                       <strong className="capitalize">{viewSale.paymentMethod}</strong>
                     </div>
                     <div>
-                      <span className="text-muted-foreground">Status:</span>{" "}
+                      <span className="text-muted-foreground">{t("status", "Status")}:</span>{" "}
                       <Badge
                         variant="outline"
                         className={cn(
@@ -819,35 +819,35 @@ function SalesPage() {
                   <div className="space-y-1 rounded-lg bg-muted/40 p-3 text-sm">
                     {viewSale.subtotal !== undefined && (
                       <div className="flex justify-between">
-                        <span className="text-muted-foreground">Subtotal</span>
+                        <span className="text-muted-foreground">{t("subtotal", "Subtotal")}</span>
                         <span>{formatCurrency(viewSale.subtotal)}</span>
                       </div>
                     )}
                     {viewSale.discountAmt !== undefined && viewSale.discountAmt > 0 && (
                       <div className="flex justify-between text-destructive">
-                        <span>Discount</span>
+                        <span>{t("discount", "Discount")}</span>
                         <span>-{formatCurrency(viewSale.discountAmt)}</span>
                       </div>
                     )}
                     {viewSale.taxAmt !== undefined && (
                       <div className="flex justify-between">
-                        <span className="text-muted-foreground">Tax</span>
+                        <span className="text-muted-foreground">{t("tax", "Tax")}</span>
                         <span>{formatCurrency(viewSale.taxAmt)}</span>
                       </div>
                     )}
                     <div className="flex justify-between border-t border-border pt-1 font-bold">
-                      <span>Total</span>
+                      <span>{t("total", "Total")}</span>
                       <span>{formatCurrency(viewSale.total)}</span>
                     </div>
                     {viewSale.paymentMethod === "cash" && viewSale.cashTendered && (
                       <div className="flex justify-between text-muted-foreground mt-1 pt-1 border-t border-border">
-                        <span>Cash Tendered</span>
+                        <span>{t("cashTendered", "Cash Tendered")}</span>
                         <span>{formatCurrency(parseFloat(viewSale.cashTendered))}</span>
                       </div>
                     )}
                     {viewSale.paymentMethod === "cash" && viewSale.changeDue != null && (
                       <div className="flex justify-between font-semibold text-success">
-                        <span>Change Due</span>
+                        <span>{t("changeDue", "Change Due")}</span>
                         <span>{formatCurrency(parseFloat(viewSale.changeDue))}</span>
                       </div>
                     )}
@@ -905,15 +905,15 @@ function SalesPage() {
             })()}
             <div className="border-t border-black pt-2 mb-2 text-[11px]">
               <div className="flex justify-between">
-                <span>Receipt #:</span>
+                <span>{t("receiptNumber", "Receipt #")}:</span>
                 <span>{viewSale.id.slice(0, 8).toUpperCase()}</span>
               </div>
               <div className="flex justify-between">
-                <span>Date:</span>
+                <span>{t("date", "Date")}:</span>
                 <span>{formatDateTime(viewSale.date)}</span>
               </div>
               <div className="flex justify-between">
-                <span>Customer:</span>
+                <span>{t("customer", "Customer")}:</span>
                 <span>{viewSale.customerName || "Walk-in"}</span>
               </div>
             </div>
@@ -928,22 +928,22 @@ function SalesPage() {
               ))}
             </div>
             <div className="flex justify-between font-bold">
-              <span>TOTAL:</span>
+              <span>{t("totalUpper", "TOTAL")}:</span>
               <span>{formatCurrency(viewSale.total)}</span>
             </div>
             {viewSale.paymentMethod === "cash" && viewSale.cashTendered && (
               <div className="flex justify-between mt-1 pt-1 border-t border-black">
-                <span>Cash Tendered:</span>
+                <span>{t("cashTendered", "Cash Tendered")}:</span>
                 <span>{formatCurrency(parseFloat(viewSale.cashTendered))}</span>
               </div>
             )}
             {viewSale.paymentMethod === "cash" && viewSale.changeDue != null && (
               <div className="flex justify-between font-bold">
-                <span>Change Due:</span>
+                <span>{t("changeDue", "Change Due")}:</span>
                 <span>{formatCurrency(parseFloat(viewSale.changeDue))}</span>
               </div>
             )}
-            <p className="mt-3 text-center text-[10px]">Thank you for your business!</p>
+            <p className="mt-3 text-center text-[10px]">{t("thankYouForBusiness", "Thank you for your business!")}</p>
           </div>
         </div>
       )}
@@ -971,11 +971,11 @@ function SalesPage() {
               restore the stock. This action cannot be undone.
             </p>
             <div className="space-y-1.5">
-              <Label className="text-xs font-bold">Reason (required)</Label>
+              <Label className="text-xs font-bold">{t("reasonRequired", "Reason (required)")}</Label>
               <Input
                 value={voidReason}
                 onChange={(e) => setVoidReason(e.target.value)}
-                placeholder="e.g. Wrong items, customer returned"
+                placeholder={t("voidReasonPlaceholder", "e.g. Wrong items, customer returned")}
               />
             </div>
           </div>

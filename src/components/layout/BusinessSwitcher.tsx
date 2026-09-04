@@ -27,6 +27,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { useAuth } from "@/contexts/AuthContext";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { PersistStore } from "@/lib/session-store";
 import { SessionStore } from "@/lib/session-store";
 
@@ -43,6 +44,7 @@ const INDUSTRIES = [
 ];
 
 export function BusinessSwitcher() {
+  const { t } = useLanguage();
   const { user, settings, refetchOrgData } = useAuth() as any;
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -158,7 +160,7 @@ export function BusinessSwitcher() {
           <Button
             variant="ghost"
             className="h-8 sm:h-9 gap-1.5 sm:gap-2 rounded-xl border border-border/70 bg-card/70 px-2 sm:px-2.5 text-xs sm:text-sm font-semibold text-foreground hover:bg-card shadow-xs shrink min-w-0 cursor-pointer"
-            title="Switch business or branch"
+            title={t("switchBusinessOrBranch", "Switch business or branch")}
           >
             <Building2 className="size-3.5 sm:size-4 text-primary shrink-0" />
             <div className="flex items-center gap-1.5 min-w-0 text-left">
@@ -175,15 +177,15 @@ export function BusinessSwitcher() {
         </PopoverTrigger>
         <PopoverContent className="w-80 p-2" align="start" sideOffset={8}>
           <div className="px-2 pb-2 pt-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-            Your Businesses
+            {t("yourBusinesses", "Your Businesses")}
           </div>
           <div className="max-h-64 overflow-y-auto space-y-1">
             {isLoading && (
-              <div className="px-2 py-3 text-center text-xs text-muted-foreground">Loading...</div>
+              <div className="px-2 py-3 text-center text-xs text-muted-foreground">{t("loading", "Loading...")}</div>
             )}
             {!isLoading && orgs.length === 0 && (
               <div className="px-2 py-3 text-center text-xs text-muted-foreground">
-                No businesses found
+                {t("noBusinessesFound", "No businesses found")}
               </div>
             )}
             {orgs.map((org) => {
@@ -205,7 +207,7 @@ export function BusinessSwitcher() {
                     <div className="min-w-0 flex-1">
                       <div className="truncate font-medium">{org.name}</div>
                       <div className="truncate text-[11px] text-muted-foreground">
-                        {org.industryType || "Business"} · {org.branches?.length || 0} branches
+                        {org.industryType || "Business"} · {org.branches?.length || 0} {t("branches", "branches")}
                       </div>
                     </div>
                     {isActive && <Check className="size-4 text-primary shrink-0" />}
@@ -216,7 +218,7 @@ export function BusinessSwitcher() {
                       onClick={() => setDeleteOrgId(org.id)}
                       className="p-1.5 rounded transition-colors hover:bg-destructive/10 text-muted-foreground"
                       disabled={deleteMutation.isPending}
-                      title="Delete business"
+                      title={t("deleteBusiness", "Delete business")}
                     >
                       {deleteMutation.isPending && deleteOrgId === org.id ? (
                         <Loader2 className="size-3.5 animate-spin" />
@@ -232,12 +234,12 @@ export function BusinessSwitcher() {
 
           <div className="mt-2 border-t border-border pt-2">
             <div className="px-2 pb-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-              Branches
+              {t("branches", "Branches")}
             </div>
             <div className="max-h-40 overflow-y-auto space-y-0.5">
               {branches.length === 0 && (
                 <div className="px-2 py-2 text-xs text-muted-foreground">
-                  No branches for this business
+                  {t("noBranchesForBusiness", "No branches for this business")}
                 </div>
               )}
               {branches.map((b) => {
@@ -256,7 +258,7 @@ export function BusinessSwitcher() {
                     {isActive ? (
                       <Check className="size-3.5 text-primary shrink-0" />
                     ) : (
-                      <span className="text-muted-foreground/60">Switch</span>
+                      <span className="text-muted-foreground/60">{t("switch", "Switch")}</span>
                     )}
                   </button>
                 );
@@ -271,26 +273,26 @@ export function BusinessSwitcher() {
               className="w-full gap-1.5"
               onClick={() => setCreateOpen((v) => !v)}
             >
-              <Plus className="size-3.5" /> Add Business
+              <Plus className="size-3.5" /> {t("addBusiness", "Add Business")}
             </Button>
             {createOpen && (
               <div className="mt-2 space-y-2">
                 <div className="space-y-1">
-                  <Label className="text-xs">Business Name</Label>
+                  <Label className="text-xs">{t("businessName", "Business Name")}</Label>
                   <Input
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    placeholder="e.g. My Retail Store"
+                    placeholder={t("businessNamePlaceholder", "e.g. My Retail Store")}
                     className="h-8 text-sm"
                   />
                 </div>
                 <div className="space-y-1">
-                  <Label className="text-xs">Industry Type</Label>
+                  <Label className="text-xs">{t("industryType", "Industry Type")}</Label>
                   <SearchableSelect
                     options={INDUSTRIES.map((o) => ({ value: o, label: o }))}
                     value={industry}
                     onChange={setIndustry}
-                    placeholder="Choose industry..."
+                    placeholder={t("chooseIndustry", "Choose industry...")}
                   />
                 </div>
                 <Button
@@ -300,7 +302,7 @@ export function BusinessSwitcher() {
                   onClick={() => createMutation.mutate()}
                 >
                   {createMutation.isPending && <Loader2 className="size-3.5 animate-spin" />}
-                  Create Business
+                  {t("createBusiness", "Create Business")}
                 </Button>
               </div>
             )}
@@ -317,18 +319,20 @@ export function BusinessSwitcher() {
               </div>
               <div>
                 <DialogTitle className="text-lg font-bold text-foreground">
-                  Delete Business
+                  {t("deleteBusiness", "Delete Business")}
                 </DialogTitle>
                 <DialogDescription className="text-xs text-muted-foreground mt-0.5">
-                  Are you sure you want to delete this business? This action cannot be undone. All
-                  data including branches, products, sales, and users will be permanently removed.
+                  {t(
+                    "deleteBusinessConfirmDesc",
+                    "Are you sure you want to delete this business? This action cannot be undone. All data including branches, products, sales, and users will be permanently removed.",
+                  )}
                 </DialogDescription>
               </div>
             </div>
           </DialogHeader>
           <DialogFooter className="mt-4 flex flex-row items-center justify-end gap-2">
             <Button type="button" variant="outline" onClick={() => setDeleteOrgId(null)}>
-              Cancel
+              {t("cancel", "Cancel")}
             </Button>
             <Button
               type="button"
@@ -340,10 +344,10 @@ export function BusinessSwitcher() {
             >
               {deleteMutation.isPending ? (
                 <>
-                  <Loader2 className="size-3.5 animate-spin mr-2" /> Deleting...
+                  <Loader2 className="size-3.5 animate-spin mr-2" /> {t("deleting", "Deleting...")}
                 </>
               ) : (
-                "Delete"
+                t("delete", "Delete")
               )}
             </Button>
           </DialogFooter>

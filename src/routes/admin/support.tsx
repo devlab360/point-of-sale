@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { SuperAdminLayout } from "@/components/admin/SuperAdminLayout";
 import { PageHeader } from "@/components/layout/PageHeader";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { appName } from "@/lib/env";
 import { StatCard } from "@/components/layout/StatCard";
 import {
@@ -47,7 +48,6 @@ import {
   updateSupportTicketStatusAdminFn,
 } from "@/api/admin/super-admin";
 import { exportToCSV } from "@/lib/export-utils";
-import { useLanguage } from "@/contexts/LanguageContext";
 
 export const Route = createFileRoute("/admin/support")({
   head: () => ({ meta: [{ title: `Support Inbox · Super Admin ${appName}` }] }),
@@ -80,7 +80,7 @@ function SuperAdminSupportPage() {
     mutationFn: ({ ticketId, status }: { ticketId: string; status: string }) =>
       updateSupportTicketStatusAdminFn({ data: { ticketId, status } }),
     onSuccess: (_, variables) => {
-      toast.success(`Ticket marked as ${variables.status}`);
+      toast.success(`${t("admin.ticketMarkedAsToast", "Ticket marked as")} ${variables.status}`);
       if (selectedTicket) {
         setSelectedTicket({ ...selectedTicket, status: variables.status });
       }
@@ -114,8 +114,8 @@ function SuperAdminSupportPage() {
       <div className="page-container space-y-6">
         {/* Header */}
         <PageHeader
-          title="Support Inbox & Merchant Helpdesk"
-          description="Review merchant support tickets, technical inquiries, and resolution workflows across all stores."
+          title={t("admin.supportTitle", "Support Inbox & Merchant Helpdesk")}
+          description={t("admin.supportDesc", "Review merchant support tickets, technical inquiries, and resolution workflows across all stores.")}
           actions={
             <div className="flex flex-wrap items-center gap-2">
               <Button
@@ -126,7 +126,7 @@ function SuperAdminSupportPage() {
                 disabled={isFetching}
               >
                 <RefreshCw className={`size-3.5 ${isFetching ? "animate-spin" : ""}`} />
-                <span>Refresh</span>
+                <span>{t("common.refresh", "Refresh")}</span>
               </Button>
               <Button
                 variant="outline"
@@ -146,7 +146,7 @@ function SuperAdminSupportPage() {
                 }}
               >
                 <Download className="size-3.5" />
-                <span>Export CSV</span>
+                <span>{t("common.exportCsv", "Export CSV")}</span>
               </Button>
             </div>
           }
@@ -155,30 +155,30 @@ function SuperAdminSupportPage() {
         {/* Top Metric KPI Cards */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           <StatCard
-            label="Total Support Inquiries"
+            label={t("admin.totalSupportInquiries", "Total Support Inquiries")}
             value={String(tickets.length)}
-            hint="Submitted merchant tickets"
+            hint={t("admin.submittedMerchantTickets", "Submitted merchant tickets")}
             icon={MessageCircle}
             accent="primary"
           />
           <StatCard
-            label="Open Unresolved"
+            label={t("admin.openUnresolved", "Open Unresolved")}
             value={String(openTicketsCount)}
-            hint={openTicketsCount > 0 ? "Awaiting response" : "All cleared"}
+            hint={openTicketsCount > 0 ? t("admin.awaitingResponse", "Awaiting response") : t("admin.allCleared", "All cleared")}
             icon={AlertCircle}
             accent={openTicketsCount > 0 ? "destructive" : "info"}
           />
           <StatCard
-            label="In Progress"
+            label={t("admin.inProgress", "In Progress")}
             value={String(inProgressCount)}
-            hint="Being actively worked on"
+            hint={t("admin.beingActivelyWorkedOn", "Being actively worked on")}
             icon={Clock}
             accent="warning"
           />
           <StatCard
-            label="Resolved / Closed"
+            label={t("admin.resolvedClosed", "Resolved / Closed")}
             value={String(resolvedCount + closedCount)}
-            hint="Completed resolutions"
+            hint={t("admin.completedResolutions", "Completed resolutions")}
             icon={CheckCircle2}
             accent="success"
           />
@@ -196,7 +196,7 @@ function SuperAdminSupportPage() {
                   : "text-muted-foreground hover:text-foreground"
               }`}
             >
-              All Tickets ({tickets.length})
+              {t("admin.allTickets", "All Tickets")} ({tickets.length})
             </button>
             <button
               type="button"
@@ -207,7 +207,7 @@ function SuperAdminSupportPage() {
                   : "text-muted-foreground hover:text-foreground"
               }`}
             >
-              <span>Open</span>
+              <span>{t("admin.open", "Open")}</span>
               {openTicketsCount > 0 && (
                 <Badge variant="destructive" className="text-[10px] px-1 py-0 h-4 font-black">
                   {openTicketsCount}
@@ -223,7 +223,7 @@ function SuperAdminSupportPage() {
                   : "text-muted-foreground hover:text-foreground"
               }`}
             >
-              In Progress ({inProgressCount})
+              {t("admin.inProgress", "In Progress")} ({inProgressCount})
             </button>
             <button
               type="button"
@@ -234,7 +234,7 @@ function SuperAdminSupportPage() {
                   : "text-muted-foreground hover:text-foreground"
               }`}
             >
-              Resolved ({resolvedCount})
+              {t("admin.resolved", "Resolved")} ({resolvedCount})
             </button>
             <button
               type="button"
@@ -245,14 +245,14 @@ function SuperAdminSupportPage() {
                   : "text-muted-foreground hover:text-foreground"
               }`}
             >
-              Closed ({closedCount})
+              {t("admin.closed", "Closed")} ({closedCount})
             </button>
           </div>
 
           <div className="relative w-full sm:w-72">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
             <Input
-              placeholder="Search subject, store, or submitter..."
+              placeholder={t("admin.searchSupportPlaceholder", "Search subject, store, or submitter...")}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-9 h-9 bg-background/50 text-xs"
@@ -265,16 +265,16 @@ function SuperAdminSupportPage() {
           {isLoading ? (
             <div className="flex flex-col items-center justify-center p-16 space-y-3">
               <Loader2 className="size-8 animate-spin text-primary" />
-              <p className="text-xs text-muted-foreground font-medium">Loading support tickets…</p>
+              <p className="text-xs text-muted-foreground font-medium">{t("admin.loadingTickets", "Loading support tickets…")}</p>
             </div>
           ) : filteredTickets.length === 0 ? (
             <div className="text-center p-16 space-y-3">
               <div className="size-12 rounded-2xl bg-muted/60 flex items-center justify-center mx-auto text-muted-foreground">
                 <MessageCircle className="size-6 opacity-40" />
               </div>
-              <h3 className="font-bold text-base text-foreground">No Support Tickets Found</h3>
+              <h3 className="font-bold text-base text-foreground">{t("admin.noTicketsFound", "No Support Tickets Found")}</h3>
               <p className="text-xs text-muted-foreground max-w-sm mx-auto">
-                No active tickets match your criteria. All customer inquiries are handled.
+                {t("admin.noTicketsDesc", "No active tickets match your criteria. All customer inquiries are handled.")}
               </p>
             </div>
           ) : (
@@ -302,7 +302,7 @@ function SuperAdminSupportPage() {
 
                     <TableCell className="px-4 py-3.5 max-w-md">
                       <div className="font-bold text-xs text-foreground truncate">
-                        {ticket.subject || "Support Inquiry"}
+                        {ticket.subject || t("admin.supportInquiry", "Support Inquiry")}
                       </div>
                       <p className="text-xs text-muted-foreground line-clamp-1 mt-0.5">
                         {ticket.message}
@@ -340,7 +340,7 @@ function SuperAdminSupportPage() {
                           setIsDetailModalOpen(true);
                         }}
                       >
-                        View & Respond
+                        {t("admin.viewRespond", "View & Respond")}
                       </Button>
                     </TableCell>
                   </TableRow>
@@ -358,11 +358,10 @@ function SuperAdminSupportPage() {
           >
             <SheetHeader className="bg-muted/60 p-5 border-b pr-12 text-left">
               <SheetTitle className="text-lg font-bold text-foreground">
-                Ticket Details: {selectedTicket?.subject || "Support Inquiry"}
+                {t("admin.ticketDetails", "Ticket Details:")} {selectedTicket?.subject || t("admin.supportInquiry", "Support Inquiry")}
               </SheetTitle>
               <SheetDescription className="text-xs text-muted-foreground mt-0.5">
-                Review message from {selectedTicket?.orgName || "Merchant Store"} and update ticket
-                state.
+                {t("admin.ticketDrawerDesc", "Review message from merchant store and update ticket state.")}
               </SheetDescription>
             </SheetHeader>
 
@@ -371,7 +370,7 @@ function SuperAdminSupportPage() {
                 <div className="flex-1 overflow-y-auto p-5 space-y-4">
                   <div className="p-3.5 rounded-xl border bg-muted/20 space-y-2 text-xs">
                     <div className="flex justify-between items-center">
-                      <span className="text-muted-foreground">Store Organization:</span>
+                      <span className="text-muted-foreground">{t("admin.storeOrganization", "Store Organization:")}</span>
                       <div className="flex items-center gap-2">
                         <span className="font-bold text-foreground">
                           {selectedTicket.orgName || selectedTicket.organizationId}
@@ -382,25 +381,25 @@ function SuperAdminSupportPage() {
                             variant="ghost"
                             className="h-6 text-[10px] px-1.5 gap-1"
                           >
-                            <Store className="size-3" /> View Store
+                            <Store className="size-3" /> {t("admin.viewStore", "View Store")}
                           </Button>
                         </Link>
                       </div>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Submitter:</span>
+                      <span className="text-muted-foreground">{t("admin.submitter", "Submitter:")}</span>
                       <span className="text-foreground font-medium">
                         {selectedTicket.userName || selectedTicket.orgEmail || "Store Owner"}
                       </span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Received Date:</span>
+                      <span className="text-muted-foreground">{t("admin.receivedDate", "Received Date:")}</span>
                       <span className="font-mono text-foreground">
                         {new Date(selectedTicket.createdAt).toLocaleString()}
                       </span>
                     </div>
                     <div className="flex justify-between items-center">
-                      <span className="text-muted-foreground">Current State:</span>
+                      <span className="text-muted-foreground">{t("admin.currentState", "Current State:")}</span>
                       <Badge
                         variant={
                           selectedTicket.status === "resolved"
@@ -419,14 +418,14 @@ function SuperAdminSupportPage() {
                   </div>
 
                   <div className="space-y-1.5">
-                    <p className="text-xs font-bold text-foreground">Inquiry Message</p>
+                    <p className="text-xs font-bold text-foreground">{t("admin.inquiryMessage", "Inquiry Message")}</p>
                     <div className="p-3.5 rounded-xl border bg-card text-xs text-foreground whitespace-pre-wrap leading-relaxed shadow-2xs">
                       {selectedTicket.message}
                     </div>
                   </div>
 
                   <div className="space-y-1.5 pt-2">
-                    <p className="text-xs font-bold text-foreground">Update Resolution Status</p>
+                    <p className="text-xs font-bold text-foreground">{t("admin.updateResolutionStatus", "Update Resolution Status")}</p>
                     <div className="grid grid-cols-3 gap-2">
                       <Button
                         type="button"
@@ -441,7 +440,7 @@ function SuperAdminSupportPage() {
                           })
                         }
                       >
-                        In Progress
+                        {t("admin.inProgress", "In Progress")}
                       </Button>
                       <Button
                         type="button"
@@ -456,7 +455,7 @@ function SuperAdminSupportPage() {
                           })
                         }
                       >
-                        Mark Resolved
+                        {t("admin.markResolved", "Mark Resolved")}
                       </Button>
                       <Button
                         type="button"
@@ -471,7 +470,7 @@ function SuperAdminSupportPage() {
                           })
                         }
                       >
-                        Close Ticket
+                        {t("admin.closeTicket", "Close Ticket")}
                       </Button>
                     </div>
                   </div>
@@ -483,7 +482,7 @@ function SuperAdminSupportPage() {
                     variant="outline"
                     onClick={() => setIsDetailModalOpen(false)}
                   >
-                    Close Drawer
+                    {t("admin.closeDrawer", "Close Drawer")}
                   </Button>
                 </SheetFooter>
               </div>

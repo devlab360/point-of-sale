@@ -106,12 +106,12 @@ function SuperAdminPaymentsPage() {
     mutationFn: (paymentId: string) => approvePaymentFn({ data: { paymentId } }),
     onSuccess: (res: any) => {
       if (res.success) {
-        toast.success("Payment approved & subscription activated for tenant store!");
+        toast.success(t("admin.paymentApprovedToast", "Payment approved & subscription activated for tenant store!"));
         setSelectedPaymentDetail(null);
         queryClient.invalidateQueries({ queryKey: ["subscription-payments"] });
         queryClient.invalidateQueries({ queryKey: ["saas-organizations"] });
       } else {
-        toast.error(res.error || "Approval failed");
+        toast.error(res.error || t("admin.approvalFailedToast", "Approval failed"));
       }
     },
   });
@@ -119,7 +119,7 @@ function SuperAdminPaymentsPage() {
   const rejectMutation = useMutation({
     mutationFn: (paymentId: string) => rejectPaymentFn({ data: { paymentId } }),
     onSuccess: () => {
-      toast.success("Payment request marked as rejected");
+      toast.success(t("admin.paymentRejectedToast", "Payment request marked as rejected"));
       setSelectedPaymentDetail(null);
       queryClient.invalidateQueries({ queryKey: ["subscription-payments"] });
     },
@@ -128,11 +128,11 @@ function SuperAdminPaymentsPage() {
   const saveConfigMutation = useMutation({
     mutationFn: (cfg: any) => saveSuperAdminPaymentConfigFn({ data: cfg }),
     onSuccess: () => {
-      toast.success("Super Admin payment details updated!");
+      toast.success(t("admin.paymentConfigUpdatedToast", "Super Admin payment details updated!"));
       setIsConfigModalOpen(false);
       queryClient.invalidateQueries({ queryKey: ["super-admin-payment-config"] });
     },
-    onError: (err: any) => toast.error(err.message || "Failed to update payment settings"),
+    onError: (err: any) => toast.error(err.message || t("admin.paymentConfigErrorToast", "Failed to update payment settings")),
   });
 
   const openConfigModal = () => {
@@ -150,39 +150,34 @@ function SuperAdminPaymentsPage() {
     setIsConfigModalOpen(true);
   };
 
-  const filteredPayments = payments
-    .filter((p: any) => {
-      if (activeTab === "pending") return p.status === "pending";
-      if (activeTab === "approved") return p.status === "approved";
-      if (activeTab === "rejected") return p.status === "rejected";
-      return true;
-    })
-    .filter((p: any) => {
-      const q = searchQuery.toLowerCase();
-      return (
-        p.organizationId?.toLowerCase().includes(q) ||
-        p.organizationName?.toLowerCase().includes(q) ||
-        p.userEmail?.toLowerCase().includes(q) ||
-        p.utrNumber?.toLowerCase().includes(q) ||
-        p.planId?.toLowerCase().includes(q)
-      );
-    });
-
-  const pendingCount = payments.filter((p: any) => p.status === "pending").length;
-  const approvedCount = payments.filter((p: any) => p.status === "approved").length;
-  const rejectedCount = payments.filter((p: any) => p.status === "rejected").length;
+  const pendingCount = payments.filter((p) => p.status === "pending").length;
+  const approvedCount = payments.filter((p) => p.status === "approved").length;
+  const rejectedCount = payments.filter((p) => p.status === "rejected").length;
 
   const totalApprovedVolume = payments
-    .filter((p: any) => p.status === "approved")
-    .reduce((acc: number, p: any) => acc + Number(p.amount || 0), 0);
+    .filter((p) => p.status === "approved")
+    .reduce((acc, p) => acc + (Number(p.amount) || 0), 0);
+
+  const filteredPayments = payments.filter((p) => {
+    const matchesTab = activeTab === "all" || p.status === activeTab;
+    const query = searchQuery.toLowerCase().trim();
+    const matchesSearch =
+      !query ||
+      p.organizationName?.toLowerCase().includes(query) ||
+      p.organizationId?.toLowerCase().includes(query) ||
+      p.referenceNumber?.toLowerCase().includes(query) ||
+      p.utrNumber?.toLowerCase().includes(query) ||
+      p.userEmail?.toLowerCase().includes(query);
+    return matchesTab && matchesSearch;
+  });
 
   return (
     <SuperAdminLayout>
       <div className="page-container space-y-6">
         {/* Header */}
         <PageHeader
-          title="Subscription Payments & Gateway Setup"
-          description="Review offline bank transfers, UPI receipts, and configure payment instructions for tenant stores."
+          title={t("admin.paymentsTitle", "Subscription Payments & Gateway Setup")}
+          description={t("admin.paymentsDesc", "Review offline bank transfers, UPI receipts, and configure payment instructions for tenant stores.")}
           actions={
             <div className="flex flex-wrap items-center gap-2">
               <Button
@@ -193,7 +188,7 @@ function SuperAdminPaymentsPage() {
                 disabled={isFetching}
               >
                 <RefreshCw className={`size-3.5 ${isFetching ? "animate-spin" : ""}`} />
-                <span>Refresh</span>
+                <span>{t("common.refresh", "Refresh")}</span>
               </Button>
               <Button
                 variant="outline"
@@ -215,11 +210,11 @@ function SuperAdminPaymentsPage() {
                 }}
               >
                 <Download className="size-3.5" />
-                <span>Export CSV</span>
+                <span>{t("common.exportCsv", "Export CSV")}</span>
               </Button>
               <Button onClick={openConfigModal} size="sm" className="gap-2 h-9 shadow-xs">
                 <QrCode className="size-4" />
-                <span>Configure Bank & UPI QR</span>
+                <span>{t("admin.configBankUpi", "Configure Bank & UPI QR")}</span>
               </Button>
             </div>
           }
@@ -228,30 +223,30 @@ function SuperAdminPaymentsPage() {
         {/* Top Metric Cards Strip */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           <StatCard
-            label="Verified Payment Volume"
+            label={t("admin.verifiedPaymentVolume", "Verified Payment Volume")}
             value={`₹${totalApprovedVolume.toLocaleString("en-IN")}`}
-            hint={`${approvedCount} total transactions`}
+            hint={`${approvedCount} ${t("admin.totalTransactions", "total transactions")}`}
             icon={Wallet}
             accent="primary"
           />
           <StatCard
-            label="Pending Review"
+            label={t("admin.pendingReview", "Pending Review")}
             value={String(pendingCount)}
-            hint={pendingCount > 0 ? "Requires verification" : "All cleared"}
+            hint={pendingCount > 0 ? t("admin.requiresVerification", "Requires verification") : t("admin.allCleared", "All cleared")}
             icon={Receipt}
             accent={pendingCount > 0 ? "destructive" : "info"}
           />
           <StatCard
-            label="Approved Subscriptions"
+            label={t("admin.approvedSubscriptions", "Approved Subscriptions")}
             value={String(approvedCount)}
-            hint="Activated store plans"
+            hint={t("admin.activatedStorePlans", "Activated store plans")}
             icon={CheckCircle2}
             accent="success"
           />
           <StatCard
-            label="Rejected Inquiries"
+            label={t("admin.rejectedInquiries", "Rejected Inquiries")}
             value={String(rejectedCount)}
-            hint="Invalid reference proofs"
+            hint={t("admin.invalidReferenceProofs", "Invalid reference proofs")}
             icon={XCircle}
             accent="destructive"
           />
@@ -269,7 +264,7 @@ function SuperAdminPaymentsPage() {
                   : "text-muted-foreground hover:text-foreground"
               }`}
             >
-              <span>Pending</span>
+              <span>{t("admin.pending", "Pending")}</span>
               {pendingCount > 0 && (
                 <Badge variant="destructive" className="text-[10px] px-1 py-0 h-4 font-black">
                   {pendingCount}
@@ -285,7 +280,7 @@ function SuperAdminPaymentsPage() {
                   : "text-muted-foreground hover:text-foreground"
               }`}
             >
-              Approved ({approvedCount})
+              {t("admin.approved", "Approved")} ({approvedCount})
             </button>
             <button
               type="button"
@@ -296,7 +291,7 @@ function SuperAdminPaymentsPage() {
                   : "text-muted-foreground hover:text-foreground"
               }`}
             >
-              Rejected ({rejectedCount})
+              {t("admin.rejected", "Rejected")} ({rejectedCount})
             </button>
             <button
               type="button"
@@ -307,14 +302,14 @@ function SuperAdminPaymentsPage() {
                   : "text-muted-foreground hover:text-foreground"
               }`}
             >
-              All Records ({payments.length})
+              {t("admin.allRecords", "All Records")} ({payments.length})
             </button>
           </div>
 
           <div className="relative w-full sm:w-72">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
             <Input
-              placeholder="Search by Org ID, Store or UTR..."
+              placeholder={t("admin.searchPaymentPlaceholder", "Search by Org ID, Store or UTR...")}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-9 h-9 bg-background/50 text-xs"
@@ -327,16 +322,16 @@ function SuperAdminPaymentsPage() {
           {isLoading ? (
             <div className="flex flex-col items-center justify-center p-16 space-y-3">
               <Loader2 className="size-8 animate-spin text-primary" />
-              <p className="text-xs text-muted-foreground font-medium">Loading payment records…</p>
+              <p className="text-xs text-muted-foreground font-medium">{t("admin.loadingPayments", "Loading payment records…")}</p>
             </div>
           ) : filteredPayments.length === 0 ? (
             <div className="text-center p-16 space-y-3">
               <div className="size-12 rounded-2xl bg-muted/60 flex items-center justify-center mx-auto text-muted-foreground">
                 <Receipt className="size-6 opacity-40" />
               </div>
-              <h3 className="font-bold text-base text-foreground">No Payment Requests Found</h3>
+              <h3 className="font-bold text-base text-foreground">{t("admin.noPaymentsFound", "No Payment Requests Found")}</h3>
               <p className="text-xs text-muted-foreground max-w-sm mx-auto">
-                No records matching your current filter. All subscriptions are up to date.
+                {t("admin.noPaymentsDesc", "No records matching your current filter. All subscriptions are up to date.")}
               </p>
             </div>
           ) : (
@@ -391,17 +386,17 @@ function SuperAdminPaymentsPage() {
                       <TableCell className="px-4 py-3.5">
                         {p.status === "pending" && (
                           <Badge className="bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30 font-bold uppercase text-[10px]">
-                            Pending Review
+                            {t("admin.pendingReview", "Pending Review")}
                           </Badge>
                         )}
                         {p.status === "approved" && (
                           <Badge className="bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 font-bold uppercase text-[10px]">
-                            Approved
+                            {t("admin.approved", "Approved")}
                           </Badge>
                         )}
                         {p.status === "rejected" && (
                           <Badge variant="destructive" className="font-bold uppercase text-[10px]">
-                            Rejected
+                            {t("admin.rejected", "Rejected")}
                           </Badge>
                         )}
                       </TableCell>
@@ -415,7 +410,7 @@ function SuperAdminPaymentsPage() {
                               disabled={approveMutation.isPending}
                               onClick={() => approveMutation.mutate(p.id)}
                             >
-                              <CheckCircle2 className="size-3.5" /> Approve
+                              <CheckCircle2 className="size-3.5" /> {t("admin.approve", "Approve")}
                             </Button>
                             <Button
                               size="sm"
@@ -424,7 +419,7 @@ function SuperAdminPaymentsPage() {
                               disabled={rejectMutation.isPending}
                               onClick={() => rejectMutation.mutate(p.id)}
                             >
-                              <XCircle className="size-3.5" /> Reject
+                              <XCircle className="size-3.5" /> {t("admin.reject", "Reject")}
                             </Button>
                           </div>
                         ) : (
@@ -434,7 +429,7 @@ function SuperAdminPaymentsPage() {
                             className="h-8 text-xs font-semibold gap-1"
                             onClick={() => setSelectedPaymentDetail(p)}
                           >
-                            <Eye className="size-3.5" /> View Proof
+                            <Eye className="size-3.5" /> {t("admin.viewProof", "View Proof")}
                           </Button>
                         )}
                       </TableCell>
@@ -457,10 +452,10 @@ function SuperAdminPaymentsPage() {
           >
             <SheetHeader className="bg-muted/60 p-5 border-b pr-12 text-left">
               <SheetTitle className="text-lg font-bold text-foreground">
-                Payment Verification Details
+                {t("admin.paymentVerificationDetails", "Payment Verification Details")}
               </SheetTitle>
               <SheetDescription className="text-xs text-muted-foreground mt-0.5">
-                Receipt and UTR transfer reference verification
+                {t("admin.receiptUtrDesc", "Receipt and UTR transfer reference verification")}
               </SheetDescription>
             </SheetHeader>
 
@@ -469,30 +464,30 @@ function SuperAdminPaymentsPage() {
                 <div className="flex-1 overflow-y-auto p-5 space-y-4 text-xs">
                   <div className="p-4 rounded-xl border bg-muted/20 space-y-2.5">
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Store Organization:</span>
+                      <span className="text-muted-foreground">{t("admin.storeOrganization", "Store Organization:")}</span>
                       <span className="font-bold text-foreground">
                         {selectedPaymentDetail.organizationName ||
                           selectedPaymentDetail.organizationId}
                       </span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Owner Email:</span>
+                      <span className="text-muted-foreground">{t("admin.ownerEmail", "Owner Email:")}</span>
                       <span className="text-foreground">{selectedPaymentDetail.userEmail}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Plan Tier:</span>
+                      <span className="text-muted-foreground">{t("admin.planTier", "Plan Tier:")}</span>
                       <Badge variant="outline" className="text-[10px] font-bold uppercase">
                         {selectedPaymentDetail.planName || selectedPaymentDetail.planId}
                       </Badge>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Amount Paid:</span>
+                      <span className="text-muted-foreground">{t("admin.amountPaid", "Amount Paid:")}</span>
                       <span className="font-black text-sm text-foreground">
                         ₹{Number(selectedPaymentDetail.amount || 0).toLocaleString("en-IN")}
                       </span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">UTR / Transaction Ref:</span>
+                      <span className="text-muted-foreground">{t("admin.utrTransactionRef", "UTR / Transaction Ref:")}</span>
                       <span className="font-mono font-bold text-foreground">
                         {selectedPaymentDetail.referenceNumber ||
                           selectedPaymentDetail.utrNumber ||
@@ -500,7 +495,7 @@ function SuperAdminPaymentsPage() {
                       </span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Status:</span>
+                      <span className="text-muted-foreground">{t("common.status", "Status")}:</span>
                       <Badge
                         variant={
                           selectedPaymentDetail.status === "approved"
@@ -518,7 +513,7 @@ function SuperAdminPaymentsPage() {
 
                   {selectedPaymentDetail.note && (
                     <div className="space-y-1">
-                      <span className="font-bold text-foreground">Merchant Note:</span>
+                      <span className="font-bold text-foreground">{t("admin.merchantNote", "Merchant Note:")}</span>
                       <p className="p-3 rounded-lg border bg-card text-muted-foreground leading-relaxed">
                         {selectedPaymentDetail.note}
                       </p>
@@ -532,7 +527,7 @@ function SuperAdminPaymentsPage() {
                     variant="outline"
                     onClick={() => setSelectedPaymentDetail(null)}
                   >
-                    Close
+                    {t("common.close", "Close")}
                   </Button>
                 </SheetFooter>
               </div>
@@ -549,11 +544,10 @@ function SuperAdminPaymentsPage() {
             <SheetHeader className="bg-muted/60 p-5 border-b pr-12 text-left">
               <SheetTitle className="text-lg font-bold flex items-center gap-2 text-foreground">
                 <QrCode className="size-5 text-primary" />
-                <span>Super Admin Payment & UPI QR Setup</span>
+                <span>{t("admin.superAdminPaymentSetup", "Super Admin Payment & UPI QR Setup")}</span>
               </SheetTitle>
               <SheetDescription className="text-xs text-muted-foreground mt-0.5">
-                Configure your official bank and UPI QR details shown to tenant store merchants when
-                upgrading plans.
+                {t("admin.superAdminPaymentSetupDesc", "Configure your official bank and UPI QR details shown to tenant store merchants when upgrading plans.")}
               </SheetDescription>
             </SheetHeader>
 
@@ -567,32 +561,32 @@ function SuperAdminPaymentsPage() {
               <div className="flex-1 overflow-y-auto p-5 space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-1.5">
-                    <Label htmlFor="cfg-bank-name">Bank Name</Label>
+                    <Label htmlFor="cfg-bank-name">{t("admin.bankName", "Bank Name")}</Label>
                     <Input
                       id="cfg-bank-name"
                       value={paymentConfig.bankName}
                       onChange={(e) =>
                         setPaymentConfig({ ...paymentConfig, bankName: e.target.value })
                       }
-                      placeholder="HDFC Bank / State Bank of India"
+                      placeholder={t("admin.bankNamePlaceholder", "HDFC Bank / State Bank of India")}
                     />
                   </div>
                   <div className="space-y-1.5">
-                    <Label htmlFor="cfg-acc-name">Account Holder Name</Label>
+                    <Label htmlFor="cfg-acc-name">{t("admin.accountHolderName", "Account Holder Name")}</Label>
                     <Input
                       id="cfg-acc-name"
                       value={paymentConfig.accountName}
                       onChange={(e) =>
                         setPaymentConfig({ ...paymentConfig, accountName: e.target.value })
                       }
-                      placeholder="OneDesk360 Cloud Technologies"
+                      placeholder={t("admin.accountHolderPlaceholder", "OneDesk360 Cloud Technologies")}
                     />
                   </div>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-1.5">
-                    <Label htmlFor="cfg-acc-no">Bank Account Number</Label>
+                    <Label htmlFor="cfg-acc-no">{t("admin.bankAccountNumber", "Bank Account Number")}</Label>
                     <Input
                       id="cfg-acc-no"
                       value={paymentConfig.accountNo}
@@ -603,7 +597,7 @@ function SuperAdminPaymentsPage() {
                     />
                   </div>
                   <div className="space-y-1.5">
-                    <Label htmlFor="cfg-ifsc">IFSC / Routing Code</Label>
+                    <Label htmlFor="cfg-ifsc">{t("admin.ifscRoutingCode", "IFSC / Routing Code")}</Label>
                     <Input
                       id="cfg-ifsc"
                       value={paymentConfig.ifscCode}
@@ -617,7 +611,7 @@ function SuperAdminPaymentsPage() {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-1.5">
-                    <Label htmlFor="cfg-upi">UPI VPA Address</Label>
+                    <Label htmlFor="cfg-upi">{t("admin.upiVpaAddress", "UPI VPA Address")}</Label>
                     <Input
                       id="cfg-upi"
                       value={paymentConfig.upiId}
@@ -628,7 +622,7 @@ function SuperAdminPaymentsPage() {
                     />
                   </div>
                   <div className="space-y-1.5">
-                    <Label htmlFor="cfg-qr">UPI QR Code Image URL</Label>
+                    <Label htmlFor="cfg-qr">{t("admin.upiQrCodeUrl", "UPI QR Code Image URL")}</Label>
                     <Input
                       id="cfg-qr"
                       value={paymentConfig.qrCodeUrl}
@@ -641,7 +635,7 @@ function SuperAdminPaymentsPage() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label htmlFor="cfg-instructions">Payment Submission Instructions</Label>
+                  <Label htmlFor="cfg-instructions">{t("admin.paymentSubmissionInstructions", "Payment Submission Instructions")}</Label>
                   <Textarea
                     id="cfg-instructions"
                     rows={3}
@@ -649,17 +643,17 @@ function SuperAdminPaymentsPage() {
                     onChange={(e) =>
                       setPaymentConfig({ ...paymentConfig, instructions: e.target.value })
                     }
-                    placeholder="Scan the QR code or transfer to the account above and submit your 12-digit UTR for immediate verification."
+                    placeholder={t("admin.paymentInstructionsPlaceholder", "Scan the QR code or transfer to the account above and submit your 12-digit UTR for immediate verification.")}
                   />
                 </div>
               </div>
 
               <SheetFooter className="p-5 border-t bg-muted/20 flex sm:justify-end gap-2 shrink-0">
                 <Button type="button" variant="outline" onClick={() => setIsConfigModalOpen(false)}>
-                  Cancel
+                  {t("common.cancel", "Cancel")}
                 </Button>
                 <Button type="submit" disabled={saveConfigMutation.isPending}>
-                  {saveConfigMutation.isPending ? "Saving Details…" : "Save Payment Details"}
+                  {saveConfigMutation.isPending ? t("admin.savingDetails", "Saving Details…") : t("admin.savePaymentDetails", "Save Payment Details")}
                 </Button>
               </SheetFooter>
             </form>

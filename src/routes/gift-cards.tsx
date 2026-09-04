@@ -248,7 +248,7 @@ function GiftCardsPage() {
           },
         });
         queryClient.invalidateQueries({ queryKey: ["giftCards"] });
-        toast.success("Gift card updated successfully");
+        toast.success(t("giftCardUpdatedSuccess", "Gift card updated successfully"));
       } else {
         await createGiftCardFn({
           data: {
@@ -264,7 +264,7 @@ function GiftCardsPage() {
           },
         });
         queryClient.invalidateQueries({ queryKey: ["giftCards"] });
-        toast.success("Gift card issued successfully");
+        toast.success(t("giftCardIssuedSuccess", "Gift card issued successfully"));
       }
       setIsAddOpen(false);
       setEditItem(null);
@@ -279,7 +279,7 @@ function GiftCardsPage() {
   const handleTopUpSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!topUpItem || !topUpAmount || parseFloat(topUpAmount) <= 0) {
-      toast.error("Please enter a valid recharge amount");
+      toast.error(t("enterValidRechargeAmount", "Please enter a valid recharge amount"));
       return;
     }
     setIsTopUpLoading(true);
@@ -295,7 +295,7 @@ function GiftCardsPage() {
       setTopUpItem(null);
       setTopUpAmount("");
     } catch {
-      toast.error("Failed to add balance");
+      toast.error(t("failedToAddBalance", "Failed to add balance"));
     } finally {
       setIsTopUpLoading(false);
     }
@@ -329,7 +329,7 @@ function GiftCardsPage() {
     try {
       const data = await parseCSV(file);
       if (data.length === 0) {
-        toast.error("No data found in the CSV");
+        toast.error(t("noDataInCsv", "No data found in CSV"));
         return;
       }
 
@@ -358,7 +358,7 @@ function GiftCardsPage() {
       queryClient.invalidateQueries({ queryKey: ["giftCards"] });
       toast.success(`Successfully imported ${count} gift cards`);
     } catch {
-      toast.error("Failed to parse CSV file");
+      toast.error(t("failedToParseCsv", "Failed to parse CSV file"));
     }
   };
 
@@ -367,10 +367,10 @@ function GiftCardsPage() {
       try {
         await deleteGiftCardFn({ data: { id: deleteId } });
         queryClient.invalidateQueries({ queryKey: ["giftCards"] });
-        toast.success("Gift Card deleted");
+        toast.success(t("giftCardDeleted", "Gift Card deleted"));
         setDeleteId(null);
       } catch {
-        toast.error("Failed to delete gift card");
+        toast.error(t("failedToDeleteGiftCard", "Failed to delete gift card"));
       }
     }
   };

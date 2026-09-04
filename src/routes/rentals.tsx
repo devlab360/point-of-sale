@@ -210,7 +210,7 @@ function RentalsPage() {
       });
 
       if (res?.success) {
-        toast.success("Equipment rental dispatched successfully");
+        toast.success(t("rentalDispatchedSuccess", "Equipment rental dispatched successfully"));
         queryClient.invalidateQueries({ queryKey: ["rentals"] });
         setIsAddOpen(false);
         setCustomerName("");
@@ -223,7 +223,7 @@ function RentalsPage() {
         toast.error(res?.error || "Failed to create rental");
       }
     } catch {
-      toast.error("Failed to create rental");
+      toast.error(t("failedToCreateRental", "Failed to create rental"));
     } finally {
       setIsSubmitting(false);
     }
@@ -238,11 +238,11 @@ function RentalsPage() {
         },
       });
       if (res?.success) {
-        toast.success("Rental marked as returned and deposit refunded/released");
+        toast.success(t("rentalReturnedSuccess", "Rental marked as returned and deposit refunded/released"));
         queryClient.invalidateQueries({ queryKey: ["rentals"] });
       }
     } catch {
-      toast.error("Failed to update status");
+      toast.error(t("failedToUpdateStatus", "Failed to update status"));
     }
   };
 
@@ -250,11 +250,11 @@ function RentalsPage() {
     if (deleteId) {
       try {
         await deleteRentalFn({ data: { id: deleteId } });
-        toast.success("Rental record removed");
+        toast.success(t("rentalRecordRemoved", "Rental record removed"));
         queryClient.invalidateQueries({ queryKey: ["rentals"] });
         setDeleteId(null);
       } catch {
-        toast.error("Failed to delete rental");
+        toast.error(t("failedToDeleteRental", "Failed to delete rental"));
       }
     }
   };

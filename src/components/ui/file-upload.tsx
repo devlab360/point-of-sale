@@ -15,6 +15,7 @@ import { Button } from "./button";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { uploadToVercelBlob, validateFileBeforeUpload, isImageUrl } from "@/lib/upload-service";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 export interface FileUploadProps {
   value?: string | string[];
@@ -41,18 +42,22 @@ export function FileUpload({
   maxSizeMB = 5,
   multiple = false,
   disabled = false,
-  label = "Upload File",
-  description = `Drag & drop or click to upload (Max ${maxSizeMB}MB)`,
+  label,
+  description,
   className,
   variant = "default",
   compact = false,
 }: FileUploadProps) {
+  const { t } = useLanguage();
   const [isDragging, setIsDragging] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [progress, setProgress] = useState(0);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const progressIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const defaultDescription =
+    description || `${t("dragDropOrClick", "Drag & drop or click to upload")} (Max ${maxSizeMB}MB)`;
 
   const urls: string[] = Array.isArray(value) ? value : value ? [value] : [];
 
@@ -161,7 +166,7 @@ export function FileUpload({
     } else {
       onChange("");
     }
-    toast.info("Image removed");
+    toast.info(t("imageRemoved", "Image removed"));
   };
 
   return (
@@ -213,7 +218,7 @@ export function FileUpload({
               {!isUploading && !disabled && (
                 <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center">
                   <Camera className="size-5 text-white mb-1" />
-                  <span className="text-[10px] text-white font-medium">Change</span>
+                  <span className="text-[10px] text-white font-medium">{t("change", "Change")}</span>
                 </div>
               )}
             </div>
@@ -229,7 +234,7 @@ export function FileUpload({
             )}
           </div>
           {label && <span className="mt-3 text-sm font-semibold">{label}</span>}
-          {description && <span className="mt-1 text-xs text-muted-foreground">{description}</span>}
+          {defaultDescription && <span className="mt-1 text-xs text-muted-foreground">{defaultDescription}</span>}
         </div>
       ) : (
         /* ── Default rectangular variant ── */
@@ -256,7 +261,7 @@ export function FileUpload({
               {isUploading && (
                 <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-background/80 backdrop-blur-sm">
                   <Loader2 className="size-8 text-primary animate-spin" />
-                  <span className="text-xs font-semibold text-foreground">Uploading...</span>
+                  <span className="text-xs font-semibold text-foreground">{t("uploading", "Uploading...")}</span>
                   <div className="w-40 h-1.5 rounded-full bg-muted overflow-hidden">
                     <div
                       className="h-full bg-primary transition-all duration-300 rounded-full"
@@ -278,7 +283,7 @@ export function FileUpload({
                     onClick={() => !disabled && fileInputRef.current?.click()}
                   >
                     <ImageIcon className="size-3.5 mr-1.5" />
-                    Change
+                    {t("change", "Change")}
                   </Button>
                   <Button
                     type="button"
@@ -291,7 +296,7 @@ export function FileUpload({
                     }}
                   >
                     <X className="size-3.5 mr-1.5" />
-                    Remove
+                    {t("remove", "Remove")}
                   </Button>
                 </div>
               )}
@@ -300,7 +305,7 @@ export function FileUpload({
               {!isUploading && (
                 <div className="absolute top-2 right-2 flex items-center gap-1 rounded-full bg-success/90 px-2 py-0.5 text-[10px] font-bold text-white shadow">
                   <CheckCircle2 className="size-3" />
-                  Saved
+                  {t("saved", "Saved")}
                 </div>
               )}
             </div>
@@ -324,7 +329,7 @@ export function FileUpload({
               {isUploading ? (
                 <div className="flex flex-col items-center gap-2 py-2 w-full max-w-xs">
                   <Loader2 className="size-8 text-primary animate-spin" />
-                  <span className="text-xs font-semibold text-foreground">Uploading image...</span>
+                  <span className="text-xs font-semibold text-foreground">{t("uploadingImage", "Uploading image...")}</span>
                   <div className="w-full h-2 rounded-full bg-muted overflow-hidden mt-1">
                     <div
                       className="h-full bg-primary transition-all duration-300 rounded-full"
@@ -350,9 +355,9 @@ export function FileUpload({
                   </div>
                   <div className="flex flex-col items-center gap-0.5 leading-tight">
                     <span className="text-sm font-semibold text-foreground">
-                      Click or drag image here
+                      {t("clickOrDragImage", "Click or drag image here")}
                     </span>
-                    <span className="text-xs text-muted-foreground">{description}</span>
+                    <span className="text-xs text-muted-foreground">{defaultDescription}</span>
                   </div>
                 </div>
               )}
@@ -373,7 +378,7 @@ export function FileUpload({
             className="h-6 px-2 text-[10px] text-destructive hover:bg-destructive/20"
             onClick={() => fileInputRef.current?.click()}
           >
-            <RefreshCw className="size-3 mr-1" /> Retry
+            <RefreshCw className="size-3 mr-1" /> {t("retry", "Retry")}
           </Button>
         </div>
       )}
@@ -393,7 +398,7 @@ export function FileUpload({
                 ) : (
                   <div className="flex flex-col items-center gap-1 text-muted-foreground">
                     <FileText className="size-6 text-primary" />
-                    <span className="text-[10px] font-mono truncate max-w-[100px]">Document</span>
+                    <span className="text-[10px] font-mono truncate max-w-[100px]">{t("document", "Document")}</span>
                   </div>
                 )}
                 <div className="absolute inset-0 bg-background/80 backdrop-blur-xs opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
@@ -402,7 +407,7 @@ export function FileUpload({
                     variant="destructive"
                     size="icon"
                     className="size-7"
-                    title="Remove file"
+                    title={t("removeFile", "Remove file")}
                     onClick={(e) => {
                       e.stopPropagation();
                       handleRemove(url);

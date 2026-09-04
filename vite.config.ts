@@ -59,7 +59,7 @@ export default defineConfig({
         },
         manifest: {
           name: "OneDesk360 POS",
-          short_name: "GrocerPOS",
+          short_name: "OneDesk360",
           description:
             "Premium POS and inventory management for grocery, daily goods, and retail chains.",
           theme_color: "#ffffff",

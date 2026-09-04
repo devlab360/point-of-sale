@@ -101,10 +101,10 @@ function ProfilePage() {
       await updateUserFn({ data: { id: authUser?.id || profile.id, updates: profile } });
       queryClient.invalidateQueries({ queryKey: ["userProfile", authUser?.id] });
       await refreshUser();
-      toast.success("Profile updated successfully.");
+      toast.success(t("profileUpdatedSuccess", "Profile updated successfully."));
     } catch (error) {
       console.error("Profile save error:", error);
-      toast.error("Failed to update profile.");
+      toast.error(t("failedToUpdateProfile", "Failed to update profile."));
     } finally {
       setIsSaving(false);
     }
@@ -131,7 +131,7 @@ function ProfilePage() {
       <div className="page-container">
         <ErrorState
           onRetry={refetchProfile}
-          title="Failed to load profile"
+          title={t("failedToLoadProfile", "Failed to load profile")}
           description="Unable to fetch user profile details. Click below to retry."
         />
       </div>
@@ -141,12 +141,12 @@ function ProfilePage() {
   return (
     <div className="page-container space-y-6">
       <PageHeader
-        title={t("profile") || "Your Profile"}
-        description="Personal details and preferences."
+        title={t("profile", "Your Profile")}
+        description={t("profileDesc", "Personal details, credentials, and user preferences.")}
         actions={
           <Button onClick={handleSave} disabled={isSaving}>
             {isSaving && <Loader2 className="size-4 animate-spin mr-2" />}
-            {t("save")}
+            {t("save", "Save")}
           </Button>
         }
       />

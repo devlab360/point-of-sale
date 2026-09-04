@@ -184,13 +184,13 @@ function InventoryDashboard() {
 
   const handleDiscardChanges = () => {
     setDirtyCells({});
-    toast.info("Unsaved stock matrix modifications discarded");
+    toast.info(t("unsavedStockDiscarded", "Unsaved stock matrix modifications discarded"));
   };
 
   // Master CSV Export
   const handleExportCSV = () => {
     if (rows.length === 0) {
-      toast.error("No inventory data to export");
+      toast.error(t("noInventoryDataToExport", "No inventory data to export"));
       return;
     }
 
@@ -220,7 +220,7 @@ function InventoryDashboard() {
     ];
 
     exportToCSV(exportData, columns, `Stock_Matrix_${new Date().toISOString().slice(0, 10)}`);
-    toast.success("Stock matrix exported to CSV");
+    toast.success(t("stockMatrixExportedSuccess", "Stock matrix exported to CSV"));
   };
 
   // Master CSV Import
@@ -232,7 +232,7 @@ function InventoryDashboard() {
       setIsImporting(true);
       const parsedRows = await parseCSV(file);
       if (parsedRows.length === 0) {
-        toast.error("CSV file is empty or formatted incorrectly");
+        toast.error(t("csvEmptyOrIncorrect", "CSV file is empty or formatted incorrectly"));
         return;
       }
 
@@ -269,7 +269,7 @@ function InventoryDashboard() {
       });
 
       if (importPayload.length === 0) {
-        toast.error("No valid branch stock data found in CSV");
+        toast.error(t("noValidBranchStockInCsv", "No valid branch stock data found in CSV"));
         return;
       }
 
@@ -452,10 +452,10 @@ function InventoryDashboard() {
                 onValueChange={(val) => setSelectedLocationColumn(val)}
               >
                 <SelectTrigger className="h-10 rounded-xl text-xs font-semibold bg-background shadow-2xs">
-                  <SelectValue placeholder="All Store Branches" />
+                  <SelectValue placeholder={t("allStoreBranches", "All Store Branches")} />
                 </SelectTrigger>
                 <SelectContent className="rounded-xl shadow-soft">
-                  <SelectItem value="all">View All Store Outlets</SelectItem>
+                  <SelectItem value="all">{t("viewAllStoreOutlets", "View All Store Outlets")}</SelectItem>
                   {locations.map((loc) => (
                     <SelectItem key={loc.id} value={loc.id} className="text-xs">
                       Focus: {loc.name} {loc.isHeadOffice ? "(HQ)" : ""}
@@ -501,7 +501,7 @@ function InventoryDashboard() {
               }`}
             >
               <span className="size-2 rounded-full bg-rose-500 inline-block" />
-              <span>Depleted</span>
+              <span>{t("depleted", "Depleted")}</span>
             </button>
           </div>
         </div>

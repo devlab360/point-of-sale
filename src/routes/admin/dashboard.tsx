@@ -166,51 +166,54 @@ function SuperAdminDashboardPage() {
   });
 
   // Mutations
-  const approveMutation = useMutation({
+  const approvePaymentMutation = useMutation({
     mutationFn: (paymentId: string) => approvePaymentFn({ data: { paymentId } }),
-    onSuccess: (res: any) => {
+    onSuccess: (res) => {
       if (res.success) {
-        toast.success("Payment approved & store subscription extended!");
+        toast.success(t("admin.paymentApproved", "Payment approved & store subscription extended!"));
         queryClient.invalidateQueries({ queryKey: ["subscription-payments"] });
         queryClient.invalidateQueries({ queryKey: ["saas-organizations"] });
       } else {
-        toast.error(res.error || "Failed to approve payment");
+        toast.error(res.error || t("failedToApprovePayment", "Failed to approve payment"));
       }
     },
   });
 
-  const rejectMutation = useMutation({
-    mutationFn: (paymentId: string) => rejectPaymentFn({ data: { paymentId } }),
-    onSuccess: () => {
-      toast.success("Payment rejected");
-      queryClient.invalidateQueries({ queryKey: ["subscription-payments"] });
+  const rejectPaymentMutation = useMutation({
+    mutationFn: (paymentId: string) => rejectPaymentFn({ data: { paymentId, notes: "Admin rejected" } }),
+    onSuccess: (res) => {
+      if (res.success) {
+        toast.success(t("admin.paymentRejected", "Payment rejected"));
+        queryClient.invalidateQueries({ queryKey: ["subscription-payments"] });
+      } else {
+        toast.error(res.error || t("failedToRejectPayment", "Failed to reject payment"));
+      }
     },
   });
 
   const createTenantMutation = useMutation({
-    mutationFn: (tenantData: typeof newStore) => createTenantUserFn({ data: tenantData }),
-    onSuccess: (res: any) => {
+    mutationFn: (data: any) => createTenantUserFn({ data }),
+    onSuccess: (res) => {
       if (res.success) {
-        toast.success(`Tenant store "${newStore.storeName}" provisioned successfully!`);
+        toast.success(t("admin.tenantProvisioned", "New tenant store provisioned successfully!"));
         setIsCreateStoreOpen(false);
         setNewStore({ storeName: "", ownerName: "", email: "", password: "", planId: "basic" });
         queryClient.invalidateQueries({ queryKey: ["saas-organizations"] });
       } else {
-        toast.error(res.error || "Failed to create tenant store");
+        toast.error(res.error || t("failedToProvisionStore", "Failed to provision store"));
       }
     },
   });
 
   const addTrialMutation = useMutation({
-    mutationFn: ({ orgId, days }: { orgId: string; days: number }) =>
-      addTrialDaysFn({ data: { orgId, days } }),
-    onSuccess: (res: any) => {
+    mutationFn: (data: { orgId: string; days: number }) => addTrialDaysFn({ data }),
+    onSuccess: (res) => {
       if (res.success) {
-        toast.success("Trial / Subscription period extended successfully!");
+        toast.success(t("admin.trialExtended", "Trial / Subscription period extended successfully!"));
         setQuickExtendOrg(null);
         queryClient.invalidateQueries({ queryKey: ["saas-organizations"] });
       } else {
-        toast.error(res.error || "Failed to extend trial");
+        toast.error(res.error || t("failedToExtendTrial", "Failed to extend trial"));
       }
     },
   });
@@ -278,8 +281,8 @@ function SuperAdminDashboardPage() {
       <div className="page-container space-y-6">
         {/* Page Header with Quick Actions */}
         <PageHeader
-          title="Super Admin Executive Dashboard"
-          description="Multi-tenant cloud platform analytics, MRR velocity, live payment verification, and infrastructure status."
+          title={t("admin.dashboardTitle", "Super Admin Executive Dashboard")}
+          description={t("admin.dashboardDesc", "Multi-tenant cloud platform analytics, MRR velocity, live payment verification, and infrastructure status.")}
           actions={
             <div className="flex flex-wrap items-center gap-2">
               <Button
@@ -290,7 +293,7 @@ function SuperAdminDashboardPage() {
                 disabled={isFetching}
               >
                 <RefreshCw className={`size-3.5 ${isFetching ? "animate-spin" : ""}`} />
-                <span>Refresh Live Data</span>
+                <span>{t("refreshLiveData", "Refresh Live Data")}</span>
               </Button>
 
               <Button
@@ -299,7 +302,7 @@ function SuperAdminDashboardPage() {
                 onClick={() => setIsCreateStoreOpen(true)}
               >
                 <Plus className="size-4" />
-                <span>Provision New Store</span>
+                <span>{t("provisionNewStore", "Provision New Store")}</span>
               </Button>
             </div>
           }
@@ -308,44 +311,44 @@ function SuperAdminDashboardPage() {
         {/* Primary Executive Metric Cards (6 KPI Cards) */}
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
           <StatCard
-            label="Monthly Recurring Rev"
+            label={t("monthlyRecurringRev", "Monthly Recurring Rev")}
             value={`₹${calculatedMRR.toLocaleString("en-IN")}`}
             hint={`ARR: ₹${(calculatedMRR * 12).toLocaleString("en-IN")}`}
             icon={Wallet}
             accent="primary"
           />
           <StatCard
-            label="Total Merchant Stores"
+            label={t("totalMerchantStores", "Total Merchant Stores")}
             value={String(totalTenants)}
-            hint={`${activeTenants} active, ${trialTenants} trial`}
+            hint={`${activeTenants} ${t("active", "active")}, ${trialTenants} ${t("trial", "trial")}`}
             icon={Store}
             accent="success"
           />
           <StatCard
-            label="Trial Registrations"
+            label={t("trialRegistrations", "Trial Registrations")}
             value={String(trialTenants)}
             hint={`${totalTenants > 0 ? Math.round((trialTenants / totalTenants) * 100) : 0}% of network`}
             icon={Sparkles}
             accent="warning"
           />
           <StatCard
-            label="Pending Approvals"
+            label={t("pendingApprovals", "Pending Approvals")}
             value={String(pendingPayments.length)}
-            hint={pendingPayments.length > 0 ? "Requires review" : "All cleared"}
+            hint={pendingPayments.length > 0 ? t("requiresReview", "Requires review") : t("allCleared", "All cleared")}
             icon={Receipt}
             accent={pendingPayments.length > 0 ? "destructive" : "info"}
           />
           <StatCard
-            label="Support Inquiries"
+            label={t("supportInquiries", "Support Inquiries")}
             value={String(openTickets.length)}
-            hint={`${tickets.length} total submitted`}
+            hint={`${tickets.length} ${t("totalSubmitted", "total submitted")}`}
             icon={MessageCircle}
             accent="info"
           />
           <StatCard
-            label="Satisfaction Rating"
+            label={t("satisfactionRating", "Satisfaction Rating")}
             value={`${avgReviewScore} ★`}
-            hint={`From ${reviews.length} merchant reviews`}
+            hint={`${t("from", "From")} ${reviews.length} ${t("merchantReviews", "merchant reviews")}`}
             icon={Star}
             accent="warning"
           />
@@ -363,9 +366,9 @@ function SuperAdminDashboardPage() {
               </div>
               <div>
                 <p className="text-xs font-bold text-foreground group-hover:text-primary transition-colors">
-                  Payment Approvals
+                  {t("paymentApprovals", "Payment Approvals")}
                 </p>
-                <p className="text-[10px] text-muted-foreground">Verify offline bank & UPI</p>
+                <p className="text-[10px] text-muted-foreground">{t("verifyBankUpi", "Verify offline bank & UPI")}</p>
               </div>
             </div>
             {pendingPayments.length > 0 && (
@@ -385,9 +388,9 @@ function SuperAdminDashboardPage() {
               </div>
               <div>
                 <p className="text-xs font-bold text-foreground group-hover:text-primary transition-colors">
-                  Tenant Directory
+                  {t("tenantDirectory", "Tenant Directory")}
                 </p>
-                <p className="text-[10px] text-muted-foreground">{totalTenants} total registered</p>
+                <p className="text-[10px] text-muted-foreground">{totalTenants} {t("totalRegistered", "total registered")}</p>
               </div>
             </div>
             <ArrowRight className="size-3.5 text-muted-foreground group-hover:translate-x-0.5 transition-transform" />
@@ -600,29 +603,29 @@ function SuperAdminDashboardPage() {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <ShieldCheck className="size-4 text-emerald-500" />
-                  <h4 className="text-xs font-bold text-foreground">Infrastructure Status</h4>
+                  <h4 className="text-xs font-bold text-foreground">{t("infrastructureStatus", "Infrastructure Status")}</h4>
                 </div>
                 <Badge
                   variant="outline"
                   className="text-[10px] text-emerald-600 bg-emerald-500/10 font-bold border-emerald-500/20"
                 >
-                  99.99% Operational
+                  99.99% {t("operational", "Operational")}
                 </Badge>
               </div>
 
               <div className="space-y-2 text-xs">
                 <div className="flex items-center justify-between p-2 rounded-xl bg-muted/20 border border-border/40">
-                  <span className="text-muted-foreground">Edge SSR Runtime</span>
+                  <span className="text-muted-foreground">{t("edgeSsrRuntime", "Edge SSR Runtime")}</span>
                   <span className="font-semibold text-foreground">Nitro Cloudflare</span>
                 </div>
                 <div className="flex items-center justify-between p-2 rounded-xl bg-muted/20 border border-border/40">
-                  <span className="text-muted-foreground">Primary Database</span>
+                  <span className="text-muted-foreground">{t("primaryDatabase", "Primary Database")}</span>
                   <span className="font-semibold text-emerald-600 dark:text-emerald-400">
-                    PostgreSQL (Healthy)
+                    PostgreSQL ({t("healthy", "Healthy")})
                   </span>
                 </div>
                 <div className="flex items-center justify-between p-2 rounded-xl bg-muted/20 border border-border/40">
-                  <span className="text-muted-foreground">Sync & PWA Engine</span>
+                  <span className="text-muted-foreground">{t("syncPwaEngine", "Sync & PWA Engine")}</span>
                   <span className="font-semibold text-foreground">ServiceWorker v1.3</span>
                 </div>
               </div>
@@ -645,7 +648,7 @@ function SuperAdminDashboardPage() {
                 }`}
               >
                 <Receipt className="size-3.5" />
-                <span>Pending Approvals</span>
+                <span>{t("pendingApprovals", "Pending Approvals")}</span>
                 {pendingPayments.length > 0 && (
                   <Badge
                     variant="destructive"
@@ -668,7 +671,7 @@ function SuperAdminDashboardPage() {
                 }`}
               >
                 <Store className="size-3.5" />
-                <span>Recent Stores ({recentTenants.length})</span>
+                <span>{t("recentStores", "Recent Stores")} ({recentTenants.length})</span>
               </button>
 
               <button
@@ -681,7 +684,7 @@ function SuperAdminDashboardPage() {
                 }`}
               >
                 <AlertTriangle className="size-3.5 text-amber-500" />
-                <span>Expiring Soon</span>
+                <span>{t("expiringSoon", "Expiring Soon")}</span>
                 {expiringSoonTenants.length > 0 && (
                   <Badge
                     variant="outline"
@@ -702,7 +705,7 @@ function SuperAdminDashboardPage() {
                 }`}
               >
                 <MessageCircle className="size-3.5" />
-                <span>Recent Inquiries ({tickets.slice(0, 5).length})</span>
+                <span>{t("recentInquiries", "Recent Inquiries")} ({tickets.slice(0, 5).length})</span>
               </button>
             </div>
 
@@ -716,7 +719,7 @@ function SuperAdminDashboardPage() {
               }
               className="text-xs font-semibold text-primary hover:underline flex items-center gap-1 mt-2 sm:mt-0"
             >
-              <span>View Full Module</span>
+              <span>{t("viewFullModule", "View Full Module")}</span>
               <ArrowRight className="size-3" />
             </Link>
           </div>
@@ -727,9 +730,9 @@ function SuperAdminDashboardPage() {
               {pendingPayments.length === 0 ? (
                 <div className="p-12 text-center space-y-2">
                   <CheckCircle2 className="size-8 mx-auto text-emerald-500" />
-                  <h4 className="text-sm font-bold text-foreground">Zero Pending Approvals</h4>
+                  <h4 className="text-sm font-bold text-foreground">{t("zeroPendingApprovals", "Zero Pending Approvals")}</h4>
                   <p className="text-xs text-muted-foreground">
-                    All merchant offline bank & UPI payments have been verified and processed.
+                    {t("zeroPendingApprovalsDesc", "All merchant offline bank & UPI payments have been verified and processed.")}
                   </p>
                 </div>
               ) : (
@@ -928,9 +931,9 @@ function SuperAdminDashboardPage() {
               {tickets.length === 0 ? (
                 <div className="p-12 text-center space-y-2">
                   <MessageCircle className="size-8 mx-auto text-muted-foreground/40" />
-                  <h4 className="text-sm font-bold text-foreground">No Support Tickets Yet</h4>
+                  <h4 className="text-sm font-bold text-foreground">{t("noSupportTicketsYet", "No Support Tickets Yet")}</h4>
                   <p className="text-xs text-muted-foreground">
-                    Merchant support inquiries will appear here automatically.
+                    {t("merchantSupportInquiriesDesc", "Merchant support inquiries will appear here automatically.")}
                   </p>
                 </div>
               ) : (
@@ -1020,18 +1023,18 @@ function SuperAdminDashboardPage() {
             >
               <div className="flex-1 overflow-y-auto p-5 space-y-4">
                 <div className="space-y-1.5">
-                  <Label htmlFor="q-storeName">Store / Company Name</Label>
+                  <Label htmlFor="q-storeName">{t("storeCompanyName", "Store / Company Name")}</Label>
                   <Input
                     id="q-storeName"
                     required
                     value={newStore.storeName}
                     onChange={(e) => setNewStore({ ...newStore, storeName: e.target.value })}
-                    placeholder="e.g. Apex Supermarket"
+                    placeholder={t("storeNamePlaceholder", "e.g. Apex Supermarket")}
                   />
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label htmlFor="q-ownerName">Owner Full Name</Label>
+                  <Label htmlFor="q-ownerName">{t("ownerFullName", "Owner Full Name")}</Label>
                   <Input
                     id="q-ownerName"
                     required
@@ -1042,7 +1045,7 @@ function SuperAdminDashboardPage() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label htmlFor="q-email">Owner Email</Label>
+                  <Label htmlFor="q-email">{t("ownerEmail", "Owner Email")}</Label>
                   <Input
                     id="q-email"
                     type="email"
@@ -1054,7 +1057,7 @@ function SuperAdminDashboardPage() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label htmlFor="q-password">Initial Password</Label>
+                  <Label htmlFor="q-password">{t("initialPassword", "Initial Password")}</Label>
                   <Input
                     id="q-password"
                     type="password"
@@ -1066,18 +1069,18 @@ function SuperAdminDashboardPage() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label htmlFor="q-plan">Assign SaaS Plan Tier</Label>
+                  <Label htmlFor="q-plan">{t("assignSaasPlanTier", "Assign SaaS Plan Tier")}</Label>
                   <Select
                     value={newStore.planId}
                     onValueChange={(val) => setNewStore({ ...newStore, planId: val })}
                   >
                     <SelectTrigger id="q-plan">
-                      <SelectValue placeholder="Select plan tier" />
+                      <SelectValue placeholder={t("selectPlanTier", "Select plan tier")} />
                     </SelectTrigger>
                     <SelectContent>
                       {plans.map((p: any) => (
                         <SelectItem key={p.id} value={p.id}>
-                          {p.name} (₹{p.price || 0}/mo)
+                          {p.name} (₹{p.price || 0}/{t("mo", "mo")})
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -1087,10 +1090,10 @@ function SuperAdminDashboardPage() {
 
               <SheetFooter className="p-5 border-t bg-muted/20 flex sm:justify-end gap-2">
                 <Button type="button" variant="outline" onClick={() => setIsCreateStoreOpen(false)}>
-                  Cancel
+                  {t("cancel", "Cancel")}
                 </Button>
                 <Button type="submit" disabled={createTenantMutation.isPending}>
-                  {createTenantMutation.isPending ? "Provisioning…" : "Provision Store Now"}
+                  {createTenantMutation.isPending ? t("provisioning", "Provisioning…") : t("provisionStoreNow", "Provision Store Now")}
                 </Button>
               </SheetFooter>
             </form>
@@ -1105,10 +1108,10 @@ function SuperAdminDashboardPage() {
           >
             <SheetHeader className="bg-muted/60 p-5 border-b pr-12 text-left">
               <SheetTitle className="text-lg font-bold text-foreground">
-                Extend Trial / Subscription
+                {t("extendTrialSubscription", "Extend Trial / Subscription")}
               </SheetTitle>
               <SheetDescription className="text-xs text-muted-foreground mt-0.5">
-                Add bonus trial days to {quickExtendOrg?.name || "Merchant Store"}.
+                {t("addBonusTrialDaysTo", "Add bonus trial days to")} {quickExtendOrg?.name || t("merchantStore", "Merchant Store")}.
               </SheetDescription>
             </SheetHeader>
 
@@ -1126,31 +1129,31 @@ function SuperAdminDashboardPage() {
                 <div className="flex-1 overflow-y-auto p-5 space-y-4">
                   <div className="p-3.5 rounded-xl border bg-muted/20 space-y-2 text-xs">
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Store Organization:</span>
+                      <span className="text-muted-foreground">{t("storeOrganization", "Store Organization:")}</span>
                       <span className="font-bold text-foreground">{quickExtendOrg.name}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Current Expiry:</span>
+                      <span className="text-muted-foreground">{t("currentExpiry", "Current Expiry:")}</span>
                       <span className="font-mono text-foreground">
                         {quickExtendOrg.planExpiryDate
                           ? new Date(quickExtendOrg.planExpiryDate).toLocaleDateString()
-                          : "No Expiry / Lifetime"}
+                          : t("noExpiryLifetime", "No Expiry / Lifetime")}
                       </span>
                     </div>
                   </div>
 
                   <div className="space-y-1.5">
-                    <Label htmlFor="ext-days">Days to Add</Label>
+                    <Label htmlFor="ext-days">{t("daysToAdd", "Days to Add")}</Label>
                     <Select value={extendDays} onValueChange={setExtendDays}>
                       <SelectTrigger id="ext-days">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="7">+7 Days Extension</SelectItem>
-                        <SelectItem value="14">+14 Days Extension (Recommended)</SelectItem>
-                        <SelectItem value="30">+30 Days (1 Month)</SelectItem>
-                        <SelectItem value="60">+60 Days (2 Months)</SelectItem>
-                        <SelectItem value="90">+90 Days (Quarterly)</SelectItem>
+                        <SelectItem value="7">+7 {t("daysExtension", "Days Extension")}</SelectItem>
+                        <SelectItem value="14">+14 {t("daysExtensionRecommended", "Days Extension (Recommended)")}</SelectItem>
+                        <SelectItem value="30">+30 {t("daysOneMonth", "Days (1 Month)")}</SelectItem>
+                        <SelectItem value="60">+60 {t("daysTwoMonths", "Days (2 Months)")}</SelectItem>
+                        <SelectItem value="90">+90 {t("daysQuarterly", "Days (Quarterly)")}</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -1158,10 +1161,10 @@ function SuperAdminDashboardPage() {
 
                 <SheetFooter className="p-5 border-t bg-muted/20 flex sm:justify-end gap-2">
                   <Button type="button" variant="outline" onClick={() => setQuickExtendOrg(null)}>
-                    Cancel
+                    {t("cancel", "Cancel")}
                   </Button>
                   <Button type="submit" disabled={addTrialMutation.isPending}>
-                    {addTrialMutation.isPending ? "Adding Days…" : "Confirm Extension"}
+                    {addTrialMutation.isPending ? t("addingDays", "Adding Days…") : t("confirmExtension", "Confirm Extension")}
                   </Button>
                 </SheetFooter>
               </form>

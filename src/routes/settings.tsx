@@ -194,7 +194,7 @@ function SettingsPage() {
   const copyToClipboard = (text: string, key: string) => {
     navigator.clipboard.writeText(text);
     setCopiedKey(key);
-    toast.success("Copied to clipboard!");
+    toast.success(t("copiedToClipboard", "Copied to clipboard!"));
     setTimeout(() => setCopiedKey(null), 2000);
   };
 
@@ -372,7 +372,7 @@ function SettingsPage() {
         queryClient.invalidateQueries({ queryKey: ["settings", orgId] }),
       ]);
     },
-    onError: () => toast.error("Failed to save tax rate"),
+    onError: () => toast.error(t("failedToSaveTaxRate", "Failed to save tax rate")),
   });
 
   const deleteTaxMutation = useMutation({
@@ -384,14 +384,14 @@ function SettingsPage() {
         toast.error(res?.error || "Failed to delete tax rate");
         return;
       }
-      toast.success("Tax rate deleted");
+      toast.success(t("taxRateDeleted", "Tax rate deleted"));
       setTaxDeleteId(null);
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["taxMasters"] }),
         queryClient.invalidateQueries({ queryKey: ["settings", orgId] }),
       ]);
     },
-    onError: () => toast.error("Failed to delete tax rate"),
+    onError: () => toast.error(t("failedToDeleteTaxRate", "Failed to delete tax rate")),
   });
 
   const loadTaxTemplateMutation = useMutation({
@@ -410,12 +410,12 @@ function SettingsPage() {
         queryClient.invalidateQueries({ queryKey: ["settings", orgId] }),
       ]);
     },
-    onError: () => toast.error("Failed to import country tax slabs"),
+    onError: () => toast.error(t("failedToImportTaxSlabs", "Failed to import country tax slabs")),
   });
 
   const handleSaveTax = () => {
     if (!taxName.trim()) {
-      toast.error("Tax name is required");
+      toast.error(t("taxNameRequired", "Tax name is required"));
       return;
     }
     setIsSavingTax(true);
@@ -426,10 +426,10 @@ function SettingsPage() {
 
   const handlePaymentProofSubmit = async () => {
     if (!paymentForm.utrNumber.trim()) {
-      return toast.error("Please enter Transaction ID / UTR Number");
+      return toast.error(t("enterTxnIdOrUtr", "Please enter Transaction ID / UTR Number"));
     }
     if (!selectedPlanForUpgrade) {
-      return toast.error("Please select a plan first");
+      return toast.error(t("selectPlanFirst", "Please select a plan first"));
     }
     setIsSubmittingPayment(true);
     try {
@@ -486,7 +486,7 @@ function SettingsPage() {
         toast.error("Error: " + res.error);
       }
     } catch (e) {
-      toast.error("Error submitting payment proof. Please try again.");
+      toast.error(t("errorSubmittingPaymentProof", "Error submitting payment proof. Please try again."));
     } finally {
       setIsSubmittingPayment(false);
     }
@@ -507,7 +507,7 @@ function SettingsPage() {
       user &&
       !hasPermissionForRoute(user, "/settings", user?.role === "super_admin", saasPlan).allowed
     ) {
-      toast.error("Unauthorized. Admin access required.");
+      toast.error(t("unauthorizedAdminAccess", "Unauthorized. Admin access required."));
       router.navigate({ to: "/" });
     }
   }, [user, router, saasPlan]);
@@ -589,17 +589,17 @@ function SettingsPage() {
           },
         });
         if (res.success) {
-          toast.success("Settings saved successfully to cloud.");
+          toast.success(t("settingsSavedSuccess", "Settings saved successfully to cloud."));
           queryClient.invalidateQueries({ queryKey: ["settings"] });
         } else {
           toast.error("Cloud sync failed: " + res.error);
         }
       } else {
-        toast.error("No valid organization ID found.");
+        toast.error(t("noValidOrgId", "No valid organization ID found."));
       }
     } catch (error) {
       console.error("Settings save error:", error);
-      toast.error("Failed to save settings.");
+      toast.error(t("failedToSaveSettings", "Failed to save settings."));
     } finally {
       setIsSaving(false);
     }
@@ -607,9 +607,9 @@ function SettingsPage() {
 
   const handleResetData = async () => {
     try {
-      toast.success("This feature is disabled as local DB is removed.");
+      toast.success(t("featureDisabledLocalDb", "This feature is disabled as local DB is removed."));
     } catch (err) {
-      toast.error("Failed to reset.");
+      toast.error(t("failedToReset", "Failed to reset."));
     } finally {
       setConfirmReset(false);
     }
@@ -643,18 +643,18 @@ function SettingsPage() {
   const handleUpdateSecurity = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) {
-      toast.error("No active user found.");
+      toast.error(t("noActiveUserFound", "No active user found."));
       return;
     }
 
     if (!passForm.currentPassword.trim()) {
-      toast.error("Please enter your current password / PIN to verify identity.");
+      toast.error(t("enterCurrentPasswordOrPin", "Please enter your current password / PIN to verify identity."));
       return;
     }
 
     if (user.pin && passForm.currentPassword) {
       if (user.pin !== passForm.currentPassword) {
-        toast.error("Current password / PIN is incorrect.");
+        toast.error(t("currentPasswordPinIncorrect", "Current password / PIN is incorrect."));
         return;
       }
     }
@@ -666,18 +666,18 @@ function SettingsPage() {
       });
       if (!isValid) return;
       if (passForm.newPassword !== passForm.confirmPassword) {
-        toast.error("New password and confirm password do not match.");
+        toast.error(t("passwordsDoNotMatch", "New password and confirm password do not match."));
         return;
       }
     }
 
     if (passForm.newPin && !/^\d{4}$/.test(passForm.newPin)) {
-      toast.error("Cashier PIN must be a 4-digit number (e.g. 1234).");
+      toast.error(t("cashierPinMustBe4Digits", "Cashier PIN must be a 4-digit number (e.g. 1234)."));
       return;
     }
 
     if (!passForm.newPassword && passForm.newPin === user.pin) {
-      toast.info("No changes made to password or PIN.");
+      toast.info(t("noChangesMadeSecurity", "No changes made to password or PIN."));
       return;
     }
 
@@ -693,7 +693,7 @@ function SettingsPage() {
         throw new Error(res.error || "Server function failed");
       }
 
-      toast.success("Security credentials updated successfully!");
+      toast.success(t("securityCredentialsUpdated", "Security credentials updated successfully!"));
       setPassForm({
         currentPassword: "",
         newPassword: "",
@@ -703,7 +703,7 @@ function SettingsPage() {
       clearSecAll();
     } catch (err) {
       console.error("Security update error:", err);
-      toast.error("Failed to update password. Please try again.");
+      toast.error(t("failedToUpdatePassword", "Failed to update password. Please try again."));
     } finally {
       setIsUpdatingSecurity(false);
     }
@@ -809,7 +809,7 @@ function SettingsPage() {
   const handleSavePaymentMethod = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!paymentMethodForm.label.trim()) {
-      toast.error("Please enter a payment method name");
+      toast.error(t("enterPaymentMethodName", "Please enter a payment method name"));
       return;
     }
     const currentList = Array.isArray(settings.config?.paymentMethods)
@@ -832,7 +832,7 @@ function SettingsPage() {
       }
     } else {
       if (currentList.some((m) => m.id === generatedId)) {
-        toast.error("A payment method with this name already exists");
+        toast.error(t("paymentMethodExists", "A payment method with this name already exists"));
         return;
       }
       currentList.push({
@@ -883,7 +883,7 @@ function SettingsPage() {
     ).filter((m: any) => m.id !== id);
     const newConfig = { ...(settings.config || {}), paymentMethods: currentList };
     handleChange("config", newConfig);
-    toast.success("Payment method removed");
+    toast.success(t("paymentMethodRemoved", "Payment method removed"));
 
     // Auto-persist to DB
     const orgId =
@@ -909,7 +909,7 @@ function SettingsPage() {
   const navItems = [
     {
       id: "store",
-      label: "Store Profile",
+      label: t("storeProfile", "Store Profile"),
       description: "Branding, address & contact",
       icon: Store,
       badge: null,
@@ -931,7 +931,7 @@ function SettingsPage() {
     },
     {
       id: "paymentMethods",
-      label: "Payment Methods",
+      label: t("paymentMethods", "Payment Methods"),
       description: "Default & custom checkout options",
       icon: Banknote,
       badge: `${paymentMethodsList.filter((m) => m.enabled !== false).length} Active`,
@@ -952,8 +952,8 @@ function SettingsPage() {
     },
     {
       id: "locations",
-      label: "Multi-Location",
-      description: "Store branches & warehouses",
+      label: t("multiLocation", "Multi-Location"),
+      description: t("multiLocationDesc", "Store branches & warehouses"),
       icon: MapPin,
       badge: null,
     },
@@ -976,7 +976,7 @@ function SettingsPage() {
             {t("settings", "Settings & Preferences")}
           </h1>
           <p className="text-xs text-muted-foreground hidden sm:block">
-            Manage your business profile, receipt design, taxation, team security, and billing.
+            {t("settingsHeaderDesc", "Manage your business profile, receipt design, taxation, team security, and billing.")}
           </p>
         </div>
         <div className="flex items-center gap-2.5 w-full sm:w-auto">
@@ -992,7 +992,7 @@ function SettingsPage() {
             variant="outline"
             onClick={() => {
               if (dbSettings) setSettings(dbSettings);
-              toast.info("Reverted to last saved settings");
+              toast.info(t("revertedToLastSavedSettings", "Reverted to last saved settings"));
             }}
             disabled={!hasChanges || isSaving}
             className="flex-1 sm:flex-none h-10 rounded-xl text-xs font-semibold"
@@ -1023,7 +1023,7 @@ function SettingsPage() {
           <div className="hidden lg:flex flex-col rounded-2xl border border-border/80 bg-card p-2 shadow-card sticky top-20 space-y-1">
             <div className="px-3 py-2 border-b border-border/50 mb-1">
               <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
-                Settings Menu
+                {t("settingsMenu", "Settings Menu")}
               </span>
             </div>
 
@@ -1079,17 +1079,17 @@ function SettingsPage() {
             <div className="mt-4 pt-3 border-t border-border/60 px-3 py-2.5 bg-muted/30 rounded-xl space-y-2">
               <div className="flex items-center justify-between">
                 <span className="text-[10px] font-bold text-muted-foreground uppercase">
-                  Store Code
+                  {t("storeCode", "Store Code")}
                 </span>
                 <button
                   type="button"
                   onClick={() => copyToClipboard(storeCode, "storeCode")}
                   className="flex items-center gap-1 text-[10px] font-mono font-bold text-primary hover:underline cursor-pointer"
-                  title="Copy Store Code"
+                  title={t("copyStoreCode", "Copy Store Code")}
                 >
                   {copiedKey === "storeCode" ? (
                     <>
-                      <CheckCircle2 className="size-3 text-success" /> Copied
+                      <CheckCircle2 className="size-3 text-success" /> {t("copied", "Copied")}
                     </>
                   ) : (
                     <>
@@ -1110,7 +1110,7 @@ function SettingsPage() {
                 className="flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground hover:text-foreground pt-1.5 border-t border-border/50 w-full transition-colors cursor-pointer"
               >
                 <Database className="size-3 text-primary" />
-                <span>Diagnostics & Cache</span>
+                <span>{t("diagnosticsAndCache", "Diagnostics & Cache")}</span>
               </button>
             </div>
           </div>
@@ -1196,7 +1196,7 @@ function SettingsPage() {
               {/* Branding and Basic Details */}
               <SettingsCard
                 icon={Store}
-                title="Store Branding & Contact Information"
+                title={t("storeBrandingContactInfo", "Store Branding & Contact Information")}
                 desc="Your brand details and registered contact info appear on printed receipts, digital invoices, and customer tickets."
               >
                 <div className="space-y-6">
@@ -1231,7 +1231,7 @@ function SettingsPage() {
                       <Input
                         value={settings.storeName}
                         onChange={(e) => handleChange("storeName", e.target.value)}
-                        placeholder="e.g. Apex Supermarket & Grocery"
+                        placeholder={t("placeholderStoreName", "e.g. Apex Supermarket & Grocery")}
                         className="font-semibold"
                       />
                     </Field>
@@ -1243,7 +1243,7 @@ function SettingsPage() {
                       <Input
                         value={settings.taxId}
                         onChange={(e) => handleChange("taxId", e.target.value)}
-                        placeholder="e.g. VAT-89472910, TRN 100234, GSTIN29ABCDE"
+                        placeholder={t("placeholderTaxId", "e.g. VAT-89472910, TRN 100234, GSTIN29ABCDE")}
                       />
                     </Field>
 
@@ -1255,7 +1255,7 @@ function SettingsPage() {
                       <Input
                         value={settings.address}
                         onChange={(e) => handleChange("address", e.target.value)}
-                        placeholder="e.g. 120 Commercial Avenue, Metro Square, 560001"
+                        placeholder={t("placeholderStoreAddress", "e.g. 120 Commercial Avenue, Metro Square, 560001")}
                       />
                     </Field>
 
@@ -1304,7 +1304,7 @@ function SettingsPage() {
               {/* Regional Localization & Currency */}
               <SettingsCard
                 icon={Globe}
-                title="Regional Localization & Multi-Currency Engine"
+                title={t("regionalLocalizationTitle", "Regional Localization & Multi-Currency Engine")}
                 desc="Configure currency display symbol, accounting timezone, and date presentation format for your jurisdiction."
               >
                 <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
@@ -1348,7 +1348,7 @@ function SettingsPage() {
                       value={settings.timeZone || "UTC"}
                       onChange={(val) => handleChange("timeZone", val)}
                       options={TIMEZONES}
-                      placeholder="Select Time Zone"
+                      placeholder={t("selectTimeZone", "Select Time Zone")}
                     />
                   </Field>
 
@@ -1386,7 +1386,7 @@ function SettingsPage() {
             <div className="space-y-6 animate-in fade-in duration-200">
               <SettingsCard
                 icon={ShieldCheck}
-                title="Account Security & Access Credentials"
+                title={t("accountSecurityTitle", "Account Security & Access Credentials")}
                 desc="Update your master account login password and quick cashier POS terminal PIN."
               >
                 <form onSubmit={handleUpdateSecurity} className="space-y-6">
@@ -1424,7 +1424,7 @@ function SettingsPage() {
                         onChange={(e) =>
                           setPassForm((p) => ({ ...p, currentPassword: e.target.value }))
                         }
-                        placeholder="Enter your current password or 4-digit PIN"
+                        placeholder={t("enterCurrentPasswordOrPinPlaceholder", "Enter your current password or 4-digit PIN")}
                         className="bg-background"
                       />
                       <p className="text-[11px] text-muted-foreground">
@@ -1442,7 +1442,7 @@ function SettingsPage() {
                           setPassForm((p) => ({ ...p, newPassword: e.target.value }));
                           clearSecError("newPassword");
                         }}
-                        placeholder="At least 4 characters"
+                        placeholder={t("atLeast4Chars", "At least 4 characters")}
                         className={`bg-background ${secErrors.newPassword ? "border-destructive focus-visible:ring-destructive" : ""}`}
                       />
                       <FieldError message={secErrors.newPassword} />
@@ -1458,7 +1458,7 @@ function SettingsPage() {
                           setPassForm((p) => ({ ...p, confirmPassword: e.target.value }));
                           clearSecError("confirmPassword");
                         }}
-                        placeholder="Re-enter new password"
+                        placeholder={t("reEnterNewPassword", "Re-enter new password")}
                         className={`bg-background ${secErrors.confirmPassword ? "border-destructive focus-visible:ring-destructive" : ""}`}
                       />
                       {passForm.newPassword && passForm.confirmPassword && (
@@ -1543,7 +1543,7 @@ function SettingsPage() {
               {/* Current Active Plan Card */}
               <SettingsCard
                 icon={CreditCard}
-                title="Current Subscription Status"
+                title={t("currentSubscriptionStatus", "Current Subscription Status")}
                 desc="Overview of your active SaaS plan tier, limits, and tenant status."
               >
                 <div className="rounded-2xl border border-border/80 bg-gradient-to-br from-card via-card to-primary/5 p-6 shadow-card">
@@ -1600,7 +1600,7 @@ function SettingsPage() {
                       <div className="text-2xl font-black text-primary">
                         {settings?.currencySymbol || "$"}
                         {saasPlan?.price || 0}
-                        <span className="text-xs font-normal text-muted-foreground"> / month</span>
+                        <span className="text-xs font-normal text-muted-foreground"> / {t("month", "month")}</span>
                       </div>
                       <p className="text-[11px] text-muted-foreground font-mono mt-0.5">
                         Tenant ID: {user?.orgId || orgId}
@@ -1676,25 +1676,25 @@ function SettingsPage() {
                             {plan.limits && (
                               <div className="space-y-2 py-3 border-t border-b border-border/60 text-xs">
                                 <div className="flex justify-between text-muted-foreground">
-                                  <span>Max Users:</span>
+                                  <span>{t("maxUsers", "Max Users:")}</span>
                                   <span className="font-bold text-foreground">
                                     {plan.limits.maxUsers}
                                   </span>
                                 </div>
                                 <div className="flex justify-between text-muted-foreground">
-                                  <span>Max Products:</span>
+                                  <span>{t("maxProducts", "Max Products:")}</span>
                                   <span className="font-bold text-foreground">
                                     {plan.limits.maxProducts}
                                   </span>
                                 </div>
                                 <div className="flex justify-between text-muted-foreground">
-                                  <span>Max Branches:</span>
+                                  <span>{t("maxBranches", "Max Branches:")}</span>
                                   <span className="font-bold text-foreground">
                                     {plan.limits.maxBranches}
                                   </span>
                                 </div>
                                 <div className="flex justify-between text-muted-foreground">
-                                  <span>Invoices/Month:</span>
+                                  <span>{t("invoicesPerMonth", "Invoices/Month:")}</span>
                                   <span className="font-bold text-foreground">
                                     {plan.limits.maxInvoicesPerMonth}
                                   </span>
@@ -1750,7 +1750,7 @@ function SettingsPage() {
             <div className="space-y-6 animate-in fade-in duration-200">
               <SettingsCard
                 icon={Banknote}
-                title="POS Checkout Payment Methods"
+                title={t("posCheckoutPaymentMethods", "POS Checkout Payment Methods")}
                 desc="Configure available payment methods in the checkout terminal. Standard options (Cash, Card, UPI, Split, Credit) are always ready to use, and you can add custom localized options like bKash, Nagad, Bank Wire, or Gift Vouchers."
                 headerRight={
                   <Button
@@ -1934,7 +1934,7 @@ function SettingsPage() {
                                       setShowAddPaymentMethodDialog(true);
                                     }}
                                     className="size-8 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted"
-                                    title="Edit Payment Method"
+                                    title={t("editPaymentMethod", "Edit Payment Method")}
                                   >
                                     <Pencil className="size-3.5" />
                                   </Button>
@@ -1943,7 +1943,7 @@ function SettingsPage() {
                                     size="icon"
                                     onClick={() => handleDeletePaymentMethod(method.id)}
                                     className="size-8 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-                                    title="Delete Payment Method"
+                                    title={t("deletePaymentMethod", "Delete Payment Method")}
                                   >
                                     <Trash2 className="size-3.5" />
                                   </Button>
@@ -1965,7 +1965,7 @@ function SettingsPage() {
               {/* Card 1: Tax Master & Rate Slabs Manager */}
               <SettingsCard
                 icon={Receipt}
-                title="Tax Master & Rate Slabs"
+                title={t("taxMasterRateSlabs", "Tax Master & Rate Slabs")}
                 desc="Create and configure multiple custom tax rates, GST/VAT/Sales Tax slabs, and rules applied to products and billing."
                 headerRight={
                   <div className="flex items-center gap-2">
@@ -1992,7 +1992,7 @@ function SettingsPage() {
                     <div className="relative flex-1 max-w-sm">
                       <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground" />
                       <Input
-                        placeholder="Search tax rates, types, or rules..."
+                        placeholder={t("searchTaxRates", "Search tax rates, types, or rules...")}
                         value={taxSearch}
                         onChange={(e) => setTaxSearch(e.target.value)}
                         className="pl-8.5 h-9 text-xs"
@@ -2008,7 +2008,7 @@ function SettingsPage() {
                     <div className="rounded-xl border border-dashed border-border/80 p-8 text-center bg-muted/10 space-y-3">
                       <Receipt className="size-8 text-muted-foreground mx-auto opacity-50" />
                       <div className="space-y-1">
-                        <p className="text-xs font-bold text-foreground">No tax rate slabs found</p>
+                        <p className="text-xs font-bold text-foreground">{t("noTaxRateSlabsFound", "No tax rate slabs found")}</p>
                         <p className="text-[11px] text-muted-foreground">
                           Create custom tax items or import standard statutory country presets.
                         </p>
@@ -2140,7 +2140,7 @@ function SettingsPage() {
               {/* Card 2: Baseline Store Tax Settings & Rules */}
               <SettingsCard
                 icon={Sliders}
-                title="Baseline Tax Configuration & Compliance"
+                title={t("baselineTaxConfig", "Baseline Tax Configuration & Compliance")}
                 desc="Configure baseline store tax defaults, pricing mode, and jurisdiction reporting."
               >
                 <div className="space-y-6">
@@ -2153,7 +2153,7 @@ function SettingsPage() {
                         className="font-semibold"
                         value={settings.taxIdLabel || "VAT / Tax ID"}
                         onChange={(e) => handleChange("taxIdLabel", e.target.value)}
-                        placeholder="e.g. VAT Registration No., GSTIN, TRN, Tax ID"
+                        placeholder={t("taxRegPlaceholder", "e.g. VAT Registration No., GSTIN, TRN, Tax ID")}
                       />
                     </Field>
 
@@ -2166,7 +2166,7 @@ function SettingsPage() {
                         onValueChange={(v) => handleChange("defaultTaxMasterId", v)}
                       >
                         <SelectTrigger className="h-10 font-bold">
-                          <SelectValue placeholder="Select default tax rate" />
+                          <SelectValue placeholder={t("selectDefaultTaxRate", "Select default tax rate")} />
                         </SelectTrigger>
                         <SelectContent>
                           {taxMasters.length === 0 && (
@@ -2307,9 +2307,9 @@ function SettingsPage() {
                   </SheetHeader>
                   <div className="space-y-4 py-4">
                     <div className="grid gap-1.5">
-                      <Label className="text-xs font-bold">Tax Name *</Label>
+                      <Label className="text-xs font-bold">{t("taxName", "Tax Name")} *</Label>
                       <Input
-                        placeholder="e.g. Standard VAT 20%, GST 18%, State Sales Tax, Zero Rate"
+                        placeholder={t("taxNamePlaceholder", "e.g. Standard VAT 20%, GST 18%, State Sales Tax, Zero Rate")}
                         value={taxName}
                         onChange={(e) => setTaxName(e.target.value)}
                         className="h-10"
@@ -2317,7 +2317,7 @@ function SettingsPage() {
                     </div>
                     <div className="grid grid-cols-2 gap-3">
                       <div className="grid gap-1.5">
-                        <Label className="text-xs font-bold">Tax Rate (%) *</Label>
+                        <Label className="text-xs font-bold">{t("taxRatePercent", "Tax Rate (%)")} *</Label>
                         <Input
                           type="number"
                           step="0.01"
@@ -2329,18 +2329,18 @@ function SettingsPage() {
                         />
                       </div>
                       <div className="grid gap-1.5">
-                        <Label className="text-xs font-bold">Tax Type</Label>
+                        <Label className="text-xs font-bold">{t("taxType", "Tax Type")}</Label>
                         <Select value={taxType} onValueChange={(v: any) => setTaxType(v)}>
                           <SelectTrigger className="h-10">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="gst">GST (CGST + SGST / IGST)</SelectItem>
-                            <SelectItem value="vat">VAT (Value Added Tax)</SelectItem>
-                            <SelectItem value="sales_tax">Sales Tax (State / Local)</SelectItem>
-                            <SelectItem value="flat">Flat Percentage Tax</SelectItem>
-                            <SelectItem value="compound">Compound / Cascade Tax</SelectItem>
-                            <SelectItem value="exempt">Tax-Exempt (0%)</SelectItem>
+                            <SelectItem value="gst">{t("taxTypeGst", "GST (CGST + SGST / IGST)")}</SelectItem>
+                            <SelectItem value="vat">{t("taxTypeVat", "VAT (Value Added Tax)")}</SelectItem>
+                            <SelectItem value="sales_tax">{t("taxTypeSalesTax", "Sales Tax (State / Local)")}</SelectItem>
+                            <SelectItem value="flat">{t("taxTypeFlatPercentage", "Flat Percentage Tax")}</SelectItem>
+                            <SelectItem value="compound">{t("taxTypeCompound", "Compound / Cascade Tax")}</SelectItem>
+                            <SelectItem value="exempt">{t("taxTypeExempt", "Tax-Exempt (0%)")}</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
@@ -2349,7 +2349,7 @@ function SettingsPage() {
                     {taxType === "gst" && (
                       <div className="grid grid-cols-3 gap-3 rounded-xl border border-border/80 bg-muted/20 p-3">
                         <div className="grid gap-1.5">
-                          <Label className="text-[10px] font-bold">CGST (%)</Label>
+                          <Label className="text-[10px] font-bold">{t("cgstPercent", "CGST (%)")}</Label>
                           <Input
                             type="number"
                             step="0.01"
@@ -2361,7 +2361,7 @@ function SettingsPage() {
                           />
                         </div>
                         <div className="grid gap-1.5">
-                          <Label className="text-[10px] font-bold">SGST (%)</Label>
+                          <Label className="text-[10px] font-bold">{t("sgstPercent", "SGST (%)")}</Label>
                           <Input
                             type="number"
                             step="0.01"
@@ -2373,7 +2373,7 @@ function SettingsPage() {
                           />
                         </div>
                         <div className="grid gap-1.5">
-                          <Label className="text-[10px] font-bold">IGST (%)</Label>
+                          <Label className="text-[10px] font-bold">{t("igstPercent", "IGST (%)")}</Label>
                           <Input
                             type="number"
                             step="0.01"
@@ -2392,9 +2392,9 @@ function SettingsPage() {
                     )}
 
                     <div className="grid gap-1.5">
-                      <Label className="text-xs font-bold">Description / Rules</Label>
+                      <Label className="text-xs font-bold">{t("descriptionRules", "Description / Rules")}</Label>
                       <Textarea
-                        placeholder="e.g. Applicable on electronics, luxury items, and consumer goods"
+                        placeholder={t("taxRulesPlaceholder", "e.g. Applicable on electronics, luxury items, and consumer goods")}
                         value={taxDescription}
                         onChange={(e) => setTaxDescription(e.target.value)}
                         className="min-h-[70px] text-xs"
@@ -2403,14 +2403,14 @@ function SettingsPage() {
 
                     <div className="grid grid-cols-2 gap-3">
                       <div className="grid gap-1.5">
-                        <Label className="text-xs font-bold">Status</Label>
+                        <Label className="text-xs font-bold">{t("status", "Status")}</Label>
                         <Select value={taxStatus} onValueChange={setTaxStatus}>
                           <SelectTrigger className="h-10">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="active">Active</SelectItem>
-                            <SelectItem value="archived">Archived</SelectItem>
+                            <SelectItem value="active">{t("active", "Active")}</SelectItem>
+                            <SelectItem value="archived">{t("archived", "Archived")}</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
@@ -2421,7 +2421,7 @@ function SettingsPage() {
                           onChange={(e) => setTaxIsDefault(e.target.checked)}
                           className="rounded border-gray-300 text-primary focus:ring-primary w-4 h-4 cursor-pointer"
                         />
-                        <span className="text-sm font-medium">Set as default rate</span>
+                        <span className="text-sm font-medium">{t("setAsDefaultRate", "Set as default rate")}</span>
                       </label>
                     </div>
                   </div>
@@ -2451,7 +2451,7 @@ function SettingsPage() {
                   </DialogHeader>
                   <div className="space-y-4 py-2">
                     <div className="grid gap-1.5">
-                      <Label className="text-xs font-bold">Select Country System</Label>
+                      <Label className="text-xs font-bold">{t("selectCountrySystem", "Select Country System")}</Label>
                       <Select
                         value={selectedTaxTemplateCountry}
                         onValueChange={setSelectedTaxTemplateCountry}
@@ -2463,43 +2463,43 @@ function SettingsPage() {
                           <SelectItem value="GB">
                             <div className="flex items-center gap-2">
                               <CountryFlag countryCode="GB" className="w-4.5 h-3" />
-                              <span>United Kingdom (Standard VAT 20%, 5%, 0%)</span>
+                              <span>{t("ukTaxTemplate", "United Kingdom (Standard VAT 20%, 5%, 0%)")}</span>
                             </div>
                           </SelectItem>
                           <SelectItem value="US">
                             <div className="flex items-center gap-2">
                               <CountryFlag countryCode="US" className="w-4.5 h-3" />
-                              <span>United States (Sales Tax 7.5%, 8.25%, 10%)</span>
+                              <span>{t("usTaxTemplate", "United States (Sales Tax 7.5%, 8.25%, 10%)")}</span>
                             </div>
                           </SelectItem>
                           <SelectItem value="AE">
                             <div className="flex items-center gap-2">
                               <CountryFlag countryCode="AE" className="w-4.5 h-3" />
-                              <span>United Arab Emirates (VAT 5%, 0%)</span>
+                              <span>{t("uaeTaxTemplate", "United Arab Emirates (VAT 5%, 0%)")}</span>
                             </div>
                           </SelectItem>
                           <SelectItem value="SA">
                             <div className="flex items-center gap-2">
                               <CountryFlag countryCode="SA" className="w-4.5 h-3" />
-                              <span>Saudi Arabia (ZATCA VAT 15%, 0%)</span>
+                              <span>{t("saudiTaxTemplate", "Saudi Arabia (ZATCA VAT 15%, 0%)")}</span>
                             </div>
                           </SelectItem>
                           <SelectItem value="CA">
                             <div className="flex items-center gap-2">
                               <CountryFlag countryCode="CA" className="w-4.5 h-3" />
-                              <span>Canada (GST / HST / PST 5%, 13%, 12%)</span>
+                              <span>{t("canadaTaxTemplate", "Canada (GST / HST / PST 5%, 13%, 12%)")}</span>
                             </div>
                           </SelectItem>
                           <SelectItem value="AU">
                             <div className="flex items-center gap-2">
                               <CountryFlag countryCode="AU" className="w-4.5 h-3" />
-                              <span>Australia (GST 10%, 0%)</span>
+                              <span>{t("australiaTaxTemplate", "Australia (GST 10%, 0%)")}</span>
                             </div>
                           </SelectItem>
                           <SelectItem value="IN">
                             <div className="flex items-center gap-2">
                               <CountryFlag countryCode="IN" className="w-4.5 h-3" />
-                              <span>India (GST 0%, 5%, 12%, 18%, 28%)</span>
+                              <span>{t("indiaTaxTemplate", "India (GST 0%, 5%, 12%, 18%, 28%)")}</span>
                             </div>
                           </SelectItem>
                         </SelectContent>
@@ -2507,7 +2507,7 @@ function SettingsPage() {
                     </div>
 
                     <div className="rounded-xl border border-border/80 bg-muted/20 p-3 space-y-2">
-                      <p className="text-xs font-semibold text-foreground">Included Slabs:</p>
+                      <p className="text-xs font-semibold text-foreground">{t("includedSlabs", "Included Slabs:")}</p>
                       <div className="space-y-1">
                         {(
                           COUNTRY_TAX_TEMPLATES[selectedTaxTemplateCountry] ||
@@ -2547,7 +2547,7 @@ function SettingsPage() {
               <Dialog open={!!taxDeleteId} onOpenChange={(o) => !o && setTaxDeleteId(null)}>
                 <DialogContent>
                   <DialogHeader>
-                    <DialogTitle>Delete Tax Rate?</DialogTitle>
+                    <DialogTitle>{t("deleteTaxRateQ", "Delete Tax Rate?")}</DialogTitle>
                     <DialogDescription>
                       This will permanently remove this tax rate slab. Products currently using it
                       will fall back to their standard saved rate. This action cannot be undone.
@@ -2585,7 +2585,7 @@ function SettingsPage() {
                   <div className="h-full pr-1">
                     <SettingsCard
                       icon={Printer}
-                      title="Receipt & Invoice Template"
+                      title={t("receiptInvoiceTemplate", "Receipt & Invoice Template")}
                       desc="Customise header/footer notes, bank settlement info, signature, and printed terms."
                     >
                       <div className="space-y-5">
@@ -2597,7 +2597,7 @@ function SettingsPage() {
                             <Input
                               value={settings.headerNote}
                               onChange={(e) => handleChange("headerNote", e.target.value)}
-                              placeholder="e.g. Thanks for shopping with us!"
+                              placeholder={t("headerNotePlaceholder", "e.g. Thanks for shopping with us!")}
                             />
                           </Field>
 
@@ -2608,7 +2608,7 @@ function SettingsPage() {
                             <Input
                               value={settings.footerNote}
                               onChange={(e) => handleChange("footerNote", e.target.value)}
-                              placeholder="e.g. Goods once sold cannot be returned."
+                              placeholder={t("footerNotePlaceholder", "e.g. Goods once sold cannot be returned.")}
                             />
                           </Field>
                         </div>
@@ -2631,21 +2631,21 @@ function SettingsPage() {
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <Field label="Bank Name">
                               <Input
-                                placeholder="e.g. JPMorgan Chase / HSBC / Emirates NBD"
+                                placeholder={t("bankNamePlaceholder", "e.g. JPMorgan Chase / HSBC / Emirates NBD")}
                                 value={bankInfo.bankName}
                                 onChange={(e) => handleBankChange("bankName", e.target.value)}
                               />
                             </Field>
                             <Field label="Account Holder Name">
                               <Input
-                                placeholder="e.g. Acme Retail Global Corp"
+                                placeholder={t("accountNamePlaceholder", "e.g. Acme Retail Global Corp")}
                                 value={bankInfo.holderName}
                                 onChange={(e) => handleBankChange("holderName", e.target.value)}
                               />
                             </Field>
                             <Field label="Account Number / IBAN">
                               <Input
-                                placeholder="e.g. GB29NWBK60161331926819 or 1002345678"
+                                placeholder={t("accountNumberPlaceholder", "e.g. GB29NWBK60161331926819 or 1002345678")}
                                 value={bankInfo.iban || bankInfo.accountNo}
                                 onChange={(e) => {
                                   handleBankChange("iban", e.target.value);
@@ -2656,7 +2656,7 @@ function SettingsPage() {
                             </Field>
                             <Field label="SWIFT / BIC / Routing Code / IFSC">
                               <Input
-                                placeholder="e.g. CHASUS33 / HSBCHKHH / SBIN0001234"
+                                placeholder={t("swiftIfscPlaceholder", "e.g. CHASUS33 / HSBCHKHH / SBIN0001234")}
                                 value={bankInfo.swiftBic || bankInfo.ifscCode}
                                 onChange={(e) => {
                                   handleBankChange("swiftBic", e.target.value);
@@ -2674,7 +2674,7 @@ function SettingsPage() {
                           description="Generates a scannable payment QR on thermal bill slips."
                         >
                           <Input
-                            placeholder="e.g. storename@okaxis"
+                            placeholder={t("upiIdPlaceholder", "e.g. storename@okaxis")}
                             value={settings.upiId || ""}
                             onChange={(e) => handleChange("upiId", e.target.value)}
                             className="font-mono"
@@ -2684,7 +2684,7 @@ function SettingsPage() {
                         <Field label="Invoice Declaration Statement" full>
                           <Textarea
                             className="min-h-[70px] text-xs"
-                            placeholder="e.g. We declare that this invoice shows the actual price of goods described."
+                            placeholder={t("declarationPlaceholder", "e.g. We declare that this invoice shows the actual price of goods described.")}
                             value={settings.receiptDeclaration || ""}
                             onChange={(e) => handleChange("receiptDeclaration", e.target.value)}
                           />
@@ -2693,7 +2693,7 @@ function SettingsPage() {
                         <Field label="Terms & Conditions (A4 Invoices)" full>
                           <Textarea
                             className="min-h-[70px] text-xs"
-                            placeholder="e.g. Warranty valid with original purchase invoice only."
+                            placeholder={t("termsPlaceholder", "e.g. Warranty valid with original purchase invoice only.")}
                             value={settings.termsAndConditions || ""}
                             onChange={(e) => handleChange("termsAndConditions", e.target.value)}
                           />
@@ -2736,7 +2736,7 @@ function SettingsPage() {
                   <div className="h-full pl-1">
                     <SettingsCard
                       icon={Eye}
-                      title="Live Visual Studio"
+                      title={t("liveVisualStudio", "Live Visual Studio")}
                       desc={
                         previewFormat === "thermal" ? "Thermal Slip (80mm)" : "Standard A4 Invoice"
                       }
@@ -2865,7 +2865,7 @@ function SettingsPage() {
 
               <div className="p-3 rounded-xl border border-border/80 bg-muted/30 space-y-1">
                 <span className="text-[10px] font-bold text-muted-foreground uppercase">
-                  Store Code
+                  {t("storeCode", "Store Code")}
                 </span>
                 <p className="text-xs font-mono font-bold text-foreground truncate">
                   {storeCode}
@@ -2914,14 +2914,13 @@ function SettingsPage() {
       <AlertDialog open={confirmReset} onOpenChange={setConfirmReset}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Reset Local Data Cache?</AlertDialogTitle>
+            <AlertDialogTitle>{t("resetLocalCacheQ", "Reset Local Data Cache?")}</AlertDialogTitle>
             <AlertDialogDescription>
-              This will safely clear temporary offline cache and reload your settings from the cloud
-              database.
+              {t("resetLocalCacheDesc", "This will safely clear temporary offline cache and reload your settings from the cloud database.")}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{t("cancel", "Cancel")}</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleResetData}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90 font-bold"
@@ -2967,7 +2966,7 @@ function SettingsPage() {
 
           <div className="flex-1 overflow-y-auto p-5 space-y-5">
             <div className="flex gap-4 items-center mb-2">
-              <span className="text-xs font-bold">Billing Cycle:</span>
+              <span className="text-xs font-bold">{t("billingCycle", "Billing Cycle:")}</span>
               <div className="flex gap-2">
                 <Button
                   size="sm"
@@ -2991,7 +2990,7 @@ function SettingsPage() {
             {/* QR Code and Bank Details Grid */}
             <div className="grid grid-cols-1 md:grid-cols-[30%_70%] gap-5 p-4 border border-border/80 rounded-2xl bg-muted/20">
               <div className="flex flex-col items-center justify-center p-3 bg-card rounded-xl border shadow-soft text-center">
-                <span className="text-xs font-bold mb-2 text-foreground">Scan QR</span>
+                <span className="text-xs font-bold mb-2 text-foreground">{t("scanQr", "Scan QR")}</span>
                 {paymentConfig?.qrCodeUrl ? (
                   <img
                     src={paymentConfig.qrCodeUrl}
@@ -3003,7 +3002,7 @@ function SettingsPage() {
                     No QR Configured
                   </div>
                 )}
-                <span className="text-[10px] text-muted-foreground mt-2">UPI, GPay, PhonePe</span>
+                <span className="text-[10px] text-muted-foreground mt-2">{t("upiGpayPhonepe", "UPI, GPay, PhonePe")}</span>
               </div>
 
               <div className="space-y-2.5 text-xs flex flex-col justify-center">
@@ -3011,30 +3010,30 @@ function SettingsPage() {
                   Bank Account Information
                 </span>
                 <div>
-                  <span className="text-muted-foreground block text-[10px]">Beneficiary Name</span>
+                  <span className="text-muted-foreground block text-[10px]">{t("beneficiaryName", "Beneficiary Name")}</span>
                   <span className="font-bold">
                     {paymentConfig?.accountName || `${appName} Pvt Ltd`}
                   </span>
                 </div>
                 <div>
-                  <span className="text-muted-foreground block text-[10px]">Bank Name</span>
+                  <span className="text-muted-foreground block text-[10px]">{t("bankName", "Bank Name")}</span>
                   <span className="font-semibold">{paymentConfig?.bankName || "HDFC Bank"}</span>
                 </div>
                 <div>
-                  <span className="text-muted-foreground block text-[10px]">Account Number</span>
+                  <span className="text-muted-foreground block text-[10px]">{t("accountNumber", "Account Number")}</span>
                   <span className="font-mono font-bold text-primary">
                     {paymentConfig?.accountNo || "50200098765432"}
                   </span>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   <div>
-                    <span className="text-muted-foreground block text-[10px]">IFSC Code</span>
+                    <span className="text-muted-foreground block text-[10px]">{t("ifscCode", "IFSC Code")}</span>
                     <span className="font-mono font-bold">
                       {paymentConfig?.ifscCode || "HDFC0001234"}
                     </span>
                   </div>
                   <div>
-                    <span className="text-muted-foreground block text-[10px]">UPI ID</span>
+                    <span className="text-muted-foreground block text-[10px]">{t("upiId", "UPI ID")}</span>
                     <span className="font-mono font-bold">
                       {paymentConfig?.upiId || "pos@hdfc"}
                     </span>
@@ -3055,7 +3054,7 @@ function SettingsPage() {
             {/* Verification Form */}
             <div className="space-y-4 border-t pt-3">
               <div>
-                <Label className="text-xs font-bold block mb-2">Select Payment Method</Label>
+                <Label className="text-xs font-bold block mb-2">{t("selectPaymentMethod", "Select Payment Method")}</Label>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   {[
                     {
@@ -3148,7 +3147,7 @@ function SettingsPage() {
                   </div>
                   {paymentForm.extraSeats > 0 && (
                     <div className="flex justify-between items-center pt-2 border-t border-border/40 text-[11px]">
-                      <span className="text-muted-foreground">Total Staff Capacity:</span>
+                      <span className="text-muted-foreground">{t("totalStaffCapacity", "Total Staff Capacity:")}</span>
                       <span className="font-bold text-primary">
                         {(selectedPlanForUpgrade.limits?.maxUsers || 5) + paymentForm.extraSeats}{" "}
                         Users ({selectedPlanForUpgrade.limits?.maxUsers || 5} included +{" "}
@@ -3161,7 +3160,7 @@ function SettingsPage() {
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
-                  <Label className="text-xs font-bold">Total Amount to Pay</Label>
+                  <Label className="text-xs font-bold">{t("totalAmountToPay", "Total Amount to Pay")}</Label>
                   <Input
                     value={`Γé╣${(
                       (paymentForm.billingCycle === "yearly"
@@ -3211,7 +3210,7 @@ function SettingsPage() {
                 <Input
                   value={paymentForm.note}
                   onChange={(e) => setPaymentForm({ ...paymentForm, note: e.target.value })}
-                  placeholder="e.g. Paid from Rahul's GPay account"
+                  placeholder={t("paidFromNotePlaceholder", "e.g. Paid from Rahul's GPay account")}
                   className="mt-1"
                 />
               </div>
@@ -3319,7 +3318,7 @@ function SettingsPage() {
                   onChange={(e) =>
                     setPaymentMethodForm({ ...paymentMethodForm, label: e.target.value })
                   }
-                  placeholder="e.g. bKash Personal, Nagad Merchant, HDFC Wire"
+                  placeholder={t("paymentMethodNamePlaceholder", "e.g. bKash Personal, Nagad Merchant, HDFC Wire")}
                   className="font-semibold text-sm h-11 rounded-xl"
                   required
                   autoFocus
@@ -3328,7 +3327,7 @@ function SettingsPage() {
 
               {/* Visual Icon Picker */}
               <div className="space-y-2">
-                <Label className="text-xs font-bold text-foreground">Select Icon</Label>
+                <Label className="text-xs font-bold text-foreground">{t("selectIcon", "Select Icon")}</Label>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                   {PAYMENT_METHOD_ICONS.map((opt) => {
                     const Icon = getPaymentMethodIconComponent(opt.id);
@@ -3355,7 +3354,7 @@ function SettingsPage() {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1.5">
-                  <Label className="text-xs font-bold text-foreground">Payment Category</Label>
+                  <Label className="text-xs font-bold text-foreground">{t("paymentCategory", "Payment Category")}</Label>
                   <select
                     value={paymentMethodForm.type || "digital"}
                     onChange={(e) =>
@@ -3366,11 +3365,11 @@ function SettingsPage() {
                     }
                     className="h-11 w-full rounded-xl border border-border/80 bg-card px-3 text-xs font-semibold text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary cursor-pointer"
                   >
-                    <option value="digital">Mobile / Digital Wallet</option>
-                    <option value="cash">Cash / Direct Physical</option>
-                    <option value="card">Card / Terminal Swipe</option>
-                    <option value="credit">Credit / Customer Ledger</option>
-                    <option value="other">Bank Wire / Other Mode</option>
+                    <option value="digital">{t("mobileDigitalWallet", "Mobile / Digital Wallet")}</option>
+                    <option value="cash">{t("cashDirectPhysical", "Cash / Direct Physical")}</option>
+                    <option value="card">{t("cardTerminalSwipe", "Card / Terminal Swipe")}</option>
+                    <option value="credit">{t("creditCustomerLedger", "Credit / Customer Ledger")}</option>
+                    <option value="other">{t("bankWireOtherMode", "Bank Wire / Other Mode")}</option>
                   </select>
                 </div>
 
@@ -3383,7 +3382,7 @@ function SettingsPage() {
                     onChange={(e) =>
                       setPaymentMethodForm({ ...paymentMethodForm, notes: e.target.value })
                     }
-                    placeholder="e.g. Wallet No: 017XXXXXXXX / Swift Code"
+                    placeholder={t("paymentInstructionPlaceholder", "e.g. Wallet No: 017XXXXXXXX / Swift Code")}
                     className="text-xs h-11 rounded-xl"
                   />
                 </div>
@@ -3514,17 +3513,17 @@ function LocationsTab() {
   };
 
   const handleSave = async () => {
-    if (!formData.name.trim()) return toast.error("Location name is required.");
+    if (!formData.name.trim()) return toast.error(t("locationNameRequired", "Location name is required."));
     setIsSaving(true);
     try {
       if (editingLocation) {
         const res = await updateLocationFn({ data: { id: editingLocation.id, updates: formData } });
         if (!res.success) throw new Error((res as any).error);
-        toast.success("Location updated!");
+        toast.success(t("locationUpdated", "Location updated!"));
       } else {
         const res = await createLocationFn({ data: { location: formData } });
         if (!res.success) throw new Error((res as any).error);
-        toast.success("Location created!");
+        toast.success(t("locationCreated", "Location created!"));
       }
       queryClient.invalidateQueries({ queryKey: ["locations"] });
       setShowForm(false);
@@ -3540,7 +3539,7 @@ function LocationsTab() {
     try {
       const res = await deleteLocationFn({ data: { id } });
       if (!res.success) throw new Error((res as any).error);
-      toast.success("Location deleted.");
+      toast.success(t("locationDeleted", "Location deleted."));
       queryClient.invalidateQueries({ queryKey: ["locations"] });
     } catch (e: any) {
       toast.error(e.message || "Failed to delete location.");
@@ -3560,7 +3559,7 @@ function LocationsTab() {
   return (
     <SettingsCard
       icon={MapPin}
-      title="Store & Warehouse Locations"
+      title={t("storeWarehouseLocations", "Store & Warehouse Locations")}
       desc="Manage your physical store branches, secondary outlets, and fulfillment warehouses."
       headerRight={
         <Button onClick={openAdd} size="sm" className="font-bold text-xs shadow-soft gap-1.5 h-8">
@@ -3590,19 +3589,19 @@ function LocationsTab() {
                 </Label>
                 <Input
                   id="loc-name"
-                  placeholder="e.g. Downtown Flagship Store"
+                  placeholder={t("locationNamePlaceholder", "e.g. Downtown Flagship Store")}
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 />
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs font-bold">Facility Type</Label>
+                <Label className="text-xs font-bold">{t("facilityType", "Facility Type")}</Label>
                 <Select
                   value={formData.type}
                   onValueChange={(val) => setFormData({ ...formData, type: val })}
                 >
                   <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select type..." />
+                    <SelectValue placeholder={t("selectFacilityType", "Select type...")} />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="store">
@@ -3638,31 +3637,31 @@ function LocationsTab() {
                 </Label>
                 <Input
                   id="loc-code"
-                  placeholder="e.g. DEL-01, MUM-02"
+                  placeholder={t("locationCodePlaceholder", "e.g. DEL-01, MUM-02")}
                   value={formData.code}
                   onChange={(e) => setFormData({ ...formData, code: e.target.value.toUpperCase() })}
                 />
               </div>
               <div className="space-y-1.5 sm:col-span-2">
-                <Label className="text-xs font-bold">Industry Type (optional)</Label>
+                <Label className="text-xs font-bold">{t("industryTypeOptional", "Industry Type (optional)")}</Label>
                 <Select
                   value={formData.industryType}
                   onValueChange={(val) => setFormData({ ...formData, industryType: val })}
                 >
                   <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Inherit from business..." />
+                    <SelectValue placeholder={t("inheritFromBusiness", "Inherit from business...")} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Inherit from Business</SelectItem>
-                    <SelectItem value="Super Market & Grocery">Super Market & Grocery</SelectItem>
-                    <SelectItem value="Apparel & Fashion">Apparel & Fashion</SelectItem>
-                    <SelectItem value="Electronics & Computers">Electronics & Computers</SelectItem>
-                    <SelectItem value="Hotel & Restaurant">Hotel & Restaurant</SelectItem>
-                    <SelectItem value="Salon & Beauty Spa">Salon & Beauty Spa</SelectItem>
-                    <SelectItem value="Pharmacy & Healthcare">Pharmacy & Healthcare</SelectItem>
-                    <SelectItem value="Furniture & Home Decor">Furniture & Home Decor</SelectItem>
-                    <SelectItem value="Books, Toys & Gifts">Books, Toys & Gifts</SelectItem>
-                    <SelectItem value="General Retail Store">General Retail Store</SelectItem>
+                    <SelectItem value="">{t("inheritFromBusiness", "Inherit from Business")}</SelectItem>
+                    <SelectItem value="Super Market & Grocery">{t("superMarketGrocery", "Super Market & Grocery")}</SelectItem>
+                    <SelectItem value="Apparel & Fashion">{t("apparelFashion", "Apparel & Fashion")}</SelectItem>
+                    <SelectItem value="Electronics & Computers">{t("electronicsComputers", "Electronics & Computers")}</SelectItem>
+                    <SelectItem value="Hotel & Restaurant">{t("hotelRestaurant", "Hotel & Restaurant")}</SelectItem>
+                    <SelectItem value="Salon & Beauty Spa">{t("salonBeautySpa", "Salon & Beauty Spa")}</SelectItem>
+                    <SelectItem value="Pharmacy & Healthcare">{t("pharmacyHealthcare", "Pharmacy & Healthcare")}</SelectItem>
+                    <SelectItem value="Furniture & Home Decor">{t("furnitureHomeDecor", "Furniture & Home Decor")}</SelectItem>
+                    <SelectItem value="Books, Toys & Gifts">{t("booksToysGifts", "Books, Toys & Gifts")}</SelectItem>
+                    <SelectItem value="General Retail Store">{t("generalRetailStore", "General Retail Store")}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -3672,7 +3671,7 @@ function LocationsTab() {
                 </Label>
                 <Input
                   id="loc-manager"
-                  placeholder="e.g. John Smith"
+                  placeholder={t("contactPersonPlaceholder", "e.g. John Smith")}
                   value={formData.managerName}
                   onChange={(e) => setFormData({ ...formData, managerName: e.target.value })}
                 />
@@ -3683,7 +3682,7 @@ function LocationsTab() {
                 </Label>
                 <Input
                   id="loc-address"
-                  placeholder="e.g. 123 Main Street"
+                  placeholder={t("addressPlaceholder", "e.g. 123 Main Street")}
                   value={formData.address}
                   onChange={(e) => setFormData({ ...formData, address: e.target.value })}
                 />
@@ -3694,7 +3693,7 @@ function LocationsTab() {
                 </Label>
                 <Input
                   id="loc-city"
-                  placeholder="e.g. New Delhi"
+                  placeholder={t("cityPlaceholder", "e.g. New Delhi")}
                   value={formData.city}
                   onChange={(e) => setFormData({ ...formData, city: e.target.value })}
                 />
@@ -3718,7 +3717,7 @@ function LocationsTab() {
                 <Input
                   id="loc-email"
                   type="email"
-                  placeholder="e.g. branch@store.com"
+                  placeholder={t("emailPlaceholder", "e.g. branch@store.com")}
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 />
@@ -3773,7 +3772,7 @@ function LocationsTab() {
               <div className="size-12 rounded-2xl bg-muted/60 flex items-center justify-center">
                 <MapPin className="size-6 text-muted-foreground" />
               </div>
-              <p className="text-foreground font-bold text-sm">No branch locations added yet</p>
+              <p className="text-foreground font-bold text-sm">{t("noBranchLocationsYet", "No branch locations added yet")}</p>
               <p className="text-xs text-muted-foreground max-w-sm">
                 Add your store outlets or warehouses to start tracking multi-branch inventory.
               </p>

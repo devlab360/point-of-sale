@@ -94,33 +94,33 @@ export function PosPrintLayouts({ state, preview = false }: { state: any; previe
 
             <div className="bg-black text-white text-center font-bold text-[13px] py-1.5 mb-3 uppercase tracking-[0.2em] w-full">
               {printData.status === "quotation"
-                ? "Quotation / Estimate"
+                ? t("quotationEstimate", "Quotation / Estimate")
                 : settings?.enableGST ||
                     printData.customerGstin ||
                     printData.customerType === "wholesale" ||
                     printData.customerType === "corporate"
-                  ? "Tax Invoice"
-                  : "Receipt"}
+                  ? t("taxInvoice", "Tax Invoice")
+                  : t("receipt", "Receipt")}
             </div>
 
             <div className="flex flex-col justify-start text-[11px] mb-3 pb-3 border-b-2 border-black border-dashed">
               <div className="flex justify-between items-start mb-1">
-                <span className="font-bold text-gray-600">Receipt No:</span>
+                <span className="font-bold text-gray-600">{t("receiptNo", "Receipt No:")}</span>
                 <span className="font-black text-right">{printData.id}</span>
               </div>
               <div className="flex justify-between items-start mb-2">
-                <span className="font-bold text-gray-600">Date:</span>
+                <span className="font-bold text-gray-600">{t("date", "Date:")}</span>
                 <span className="font-black text-right">{formattedDate}</span>
               </div>
               <div className="flex flex-col mb-1 border-t border-gray-200 pt-2 mt-1">
-                <span className="font-bold text-gray-600 text-[10px] uppercase">Bill To:</span>
+                <span className="font-bold text-gray-600 text-[10px] uppercase">{t("billTo", "Bill To:")}</span>
                 <span className="font-black text-[12px] uppercase">
                   {printData.customerObj?.name || printData.customer}
                 </span>
                 {printData.customerObj?.phone || printData.customerPhone ? (
-                  <span>Phone: {printData.customerObj?.phone || printData.customerPhone}</span>
+                  <span>{t("phone", "Phone:")} {printData.customerObj?.phone || printData.customerPhone}</span>
                 ) : null}
-                {printData.customerObj?.email && <span>Email: {printData.customerObj.email}</span>}
+                {printData.customerObj?.email && <span>{t("email", "Email:")} {printData.customerObj.email}</span>}
                 {printData.customerGstin && (
                   <span className="font-bold">GSTIN: {printData.customerGstin}</span>
                 )}
@@ -133,7 +133,7 @@ export function PosPrintLayouts({ state, preview = false }: { state: any; previe
                 )}
               </div>
               <div className="flex justify-between items-start mt-2">
-                <span className="font-bold text-gray-600">Payment Mode:</span>
+                <span className="font-bold text-gray-600">{t("paymentMode", "Payment Mode:")}</span>
                 <span className="font-black uppercase">
                   {printData.payment === "split" && printData.splitPayments?.length
                     ? printData.splitPayments.map((p: any) => p.method).join(" + ")
@@ -207,7 +207,7 @@ export function PosPrintLayouts({ state, preview = false }: { state: any; previe
 
             <div className="space-y-1 text-[11px] pt-3 border-t-2 border-black border-dashed">
               <div className="flex justify-between">
-                <span className="font-semibold text-gray-600">Subtotal:</span>
+                <span className="font-semibold text-gray-600">{t("subtotal", "Subtotal:")}</span>
                 <span className="font-bold">
                   {currencySymbol}
                   {fmt(printData.subtotal)}
@@ -215,7 +215,7 @@ export function PosPrintLayouts({ state, preview = false }: { state: any; previe
               </div>
               {printData.discountAmt > 0 && (
                 <div className="flex justify-between">
-                  <span className="font-semibold text-gray-600">Discount:</span>
+                  <span className="font-semibold text-gray-600">{t("discount", "Discount:")}</span>
                   <span className="font-bold">
                     -{currencySymbol}
                     {fmt(printData.discountAmt)}
@@ -255,7 +255,7 @@ export function PosPrintLayouts({ state, preview = false }: { state: any; previe
               ) : (
                 printData.taxAmt > 0 && (
                   <div className="flex justify-between">
-                    <span className="font-semibold text-gray-600">Tax:</span>
+                    <span className="font-semibold text-gray-600">{t("tax", "Tax:")}</span>
                     <span className="font-bold">
                       {currencySymbol}
                       {fmt(printData.taxAmt)}
@@ -264,7 +264,7 @@ export function PosPrintLayouts({ state, preview = false }: { state: any; previe
                 )
               )}
               <div className="flex justify-between items-center text-[15px] border-t-2 border-black border-dashed pt-2 mt-2">
-                <span className="font-black">TOTAL:</span>
+                <span className="font-black">{t("total", "TOTAL:")}</span>
                 <span className="font-black">
                   {currencySymbol}
                   {fmt(printData.total)}
@@ -272,7 +272,7 @@ export function PosPrintLayouts({ state, preview = false }: { state: any; previe
               </div>
               {printData.payment === "cash" && printData.cashTendered != null && (
                 <div className="flex justify-between mt-2 pt-2 border-t border-gray-400 border-dotted">
-                  <span className="font-semibold text-gray-600">Cash Tendered:</span>
+                  <span className="font-semibold text-gray-600">{t("cashTendered", "Cash Tendered:")}</span>
                   <span className="font-bold">
                     {currencySymbol}
                     {fmt(printData.cashTendered)}
@@ -281,7 +281,7 @@ export function PosPrintLayouts({ state, preview = false }: { state: any; previe
               )}
               {printData.payment === "cash" && printData.changeDue != null && (
                 <div className="flex justify-between">
-                  <span className="font-semibold text-gray-600">Change Due:</span>
+                  <span className="font-semibold text-gray-600">{t("changeDue", "Change Due:")}</span>
                   <span className="font-bold">
                     {currencySymbol}
                     {fmt(printData.changeDue)}
@@ -291,14 +291,14 @@ export function PosPrintLayouts({ state, preview = false }: { state: any; previe
               {printData.payment === "credit" && printData.advancePaid != null && (
                 <>
                   <div className="flex justify-between">
-                    <span className="font-semibold text-gray-600">Advance Paid:</span>
+                    <span className="font-semibold text-gray-600">{t("advancePaid", "Advance Paid:")}</span>
                     <span className="font-bold">
                       {currencySymbol}
                       {fmt(printData.advancePaid)}
                     </span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="font-semibold text-gray-600">Due Amount:</span>
+                    <span className="font-semibold text-gray-600">{t("dueAmount", "Due Amount:")}</span>
                     <span className="font-bold">
                       {currencySymbol}
                       {fmt(printData.dueAmount)}
@@ -310,7 +310,7 @@ export function PosPrintLayouts({ state, preview = false }: { state: any; previe
                 printData.splitPayments &&
                 printData.splitPayments.length > 0 && (
                   <div className="mt-2 pt-2 border-t border-gray-400 border-dotted text-[11px]">
-                    <div className="font-semibold text-gray-600 mb-1">Split Payment Details:</div>
+                    <div className="font-semibold text-gray-600 mb-1">{t("splitPaymentDetails", "Split Payment Details:")}</div>
                     {printData.splitPayments.map((p: any, i: number) => (
                       <div key={i} className="flex justify-between">
                         <span className="uppercase">{p.method}</span>
@@ -326,7 +326,7 @@ export function PosPrintLayouts({ state, preview = false }: { state: any; previe
 
             <div className="mt-3 text-left">
               <span className="text-[10px] font-bold text-gray-600 uppercase">
-                Amount in Words:
+                {t("amountInWords", "Amount in Words:")}
               </span>
               <p className="font-bold text-[11px] italic">{printData.amountInWords}</p>
             </div>
@@ -335,7 +335,7 @@ export function PosPrintLayouts({ state, preview = false }: { state: any; previe
               <div className="border-t-2 border-black border-dashed mt-2 pt-4 pb-2">
                 {printData.upiId && (
                   <div className="flex flex-col items-center justify-center mb-4">
-                    <p className="text-[10px] font-bold uppercase mb-2">Scan & Pay</p>
+                    <p className="text-[10px] font-bold uppercase mb-2">{t("scanAndPay", "Scan & Pay")}</p>
                     <div className="p-1.5 bg-white border-2 border-black rounded-lg">
                       <QRCode
                         value={`upi://pay?pa=${printData.upiId}&pn=${encodeURIComponent(printData.storeName)}&am=${fmt(printData.total)}&cu=INR`}
@@ -345,14 +345,14 @@ export function PosPrintLayouts({ state, preview = false }: { state: any; previe
                     </div>
                     <p className="text-[10px] font-medium mt-1">UPI: {printData.upiId}</p>
                     <p className="text-[11px] font-bold mt-0.5">
-                      Amount: {currencySymbol}
+                      {t("amount", "Amount")}: {currencySymbol}
                       {fmt(printData.total)}
                     </p>
                   </div>
                 )}
                 {printData.bankDetails && (
                   <div className="text-left text-[10px]">
-                    <span className="font-bold uppercase underline">Bank Details:</span>
+                    <span className="font-bold uppercase underline">{t("bankDetails", "Bank Details:")}</span>
                     <BankDetailsDisplay
                       data={printData.bankDetails}
                       className="mt-1 font-medium leading-relaxed"
@@ -366,7 +366,7 @@ export function PosPrintLayouts({ state, preview = false }: { state: any; previe
             {printData.lines.some((l: any) => l.product?.metadata?.hasWarranty) && (
               <div className="mt-4 p-2.5 border-2 border-black border-dashed rounded-lg text-left text-[10px] space-y-1.5 bg-gray-50/50">
                 <div className="font-black uppercase tracking-wider text-center border-b border-black pb-1 text-[11px]">
-                  🛡️ Official Warranty Certificate
+                  {t("officialWarrantyCertificate", "🛡️ Official Warranty Certificate")}
                 </div>
                 {printData.lines
                   .filter((l: any) => l.product?.metadata?.hasWarranty)
@@ -380,26 +380,26 @@ export function PosPrintLayouts({ state, preview = false }: { state: any; previe
                         <div className="font-bold text-[11px]">{l.product.name}</div>
                         {l.selectedSerial && (
                           <div className="font-mono font-bold text-[10px]">
-                            Serial / IMEI: {l.selectedSerial}
+                            {t("serialImei", "Serial / IMEI:")} {l.selectedSerial}
                           </div>
                         )}
                         <div className="flex justify-between font-semibold text-gray-800">
                           <span>
-                            Coverage: {meta.warrantyMonths || 12} Mos (
+                            {t("coverage", "Coverage:")} {meta.warrantyMonths || 12} Mos (
                             {meta.warrantyType || "Carry-In"})
                           </span>
                           <span className="font-bold">
-                            Expires: {getWarrantyExpiry(printData.date, meta.warrantyMonths || 12)}
+                            {t("expires", "Expires:")} {getWarrantyExpiry(printData.date, meta.warrantyMonths || 12)}
                           </span>
                         </div>
                         {meta.guaranteeMonths > 0 && (
                           <div className="text-gray-700">
-                            • Instant Replacement Guarantee: {meta.guaranteeMonths} Months
+                            • {t("instantReplacementGuarantee", "Instant Replacement Guarantee:")} {meta.guaranteeMonths} Months
                           </div>
                         )}
                         {meta.warrantyPolicy && (
                           <div className="text-[9px] text-gray-600 italic">
-                            Policy: {meta.warrantyPolicy}
+                            {t("policy", "Policy:")} {meta.warrantyPolicy}
                           </div>
                         )}
                       </div>
@@ -409,7 +409,7 @@ export function PosPrintLayouts({ state, preview = false }: { state: any; previe
             )}
 
             <div className="text-center text-[11px] mt-6 mb-2">
-              <p className="font-black uppercase tracking-widest text-[14px]">*** Thank You ***</p>
+              <p className="font-black uppercase tracking-widest text-[14px]">{t("thankYou", "*** Thank You ***")}</p>
               {printData.receiptDeclaration && (
                 <p className="mt-3 text-[9px] text-gray-700 whitespace-pre-wrap text-justify border-t border-dashed border-gray-400 pt-2 font-medium">
                   {printData.receiptDeclaration}
@@ -418,7 +418,7 @@ export function PosPrintLayouts({ state, preview = false }: { state: any; previe
               {printData.termsAndConditions && (
                 <div className="mt-2 text-[9px] text-gray-700 text-justify font-medium">
                   <span className="font-bold underline uppercase block mb-0.5 text-center">
-                    Terms & Conditions
+                    {t("termsAndConditions", "Terms & Conditions")}
                   </span>
                   <p className="whitespace-pre-wrap">{printData.termsAndConditions}</p>
                 </div>
@@ -426,7 +426,7 @@ export function PosPrintLayouts({ state, preview = false }: { state: any; previe
               {printData.privacyPolicy && (
                 <div className="mt-2 text-[9px] text-gray-700 text-justify font-medium">
                   <span className="font-bold underline uppercase block mb-0.5 text-center">
-                    Privacy Policy
+                    {t("privacyPolicy", "Privacy Policy")}
                   </span>
                   <p className="whitespace-pre-wrap">{printData.privacyPolicy}</p>
                 </div>
@@ -502,13 +502,13 @@ export function PosPrintLayouts({ state, preview = false }: { state: any; previe
               </div>
               <div className="text-right">
                 <div className="inline-grid grid-cols-[auto_auto] gap-x-4 gap-y-1 text-sm text-right">
-                  <span className="text-gray-500 text-right">Invoice No:</span>
+                  <span className="text-gray-500 text-right">{t("invoiceNo", "Invoice No:")}</span>
                   <span className="font-bold text-black text-right">{printData.id}</span>
-                  <span className="text-gray-500 text-right">Date:</span>
+                  <span className="text-gray-500 text-right">{t("date", "Date:")}</span>
                   <span className="font-bold text-black text-right">{formattedDate}</span>
                   {printData.payment && (
                     <>
-                      <span className="text-gray-500 text-right">Payment:</span>
+                      <span className="text-gray-500 text-right">{t("payment", "Payment:")}</span>
                       <span className="font-bold text-black text-right uppercase">
                         {printData.payment === "split" && printData.splitPayments?.length
                           ? printData.splitPayments.map((p: any) => p.method).join(" + ")
@@ -523,7 +523,7 @@ export function PosPrintLayouts({ state, preview = false }: { state: any; previe
             {/* ── BILL TO ── */}
             <div className="mb-5">
               <div className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-1">
-                Bill To
+                {t("billTo", "Bill To")}
               </div>
               <div className="font-bold text-base text-black mb-1">
                 {printData.customerObj?.name || printData.customer}
@@ -534,10 +534,10 @@ export function PosPrintLayouts({ state, preview = false }: { state: any; previe
                 </div>
               )}
               {printData.customerObj?.phone && (
-                <div className="text-xs text-gray-600">Phone: {printData.customerObj.phone}</div>
+                <div className="text-xs text-gray-600">{t("phone", "Phone:")} {printData.customerObj.phone}</div>
               )}
               {printData.customerObj?.email && (
-                <div className="text-xs text-gray-600">Email: {printData.customerObj.email}</div>
+                <div className="text-xs text-gray-600">{t("email", "Email:")} {printData.customerObj.email}</div>
               )}
               {printData.customerObj?.address && (
                 <div className="text-xs text-gray-600">
@@ -577,17 +577,17 @@ export function PosPrintLayouts({ state, preview = false }: { state: any; previe
                         )}
                         {meta.hasWarranty && (
                           <div className="text-[11px] text-emerald-700 font-semibold mt-0.5">
-                            🛡️ {meta.warrantyMonths} Months Warranty{" "}
+                            🛡️ {meta.warrantyMonths} {t("monthsWarranty", "Months Warranty")}{" "}
                             {meta.guaranteeMonths ? `+ ${meta.guaranteeMonths}M Guarantee` : ""} (
                             {meta.warrantyType || "Carry-In"})
                           </div>
                         )}
                         {meta.isJewellery && (
                           <div className="text-[11px] text-amber-800 mt-0.5">
-                            Purity: {meta.purityKarat || "22K"} | Net Gold:{" "}
+                            {t("purity", "Purity")}: {meta.purityKarat || "22K"} | {t("netGold", "Net Gold")}:{" "}
                             {Number(meta.netWeight || 0).toFixed(3)}g{" "}
                             {meta.makingChargeValue
-                              ? `| Making Charge: ${meta.makingChargeValue}${meta.makingChargeType === "percent" ? "%" : ""}`
+                              ? `| ${t("makingCharge", "Making Charge")}: ${meta.makingChargeValue}${meta.makingChargeType === "percent" ? "%" : ""}`
                               : ""}
                           </div>
                         )}
@@ -625,7 +625,7 @@ export function PosPrintLayouts({ state, preview = false }: { state: any; previe
                 {printData.upiId && (
                   <div>
                     <div className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-2">
-                      Scan & Pay
+                      {t("scanAndPay", "Scan & Pay")}
                     </div>
                     <div className="flex items-start gap-4">
                       <div className="border-2 border-gray-300 p-1.5 rounded shrink-0">
@@ -638,7 +638,7 @@ export function PosPrintLayouts({ state, preview = false }: { state: any; previe
                       <div className="text-xs text-gray-600 mt-1">
                         <div className="font-semibold text-black">UPI: {printData.upiId}</div>
                         <div className="text-gray-500 mt-0.5 text-[10px]">
-                          Scan to pay with any UPI app
+                          {t("scanToPayWithUpi", "Scan to pay with any UPI app")}
                         </div>
                       </div>
                     </div>
@@ -647,7 +647,7 @@ export function PosPrintLayouts({ state, preview = false }: { state: any; previe
                 {printData.bankDetails && (
                   <div>
                     <div className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-1.5">
-                      Bank Details
+                      {t("bankDetails", "Bank Details")}
                     </div>
                     <BankDetailsDisplay
                       data={printData.bankDetails}
@@ -658,7 +658,7 @@ export function PosPrintLayouts({ state, preview = false }: { state: any; previe
                 {printData.receiptFooter && (
                   <div>
                     <div className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-1">
-                      Note
+                      {t("note", "Note")}
                     </div>
                     <div className="text-xs text-gray-600 whitespace-pre-wrap">
                       {printData.receiptFooter}
@@ -671,7 +671,7 @@ export function PosPrintLayouts({ state, preview = false }: { state: any; previe
               <div className="w-[240px] shrink-0">
                 <div className="space-y-1.5 text-sm">
                   <div className="flex justify-between gap-4">
-                    <span className="text-gray-500">Subtotal</span>
+                    <span className="text-gray-500">{t("subtotal", "Subtotal")}</span>
                     <span className="font-semibold">
                       {currencySymbol}
                       {fmt(printData.subtotal)}
@@ -679,7 +679,7 @@ export function PosPrintLayouts({ state, preview = false }: { state: any; previe
                   </div>
                   {printData.discountAmt > 0 && (
                     <div className="flex justify-between gap-4 text-green-700">
-                      <span>Discount</span>
+                      <span>{t("discount", "Discount")}</span>
                       <span className="font-semibold">
                         -{currencySymbol}
                         {fmt(printData.discountAmt)}
@@ -719,7 +719,7 @@ export function PosPrintLayouts({ state, preview = false }: { state: any; previe
                   ) : (
                     printData.taxAmt > 0 && (
                       <div className="flex justify-between gap-4 text-gray-500">
-                        <span>Tax</span>
+                        <span>{t("tax", "Tax")}</span>
                         <span className="font-semibold text-black">
                           {currencySymbol}
                           {fmt(printData.taxAmt)}
@@ -728,7 +728,7 @@ export function PosPrintLayouts({ state, preview = false }: { state: any; previe
                     )
                   )}
                   <div className="border-t-2 border-black pt-2 mt-1 flex justify-between gap-4 items-baseline">
-                    <span className="font-black text-base">Grand Total</span>
+                    <span className="font-black text-base">{t("grandTotal", "Grand Total")}</span>
                     <span className="font-black text-xl">
                       {currencySymbol}
                       {fmt(printData.total)}
@@ -736,7 +736,7 @@ export function PosPrintLayouts({ state, preview = false }: { state: any; previe
                   </div>
                   {printData.payment === "cash" && printData.cashTendered != null && (
                     <div className="flex justify-between gap-4 mt-1 pt-1 border-t border-dashed border-gray-300">
-                      <span className="text-gray-500">Cash Tendered</span>
+                      <span className="text-gray-500">{t("cashTendered", "Cash Tendered")}</span>
                       <span className="font-semibold">
                         {currencySymbol}
                         {fmt(printData.cashTendered)}
@@ -745,7 +745,7 @@ export function PosPrintLayouts({ state, preview = false }: { state: any; previe
                   )}
                   {printData.payment === "cash" && printData.changeDue != null && (
                     <div className="flex justify-between gap-4">
-                      <span className="text-gray-500">Change Due</span>
+                      <span className="text-gray-500">{t("changeDue", "Change Due")}</span>
                       <span className="font-semibold text-green-700">
                         {currencySymbol}
                         {fmt(printData.changeDue)}
@@ -755,14 +755,14 @@ export function PosPrintLayouts({ state, preview = false }: { state: any; previe
                   {printData.payment === "credit" && printData.advancePaid != null && (
                     <>
                       <div className="flex justify-between gap-4">
-                        <span className="text-gray-500">Advance Paid</span>
+                        <span className="text-gray-500">{t("advancePaid", "Advance Paid")}</span>
                         <span className="font-semibold">
                           {currencySymbol}
                           {fmt(printData.advancePaid)}
                         </span>
                       </div>
                       <div className="flex justify-between gap-4">
-                        <span className="text-gray-500">Due Amount</span>
+                        <span className="text-gray-500">{t("dueAmount", "Due Amount")}</span>
                         <span className="font-semibold text-red-600">
                           {currencySymbol}
                           {fmt(printData.dueAmount)}
@@ -775,7 +775,7 @@ export function PosPrintLayouts({ state, preview = false }: { state: any; previe
                     printData.splitPayments.length > 0 && (
                       <div className="flex flex-col gap-1 mt-1 pt-1 border-t border-dashed border-gray-300">
                         <div className="text-gray-500 text-[11px] font-semibold mb-1">
-                          Split Payment Details
+                          {t("splitPaymentDetails", "Split Payment Details")}
                         </div>
                         {printData.splitPayments.map((p: any, i: number) => (
                           <div key={i} className="flex justify-between gap-4">
@@ -791,7 +791,7 @@ export function PosPrintLayouts({ state, preview = false }: { state: any; previe
                   {printData.amountInWords && (
                     <div className="text-right">
                       <div className="text-[10px] text-gray-400 uppercase tracking-wider mt-1">
-                        Amount in Words
+                        {t("amountInWords", "Amount in Words")}
                       </div>
                       <div className="text-[11px] font-semibold italic text-gray-700 leading-tight">
                         {printData.amountInWords}
@@ -812,7 +812,7 @@ export function PosPrintLayouts({ state, preview = false }: { state: any; previe
                     <div className="h-10" />
                   )}
                   <div className="text-[10px] font-bold uppercase tracking-widest text-gray-500">
-                    Authorized Signatory
+                    {t("authorizedSignatory", "Authorized Signatory")}
                   </div>
                 </div>
               </div>
@@ -823,10 +823,10 @@ export function PosPrintLayouts({ state, preview = false }: { state: any; previe
               <div className="mt-6 p-4 border-2 border-black border-dashed rounded-xl bg-gray-50/50 space-y-2">
                 <div className="flex items-center justify-between border-b border-black pb-1.5">
                   <span className="font-black text-sm uppercase tracking-wider">
-                    🛡️ OFFICIAL DIGITAL WARRANTY & GUARANTEE CERTIFICATE
+                    {t("officialWarrantyCertificate", "🛡️ OFFICIAL DIGITAL WARRANTY & GUARANTEE CERTIFICATE")}
                   </span>
                   <span className="text-xs text-gray-500 font-medium">
-                    Store Verification ID: #{String(printData.id).slice(0, 10).toUpperCase()}
+                    {t("storeVerificationId", "Store Verification ID:")} #{String(printData.id).slice(0, 10).toUpperCase()}
                   </span>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
@@ -842,28 +842,28 @@ export function PosPrintLayouts({ state, preview = false }: { state: any; previe
                           <div className="font-bold text-black">{l.product.name}</div>
                           {l.selectedSerial && (
                             <div className="font-mono text-gray-700">
-                              Registered SN:{" "}
+                              {t("registeredSn", "Registered SN:")}{" "}
                               <strong className="text-black">{l.selectedSerial}</strong>
                             </div>
                           )}
                           <div className="flex justify-between font-medium text-gray-600">
                             <span>
-                              Warranty: {meta.warrantyMonths || 12} Mos (
+                              {t("warranty", "Warranty:")} {meta.warrantyMonths || 12} Mos (
                               {meta.warrantyType || "Carry-In"})
                             </span>
                             <span className="font-bold text-emerald-800">
-                              Valid Till:{" "}
+                              {t("validTill", "Valid Till:")}{" "}
                               {getWarrantyExpiry(printData.date, meta.warrantyMonths || 12)}
                             </span>
                           </div>
                           {meta.guaranteeMonths > 0 && (
                             <div className="text-amber-800 font-medium">
-                              • Instant Replacement Guarantee: {meta.guaranteeMonths} Months
+                              • {t("instantReplacementGuarantee", "Instant Replacement Guarantee:")} {meta.guaranteeMonths} Months
                             </div>
                           )}
                           {meta.warrantyPolicy && (
                             <div className="text-[10px] text-gray-500 italic mt-0.5">
-                              Policy: {meta.warrantyPolicy}
+                              {t("policy", "Policy:")} {meta.warrantyPolicy}
                             </div>
                           )}
                         </div>
@@ -877,7 +877,7 @@ export function PosPrintLayouts({ state, preview = false }: { state: any; previe
             {printData.receiptDeclaration && (
               <div className="mt-6 pt-4 border-t border-gray-200">
                 <div className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-1">
-                  Declaration
+                  {t("declaration", "Declaration")}
                 </div>
                 <p className="text-[10px] text-gray-600 leading-relaxed whitespace-pre-wrap">
                   {printData.receiptDeclaration}
@@ -887,7 +887,7 @@ export function PosPrintLayouts({ state, preview = false }: { state: any; previe
             {printData.termsAndConditions && (
               <div className="mt-4 pt-2">
                 <div className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-1">
-                  Terms & Conditions
+                  {t("termsAndConditions", "Terms & Conditions")}
                 </div>
                 <p className="text-[10px] text-gray-600 leading-relaxed whitespace-pre-wrap">
                   {printData.termsAndConditions}
@@ -897,7 +897,7 @@ export function PosPrintLayouts({ state, preview = false }: { state: any; previe
             {printData.privacyPolicy && (
               <div className="mt-4 pt-2">
                 <div className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-1">
-                  Privacy Policy
+                  {t("privacyPolicy", "Privacy Policy")}
                 </div>
                 <p className="text-[10px] text-gray-600 leading-relaxed whitespace-pre-wrap">
                   {printData.privacyPolicy}
@@ -907,7 +907,7 @@ export function PosPrintLayouts({ state, preview = false }: { state: any; previe
 
             {/* ── FOOTER ── */}
             <div className="mt-8 pt-4 border-t border-gray-100 text-center text-[10px] text-gray-400 tracking-wider">
-              This is a computer generated Invoice
+              {t("computerGeneratedInvoice", "This is a computer generated Invoice")}
             </div>
           </div>
         </div>

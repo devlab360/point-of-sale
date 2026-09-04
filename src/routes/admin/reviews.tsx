@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { appName } from "@/lib/env";
 import { SuperAdminLayout } from "@/components/admin/SuperAdminLayout";
 import { PageHeader } from "@/components/layout/PageHeader";
+import { useLanguage } from "@/contexts/LanguageContext";
 import {
   Star,
   RefreshCw,
@@ -27,6 +28,7 @@ export const Route = createFileRoute("/admin/reviews")({
 });
 
 function SuperAdminReviewsPage() {
+  const { t } = useLanguage();
   const [selectedRating, setSelectedRating] = useState<number | "all">("all");
 
   const {
@@ -62,13 +64,13 @@ function SuperAdminReviewsPage() {
       <div className="page-container space-y-6">
         {/* Header */}
         <PageHeader
-          title="Merchant Reviews & Customer Satisfaction"
-          description="Monitor store owner satisfaction ratings, feedback, and platform NPS performance."
+          title={t("admin.reviewsTitle", "Merchant Reviews & Customer Satisfaction")}
+          description={t("admin.reviewsDesc", "Monitor store owner satisfaction ratings, feedback, and platform NPS performance.")}
           actions={
             <div className="flex items-center gap-2">
               <Button onClick={() => refetch()} variant="outline" size="sm" className="gap-1.5 h-9">
                 <RefreshCw className="size-3.5" />
-                <span>Refresh Reviews</span>
+                <span>{t("admin.refreshReviews", "Refresh Reviews")}</span>
               </Button>
               <Button
                 variant="outline"
@@ -87,7 +89,7 @@ function SuperAdminReviewsPage() {
                 }}
               >
                 <Download className="size-3.5" />
-                <span>Export CSV</span>
+                <span>{t("common.exportCsv", "Export CSV")}</span>
               </Button>
             </div>
           }
@@ -113,14 +115,14 @@ function SuperAdminReviewsPage() {
               ))}
             </div>
             <p className="text-xs text-muted-foreground font-medium">
-              Based on {total} merchant reviews
+              {t("admin.basedOnReviews", "Based on")} {total} {t("admin.merchantReviews", "merchant reviews")}
             </p>
           </Card>
 
           {/* Star Distribution Breakdown */}
           <Card className="md:col-span-2 rounded-3xl border bg-card p-6 shadow-xs flex flex-col justify-center space-y-2.5">
             <h4 className="text-xs font-bold text-foreground uppercase tracking-wider mb-1">
-              Rating Distribution
+              {t("admin.ratingDistribution", "Rating Distribution")}
             </h4>
             {starCounts.map((sc) => (
               <div key={sc.stars} className="flex items-center gap-3 text-xs">
@@ -155,7 +157,7 @@ function SuperAdminReviewsPage() {
         {/* Rating Filter Bar */}
         <div className="flex items-center gap-2 bg-card p-3 rounded-2xl border text-xs font-bold shadow-2xs">
           <span className="text-muted-foreground mr-1 flex items-center gap-1">
-            <Filter className="size-3.5" /> Filter:
+            <Filter className="size-3.5" /> {t("common.filter", "Filter")}:
           </span>
           <Button
             size="sm"
@@ -163,7 +165,7 @@ function SuperAdminReviewsPage() {
             className="h-7 text-xs"
             onClick={() => setSelectedRating("all")}
           >
-            All Ratings ({total})
+            {t("admin.allRatings", "All Ratings")} ({total})
           </Button>
           {[5, 4, 3, 2, 1].map((r) => (
             <Button
@@ -182,14 +184,14 @@ function SuperAdminReviewsPage() {
         {/* Reviews Cards Feed */}
         {isLoading ? (
           <div className="p-16 text-center text-xs text-muted-foreground">
-            Loading merchant feedback…
+            {t("admin.loadingFeedback", "Loading merchant feedback…")}
           </div>
         ) : filteredReviews.length === 0 ? (
           <div className="p-16 text-center rounded-2xl border bg-card space-y-2">
             <MessageSquare className="size-8 mx-auto text-muted-foreground/40" />
-            <h4 className="font-bold text-sm text-foreground">No Reviews in this Category</h4>
+            <h4 className="font-bold text-sm text-foreground">{t("admin.noReviewsCategory", "No Reviews in this Category")}</h4>
             <p className="text-xs text-muted-foreground">
-              Merchant ratings and feedback will appear here as stores submit their reviews.
+              {t("admin.noReviewsCategoryDesc", "Merchant ratings and feedback will appear here as stores submit their reviews.")}
             </p>
           </div>
         ) : (
@@ -206,10 +208,10 @@ function SuperAdminReviewsPage() {
                     </div>
                     <div>
                       <p className="font-bold text-xs text-foreground">
-                        {rev.orgName || "Store Merchant"}
+                        {rev.orgName || t("admin.storeMerchant", "Store Merchant")}
                       </p>
                       <p className="text-[10px] text-muted-foreground">
-                        {rev.userName || rev.userEmail || "Store Owner"}
+                        {rev.userName || rev.userEmail || t("admin.storeOwner", "Store Owner")}
                       </p>
                     </div>
                   </div>
@@ -229,11 +231,11 @@ function SuperAdminReviewsPage() {
                 </div>
 
                 <p className="text-xs text-foreground/90 leading-relaxed italic">
-                  "{rev.comment || "Great platform for retail POS and multi-store management!"}"
+                  "{rev.comment || t("admin.defaultReviewComment", "Great platform for retail POS and multi-store management!")}"
                 </p>
 
                 <div className="pt-2 border-t flex items-center justify-between text-[10px] text-muted-foreground">
-                  <span>Verified Merchant Store</span>
+                  <span>{t("admin.verifiedMerchantStore", "Verified Merchant Store")}</span>
                   <span className="font-mono">{new Date(rev.createdAt).toLocaleDateString()}</span>
                 </div>
               </div>

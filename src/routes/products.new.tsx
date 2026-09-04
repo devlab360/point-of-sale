@@ -1,3 +1,4 @@
+import { useLanguage } from "@/contexts/LanguageContext";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { ProductForm } from "@/components/products/ProductForm";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -12,6 +13,7 @@ export const Route = createFileRoute("/products/new")({
 });
 
 function NewProductPage() {
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
@@ -55,7 +57,7 @@ function NewProductPage() {
       if (context?.previousProducts) {
         queryClient.setQueryData(["products"], context.previousProducts);
       }
-      toast.error("Failed to create product");
+      toast.error(t("failedToCreateProduct", "Failed to create product"));
     },
     onSettled: () => {
       // Background re-fetch to ensure sync with server
@@ -81,7 +83,7 @@ function NewProductPage() {
           });
         }
         // No need to invalidate here as onSettled handles it
-        toast.success("Product created successfully");
+        toast.success(t("productCreatedSuccess", "Product created successfully"));
         navigate({ to: "/products" });
       } else {
         toast.error(res?.error || "Failed to create product");

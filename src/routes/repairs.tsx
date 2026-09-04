@@ -294,7 +294,7 @@ function RepairsPage() {
       const res = (await deleteRepairFn({ data: { id } })) as any;
       if (res?.success) {
         queryClient.invalidateQueries({ queryKey: ["repairs", orgId] });
-        toast.success("Repair ticket deleted");
+        toast.success(t("repairTicketDeleted", "Repair ticket deleted"));
         setDeleteId(null);
       } else throw new Error(res?.error);
     } catch (err: any) {
@@ -322,24 +322,24 @@ function RepairsPage() {
         </head>
         <body>
           <div class="header">
-            <div style="font-size: 14px; font-weight: bold; text-transform: uppercase;">Repair Job Sheet & Intake Receipt</div>
+            <div style="font-size: 14px; font-weight: bold; text-transform: uppercase;">{t("repairJobSheetReceipt", "Repair Job Sheet & Intake Receipt")}</div>
             <div class="ticket-no">${ticket.ticketNo}</div>
             <div style="font-size: 12px; color: #666;">Date: ${new Date().toLocaleDateString()}</div>
           </div>
           <div class="section">
-            <div class="row"><span class="bold">Customer:</span> <span>${ticket.customerName}</span></div>
-            <div class="row"><span class="bold">Contact:</span> <span>${ticket.customerPhone || "N/A"}</span></div>
-            <div class="row"><span class="bold">Device:</span> <span>${ticket.deviceName}</span></div>
-            <div class="row"><span class="bold">Serial / IMEI:</span> <span>${ticket.serialOrImei || "N/A"}</span></div>
+            <div class="row"><span class="bold">{t("customer", "Customer")}:</span> <span>${ticket.customerName}</span></div>
+            <div class="row"><span class="bold">{t("contact", "Contact")}:</span> <span>${ticket.customerPhone || "N/A"}</span></div>
+            <div class="row"><span class="bold">{t("device", "Device")}:</span> <span>${ticket.deviceName}</span></div>
+            <div class="row"><span class="bold">{t("serialOrImei", "Serial / IMEI")}:</span> <span>${ticket.serialOrImei || "N/A"}</span></div>
           </div>
           <div class="box">
-            <div class="bold" style="margin-bottom: 4px;">Reported Issue:</div>
+            <div class="bold" style="margin-bottom: 4px;">{t("reportedIssue", "Reported Issue")}:</div>
             <div>${ticket.problemDescription}</div>
           </div>
           <div class="section">
-            <div class="row"><span class="bold">Estimated Cost:</span> <span>${currencySymbol}${Number(ticket.estimatedCost || 0).toFixed(2)}</span></div>
-            <div class="row"><span class="bold">Advance Paid:</span> <span>${currencySymbol}${Number(ticket.advancePaid || 0).toFixed(2)}</span></div>
-            <div class="row"><span class="bold">Balance Due:</span> <span>${currencySymbol}${Math.max(0, (Number(ticket.estimatedCost) || 0) - (Number(ticket.advancePaid) || 0)).toFixed(2)}</span></div>
+            <div class="row"><span class="bold">{t("estimatedCost", "Estimated Cost")}:</span> <span>${currencySymbol}${Number(ticket.estimatedCost || 0).toFixed(2)}</span></div>
+            <div class="row"><span class="bold">{t("advancePaid", "Advance Paid")}:</span> <span>${currencySymbol}${Number(ticket.advancePaid || 0).toFixed(2)}</span></div>
+            <div class="row"><span class="bold">{t("balanceDue", "Balance Due")}:</span> <span>${currencySymbol}${Math.max(0, (Number(ticket.estimatedCost) || 0) - (Number(ticket.advancePaid) || 0)).toFixed(2)}</span></div>
           </div>
           <div class="footer">
             Terms: Backup data before repair. 30 days warranty on replaced parts. Please bring this receipt for device pickup.

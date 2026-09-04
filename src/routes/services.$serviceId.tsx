@@ -1,3 +1,4 @@
+import { useLanguage } from "@/contexts/LanguageContext";
 import { createFileRoute, useNavigate, useParams } from "@tanstack/react-router";
 import { ServiceForm } from "@/components/services/ServiceForm";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -11,6 +12,7 @@ export const Route = createFileRoute("/services/$serviceId")({
 });
 
 function EditServicePage() {
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const { serviceId } = useParams({ from: "/services/$serviceId" });
   const queryClient = useQueryClient();
@@ -33,12 +35,12 @@ function EditServicePage() {
             }
             setInitialData(service);
           } else {
-            toast.error("Service not found");
+            toast.error(t("serviceNotFound", "Service not found"));
             navigate({ to: "/services" });
           }
         }
       } catch (e) {
-        toast.error("Failed to load service");
+        toast.error(t("failedToLoadService", "Failed to load service"));
       } finally {
         setLoading(false);
       }
@@ -58,10 +60,10 @@ function EditServicePage() {
     onSuccess: (res) => {
       if (res?.success) {
         queryClient.invalidateQueries({ queryKey: ["services"] });
-        toast.success("Service updated successfully");
+        toast.success(t("serviceUpdatedSuccess", "Service updated successfully"));
         navigate({ to: "/services" });
       } else {
-        toast.error("Failed to update service");
+        toast.error(t("failedToUpdateService", "Failed to update service"));
       }
     },
     onError: () => toast.error("Failed to update service"),

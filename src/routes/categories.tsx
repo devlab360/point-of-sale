@@ -218,7 +218,7 @@ function CategoriesPage() {
           },
         })) as any;
         if (res?.success) {
-          toast.success("Category updated successfully");
+          toast.success(t("categoryUpdatedSuccess", "Category updated successfully"));
           setModalOpen(false);
           queryClient.invalidateQueries({ queryKey: ["categories", orgId] });
         } else throw new Error(res?.error);
@@ -234,7 +234,7 @@ function CategoriesPage() {
           },
         })) as any;
         if (res?.success) {
-          toast.success("Category added to catalog");
+          toast.success(t("categoryAddedToCatalog", "Category added to catalog"));
           setModalOpen(false);
           queryClient.invalidateQueries({ queryKey: ["categories", orgId] });
         } else throw new Error(res?.error);
@@ -251,7 +251,7 @@ function CategoriesPage() {
       try {
         const res = (await deleteCategoryFn({ data: { id: deleteId } })) as any;
         if (res?.success) {
-          toast.success("Category deleted");
+          toast.success(t("categoryDeleted", "Category deleted"));
           setDeleteId(null);
           queryClient.invalidateQueries({ queryKey: ["categories", orgId] });
         } else throw new Error(res?.error);
@@ -424,7 +424,7 @@ function CategoriesPage() {
                         <h3 className="font-bold text-base text-foreground group-hover:text-primary transition-colors truncate">
                           {c.name}
                         </h3>
-                        <p className="text-xs text-muted-foreground mt-0.5">POS Touch Department</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">{t("posTouchDepartment", "POS Touch Department")}</p>
                       </div>
                     </div>
 
@@ -590,7 +590,7 @@ function CategoriesPage() {
                       setName(e.target.value);
                       clearCatError("name");
                     }}
-                    placeholder="e.g. Beverages, Electronics, Apparel"
+                    placeholder={t("categoryNamePlaceholder", "e.g. Beverages, Electronics, Apparel")}
                     className={catErrors.name ? "border-destructive" : ""}
                   />
                   <FieldError message={catErrors.name} />

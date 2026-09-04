@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { appName } from "@/lib/env";
 import { SuperAdminLayout } from "@/components/admin/SuperAdminLayout";
 import { PageHeader } from "@/components/layout/PageHeader";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { StatCard } from "@/components/layout/StatCard";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -83,7 +84,6 @@ import {
 import { exportToCSV } from "@/lib/export-utils";
 
 import { SYSTEM_MODULES as ALL_SYSTEM_MODULES } from "@/constants";
-import { useLanguage } from "@/contexts/LanguageContext";
 
 export const Route = createFileRoute("/admin/tenants")({
   head: () => ({ meta: [{ title: `Tenants & Stores · Super Admin ${appName}` }] }),
@@ -154,14 +154,14 @@ function SuperAdminTenantsPage() {
     mutationFn: (org: any) => updateOrganizationFn({ data: org }),
     onSuccess: (res: any) => {
       if (res?.success) {
-        toast.success("Tenant store updated successfully");
+        toast.success(t("admin.tenantUpdatedToast", "Tenant store updated successfully"));
         setIsEditModalOpen(false);
         queryClient.invalidateQueries({ queryKey: ["saas-organizations"] });
       } else {
-        toast.error(res?.error || "Update failed");
+        toast.error(res?.error || t("admin.updateFailedToast", "Update failed"));
       }
     },
-    onError: (err: any) => toast.error(err.message || "Update failed"),
+    onError: (err: any) => toast.error(err.message || t("admin.updateFailedToast", "Update failed")),
   });
 
   const saveGrantsMutation = useMutation({
@@ -169,27 +169,27 @@ function SuperAdminTenantsPage() {
       setAdminMenuGrantsFn({ data: { orgId, menuKeys } }),
     onSuccess: (res: any) => {
       if (res?.success) {
-        toast.success("Module access grants updated!");
+        toast.success(t("admin.moduleGrantsUpdatedToast", "Module access grants updated!"));
       } else {
-        toast.error(res?.error || "Failed to save grants");
+        toast.error(res?.error || t("admin.saveGrantsFailedToast", "Failed to save grants"));
       }
     },
-    onError: (err: any) => toast.error(err.message || "Failed to save grants"),
+    onError: (err: any) => toast.error(err.message || t("admin.saveGrantsFailedToast", "Failed to save grants")),
   });
 
   const createTenantMutation = useMutation({
     mutationFn: (tenant: any) => createTenantUserFn({ data: tenant }),
     onSuccess: (res: any) => {
       if (res?.success) {
-        toast.success("Tenant store provisioned successfully!");
+        toast.success(t("admin.tenantProvisionedToast", "Tenant store provisioned successfully!"));
         setIsCreateModalOpen(false);
         setNewTenant({ storeName: "", ownerName: "", email: "", password: "", planId: "basic" });
         queryClient.invalidateQueries({ queryKey: ["saas-organizations"] });
       } else {
-        toast.error(res?.error || "Failed to create tenant");
+        toast.error(res?.error || t("admin.createTenantFailedToast", "Failed to create tenant"));
       }
     },
-    onError: (err: any) => toast.error(err.message || "Creation failed"),
+    onError: (err: any) => toast.error(err.message || t("admin.createTenantFailedToast", "Creation failed")),
   });
 
   const addTrialMutation = useMutation({
@@ -197,7 +197,7 @@ function SuperAdminTenantsPage() {
       addTrialDaysFn({ data: { orgId, days } }),
     onSuccess: (res: any, variables) => {
       if (res?.success) {
-        toast.success(`Added +${variables.days} trial days`);
+        toast.success(`${t("admin.addedDaysToast", "Added +")}${variables.days} ${t("admin.trialDaysToast", "trial days")}`);
         queryClient.invalidateQueries({ queryKey: ["saas-organizations"] });
         if (editingTenant) {
           refetch().then((r: any) => {
@@ -211,7 +211,7 @@ function SuperAdminTenantsPage() {
           });
         }
       } else {
-        toast.error(res?.error || "Failed to add trial days");
+        toast.error(res?.error || t("admin.addTrialDaysFailedToast", "Failed to add trial days"));
       }
     },
   });
@@ -220,13 +220,13 @@ function SuperAdminTenantsPage() {
     mutationFn: (orgId: string) => resetTenantSyncKeyFn({ data: { orgId } }),
     onSuccess: (res: any) => {
       if (res?.success) {
-        toast.success("Device sync key regenerated!");
+        toast.success(t("admin.syncKeyRegeneratedToast", "Device sync key regenerated!"));
         if (editingTenant) {
           setEditingTenant({ ...editingTenant, syncKey: res.syncKey });
         }
         queryClient.invalidateQueries({ queryKey: ["saas-organizations"] });
       } else {
-        toast.error(res?.error || "Failed to reset sync key");
+        toast.error(res?.error || t("admin.resetSyncKeyFailedToast", "Failed to reset sync key"));
       }
     },
   });
@@ -235,14 +235,14 @@ function SuperAdminTenantsPage() {
     mutationFn: (orgId: string) => deleteOrganizationFn({ data: { orgId } }),
     onSuccess: (res: any) => {
       if (res?.success) {
-        toast.success("Tenant store deleted permanently");
+        toast.success(t("admin.tenantDeletedToast", "Tenant store deleted permanently"));
         setIsEditModalOpen(false);
         queryClient.invalidateQueries({ queryKey: ["saas-organizations"] });
       } else {
-        toast.error(res?.error || "Delete failed");
+        toast.error(res?.error || t("admin.deleteFailedToast", "Delete failed"));
       }
     },
-    onError: (err: any) => toast.error(err.message || "Delete failed"),
+    onError: (err: any) => toast.error(err.message || t("admin.deleteFailedToast", "Delete failed")),
   });
 
   const handleGrantToggle = (key: string) => {
@@ -292,8 +292,8 @@ function SuperAdminTenantsPage() {
       <div className="page-container space-y-6">
         {/* Top Header */}
         <PageHeader
-          title="SaaS Tenant Stores & Organizations"
-          description="Manage registered merchant stores, subscription states, trial extensions, and granular module permissions."
+          title={t("admin.tenantsTitle", "Tenant Stores & Client Organizations")}
+          description={t("admin.tenantsDesc", "Provision tenant stores, configure plan quotas, extend evaluation trials, and manage granular feature overrides.")}
           actions={
             <div className="flex flex-wrap items-center gap-2">
               <Button
@@ -304,7 +304,7 @@ function SuperAdminTenantsPage() {
                 disabled={isFetching}
               >
                 <RefreshCw className={`size-3.5 ${isFetching ? "animate-spin" : ""}`} />
-                <span>Refresh</span>
+                <span>{t("common.refresh", "Refresh")}</span>
               </Button>
               <Button
                 variant="outline"
@@ -326,7 +326,7 @@ function SuperAdminTenantsPage() {
                 }}
               >
                 <Download className="size-3.5" />
-                <span>Export CSV</span>
+                <span>{t("common.exportCsv", "Export CSV")}</span>
               </Button>
               <Button
                 onClick={() => setIsCreateModalOpen(true)}
@@ -334,7 +334,7 @@ function SuperAdminTenantsPage() {
                 className="gap-2 h-9 shadow-xs"
               >
                 <Plus className="size-4" />
-                <span>Provision Tenant Store</span>
+                <span>{t("admin.provisionTenantStore", "Provision Tenant Store")}</span>
               </Button>
             </div>
           }
@@ -343,30 +343,30 @@ function SuperAdminTenantsPage() {
         {/* Quick KPI Strip */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           <StatCard
-            label="Total Registered Stores"
+            label={t("admin.totalRegisteredStores", "Total Registered Stores")}
             value={String(totalStores)}
-            hint="All multi-tenant businesses"
+            hint={t("admin.allMultiTenantBusinesses", "All multi-tenant businesses")}
             icon={Store}
             accent="primary"
           />
           <StatCard
-            label="Active Subscriptions"
+            label={t("admin.activeSubscriptions", "Active Subscriptions")}
             value={String(activeStores)}
-            hint="Paid operational stores"
+            hint={t("admin.paidOperationalStores", "Paid operational stores")}
             icon={CheckCircle2}
             accent="success"
           />
           <StatCard
-            label="Trial Period Stores"
+            label={t("admin.trialPeriodStores", "Trial Period Stores")}
             value={String(trialStores)}
-            hint="Evaluation candidates"
+            hint={t("admin.evaluationCandidates", "Evaluation candidates")}
             icon={Sparkles}
             accent="warning"
           />
           <StatCard
-            label="Suspended / Expired"
+            label={t("admin.suspendedExpired", "Suspended / Expired")}
             value={String(suspendedStores)}
-            hint="Requires payment reactivation"
+            hint={t("admin.requiresPaymentReactivation", "Requires payment reactivation")}
             icon={Ban}
             accent="destructive"
           />
@@ -377,7 +377,7 @@ function SuperAdminTenantsPage() {
           <div className="relative flex-1 w-full">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
             <Input
-              placeholder="Search by store name, owner email, or Org ID..."
+              placeholder={t("admin.searchTenantsPlaceholder", "Search by store name, owner email, or Org ID...")}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-9 bg-background/50"
@@ -388,23 +388,23 @@ function SuperAdminTenantsPage() {
             {/* Status Filter */}
             <Select value={statusFilter} onValueChange={(val: any) => setStatusFilter(val)}>
               <SelectTrigger className="w-[130px] bg-background/50 text-xs">
-                <SelectValue placeholder="Status Filter" />
+                <SelectValue placeholder={t("admin.statusFilter", "Status Filter")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Statuses ({totalStores})</SelectItem>
-                <SelectItem value="active">Active ({activeStores})</SelectItem>
-                <SelectItem value="trial">Trial ({trialStores})</SelectItem>
-                <SelectItem value="suspended">Suspended ({suspendedStores})</SelectItem>
+                <SelectItem value="all">{t("admin.allStatuses", "All Statuses")} ({totalStores})</SelectItem>
+                <SelectItem value="active">{t("common.active", "Active")} ({activeStores})</SelectItem>
+                <SelectItem value="trial">{t("admin.trial", "Trial")} ({trialStores})</SelectItem>
+                <SelectItem value="suspended">{t("admin.suspended", "Suspended")} ({suspendedStores})</SelectItem>
               </SelectContent>
             </Select>
 
             {/* Plan Filter */}
             <Select value={planFilter} onValueChange={setPlanFilter}>
               <SelectTrigger className="w-[130px] bg-background/50 text-xs">
-                <SelectValue placeholder="Plan Filter" />
+                <SelectValue placeholder={t("admin.planFilter", "Plan Filter")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Plans</SelectItem>
+                <SelectItem value="all">{t("admin.allPlans", "All Plans")}</SelectItem>
                 {plans.map((p: any) => (
                   <SelectItem key={p.id} value={p.id}>
                     {p.name}
@@ -416,13 +416,13 @@ function SuperAdminTenantsPage() {
             {/* Sort Order */}
             <Select value={sortBy} onValueChange={(val: any) => setSortBy(val)}>
               <SelectTrigger className="w-[130px] bg-background/50 text-xs">
-                <SelectValue placeholder="Sort Order" />
+                <SelectValue placeholder={t("admin.sortOrder", "Sort Order")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="newest">Newest First</SelectItem>
-                <SelectItem value="oldest">Oldest First</SelectItem>
-                <SelectItem value="name">Store Name</SelectItem>
-                <SelectItem value="expiry">Plan Expiry</SelectItem>
+                <SelectItem value="newest">{t("admin.newestFirst", "Newest First")}</SelectItem>
+                <SelectItem value="oldest">{t("admin.oldestFirst", "Oldest First")}</SelectItem>
+                <SelectItem value="name">{t("admin.storeNameSort", "Store Name")}</SelectItem>
+                <SelectItem value="expiry">{t("admin.planExpirySort", "Plan Expiry")}</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -434,7 +434,7 @@ function SuperAdminTenantsPage() {
             <div className="flex flex-col items-center justify-center p-16 space-y-3">
               <Loader2 className="size-8 animate-spin text-primary" />
               <p className="text-xs text-muted-foreground font-medium">
-                Loading tenant organizations…
+                {t("admin.loadingTenants", "Loading tenant organizations…")}
               </p>
             </div>
           ) : filteredOrgs.length === 0 ? (
@@ -442,10 +442,9 @@ function SuperAdminTenantsPage() {
               <div className="size-12 rounded-2xl bg-muted/60 flex items-center justify-center mx-auto text-muted-foreground">
                 <Store className="size-6 opacity-40" />
               </div>
-              <h3 className="font-bold text-base text-foreground">No Tenant Stores Found</h3>
+              <h3 className="font-bold text-base text-foreground">{t("admin.noTenantsFound", "No Tenant Stores Found")}</h3>
               <p className="text-xs text-muted-foreground max-w-sm mx-auto">
-                No stores match your current query. Try clearing filters or create a new store
-                tenant.
+                {t("admin.noTenantsDesc", "No stores match your current query. Try clearing filters or create a new store tenant.")}
               </p>
             </div>
           ) : (
@@ -503,12 +502,12 @@ function SuperAdminTenantsPage() {
                         <TableCell className="px-4 py-3.5">
                           {org.status === "active" && (
                             <Badge className="bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 font-bold uppercase text-[10px]">
-                              Active
+                              {t("common.active", "Active")}
                             </Badge>
                           )}
                           {org.status === "trial" && (
                             <Badge className="bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30 font-bold uppercase text-[10px]">
-                              Trial
+                              {t("admin.trial", "Trial")}
                             </Badge>
                           )}
                           {org.status === "suspended" && (
@@ -516,7 +515,7 @@ function SuperAdminTenantsPage() {
                               variant="destructive"
                               className="font-bold uppercase text-[10px]"
                             >
-                              Suspended
+                              {t("admin.suspended", "Suspended")}
                             </Badge>
                           )}
                         </TableCell>
@@ -528,15 +527,15 @@ function SuperAdminTenantsPage() {
                                 {new Date(org.planExpiryDate).toLocaleDateString()}
                               </span>
                               {isExpired ? (
-                                <p className="text-[10px] font-bold text-destructive">Expired</p>
+                                <p className="text-[10px] font-bold text-destructive">{t("admin.expired", "Expired")}</p>
                               ) : isExpiringSoon ? (
                                 <p className="text-[10px] font-bold text-amber-500">
-                                  Expiring Soon
+                                  {t("admin.expiringSoon", "Expiring Soon")}
                                 </p>
                               ) : null}
                             </div>
                           ) : (
-                            <span className="text-muted-foreground">Unlimited / Lifetime</span>
+                            <span className="text-muted-foreground">{t("admin.unlimitedLifetime", "Unlimited / Lifetime")}</span>
                           )}
                         </TableCell>
 
@@ -553,7 +552,7 @@ function SuperAdminTenantsPage() {
                             className="h-8 gap-1 font-semibold"
                             onClick={() => openEditTenantModal(org)}
                           >
-                            <Edit3 className="size-3.5" /> Manage
+                            <Edit3 className="size-3.5" /> {t("admin.manage", "Manage")}
                           </Button>
                         </TableCell>
                       </TableRow>
@@ -574,11 +573,10 @@ function SuperAdminTenantsPage() {
             <SheetHeader className="bg-muted/60 p-5 border-b pr-12 text-left">
               <SheetTitle className="text-lg font-bold flex items-center gap-2 text-foreground">
                 <Store className="size-5 text-primary" />
-                <span>Manage Tenant: {editingTenant?.name}</span>
+                <span>{t("admin.manageTenant", "Manage Tenant:")} {editingTenant?.name}</span>
               </SheetTitle>
               <SheetDescription className="text-xs text-muted-foreground mt-0.5">
-                Configure store profile, subscription plan, trial periods, and granular module
-                grants.
+                {t("admin.manageTenantDesc", "Configure store profile, subscription plan, trial periods, and granular module grants.")}
               </SheetDescription>
             </SheetHeader>
 
@@ -595,7 +593,7 @@ function SuperAdminTenantsPage() {
                         : "text-muted-foreground hover:bg-muted"
                     }`}
                   >
-                    General Info
+                    {t("admin.generalInfo", "General Info")}
                   </button>
                   <button
                     type="button"
@@ -606,7 +604,7 @@ function SuperAdminTenantsPage() {
                         : "text-muted-foreground hover:bg-muted"
                     }`}
                   >
-                    Plan & Subscription
+                    {t("admin.planSubscriptionTab", "Plan & Subscription")}
                   </button>
                   <button
                     type="button"
@@ -618,7 +616,7 @@ function SuperAdminTenantsPage() {
                     }`}
                   >
                     <SlidersHorizontal className="size-3.5" />
-                    <span>Module Grants ({selectedGrants.length})</span>
+                    <span>{t("admin.moduleGrants", "Module Grants")} ({selectedGrants.length})</span>
                   </button>
                   <button
                     type="button"
@@ -629,7 +627,7 @@ function SuperAdminTenantsPage() {
                         : ""
                     }`}
                   >
-                    Danger Zone
+                    {t("admin.dangerZone", "Danger Zone")}
                   </button>
                 </div>
 
@@ -640,7 +638,7 @@ function SuperAdminTenantsPage() {
                     <div className="space-y-4">
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div className="space-y-1.5">
-                          <Label htmlFor="edit-store-name">Store / Business Name</Label>
+                          <Label htmlFor="edit-store-name">{t("admin.storeBusinessName", "Store / Business Name")}</Label>
                           <Input
                             id="edit-store-name"
                             value={editingTenant.name || ""}
@@ -650,7 +648,7 @@ function SuperAdminTenantsPage() {
                           />
                         </div>
                         <div className="space-y-1.5">
-                          <Label htmlFor="edit-owner-email">Owner Email</Label>
+                          <Label htmlFor="edit-owner-email">{t("admin.ownerEmail", "Owner Email")}</Label>
                           <Input
                             id="edit-owner-email"
                             type="email"
@@ -664,13 +662,13 @@ function SuperAdminTenantsPage() {
 
                       <div className="p-3.5 rounded-xl border bg-muted/20 space-y-2 text-xs">
                         <div className="flex justify-between items-center">
-                          <span className="text-muted-foreground">Tenant Organization ID:</span>
+                          <span className="text-muted-foreground">{t("admin.tenantOrganizationId", "Tenant Organization ID:")}</span>
                           <span className="font-mono font-bold text-foreground">
                             {editingTenant.id}
                           </span>
                         </div>
                         <div className="flex justify-between items-center">
-                          <span className="text-muted-foreground">Device Sync Key:</span>
+                          <span className="text-muted-foreground">{t("admin.deviceSyncKey", "Device Sync Key:")}</span>
                           <div className="flex items-center gap-2">
                             <span className="font-mono text-foreground">
                               {editingTenant.syncKey || "default-sync-key"}
@@ -683,7 +681,7 @@ function SuperAdminTenantsPage() {
                               disabled={resetSyncKeyMutation.isPending}
                               onClick={() => resetSyncKeyMutation.mutate(editingTenant.id)}
                             >
-                              <RefreshCw className="size-3" /> Reset
+                              <RefreshCw className="size-3" /> {t("admin.reset", "Reset")}
                             </Button>
                           </div>
                         </div>
@@ -696,7 +694,7 @@ function SuperAdminTenantsPage() {
                     <div className="space-y-4">
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div className="space-y-1.5">
-                          <Label htmlFor="edit-plan-id">Assigned SaaS Plan Tier</Label>
+                          <Label htmlFor="edit-plan-id">{t("admin.assignedPlanTier", "Assigned SaaS Plan Tier")}</Label>
                           <Select
                             value={editingTenant.currentPlanId || "basic"}
                             onValueChange={(val) =>
@@ -704,7 +702,7 @@ function SuperAdminTenantsPage() {
                             }
                           >
                             <SelectTrigger id="edit-plan-id">
-                              <SelectValue placeholder="Select plan" />
+                              <SelectValue placeholder={t("admin.selectPlan", "Select plan")} />
                             </SelectTrigger>
                             <SelectContent>
                               {plans.map((p: any) => (
@@ -717,7 +715,7 @@ function SuperAdminTenantsPage() {
                         </div>
 
                         <div className="space-y-1.5">
-                          <Label htmlFor="edit-status">Account Status</Label>
+                          <Label htmlFor="edit-status">{t("admin.accountStatus", "Account Status")}</Label>
                           <Select
                             value={editingTenant.status || "active"}
                             onValueChange={(val) =>
@@ -725,12 +723,12 @@ function SuperAdminTenantsPage() {
                             }
                           >
                             <SelectTrigger id="edit-status">
-                              <SelectValue placeholder="Select status" />
+                              <SelectValue placeholder={t("admin.selectStatus", "Select status")} />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="active">Active</SelectItem>
-                              <SelectItem value="trial">Trial</SelectItem>
-                              <SelectItem value="suspended">Suspended</SelectItem>
+                              <SelectItem value="active">{t("common.active", "Active")}</SelectItem>
+                              <SelectItem value="trial">{t("admin.trial", "Trial")}</SelectItem>
+                              <SelectItem value="suspended">{t("admin.suspended", "Suspended")}</SelectItem>
                             </SelectContent>
                           </Select>
                         </div>
@@ -738,7 +736,7 @@ function SuperAdminTenantsPage() {
 
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div className="space-y-1.5">
-                          <Label htmlFor="edit-expiry">Plan Expiry Date</Label>
+                          <Label htmlFor="edit-expiry">{t("admin.planExpiryDate", "Plan Expiry Date")}</Label>
                           <Input
                             id="edit-expiry"
                             type="date"
@@ -749,7 +747,7 @@ function SuperAdminTenantsPage() {
                           />
                         </div>
                         <div className="space-y-1.5">
-                          <Label htmlFor="edit-extra-users">Extra Purchased User Seats</Label>
+                          <Label htmlFor="edit-extra-users">{t("admin.extraPurchasedSeats", "Extra Purchased User Seats")}</Label>
                           <Input
                             id="edit-extra-users"
                             type="number"
@@ -764,7 +762,7 @@ function SuperAdminTenantsPage() {
                             }
                           />
                           <p className="text-[10px] text-muted-foreground">
-                            Additional staff seats granted above the base plan limit.
+                            {t("admin.extraSeatsDesc", "Additional staff seats granted above the base plan limit.")}
                           </p>
                         </div>
                       </div>
@@ -772,7 +770,7 @@ function SuperAdminTenantsPage() {
                       {/* Quick Extension Buttons */}
                       <div className="p-4 rounded-xl border bg-muted/20 space-y-2">
                         <Label className="text-xs font-bold text-foreground">
-                          Quick Trial Extension (+Days)
+                          {t("admin.quickTrialExtension", "Quick Trial Extension (+Days)")}
                         </Label>
                         <div className="flex flex-wrap items-center gap-2">
                           <Button
@@ -785,7 +783,7 @@ function SuperAdminTenantsPage() {
                               addTrialMutation.mutate({ orgId: editingTenant.id, days: 7 })
                             }
                           >
-                            +7 Days Trial
+                            +7 {t("admin.daysTrial", "Days Trial")}
                           </Button>
                           <Button
                             type="button"
@@ -797,7 +795,7 @@ function SuperAdminTenantsPage() {
                               addTrialMutation.mutate({ orgId: editingTenant.id, days: 14 })
                             }
                           >
-                            +14 Days Trial
+                            +14 {t("admin.daysTrial", "Days Trial")}
                           </Button>
                           <Button
                             type="button"
@@ -809,7 +807,7 @@ function SuperAdminTenantsPage() {
                               addTrialMutation.mutate({ orgId: editingTenant.id, days: 30 })
                             }
                           >
-                            +30 Days Month
+                            +30 {t("admin.daysMonth", "Days Month")}
                           </Button>
                         </div>
                       </div>
@@ -822,11 +820,10 @@ function SuperAdminTenantsPage() {
                       <div className="flex items-center justify-between">
                         <div>
                           <h4 className="text-xs font-bold text-foreground">
-                            Granular Module & Menu Overrides
+                            {t("admin.granularModuleOverrides", "Granular Module & Menu Overrides")}
                           </h4>
                           <p className="text-[11px] text-muted-foreground">
-                            Grant or revoke specific feature access beyond the standard SaaS plan
-                            limits.
+                            {t("admin.moduleOverridesDesc", "Grant or revoke specific feature access beyond the standard SaaS plan limits.")}
                           </p>
                         </div>
                         <div className="flex items-center gap-2">
@@ -837,7 +834,7 @@ function SuperAdminTenantsPage() {
                             className="h-7 text-xs"
                             onClick={handleSelectAllGrants}
                           >
-                            Select All
+                            {t("admin.selectAll", "Select All")}
                           </Button>
                           <Button
                             type="button"
@@ -846,7 +843,7 @@ function SuperAdminTenantsPage() {
                             className="h-7 text-xs text-destructive"
                             onClick={handleClearAllGrants}
                           >
-                            Clear
+                            {t("common.clear", "Clear")}
                           </Button>
                         </div>
                       </div>
@@ -894,7 +891,7 @@ function SuperAdminTenantsPage() {
                           })
                         }
                       >
-                        {saveGrantsMutation.isPending ? "Saving Grants…" : "Save Module Grants"}
+                        {saveGrantsMutation.isPending ? t("admin.savingGrants", "Saving Grants…") : t("admin.saveModuleGrants", "Save Module Grants")}
                       </Button>
                     </div>
                   )}
@@ -903,10 +900,9 @@ function SuperAdminTenantsPage() {
                   {activeTab === "danger" && (
                     <div className="space-y-4 p-4 rounded-2xl border border-destructive/30 bg-destructive/5">
                       <div>
-                        <h4 className="text-sm font-bold text-destructive">Danger Zone</h4>
+                        <h4 className="text-sm font-bold text-destructive">{t("admin.dangerZone", "Danger Zone")}</h4>
                         <p className="text-xs text-muted-foreground mt-1">
-                          Permanently delete this tenant store and all associated products, sales,
-                          and settings.
+                          {t("admin.dangerZoneTenantDesc", "Permanently delete this tenant store and all associated products, sales, and settings.")}
                         </p>
                       </div>
 
@@ -928,8 +924,8 @@ function SuperAdminTenantsPage() {
                         >
                           <Trash2 className="size-4 mr-1.5" />
                           {deleteOrgMutation.isPending
-                            ? "Deleting Tenant…"
-                            : "Delete Store Permanently"}
+                            ? t("admin.deletingTenant", "Deleting Tenant…")
+                            : t("admin.deleteStorePermanently", "Delete Store Permanently")}
                         </Button>
                       </div>
                     </div>
@@ -939,7 +935,7 @@ function SuperAdminTenantsPage() {
                 {/* Sticky Drawer Footer */}
                 <SheetFooter className="p-5 border-t bg-muted/20 flex sm:justify-end gap-2 shrink-0">
                   <Button type="button" variant="outline" onClick={() => setIsEditModalOpen(false)}>
-                    Cancel
+                    {t("common.cancel", "Cancel")}
                   </Button>
                   <Button
                     type="button"
@@ -956,7 +952,7 @@ function SuperAdminTenantsPage() {
                       });
                     }}
                   >
-                    {updateOrgMutation.isPending ? "Saving Changes…" : "Save All Changes"}
+                    {updateOrgMutation.isPending ? t("admin.savingChanges", "Saving Changes…") : t("admin.saveAllChanges", "Save All Changes")}
                   </Button>
                 </SheetFooter>
               </div>
@@ -972,10 +968,10 @@ function SuperAdminTenantsPage() {
           >
             <SheetHeader className="bg-muted/60 p-5 border-b pr-12 text-left">
               <SheetTitle className="text-lg font-bold text-foreground">
-                Provision New Tenant Store
+                {t("admin.provisionNewTenantStore", "Provision New Tenant Store")}
               </SheetTitle>
               <SheetDescription className="text-xs text-muted-foreground mt-0.5">
-                Create a new business store account with owner credentials and plan assignment.
+                {t("admin.provisionTenantDesc", "Create a new business store account with owner credentials and plan assignment.")}
               </SheetDescription>
             </SheetHeader>
             <form
@@ -987,41 +983,41 @@ function SuperAdminTenantsPage() {
             >
               <div className="flex-1 overflow-y-auto p-5 space-y-4">
                 <div className="space-y-1.5">
-                  <Label htmlFor="create-store-name">Store / Business Name</Label>
+                  <Label htmlFor="create-store-name">{t("admin.storeBusinessName", "Store / Business Name")}</Label>
                   <Input
                     id="create-store-name"
                     required
                     value={newTenant.storeName}
                     onChange={(e) => setNewTenant({ ...newTenant, storeName: e.target.value })}
-                    placeholder="e.g. Apex Hypermarket"
+                    placeholder={t("admin.storeNamePlaceholder", "e.g. Apex Hypermarket")}
                   />
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label htmlFor="create-owner-name">Owner Full Name</Label>
+                  <Label htmlFor="create-owner-name">{t("admin.ownerFullName", "Owner Full Name")}</Label>
                   <Input
                     id="create-owner-name"
                     required
                     value={newTenant.ownerName}
                     onChange={(e) => setNewTenant({ ...newTenant, ownerName: e.target.value })}
-                    placeholder="e.g. Alex Henderson"
+                    placeholder={t("admin.ownerNamePlaceholder", "e.g. Alex Henderson")}
                   />
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label htmlFor="create-email">Owner Email</Label>
+                  <Label htmlFor="create-email">{t("admin.ownerEmail", "Owner Email")}</Label>
                   <Input
                     id="create-email"
                     type="email"
                     required
                     value={newTenant.email}
                     onChange={(e) => setNewTenant({ ...newTenant, email: e.target.value })}
-                    placeholder="e.g. alex@apexstore.com"
+                    placeholder={t("admin.ownerEmailPlaceholder", "e.g. alex@apexstore.com")}
                   />
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label htmlFor="create-password">Initial Password</Label>
+                  <Label htmlFor="create-password">{t("admin.initialPassword", "Initial Password")}</Label>
                   <Input
                     id="create-password"
                     type="password"
@@ -1033,13 +1029,13 @@ function SuperAdminTenantsPage() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label htmlFor="create-plan">Assign SaaS Plan Tier</Label>
+                  <Label htmlFor="create-plan">{t("admin.assignSaasPlanTier", "Assign SaaS Plan Tier")}</Label>
                   <Select
                     value={newTenant.planId}
                     onValueChange={(val) => setNewTenant({ ...newTenant, planId: val })}
                   >
                     <SelectTrigger id="create-plan">
-                      <SelectValue placeholder="Select plan" />
+                      <SelectValue placeholder={t("admin.selectPlan", "Select plan")} />
                     </SelectTrigger>
                     <SelectContent>
                       {plans.map((p: any) => (
@@ -1054,10 +1050,10 @@ function SuperAdminTenantsPage() {
 
               <SheetFooter className="p-5 border-t bg-muted/20 flex sm:justify-end gap-2">
                 <Button type="button" variant="outline" onClick={() => setIsCreateModalOpen(false)}>
-                  Cancel
+                  {t("common.cancel", "Cancel")}
                 </Button>
                 <Button type="submit" disabled={createTenantMutation.isPending}>
-                  {createTenantMutation.isPending ? "Creating Tenant…" : "Provision Store Now"}
+                  {createTenantMutation.isPending ? t("admin.creatingTenant", "Creating Tenant…") : t("admin.provisionStoreNow", "Provision Store Now")}
                 </Button>
               </SheetFooter>
             </form>

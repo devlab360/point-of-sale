@@ -251,7 +251,7 @@ function CouponsPage() {
       const res = (await deleteCouponFn({ data: { id } })) as any;
       if (res?.success) {
         queryClient.invalidateQueries({ queryKey: ["coupons", orgId] });
-        toast.success("Coupon code deleted");
+        toast.success(t("couponDeleted", "Coupon code deleted"));
         setDeleteId(null);
       } else throw new Error(res?.error);
     } catch (err: any) {

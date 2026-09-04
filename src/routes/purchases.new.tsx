@@ -167,12 +167,12 @@ function NewPurchasePage() {
 
   const handleSubmit = async () => {
     if (!supplierId) {
-      return toast.error("Please select or enter a supplier");
+      return toast.error(t("selectOrEnterSupplier", "Please select or enter a supplier"));
     }
 
     const validLines = lines.filter((l) => l.productId && l.qty > 0);
     if (validLines.length === 0) {
-      return toast.error("Please add at least one valid product line item with quantity > 0");
+      return toast.error(t("addAtLeastOneValidLineItem", "Please add at least one valid product line item with quantity > 0"));
     }
 
     setIsSubmitting(true);
@@ -212,7 +212,7 @@ function NewPurchasePage() {
           },
         });
         if (res?.success) {
-          toast.success("Purchase order updated successfully");
+          toast.success(t("purchaseOrderUpdatedSuccess", "Purchase order updated successfully"));
           queryClient.invalidateQueries({ queryKey: ["purchases"] });
           navigate({ to: "/purchases" });
         } else {
@@ -221,7 +221,7 @@ function NewPurchasePage() {
       } else {
         const res = await createPurchaseFn({ data: purchaseData });
         if (res?.success) {
-          toast.success("Purchase order recorded and stock updated!");
+          toast.success(t("purchaseOrderRecordedStockUpdated", "Purchase order recorded and stock updated!"));
           queryClient.invalidateQueries({ queryKey: ["purchases"] });
           queryClient.invalidateQueries({ queryKey: ["products"] });
           navigate({ to: "/purchases" });
@@ -318,17 +318,17 @@ function NewPurchasePage() {
         <div>
           <div className="flex items-center gap-2">
             <h1 className="text-xl sm:text-2xl font-semibold tracking-tight text-foreground">
-              {editId ? "Edit Purchase Order" : "New Inbound Purchase Order"}
+              {editId ? t("editPurchaseOrder", "Edit Purchase Order") : t("newInboundPurchaseOrder", "New Inbound Purchase Order")}
             </h1>
             <Badge
               variant="outline"
               className="text-xs font-bold px-2 py-0.5 border-primary/30 text-primary bg-primary/5"
             >
-              {editId ? `Editing ${existingPurchaseData?.invoiceNo || editId}` : "Stock Inflow"}
+              {editId ? `${t("editing", "Editing")} ${existingPurchaseData?.invoiceNo || editId}` : t("stockInflow", "Stock Inflow")}
             </Badge>
           </div>
           <p className="text-xs text-muted-foreground hidden sm:block">
-            Receive inbound products, update warehouse valuation, and record vendor payables.
+            {t("newPurchaseDesc", "Receive inbound products, update warehouse valuation, and record vendor payables.")}
           </p>
         </div>
 
@@ -384,7 +384,7 @@ function NewPurchasePage() {
           <div className="rounded-2xl border border-border/80 bg-card p-5 sm:p-6 shadow-card space-y-4">
             <div className="flex items-center gap-2.5 pb-3 border-b border-border/60">
               <Building2 className="size-4 text-primary" />
-              <h3 className="font-bold text-sm text-foreground">Supplier & Purchase Metadata</h3>
+              <h3 className="font-bold text-sm text-foreground">{t("supplierPurchaseMetadata", "Supplier & Purchase Metadata")}</h3>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -400,7 +400,7 @@ function NewPurchasePage() {
                   }))}
                   value={supplierId}
                   onChange={setSupplierId}
-                  placeholder="Select or search vendor..."
+                  placeholder={t("selectOrSearchVendor", "Select or search vendor...")}
                   onCreate={async (name) => {
                     const res = await createSupplierFn({ data: { supplier: { name } } });
                     if (res?.success) {
@@ -414,9 +414,9 @@ function NewPurchasePage() {
               </div>
 
               <div className="space-y-1.5">
-                <Label className="text-xs font-bold">PO / Invoice Reference Number</Label>
+                <Label className="text-xs font-bold">{t("poInvoiceRefNumber", "PO / Invoice Reference Number")}</Label>
                 <Input
-                  placeholder="e.g. INV-9902 or PO-8841"
+                  placeholder={t("poInvoiceRefPlaceholder", "e.g. INV-9902 or PO-8841")}
                   value={invoiceNo}
                   onChange={(e) => setInvoiceNo(e.target.value)}
                   className="h-10 text-xs rounded-xl"
@@ -440,12 +440,12 @@ function NewPurchasePage() {
               </div>
 
               <div className="space-y-1.5">
-                <Label className="text-xs font-bold">Payment Method</Label>
+                <Label className="text-xs font-bold">{t("paymentMethod", "Payment Method")}</Label>
                 <SearchableSelect
                   options={PAYMENT_METHOD_OPTIONS.map((m) => ({ value: m.label, label: m.label }))}
                   value={paymentMethod}
                   onChange={setPaymentMethod}
-                  placeholder="Select payment mode"
+                  placeholder={t("selectPaymentMode", "Select payment mode")}
                 />
               </div>
             </div>
@@ -457,7 +457,7 @@ function NewPurchasePage() {
               <div className="flex items-center gap-2.5">
                 <ShoppingBag className="size-4 text-primary" />
                 <div>
-                  <h3 className="font-bold text-sm text-foreground">Inbound Stock Items</h3>
+                  <h3 className="font-bold text-sm text-foreground">{t("inboundStockItems", "Inbound Stock Items")}</h3>
                   <p className="text-[11px] text-muted-foreground">
                     Select products, received quantities, and unit purchase costs.
                   </p>
@@ -506,7 +506,7 @@ function NewPurchasePage() {
                             }))}
                             value={line.productId}
                             onChange={(val) => handleUpdateLine(idx, "productId", val)}
-                            placeholder="Select product SKU..."
+                            placeholder={t("selectProductSku", "Select product SKU...")}
                           />
                         </TableCell>
                         <TableCell className="text-right py-3">
@@ -541,7 +541,7 @@ function NewPurchasePage() {
                             size="icon"
                             onClick={() => handleRemoveLine(idx)}
                             className="size-8 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-                            title="Remove Line Item"
+                            title={t("removeLineItem", "Remove Line Item")}
                           >
                             <Trash2 className="size-4" />
                           </Button>
@@ -560,7 +560,7 @@ function NewPurchasePage() {
           <div className="rounded-2xl border border-border/80 bg-card p-5 sm:p-6 shadow-card space-y-4">
             <div className="flex items-center gap-2 pb-3 border-b border-border/60">
               <Receipt className="size-4 text-primary" />
-              <h3 className="font-bold text-sm text-foreground">Order Settlement Summary</h3>
+              <h3 className="font-bold text-sm text-foreground">{t("orderSettlementSummary", "Order Settlement Summary")}</h3>
             </div>
 
             <div className="space-y-3 text-xs">
@@ -569,12 +569,12 @@ function NewPurchasePage() {
                 <span className="font-bold text-foreground">{formatCurrency(subtotal)}</span>
               </div>
               <div className="flex justify-between text-muted-foreground">
-                <span>Estimated Taxes:</span>
+                <span>{t("estimatedTaxes", "Estimated Taxes:")}</span>
                 <span className="font-bold text-foreground">{formatCurrency(tax)}</span>
               </div>
 
               <div className="pt-3 border-t border-border/60 flex justify-between items-center text-sm font-black text-foreground">
-                <span className="uppercase tracking-wider text-xs">Grand Total:</span>
+                <span className="uppercase tracking-wider text-xs">{t("grandTotal", "Grand Total:")}</span>
                 <span className="text-xl font-black text-primary">{formatCurrency(total)}</span>
               </div>
             </div>

@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { updateSettingsFn } from "@/api/settings";
 import { useAuth } from "@/contexts/AuthContext";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 export function CheckoutModal({
   open,
@@ -18,6 +19,7 @@ export function CheckoutModal({
   onOpenChange: (open: boolean) => void;
   onSuccess: () => void;
 }) {
+  const { t } = useLanguage();
   const { user } = useAuth();
   const [isProcessing, setIsProcessing] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
@@ -52,7 +54,7 @@ export function CheckoutModal({
   const handlePay = async (e: React.FormEvent) => {
     e.preventDefault();
     if (card.number.length < 19 || card.expiry.length < 5 || card.cvc.length < 3 || !card.name) {
-      toast.error("Please fill in all card details correctly");
+      toast.error(t("fillAllCardDetails", "Please fill in all card details correctly"));
       return;
     }
 
@@ -71,7 +73,7 @@ export function CheckoutModal({
 
       setIsProcessing(false);
       setIsSuccess(true);
-      toast.success("Payment successful! Your subscription is now active.");
+      toast.success(t("paymentSuccessActive", "Payment successful! Your subscription is now active."));
 
       setTimeout(() => {
         onSuccess();
@@ -81,7 +83,7 @@ export function CheckoutModal({
       }, 2000);
     } catch (error) {
       setIsProcessing(false);
-      toast.error("Payment failed. Please try again.");
+      toast.error(t("paymentFailedRetry", "Payment failed. Please try again."));
     }
   };
 
@@ -90,7 +92,7 @@ export function CheckoutModal({
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Lock className="size-4 text-muted-foreground" /> Secure Checkout
+            <Lock className="size-4 text-muted-foreground" /> {t("secureCheckout", "Secure Checkout")}
           </DialogTitle>
         </DialogHeader>
 
@@ -99,9 +101,9 @@ export function CheckoutModal({
             <div className="rounded-full bg-success/10 p-3 mb-4">
               <CheckCircle2 className="size-12 text-success" />
             </div>
-            <h3 className="text-xl font-bold">Payment Successful</h3>
+            <h3 className="text-xl font-bold">{t("paymentSuccessful", "Payment Successful")}</h3>
             <p className="text-muted-foreground text-sm mt-2 text-center">
-              Thank you for subscribing! Your account is now fully active.
+              {t("subSuccessDesc", "Thank you for subscribing! Your account is now fully active.")}
             </p>
           </div>
         ) : (
@@ -110,9 +112,9 @@ export function CheckoutModal({
               <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-bl-full -mr-10 -mt-10" />
               <div className="flex justify-between items-start mb-6">
                 <div>
-                  <p className="text-sm text-muted-foreground">Amount due</p>
+                  <p className="text-sm text-muted-foreground">{t("amountDue", "Amount due")}</p>
                   <p className="text-2xl font-black">
-                    $29.00<span className="text-sm font-normal text-muted-foreground">/mo</span>
+                    $29.00<span className="text-sm font-normal text-muted-foreground">/{t("mo", "mo")}</span>
                   </p>
                 </div>
                 <CreditCard className="size-6 text-primary" />
@@ -120,7 +122,7 @@ export function CheckoutModal({
 
               <div className="space-y-4">
                 <div className="space-y-2">
-                  <Label>Card Number</Label>
+                  <Label>{t("cardNumber", "Card Number")}</Label>
                   <div className="relative">
                     <Input
                       name="number"
@@ -135,7 +137,7 @@ export function CheckoutModal({
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Cardholder Name</Label>
+                  <Label>{t("cardholderName", "Cardholder Name")}</Label>
                   <Input
                     name="name"
                     value={card.name}
@@ -147,7 +149,7 @@ export function CheckoutModal({
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label>Expiry Date</Label>
+                    <Label>{t("expiryDate", "Expiry Date")}</Label>
                     <Input
                       name="expiry"
                       value={card.expiry}
@@ -158,7 +160,7 @@ export function CheckoutModal({
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label>CVC</Label>
+                    <Label>{t("cvc", "CVC")}</Label>
                     <Input
                       name="cvc"
                       value={card.cvc}
@@ -181,15 +183,15 @@ export function CheckoutModal({
               {isProcessing ? (
                 <>
                   <Loader2 className="mr-2 size-5 animate-spin" />
-                  Processing...
+                  {t("processing", "Processing...")}
                 </>
               ) : (
-                "Pay $29.00"
+                `${t("pay", "Pay")} $29.00`
               )}
             </Button>
 
             <p className="text-xs text-center text-muted-foreground flex items-center justify-center gap-1 mt-2">
-              <Lock className="size-3" /> Payments are secure and encrypted.
+              <Lock className="size-3" /> {t("paymentSecureEncrypted", "Payments are secure and encrypted.")}
             </p>
           </form>
         )}

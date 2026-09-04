@@ -155,11 +155,11 @@ function PurchasesPage() {
     try {
       const res = await deletePurchaseFn({ data: { id: deleteId } });
       if (res?.success) {
-        toast.success("Purchase order removed");
+        toast.success(t("purchaseOrderRemoved", "Purchase order removed"));
         queryClient.invalidateQueries({ queryKey: ["purchases"] });
       }
     } catch {
-      toast.error("Failed to delete purchase order");
+      toast.error(t("failedToDeletePurchaseOrder", "Failed to delete purchase order"));
     } finally {
       setDeleteId(null);
     }
@@ -346,7 +346,7 @@ function PurchasesPage() {
                       <TableCell colSpan={8} className="h-64 text-center">
                         <EmptyState
                           icon={ShoppingCart}
-                          title="No purchases found"
+                          title={t("noPurchasesFound", "No purchases found")}
                           description={
                             query
                               ? "Try adjusting your search query."
@@ -659,14 +659,14 @@ function PurchasesPage() {
       <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
         <AlertDialogContent className="rounded-2xl">
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Purchase Order?</AlertDialogTitle>
+            <AlertDialogTitle>{t("deletePurchaseOrderQ", "Delete Purchase Order?")}</AlertDialogTitle>
             <AlertDialogDescription>
               Are you sure you want to delete this purchase order record? This will remove the
               recorded bill and transaction reference.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{t("cancel", "Cancel")}</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDelete}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"

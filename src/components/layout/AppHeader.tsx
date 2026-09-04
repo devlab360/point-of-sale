@@ -72,12 +72,61 @@ import { InstallAppButton } from "@/components/InstallAppButton";
 import { LogoutConfirmDialog } from "./LogoutConfirmDialog";
 import { BusinessSwitcher } from "@/components/layout/BusinessSwitcher";
 
+const CRUMB_TRANSLATION_KEYS: Record<string, string> = {
+  home: "home",
+  dashboard: "dashboard",
+  inventory: "inventory",
+  products: "products",
+  sales: "sales",
+  purchases: "purchases",
+  customers: "customers",
+  suppliers: "suppliers",
+  expenses: "expenses",
+  reports: "reports",
+  settings: "settings",
+  users: "users",
+  adjustments: "adjustments",
+  transfers: "transfers",
+  history: "history",
+  returns: "returns",
+  quotations: "quotations",
+  repairs: "repairs",
+  rentals: "rentals",
+  subscriptions: "subscriptions",
+  promotions: "promotions",
+  notifications: "notifications",
+  profile: "profile",
+  help: "help",
+  new: "new",
+  tables: "tables",
+  kitchen: "kitchen",
+  "gift-cards": "giftCards",
+  "delivery-challans": "deliveryChallans",
+  "price-books": "priceBooks",
+  units: "units",
+  loyalty: "loyalty",
+  portal: "portal",
+  admin: "admin",
+  tenants: "tenants",
+  plans: "plans",
+  payments: "payments",
+  support: "support",
+  announcements: "announcements",
+  reviews: "reviews",
+  categories: "categories",
+  brands: "brands",
+  warranties: "warranties",
+  coupons: "coupons",
+  discounts: "discounts",
+};
+
 function pathToCrumbs(pathname: string) {
-  if (pathname === "/") return [{ label: "Dashboard", to: "/" }];
+  if (pathname === "/") return [{ slug: "dashboard", label: "Dashboard", to: "/" }];
   const parts = pathname.split("/").filter(Boolean);
   return [
-    { label: "Home", to: "/" },
+    { slug: "home", label: "Home", to: "/" },
     ...parts.map((p, i) => ({
+      slug: p.toLowerCase(),
       label: p.replace(/-/g, " ").replace(/^\w/, (c) => c.toUpperCase()),
       to: "/" + parts.slice(0, i + 1).join("/"),
     })),
@@ -271,13 +320,13 @@ export function AppHeader() {
 
     const parsedCash = parseFloat(actualCash);
     if (isNaN(parsedCash)) {
-      toast.error("Invalid amount");
+      toast.error(t("invalidAmount", "Invalid amount"));
       return;
     }
 
     const difference = parsedCash - activeShift.expectedCash;
 
-    toast.success("Register closed. Discrepancy logged. (Stubbed for Phase 4)");
+    toast.success(t("registerClosedLogged", "Register closed. Discrepancy logged."));
   };
 
   const [dismissedBroadcastId, setDismissedBroadcastId] = useState<string | null>(() => {
@@ -325,7 +374,7 @@ export function AppHeader() {
               }
             }}
             className="p-1 rounded-md hover:bg-black/10 transition-colors ml-2"
-            title="Dismiss Announcement"
+            title={t("dismissAnnouncement", "Dismiss Announcement")}
           >
             <X className="size-3.5" />
           </button>
@@ -340,12 +389,12 @@ export function AppHeader() {
             size="icon"
             className="hidden md:flex lg:hidden"
             onClick={() => setMobileOpen(true)}
-            aria-label="Open menu"
+            aria-label={t("openMenu", "Open menu")}
           >
             <Menu className="size-5" />
           </Button>
           <SheetContent side="left" className="w-72 p-0">
-            <SheetTitle className="sr-only">Navigation</SheetTitle>
+            <SheetTitle className="sr-only">{t("navigation", "Navigation")}</SheetTitle>
             <AppSidebar onNavigate={() => setMobileOpen(false)} />
           </SheetContent>
         </Sheet>
@@ -355,28 +404,35 @@ export function AppHeader() {
             <img src={settings.storeLogo} alt="Store Logo" className="h-7 w-auto object-contain" />
           ) : (
             <span className="truncate text-sm font-semibold text-foreground">
-              {crumbs[crumbs.length - 1]?.label || "Dashboard"}
+              {(() => {
+                const lastCrumb = crumbs[crumbs.length - 1];
+                if (!lastCrumb) return t("dashboard", "Dashboard");
+                return t(CRUMB_TRANSLATION_KEYS[lastCrumb.slug] || lastCrumb.slug, lastCrumb.label);
+              })()}
             </span>
           )}
         </div>
 
         <nav aria-label="Breadcrumb" className="hidden min-w-0 flex-1 items-center md:flex">
           <ol className="flex items-center gap-1.5 text-sm">
-            {crumbs.map((c, i) => (
-              <li key={c.to} className="flex items-center gap-1.5">
-                {i > 0 && <span className="text-muted-foreground/50">/</span>}
-                {i === crumbs.length - 1 ? (
-                  <span className="font-medium text-foreground">{c.label}</span>
-                ) : (
-                  <Link
-                    to={c.to}
-                    className="text-muted-foreground hover:text-foreground transition-colors"
-                  >
-                    {c.label}
-                  </Link>
-                )}
-              </li>
-            ))}
+            {crumbs.map((c, i) => {
+              const localizedLabel = t(CRUMB_TRANSLATION_KEYS[c.slug] || c.slug, c.label);
+              return (
+                <li key={c.to} className="flex items-center gap-1.5">
+                  {i > 0 && <span className="text-muted-foreground/50">/</span>}
+                  {i === crumbs.length - 1 ? (
+                    <span className="font-medium text-foreground">{localizedLabel}</span>
+                  ) : (
+                    <Link
+                      to={c.to}
+                      className="text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      {localizedLabel}
+                    </Link>
+                  )}
+                </li>
+              );
+            })}
           </ol>
         </nav>
 
@@ -398,7 +454,7 @@ export function AppHeader() {
             size="icon"
             className="md:hidden rounded-xl"
             onClick={() => setSearchOpen(true)}
-            title="Global Search"
+            title={t("globalSearch", "Global Search")}
           >
             <Search className="size-5" />
           </Button>
@@ -433,7 +489,7 @@ export function AppHeader() {
                   variant="ghost"
                   size="sm"
                   className="h-9 px-2 text-xs font-semibold gap-1.5 cursor-pointer"
-                  title="Select Language"
+                  title={t("selectLanguage", "Select Language")}
                 >
                   <CountryFlag
                     countryCode={activeLanguageObj.countryCode}
@@ -444,7 +500,7 @@ export function AppHeader() {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuLabel className="text-xs">Select Language</DropdownMenuLabel>
+                <DropdownMenuLabel className="text-xs">{t("selectLanguage", "Select Language")}</DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 {LANGUAGES.map((l) => (
                   <DropdownMenuItem
@@ -475,8 +531,8 @@ export function AppHeader() {
               variant="ghost"
               size="icon"
               onClick={toggleFullscreen}
-              tooltip={isFullscreen ? "Exit Fullscreen (F11)" : "Full Screen (F11)"}
-              aria-label="Toggle Fullscreen"
+              tooltip={isFullscreen ? t("exitFullscreen", "Exit Fullscreen (F11)") : t("fullScreen", "Full Screen (F11)")}
+              aria-label={t("toggleFullscreen", "Toggle Fullscreen")}
               className="cursor-pointer"
             >
               {isFullscreen ? <Minimize className="size-5" /> : <Maximize className="size-5" />}
@@ -491,8 +547,8 @@ export function AppHeader() {
               onClick={() => {
                 window.dispatchEvent(new CustomEvent("open-ai-copilot"));
               }}
-              tooltip="AI Copilot Assistant (Ctrl+J)"
-              aria-label="Open AI Copilot"
+              tooltip={t("aiCopilotTooltip", "AI Copilot Assistant (Ctrl+J)")}
+              aria-label={t("openAiCopilot", "Open AI Copilot")}
               className="text-primary hover:bg-primary/10 cursor-pointer"
             >
               <Sparkles className="size-5" />
@@ -504,8 +560,8 @@ export function AppHeader() {
               variant="ghost"
               size="icon"
               onClick={toggleTheme}
-              tooltip="Toggle Dark / Light Theme"
-              aria-label="Toggle theme"
+              tooltip={t("toggleThemeTooltip", "Toggle Dark / Light Theme")}
+              aria-label={t("toggleThemeTooltip", "Toggle Dark / Light Theme")}
               className="cursor-pointer"
             >
               <Sun className="size-5 dark:hidden" />
@@ -521,8 +577,8 @@ export function AppHeader() {
                   variant="ghost"
                   size="icon"
                   className="relative"
-                  tooltip="Notifications"
-                  aria-label="Notifications"
+                  tooltip={t("notifications", "Notifications")}
+                  aria-label={t("notifications", "Notifications")}
                 >
                   <Bell className="size-5" />
                   {unread > 0 && (
@@ -546,7 +602,7 @@ export function AppHeader() {
                         );
                         await markAllNotificationsReadFn({ data: {} });
                         queryClient.invalidateQueries({ queryKey: ["notifications"] });
-                        toast.success("All notifications marked as read");
+                        toast.success(t("allNotificationsMarkedRead", "All notifications marked as read"));
                       }}
                       className="text-[11px] font-bold text-primary hover:underline cursor-pointer"
                     >
@@ -611,8 +667,8 @@ export function AppHeader() {
             size="icon"
             className="md:hidden rounded-xl h-9 w-9 text-foreground hover:text-primary hover:bg-primary/10 cursor-pointer shrink-0"
             onClick={() => setMobileToolsOpen(true)}
-            title="Quick Tools & Actions"
-            aria-label="Quick Tools & Actions"
+            title={t("quickToolsActions", "Quick Tools & Actions")}
+            aria-label={t("quickToolsActions", "Quick Tools & Actions")}
           >
             <MoreHorizontal className="size-5" />
           </Button>
@@ -700,8 +756,8 @@ export function AppHeader() {
                   <Layers className="size-5" />
                 </div>
                 <div>
-                  <h3 className="text-sm font-bold text-foreground">Quick Tools & POS Hub</h3>
-                  <p className="text-[11px] text-muted-foreground">All terminal shortcuts and system controls</p>
+                  <h3 className="text-sm font-bold text-foreground">{t("quickToolsPosHub", "Quick Tools & POS Hub")}</h3>
+                  <p className="text-[11px] text-muted-foreground">{t("quickToolsDesc", "All terminal shortcuts and system controls")}</p>
                 </div>
               </div>
             </div>
@@ -737,8 +793,8 @@ export function AppHeader() {
                   <Sparkles className="size-4" />
                 </div>
                 <div className="min-w-0">
-                  <div className="text-xs font-bold text-foreground">AI Copilot</div>
-                  <div className="text-[10px] text-muted-foreground">Smart Assistant</div>
+                  <div className="text-xs font-bold text-foreground">{t("aiCopilot", "AI Copilot")}</div>
+                  <div className="text-[10px] text-muted-foreground">{t("smartAssistant", "Smart Assistant")}</div>
                 </div>
               </button>
 
@@ -756,7 +812,7 @@ export function AppHeader() {
                 </div>
                 <div className="min-w-0">
                   <div className="text-xs font-bold text-foreground capitalize">{theme} Mode</div>
-                  <div className="text-[10px] text-muted-foreground">Switch theme</div>
+                  <div className="text-[10px] text-muted-foreground">{t("switchTheme", "Switch theme")}</div>
                 </div>
               </button>
 
@@ -774,9 +830,9 @@ export function AppHeader() {
                 </div>
                 <div className="min-w-0">
                   <div className="text-xs font-bold text-foreground">
-                    {isFullscreen ? "Exit Screen" : "Fullscreen"}
+                    {isFullscreen ? t("exitScreen", "Exit Screen") : t("fullscreen", "Fullscreen")}
                   </div>
-                  <div className="text-[10px] text-muted-foreground">Immersive view</div>
+                  <div className="text-[10px] text-muted-foreground">{t("immersiveView", "Immersive view")}</div>
                 </div>
               </button>
 
@@ -785,7 +841,7 @@ export function AppHeader() {
                 type="button"
                 onClick={async () => {
                   await queryClient.invalidateQueries();
-                  toast.success("Cloud data synchronized successfully");
+                  toast.success(t("cloudDataSynced", "Cloud data synchronized successfully"));
                 }}
                 className="flex items-center gap-2.5 p-3 rounded-xl border border-border/80 bg-muted/20 hover:bg-muted/40 transition-all text-left cursor-pointer active:scale-[0.98]"
               >
@@ -793,8 +849,8 @@ export function AppHeader() {
                   <RefreshCw className="size-4" />
                 </div>
                 <div className="min-w-0">
-                  <div className="text-xs font-bold text-foreground">Cloud Sync</div>
-                  <div className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">Online & Synced</div>
+                  <div className="text-xs font-bold text-foreground">{t("cloudSync", "Cloud Sync")}</div>
+                  <div className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">{t("onlineSynced", "Online & Synced")}</div>
                 </div>
               </button>
             </div>
@@ -808,7 +864,7 @@ export function AppHeader() {
                   if (promptEvent) {
                     promptEvent.prompt();
                   } else {
-                    toast.info("Install: Tap browser menu (⋮) & select 'Add to Home screen' / 'Install App'");
+                    toast.info(t("pwaInstallManualTip", "Install: Tap browser menu (⋮) & select 'Add to Home screen' / 'Install App'"));
                   }
                   setMobileToolsOpen(false);
                 }}
@@ -819,8 +875,8 @@ export function AppHeader() {
                     <Download className="size-4" />
                   </div>
                   <div>
-                    <div className="text-xs font-bold text-foreground">Install Mobile App (PWA)</div>
-                    <div className="text-[10px] text-muted-foreground">Add to home screen for faster offline access</div>
+                    <div className="text-xs font-bold text-foreground">{t("installMobileAppPwa", "Install Mobile App (PWA)")}</div>
+                    <div className="text-[10px] text-muted-foreground">{t("installMobileAppDesc", "Add to home screen for faster offline access")}</div>
                   </div>
                 </div>
                 <Smartphone className="size-4 text-primary shrink-0 opacity-80" />
@@ -831,7 +887,7 @@ export function AppHeader() {
             <div className="mt-4 pt-3 border-t border-border/60">
               <div className="flex items-center gap-1.5 text-xs font-bold text-muted-foreground uppercase mb-2">
                 <Globe className="size-3.5 text-primary" />
-                <span>Language / Idioma ({activeLanguageObj.nativeName})</span>
+                <span>{t("language", "Language")} ({activeLanguageObj.nativeName})</span>
               </div>
               <div className="grid grid-cols-2 gap-1.5 max-h-40 overflow-y-auto">
                 {LANGUAGES.map((l) => (
@@ -876,14 +932,14 @@ export function AppHeader() {
 
         <Dialog open={searchOpen} onOpenChange={setSearchOpen}>
           <DialogContent className="sm:max-w-xl p-0 overflow-hidden [&>button]:hidden top-[20%] translate-y-0 shadow-2xl border-border/80">
-            <DialogTitle className="sr-only">Global Search</DialogTitle>
+            <DialogTitle className="sr-only">{t("globalSearch", "Global Search")}</DialogTitle>
             <div className="flex items-center border-b border-border px-4 bg-muted/20">
               <Search className="size-5 text-muted-foreground shrink-0 mr-2.5" />
               <input
                 autoFocus
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search modules, products, customers, orders, suppliers, expenses..."
+                placeholder={t("globalSearchPlaceholder", "Search modules, products, customers, orders, suppliers, expenses...")}
                 className="flex-1 h-13 bg-transparent text-sm focus:outline-none placeholder:text-muted-foreground"
               />
               {searchQuery && (

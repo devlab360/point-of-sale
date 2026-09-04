@@ -163,7 +163,7 @@ function AppointmentsPage() {
     mutationFn: (appointment: any) => createAppointmentFn({ data: appointment }),
     onSuccess: (res: any) => {
       if (res?.success) {
-        toast.success("Appointment scheduled successfully");
+        toast.success(t("appointmentScheduledSuccess", "Appointment scheduled successfully"));
         queryClient.invalidateQueries({ queryKey: ["appointments"] });
         setIsCreateOpen(false);
         setFormData({
@@ -213,7 +213,7 @@ function AppointmentsPage() {
 
   const handleCreate = () => {
     if (!formData.customerName || !formData.serviceName) {
-      toast.error("Customer name and Service name are required");
+      toast.error(t("customerAndServiceNameRequired", "Customer name and Service name are required"));
       return;
     }
 

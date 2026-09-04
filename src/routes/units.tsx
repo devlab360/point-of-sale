@@ -189,7 +189,7 @@ function UnitsPage() {
           },
         })) as any;
         if (res?.success) {
-          toast.success("Unit updated");
+          toast.success(t("unitUpdated", "Unit updated"));
           setModalOpen(false);
           queryClient.invalidateQueries({ queryKey: ["units", orgId] });
         } else throw new Error(res?.error);
@@ -204,7 +204,7 @@ function UnitsPage() {
           },
         })) as any;
         if (res?.success) {
-          toast.success("Unit added to system");
+          toast.success(t("unitAddedToSystem", "Unit added to system"));
           setModalOpen(false);
           queryClient.invalidateQueries({ queryKey: ["units", orgId] });
         } else throw new Error(res?.error);
@@ -221,7 +221,7 @@ function UnitsPage() {
       try {
         const res = (await deleteUnitFn({ data: { id: deleteId } })) as any;
         if (res?.success) {
-          toast.success("Unit deleted");
+          toast.success(t("unitDeleted", "Unit deleted"));
           setDeleteId(null);
           queryClient.invalidateQueries({ queryKey: ["units", orgId] });
         } else throw new Error(res?.error);
@@ -317,7 +317,7 @@ function UnitsPage() {
                     ? "bg-card text-foreground shadow-sm font-bold"
                     : "text-muted-foreground hover:text-foreground"
                 }`}
-                title="Table View"
+                title={t("tableView", "Table View")}
               >
                 <TableIcon className="size-4" />
               </button>
@@ -329,7 +329,7 @@ function UnitsPage() {
                     ? "bg-card text-foreground shadow-sm font-bold"
                     : "text-muted-foreground hover:text-foreground"
                 }`}
-                title="Grid View"
+                title={t("gridView", "Grid View")}
               >
                 <LayoutGrid className="size-4" />
               </button>
@@ -548,7 +548,7 @@ function UnitsPage() {
                       setName(e.target.value);
                       clearUnitError("name");
                     }}
-                    placeholder="e.g. Kilograms, Liters, Boxes"
+                    placeholder={t("unitNamePlaceholder", "e.g. Kilograms, Liters, Boxes")}
                     className={unitErrors.name ? "border-destructive" : ""}
                   />
                   <FieldError message={unitErrors.name} />
@@ -565,7 +565,7 @@ function UnitsPage() {
                       setShort(e.target.value);
                       clearUnitError("short");
                     }}
-                    placeholder="e.g. kg, ltr, box, pcs"
+                    placeholder={t("unitShortPlaceholder", "e.g. kg, ltr, box, pcs")}
                     className={unitErrors.short ? "border-destructive" : ""}
                   />
                   <FieldError message={unitErrors.short} />

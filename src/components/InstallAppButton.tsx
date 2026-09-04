@@ -9,8 +9,10 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 export function InstallAppButton() {
+  const { t } = useLanguage();
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [isStandalone, setIsStandalone] = useState(false);
   const [showGuide, setShowGuide] = useState(false);
@@ -88,11 +90,11 @@ export function InstallAppButton() {
         size="sm"
         className="hidden md:inline-flex gap-1.5 h-9 bg-primary/10 border-primary/30 text-primary hover:bg-primary/20 hover:text-primary font-bold shadow-xs transition-all"
         onClick={handleInstallClick}
-        tooltip="Install App as Desktop / Mobile Application"
-        aria-label="Install App"
+        tooltip={t("installAppTooltip", "Install App as Desktop / Mobile Application")}
+        aria-label={t("installApp", "Install App")}
       >
         <Download className="size-4" />
-        <span className="hidden lg:inline">Install App</span>
+        <span className="hidden lg:inline">{t("installApp", "Install App")}</span>
       </Button>
 
       {/* Mobile / Tablet Compact Icon */}
@@ -101,8 +103,8 @@ export function InstallAppButton() {
         size="icon"
         className="md:hidden flex size-9 text-primary hover:bg-primary/10"
         onClick={handleInstallClick}
-        tooltip="Install App"
-        aria-label="Install App"
+        tooltip={t("installApp", "Install App")}
+        aria-label={t("installApp", "Install App")}
       >
         <Download className="size-5" />
       </Button>
@@ -111,11 +113,13 @@ export function InstallAppButton() {
         <DialogContent className="sm:max-w-md rounded-2xl">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-primary font-bold">
-              <Download className="size-5" /> Install ${appName} POS
+              <Download className="size-5" /> {t("installApp", "Install App")} {appName} POS
             </DialogTitle>
             <DialogDescription>
-              Install this app on your device for lightning-fast offline billing, dedicated desktop
-              window, and hardware printer integration.
+              {t(
+                "installAppDesc",
+                "Install this app on your device for lightning-fast offline billing, dedicated desktop window, and hardware printer integration.",
+              )}
             </DialogDescription>
           </DialogHeader>
 
@@ -125,8 +129,7 @@ export function InstallAppButton() {
                 <Monitor className="size-4 text-primary" /> Chrome / Edge (Desktop)
               </div>
               <p className="text-muted-foreground">
-                Click the <strong>Install icon (⊕)</strong> on the right side of your browser
-                address bar, or click <strong>Menu (⋮) &rarr; Install ${appName}</strong>.
+                {t("installDesktopHint", "Click the Install icon (⊕) on the right side of your browser address bar, or click Menu (⋮) → Install app.")}
               </p>
             </div>
 
@@ -135,16 +138,12 @@ export function InstallAppButton() {
                 <Smartphone className="size-4 text-primary" /> Android / iOS (Mobile & Tablet)
               </div>
               <p className="text-muted-foreground">
-                In Safari on iPhone/iPad: Tap <strong>Share (⎋) &rarr; Add to Home Screen</strong>.
-                <br />
-                In Chrome on Android: Tap{" "}
-                <strong>Menu (⋮) &rarr; Install app / Add to Home screen</strong>.
+                {t("installMobileHint", "In Safari on iOS: Tap Share (⎋) → Add to Home Screen. In Chrome on Android: Tap Menu (⋮) → Install app / Add to Home screen.")}
               </p>
             </div>
 
             <div className="flex items-center gap-2 text-success font-semibold pt-1">
-              <CheckCircle className="size-4" /> Works offline & syncs automatically when
-              reconnected!
+              <CheckCircle className="size-4" /> {t("worksOfflineSync", "Works offline & syncs automatically when reconnected!")}
             </div>
           </div>
         </DialogContent>

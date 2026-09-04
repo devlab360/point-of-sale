@@ -346,7 +346,7 @@ function SuppliersPage() {
           data: { id: editItem.id, updates: payload },
         })) as any;
         if (res?.success) {
-          toast.success("Supplier updated successfully");
+          toast.success(t("supplierUpdatedSuccess", "Supplier updated successfully"));
           setIsAddOpen(false);
           setEditItem(null);
         } else throw new Error(res?.error);
@@ -360,7 +360,7 @@ function SuppliersPage() {
           },
         })) as any;
         if (res?.success) {
-          toast.success("Supplier added successfully");
+          toast.success(t("supplierAddedSuccess", "Supplier added successfully"));
           setIsAddOpen(false);
         } else throw new Error(res?.error);
       }
@@ -378,7 +378,7 @@ function SuppliersPage() {
       try {
         const res = (await deleteSupplierFn({ data: { id: deleteId } })) as any;
         if (res?.success) {
-          toast.success("Supplier deleted");
+          toast.success(t("supplierDeleted", "Supplier deleted"));
           setDeleteId(null);
           queryClient.invalidateQueries({ queryKey: ["suppliers", orgId] });
         } else throw new Error(res?.error);
@@ -417,7 +417,7 @@ function SuppliersPage() {
         },
       });
 
-      toast.success("Settlement recorded successfully");
+      toast.success(t("settlementRecordedSuccess", "Settlement recorded successfully"));
       queryClient.invalidateQueries({ queryKey: ["suppliers", orgId] });
       queryClient.invalidateQueries({ queryKey: ["supplierLedger"] });
       setSettleItem(null);
@@ -448,7 +448,7 @@ function SuppliersPage() {
     try {
       const data = await parseCSV(file);
       if (data.length === 0) {
-        toast.error("No data found in CSV");
+        toast.error(t("noDataInCsv", "No data found in CSV"));
         return;
       }
       let count = 0;
@@ -472,7 +472,7 @@ function SuppliersPage() {
       queryClient.invalidateQueries({ queryKey: ["suppliers", orgId] });
       toast.success(`Imported ${count} suppliers`);
     } catch {
-      toast.error("Failed to parse CSV file");
+      toast.error(t("failedToParseCsv", "Failed to parse CSV file"));
     }
   };
 
@@ -480,8 +480,8 @@ function SuppliersPage() {
     <div className="page-container space-y-6">
       {/* Consistent Standard PageHeader */}
       <PageHeader
-        title="Suppliers & Vendor Khata"
-        description="Manage vendor relationships, purchase records, and outstanding payable balances."
+        title={t("suppliers.pageTitle", "Suppliers & Vendor Khata")}
+        description={t("suppliers.pageDesc", "Manage vendor relationships, purchase records, and outstanding payable balances.")}
         actions={
           <div className="flex flex-wrap items-center gap-2">
             <Button
@@ -490,7 +490,7 @@ function SuppliersPage() {
               onClick={() => document.getElementById("supplier-import-input")?.click()}
               className="gap-1.5"
             >
-              <Upload className="size-4" /> Import CSV
+              <Upload className="size-4" /> {t("importCSV", "Import CSV")}
               <input
                 type="file"
                 id="supplier-import-input"
@@ -581,7 +581,7 @@ function SuppliersPage() {
                     ? "bg-card text-foreground shadow-sm font-bold"
                     : "text-muted-foreground hover:text-foreground"
                 }`}
-                title="Table View"
+                title={t("tableView", "Table View")}
               >
                 <TableIcon className="size-4" />
               </button>
@@ -593,7 +593,7 @@ function SuppliersPage() {
                     ? "bg-card text-foreground shadow-sm font-bold"
                     : "text-muted-foreground hover:text-foreground"
                 }`}
-                title="Grid View"
+                title={t("gridView", "Grid View")}
               >
                 <LayoutGrid className="size-4" />
               </button>
@@ -965,7 +965,7 @@ function SuppliersPage() {
                       </Label>
                       <Input
                         id="name"
-                        placeholder="e.g. Apex Electronics Ltd"
+                        placeholder={t("supplierNamePlaceholder", "e.g. Apex Electronics Ltd")}
                         value={name}
                         onChange={(e) => {
                           setName(e.target.value);
@@ -985,7 +985,7 @@ function SuppliersPage() {
                         </Label>
                         <Input
                           id="contact"
-                          placeholder="e.g. John Doe"
+                          placeholder={t("contactPersonPlaceholder", "e.g. John Doe")}
                           value={contact}
                           onChange={(e) => {
                             setContact(e.target.value);
@@ -1029,7 +1029,7 @@ function SuppliersPage() {
                         <Input
                           id="email"
                           type="email"
-                          placeholder="e.g. billing@vendor.com"
+                          placeholder={t("billingEmailPlaceholder", "e.g. billing@vendor.com")}
                           value={email}
                           onChange={(e) => setEmail(e.target.value)}
                         />
@@ -1041,7 +1041,7 @@ function SuppliersPage() {
                         </Label>
                         <Input
                           id="website"
-                          placeholder="e.g. https://vendor.com"
+                          placeholder={t("websitePlaceholder", "e.g. https://vendor.com")}
                           value={website}
                           onChange={(e) => setWebsite(e.target.value)}
                         />
@@ -1100,7 +1100,7 @@ function SuppliersPage() {
                       </Label>
                       <Input
                         id="address"
-                        placeholder="e.g. 123 Commerce Way, Suite 400"
+                        placeholder={t("addressPlaceholder", "e.g. 123 Commerce Way, Suite 400")}
                         value={address}
                         onChange={(e) => setAddress(e.target.value)}
                       />
@@ -1113,7 +1113,7 @@ function SuppliersPage() {
                         </Label>
                         <Input
                           id="city"
-                          placeholder="e.g. Mumbai"
+                          placeholder={t("cityPlaceholder", "e.g. Mumbai")}
                           value={city}
                           onChange={(e) => setCity(e.target.value)}
                         />
@@ -1125,7 +1125,7 @@ function SuppliersPage() {
                         </Label>
                         <Input
                           id="state"
-                          placeholder="e.g. Maharashtra"
+                          placeholder={t("statePlaceholder", "e.g. Maharashtra")}
                           value={state}
                           onChange={(e) => setState(e.target.value)}
                         />
@@ -1137,7 +1137,7 @@ function SuppliersPage() {
                         </Label>
                         <Input
                           id="postalCode"
-                          placeholder="e.g. 400001"
+                          placeholder={t("postalCodePlaceholder", "e.g. 400001")}
                           value={postalCode}
                           onChange={(e) => setPostalCode(e.target.value)}
                           className="font-mono"
@@ -1152,18 +1152,18 @@ function SuppliersPage() {
                   <div className="space-y-4">
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                       <div className="space-y-1.5">
-                        <Label className="text-xs font-semibold">Payment Terms</Label>
+                        <Label className="text-xs font-semibold">{t("paymentTerms", "Payment Terms")}</Label>
                         <Select value={paymentTerms} onValueChange={setPaymentTerms}>
                           <SelectTrigger className="h-9 text-xs">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="Due on Receipt">Due on Receipt</SelectItem>
-                            <SelectItem value="Advance">100% Advance</SelectItem>
-                            <SelectItem value="Net 7">Net 7 Days</SelectItem>
-                            <SelectItem value="Net 15">Net 15 Days</SelectItem>
-                            <SelectItem value="Net 30">Net 30 Days</SelectItem>
-                            <SelectItem value="Net 60">Net 60 Days</SelectItem>
+                            <SelectItem value="Due on Receipt">{t("dueOnReceipt", "Due on Receipt")}</SelectItem>
+                            <SelectItem value="Advance">{t("advance100", "100% Advance")}</SelectItem>
+                            <SelectItem value="Net 7">{t("net7Days", "Net 7 Days")}</SelectItem>
+                            <SelectItem value="Net 15">{t("net15Days", "Net 15 Days")}</SelectItem>
+                            <SelectItem value="Net 30">{t("net30Days", "Net 30 Days")}</SelectItem>
+                            <SelectItem value="Net 60">{t("net60Days", "Net 60 Days")}</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
@@ -1209,7 +1209,7 @@ function SuppliersPage() {
                           </Label>
                           <Input
                             id="bankName"
-                            placeholder="e.g. HDFC Bank"
+                            placeholder={t("bankNamePlaceholder", "e.g. HDFC Bank")}
                             value={bankName}
                             onChange={(e) => setBankName(e.target.value)}
                           />
@@ -1221,7 +1221,7 @@ function SuppliersPage() {
                           </Label>
                           <Input
                             id="accountNumber"
-                            placeholder="e.g. 50100234567890"
+                            placeholder={t("accountNumberPlaceholder", "e.g. 50100234567890")}
                             value={accountNumber}
                             onChange={(e) => setAccountNumber(e.target.value)}
                             className="font-mono"
@@ -1236,7 +1236,7 @@ function SuppliersPage() {
                           </Label>
                           <Input
                             id="ifscSwift"
-                            placeholder="e.g. HDFC0001234"
+                            placeholder={t("swiftIfscPlaceholder", "e.g. HDFC0001234")}
                             value={ifscSwift}
                             onChange={(e) => setIfscSwift(e.target.value.toUpperCase())}
                             className="font-mono uppercase"
@@ -1249,7 +1249,7 @@ function SuppliersPage() {
                           </Label>
                           <Input
                             id="upiId"
-                            placeholder="e.g. vendor@upi"
+                            placeholder={t("upiIdPlaceholder", "e.g. vendor@upi")}
                             value={upiId}
                             onChange={(e) => setUpiId(e.target.value)}
                             className="font-mono"
@@ -1264,16 +1264,16 @@ function SuppliersPage() {
                 {activeFormTab === "notes" && (
                   <div className="space-y-4">
                     <div className="space-y-1.5">
-                      <Label className="text-xs font-semibold">Supplier Status</Label>
+                      <Label className="text-xs font-semibold">{t("supplierStatus", "Supplier Status")}</Label>
                       <Select value={status} onValueChange={setStatus}>
                         <SelectTrigger className="h-9 text-xs">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="active">Active</SelectItem>
-                          <SelectItem value="preferred">Preferred / VIP Vendor ⭐</SelectItem>
-                          <SelectItem value="on_hold">On Hold</SelectItem>
-                          <SelectItem value="inactive">Inactive</SelectItem>
+                          <SelectItem value="active">{t("active", "Active")}</SelectItem>
+                          <SelectItem value="preferred">{t("preferredVendor", "Preferred / VIP Vendor ⭐")}</SelectItem>
+                          <SelectItem value="on_hold">{t("onHold", "On Hold")}</SelectItem>
+                          <SelectItem value="inactive">{t("inactive", "Inactive")}</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -1285,7 +1285,7 @@ function SuppliersPage() {
                       <Textarea
                         id="notes"
                         rows={4}
-                        placeholder="Internal vendor notes, delivery instructions..."
+                        placeholder={t("vendorNotesPlaceholder", "Internal vendor notes, delivery instructions...")}
                         value={notes}
                         onChange={(e) => setNotes(e.target.value)}
                       />
@@ -1359,7 +1359,7 @@ function SuppliersPage() {
             <SheetHeader className="bg-muted/40 p-5 border-b pr-12 text-left shrink-0">
               <SheetTitle className="text-xl font-bold text-foreground flex items-center gap-2">
                 <Wallet className="size-5 text-primary" />
-                <span>Settle Vendor Balance</span>
+                <span>{t("settleVendorBalance", "Settle Vendor Balance")}</span>
               </SheetTitle>
               <SheetDescription className="text-xs text-muted-foreground mt-0.5">
                 Record a direct payment settlement for <strong>{settleItem?.name}</strong>.

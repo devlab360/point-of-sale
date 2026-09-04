@@ -249,12 +249,12 @@ function DeliveryChallansPage() {
     if (!isValid) return;
 
     if (lineItems.length === 0) {
-      toast.error("Please add at least one line item");
+      toast.error(t("addAtLeastOneLineItem", "Please add at least one line item"));
       return;
     }
 
     const cust = customers.find((c) => c.id === selectedCustomerId);
-    if (!cust) return toast.error("Please select a customer");
+    if (!cust) return toast.error(t("selectCustomer", "Please select a customer"));
 
     setIsSubmitting(true);
     await new Promise((resolve) => setTimeout(resolve, 500));
@@ -310,7 +310,7 @@ function DeliveryChallansPage() {
       setLineItems([]);
       clearChAll();
     } catch (err) {
-      toast.error("Failed to create delivery challan");
+      toast.error(t("failedToCreateChallan", "Failed to create delivery challan"));
     } finally {
       setIsSubmitting(false);
     }
@@ -374,7 +374,7 @@ function DeliveryChallansPage() {
       toast.success(`Delivery Challan ${ch.challanNo} billed as Sales Invoice #${invNum}!`);
       setViewItem(null);
     } catch (err) {
-      toast.error("Failed to convert challan to invoice");
+      toast.error(t("failedToConvertChallan", "Failed to convert challan to invoice"));
     }
   };
 
@@ -382,11 +382,11 @@ function DeliveryChallansPage() {
     try {
       const res = await deleteDeliveryChallanFn({ data: { id } });
       if (res?.success) {
-        toast.success("Delivery Challan deleted");
+        toast.success(t("challanDeleted", "Delivery Challan deleted"));
         queryClient.invalidateQueries({ queryKey: ["deliveryChallans"] });
       } else throw new Error((res as any)?.error);
     } catch {
-      toast.error("Failed to delete delivery challan");
+      toast.error(t("failedToDeleteChallan", "Failed to delete delivery challan"));
     }
   };
 
@@ -416,7 +416,7 @@ function DeliveryChallansPage() {
     link.download = `delivery_challans_${Date.now()}.csv`;
     link.click();
     URL.revokeObjectURL(url);
-    toast.success("Delivery Challans exported successfully");
+    toast.success(t("challansExportedSuccess", "Delivery Challans exported successfully"));
   };
 
   return (

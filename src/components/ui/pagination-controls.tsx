@@ -1,6 +1,7 @@
 import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 interface PaginationControlsProps {
   currentPage: number;
@@ -21,6 +22,7 @@ export function PaginationControls({
   className,
   totalItems = 0,
 }: PaginationControlsProps) {
+  const { t } = useLanguage();
   const maxVisiblePages = 5;
   const pages: (number | string)[] = [];
 
@@ -60,9 +62,9 @@ export function PaginationControls({
       )}
     >
       <div className="text-xs text-muted-foreground mb-3 sm:mb-0">
-        Showing <span className="font-semibold text-foreground">{startItem}</span> to{" "}
-        <span className="font-semibold text-foreground">{endItem}</span> of{" "}
-        <span className="font-semibold text-foreground">{totalItems}</span> results
+        {t("showing", "Showing")} <span className="font-semibold text-foreground">{startItem}</span> {t("to", "to")}{" "}
+        <span className="font-semibold text-foreground">{endItem}</span> {t("of", "of")}{" "}
+        <span className="font-semibold text-foreground">{totalItems}</span> {t("results", "results")}
       </div>
 
       <div className="flex items-center space-x-1">

@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { LogOut, Loader2 } from "lucide-react";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 interface LogoutConfirmDialogProps {
   open: boolean;
@@ -25,6 +26,7 @@ export function LogoutConfirmDialog({
   userName,
   userEmail,
 }: LogoutConfirmDialogProps) {
+  const { t } = useLanguage();
   const [isLoading, setIsLoading] = useState(false);
 
   const handleConfirm = async () => {
@@ -47,11 +49,11 @@ export function LogoutConfirmDialog({
             </div>
             <div>
               <DialogTitle className="text-lg font-black text-foreground">
-                Confirm Sign Out
+                {t("confirmSignOut", "Confirm Sign Out")}
               </DialogTitle>
               {(userName || userEmail) && (
                 <p className="text-xs text-muted-foreground font-medium mt-0.5">
-                  Currently signed in as{" "}
+                  {t("currentlySignedInAs", "Currently signed in as")}{" "}
                   <span className="font-semibold text-foreground">{userName || userEmail}</span>
                 </p>
               )}
@@ -59,8 +61,10 @@ export function LogoutConfirmDialog({
           </div>
 
           <DialogDescription className="text-xs text-muted-foreground leading-relaxed pt-1">
-            Are you sure you want to end your current session? You will need to enter your
-            credentials to log back in.
+            {t(
+              "confirmSignOutDesc",
+              "Are you sure you want to end your current session? You will need to enter your credentials to log back in.",
+            )}
           </DialogDescription>
         </DialogHeader>
 
@@ -72,7 +76,7 @@ export function LogoutConfirmDialog({
             onClick={() => onOpenChange(false)}
             className="rounded-xl text-xs font-semibold h-9 px-4"
           >
-            Stay Signed In
+            {t("staySignedIn", "Stay Signed In")}
           </Button>
           <Button
             type="button"
@@ -86,7 +90,7 @@ export function LogoutConfirmDialog({
             ) : (
               <LogOut className="size-3.5 mr-1.5" />
             )}
-            Sign Out
+            {t("signOut", "Sign Out")}
           </Button>
         </DialogFooter>
       </DialogContent>

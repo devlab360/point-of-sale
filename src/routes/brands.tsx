@@ -180,7 +180,7 @@ function BrandsPage() {
           },
         })) as any;
         if (res?.success) {
-          toast.success("Brand updated");
+          toast.success(t("brandUpdated", "Brand updated"));
           setModalOpen(false);
           queryClient.invalidateQueries({ queryKey: ["brands", orgId] });
         } else throw new Error(res?.error);
@@ -194,7 +194,7 @@ function BrandsPage() {
           },
         })) as any;
         if (res?.success) {
-          toast.success("Brand added to catalog");
+          toast.success(t("brandAddedToCatalog", "Brand added to catalog"));
           setModalOpen(false);
           queryClient.invalidateQueries({ queryKey: ["brands", orgId] });
         } else throw new Error(res?.error);
@@ -211,7 +211,7 @@ function BrandsPage() {
       try {
         const res = (await deleteBrandFn({ data: { id: deleteId } })) as any;
         if (res?.success) {
-          toast.success("Brand deleted");
+          toast.success(t("brandDeleted", "Brand deleted"));
           setDeleteId(null);
           queryClient.invalidateQueries({ queryKey: ["brands", orgId] });
         } else throw new Error(res?.error);
@@ -512,7 +512,7 @@ function BrandsPage() {
                       setName(e.target.value);
                       clearBrandError("name");
                     }}
-                    placeholder="e.g. Apple, Samsung, Nike, Nestle"
+                    placeholder={t("brandNamePlaceholder", "e.g. Apple, Samsung, Nike, Nestle")}
                     className={brandErrors.name ? "border-destructive" : ""}
                   />
                   <FieldError message={brandErrors.name} />

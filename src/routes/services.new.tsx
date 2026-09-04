@@ -1,3 +1,4 @@
+import { useLanguage } from "@/contexts/LanguageContext";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { ServiceForm } from "@/components/services/ServiceForm";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -10,6 +11,7 @@ export const Route = createFileRoute("/services/new")({
 });
 
 function NewServicePage() {
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
@@ -25,10 +27,10 @@ function NewServicePage() {
     onSuccess: (res) => {
       if (res?.success) {
         queryClient.invalidateQueries({ queryKey: ["services"] });
-        toast.success("Service created successfully");
+        toast.success(t("serviceCreatedSuccess", "Service created successfully"));
         navigate({ to: "/services" });
       } else {
-        toast.error("Failed to create service");
+        toast.error(t("failedToCreateService", "Failed to create service"));
       }
     },
     onError: () => toast.error("Failed to create service"),

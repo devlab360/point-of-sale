@@ -236,7 +236,7 @@ function ExpensesPage() {
           },
         });
         if (res?.success) {
-          toast.success("Expense updated successfully");
+          toast.success(t("expenseUpdatedSuccess", "Expense updated successfully"));
           setIsAddOpen(false);
           setEditItem(null);
           queryClient.invalidateQueries({ queryKey: ["expenses"] });
@@ -254,7 +254,7 @@ function ExpensesPage() {
           },
         });
         if (res?.success) {
-          toast.success("Expense added successfully");
+          toast.success(t("expenseAddedSuccess", "Expense added successfully"));
           setIsAddOpen(false);
           queryClient.invalidateQueries({ queryKey: ["expenses"] });
         } else throw new Error(res?.error);
@@ -272,12 +272,12 @@ function ExpensesPage() {
       try {
         const res = await deleteExpenseFn({ data: { id: deleteId } });
         if (res?.success) {
-          toast.success("Expense record deleted");
+          toast.success(t("expenseDeleted", "Expense record deleted"));
           setDeleteId(null);
           queryClient.invalidateQueries({ queryKey: ["expenses"] });
         } else throw new Error(res?.error);
       } catch {
-        toast.error("Failed to delete expense");
+        toast.error(t("failedToDeleteExpense", "Failed to delete expense"));
       }
     }
   };
@@ -682,7 +682,7 @@ function ExpensesPage() {
                     id="category"
                     name="category"
                     defaultValue={editItem?.category}
-                    placeholder="e.g. Utilities / Office Rent"
+                    placeholder={t("expenseCategoryPlaceholder", "e.g. Utilities / Office Rent")}
                     className={
                       expErrors.category ? "border-destructive focus-visible:ring-destructive" : ""
                     }
@@ -699,7 +699,7 @@ function ExpensesPage() {
                 <Input
                   id="description"
                   name="description"
-                  placeholder="e.g. Paid showroom internet & electricity bill"
+                  placeholder={t("expenseDescriptionPlaceholder", "e.g. Paid showroom internet & electricity bill")}
                   defaultValue={editItem?.description}
                   className={
                     expErrors.description ? "border-destructive focus-visible:ring-destructive" : ""

@@ -171,7 +171,7 @@ function LoginPage() {
     const targetEmail = sanitizeInput(resetEmail || email);
 
     if (!targetEmail) {
-      toast.error("Please enter your registered email address.");
+      toast.error(t("enterRegisteredEmail", "Please enter your registered email address."));
       return;
     }
 
@@ -210,17 +210,17 @@ function LoginPage() {
     const targetEmail = (resetEmail.trim() || email.trim()).toLowerCase();
 
     if (!otpInput.trim()) {
-      toast.error("Please enter the 6-digit OTP code.");
+      toast.error(t("enterOtpCode", "Please enter the 6-digit OTP code."));
       return;
     }
 
     if (newPassword.length < 4) {
-      toast.error("New password must be at least 4 characters.");
+      toast.error(t("newPasswordMinLength", "New password must be at least 4 characters."));
       return;
     }
 
     if (newPassword !== confirmPassword) {
-      toast.error("Passwords do not match.");
+      toast.error(t("passwordsDoNotMatch", "Passwords do not match."));
       return;
     }
 
@@ -233,7 +233,7 @@ function LoginPage() {
         throw new Error(res?.error || "Failed to reset password.");
       }
 
-      toast.success("Password updated successfully! Signing you in...");
+      toast.success(t("passwordUpdatedSigningIn", "Password updated successfully! Signing you in..."));
       await loginWithEmail(targetEmail, newPassword);
     } catch (err: any) {
       toast.error(err.message || "Failed to update password.");
@@ -246,8 +246,8 @@ function LoginPage() {
       <div className="min-h-screen w-full flex items-center justify-center bg-background text-foreground">
         <div className="flex flex-col items-center gap-3 p-8 rounded-xl border border-border bg-card shadow-soft text-center max-w-sm">
           <Loader2 className="size-8 animate-spin text-primary" />
-          <h3 className="font-semibold text-base">Signing you in...</h3>
-          <p className="text-sm text-muted-foreground">Redirecting to your dashboard</p>
+          <h3 className="font-semibold text-base">{t("signingYouIn", "Signing you in...")}</h3>
+          <p className="text-sm text-muted-foreground">{t("redirectingToDashboard", "Redirecting to your dashboard")}</p>
         </div>
       </div>
     );

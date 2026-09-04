@@ -29,6 +29,7 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import { useCurrency } from "@/lib/currency";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 interface JewelleryCalculatorModalProps {
   product: any | null;
@@ -50,6 +51,7 @@ export function JewelleryCalculatorModal({
   onAddToCart,
   settings,
 }: JewelleryCalculatorModalProps) {
+  const { t } = useLanguage();
   const { currencySymbol } = useCurrency();
 
   const meta = product?.metadata || {};
@@ -167,10 +169,10 @@ export function JewelleryCalculatorModal({
             </div>
             <div>
               <DialogTitle className="text-base sm:text-lg font-bold text-foreground">
-                Jewellery Bullion Calculator
+                {t("jewelleryBullionCalc", "Jewellery Bullion Calculator")}
               </DialogTitle>
               <DialogDescription className="text-xs text-muted-foreground mt-0.5">
-                {product.name} • Live rate & weight estimation
+                {product.name} • {t("liveRateWeightEstimation", "Live rate & weight estimation")}
               </DialogDescription>
             </div>
           </div>
@@ -187,7 +189,7 @@ export function JewelleryCalculatorModal({
           {/* Karat & Live Spot Rate */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
             <div className="space-y-1.5">
-              <Label className="text-xs font-bold text-foreground">Purity / Karat</Label>
+              <Label className="text-xs font-bold text-foreground">{t("purityKarat", "Purity / Karat")}</Label>
               <Select value={purityKarat} onValueChange={handleKaratChange}>
                 <SelectTrigger className="h-10 rounded-xl font-semibold">
                   <SelectValue />
@@ -204,7 +206,7 @@ export function JewelleryCalculatorModal({
 
             <div className="space-y-1.5">
               <Label className="text-xs font-bold text-foreground">
-                Spot Rate / Gram ({currencySymbol})
+                {t("spotRatePerGram", "Spot Rate / Gram")} ({currencySymbol})
               </Label>
               <div className="relative">
                 <Input
@@ -223,13 +225,13 @@ export function JewelleryCalculatorModal({
           <div className="rounded-2xl border border-border/80 bg-muted/20 p-4 space-y-3">
             <div className="flex items-center gap-2 text-xs font-bold text-foreground">
               <Scale className="size-4 text-amber-600 dark:text-amber-400" />
-              <span>Weight Breakdown (Grams)</span>
+              <span>{t("weightBreakdownGrams", "Weight Breakdown (Grams)")}</span>
             </div>
 
             <div className="grid grid-cols-3 gap-3">
               <div className="space-y-1.5">
                 <Label className="text-[11px] font-semibold text-muted-foreground">
-                  Gross Wt (g)
+                  {t("grossWeight", "Gross Wt (g)")}
                 </Label>
                 <Input
                   type="number"
@@ -244,7 +246,7 @@ export function JewelleryCalculatorModal({
 
               <div className="space-y-1.5">
                 <Label className="text-[11px] font-semibold text-muted-foreground">
-                  Stone Wt (g)
+                  {t("stoneWeight", "Stone Wt (g)")}
                 </Label>
                 <Input
                   type="number"
@@ -259,7 +261,7 @@ export function JewelleryCalculatorModal({
 
               <div className="space-y-1.5">
                 <Label className="text-[11px] font-semibold text-muted-foreground">
-                  Net Gold Wt (g)
+                  {t("netGoldWeight", "Net Gold Wt (g)")}
                 </Label>
                 <div className="h-10 rounded-xl border bg-card px-3 flex items-center font-mono font-black text-sm text-foreground shadow-xs">
                   {netWeight.toFixed(3)}g
@@ -272,7 +274,7 @@ export function JewelleryCalculatorModal({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
-                <Label className="text-xs font-bold text-foreground">Making Charges</Label>
+                <Label className="text-xs font-bold text-foreground">{t("makingCharges", "Making Charges")}</Label>
                 <div className="flex gap-1">
                   <button
                     type="button"
@@ -305,7 +307,7 @@ export function JewelleryCalculatorModal({
                         : "bg-muted text-muted-foreground hover:text-foreground"
                     }`}
                   >
-                    Fixed
+                    {t("fixed", "Fixed")}
                   </button>
                 </div>
               </div>
@@ -315,14 +317,14 @@ export function JewelleryCalculatorModal({
                 min="0"
                 value={makingChargeValue || ""}
                 onChange={(e) => setMakingChargeValue(parseFloat(e.target.value) || 0)}
-                placeholder={makingChargeType === "percent" ? "10%" : "₹500"}
+                placeholder={makingChargeType === "percent" ? "10%" : "500"}
                 className="h-10 rounded-xl font-bold"
               />
             </div>
 
             <div className="space-y-1.5">
               <Label className="text-xs font-bold text-foreground">
-                Stone / Diamond Charges ({currencySymbol})
+                {t("stoneDiamondCharges", "Stone / Diamond Charges")} ({currencySymbol})
               </Label>
               <Input
                 type="number"
@@ -340,7 +342,7 @@ export function JewelleryCalculatorModal({
           <div className="rounded-2xl border border-amber-500/30 bg-amber-500/5 p-4 space-y-2 text-xs">
             <div className="flex justify-between text-muted-foreground">
               <span>
-                Pure Metal Cost ({netWeight.toFixed(3)}g × {currencySymbol}
+                {t("pureMetalCost", "Pure Metal Cost")} ({netWeight.toFixed(3)}g × {currencySymbol}
                 {ratePerGram}/g):
               </span>
               <span className="font-mono font-bold text-foreground">
@@ -350,12 +352,12 @@ export function JewelleryCalculatorModal({
             </div>
             <div className="flex justify-between text-muted-foreground">
               <span>
-                Making Charges (
+                {t("makingCharges", "Making Charges")} (
                 {makingChargeType === "percent"
                   ? `${makingChargeValue}%`
                   : makingChargeType === "per_gram"
                     ? `${currencySymbol}${makingChargeValue}/g`
-                    : "Fixed"}
+                    : t("fixed", "Fixed")}
                 ):
               </span>
               <span className="font-mono font-bold text-foreground">
@@ -365,7 +367,7 @@ export function JewelleryCalculatorModal({
             </div>
             {stoneCharges > 0 && (
               <div className="flex justify-between text-muted-foreground">
-                <span>Stone / Gem Charges:</span>
+                <span>{t("stoneCharges", "Stone / Gem Charges")}:</span>
                 <span className="font-mono font-bold text-foreground">
                   {currencySymbol}
                   {stoneCharges.toFixed(2)}
@@ -373,7 +375,7 @@ export function JewelleryCalculatorModal({
               </div>
             )}
             <div className="border-t border-amber-500/20 pt-2 mt-2 flex justify-between items-center text-sm">
-              <span className="font-black text-foreground">Calculated Item Total:</span>
+              <span className="font-black text-foreground">{t("calculatedItemTotal", "Calculated Item Total")}:</span>
               <span className="text-lg font-black text-amber-700 dark:text-amber-400 font-mono">
                 {currencySymbol}
                 {finalTotal.toFixed(2)}
@@ -389,13 +391,13 @@ export function JewelleryCalculatorModal({
             onClick={onClose}
             className="h-11 rounded-xl text-xs font-semibold"
           >
-            Cancel
+            {t("cancel", "Cancel")}
           </Button>
           <Button
             onClick={handleConfirm}
             className="h-11 px-6 rounded-xl font-extrabold text-xs bg-amber-600 hover:bg-amber-700 text-white shadow-soft gap-2"
           >
-            Add Jewellery to Cart
+            {t("addJewelleryToCart", "Add Jewellery to Cart")}
             <ArrowRight className="size-4" />
           </Button>
         </div>

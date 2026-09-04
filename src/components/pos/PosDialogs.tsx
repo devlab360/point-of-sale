@@ -301,7 +301,7 @@ export function PosDialogs({
     const status = (formData.get("status") as string) || "new";
     const type = (formData.get("type") as any) || "retail";
 
-    if (!name) return toast.error("Customer name is required");
+    if (!name) return toast.error(t("customerNameRequired", "Customer name is required"));
 
     setIsAddingCustomer(true);
     try {
@@ -331,12 +331,12 @@ export function PosDialogs({
         setSelectedCustomer(res.data);
         setShowAddCustomer(false);
         setShowCustomerSearch(false);
-        toast.success(`Customer "${name}" added & selected!`);
+        toast.success(t("customerAddedSuccess", `Customer "${name}" added & selected!`));
       } else {
-        toast.error(res?.error || "Failed to add customer");
+        toast.error(res?.error || t("failedToAddCustomer", "Failed to add customer"));
       }
     } catch (err: any) {
-      toast.error(err.message || "Failed to add customer.");
+      toast.error(err.message || t("failedToAddCustomer", "Failed to add customer."));
     } finally {
       setIsAddingCustomer(false);
     }
@@ -354,9 +354,9 @@ export function PosDialogs({
     const barcode = ((formData.get("barcode") as string) || "").trim();
     const stock = parseInt(formData.get("stock") as string, 10) || 0;
 
-    if (!name) return toast.error("Product name is required");
-    if (price <= 0) return toast.error("Valid price is required");
-    if (!unit) return toast.error("Unit is required");
+    if (!name) return toast.error(t("productNameRequired", "Product name is required"));
+    if (price <= 0) return toast.error(t("validPriceRequired", "Valid price is required"));
+    if (!unit) return toast.error(t("unitRequired", "Unit is required"));
 
     setIsAddingProduct(true);
     try {
@@ -370,27 +370,27 @@ export function PosDialogs({
         price,
         cost,
         stock,
-        reorderLevel: 5,
         image: newProductImage,
-        synced: false,
+        status: "active",
       };
 
       const res = await createProductFn({
-        data: { product: payload },
+        data: payload,
       });
+
       if (res?.success) {
         queryClient.invalidateQueries({ queryKey: ["posItems"] });
         queryClient.invalidateQueries({ queryKey: ["products"] });
         setShowAddProduct(false);
-        setNewProductBarcode(""); // Reset barcode field
         setNewProductImage(""); // Reset image field
+        setNewProductBarcode(""); // Reset barcode field
         setNewProductUnit(""); // Reset unit field
-        toast.success(`Product "${name}" added successfully!`);
+        toast.success(t("productAddedSuccess", `Product "${name}" added successfully!`));
       } else {
-        toast.error(res?.error || "Failed to add product");
+        toast.error(res?.error || t("failedToAddProduct", "Failed to add product"));
       }
     } catch (err: any) {
-      toast.error(err.message || "Failed to add product.");
+      toast.error(err.message || t("failedToAddProduct", "Failed to add product."));
     } finally {
       setIsAddingProduct(false);
     }
@@ -411,9 +411,9 @@ export function PosDialogs({
     if (durationUnit === "days") durationMins = rawDuration * 1440;
     const duration = durationMins > 0 ? durationMins.toString() : "";
 
-    if (!name) return toast.error("Service name is required");
-    if (price < 0) return toast.error("Valid price is required");
-    if (!unit) return toast.error("Unit is required");
+    if (!name) return toast.error(t("serviceNameRequired", "Service name is required"));
+    if (price < 0) return toast.error(t("validPriceRequired", "Valid price is required"));
+    if (!unit) return toast.error(t("unitRequired", "Unit is required"));
 
     setIsAddingService(true);
     try {
@@ -438,12 +438,12 @@ export function PosDialogs({
         setShowAddService(false);
         setNewServiceImage(""); // Reset image field
         setNewServiceUnit(""); // Reset unit field
-        toast.success(`Service "${name}" added successfully!`);
+        toast.success(t("serviceAddedSuccess", `Service "${name}" added successfully!`));
       } else {
-        toast.error(res?.error || "Failed to add service");
+        toast.error(res?.error || t("failedToAddService", "Failed to add service"));
       }
     } catch (err: any) {
-      toast.error(err.message || "Failed to add service.");
+      toast.error(err.message || t("failedToAddService", "Failed to add service."));
     } finally {
       setIsAddingService(false);
     }
@@ -470,7 +470,7 @@ export function PosDialogs({
     const phone =
       saleComplete.customerObj?.phone || saleComplete.customerPhone || saleComplete.phone || "";
     if (!phone) {
-      toast.error("Customer phone number not available for WhatsApp");
+      toast.error(t("customerPhoneNotAvailable", "Customer phone number not available for WhatsApp"));
       return;
     }
     const cleanPhone = phone.replace(/\D/g, "");
@@ -530,7 +530,7 @@ export function PosDialogs({
                   type="button"
                   onClick={() => setCustomerQuery("")}
                   className="absolute right-2.5 top-1/2 -translate-y-1/2 size-5 rounded-full bg-muted text-muted-foreground hover:text-foreground grid place-items-center text-xs"
-                  title="Clear search"
+                  title={t("clearSearch", "Clear search")}
                 >
                   <X className="size-3" />
                 </button>
@@ -823,7 +823,7 @@ export function PosDialogs({
               <Label className="text-xs font-bold text-foreground">{t("fullName", "Full Name")} *</Label>
               <Input
                 name="name"
-                placeholder="e.g. Rajesh Kumar"
+                placeholder={t("customerNamePlaceholder", "e.g. Rajesh Kumar")}
                 required
                 defaultValue={!/^\d+$/.test(customerQuery) ? customerQuery : ""}
                 className="h-10 rounded-xl"
@@ -868,7 +868,7 @@ export function PosDialogs({
                 <Label className="text-xs font-bold text-foreground">{t("address", "Address")}</Label>
                 <Input
                   name="address"
-                  placeholder="Shop / House No, Street name"
+                  placeholder={t("addressPlaceholder", "Shop / House No, Street name")}
                   className="h-10 rounded-xl"
                 />
               </div>
@@ -876,11 +876,11 @@ export function PosDialogs({
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <Label className="text-xs font-bold text-foreground">{t("city", "City")}</Label>
-                <Input name="city" placeholder="City" className="h-10 rounded-xl" />
+                <Input name="city" placeholder={t("city", "City")} className="h-10 rounded-xl" />
               </div>
               <div className="space-y-1.5">
                 <Label className="text-xs font-bold text-foreground">{t("zipCode", "Zip Code")}</Label>
-                <Input name="zipCode" placeholder="Postal Code" className="h-10 rounded-xl" />
+                <Input name="zipCode" placeholder={t("postalCode", "Postal Code")} className="h-10 rounded-xl" />
               </div>
             </div>
             <div className="flex items-center justify-end gap-2 pt-2 border-t border-border/80">
@@ -963,7 +963,7 @@ export function PosDialogs({
                     <Label className="text-xs font-bold text-foreground">{t("productName", "Product Name")} *</Label>
                     <Input
                       name="name"
-                      placeholder="e.g. Wireless Ergonomic Mouse"
+                      placeholder={t("productNamePlaceholder", "e.g. Wireless Ergonomic Mouse")}
                       className="rounded-xl h-10 text-xs sm:text-sm font-medium border-border/80"
                       required
                       autoFocus
@@ -1026,7 +1026,7 @@ export function PosDialogs({
                       </div>
                       <Input
                         name="barcode"
-                        placeholder="Scan or enter code"
+                        placeholder={t("barcodeScanPlaceholder", "Scan or enter code")}
                         value={newProductBarcode}
                         onChange={(e) => setNewProductBarcode(e.target.value)}
                         className="rounded-xl h-10 text-xs sm:text-sm font-medium border-border/80"
@@ -1131,7 +1131,7 @@ export function PosDialogs({
                     <Label className="text-xs font-bold text-foreground">{t("serviceName", "Service Name")} *</Label>
                     <Input
                       name="name"
-                      placeholder="e.g. Express Laptop Screen Replacement"
+                      placeholder={t("serviceNamePlaceholder", "e.g. Express Laptop Screen Replacement")}
                       className="rounded-xl h-10 text-xs sm:text-sm font-medium border-border/80"
                       required
                       autoFocus
@@ -1159,7 +1159,7 @@ export function PosDialogs({
                           name="duration"
                           type="number"
                           min="0"
-                          placeholder="e.g. 45"
+                          placeholder={t("durationPlaceholder", "e.g. 45")}
                           className="flex-1 rounded-xl h-10 text-xs sm:text-sm font-medium border-border/80"
                         />
                         <Select name="durationUnit" defaultValue="mins">
@@ -1811,7 +1811,7 @@ export function PosDialogs({
                       <span className="text-xs font-black">
                         {isPercent ? `${discountValue}%` : `${currencySymbol}${discountValue}`}
                       </span>
-                      <span className="text-[8px] font-bold opacity-80 mt-0.5">OFF</span>
+                      <span className="text-[8px] font-bold opacity-80 mt-0.5">{t("off", "OFF")}</span>
                     </div>
 
                     <div className="min-w-0 flex-1">
@@ -2001,7 +2001,7 @@ export function PosDialogs({
                   {t("prescriptionRefOptional", "Prescription Reference (Optional)")}
                 </Label>
                 <Input
-                  placeholder="e.g. Rx-12345"
+                  placeholder={t("prescriptionPlaceholder", "e.g. Rx-12345")}
                   value={state.prescriptionRef}
                   onChange={(e) => state.setPrescriptionRef(e.target.value)}
                   className="h-10 rounded-xl"
@@ -2131,7 +2131,7 @@ export function PosDialogs({
                   if (!saleComplete?.id) return;
                   const billId = String(saleComplete.id);
                   const ok = window.confirm(
-                    `Are you sure you want to VOID bill #${billId.slice(0, 8).toUpperCase()}?\nThis will restore product stock immediately.`,
+                    t("confirmVoidBill", `Are you sure you want to VOID bill #${billId.slice(0, 8).toUpperCase()}?\nThis will restore product stock immediately.`),
                   );
                   if (!ok) return;
                   try {
@@ -2149,10 +2149,10 @@ export function PosDialogs({
                       queryClient.invalidateQueries({ queryKey: ["sales"] });
                       queryClient.invalidateQueries({ queryKey: ["products"] });
                     } else {
-                      toast.error(res?.error || "Failed to void sale");
+                      toast.error(res?.error || t("failedToVoidSale", "Failed to void sale"));
                     }
                   } catch (e: any) {
-                    toast.error(e.message || "Failed to void sale");
+                    toast.error(e.message || t("failedToVoidSale", "Failed to void sale"));
                   }
                 }}
                 className="h-9 text-xs font-semibold text-destructive hover:bg-destructive/10 rounded-xl"
@@ -2284,12 +2284,12 @@ export function PosDialogs({
                 newInvoices: splits,
               },
             });
-            toast.success("Check split successfully");
+            toast.success(t("checkSplitSuccess", "Check split successfully"));
             setSplittingInvoice(null);
             refetchHeld();
             setShowHeld(true);
           } catch (e: any) {
-            toast.error(e.message || "Failed to split check");
+            toast.error(e.message || t("failedToSplitCheck", "Failed to split check"));
           } finally {
             setIsSplitting(false);
           }

@@ -719,7 +719,7 @@ function TablesPage() {
               <Button
                 onClick={() => {
                   if (!guestName.trim()) {
-                    toast.error("Please enter guest name to check in");
+                    toast.error(t("enterGuestNameToCheckIn", "Please enter guest name to check in"));
                     return;
                   }
                   updateStatus.mutate({ id: selectedRoomForFolio.id, status: "occupied" });

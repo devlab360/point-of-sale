@@ -1,3 +1,4 @@
+import { useLanguage } from "@/contexts/LanguageContext";
 import { createFileRoute, useNavigate, useParams } from "@tanstack/react-router";
 import { ProductForm } from "@/components/products/ProductForm";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -13,6 +14,7 @@ export const Route = createFileRoute("/products/$productId")({
 });
 
 function EditProductPage() {
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const { productId } = useParams({ from: "/products/$productId" });
   const queryClient = useQueryClient();
@@ -27,11 +29,11 @@ function EditProductPage() {
         if (res && res.success && res.data) {
           setInitialData(res.data);
         } else {
-          toast.error("Product not found");
+          toast.error(t("productNotFound", "Product not found"));
           navigate({ to: "/products" });
         }
       } catch (e) {
-        toast.error("Failed to load product details");
+        toast.error(t("failedToLoadProductDetails", "Failed to load product details"));
         navigate({ to: "/products" });
       } finally {
         setLoading(false);
@@ -75,7 +77,7 @@ function EditProductPage() {
       if (context?.previousProducts) {
         queryClient.setQueryData(["products"], context.previousProducts);
       }
-      toast.error("Failed to update product");
+      toast.error(t("failedToUpdateProduct", "Failed to update product"));
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["products"] });
@@ -100,7 +102,7 @@ function EditProductPage() {
           });
         }
         // onSettled handles invalidation
-        toast.success("Product updated successfully");
+        toast.success(t("productUpdatedSuccess", "Product updated successfully"));
         navigate({ to: "/products" });
       } else {
         toast.error(res?.error || "Failed to update product");

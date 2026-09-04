@@ -266,7 +266,7 @@ function PriceBooksComponent() {
     },
     onSuccess: (res: any) => {
       if (res?.success) {
-        toast.success("All branch rate chart assignments updated successfully");
+        toast.success(t("rateChartAssignmentsUpdated", "All branch rate chart assignments updated successfully"));
         queryClient.invalidateQueries({ queryKey: ["priceBooks", orgId] });
       } else {
         toast.error(res?.error || "Failed to update branch mappings");
@@ -321,7 +321,7 @@ function PriceBooksComponent() {
     },
     onSuccess: (res: any) => {
       if (res?.success) {
-        toast.success("Rate chart rules saved successfully");
+        toast.success(t("rateChartRulesSaved", "Rate chart rules saved successfully"));
         queryClient.invalidateQueries({ queryKey: ["priceBookItems"] });
         queryClient.invalidateQueries({ queryKey: ["priceBooks", orgId] });
       } else {
@@ -548,7 +548,7 @@ function PriceBooksComponent() {
                 size="icon"
                 className="size-8 rounded-lg"
                 onClick={() => setBooksViewMode("grid")}
-                title="Grid Cards View"
+                title={t("gridCardsView", "Grid Cards View")}
               >
                 <LayoutGrid className="size-4" />
               </Button>
@@ -557,7 +557,7 @@ function PriceBooksComponent() {
                 size="icon"
                 className="size-8 rounded-lg"
                 onClick={() => setBooksViewMode("table")}
-                title="Table View"
+                title={t("tableView", "Table View")}
               >
                 <List className="size-4" />
               </Button>

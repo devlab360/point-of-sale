@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useCurrency } from "@/lib/currency";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { useQuery } from "@tanstack/react-query";
 import { getProductModifiersFn } from "@/api/modifiers";
 import { Loader2 } from "lucide-react";
@@ -36,6 +37,7 @@ export function ModifierSelectionModal({
   onClose,
   onConfirm,
 }: ModifierSelectionModalProps) {
+  const { t } = useLanguage();
   const { formatCurrency } = useCurrency();
   const [selected, setSelected] = useState<SelectedModifier[]>([]);
 
@@ -95,7 +97,7 @@ export function ModifierSelectionModal({
       if (group.isRequired) {
         const hasSelection = selected.some((s) => s.id === group.id);
         if (!hasSelection) {
-          alert(`Please select an option for ${group.name}`);
+          alert(`${t("pleaseSelectOptionFor", "Please select an option for")} ${group.name}`);
           return;
         }
       }
@@ -112,15 +114,15 @@ export function ModifierSelectionModal({
         <div className="p-4 sm:p-5 border-b border-border/80 bg-muted/20 flex items-center justify-between">
           <div className="space-y-0.5">
             <DialogTitle className="text-base sm:text-lg font-bold text-foreground flex items-center gap-2">
-              <span>Customize {product.name}</span>
+              <span>{t("customize", "Customize")} {product.name}</span>
             </DialogTitle>
             <p className="text-xs text-muted-foreground">
-              Select item modifiers, variations, and add-ons
+              {t("selectModifiersAddons", "Select item modifiers, variations, and add-ons")}
             </p>
           </div>
           <div className="text-right">
             <div className="text-[10px] font-extrabold uppercase text-muted-foreground">
-              Base Price
+              {t("basePrice", "Base Price")}
             </div>
             <div className="text-sm font-black text-foreground number">
               {formatCurrency(Number(product.price || 0))}
@@ -131,7 +133,7 @@ export function ModifierSelectionModal({
         {isLoading ? (
           <div className="py-16 flex flex-col items-center justify-center text-muted-foreground">
             <Loader2 className="w-8 h-8 animate-spin mb-3 text-primary" />
-            <p className="text-xs font-semibold">Loading options...</p>
+            <p className="text-xs font-semibold">{t("loadingOptions", "Loading options...")}</p>
           </div>
         ) : (
           <div className="p-5 space-y-5 max-h-[60vh] overflow-y-auto">
@@ -146,12 +148,12 @@ export function ModifierSelectionModal({
                       {group.name}
                     </Label>
                     <span className="text-[10px] text-muted-foreground">
-                      ({group.selectionType === "single" ? "Choose 1" : "Multiple choices allowed"})
+                      ({group.selectionType === "single" ? t("choose1", "Choose 1") : t("multipleChoicesAllowed", "Multiple choices allowed")})
                     </span>
                   </div>
                   {group.isRequired && (
                     <span className="text-[10px] font-bold bg-destructive/10 text-destructive px-2 py-0.5 rounded-full border border-destructive/20">
-                      Required
+                      {t("required", "Required")}
                     </span>
                   )}
                 </div>
@@ -224,14 +226,14 @@ export function ModifierSelectionModal({
             onClick={onClose}
             className="h-10 px-4 text-xs font-bold rounded-xl"
           >
-            Cancel
+            {t("cancel", "Cancel")}
           </Button>
           <Button
             onClick={handleConfirm}
             disabled={isLoading}
             className="h-10 px-5 text-xs font-bold rounded-xl bg-primary text-primary-foreground shadow-md"
           >
-            Add to Cart
+            {t("addToCart", "Add to Cart")}
           </Button>
         </div>
       </DialogContent>

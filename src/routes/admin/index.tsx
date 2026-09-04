@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { useAdminAuth } from "@/contexts/AdminAuthContext";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { appName } from "@/lib/env";
 import {
   Shield,
@@ -44,6 +45,7 @@ export const Route = createFileRoute("/admin/")({
 });
 
 function AdminLoginPage() {
+  const { t } = useLanguage();
   const { loginWithEmail, isLoading } = useAdminAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -53,14 +55,14 @@ function AdminLoginPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email.trim() || !password) {
-      toast.error("Please enter email and password");
+      toast.error(t("enterEmailPassword", "Please enter email and password"));
       return;
     }
     setLoading(true);
     try {
       await loginWithEmail(email.trim(), password);
     } catch (err: any) {
-      toast.error(err?.message || "Super Admin authentication failed");
+      toast.error(err?.message || t("superAdminAuthFailed", "Super Admin authentication failed"));
     } finally {
       setLoading(false);
     }
@@ -103,16 +105,18 @@ function AdminLoginPage() {
           <div className="space-y-4">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/25 text-primary text-xs font-bold font-mono uppercase tracking-wider shadow-2xs">
               <ShieldCheck className="size-3.5" />
-              <span>Root Governance Portal</span>
+              <span>{t("rootGovernancePortal", "Root Governance Portal")}</span>
             </div>
 
             <h1 className="text-3xl xl:text-4xl font-black tracking-tight text-foreground font-display leading-tight">
-              Executive Cloud POS Control Plane
+              {t("executiveCloudControlPlane", "Executive Cloud POS Control Plane")}
             </h1>
 
             <p className="text-xs xl:text-sm text-muted-foreground leading-relaxed">
-              Global tenant store orchestrator, multi-industry catalog engine, SaaS subscription
-              plans, and real-time ledger velocity.
+              {t(
+                "superAdminHeroDesc",
+                "Global tenant store orchestrator, multi-industry catalog engine, SaaS subscription plans, and real-time ledger velocity.",
+              )}
             </p>
           </div>
 
@@ -121,18 +125,18 @@ function AdminLoginPage() {
             {[
               {
                 icon: Layers,
-                title: "11 Industry Profiles",
-                desc: "Restaurant, Salon, Repair, Retail, Grocery, Wholesale, Pharmacy",
+                title: t("telemetryProfilesTitle", "11 Industry Profiles"),
+                desc: t("telemetryProfilesDesc", "Restaurant, Salon, Repair, Retail, Grocery, Wholesale, Pharmacy"),
               },
               {
                 icon: Server,
-                title: "Multi-Tenant Isolation",
-                desc: "Zero cross-store data leakage with strict tenant boundaries",
+                title: t("telemetryIsolationTitle", "Multi-Tenant Isolation"),
+                desc: t("telemetryIsolationDesc", "Zero cross-store data leakage with strict tenant boundaries"),
               },
               {
                 icon: Cpu,
-                title: "Offline-First Engine",
-                desc: "Continuous local IndexedDB billing with cloud reconciliation",
+                title: t("telemetryOfflineTitle", "Offline-First Engine"),
+                desc: t("telemetryOfflineDesc", "Continuous local IndexedDB billing with cloud reconciliation"),
               },
             ].map((item, idx) => {
               const Icon = item.icon;
@@ -162,7 +166,7 @@ function AdminLoginPage() {
               className="inline-flex items-center gap-2 text-sm font-bold text-muted-foreground hover:text-primary transition-colors group"
             >
               <Store className="size-4" />
-              <span>Looking for Tenant Store Sign In?</span>
+              <span>{t("lookingForTenantStoreSignIn", "Looking for Tenant Store Sign In?")}</span>
               <ArrowRight className="size-4 group-hover:translate-x-1 transition-transform" />
             </Link>
           </div>
@@ -179,7 +183,7 @@ function AdminLoginPage() {
               {appName} Super Admin
             </h1>
             <p className="text-sm text-muted-foreground">
-              Master control plane for multi-tenant store provisioning
+              {t("masterControlPlaneDesc", "Master control plane for multi-tenant store provisioning")}
             </p>
           </div>
 
@@ -189,14 +193,14 @@ function AdminLoginPage() {
               <div className="space-y-0.5">
                 <div className="flex items-center gap-2">
                   <h2 className="text-base font-black uppercase tracking-wider text-foreground">
-                    Root Authentication
+                    {t("rootAuthentication", "Root Authentication")}
                   </h2>
                   <Badge className="bg-amber-500/15 text-amber-700 dark:text-amber-400 border-amber-500/30 text-xs font-mono font-extrabold uppercase px-2.5 py-0.5">
                     Level 0
                   </Badge>
                 </div>
                 <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
-                  Sign in to master multi-tenant administration
+                  {t("signInToMasterMultiTenant", "Sign in to master multi-tenant administration")}
                 </p>
               </div>
               <div className="size-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary border border-primary/20">
@@ -209,10 +213,10 @@ function AdminLoginPage() {
               <div className="flex items-center justify-between text-xs sm:text-sm font-bold text-foreground">
                 <span className="flex items-center gap-1.5 text-primary">
                   <Zap className="size-4 fill-primary/20 text-primary" />
-                  <span>Development & Demo Quick Sign In</span>
+                  <span>{t("devDemoQuickSignIn", "Development & Demo Quick Sign In")}</span>
                 </span>
                 <span className="text-xs font-mono text-muted-foreground uppercase font-bold">
-                  Instant
+                  {t("instant", "Instant")}
                 </span>
               </div>
               <Button
@@ -223,7 +227,7 @@ function AdminLoginPage() {
                 className="w-full h-12 rounded-xl bg-card hover:bg-primary/10 border-primary/30 text-primary font-black gap-2 text-sm shadow-xs hover:border-primary transition-all active:scale-[0.98] cursor-pointer"
               >
                 <Sparkles className="size-4 text-amber-500 animate-pulse" />
-                <span>⚡ 1-Click Super Admin Root Sign In</span>
+                <span>⚡ {t("quickSuperAdminRootSignIn", "1-Click Super Admin Root Sign In")}</span>
               </Button>
             </div>
 
@@ -235,7 +239,7 @@ function AdminLoginPage() {
                   htmlFor="sa-email"
                 >
                   <Mail className="size-4 text-muted-foreground" />
-                  <span>Master Administrator Email</span>
+                  <span>{t("masterAdminEmail", "Master Administrator Email")}</span>
                 </Label>
                 <Input
                   id="sa-email"
@@ -256,7 +260,7 @@ function AdminLoginPage() {
                     htmlFor="sa-password"
                   >
                     <Lock className="size-4 text-muted-foreground" />
-                    <span>Master Password</span>
+                    <span>{t("masterPassword", "Master Password")}</span>
                   </Label>
                 </div>
                 <div className="relative">
@@ -274,7 +278,7 @@ function AdminLoginPage() {
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors p-1"
-                    aria-label={showPassword ? "Hide password" : "Show password"}
+                    aria-label={showPassword ? t("hidePassword", "Hide password") : t("showPassword", "Show password")}
                   >
                     {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
                   </button>
@@ -286,7 +290,7 @@ function AdminLoginPage() {
                 disabled={loading || isLoading}
                 className="w-full h-12 rounded-xl bg-primary text-primary-foreground font-extrabold shadow-md shadow-primary/20 hover:bg-primary/90 transition-all gap-2 text-sm sm:text-base mt-2 cursor-pointer"
               >
-                {loading ? "Authenticating Root Authority…" : "Sign In to Super Admin"}
+                {loading ? t("authenticatingRootAuthority", "Authenticating Root Authority…") : t("signInToSuperAdmin", "Sign In to Super Admin")}
                 <ArrowRight className="size-5" />
               </Button>
             </form>
@@ -294,7 +298,7 @@ function AdminLoginPage() {
             {/* Mobile Link to Store Login */}
             <div className="lg:hidden border-t border-border/70 pt-3 text-center">
               <Link to="/login" className="text-sm font-bold text-primary hover:underline">
-                ← Return to Store Sign In
+                ← {t("returnToStoreSignIn", "Return to Store Sign In")}
               </Link>
             </div>
           </div>
@@ -303,7 +307,7 @@ function AdminLoginPage() {
           <div className="text-center space-y-1 text-[11px] text-muted-foreground pt-1">
             <p className="flex items-center justify-center gap-1.5 font-medium">
               <CheckCircle2 className="size-3.5 text-emerald-500" />
-              <span>Secured with JWT HTTP-only Root Tokens & Rate-Limit Shield</span>
+              <span>{t("securityFootnote", "Secured with JWT HTTP-only Root Tokens & Rate-Limit Shield")}</span>
             </p>
           </div>
         </div>

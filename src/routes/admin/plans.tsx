@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { SuperAdminLayout } from "@/components/admin/SuperAdminLayout";
 import { PageHeader } from "@/components/layout/PageHeader";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { appName } from "@/lib/env";
 import { StatCard } from "@/components/layout/StatCard";
 import { Badge } from "@/components/ui/badge";
@@ -87,6 +88,7 @@ const defaultEditingPlan = {
 };
 
 function SuperAdminPlansPage() {
+  const { t } = useLanguage();
   const queryClient = useQueryClient();
   const [isPlanModalOpen, setIsPlanModalOpen] = useState(false);
   const [editingPlan, setEditingPlan] = useState({ ...defaultEditingPlan });
@@ -121,17 +123,17 @@ function SuperAdminPlansPage() {
   const savePlanMutation = useMutation({
     mutationFn: (planData: any) => createOrUpdatePlanFn({ data: planData }),
     onSuccess: () => {
-      toast.success("SaaS Plan Tier saved successfully");
+      toast.success(t("admin.planSavedToast", "SaaS Plan Tier saved successfully"));
       setIsPlanModalOpen(false);
       queryClient.invalidateQueries({ queryKey: ["saas-plans"] });
     },
-    onError: (err: any) => toast.error(err.message || "Failed to save plan"),
+    onError: (err: any) => toast.error(err.message || t("admin.savePlanFailedToast", "Failed to save plan")),
   });
 
   const deletePlanMutation = useMutation({
     mutationFn: (planId: string) => deletePlanFn({ data: { planId } }),
     onSuccess: () => {
-      toast.success("SaaS Plan tier deleted");
+      toast.success(t("admin.planDeletedToast", "SaaS Plan tier deleted"));
       queryClient.invalidateQueries({ queryKey: ["saas-plans"] });
     },
   });
@@ -158,8 +160,8 @@ function SuperAdminPlansPage() {
       <div className="page-container space-y-6">
         {/* Header */}
         <PageHeader
-          title="SaaS Plan Architecture & Pricing"
-          description="Define pricing tiers, resource quotas (users, products, invoices), and package module access for merchant stores."
+          title={t("admin.plansTitle", "SaaS Plan Architecture & Pricing")}
+          description={t("admin.plansDesc", "Define pricing tiers, resource quotas (users, products, invoices), and package module access for merchant stores.")}
           actions={
             <div className="flex flex-wrap items-center gap-2">
               <Button
@@ -173,7 +175,7 @@ function SuperAdminPlansPage() {
                 disabled={isFetching}
               >
                 <RefreshCw className={`size-3.5 ${isFetching ? "animate-spin" : ""}`} />
-                <span>Refresh</span>
+                <span>{t("common.refresh", "Refresh")}</span>
               </Button>
               <Button
                 variant="outline"
@@ -196,7 +198,7 @@ function SuperAdminPlansPage() {
                 }}
               >
                 <Download className="size-3.5" />
-                <span>Export CSV</span>
+                <span>{t("common.exportCsv", "Export CSV")}</span>
               </Button>
               <Button
                 onClick={() => {
@@ -207,7 +209,7 @@ function SuperAdminPlansPage() {
                 className="gap-2 h-9 shadow-xs"
               >
                 <Plus className="size-4" />
-                <span>Create New Plan Tier</span>
+                <span>{t("admin.createNewPlanTier", "Create New Plan Tier")}</span>
               </Button>
             </div>
           }
@@ -216,30 +218,30 @@ function SuperAdminPlansPage() {
         {/* Top KPI Metric Cards */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           <StatCard
-            label="Configured Tiers"
+            label={t("admin.configuredTiers", "Configured Tiers")}
             value={String(plans.length)}
-            hint="Active monetization tiers"
+            hint={t("admin.activeMonetizationTiers", "Active monetization tiers")}
             icon={Layers}
             accent="primary"
           />
           <StatCard
-            label="Paid Subscribed Stores"
+            label={t("admin.paidSubscribedStores", "Paid Subscribed Stores")}
             value={String(totalPaidStores)}
-            hint="Active paying merchants"
+            hint={t("admin.activePayingMerchants", "Active paying merchants")}
             icon={CheckCircle2}
             accent="success"
           />
           <StatCard
-            label="Trial Period Stores"
+            label={t("admin.trialPeriodStores", "Trial Period Stores")}
             value={String(totalTrialStores)}
-            hint="Active evaluations"
+            hint={t("admin.activeEvaluations", "Active evaluations")}
             icon={Sparkles}
             accent="warning"
           />
           <StatCard
-            label="Default Trial Tier"
+            label={t("admin.defaultTrialTier", "Default Trial Tier")}
             value={defaultTrialPlan}
-            hint="Assigned on sign-up"
+            hint={t("admin.assignedOnSignup", "Assigned on sign-up")}
             icon={ShieldCheck}
             accent="info"
           />
@@ -249,7 +251,7 @@ function SuperAdminPlansPage() {
         {isLoading ? (
           <div className="flex flex-col items-center justify-center p-16 space-y-3">
             <Loader2 className="size-8 animate-spin text-primary" />
-            <p className="text-xs text-muted-foreground font-medium">Loading SaaS plans…</p>
+            <p className="text-xs text-muted-foreground font-medium">{t("admin.loadingPlans", "Loading SaaS plans…")}</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -275,7 +277,7 @@ function SuperAdminPlansPage() {
                   {plan.isTrialDefault && (
                     <div className="absolute -top-3 right-4">
                       <Badge className="bg-amber-500 text-amber-950 font-black gap-1 text-[11px] shadow-sm">
-                        <Sparkles className="size-3" /> Default Trial Tier
+                        <Sparkles className="size-3" /> {t("admin.defaultTrialTier", "Default Trial Tier")}
                       </Badge>
                     </div>
                   )}
@@ -296,12 +298,12 @@ function SuperAdminPlansPage() {
                         {currencySymbol}
                         {monthly}
                       </span>
-                      <span className="text-xs text-muted-foreground font-medium">/ month</span>
+                      <span className="text-xs text-muted-foreground font-medium">{t("admin.perMonth", "/ month")}</span>
                     </div>
                     {yearly > 0 && (
                       <p className="text-[11px] text-emerald-600 dark:text-emerald-400 font-semibold mt-0.5">
                         {currencySymbol}
-                        {yearly} / billed yearly
+                        {yearly} {t("admin.billedYearly", "/ billed yearly")}
                       </p>
                     )}
 
@@ -309,10 +311,10 @@ function SuperAdminPlansPage() {
                     <div className="mt-4 p-3 rounded-2xl bg-muted/40 border border-border/60 flex items-center justify-between text-xs">
                       <div className="flex items-center gap-1.5 font-bold text-foreground">
                         <Store className="size-4 text-primary" />
-                        <span>{subscribedStores.length} Stores</span>
+                        <span>{subscribedStores.length} {t("admin.stores", "Stores")}</span>
                       </div>
                       <span className="text-[11px] text-muted-foreground font-medium">
-                        {activeCount} active · {trialCount} trial
+                        {activeCount} {t("common.active", "active")} · {trialCount} {t("admin.trial", "trial")}
                       </span>
                     </div>
 
@@ -320,30 +322,30 @@ function SuperAdminPlansPage() {
                     <div className="mt-4 space-y-2 border-t pt-4 text-xs">
                       <div className="flex justify-between py-1 border-b border-border/40">
                         <span className="text-muted-foreground flex items-center gap-1.5">
-                          <Users className="size-3.5 text-primary" /> Max Staff Users:
+                          <Users className="size-3.5 text-primary" /> {t("admin.maxStaffUsers", "Max Staff Users:")}
                         </span>
                         <div className="text-right">
                           <span className="font-bold text-foreground block">
-                            {plan.limits?.maxUsers || "Unlimited"}
+                            {plan.limits?.maxUsers || t("admin.unlimited", "Unlimited")}
                           </span>
                           {Number(plan.perExtraUserPrice) > 0 && (
                             <span className="text-[10px] text-primary font-semibold block">
-                              +₹{plan.perExtraUserPrice}/mo per extra seat
+                              +₹{plan.perExtraUserPrice}{t("admin.perExtraSeat", "/mo per extra seat")}
                             </span>
                           )}
                         </div>
                       </div>
                       <div className="flex justify-between py-1 border-b border-border/40">
                         <span className="text-muted-foreground flex items-center gap-1.5">
-                          <Package className="size-3.5 text-primary" /> Max Products:
+                          <Package className="size-3.5 text-primary" /> {t("admin.maxProducts", "Max Products:")}
                         </span>
                         <span className="font-bold text-foreground">
-                          {plan.limits?.maxProducts || "Unlimited"}
+                          {plan.limits?.maxProducts || t("admin.unlimited", "Unlimited")}
                         </span>
                       </div>
                       <div className="flex justify-between py-1 border-b border-border/40">
                         <span className="text-muted-foreground flex items-center gap-1.5">
-                          <Building2 className="size-3.5 text-primary" /> Max Branches:
+                          <Building2 className="size-3.5 text-primary" /> {t("admin.maxBranches", "Max Branches:")}
                         </span>
                         <span className="font-bold text-foreground">
                           {plan.limits?.maxBranches || 1}
@@ -351,10 +353,10 @@ function SuperAdminPlansPage() {
                       </div>
                       <div className="flex justify-between py-1">
                         <span className="text-muted-foreground flex items-center gap-1.5">
-                          <FileSpreadsheet className="size-3.5 text-primary" /> Monthly Invoices:
+                          <FileSpreadsheet className="size-3.5 text-primary" /> {t("admin.monthlyInvoices", "Monthly Invoices:")}
                         </span>
                         <span className="font-bold text-foreground">
-                          {plan.limits?.maxInvoicesPerMonth || "Unlimited"}
+                          {plan.limits?.maxInvoicesPerMonth || t("admin.unlimited", "Unlimited")}
                         </span>
                       </div>
                     </div>
@@ -363,7 +365,7 @@ function SuperAdminPlansPage() {
                     {Array.isArray(plan.features) && plan.features.length > 0 && (
                       <div className="mt-4 pt-3 border-t">
                         <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2">
-                          Included Modules ({plan.features.length})
+                          {t("admin.includedModules", "Included Modules")} ({plan.features.length})
                         </p>
                         <div className="flex flex-wrap gap-1">
                           {plan.features.slice(0, 6).map((feat: string) => (
@@ -377,7 +379,7 @@ function SuperAdminPlansPage() {
                           ))}
                           {plan.features.length > 6 && (
                             <Badge variant="outline" className="text-[10px] px-1 py-0">
-                              +{plan.features.length - 6} more
+                              +{plan.features.length - 6} {t("common.more", "more")}
                             </Badge>
                           )}
                         </div>
@@ -405,7 +407,7 @@ function SuperAdminPlansPage() {
                         setIsPlanModalOpen(true);
                       }}
                     >
-                      <Edit3 className="size-3.5" /> Edit Tier
+                      <Edit3 className="size-3.5" /> {t("admin.editTier", "Edit Tier")}
                     </Button>
                     <Button
                       size="sm"
@@ -414,11 +416,11 @@ function SuperAdminPlansPage() {
                       disabled={deletePlanMutation.isPending || subscribedStores.length > 0}
                       title={
                         subscribedStores.length > 0
-                          ? "Cannot delete tier with active subscribers"
+                          ? t("admin.cannotDeleteTierWithSubscribers", "Cannot delete tier with active subscribers")
                           : ""
                       }
                       onClick={() => {
-                        if (confirm(`Delete plan tier "${plan.name}"?`)) {
+                        if (confirm(`${t("admin.deletePlanConfirm", "Delete plan tier")} "${plan.name}"?`)) {
                           deletePlanMutation.mutate(plan.id);
                         }
                       }}
@@ -442,11 +444,11 @@ function SuperAdminPlansPage() {
               <SheetTitle className="text-lg font-bold flex items-center gap-2 text-foreground">
                 <Layers className="size-5 text-primary" />
                 <span>
-                  {editingPlan.id ? `Edit Plan Tier: ${editingPlan.name}` : "Create New SaaS Plan"}
+                  {editingPlan.id ? `${t("admin.editPlanTier", "Edit Plan Tier:")} ${editingPlan.name}` : t("admin.createNewSaasPlan", "Create New SaaS Plan")}
                 </span>
               </SheetTitle>
               <SheetDescription className="text-xs text-muted-foreground mt-0.5">
-                Set monthly/yearly pricing, quota ceilings, and bundled features.
+                {t("admin.planDrawerDesc", "Set monthly/yearly pricing, quota ceilings, and bundled features.")}
               </SheetDescription>
             </SheetHeader>
 
@@ -460,7 +462,7 @@ function SuperAdminPlansPage() {
               <div className="flex-1 overflow-y-auto p-5 space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-1.5">
-                    <Label htmlFor="plan-id">Plan Unique Identifier (ID)</Label>
+                    <Label htmlFor="plan-id">{t("admin.planUniqueId", "Plan Unique Identifier (ID)")}</Label>
                     <Input
                       id="plan-id"
                       required
@@ -478,7 +480,7 @@ function SuperAdminPlansPage() {
                     />
                   </div>
                   <div className="space-y-1.5">
-                    <Label htmlFor="plan-name">Display Plan Name</Label>
+                    <Label htmlFor="plan-name">{t("admin.displayPlanName", "Display Plan Name")}</Label>
                     <Input
                       id="plan-name"
                       required
@@ -491,7 +493,7 @@ function SuperAdminPlansPage() {
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <div className="space-y-1.5">
-                    <Label htmlFor="plan-curr">Currency</Label>
+                    <Label htmlFor="plan-curr">{t("admin.currency", "Currency")}</Label>
                     <Select
                       value={editingPlan.currency || "INR"}
                       onValueChange={(val) => setEditingPlan({ ...editingPlan, currency: val })}
@@ -509,7 +511,7 @@ function SuperAdminPlansPage() {
                     </Select>
                   </div>
                   <div className="space-y-1.5">
-                    <Label htmlFor="plan-mprice">Monthly Price</Label>
+                    <Label htmlFor="plan-mprice">{t("admin.monthlyPrice", "Monthly Price")}</Label>
                     <Input
                       id="plan-mprice"
                       type="number"
@@ -525,7 +527,7 @@ function SuperAdminPlansPage() {
                     />
                   </div>
                   <div className="space-y-1.5">
-                    <Label htmlFor="plan-yprice">Yearly Price</Label>
+                    <Label htmlFor="plan-yprice">{t("admin.yearlyPrice", "Yearly Price")}</Label>
                     <Input
                       id="plan-yprice"
                       type="number"
@@ -537,7 +539,7 @@ function SuperAdminPlansPage() {
                     />
                   </div>
                   <div className="space-y-1.5">
-                    <Label htmlFor="plan-extra-user">Add-on Price / Extra User (₹/mo)</Label>
+                    <Label htmlFor="plan-extra-user">{t("admin.addonPriceExtraUser", "Add-on Price / Extra User (₹/mo)")}</Label>
                     <Input
                       id="plan-extra-user"
                       type="number"
@@ -558,11 +560,11 @@ function SuperAdminPlansPage() {
                 <div className="p-4 rounded-2xl border bg-muted/20 space-y-3">
                   <h4 className="text-xs font-bold text-foreground flex items-center gap-1.5">
                     <Sliders className="size-3.5 text-primary" />
-                    <span>Quota Limits & Ceilings</span>
+                    <span>{t("admin.quotaLimitsCeilings", "Quota Limits & Ceilings")}</span>
                   </h4>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
                     <div className="space-y-1">
-                      <Label htmlFor="lim-users">Max Users (Staff)</Label>
+                      <Label htmlFor="lim-users">{t("admin.maxUsersStaff", "Max Users (Staff)")}</Label>
                       <Input
                         id="lim-users"
                         type="number"
@@ -577,7 +579,7 @@ function SuperAdminPlansPage() {
                       />
                     </div>
                     <div className="space-y-1">
-                      <Label htmlFor="lim-products">Max Products</Label>
+                      <Label htmlFor="lim-products">{t("admin.maxProductsQuota", "Max Products")}</Label>
                       <Input
                         id="lim-products"
                         type="number"
@@ -592,7 +594,7 @@ function SuperAdminPlansPage() {
                       />
                     </div>
                     <div className="space-y-1">
-                      <Label htmlFor="lim-branches">Max Store Branches</Label>
+                      <Label htmlFor="lim-branches">{t("admin.maxStoreBranches", "Max Store Branches")}</Label>
                       <Input
                         id="lim-branches"
                         type="number"
@@ -607,7 +609,7 @@ function SuperAdminPlansPage() {
                       />
                     </div>
                     <div className="space-y-1">
-                      <Label htmlFor="lim-invoices">Monthly Invoice Limit</Label>
+                      <Label htmlFor="lim-invoices">{t("admin.monthlyInvoiceLimit", "Monthly Invoice Limit")}</Label>
                       <Input
                         id="lim-invoices"
                         type="number"
@@ -632,11 +634,10 @@ function SuperAdminPlansPage() {
                   <div className="flex items-center justify-between">
                     <div>
                       <Label className="text-xs font-bold text-foreground">
-                        Bundled System Features & Modules
+                        {t("admin.bundledFeaturesModules", "Bundled System Features & Modules")}
                       </Label>
                       <p className="text-[11px] text-muted-foreground">
-                        {editingPlan.features?.length || 0} of {AVAILABLE_MODULES.length} modules
-                        enabled for this tier
+                        {editingPlan.features?.length || 0} {t("common.of", "of")} {AVAILABLE_MODULES.length} {t("admin.modulesEnabledTier", "modules enabled for this tier")}
                       </p>
                     </div>
                     <div className="flex items-center gap-2">
@@ -652,7 +653,7 @@ function SuperAdminPlansPage() {
                           })
                         }
                       >
-                        Select All
+                        {t("admin.selectAll", "Select All")}
                       </Button>
                       <Button
                         type="button"
@@ -666,7 +667,7 @@ function SuperAdminPlansPage() {
                           })
                         }
                       >
-                        Deselect All
+                        {t("admin.deselectAll", "Deselect All")}
                       </Button>
                     </div>
                   </div>
@@ -705,10 +706,10 @@ function SuperAdminPlansPage() {
                 <div className="flex items-center justify-between p-3.5 rounded-xl border bg-muted/20">
                   <div>
                     <Label htmlFor="default-trial" className="text-xs font-bold text-foreground">
-                      Set as Default Trial Tier
+                      {t("admin.setDefaultTrialTier", "Set as Default Trial Tier")}
                     </Label>
                     <p className="text-[11px] text-muted-foreground">
-                      Automatically provision new merchant store sign-ups on this plan tier.
+                      {t("admin.defaultTrialTierDesc", "Automatically provision new merchant store sign-ups on this plan tier.")}
                     </p>
                   </div>
                   <Switch
@@ -723,10 +724,10 @@ function SuperAdminPlansPage() {
 
               <SheetFooter className="p-5 border-t bg-muted/20 flex sm:justify-end gap-2 shrink-0">
                 <Button type="button" variant="outline" onClick={() => setIsPlanModalOpen(false)}>
-                  Cancel
+                  {t("common.cancel", "Cancel")}
                 </Button>
                 <Button type="submit" disabled={savePlanMutation.isPending}>
-                  {savePlanMutation.isPending ? "Saving Plan…" : "Save Plan Tier"}
+                  {savePlanMutation.isPending ? t("admin.savingPlan", "Saving Plan…") : t("admin.savePlanTier", "Save Plan Tier")}
                 </Button>
               </SheetFooter>
             </form>

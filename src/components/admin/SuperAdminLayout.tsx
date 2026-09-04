@@ -62,14 +62,29 @@ import {
 } from "@/components/ui/sheet";
 import { LogoutConfirmDialog } from "@/components/layout/LogoutConfirmDialog";
 import { applyTheme, getInitialTheme, type Theme } from "@/lib/theme";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+
+const ADMIN_CRUMB_TRANSLATION_KEYS: Record<string, string> = {
+  admin: "admin",
+  "super-admin": "superAdmin",
+  dashboard: "dashboard",
+  tenants: "tenants",
+  plans: "plans",
+  payments: "payments",
+  support: "support",
+  reviews: "reviews",
+  help: "help",
+  announcements: "announcements",
+  users: "users",
+};
 
 function pathToCrumbs(pathname: string) {
   if (pathname === "/admin/dashboard" || pathname === "/admin") {
     return [
-      { label: "Super Admin", to: "/admin/dashboard" },
-      { label: "Dashboard", to: "/admin/dashboard" },
+      { slug: "super-admin", label: "Super Admin", to: "/admin/dashboard" },
+      { slug: "dashboard", label: "Dashboard", to: "/admin/dashboard" },
     ];
   }
   const parts = pathname
@@ -77,8 +92,9 @@ function pathToCrumbs(pathname: string) {
     .split("/")
     .filter(Boolean);
   return [
-    { label: "Super Admin", to: "/admin/dashboard" },
+    { slug: "super-admin", label: "Super Admin", to: "/admin/dashboard" },
     ...parts.map((p, i) => ({
+      slug: p.toLowerCase(),
       label: p.replace(/-/g, " ").replace(/^\w/, (c) => c.toUpperCase()),
       to: "/admin/" + parts.slice(0, i + 1).join("/"),
     })),
@@ -86,13 +102,14 @@ function pathToCrumbs(pathname: string) {
 }
 
 const MOBILE_NAV_ITEMS = [
-  { to: "/admin/dashboard", label: "Dashboard", icon: LayoutGrid },
-  { to: "/admin/tenants", label: "Stores", icon: Store },
-  { to: "/admin/payments", label: "Payments", icon: Receipt },
-  { to: "/admin/support", label: "Support", icon: MessageCircle },
+  { to: "/admin/dashboard", key: "dashboard", label: "Dashboard", icon: LayoutGrid },
+  { to: "/admin/tenants", key: "tenants", label: "Stores", icon: Store },
+  { to: "/admin/payments", key: "payments", label: "Payments", icon: Receipt },
+  { to: "/admin/support", key: "support", label: "Support", icon: MessageCircle },
 ] as const;
 
 export function SuperAdminLayout({ children }: { children: React.ReactNode }) {
+  const { t } = useLanguage();
   const queryClient = useQueryClient();
   const { user, logout, isAuthenticated, isLoading, hasModuleAccess } = useAdminAuth();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
@@ -220,17 +237,17 @@ export function SuperAdminLayout({ children }: { children: React.ReactNode }) {
     }>;
   }> = [
     {
-      groupTitle: "SaaS Platform & Tenants",
+      groupTitle: t("saasPlatformTenants", "SaaS Platform & Tenants"),
       items: [
-        { label: "Tenant Stores & Orgs", to: "/admin/tenants", icon: Store, moduleKey: "tenants" },
-        { label: "SaaS Plans & Quotas", to: "/admin/plans", icon: Layers, moduleKey: "plans" },
+        { label: t("tenantStoresOrgs", "Tenant Stores & Orgs"), to: "/admin/tenants", icon: Store, moduleKey: "tenants" },
+        { label: t("saasPlansQuotas", "SaaS Plans & Quotas"), to: "/admin/plans", icon: Layers, moduleKey: "plans" },
       ],
     },
     {
-      groupTitle: "Billing & Gateways",
+      groupTitle: t("billingGateways", "Billing & Gateways"),
       items: [
         {
-          label: "Payment Approvals",
+          label: t("paymentApprovals", "Payment Approvals"),
           to: "/admin/payments",
           icon: Receipt,
           moduleKey: "payments",
@@ -240,13 +257,13 @@ export function SuperAdminLayout({ children }: { children: React.ReactNode }) {
       ],
     },
     {
-      groupTitle: "Help Desk & Feedback",
+      groupTitle: t("helpDeskFeedback", "Help Desk & Feedback"),
       items: [
-        { label: "Support Inbox", to: "/admin/support", icon: MessageCircle, moduleKey: "support" },
-        { label: "Merchant Reviews", to: "/admin/reviews", icon: Star, moduleKey: "reviews" },
-        { label: "Help Center & FAQs", to: "/admin/help", icon: BookOpen, moduleKey: "help" },
+        { label: t("supportInbox", "Support Inbox"), to: "/admin/support", icon: MessageCircle, moduleKey: "support" },
+        { label: t("merchantReviews", "Merchant Reviews"), to: "/admin/reviews", icon: Star, moduleKey: "reviews" },
+        { label: t("helpCenterFaqs", "Help Center & FAQs"), to: "/admin/help", icon: BookOpen, moduleKey: "help" },
         {
-          label: "Broadcast Notices",
+          label: t("broadcastNotices", "Broadcast Notices"),
           to: "/admin/announcements",
           icon: Megaphone,
           moduleKey: "announcements",
@@ -254,8 +271,8 @@ export function SuperAdminLayout({ children }: { children: React.ReactNode }) {
       ],
     },
     {
-      groupTitle: "Platform Personnel",
-      items: [{ label: "Super Admin Users", to: "/admin/users", icon: Users, moduleKey: "users" }],
+      groupTitle: t("platformPersonnel", "Platform Personnel"),
+      items: [{ label: t("superAdminUsers", "Super Admin Users"), to: "/admin/users", icon: Users, moduleKey: "users" }],
     },
   ];
 
@@ -372,7 +389,7 @@ export function SuperAdminLayout({ children }: { children: React.ReactNode }) {
                 </Link>
               </TooltipTrigger>
               <TooltipContent side="right" className="font-bold text-xs">
-                Dashboard
+                {t("dashboard", "Dashboard")}
               </TooltipContent>
             </Tooltip>
           ) : (
@@ -391,7 +408,7 @@ export function SuperAdminLayout({ children }: { children: React.ReactNode }) {
                   isDashboardActive ? "text-white" : "text-foreground/80",
                 )}
               />
-              <span>Executive Dashboard</span>
+              <span>{t("executiveDashboard", "Executive Dashboard")}</span>
             </Link>
           )}
 
@@ -506,17 +523,17 @@ export function SuperAdminLayout({ children }: { children: React.ReactNode }) {
                   {!isMinimized && (
                     <div className="min-w-0 flex-1">
                       <div className="truncate text-xs sm:text-sm font-bold text-foreground">
-                        {user?.name || "Super Admin"}
+                        {user?.name || t("superAdmin", "Super Admin")}
                       </div>
                       <div className="truncate text-[10px] sm:text-[11px] font-semibold text-muted-foreground flex items-center gap-1 mt-0.5">
                         <span className="size-1.5 rounded-full bg-emerald-500 inline-block"></span>
-                        <span className="capitalize">Super Administrator</span>
+                        <span className="capitalize">{t("superAdministrator", "Super Administrator")}</span>
                       </div>
                     </div>
                   )}
                 </button>
               </TooltipTrigger>
-              <TooltipContent side="right">Admin Profile & Security</TooltipContent>
+              <TooltipContent side="right">{t("adminProfileSecurity", "Admin Profile & Security")}</TooltipContent>
             </Tooltip>
 
             <Button
@@ -528,7 +545,7 @@ export function SuperAdminLayout({ children }: { children: React.ReactNode }) {
                 "shrink-0 text-muted-foreground hover:border-destructive/30 hover:bg-destructive/10 hover:text-destructive",
                 isMinimized ? "size-8 w-full" : "size-7.5",
               )}
-              title="Log out"
+              title={t("logout", "Log out")}
             >
               <LogOut className="size-4" />
             </Button>
@@ -546,13 +563,13 @@ export function SuperAdminLayout({ children }: { children: React.ReactNode }) {
             size="icon"
             className="md:flex lg:hidden"
             onClick={() => setMobileMenuOpen(true)}
-            aria-label="Open menu"
+            aria-label={t("openMenu", "Open menu")}
           >
             <Menu className="size-5" />
           </Button>
 
           {/* Breadcrumb Navigation matching AppHeader */}
-          <nav aria-label="Breadcrumb" className="hidden min-w-0 flex-1 items-center md:flex">
+          <nav aria-label={t("breadcrumb", "Breadcrumb")} className="hidden min-w-0 flex-1 items-center md:flex">
             <ol className="flex items-center gap-1.5 text-sm">
               <li className="flex items-center gap-1.5">
                 <Link
@@ -562,21 +579,24 @@ export function SuperAdminLayout({ children }: { children: React.ReactNode }) {
                   <Home className="size-3.5 text-muted-foreground/70" />
                 </Link>
               </li>
-              {crumbs.map((c, i) => (
-                <li key={c.to} className="flex items-center gap-1.5">
-                  <span className="text-muted-foreground/50">/</span>
-                  {i === crumbs.length - 1 ? (
-                    <span className="font-semibold text-foreground truncate">{c.label}</span>
-                  ) : (
-                    <Link
-                      to={c.to as any}
-                      className="text-muted-foreground hover:text-foreground transition-colors truncate"
-                    >
-                      {c.label}
-                    </Link>
-                  )}
-                </li>
-              ))}
+              {crumbs.map((c, i) => {
+                const localizedLabel = t(ADMIN_CRUMB_TRANSLATION_KEYS[c.slug] || c.slug, c.label);
+                return (
+                  <li key={c.to} className="flex items-center gap-1.5">
+                    <span className="text-muted-foreground/50">/</span>
+                    {i === crumbs.length - 1 ? (
+                      <span className="font-semibold text-foreground truncate">{localizedLabel}</span>
+                    ) : (
+                      <Link
+                        to={c.to as any}
+                        className="text-muted-foreground hover:text-foreground transition-colors truncate"
+                      >
+                        {localizedLabel}
+                      </Link>
+                    )}
+                  </li>
+                );
+              })}
             </ol>
           </nav>
 
@@ -590,7 +610,7 @@ export function SuperAdminLayout({ children }: { children: React.ReactNode }) {
             >
               <Link to="/pos">
                 <Store className="size-3.5 text-[#B58D4C]" />
-                <span>Store POS</span>
+                <span>{t("storePOS", "Store POS")}</span>
                 <ExternalLink className="size-3 text-muted-foreground" />
               </Link>
             </Button>
@@ -600,7 +620,7 @@ export function SuperAdminLayout({ children }: { children: React.ReactNode }) {
               variant="ghost"
               size="icon"
               onClick={toggleFullscreen}
-              title={isFullscreen ? "Exit Fullscreen (F11)" : "Full Screen (F11)"}
+              title={isFullscreen ? t("exitFullscreen", "Exit Fullscreen (F11)") : t("fullScreen", "Full Screen (F11)")}
               className="size-9 rounded-xl text-muted-foreground hover:text-foreground hidden sm:flex"
             >
               {isFullscreen ? <Minimize className="size-4" /> : <Maximize className="size-4" />}
@@ -611,7 +631,7 @@ export function SuperAdminLayout({ children }: { children: React.ReactNode }) {
               variant="ghost"
               size="icon"
               onClick={toggleTheme}
-              title={theme === "dark" ? "Light Mode" : "Dark Mode"}
+              title={theme === "dark" ? t("lightMode", "Light Mode") : t("darkMode", "Dark Mode")}
               className="size-9 rounded-xl text-muted-foreground hover:text-foreground"
             >
               {theme === "dark" ? <Sun className="size-4" /> : <Moon className="size-4" />}
@@ -634,13 +654,13 @@ export function SuperAdminLayout({ children }: { children: React.ReactNode }) {
                     </div>
                     <div className="flex flex-col space-y-0.5 min-w-0">
                       <p className="text-xs font-bold leading-tight truncate">
-                        {user?.name || "Super Administrator"}
+                        {user?.name || t("superAdministrator", "Super Administrator")}
                       </p>
                       <p className="text-[11px] leading-tight text-muted-foreground truncate">
                         {user?.email || "admin@superadmin.com"}
                       </p>
                       <span className="text-[10px] font-semibold text-[#B58D4C] uppercase tracking-wider mt-0.5">
-                        Root Authority
+                        {t("rootAuthority", "Root Authority")}
                       </span>
                     </div>
                   </div>
@@ -650,7 +670,7 @@ export function SuperAdminLayout({ children }: { children: React.ReactNode }) {
                   onClick={() => setIsProfileDrawerOpen(true)}
                   className="cursor-pointer text-xs font-medium py-2"
                 >
-                  <User className="size-4 mr-2 text-[#B58D4C]" /> Admin Profile & Password
+                  <User className="size-4 mr-2 text-[#B58D4C]" /> {t("adminProfilePassword", "Admin Profile & Password")}
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   onClick={toggleTheme}
@@ -658,11 +678,11 @@ export function SuperAdminLayout({ children }: { children: React.ReactNode }) {
                 >
                   {theme === "dark" ? (
                     <>
-                      <Sun className="size-4 mr-2 text-amber-500" /> Switch to Light Mode
+                      <Sun className="size-4 mr-2 text-amber-500" /> {t("switchToLightMode", "Switch to Light Mode")}
                     </>
                   ) : (
                     <>
-                      <Moon className="size-4 mr-2 text-blue-500" /> Switch to Dark Mode
+                      <Moon className="size-4 mr-2 text-blue-500" /> {t("switchToDarkMode", "Switch to Dark Mode")}
                     </>
                   )}
                 </DropdownMenuItem>
@@ -671,7 +691,7 @@ export function SuperAdminLayout({ children }: { children: React.ReactNode }) {
                   onClick={() => setShowLogoutConfirm(true)}
                   className="cursor-pointer text-xs text-destructive focus:text-destructive py-2 font-medium"
                 >
-                  <LogOut className="size-4 mr-2" /> Log out
+                  <LogOut className="size-4 mr-2" /> {t("logout", "Log out")}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -697,20 +717,20 @@ export function SuperAdminLayout({ children }: { children: React.ReactNode }) {
                         <Lock className="size-10 text-destructive" />
                       </div>
                       <div className="space-y-2">
-                        <h1 className="text-2xl font-black text-foreground">Access Restricted</h1>
+                        <h1 className="text-2xl font-black text-foreground">{t("accessRestricted", "Access Restricted")}</h1>
                         <p className="text-sm text-muted-foreground max-w-sm">
-                          You do not have permission to access{" "}
+                          {t("noPermissionToAccessModule", "You do not have permission to access")}{" "}
                           <span className="font-semibold text-foreground">
                             {mod?.label || "this module"}
                           </span>
-                          . Contact your Super Admin owner to request access.
+                          . {t("contactOwnerForAccess", "Contact your Super Admin owner to request access.")}
                         </p>
                       </div>
                       <button
                         onClick={() => navigate({ to: "/admin/dashboard" as any })}
                         className="mt-2 rounded-xl border border-border bg-card px-5 py-2.5 text-sm font-bold text-foreground hover:bg-muted/50 transition-colors"
                       >
-                        ← Back to Dashboard
+                        ← {t("backToDashboard", "Back to Dashboard")}
                       </button>
                     </div>
                   );
@@ -726,7 +746,7 @@ export function SuperAdminLayout({ children }: { children: React.ReactNode }) {
           className="fixed bottom-0 left-0 right-0 z-50 flex items-end justify-around border-t border-border bg-card/95 backdrop-blur-xl shadow-bottom-nav md:hidden"
           style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
           role="navigation"
-          aria-label="Super Admin Mobile Navigation"
+          aria-label={t("superAdminMobileNav", "Super Admin Mobile Navigation")}
         >
           {MOBILE_NAV_ITEMS.map((item) => {
             const Icon = item.icon;
@@ -770,7 +790,7 @@ export function SuperAdminLayout({ children }: { children: React.ReactNode }) {
                 ? "text-[#B58D4C]"
                 : "text-muted-foreground active:text-foreground",
             )}
-            aria-label="More navigation options"
+            aria-label={t("moreNavigationOptions", "More navigation options")}
           >
             <div
               className={cn(
@@ -783,7 +803,7 @@ export function SuperAdminLayout({ children }: { children: React.ReactNode }) {
                 strokeWidth={mobileMenuOpen || !isOnMainMobileNav ? 2.5 : 2}
               />
             </div>
-            <span className="leading-none">More</span>
+            <span className="leading-none">{t("more", "More")}</span>
             {(mobileMenuOpen || !isOnMainMobileNav) && (
               <div className="absolute top-0 left-1/2 -translate-x-1/2 h-0.5 w-6 rounded-full bg-[#B58D4C]" />
             )}
@@ -822,7 +842,7 @@ export function SuperAdminLayout({ children }: { children: React.ReactNode }) {
                 className="w-full flex items-center gap-3 rounded-xl px-3 py-2.5 text-xs font-semibold bg-[#B58D4C]/10 text-[#B58D4C] hover:bg-[#B58D4C]/15 transition-colors"
               >
                 <User className="size-4" />
-                <span>Admin Profile & Password</span>
+                <span>{t("adminProfilePassword", "Admin Profile & Password")}</span>
               </button>
             </div>
 
@@ -881,7 +901,7 @@ export function SuperAdminLayout({ children }: { children: React.ReactNode }) {
                 setShowLogoutConfirm(true);
               }}
             >
-              <LogOut className="size-4" /> Logout
+              <LogOut className="size-4" /> {t("logout", "Logout")}
             </Button>
           </div>
         </SheetContent>
@@ -896,10 +916,10 @@ export function SuperAdminLayout({ children }: { children: React.ReactNode }) {
           <SheetHeader className="bg-muted/60 p-5 border-b pr-12 text-left">
             <SheetTitle className="text-lg font-bold flex items-center gap-2 text-foreground">
               <User className="size-5 text-[#B58D4C]" />
-              <span>Super Admin Profile & Security</span>
+              <span>{t("superAdminProfileSecurity", "Super Admin Profile & Security")}</span>
             </SheetTitle>
             <SheetDescription className="text-xs text-muted-foreground mt-0.5">
-              Update administrative account credentials and change your master password.
+              {t("updateAdminCredentialsDesc", "Update administrative account credentials and change your master password.")}
             </SheetDescription>
           </SheetHeader>
 
@@ -914,10 +934,10 @@ export function SuperAdminLayout({ children }: { children: React.ReactNode }) {
                   <div>
                     <div className="flex items-center gap-1.5">
                       <span className="font-bold text-sm text-foreground">
-                        {user?.name || "Super Administrator"}
+                        {user?.name || t("superAdministrator", "Super Administrator")}
                       </span>
                       <Badge className="bg-[#B58D4C]/15 text-[#B58D4C] border-[#B58D4C]/30 text-[10px] font-bold">
-                        Root Access
+                        {t("rootAccess", "Root Access")}
                       </Badge>
                     </div>
                     <p className="text-xs text-muted-foreground font-medium">{user?.email}</p>
@@ -925,9 +945,9 @@ export function SuperAdminLayout({ children }: { children: React.ReactNode }) {
                 </div>
 
                 <div className="pt-2 border-t text-[11px] flex justify-between text-muted-foreground">
-                  <span>Session Status:</span>
+                  <span>{t("sessionStatus", "Session Status")}:</span>
                   <span className="font-semibold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
-                    <CheckCircle2 className="size-3" /> Authenticated via JWT
+                    <CheckCircle2 className="size-3" /> {t("authenticatedViaJWT", "Authenticated via JWT")}
                   </span>
                 </div>
               </div>
@@ -935,22 +955,22 @@ export function SuperAdminLayout({ children }: { children: React.ReactNode }) {
               {/* General Profile Info */}
               <div className="space-y-3">
                 <h4 className="text-xs font-bold text-foreground uppercase tracking-wider">
-                  Personal Details
+                  {t("personalDetails", "Personal Details")}
                 </h4>
 
                 <div className="space-y-1.5">
-                  <Label htmlFor="prof-name">Full Name</Label>
+                  <Label htmlFor="prof-name">{t("fullName", "Full Name")}</Label>
                   <Input
                     id="prof-name"
                     required
                     value={profileName}
                     onChange={(e) => setProfileName(e.target.value)}
-                    placeholder="Super Admin Name"
+                    placeholder={t("superAdminNamePlaceholder", "Super Admin Name")}
                   />
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label htmlFor="prof-email">Email Address</Label>
+                  <Label htmlFor="prof-email">{t("emailAddress", "Email Address")}</Label>
                   <Input
                     id="prof-email"
                     type="email"
@@ -967,22 +987,22 @@ export function SuperAdminLayout({ children }: { children: React.ReactNode }) {
                 <div className="flex items-center justify-between">
                   <h4 className="text-xs font-bold text-foreground uppercase tracking-wider flex items-center gap-1.5">
                     <KeyRound className="size-3.5 text-[#B58D4C]" />
-                    <span>Change Master Password</span>
+                    <span>{t("changeMasterPassword", "Change Master Password")}</span>
                   </h4>
                   <span className="text-[10px] text-muted-foreground">
-                    Leave blank to keep unchanged
+                    {t("leaveBlankToKeepUnchanged", "Leave blank to keep unchanged")}
                   </span>
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label htmlFor="curr-pw">Current Password</Label>
+                  <Label htmlFor="curr-pw">{t("currentPassword", "Current Password")}</Label>
                   <div className="relative">
                     <Input
                       id="curr-pw"
                       type={showCurrentPw ? "text" : "password"}
                       value={currentPassword}
                       onChange={(e) => setCurrentPassword(e.target.value)}
-                      placeholder="Required only if changing password"
+                      placeholder={t("requiredOnlyIfChangingPw", "Required only if changing password")}
                       className="pr-10 text-xs"
                     />
                     <button
@@ -1000,14 +1020,14 @@ export function SuperAdminLayout({ children }: { children: React.ReactNode }) {
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label htmlFor="new-pw">New Master Password</Label>
+                  <Label htmlFor="new-pw">{t("newMasterPassword", "New Master Password")}</Label>
                   <div className="relative">
                     <Input
                       id="new-pw"
                       type={showNewPw ? "text" : "password"}
                       value={newPassword}
                       onChange={(e) => setNewPassword(e.target.value)}
-                      placeholder="Minimum 6 characters"
+                      placeholder={t("minimum6Characters", "Minimum 6 characters")}
                       className="pr-10 text-xs"
                     />
                     <button
@@ -1021,13 +1041,13 @@ export function SuperAdminLayout({ children }: { children: React.ReactNode }) {
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label htmlFor="conf-pw">Confirm New Password</Label>
+                  <Label htmlFor="conf-pw">{t("confirmNewPassword", "Confirm New Password")}</Label>
                   <Input
                     id="conf-pw"
                     type="password"
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
-                    placeholder="Repeat new master password"
+                    placeholder={t("repeatNewPassword", "Repeat new master password")}
                     className="text-xs"
                   />
                 </div>
@@ -1036,10 +1056,10 @@ export function SuperAdminLayout({ children }: { children: React.ReactNode }) {
 
             <SheetFooter className="p-5 border-t bg-muted/20 flex sm:justify-end gap-2 shrink-0">
               <Button type="button" variant="outline" onClick={() => setIsProfileDrawerOpen(false)}>
-                Cancel
+                {t("cancel", "Cancel")}
               </Button>
               <Button type="submit" disabled={updateProfileMutation.isPending}>
-                {updateProfileMutation.isPending ? "Updating…" : "Save Profile & Security"}
+                {updateProfileMutation.isPending ? t("updating", "Updating…") : t("saveProfileSecurity", "Save Profile & Security")}
               </Button>
             </SheetFooter>
           </form>

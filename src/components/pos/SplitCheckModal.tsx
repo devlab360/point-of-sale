@@ -23,6 +23,7 @@ import {
   ShoppingBag,
 } from "lucide-react";
 import { useCurrency } from "@/lib/currency";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
@@ -57,6 +58,7 @@ export function SplitCheckModal({
   onConfirm,
   isSplitting,
 }: SplitCheckModalProps) {
+  const { t } = useLanguage();
   const { formatCurrency } = useCurrency();
 
   const [pool, setPool] = useState<SplitItem[]>([]);
@@ -301,7 +303,7 @@ export function SplitCheckModal({
             variant="outline"
             className="h-8 text-xs font-bold gap-1 rounded-xl border-primary/30 text-primary hover:bg-primary/10"
           >
-            <Plus className="size-3.5" /> Add Seat
+            <Plus className="size-3.5" /> {t("addSeat", "Add Seat")}
           </Button>
         </DialogHeader>
 
@@ -312,7 +314,7 @@ export function SplitCheckModal({
             <div className="p-3 border-b border-border/80 font-bold text-xs flex items-center justify-between bg-muted/30">
               <span className="flex items-center gap-1.5 text-foreground">
                 <ShoppingBag className="size-3.5 text-primary" />
-                Unassigned Items
+                {t("unassignedItems", "Unassigned Items")}
               </span>
               <span
                 className={cn(
@@ -322,7 +324,7 @@ export function SplitCheckModal({
                     : "bg-warning/15 text-warning border-warning/25",
                 )}
               >
-                {totalPoolQty === 0 ? "Assigned ✓" : `${totalPoolQty} Left`}
+                {totalPoolQty === 0 ? `✓ ${t("assigned", "Assigned")}` : `${totalPoolQty} ${t("left", "Left")}`}
               </span>
             </div>
 
@@ -332,10 +334,9 @@ export function SplitCheckModal({
                   <div className="size-10 rounded-full bg-emerald-500/10 border border-emerald-500/20 grid place-items-center text-emerald-500 mx-auto">
                     <CheckCircle2 className="size-5" />
                   </div>
-                  <div className="font-bold text-sm text-foreground">All Items Assigned!</div>
+                  <div className="font-bold text-sm text-foreground">{t("allItemsAssigned", "All Items Assigned!")}</div>
                   <p className="text-xs text-muted-foreground">
-                    All dishes and services have been allocated to guests. Ready to confirm split
-                    checks.
+                    {t("allItemsAssignedDesc", "All dishes and services have been allocated to guests. Ready to confirm split checks.")}
                   </p>
                 </div>
               ) : (
@@ -355,7 +356,7 @@ export function SplitCheckModal({
                               {item.qty}x
                             </span>
                             <span className="font-semibold text-primary">
-                              {formatCurrency(item.price)} each
+                              {formatCurrency(item.price)} {t("each", "each")}
                             </span>
                           </div>
                         </div>
@@ -373,7 +374,7 @@ export function SplitCheckModal({
                             variant="outline"
                             className="h-7 text-[11px] font-bold px-2 rounded-lg gap-1 border-border/80 hover:border-primary/50 hover:bg-primary/5"
                             onClick={() => moveItem(item, null, c.id)}
-                            title={`Move 1x to ${c.name}`}
+                            title={`${t("move", "Move")} 1x -> ${c.name}`}
                           >
                             <span>
                               {c.name.split(" ")[0]} {c.name.split(" ")[1] || ""}
@@ -394,10 +395,10 @@ export function SplitCheckModal({
             <div className="p-3.5 border-b border-border/80 bg-muted/20 flex justify-between items-center">
               <span className="font-bold text-xs text-foreground flex items-center gap-1.5">
                 <Users className="size-4 text-primary" />
-                Active Guest Checks ({checks.length})
+                {t("activeGuestChecks", "Active Guest Checks")} ({checks.length})
               </span>
               <span className="text-xs text-muted-foreground">
-                Move items between guests or return to pool
+                {t("moveItemsBetweenGuests", "Move items between guests or return to pool")}
               </span>
             </div>
 
@@ -437,7 +438,7 @@ export function SplitCheckModal({
                             size="icon"
                             className="size-7 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg shrink-0"
                             onClick={() => removeCheck(c.id)}
-                            title="Remove guest check"
+                            title={t("removeGuestCheck", "Remove guest check")}
                           >
                             <Trash2 className="size-3.5" />
                           </Button>
@@ -450,7 +451,7 @@ export function SplitCheckModal({
                           <div className="grid h-full place-items-center text-center text-muted-foreground text-xs py-8">
                             <div>
                               <ShoppingBag className="size-6 mx-auto mb-1 opacity-30" />
-                              <span>No items allocated to this seat</span>
+                              <span>{t("noItemsAllocatedToSeat", "No items allocated to this seat")}</span>
                             </div>
                           </div>
                         ) : (
@@ -464,7 +465,7 @@ export function SplitCheckModal({
                                 size="icon"
                                 className="size-6 shrink-0 mr-1.5 text-muted-foreground hover:text-warning hover:bg-warning/10 rounded-md"
                                 onClick={() => moveItem(item, c.id, null)}
-                                title="Return 1x to Unassigned Pool"
+                                title={t("returnToPool", "Return 1x to Unassigned Pool")}
                               >
                                 <ArrowLeft className="size-3.5" />
                               </Button>
@@ -487,10 +488,10 @@ export function SplitCheckModal({
                       {/* Guest Check Footer / Total */}
                       <div className="p-3 border-t border-border/80 bg-muted/20 flex justify-between items-center">
                         <div className="text-xs text-muted-foreground font-semibold">
-                          {checkQty} {checkQty === 1 ? "item" : "items"}
+                          {checkQty} {checkQty === 1 ? t("item", "item") : t("items", "items")}
                         </div>
                         <div className="flex items-center gap-1.5">
-                          <span className="text-xs text-muted-foreground font-bold">Total:</span>
+                          <span className="text-xs text-muted-foreground font-bold">{t("total", "Total")}:</span>
                           <span className="font-extrabold text-sm text-primary number">
                             {formatCurrency(checkTotal)}
                           </span>
@@ -509,8 +510,7 @@ export function SplitCheckModal({
           <div className="text-xs text-muted-foreground flex items-center gap-1.5">
             <Sparkles className="size-3.5 text-primary" />
             <span>
-              Each split check will be saved as an independent parked invoice with its own seat
-              identifier.
+              {t("splitCheckExplanation", "Each split check will be saved as an independent parked invoice with its own seat identifier.")}
             </span>
           </div>
 
@@ -520,7 +520,7 @@ export function SplitCheckModal({
               onClick={() => onOpenChange(false)}
               className="h-9 px-4 text-xs font-bold rounded-xl"
             >
-              Cancel
+              {t("cancel", "Cancel")}
             </Button>
             <Button
               onClick={handleConfirm}
@@ -528,7 +528,7 @@ export function SplitCheckModal({
               className="h-9 px-5 text-xs font-extrabold gap-1.5 rounded-xl bg-primary text-primary-foreground shadow-md"
             >
               <SplitSquareHorizontal className="size-4" />
-              {isSplitting ? "Splitting Checks..." : "Confirm Split Checks"}
+              {isSplitting ? t("splittingChecks", "Splitting Checks...") : t("confirmSplitChecks", "Confirm Split Checks")}
             </Button>
           </div>
         </DialogFooter>

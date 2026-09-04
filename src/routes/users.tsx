@@ -329,7 +329,7 @@ function UsersPage() {
   const handleGenerateInvite = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!inviteEmail.trim()) {
-      toast.error("Email address is required");
+      toast.error(t("emailAddressRequired", "Email address is required"));
       return;
     }
     setIsGenerating(true);
@@ -346,7 +346,7 @@ function UsersPage() {
       if (res?.success) {
         const link = `${window.location.origin}/register?token=${res.data?.token || uuidv4()}&email=${encodeURIComponent(inviteEmail)}`;
         setGeneratedLink(link);
-        toast.success("Invitation link generated!");
+        toast.success(t("invitationLinkGenerated", "Invitation link generated!"));
       } else throw new Error(res?.error || "Failed to generate invite");
     } catch (err: any) {
       toast.error(err?.message || "Failed to generate invite");
@@ -358,7 +358,7 @@ function UsersPage() {
   const handleCreateDirectUser = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!directName.trim() || !directEmail.trim() || !directPassword.trim()) {
-      toast.error("All fields are required");
+      toast.error(t("allFieldsRequired", "All fields are required"));
       return;
     }
     setIsSaving(true);
@@ -415,7 +415,7 @@ function UsersPage() {
 
       if (res?.success) {
         queryClient.invalidateQueries({ queryKey: ["users", orgId] });
-        toast.success("Staff profile and access permissions updated");
+        toast.success(t("staffProfileUpdated", "Staff profile and access permissions updated"));
         setEditItem(null);
       } else throw new Error(res?.error || "Failed to update profile");
     } catch (err: any) {
@@ -430,7 +430,7 @@ function UsersPage() {
       try {
         const res = (await deleteUserFn({ data: { id: deleteId } })) as any;
         if (res?.success) {
-          toast.success("Staff member removed");
+          toast.success(t("staffMemberRemoved", "Staff member removed"));
           setDeleteId(null);
           queryClient.invalidateQueries({ queryKey: ["users", orgId] });
         } else throw new Error(res?.error || "Failed to delete");
@@ -519,25 +519,25 @@ function UsersPage() {
           <div className="flex flex-wrap items-center gap-2">
             <Select value={roleFilter} onValueChange={setRoleFilter}>
               <SelectTrigger className="h-9.5 w-36 text-xs rounded-xl font-medium">
-                <SelectValue placeholder="All Roles" />
+                <SelectValue placeholder={t("allRoles", "All Roles")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Roles</SelectItem>
-                <SelectItem value="admin">Administrator</SelectItem>
-                <SelectItem value="manager">Manager</SelectItem>
-                <SelectItem value="cashier">POS Cashier</SelectItem>
+                <SelectItem value="all">{t("allRoles", "All Roles")}</SelectItem>
+                <SelectItem value="admin">{t("administrator", "Administrator")}</SelectItem>
+                <SelectItem value="manager">{t("manager", "Manager")}</SelectItem>
+                <SelectItem value="cashier">{t("posCashier", "POS Cashier")}</SelectItem>
               </SelectContent>
             </Select>
 
             <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger className="h-9.5 w-32 text-xs rounded-xl font-medium">
-                <SelectValue placeholder="Status" />
+                <SelectValue placeholder={t("status", "Status")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="active">Active</SelectItem>
-                <SelectItem value="pending">Pending</SelectItem>
-                <SelectItem value="inactive">Inactive</SelectItem>
+                <SelectItem value="all">{t("allStatus", "All Status")}</SelectItem>
+                <SelectItem value="active">{t("active", "Active")}</SelectItem>
+                <SelectItem value="pending">{t("pending", "Pending")}</SelectItem>
+                <SelectItem value="inactive">{t("inactive", "Inactive")}</SelectItem>
               </SelectContent>
             </Select>
 
@@ -549,7 +549,7 @@ function UsersPage() {
                   ? "bg-card text-primary shadow-xs font-bold"
                   : "text-muted-foreground hover:text-foreground"
                   }`}
-                title="Table View"
+                title={t("tableView", "Table View")}
               >
                 <TableIcon className="size-4" />
               </button>
@@ -560,7 +560,7 @@ function UsersPage() {
                   ? "bg-card text-primary shadow-xs font-bold"
                   : "text-muted-foreground hover:text-foreground"
                   }`}
-                title="Grid View"
+                title={t("gridView", "Grid View")}
               >
                 <LayoutGrid className="size-4" />
               </button>
@@ -580,7 +580,7 @@ function UsersPage() {
         ) : filteredUsers.length === 0 ? (
           <EmptyState
             icon={Users}
-            title="No staff members found"
+            title={t("noStaffMembersFound", "No staff members found")}
             description={
               search ? "Try adjusting your search criteria." : "No employee accounts found."
             }
@@ -723,7 +723,7 @@ function UsersPage() {
                         ) : (
                           <span
                             className="size-8.5 px-3 pt-2.5 rounded-xl text-muted-foreground/50"
-                            title="Owner cannot be deleted"
+                            title={t("ownerCannotBeDeleted", "Owner cannot be deleted")}
                           >
                             <Trash2 className="size-3.5" />
                           </span>
@@ -840,7 +840,7 @@ function UsersPage() {
                             ) : (
                               <span
                                 className="size-8.5 px-3 pt-2.5 rounded-xl text-muted-foreground/50"
-                                title="Owner cannot be deleted"
+                                title={t("ownerCannotBeDeleted", "Owner cannot be deleted")}
                               >
                                 <Trash2 className="size-3.5" />
                               </span>
@@ -885,7 +885,7 @@ function UsersPage() {
                     </div>
                     <div className="min-w-0">
                       <SheetTitle className="text-lg sm:text-xl font-black text-foreground truncate flex items-center gap-2">
-                        <span>Staff Access Control</span>
+                        <span>{t("staffAccessControl", "Staff Access Control")}</span>
                         <span className="text-primary font-medium text-sm">/</span>
                         <span className="text-primary truncate">{editItem.name}</span>
                       </SheetTitle>
@@ -931,7 +931,7 @@ function UsersPage() {
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div className="space-y-1.5">
-                        <Label className="text-xs font-bold text-foreground">Full Name *</Label>
+                        <Label className="text-xs font-bold text-foreground">{t("fullName", "Full Name")} *</Label>
                         <Input
                           value={editName}
                           onChange={(e) => setEditName(e.target.value)}
@@ -940,7 +940,7 @@ function UsersPage() {
                         />
                       </div>
                       <div className="space-y-1.5">
-                        <Label className="text-xs font-bold text-foreground">Email Address *</Label>
+                        <Label className="text-xs font-bold text-foreground">{t("emailAddress", "Email Address")} *</Label>
                         <Input
                           type="email"
                           value={editEmail}
@@ -994,15 +994,15 @@ function UsersPage() {
                         </div>
                       </div>
                       <div className="space-y-1.5">
-                        <Label className="text-xs font-bold text-foreground">Account Status</Label>
+                        <Label className="text-xs font-bold text-foreground">{t("accountStatus", "Account Status")}</Label>
                         <Select value={editStatus} onValueChange={setEditStatus}>
                           <SelectTrigger className="h-10 text-xs rounded-xl font-bold">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="active">Active (Full Login)</SelectItem>
-                            <SelectItem value="pending">Pending Approval</SelectItem>
-                            <SelectItem value="inactive">Inactive / Suspended</SelectItem>
+                            <SelectItem value="active">{t("activeFullLogin", "Active (Full Login)")}</SelectItem>
+                            <SelectItem value="pending">{t("pendingApproval", "Pending Approval")}</SelectItem>
+                            <SelectItem value="inactive">{t("inactiveSuspended", "Inactive / Suspended")}</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
@@ -1044,7 +1044,7 @@ function UsersPage() {
                           />
                           <span className="flex items-center gap-2">
                             <Building2 className="size-4" />
-                            <span>All Branches</span>
+                            <span>{t("allBranches", "All Branches")}</span>
                             <span className="text-[9px] font-black uppercase tracking-wider text-primary/70 bg-primary/10 px-1.5 py-0.5 rounded">
                               All
                             </span>
@@ -1274,22 +1274,22 @@ function UsersPage() {
               <div className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-6">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-1.5">
-                    <Label className="text-xs font-bold text-foreground">Full Name *</Label>
+                    <Label className="text-xs font-bold text-foreground">{t("fullName", "Full Name")} *</Label>
                     <Input
                       value={directName}
                       onChange={(e) => setDirectName(e.target.value)}
-                      placeholder="e.g. John Doe"
+                      placeholder={t("contactPersonPlaceholder", "e.g. John Doe")}
                       className="h-10 rounded-xl"
                       required
                     />
                   </div>
                   <div className="space-y-1.5">
-                    <Label className="text-xs font-bold text-foreground">Email Address *</Label>
+                    <Label className="text-xs font-bold text-foreground">{t("emailAddress", "Email Address")} *</Label>
                     <Input
                       type="email"
                       value={directEmail}
                       onChange={(e) => setDirectEmail(e.target.value)}
-                      placeholder="e.g. staff@business.com"
+                      placeholder={t("staffEmailPlaceholder", "e.g. staff@business.com")}
                       className="h-10 rounded-xl"
                       required
                     />
@@ -1297,19 +1297,19 @@ function UsersPage() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label className="text-xs font-bold text-foreground">Temporary Password *</Label>
+                  <Label className="text-xs font-bold text-foreground">{t("temporaryPassword", "Temporary Password")} *</Label>
                   <Input
                     type="password"
                     value={directPassword}
                     onChange={(e) => setDirectPassword(e.target.value)}
-                    placeholder="Min. 8 characters (Upper, Lower, Number, Special)"
+                    placeholder={t("passwordRequirementPlaceholder", "Min. 8 characters (Upper, Lower, Number, Special)")}
                     className="h-10 rounded-xl"
                     required
                   />
                 </div>
 
                 <div className="space-y-2.5">
-                  <Label className="text-xs font-bold text-foreground">Assigned Role Scope</Label>
+                  <Label className="text-xs font-bold text-foreground">{t("assignedRoleScope", "Assigned Role Scope")}</Label>
                   <RoleSelectCards value={directRole} onChange={setDirectRole} />
                 </div>
 
@@ -1343,7 +1343,7 @@ function UsersPage() {
                         />
                         <span className="flex items-center gap-2">
                           <Building2 className="size-4" />
-                          <span>All Branches</span>
+                          <span>{t("allBranches", "All Branches")}</span>
                           <span className="text-[9px] font-black uppercase tracking-wider text-primary/70 bg-primary/10 px-1.5 py-0.5 rounded">
                             All
                           </span>
@@ -1456,19 +1456,19 @@ function UsersPage() {
             >
               <div className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-6">
                 <div className="space-y-1.5">
-                  <Label className="text-xs font-bold text-foreground">Staff Email Address *</Label>
+                  <Label className="text-xs font-bold text-foreground">{t("staffEmailAddress", "Staff Email Address")} *</Label>
                   <Input
                     type="email"
                     value={inviteEmail}
                     onChange={(e) => setInviteEmail(e.target.value)}
-                    placeholder="e.g. employee@company.com"
+                    placeholder={t("employeeEmailPlaceholder", "e.g. employee@company.com")}
                     className="h-10 rounded-xl"
                     required
                   />
                 </div>
 
                 <div className="space-y-2.5">
-                  <Label className="text-xs font-bold text-foreground">Assigned Role</Label>
+                  <Label className="text-xs font-bold text-foreground">{t("assignedRole", "Assigned Role")}</Label>
                   <RoleSelectCards value={inviteRole} onChange={setInviteRole} />
                 </div>
               </div>
@@ -1492,7 +1492,7 @@ function UsersPage() {
                           navigator.clipboard.writeText(generatedLink);
                           setCopiedLink(true);
                           setTimeout(() => setCopiedLink(false), 2000);
-                          toast.success("Link copied to clipboard!");
+                          toast.success(t("linkCopiedToClipboard", "Link copied to clipboard!"));
                         }}
                         className="h-9 px-4 font-bold rounded-xl"
                       >

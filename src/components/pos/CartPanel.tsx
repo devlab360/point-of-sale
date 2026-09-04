@@ -106,7 +106,7 @@ export function CartPanel({
     mutationFn: (data: any) => createKOTFn({ data }),
     onSuccess: (res) => {
       if (res.success) {
-        toast.success("Order sent to kitchen (KOT)");
+        toast.success(t("kotSent", "Order sent to kitchen (KOT)"));
         state.setCart([]);
         state.setDiscountPct(0);
         state.setDiscountInput("0");
@@ -123,13 +123,13 @@ export function CartPanel({
           // silently ignore if BroadcastChannel unavailable
         }
       } else {
-        toast.error("Failed to send order to kitchen");
+        toast.error(t("kotFailed", "Failed to send order to kitchen"));
       }
     },
   });
 
   const handleSendToKitchen = () => {
-    if (lines.length === 0) return toast.error("Cart is empty");
+    if (lines.length === 0) return toast.error(t("cartEmpty", "Cart is empty"));
 
     const kotItems = lines.map((l: any) => ({
       productId: l.product.id,
@@ -172,7 +172,7 @@ export function CartPanel({
           <button
             onClick={() => setShowCustomerSearch(true)}
             className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm font-bold flex-1 min-w-0 bg-background border border-border/80 rounded-xl px-2.5 sm:px-3 h-10 sm:h-11 hover:border-primary/50 transition-colors shadow-xs justify-between"
-            title="Change Customer"
+            title={t("changeCustomer", "Change Customer")}
           >
             <div className="flex items-center gap-1.5 sm:gap-2 truncate">
               <User className="size-3.5 sm:size-4 text-primary shrink-0" />
@@ -198,7 +198,7 @@ export function CartPanel({
           <Button
             variant="outline"
             className="h-10 sm:h-11 rounded-xl relative border-border/80 bg-background shrink-0 px-2.5 sm:px-3 gap-1 shadow-xs"
-            title="Held invoices"
+            title={t("heldInvoices", "Held invoices")}
             onClick={() => setShowHeld(true)}
           >
             <Play className="size-3.5 sm:size-4" />
@@ -214,7 +214,7 @@ export function CartPanel({
           <Button
             variant="outline"
             className="h-10 sm:h-11 rounded-xl border-primary/25 bg-primary/5 text-primary hover:bg-primary/15 border gap-1 shrink-0 px-2.5 sm:px-3"
-            title="Create new customer"
+            title={t("createNewCustomer", "Create new customer")}
             onClick={() => setShowAddCustomer(true)}
           >
             <Plus className="size-3.5 sm:size-4" />
@@ -304,7 +304,7 @@ export function CartPanel({
                           <button
                             onClick={() => updateQty(l.id, 0)}
                             className="rounded-lg p-1.5 text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors"
-                            aria-label="Remove item"
+                            aria-label={t("removeItem", "Remove item")}
                           >
                             <Trash2 className="size-4" />
                           </button>
@@ -362,13 +362,13 @@ export function CartPanel({
                                     else state.updateBatch(l.id, undefined, undefined);
                                   }}
                                 >
-                                  <option value="">Auto FEFO: {l.selectedBatch}</option>
+                                  <option value="">{t("autoFefo", "Auto FEFO")}: {l.selectedBatch}</option>
                                   {l.product.batches
                                     .filter((b: any) => Number(b.quantityRemaining) > 0)
                                     .map((b: any) => (
                                       <option key={b.id} value={b.id}>
                                         {b.batchNo} (
-                                        {b.expiryDate ? b.expiryDate.slice(0, 10) : "No Exp"})
+                                        {b.expiryDate ? b.expiryDate.slice(0, 10) : t("noExp", "No Exp")})
                                       </option>
                                     ))}
                                 </select>
@@ -380,9 +380,9 @@ export function CartPanel({
                           {l.product.metadata?.prescriptionRequired && (
                             <div
                               className="flex items-center gap-1 text-[10px] font-bold bg-destructive/10 text-destructive px-1.5 py-0.5 rounded border border-destructive/20"
-                              title="Valid prescription required"
+                              title={t("validPrescriptionRequired", "Valid prescription required")}
                             >
-                              <ShieldCheck className="size-3" /> Rx Req
+                              <ShieldCheck className="size-3" /> {t("rxReq", "Rx Req")}
                             </div>
                           )}
                         </div>
@@ -420,7 +420,7 @@ export function CartPanel({
             className="h-8 flex-1 min-w-[60px] rounded-lg sm:rounded-xl text-xs font-bold gap-1 border-dashed hover:border-warning/50 text-warning hover:bg-warning/10 px-2"
             disabled={lines.length === 0}
             onClick={holdInvoice}
-            title="Park current cart to serve next customer immediately (F4)"
+            title={t("parkCartTitle", "Park current cart to serve next customer immediately (F4)")}
           >
             <Pause className="size-3.5 text-warning" />
             <span className="truncate">{t("hold", "Hold")}</span>
@@ -623,7 +623,7 @@ export function CartPanel({
 
               <div className="flex items-center rounded-xl border border-border/80 bg-background overflow-hidden h-9 sm:h-10 focus-within:border-primary focus-within:ring-1 focus-within:ring-primary shadow-xs">
                 <span className="bg-muted/50 px-1.5 sm:px-2 py-1 text-[9px] sm:text-[10px] font-bold uppercase text-muted-foreground border-r border-border/60 shrink-0">
-                  UPI
+                  {t("upi", "UPI")}
                 </span>
                 <input
                   type="number"
@@ -648,7 +648,7 @@ export function CartPanel({
               const remaining = total - paid;
               return (
                 <div className="flex items-center justify-between text-[10px] sm:text-[11px] font-bold pt-0.5 px-1">
-                  <span className="text-muted-foreground truncate">Split: {formatCurrency(paid)}</span>
+                  <span className="text-muted-foreground truncate">{t("split", "Split")}: {formatCurrency(paid)}</span>
                   <span
                     className={
                       Math.abs(remaining) < 0.01
@@ -661,8 +661,8 @@ export function CartPanel({
                     {Math.abs(remaining) < 0.01
                       ? `✓ ${t("settled", "Settled")}`
                       : remaining > 0
-                        ? `Rem: ${formatCurrency(remaining)}`
-                        : `Over: ${formatCurrency(Math.abs(remaining))}`}
+                        ? `${t("rem", "Rem")}: ${formatCurrency(remaining)}`
+                        : `${t("over", "Over")}: ${formatCurrency(Math.abs(remaining))}`}
                   </span>
                 </div>
               );
@@ -695,7 +695,7 @@ export function CartPanel({
             className="h-11 sm:h-12 rounded-xl text-xs font-bold px-2.5 sm:px-3 gap-1"
             disabled={lines.length === 0}
             onClick={() => onCheckout?.(true)}
-            title="Create Quotation"
+            title={t("createQuotation", "Create Quotation")}
           >
             <FileText className="size-4" />
             <span className="hidden sm:inline">{t("quote", "Quote")}</span>
@@ -710,7 +710,7 @@ export function CartPanel({
                 (payment === "credit" || payment === "wallet") &&
                 activeCustomer.id === "walkin"
               ) {
-                toast.error("Credit/Wallet requires a registered customer");
+                toast.error(t("creditRequiresCustomer", "Credit/Wallet requires a registered customer"));
                 return;
               }
               setConfirmCheckout(true);
@@ -728,7 +728,7 @@ export function CartPanel({
             size="icon"
             variant="outline"
             className="h-11 sm:h-12 w-11 sm:w-12 rounded-xl shrink-0"
-            aria-label="Print"
+            aria-label={t("print", "Print")}
             disabled={lines.length === 0}
             onClick={onPrintBill}
           >
@@ -747,15 +747,15 @@ export function CartPanel({
               </div>
               <div>
                 <DialogTitle className="text-base font-bold text-foreground">
-                  Select Repair Job Ticket
+                  {t("selectRepairTicket", "Select Repair Job Ticket")}
                 </DialogTitle>
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  Attach active repair job sheet to checkout cart
+                  {t("attachRepairTicketDesc", "Attach active repair job sheet to checkout cart")}
                 </p>
               </div>
             </div>
             <span className="rounded-full bg-primary/10 px-2.5 py-1 text-[11px] font-extrabold text-primary border border-primary/20">
-              {openRepairs.length} Open
+              {openRepairs.length} {t("open", "Open")}
             </span>
           </div>
 
@@ -763,7 +763,7 @@ export function CartPanel({
             {openRepairs.length === 0 ? (
               <div className="text-center py-10 px-4 text-muted-foreground text-xs border border-dashed border-border/80 rounded-2xl bg-muted/10">
                 <Wrench className="size-8 mx-auto mb-2 opacity-30" />
-                <p className="font-semibold">No active repair tickets pending collection.</p>
+                <p className="font-semibold">{t("noActiveRepairTickets", "No active repair tickets pending collection.")}</p>
               </div>
             ) : (
               openRepairs.map((r: any) => {
@@ -790,7 +790,7 @@ export function CartPanel({
                     </div>
                     <div className="text-right">
                       <div className="text-[10px] text-muted-foreground uppercase font-extrabold tracking-wider">
-                        Balance Due
+                        {t("balanceDue", "Balance Due")}
                       </div>
                       <div className="font-black text-sm text-destructive number">
                         {state.formatCurrency(balance)}
@@ -803,14 +803,14 @@ export function CartPanel({
           </div>
 
           <div className="p-3.5 sm:p-4 border-t border-border/80 bg-muted/20 flex items-center justify-between text-xs text-muted-foreground">
-            <span>Select any ticket to transfer directly into the checkout cart.</span>
+            <span>{t("selectTicketTransferDesc", "Select any ticket to transfer directly into the checkout cart.")}</span>
             <Button
               variant="outline"
               size="sm"
               onClick={() => setShowRepairDialog(false)}
               className="h-8 rounded-xl text-xs font-bold"
             >
-              Close
+              {t("close", "Close")}
             </Button>
           </div>
         </DialogContent>
@@ -825,21 +825,17 @@ export function CartPanel({
             </div>
             <div>
               <DialogTitle className="text-base font-bold text-foreground">
-                Void Active Cart?
+                {t("voidActiveCartTitle", "Void Active Cart?")}
               </DialogTitle>
               <p className="text-xs text-muted-foreground mt-0.5">
-                Clear all items and reset active bill
+                {t("clearAllItemsResetDesc", "Clear all items and reset active bill")}
               </p>
             </div>
           </div>
 
           <div className="p-5 space-y-2">
             <p className="text-xs text-muted-foreground leading-relaxed">
-              This will permanently clear all{" "}
-              <strong className="text-foreground font-bold">
-                {lines.length} {lines.length === 1 ? "item" : "items"}
-              </strong>{" "}
-              from the checkout cart and reset discounts. This action cannot be reversed.
+              {t("voidCartConfirmPrompt", "This will permanently clear all active items from the checkout cart and reset discounts. This action cannot be reversed.")}
             </p>
           </div>
 
@@ -849,7 +845,7 @@ export function CartPanel({
               onClick={() => setShowVoidConfirm(false)}
               className="rounded-xl h-10 px-4 text-xs font-semibold"
             >
-              Cancel
+              {t("cancel", "Cancel")}
             </Button>
             <Button
               variant="destructive"
@@ -858,12 +854,12 @@ export function CartPanel({
                 setActiveInput(null);
                 setKeyboardOpen(false);
                 setShowVoidConfirm(false);
-                toast.success("Active cart voided");
+                toast.success(t("cartVoided", "Active cart voided"));
               }}
               className="rounded-xl h-10 px-4 text-xs font-bold gap-1.5"
             >
               <Ban className="size-3.5" />
-              Yes, Void Cart
+              {t("yesVoidCart", "Yes, Void Cart")}
             </Button>
           </div>
         </DialogContent>

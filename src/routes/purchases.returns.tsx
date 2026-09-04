@@ -184,23 +184,23 @@ function PurchaseReturnsPage() {
   const handleAdd = async () => {
     try {
       if (!purchaseId) {
-        toast.error("Please select an original purchase invoice");
+        toast.error(t("selectOriginalPurchaseInvoice", "Please select an original purchase invoice"));
         return;
       }
       if (!supplier.trim()) {
-        toast.error("Supplier name is required");
+        toast.error(t("supplierNameRequired", "Supplier name is required"));
         return;
       }
       if (!reason.trim()) {
-        toast.error("Reason for return is required");
+        toast.error(t("reasonForReturnRequired", "Reason for return is required"));
         return;
       }
       if (returnItems.length === 0) {
-        toast.error("Add at least one line item to return");
+        toast.error(t("addAtLeastOneReturnItem", "Add at least one line item to return"));
         return;
       }
       if (returnItems.some((i) => !i.productId)) {
-        toast.error("All items must have a valid product selected");
+        toast.error(t("allItemsMustHaveProduct", "All items must have a valid product selected"));
         return;
       }
 
@@ -228,7 +228,7 @@ function PurchaseReturnsPage() {
 
       queryClient.invalidateQueries({ queryKey: ["purchaseReturns"] });
       queryClient.invalidateQueries({ queryKey: ["products"] });
-      toast.success("Purchase return recorded & stock adjusted successfully");
+      toast.success(t("purchaseReturnRecordedSuccess", "Purchase return recorded & stock adjusted successfully"));
       setIsAddOpen(false);
       setPurchaseId("");
       setSupplier("");
@@ -246,12 +246,12 @@ function PurchaseReturnsPage() {
     try {
       const res = await deletePurchaseReturnFn({ data: { id: deleteId } });
       if (res?.success) {
-        toast.success("Return record deleted");
+        toast.success(t("returnRecordDeleted", "Return record deleted"));
         setDeleteId(null);
         queryClient.invalidateQueries({ queryKey: ["purchaseReturns"] });
       } else throw new Error(res?.error);
     } catch {
-      toast.error("Failed to delete return");
+      toast.error(t("failedToDeleteReturn", "Failed to delete return"));
     }
   };
 

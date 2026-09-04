@@ -610,7 +610,7 @@ function HelpPage() {
                   <Input
                     value={chatSubject}
                     onChange={(e) => setChatSubject(e.target.value)}
-                    placeholder="e.g. Receipt printer alignment issue"
+                    placeholder={t("helpSubjectPlaceholder", "e.g. Receipt printer alignment issue")}
                     required
                   />
                 </div>

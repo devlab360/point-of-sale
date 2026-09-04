@@ -168,16 +168,16 @@ function SuperAdminUsersPage() {
     mutationFn: (data: any) => createSuperAdminUserFn({ data }),
     onSuccess: (res: any) => {
       if (res.success) {
-        toast.success("New Super Administrator provisioned!");
+        toast.success(t("admin.newSuperAdminProvisionedToast", "New Super Administrator provisioned!"));
         setIsAddUserModalOpen(false);
         setNewUser({ name: "", email: "", password: "", adminPermissions: [] });
         setNewUserFullAccess(true);
         queryClient.invalidateQueries({ queryKey: ["super-admin-users"] });
       } else {
-        toast.error(res.error || "Failed to create user");
+        toast.error(res.error || t("admin.createUserFailedToast", "Failed to create user"));
       }
     },
-    onError: (err: any) => toast.error(err.message || "Failed to create user"),
+    onError: (err: any) => toast.error(err.message || t("admin.createUserFailedToast", "Failed to create user")),
   });
 
   const updatePermissionsMutation = useMutation({
@@ -185,29 +185,29 @@ function SuperAdminUsersPage() {
       updateSuperAdminUserPermissionsFn({ data }),
     onSuccess: (res: any) => {
       if (res.success) {
-        toast.success("Module permissions updated!");
+        toast.success(t("admin.modulePermissionsUpdatedToast", "Module permissions updated!"));
         setEditingPermissionsUser(null);
         queryClient.invalidateQueries({ queryKey: ["super-admin-users"] });
       } else {
-        toast.error(res.error || "Failed to update permissions");
+        toast.error(res.error || t("admin.updatePermissionsFailedToast", "Failed to update permissions"));
       }
     },
-    onError: (err: any) => toast.error(err.message || "Failed to update permissions"),
+    onError: (err: any) => toast.error(err.message || t("admin.updatePermissionsFailedToast", "Failed to update permissions")),
   });
 
   const deleteUserMutation = useMutation({
     mutationFn: (userId: string) => deleteSuperAdminUserFn({ data: { userId } }),
     onSuccess: () => {
-      toast.success("Super Admin account removed");
+      toast.success(t("admin.superAdminRemovedToast", "Super Admin account removed"));
       queryClient.invalidateQueries({ queryKey: ["super-admin-users"] });
     },
-    onError: (err: any) => toast.error(err.message || "Failed to delete user"),
+    onError: (err: any) => toast.error(err.message || t("admin.deleteUserFailedToast", "Failed to delete user")),
   });
 
   const revokeSessionMutation = useMutation({
     mutationFn: (sessionId: string) => revokeSuperAdminSessionFn({ data: { sessionId } }),
     onSuccess: () => {
-      toast.success("Admin session revoked");
+      toast.success(t("admin.adminSessionRevokedToast", "Admin session revoked"));
       queryClient.invalidateQueries({ queryKey: ["super-admin-sessions"] });
     },
   });
@@ -217,8 +217,8 @@ function SuperAdminUsersPage() {
       <div className="page-container space-y-6">
         {/* Header */}
         <PageHeader
-          title="Super Admin Personnel & Active Sessions"
-          description="Manage master platform personnel with root administrative authority and inspect active login sessions."
+          title={t("admin.usersTitle", "Super Admin Personnel & Active Sessions")}
+          description={t("admin.usersDesc", "Manage master platform personnel with root administrative authority and inspect active login sessions.")}
           actions={
             <div className="flex flex-wrap items-center gap-2">
               <Button
@@ -232,7 +232,7 @@ function SuperAdminUsersPage() {
                 disabled={isUsersFetching}
               >
                 <RefreshCw className={`size-3.5 ${isUsersFetching ? "animate-spin" : ""}`} />
-                <span>Refresh</span>
+                <span>{t("common.refresh", "Refresh")}</span>
               </Button>
               <Button
                 variant="outline"
@@ -250,7 +250,7 @@ function SuperAdminUsersPage() {
                 }}
               >
                 <Download className="size-3.5" />
-                <span>Export Staff CSV</span>
+                <span>{t("admin.exportStaffCsv", "Export Staff CSV")}</span>
               </Button>
               <Button
                 onClick={() => setIsAddUserModalOpen(true)}
@@ -258,7 +258,7 @@ function SuperAdminUsersPage() {
                 className="gap-2 h-9 shadow-xs"
               >
                 <Plus className="size-4" />
-                <span>Add Super Admin</span>
+                <span>{t("admin.addSuperAdmin", "Add Super Admin")}</span>
               </Button>
             </div>
           }
@@ -267,23 +267,23 @@ function SuperAdminUsersPage() {
         {/* KPI Strip */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <StatCard
-            label="Super Administrators"
+            label={t("admin.superAdministrators", "Super Administrators")}
             value={String(users.length)}
-            hint="Root administrative accounts"
+            hint={t("admin.rootAdminAccounts", "Root administrative accounts")}
             icon={Shield}
             accent="primary"
           />
           <StatCard
-            label="Active Login Sessions"
+            label={t("admin.activeLoginSessions", "Active Login Sessions")}
             value={String(activeSessionsCount)}
-            hint={`${sessions.length} total recorded`}
+            hint={`${sessions.length} ${t("admin.totalRecorded", "total recorded")}`}
             icon={Laptop}
             accent="success"
           />
           <StatCard
-            label="Session Security"
+            label={t("admin.sessionSecurity", "Session Security")}
             value="Argon2 Encrypted"
-            hint="Cryptographic JWT Session Engine"
+            hint={t("admin.cryptoJwtEngine", "Cryptographic JWT Session Engine")}
             icon={ShieldCheck}
             accent="info"
           />
@@ -294,7 +294,7 @@ function SuperAdminUsersPage() {
           <div className="relative flex-1 w-full">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
             <Input
-              placeholder="Search administrator or session..."
+              placeholder={t("admin.searchAdminPlaceholder", "Search administrator or session...")}
               value={filterQuery}
               onChange={(e) => setFilterQuery(e.target.value)}
               className="pl-9 bg-background/50"
@@ -304,11 +304,11 @@ function SuperAdminUsersPage() {
           <div className="flex flex-wrap items-center gap-2.5 w-full md:w-auto">
             <Select value={filterEntity} onValueChange={(v) => setFilterEntity(v as any)}>
               <SelectTrigger className="w-[150px] bg-background/50 text-xs">
-                <SelectValue placeholder="Scope" />
+                <SelectValue placeholder={t("admin.scope", "Scope")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="admins">Admins</SelectItem>
-                <SelectItem value="sessions">Sessions</SelectItem>
+                <SelectItem value="admins">{t("admin.admins", "Admins")}</SelectItem>
+                <SelectItem value="sessions">{t("admin.sessions", "Sessions")}</SelectItem>
               </SelectContent>
             </Select>
 
@@ -318,12 +318,12 @@ function SuperAdminUsersPage() {
                 onValueChange={(v) => setAdminAccessFilter(v as any)}
               >
                 <SelectTrigger className="w-[160px] bg-background/50 text-xs">
-                  <SelectValue placeholder="Access" />
+                  <SelectValue placeholder={t("admin.access", "Access")} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Access ({users.length})</SelectItem>
+                  <SelectItem value="all">{t("admin.allAccess", "All Access")} ({users.length})</SelectItem>
                   <SelectItem value="full">
-                    Full Access (
+                    {t("admin.fullAccess", "Full Access")} (
                     {
                       users.filter(
                         (u: any) => !u.adminPermissions || u.adminPermissions.length === 0,
@@ -332,7 +332,7 @@ function SuperAdminUsersPage() {
                     )
                   </SelectItem>
                   <SelectItem value="restricted">
-                    Restricted (
+                    {t("admin.restricted", "Restricted")} (
                     {
                       users.filter((u: any) => u.adminPermissions && u.adminPermissions.length > 0)
                         .length
@@ -349,15 +349,15 @@ function SuperAdminUsersPage() {
                 onValueChange={(v) => setSessionStatusFilter(v as any)}
               >
                 <SelectTrigger className="w-[160px] bg-background/50 text-xs">
-                  <SelectValue placeholder="Status" />
+                  <SelectValue placeholder={t("common.status", "Status")} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Statuses ({sessions.length})</SelectItem>
-                  <SelectItem value="live">Live Valid ({liveSessionCount})</SelectItem>
+                  <SelectItem value="all">{t("admin.allStatuses", "All Statuses")} ({sessions.length})</SelectItem>
+                  <SelectItem value="live">{t("admin.liveValid", "Live Valid")} ({liveSessionCount})</SelectItem>
                   <SelectItem value="expired">
-                    Expired ({sessions.length - liveSessionCount - revokedSessionCount})
+                    {t("admin.expired", "Expired")} ({sessions.length - liveSessionCount - revokedSessionCount})
                   </SelectItem>
-                  <SelectItem value="revoked">Revoked ({revokedSessionCount})</SelectItem>
+                  <SelectItem value="revoked">{t("admin.revoked", "Revoked")} ({revokedSessionCount})</SelectItem>
                 </SelectContent>
               </Select>
             )}
@@ -369,7 +369,7 @@ function SuperAdminUsersPage() {
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
               <Shield className="size-4 text-primary" />
-              <span>Platform Administrators ({filteredUsers.length})</span>
+              <span>{t("admin.platformAdministrators", "Platform Administrators")} ({filteredUsers.length})</span>
             </h3>
           </div>
 
@@ -380,7 +380,7 @@ function SuperAdminUsersPage() {
               </div>
             ) : filteredUsers.length === 0 ? (
               <div className="p-8 text-center text-xs text-muted-foreground">
-                No administrators match your filters.
+                {t("admin.noAdminsMatching", "No administrators match your filters.")}
               </div>
             ) : (
               <div className="overflow-x-auto">
@@ -414,7 +414,7 @@ function SuperAdminUsersPage() {
                                       variant="secondary"
                                       className="text-[10px] px-1.5 py-0 font-bold"
                                     >
-                                      You
+                                      {t("admin.you", "You")}
                                     </Badge>
                                   )}
                                 </div>
@@ -431,7 +431,7 @@ function SuperAdminUsersPage() {
                                 <div className="flex flex-wrap gap-1 max-w-[260px]">
                                   {isFullAccess ? (
                                     <Badge className="bg-primary/15 text-primary border-primary/30 font-bold uppercase text-[10px]">
-                                      ⚡ Full Access
+                                      ⚡ {t("admin.fullAccess", "Full Access")}
                                     </Badge>
                                   ) : (
                                     perms.map((key) => {
@@ -454,20 +454,20 @@ function SuperAdminUsersPage() {
 
                           <TableCell className="px-4 py-3.5">
                             <Badge className="bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 font-bold uppercase text-[10px]">
-                              Active
+                              {t("common.active", "Active")}
                             </Badge>
                           </TableCell>
 
                           <TableCell className="px-4 py-3.5 text-xs font-mono text-muted-foreground">
                             {admin.lastActive
                               ? new Date(admin.lastActive).toLocaleString()
-                              : "Just now"}
+                              : t("admin.justNow", "Just now")}
                           </TableCell>
 
                           <TableCell className="px-4 py-3.5 text-xs font-mono text-muted-foreground">
                             {admin.joined
                               ? new Date(admin.joined).toLocaleDateString()
-                              : "System Initial"}
+                              : t("admin.systemInitial", "System Initial")}
                           </TableCell>
 
                           <TableCell className="px-4 py-3.5 text-right">
@@ -485,7 +485,7 @@ function SuperAdminUsersPage() {
                                     setEditingPerms(isFullAccess ? [] : [...perms]);
                                   }}
                                 >
-                                  <Key className="size-3.5" /> Permissions
+                                  <Key className="size-3.5" /> {t("admin.permissions", "Permissions")}
                                 </Button>
                               )}
                               {!isSelf && (
@@ -495,12 +495,12 @@ function SuperAdminUsersPage() {
                                   className="text-destructive hover:bg-destructive/10 h-8 font-semibold"
                                   disabled={deleteUserMutation.isPending}
                                   onClick={() => {
-                                    if (confirm(`Remove administrator "${admin.name}"?`)) {
+                                    if (confirm(`${t("admin.removeAdminConfirm", "Remove administrator")} "${admin.name}"?`)) {
                                       deleteUserMutation.mutate(admin.id);
                                     }
                                   }}
                                 >
-                                  <Trash2 className="size-3.5 mr-1" /> Remove
+                                  <Trash2 className="size-3.5 mr-1" /> {t("common.remove", "Remove")}
                                 </Button>
                               )}
                             </div>
@@ -521,10 +521,10 @@ function SuperAdminUsersPage() {
             <div>
               <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
                 <Laptop className="size-4 text-indigo-500" />
-                <span>Active Server Login Sessions ({filteredSessions.length})</span>
+                <span>{t("admin.activeServerSessions", "Active Server Login Sessions")} ({filteredSessions.length})</span>
               </h3>
               <p className="text-xs text-muted-foreground">
-                Cryptographically signed 24-hour JWT auth tokens stored in database
+                {t("admin.cryptoSignedTokensDesc", "Cryptographically signed 24-hour JWT auth tokens stored in database")}
               </p>
             </div>
           </div>
@@ -536,11 +536,11 @@ function SuperAdminUsersPage() {
               </div>
             ) : sessions.length === 0 ? (
               <div className="p-8 text-center text-xs text-muted-foreground">
-                No active sessions.
+                {t("admin.noActiveSessions", "No active sessions.")}
               </div>
             ) : filteredSessions.length === 0 ? (
               <div className="p-8 text-center text-xs text-muted-foreground">
-                No sessions match your search or filter.
+                {t("admin.noSessionsMatch", "No sessions match your search or filter.")}
               </div>
             ) : (
               <div className="overflow-x-auto">
@@ -563,7 +563,7 @@ function SuperAdminUsersPage() {
                         <TableRow key={sess.id} className="hover:bg-muted/30 transition-colors">
                           <TableCell className="px-4 py-3.5">
                             <span className="font-bold text-xs text-foreground">
-                              {sess.userName || "Super Admin"}
+                              {sess.userName || t("admin.superAdmin", "Super Admin")}
                             </span>
                             <p className="text-[10px] text-muted-foreground">{sess.userEmail}</p>
                           </TableCell>
@@ -586,18 +586,18 @@ function SuperAdminUsersPage() {
                                 variant="destructive"
                                 className="font-bold uppercase text-[10px]"
                               >
-                                Revoked
+                                {t("admin.revoked", "Revoked")}
                               </Badge>
                             ) : isExpired ? (
                               <Badge
                                 variant="secondary"
                                 className="font-bold uppercase text-[10px]"
                               >
-                                Expired
+                                {t("admin.expired", "Expired")}
                               </Badge>
                             ) : (
                               <Badge className="bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 font-bold uppercase text-[10px]">
-                                Live Valid
+                                {t("admin.liveValid", "Live Valid")}
                               </Badge>
                             )}
                           </TableCell>
@@ -611,7 +611,7 @@ function SuperAdminUsersPage() {
                                 disabled={revokeSessionMutation.isPending}
                                 onClick={() => revokeSessionMutation.mutate(sess.id)}
                               >
-                                Revoke
+                                {t("admin.revoke", "Revoke")}
                               </Button>
                             )}
                           </TableCell>
@@ -633,10 +633,10 @@ function SuperAdminUsersPage() {
           >
             <SheetHeader className="bg-muted/60 p-5 border-b pr-12 text-left">
               <SheetTitle className="text-lg font-bold text-foreground">
-                Add Super Administrator
+                {t("admin.addSuperAdministrator", "Add Super Administrator")}
               </SheetTitle>
               <SheetDescription className="text-xs text-muted-foreground mt-0.5">
-                Provision a new super admin user and define which platform modules they can access.
+                {t("admin.addSuperAdminDesc", "Provision a new super admin user and define which platform modules they can access.")}
               </SheetDescription>
             </SheetHeader>
 
@@ -653,7 +653,7 @@ function SuperAdminUsersPage() {
               <div className="flex-1 overflow-y-auto p-5 space-y-5">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-1.5">
-                    <Label htmlFor="admin-name">Full Name</Label>
+                    <Label htmlFor="admin-name">{t("admin.fullName", "Full Name")}</Label>
                     <Input
                       id="admin-name"
                       required
@@ -664,7 +664,7 @@ function SuperAdminUsersPage() {
                   </div>
 
                   <div className="space-y-1.5">
-                    <Label htmlFor="admin-email">Email Address</Label>
+                    <Label htmlFor="admin-email">{t("admin.emailAddress", "Email Address")}</Label>
                     <Input
                       id="admin-email"
                       type="email"
@@ -677,7 +677,7 @@ function SuperAdminUsersPage() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label htmlFor="admin-password">Master Password</Label>
+                  <Label htmlFor="admin-password">{t("admin.masterPassword", "Master Password")}</Label>
                   <Input
                     id="admin-password"
                     type="password"
@@ -693,10 +693,10 @@ function SuperAdminUsersPage() {
                   <div className="flex items-center justify-between">
                     <div>
                       <h4 className="text-sm font-bold text-foreground">
-                        Module Access Permissions
+                        {t("admin.moduleAccessPermissions", "Module Access Permissions")}
                       </h4>
                       <p className="text-[11px] text-muted-foreground mt-0.5">
-                        Define which super admin modules this user can access.
+                        {t("admin.defineSuperAdminModulesDesc", "Define which super admin modules this user can access.")}
                       </p>
                     </div>
                     <label className="flex items-center gap-2 cursor-pointer select-none">
@@ -705,7 +705,7 @@ function SuperAdminUsersPage() {
                         checked={newUserFullAccess}
                         onCheckedChange={(v) => setNewUserFullAccess(!!v)}
                       />
-                      <span className="text-xs font-bold text-primary">Full Access</span>
+                      <span className="text-xs font-bold text-primary">{t("admin.fullAccess", "Full Access")}</span>
                     </label>
                   </div>
 
@@ -758,10 +758,10 @@ function SuperAdminUsersPage() {
                   variant="outline"
                   onClick={() => setIsAddUserModalOpen(false)}
                 >
-                  Cancel
+                  {t("common.cancel", "Cancel")}
                 </Button>
                 <Button type="submit" disabled={createUserMutation.isPending}>
-                  {createUserMutation.isPending ? "Creating Admin…" : "Create Administrator"}
+                  {createUserMutation.isPending ? t("admin.creatingAdmin", "Creating Admin…") : t("admin.createAdministrator", "Create Administrator")}
                 </Button>
               </SheetFooter>
             </form>
@@ -779,10 +779,10 @@ function SuperAdminUsersPage() {
           >
             <SheetHeader className="bg-muted/60 p-5 border-b pr-12 text-left">
               <SheetTitle className="text-lg font-bold text-foreground">
-                Module Permissions — {editingPermissionsUser?.name}
+                {t("admin.modulePermissionsUser", "Module Permissions —")} {editingPermissionsUser?.name}
               </SheetTitle>
               <SheetDescription className="text-xs text-muted-foreground mt-0.5">
-                Define which super admin panel modules {editingPermissionsUser?.email} can access.
+                {t("admin.defineModulesAccessDesc", "Define which super admin panel modules this user can access.")}
               </SheetDescription>
             </SheetHeader>
 
@@ -790,9 +790,9 @@ function SuperAdminUsersPage() {
               <div className="p-4 rounded-2xl border border-border/80 bg-muted/20 space-y-3">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h4 className="text-sm font-bold text-foreground">Access Level</h4>
+                    <h4 className="text-sm font-bold text-foreground">{t("admin.accessLevel", "Access Level")}</h4>
                     <p className="text-[11px] text-muted-foreground">
-                      Toggle Full Access to grant all modules, or select specific modules below.
+                      {t("admin.toggleFullAccessDesc", "Toggle Full Access to grant all modules, or select specific modules below.")}
                     </p>
                   </div>
                   <label className="flex items-center gap-2 cursor-pointer select-none">
@@ -805,7 +805,7 @@ function SuperAdminUsersPage() {
                       }}
                     />
                     <span className="text-xs font-bold text-primary">
-                      Full Access (No Restrictions)
+                      {t("admin.fullAccessNoRestrictions", "Full Access (No Restrictions)")}
                     </span>
                   </label>
                 </div>
@@ -854,7 +854,7 @@ function SuperAdminUsersPage() {
               {!editPermFullAccess && editingPerms.length === 0 && (
                 <div className="flex items-center gap-2 p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-xs text-amber-600 dark:text-amber-400">
                   <ShieldAlert className="size-4 shrink-0" />
-                  <span>No modules selected. The user will effectively have no access.</span>
+                  <span>{t("admin.noModulesSelectedWarning", "No modules selected. The user will effectively have no access.")}</span>
                 </div>
               )}
             </div>
@@ -865,7 +865,7 @@ function SuperAdminUsersPage() {
                 variant="outline"
                 onClick={() => setEditingPermissionsUser(null)}
               >
-                Cancel
+                {t("common.cancel", "Cancel")}
               </Button>
               <Button
                 type="button"
@@ -877,7 +877,7 @@ function SuperAdminUsersPage() {
                   });
                 }}
               >
-                {updatePermissionsMutation.isPending ? "Saving…" : "Save Permissions"}
+                {updatePermissionsMutation.isPending ? t("admin.saving", "Saving…") : t("admin.savePermissions", "Save Permissions")}
               </Button>
             </SheetFooter>
           </SheetContent>
