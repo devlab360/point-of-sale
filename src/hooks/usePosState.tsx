@@ -232,6 +232,7 @@ export function usePosState() {
   const [activeCat, setActiveCat] = useState<string>("all");
   const [query, setQuery] = useState("");
   const [cart, setCart] = useState<CartLine[]>([]);
+  const [discountType, setDiscountType] = useState<"percentage" | "flat">("percentage");
   const [discountPct, setDiscountPct] = useState(0);
   const [discountInput, setDiscountInput] = useState("0");
   const [payment, setPayment] = useState<PaymentMode>("card");
@@ -597,7 +598,14 @@ export function usePosState() {
       ? subtotal * (appliedCoupon.discount / 100)
       : appliedCoupon.discount
     : 0;
-  const discountAmt = subtotal * (discountPct / 100) + couponDisc;
+
+  const parsedDiscInput = parseFloat(discountInput) || 0;
+  const manualDisc =
+    discountType === "percentage"
+      ? subtotal * (Math.min(100, Math.max(0, parsedDiscInput)) / 100)
+      : Math.min(subtotal, Math.max(0, parsedDiscInput));
+
+  const discountAmt = manualDisc + couponDisc;
 
   const taxMasterMap = useMemo(() => {
     const m = new Map<string, any>();
@@ -897,6 +905,8 @@ export function usePosState() {
     setCart,
     discountPct,
     setDiscountPct,
+    discountType,
+    setDiscountType,
     discountInput,
     setDiscountInput,
     payment,

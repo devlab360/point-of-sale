@@ -177,6 +177,8 @@ export function PosDialogs({
     currencySymbol,
     discountInput,
     setDiscountInput,
+    discountType,
+    setDiscountType,
     setDiscountPct,
     cashTendered,
     setCashTendered,
@@ -453,7 +455,8 @@ export function PosDialogs({
     if (activeInput === "discount") {
       if (!canDiscount) return;
       setDiscountInput(input);
-      setDiscountPct(Math.min(100, Math.max(0, parseFloat(input) || 0)));
+      const parsed = parseFloat(input) || 0;
+      setDiscountPct(discountType === "percentage" ? Math.min(100, Math.max(0, parsed)) : parsed);
     } else if (activeInput === "cashTendered") {
       setCashTendered(input);
     } else if (activeInput === "splitCash") {
@@ -2253,6 +2256,9 @@ export function PosDialogs({
         inputName={activeInput || "default"}
         isNumeric={true}
         layoutName="numpad"
+        discountType={discountType}
+        onDiscountTypeChange={setDiscountType}
+        currencySymbol={currencySymbol}
         inputValue={
           activeInput === "discount"
             ? discountInput

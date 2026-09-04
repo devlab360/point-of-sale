@@ -61,6 +61,8 @@ export function CartPanel({
     updateQty,
     discountInput,
     setDiscountInput,
+    discountType,
+    setDiscountType,
     setActiveInput,
     setKeyboardOpen,
     setDiscountPct,
@@ -464,8 +466,17 @@ export function CartPanel({
 
           {/* Quick Manual Discount Input */}
           {canDiscount && (
-            <div className="flex items-center rounded-lg sm:rounded-xl border border-border/80 bg-card px-2 h-8 w-16 sm:w-20 shrink-0">
-              <span className="text-xs font-bold text-muted-foreground mr-0.5">%</span>
+            <div className="flex items-center rounded-lg sm:rounded-xl border border-border/80 bg-card px-1.5 h-8 shrink-0 shadow-2xs hover:border-primary/50 transition-colors">
+              <button
+                type="button"
+                onClick={() => {
+                  setDiscountType(discountType === "percentage" ? "flat" : "percentage");
+                }}
+                className="px-1.5 py-0.5 text-[11px] font-black rounded-md bg-primary/10 hover:bg-primary/20 text-primary transition-all mr-1 cursor-pointer"
+                title="Toggle Percentage (%) or Flat Amount"
+              >
+                {discountType === "percentage" ? "%" : settings?.currencySymbol || "₹"}
+              </button>
               <input
                 type="number"
                 value={discountInput}
@@ -475,10 +486,11 @@ export function CartPanel({
                 }}
                 onChange={(e) => {
                   setDiscountInput(e.target.value);
-                  setDiscountPct(parseFloat(e.target.value) || 0);
+                  const val = parseFloat(e.target.value) || 0;
+                  setDiscountPct(discountType === "percentage" ? Math.min(100, Math.max(0, val)) : val);
                 }}
                 placeholder="0"
-                className="w-full bg-transparent text-xs font-bold text-foreground outline-none"
+                className="w-12 sm:w-16 bg-transparent text-xs font-bold text-foreground outline-none"
               />
             </div>
           )}
