@@ -85,14 +85,9 @@ export function ProductGrid({ state }: { state: any }) {
     const resizeObserver = new ResizeObserver((entries) => {
       for (let entry of entries) {
         const width = entry.contentRect.width;
-        if (width >= 1536)
-          setColumns(5); // 2xl
-        else if (width >= 1280)
-          setColumns(4); // xl
-        else if (width >= 768)
-          setColumns(3); // md, lg
-        else if (width >= 640)
-          setColumns(3); // sm
+        if (width >= 1350) setColumns(5);
+        else if (width >= 1024) setColumns(4);
+        else if (width >= 680) setColumns(3);
         else setColumns(2);
       }
     });
@@ -105,9 +100,9 @@ export function ProductGrid({ state }: { state: any }) {
   const virtualizer = useVirtualizer({
     count: rowCount,
     getScrollElement: () => parentRef.current,
-    estimateSize: () => 265, // Initial estimate: image (150px) + text area + gap
-    measureElement: (el) => (el as HTMLElement).offsetHeight, // Dynamically measure real card height
-    overscan: 4, // Render 4 rows ahead/behind
+    estimateSize: () => 235, // Initial estimate: image (120px) + text area + gap
+    measureElement: (el) => (el as HTMLElement).offsetHeight,
+    overscan: 4,
   });
 
   return (
@@ -118,15 +113,15 @@ export function ProductGrid({ state }: { state: any }) {
       )}
     >
       {/* Top Controls: Search, Barcode, Store Location, Add Product */}
-      <div className="flex flex-wrap md:flex-nowrap items-center gap-2 border-b border-border/80 bg-background/95 p-2 sm:p-3 backdrop-blur-md shrink-0">
+      <div className="flex flex-wrap lg:flex-nowrap items-center gap-1.5 sm:gap-2 border-b border-border/80 bg-background/95 p-2 sm:p-2.5 md:p-3 backdrop-blur-md shrink-0">
         {/* Product Search */}
-        <div className="relative flex-1 min-w-[130px] md:flex-[3]">
+        <div className="relative flex-1 min-w-[120px] sm:min-w-[150px] lg:flex-[2.5]">
           <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder={t("searchProducts", "Search products...")}
-            className="h-11 w-full rounded-xl border border-border/80 bg-card pl-9 pr-8 text-xs sm:text-sm font-medium transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 placeholder:text-muted-foreground"
+            className="h-10 sm:h-11 w-full rounded-xl border border-border/80 bg-card pl-9 pr-8 text-xs sm:text-sm font-medium transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 placeholder:text-muted-foreground"
           />
           {query && (
             <button
@@ -138,8 +133,8 @@ export function ProductGrid({ state }: { state: any }) {
           )}
         </div>
 
-        {/* Barcode Scanner — desktop full input */}
-        <div className="relative hidden md:flex md:flex-[2] shrink-0">
+        {/* Barcode Scanner — desktop large screen full input */}
+        <div className="relative hidden lg:flex lg:flex-[1.5] xl:flex-[2] min-w-0 shrink-0">
           <ScanBarcode className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-primary" />
           <input
             placeholder={t("scanBarcode", "Scan Barcode...")}
@@ -162,18 +157,18 @@ export function ProductGrid({ state }: { state: any }) {
                 e.currentTarget.value = "";
               }
             }}
-            className="h-11 w-full rounded-xl border border-primary/30 bg-primary/8 pl-9 pr-3 font-mono text-xs text-foreground placeholder:text-primary/70 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 font-semibold"
+            className="h-10 sm:h-11 w-full rounded-xl border border-primary/30 bg-primary/8 pl-9 pr-3 font-mono text-xs text-foreground placeholder:text-primary/70 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 font-semibold"
           />
         </div>
 
-        {/* Barcode Scanner — mobile compact icon button */}
-        <div className="md:hidden shrink-0">
+        {/* Barcode Scanner — mobile & tablet compact icon button */}
+        <div className="lg:hidden shrink-0">
           <Popover>
             <PopoverTrigger asChild>
               <Button
                 variant="outline"
                 size="icon"
-                className="h-11 w-11 rounded-xl border-border/80 bg-card text-foreground hover:text-primary hover:bg-muted/40 shrink-0 cursor-pointer"
+                className="h-10 w-10 sm:h-11 sm:w-11 rounded-xl border-border/80 bg-card text-foreground hover:text-primary hover:bg-muted/40 shrink-0 cursor-pointer"
                 title="Scan Barcode"
               >
                 <ScanBarcode className="size-4 text-primary" />
@@ -207,7 +202,7 @@ export function ProductGrid({ state }: { state: any }) {
                       e.currentTarget.value = "";
                     }
                   }}
-                  className="h-11 w-full rounded-lg border border-primary/30 bg-primary/5 px-3 font-mono text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 font-semibold"
+                  className="h-10 sm:h-11 w-full rounded-lg border border-primary/30 bg-primary/5 px-3 font-mono text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 font-semibold"
                 />
               </div>
             </PopoverContent>
@@ -217,7 +212,7 @@ export function ProductGrid({ state }: { state: any }) {
         {/* Add Product Button */}
         <Button
           onClick={() => state.setShowAddProduct(true)}
-          className="h-11 shrink-0 rounded-xl font-bold shadow-sm gap-1 px-2.5 sm:px-3.5 cursor-pointer"
+          className="h-10 sm:h-11 shrink-0 rounded-xl font-bold shadow-sm gap-1 px-2.5 sm:px-3.5 cursor-pointer"
           title={t("addProduct", "Add Product")}
         >
           <Plus className="size-4" />
@@ -230,7 +225,7 @@ export function ProductGrid({ state }: { state: any }) {
           onValueChange={(val) => state.setSelectedLocationId(val === "default" ? null : val)}
         >
           <SelectTrigger
-            className="h-11 rounded-xl bg-card border-border/80 text-foreground hover:bg-muted/40 transition-colors w-auto max-w-[130px] sm:max-w-[160px] md:min-w-[140px] px-2.5 gap-1.5 shrink-0 cursor-pointer text-xs"
+            className="h-10 sm:h-11 rounded-xl bg-card border-border/80 text-foreground hover:bg-muted/40 transition-colors w-auto max-w-[120px] sm:max-w-[150px] lg:max-w-[170px] px-2 sm:px-2.5 gap-1 shrink-0 cursor-pointer text-xs"
             title={t("selectStoreOutlet", "Store / Location Outlet")}
           >
             <div className="flex items-center gap-1.5 min-w-0">
@@ -266,17 +261,17 @@ export function ProductGrid({ state }: { state: any }) {
         {/* Active Branch Rate Chart Badge */}
         {state.activePriceBook && (
           <div
-            className="hidden lg:flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-primary/10 border border-primary/20 text-primary text-[11px] font-bold tracking-tight shrink-0 shadow-2xs"
+            className="hidden xl:flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-primary/10 border border-primary/20 text-primary text-[11px] font-bold tracking-tight shrink-0 shadow-2xs"
             title={`Active Rate Chart: ${state.activePriceBook.name}`}
           >
             <span className="size-2 rounded-full bg-primary animate-pulse" />
-            <span className="truncate max-w-[130px] font-mono">{state.activePriceBook.code}</span>
+            <span className="truncate max-w-[120px] font-mono">{state.activePriceBook.code}</span>
           </div>
         )}
       </div>
 
       {/* Horizontal Category Filter Pills */}
-      <div className="flex gap-2 overflow-x-auto border-b border-border/70 bg-card/60 px-3 py-2.5 scrollbar-none">
+      <div className="flex gap-1.5 sm:gap-2 overflow-x-auto border-b border-border/70 bg-card/60 px-2.5 sm:px-3 py-2 scrollbar-none shrink-0">
         <CatChip
           active={activeCat === "all"}
           onClick={() => setActiveCat("all")}
@@ -304,13 +299,10 @@ export function ProductGrid({ state }: { state: any }) {
         })}
       </div>
 
-      {/* Products Grid Feed — Scrollable inner area with bottom safe padding */}
+      {/* Products Grid Feed — Scrollable inner area */}
       <div
         ref={parentRef}
-        className={cn(
-          "flex-1 overflow-y-auto p-3 sm:p-4 relative overscroll-contain",
-          (state.cart || []).length > 0 ? "pb-24 md:pb-4" : "pb-4",
-        )}
+        className="flex-1 overflow-y-auto p-2.5 sm:p-3 md:p-4 pb-4 relative overscroll-contain"
       >
         {filtered.length === 0 ? (
           <div className="flex h-64 flex-col items-center justify-center text-center text-sm text-muted-foreground">
@@ -349,8 +341,8 @@ export function ProductGrid({ state }: { state: any }) {
                     style={{
                       display: "grid",
                       gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))`,
-                      gap: "12px",
-                      paddingBottom: "12px", // acts as row gap
+                      gap: "10px",
+                      paddingBottom: "10px", // acts as row gap
                     }}
                   >
                     {rowItems.map((p: any) => {
@@ -385,12 +377,12 @@ export function ProductGrid({ state }: { state: any }) {
                           disabled={out}
                           style={{ height: "100%" }}
                           className={cn(
-                            "group relative flex flex-col overflow-hidden rounded-2xl border border-border/80 bg-card text-left transition-all duration-200 hover:border-primary/50 hover:shadow-card-hover card-interactive focus:outline-none focus:ring-2 focus:ring-primary/20",
+                            "group relative flex flex-col overflow-hidden rounded-xl sm:rounded-2xl border border-border/80 bg-card text-left transition-all duration-200 hover:border-primary/50 hover:shadow-card-hover card-interactive focus:outline-none focus:ring-2 focus:ring-primary/20",
                             out && "opacity-60 cursor-not-allowed",
                           )}
                         >
                           {/* Thumbnail & Badges */}
-                          <div className="relative h-[150px] w-full shrink-0 overflow-hidden bg-muted/40 flex items-center justify-center border-b border-border/50">
+                          <div className="relative h-28 sm:h-32 md:h-36 w-full shrink-0 overflow-hidden bg-muted/40 flex items-center justify-center border-b border-border/50">
                             {p.image && !p.image.includes("1542838132") ? (
                               <img
                                 src={p.image}
@@ -403,28 +395,28 @@ export function ProductGrid({ state }: { state: any }) {
                               />
                             ) : (
                               <div className="flex flex-col items-center justify-center text-muted-foreground/30">
-                                <ImageIcon className="size-10" strokeWidth={1.5} />
+                                <ImageIcon className="size-8 sm:size-10" strokeWidth={1.5} />
                               </div>
                             )}
 
                             {/* Stock Status Pills */}
                             {low && !out && (
-                              <span className="absolute left-2 top-2 rounded-full bg-warning/95 px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wider text-warning-foreground shadow-sm backdrop-blur-sm">
+                              <span className="absolute left-1.5 top-1.5 sm:left-2 sm:top-2 rounded-full bg-warning/95 px-1.5 sm:px-2 py-0.5 text-[9px] sm:text-[10px] font-extrabold uppercase tracking-wider text-warning-foreground shadow-sm backdrop-blur-sm">
                                 {p.stock} {t("left", "left")}
                               </span>
                             )}
                             {out && (
-                              <span className="absolute left-2 top-2 rounded-full bg-destructive/95 px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wider text-white shadow-sm backdrop-blur-sm">
+                              <span className="absolute left-1.5 top-1.5 sm:left-2 sm:top-2 rounded-full bg-destructive/95 px-1.5 sm:px-2 py-0.5 text-[9px] sm:text-[10px] font-extrabold uppercase tracking-wider text-white shadow-sm backdrop-blur-sm">
                                 {t("outOfStock", "Out of Stock")}
                               </span>
                             )}
                             {isService && (
-                              <span className="absolute left-2 top-2 rounded-full bg-primary/95 px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wider text-primary-foreground shadow-sm backdrop-blur-sm">
+                              <span className="absolute left-1.5 top-1.5 sm:left-2 sm:top-2 rounded-full bg-primary/95 px-1.5 sm:px-2 py-0.5 text-[9px] sm:text-[10px] font-extrabold uppercase tracking-wider text-primary-foreground shadow-sm backdrop-blur-sm">
                                 {t("services", "Service")}
                               </span>
                             )}
                             {p.metadata?.isJewellery && (
-                              <span className="absolute right-2 top-2 rounded-full bg-amber-500/95 px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wider text-white shadow-sm backdrop-blur-sm flex items-center gap-1">
+                              <span className="absolute right-1.5 top-1.5 sm:right-2 sm:top-2 rounded-full bg-amber-500/95 px-1.5 sm:px-2 py-0.5 text-[9px] sm:text-[10px] font-extrabold uppercase tracking-wider text-white shadow-sm backdrop-blur-sm flex items-center gap-1">
                                 <Gem className="size-2.5" />
                                 {p.metadata.purityKarat || "22K"}
                               </span>
@@ -432,9 +424,9 @@ export function ProductGrid({ state }: { state: any }) {
                           </div>
 
                           {/* Product Details */}
-                          <div className="flex flex-1 flex-col justify-between p-3 min-h-[84px]">
+                          <div className="flex flex-1 flex-col justify-between p-2 sm:p-2.5 md:p-3 min-h-[72px] sm:min-h-[80px]">
                             <div>
-                              <h4 className="line-clamp-2 text-xs sm:text-sm font-bold text-foreground leading-tight">
+                              <h4 className="line-clamp-2 text-xs sm:text-sm font-bold text-foreground leading-snug">
                                 {p.name}
                               </h4>
                               {subText && (
@@ -449,14 +441,14 @@ export function ProductGrid({ state }: { state: any }) {
                               )}
                             </div>
 
-                            <div className="mt-2.5 flex items-center justify-between gap-1.5 border-t border-border/40 pt-2 shrink-0">
-                              <span className="number text-sm sm:text-base font-black text-primary">
+                            <div className="mt-2 flex items-center justify-between gap-1 border-t border-border/40 pt-1.5 shrink-0">
+                              <span className="number text-xs sm:text-sm md:text-base font-black text-primary truncate">
                                 {formatCurrency(p.price)}
                               </span>
-                              <div className="flex items-center gap-1">
+                              <div className="flex items-center gap-1 shrink-0">
                                 {p.metadata?.hasWarranty && (
                                   <span
-                                    className="text-[9px] font-bold rounded-md bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 px-1.5 py-0.5 uppercase tracking-wider flex items-center gap-0.5"
+                                    className="text-[8px] sm:text-[9px] font-bold rounded bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 px-1 py-0.25 uppercase tracking-wider flex items-center gap-0.5"
                                     title="Warranty Protected"
                                   >
                                     <ShieldCheck className="size-2.5" />
@@ -464,19 +456,19 @@ export function ProductGrid({ state }: { state: any }) {
                                   </span>
                                 )}
                                 {p.hasVariants && (
-                                  <span className="text-[9px] font-bold rounded-md bg-secondary/80 px-1.5 py-0.5 text-secondary-foreground uppercase tracking-wider">
-                                    Variants
+                                  <span className="text-[8px] sm:text-[9px] font-bold rounded bg-secondary/80 px-1 py-0.25 text-secondary-foreground uppercase tracking-wider">
+                                    Var
                                   </span>
                                 )}
                                 {/* Always-visible quick add button */}
                                 <span
                                   className={cn(
-                                    "grid size-8 rounded-lg place-items-center transition-colors",
+                                    "grid size-6 sm:size-7 md:size-8 rounded-lg place-items-center transition-colors shrink-0",
                                     "bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground",
                                   )}
                                   aria-hidden="true"
                                 >
-                                  <Plus className="size-4 stroke-[2.5]" />
+                                  <Plus className="size-3.5 sm:size-4 stroke-[2.5]" />
                                 </span>
                               </div>
                             </div>

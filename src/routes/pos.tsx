@@ -293,7 +293,8 @@ function PosScreen() {
     const handleMouseMove = (e: MouseEvent) => {
       if (!isResizing.current) return;
       const newWidth = document.documentElement.clientWidth - e.clientX;
-      if (newWidth >= 360 && newWidth <= 700) setDrawerWidth(newWidth);
+      const maxWidth = Math.min(650, window.innerWidth * 0.55);
+      if (newWidth >= 290 && newWidth <= maxWidth) setDrawerWidth(newWidth);
     };
     const handleMouseUp = () => {
       if (isResizing.current) {
@@ -658,14 +659,14 @@ function PosScreen() {
   const cartItemCount = state.cart.reduce((s: any, i: any) => s + (Number(i.qty) || 1), 0);
 
   return (
-    <>
+    <div className="flex flex-col h-[calc(100dvh-3.5rem-4.5rem-env(safe-area-inset-bottom,0px))] md:h-[calc(100vh-4rem)] overflow-hidden relative print:hidden">
       {/* Mobile Top Navigation Tabs */}
-      <div className="md:hidden flex bg-card/95 border-b border-border/80 sticky top-0 z-20 backdrop-blur-md px-3 py-2 gap-2">
+      <div className="md:hidden flex bg-card/95 border-b border-border/80 shrink-0 backdrop-blur-md px-2.5 py-1.5 gap-2 z-20">
         <button
           type="button"
           onClick={() => setMobileTab("products")}
           className={cn(
-            "flex-1 py-2.5 text-sm font-extrabold text-center rounded-xl transition-all active:scale-[0.98]",
+            "flex-1 py-2 text-xs sm:text-sm font-extrabold text-center rounded-xl transition-all active:scale-[0.98]",
             mobileTab === "products"
               ? "bg-primary text-primary-foreground shadow-sm"
               : "bg-muted/40 text-muted-foreground hover:bg-muted hover:text-foreground",
@@ -677,7 +678,7 @@ function PosScreen() {
           type="button"
           onClick={() => setMobileTab("cart")}
           className={cn(
-            "flex-1 py-2.5 text-sm font-extrabold text-center rounded-xl transition-all active:scale-[0.98] flex items-center justify-center gap-2",
+            "flex-1 py-2 text-xs sm:text-sm font-extrabold text-center rounded-xl transition-all active:scale-[0.98] flex items-center justify-center gap-2",
             mobileTab === "cart"
               ? "bg-primary text-primary-foreground shadow-sm"
               : "bg-muted/40 text-muted-foreground hover:bg-muted hover:text-foreground",
@@ -700,42 +701,43 @@ function PosScreen() {
       </div>
 
       {/* Main Responsive Split Layout */}
-      <div className="print:hidden flex h-[calc(100dvh-7.5rem)] md:h-[calc(100vh-4rem)] flex-col md:flex-row overflow-hidden relative">
+      <div className="flex-1 min-h-0 min-w-0 flex flex-col md:flex-row overflow-hidden relative">
         <ProductGrid state={state} />
 
         {/* Resizable Divider Handle for Desktop */}
         <div
-          className="hidden md:block w-1.5 cursor-col-resize hover:bg-primary/50 active:bg-primary z-10 transition-colors bg-border/60 hover:w-2"
+          className="hidden md:block w-1.5 cursor-col-resize hover:bg-primary/50 active:bg-primary z-10 transition-colors bg-border/60 hover:w-2 shrink-0"
           onMouseDown={handleStartResizing}
           title="Drag to resize cart panel"
         />
 
         <CartPanel state={state} onCheckout={handleCheckout} onPrintBill={handlePrintBill} />
-
-        {/* Fixed Mobile Cart Bottom Bar (Sticky at bottom, inner catalog scrolls smoothly past it) */}
-        {mobileTab === "products" && cartItemCount > 0 && (
-          <div className="fixed bottom-0 inset-x-0 z-30 md:hidden p-3 bg-background/90 backdrop-blur-md border-t border-border/80 shadow-elevated animate-in fade-in slide-in-from-bottom-2 duration-200">
-            <button
-              onClick={() => setMobileTab("cart")}
-              className="w-full flex items-center justify-between bg-primary text-primary-foreground rounded-xl h-12 px-4 shadow-soft font-bold text-sm active:scale-[0.98] transition-transform cursor-pointer"
-            >
-              <div className="flex items-center gap-2.5">
-                <span className="grid size-6 place-items-center rounded-full bg-primary-foreground/20 text-xs font-black">
-                  {cartItemCount}
-                </span>
-                <span>View Cart & Checkout</span>
-              </div>
-              <div className="number text-sm font-black tracking-tight flex items-center gap-1">
-                <span>{state.formatCurrency(state.total)}</span>
-                <span>→</span>
-              </div>
-            </button>
-          </div>
-        )}
       </div>
+
+      {/* Docked Mobile Cart Bottom Bar — sits flush directly above BottomNav */}
+      {mobileTab === "products" && cartItemCount > 0 && (
+        <div className="shrink-0 md:hidden p-2 sm:p-2.5 bg-card border-t border-border/80 shadow-md animate-in fade-in slide-in-from-bottom-2 duration-150 z-20">
+          <button
+            type="button"
+            onClick={() => setMobileTab("cart")}
+            className="w-full flex items-center justify-between bg-primary text-primary-foreground rounded-xl h-11 sm:h-12 px-3.5 sm:px-4 shadow-sm font-bold text-xs sm:text-sm active:scale-[0.98] transition-transform cursor-pointer"
+          >
+            <div className="flex items-center gap-2 sm:gap-2.5">
+              <span className="grid size-5 sm:size-6 place-items-center rounded-full bg-primary-foreground/20 text-[11px] sm:text-xs font-black">
+                {cartItemCount}
+              </span>
+              <span>View Cart & Checkout</span>
+            </div>
+            <div className="number text-xs sm:text-sm font-black tracking-tight flex items-center gap-1">
+              <span>{state.formatCurrency(state.total)}</span>
+              <span>→</span>
+            </div>
+          </button>
+        </div>
+      )}
 
       <PosDialogs state={state} onCheckout={handleCheckout} onResumeInvoice={resumeInvoice} />
       <PosPrintLayouts state={state} />
-    </>
+    </div>
   );
 }

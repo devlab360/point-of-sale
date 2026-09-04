@@ -23,6 +23,7 @@ import { useFormValidation } from "@/hooks/useFormValidation";
 import { FieldError } from "@/components/ui/field-error";
 import { isProduction, appName } from "@/lib/env";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { checkRateLimit } from "@/lib/api-response";
 
 export const Route = createFileRoute("/login")({
   head: () => ({ meta: [{ title: `Sign In · ${appName} SaaS` }] }),

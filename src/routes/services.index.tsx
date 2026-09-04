@@ -48,6 +48,7 @@ import { CardGridSkeleton } from "@/components/skeletons/CardGridSkeleton";
 import { ErrorState } from "@/components/ui/error-state";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getServicesListFn, deleteServiceItemFn, getAllServiceVariantsFn } from "@/api/services";
+import { getCategoriesFn } from "@/api/categories";
 import { isImageUrl } from "@/lib/upload-service";
 import { useLanguage } from "@/contexts/LanguageContext";
 import {

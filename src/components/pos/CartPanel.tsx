@@ -160,48 +160,48 @@ export function CartPanel({
   return (
     <aside
       className={cn(
-        "flex flex-1 md:flex-none min-h-0 flex-col border-t border-border/80 bg-card w-full md:border-l md:border-t-0 md:w-[var(--drawer-width)] shrink-0 shadow-lg",
+        "flex flex-1 md:flex-none min-h-0 min-w-0 flex-col bg-card w-full md:border-l md:border-t-0 border-border/80 md:w-[clamp(300px,var(--drawer-width),48vw)] shrink-0 shadow-lg",
         mobileTab === "products" ? "hidden md:flex" : "flex",
       )}
       style={{ "--drawer-width": `${drawerWidth}px` } as React.CSSProperties}
     >
       {/* Customer Selection Header */}
-      <div className="border-b border-border/80 p-2.5 bg-muted/20 shrink-0 space-y-2">
-        <div className="flex items-center gap-2">
+      <div className="border-b border-border/80 p-2 sm:p-2.5 bg-muted/20 shrink-0 space-y-1.5 sm:space-y-2">
+        <div className="flex items-center gap-1.5 sm:gap-2">
           {/* Customer Pill */}
           <button
             onClick={() => setShowCustomerSearch(true)}
-            className="flex items-center gap-2 text-sm font-bold flex-1 min-w-0 bg-background border border-border/80 rounded-xl px-3 h-11 hover:border-primary/50 transition-colors shadow-xs justify-between"
+            className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm font-bold flex-1 min-w-0 bg-background border border-border/80 rounded-xl px-2.5 sm:px-3 h-10 sm:h-11 hover:border-primary/50 transition-colors shadow-xs justify-between"
             title="Change Customer"
           >
-            <div className="flex items-center gap-2 truncate">
-              <User className="size-4 text-primary shrink-0" />
+            <div className="flex items-center gap-1.5 sm:gap-2 truncate">
+              <User className="size-3.5 sm:size-4 text-primary shrink-0" />
               <span className="truncate text-foreground">{activeCustomer.name}</span>
             </div>
-            <div className="flex items-center gap-1.5 shrink-0">
+            <div className="flex items-center gap-1 shrink-0">
               {activeCustomer.type === "wholesale" && (
-                <span className="rounded bg-primary/15 px-1.5 py-0.5 text-[9px] font-black text-primary uppercase">
+                <span className="rounded bg-primary/15 px-1 py-0.25 text-[8px] sm:text-[9px] font-black text-primary uppercase">
                   WH
                 </span>
               )}
               {activeCustomer.loyaltyPoints != null && activeCustomer.loyaltyPoints > 0 && (
-                <span className="rounded-lg bg-amber-500/15 border border-amber-500/30 px-1.5 py-0.5 text-[10px] font-bold text-amber-600 dark:text-amber-400 flex items-center gap-0.5">
-                  <Star className="size-3 fill-amber-500 text-amber-500" />
-                  <span>{activeCustomer.loyaltyPoints} pts</span>
+                <span className="rounded-lg bg-amber-500/15 border border-amber-500/30 px-1.5 py-0.5 text-[9px] sm:text-[10px] font-bold text-amber-600 dark:text-amber-400 flex items-center gap-0.5">
+                  <Star className="size-2.5 sm:size-3 fill-amber-500 text-amber-500" />
+                  <span>{activeCustomer.loyaltyPoints}</span>
                 </span>
               )}
-              <ChevronRight className="size-4 text-muted-foreground" />
+              <ChevronRight className="size-3.5 sm:size-4 text-muted-foreground" />
             </div>
           </button>
 
           {/* Held Invoices Button */}
           <Button
             variant="outline"
-            className="h-11 rounded-xl relative border-border/80 bg-background shrink-0 px-3 gap-1.5 shadow-xs"
+            className="h-10 sm:h-11 rounded-xl relative border-border/80 bg-background shrink-0 px-2.5 sm:px-3 gap-1 shadow-xs"
             title="Held invoices"
             onClick={() => setShowHeld(true)}
           >
-            <Play className="size-4" />
+            <Play className="size-3.5 sm:size-4" />
             <span className="hidden sm:inline text-xs font-bold">{t("held", "Held")}</span>
             {heldInvoices.length > 0 && (
               <span className="absolute -top-1.5 -right-1.5 flex size-4 items-center justify-center rounded-full bg-warning text-[9px] font-bold text-warning-foreground shadow-xs ring-1 ring-background">
@@ -213,12 +213,12 @@ export function CartPanel({
           {/* Quick Add Customer */}
           <Button
             variant="outline"
-            className="h-11 rounded-xl border-primary/25 bg-primary/5 text-primary hover:bg-primary/15 border gap-1.5 shrink-0 px-3"
+            className="h-10 sm:h-11 rounded-xl border-primary/25 bg-primary/5 text-primary hover:bg-primary/15 border gap-1 shrink-0 px-2.5 sm:px-3"
             title="Create new customer"
             onClick={() => setShowAddCustomer(true)}
           >
-            <Plus className="size-4" />
-            <span className="hidden lg:inline text-xs font-bold">{t("addCustomer", "Add Customer")}</span>
+            <Plus className="size-3.5 sm:size-4" />
+            <span className="hidden xl:inline text-xs font-bold">{t("addCustomer", "Add Customer")}</span>
           </Button>
         </div>
 
@@ -397,55 +397,55 @@ export function CartPanel({
       </div>
 
       {/* Bottom Settlement Controls */}
-      <div className="border-t border-border/80 bg-background/95 p-3 space-y-2.5 backdrop-blur-md">
+      <div className="border-t border-border/80 bg-background/95 p-2 sm:p-2.5 md:p-3 space-y-2 backdrop-blur-md shrink-0">
         {/* Row 1: Fast Shortcuts */}
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-1 sm:gap-1.5 overflow-x-auto no-scrollbar py-0.5">
           <Button
             size="sm"
             variant="outline"
-            className="h-8 flex-1 rounded-xl text-xs font-bold gap-1 border-dashed hover:border-primary/50 text-muted-foreground hover:text-foreground"
+            className="h-8 flex-1 min-w-[70px] rounded-lg sm:rounded-xl text-xs font-bold gap-1 border-dashed hover:border-primary/50 text-muted-foreground hover:text-foreground px-2"
             onClick={() => setShowCoupon(true)}
           >
             <Ticket className="size-3.5 text-primary" />
             {appliedCoupon ? (
-              <span className="text-primary truncate">{appliedCoupon.code}</span>
+              <span className="text-primary truncate max-w-[50px]">{appliedCoupon.code}</span>
             ) : (
-              t("coupon", "Coupon")
+              <span className="truncate">{t("coupon", "Coupon")}</span>
             )}
           </Button>
 
           <Button
             size="sm"
             variant="outline"
-            className="h-8 flex-1 rounded-xl text-xs font-bold gap-1 border-dashed hover:border-warning/50 text-warning hover:bg-warning/10"
+            className="h-8 flex-1 min-w-[60px] rounded-lg sm:rounded-xl text-xs font-bold gap-1 border-dashed hover:border-warning/50 text-warning hover:bg-warning/10 px-2"
             disabled={lines.length === 0}
             onClick={holdInvoice}
             title="Park current cart to serve next customer immediately (F4)"
           >
             <Pause className="size-3.5 text-warning" />
-            <span>{t("hold", "Hold")}</span>
+            <span className="truncate">{t("hold", "Hold")}</span>
           </Button>
 
           <Button
             size="sm"
             variant="outline"
-            className="h-8 flex-1 rounded-xl text-xs font-bold gap-1 border-dashed hover:border-destructive/50 text-destructive hover:bg-destructive/10"
+            className="h-8 flex-1 min-w-[60px] rounded-lg sm:rounded-xl text-xs font-bold gap-1 border-dashed hover:border-destructive/50 text-destructive hover:bg-destructive/10 px-2"
             disabled={lines.length === 0}
             onClick={() => setShowVoidConfirm(true)}
           >
             <Ban className="size-3.5 text-destructive" />
-            <span>{t("void", "Void")}</span>
+            <span className="truncate">{t("void", "Void")}</span>
           </Button>
 
           {hasRepairs && (
             <Button
               size="sm"
               variant="outline"
-              className="h-8 flex-1 rounded-xl text-xs font-bold gap-1 text-muted-foreground hover:text-foreground"
+              className="h-8 flex-1 min-w-[65px] rounded-lg sm:rounded-xl text-xs font-bold gap-1 text-muted-foreground hover:text-foreground px-2"
               onClick={() => setShowRepairDialog(true)}
             >
               <Wrench className="size-3.5 text-primary" />
-              <span>{t("repair", "Repair")}</span>
+              <span className="truncate">{t("repair", "Repair")}</span>
             </Button>
           )}
 
@@ -453,19 +453,19 @@ export function CartPanel({
             <Button
               size="sm"
               variant="outline"
-              className="h-8 flex-1 rounded-xl text-xs font-bold gap-1 text-amber-500 hover:bg-amber-500/10 border-amber-500/30"
+              className="h-8 flex-1 min-w-[60px] rounded-lg sm:rounded-xl text-xs font-bold gap-1 text-amber-500 hover:bg-amber-500/10 border-amber-500/30 px-2"
               disabled={lines.length === 0 || sendToKitchen.isPending}
               onClick={handleSendToKitchen}
             >
               <ChefHat className="size-3.5" />
-              <span>{t("kot", "KOT")}</span>
+              <span className="truncate">{t("kot", "KOT")}</span>
             </Button>
           )}
 
           {/* Quick Manual Discount Input */}
           {canDiscount && (
-            <div className="flex items-center rounded-xl border border-border/80 bg-card px-2 h-8 w-20 shrink-0">
-              <span className="text-xs font-bold text-muted-foreground mr-1">%</span>
+            <div className="flex items-center rounded-lg sm:rounded-xl border border-border/80 bg-card px-2 h-8 w-16 sm:w-20 shrink-0">
+              <span className="text-xs font-bold text-muted-foreground mr-0.5">%</span>
               <input
                 type="number"
                 value={discountInput}
@@ -485,34 +485,34 @@ export function CartPanel({
         </div>
 
         {/* Row 2: Calculation Breakdown */}
-        <div className="rounded-xl bg-muted/30 px-3 py-2 border border-border/60 space-y-1">
-          <div className="flex items-center justify-between text-xs text-muted-foreground">
+        <div className="rounded-xl bg-muted/30 px-2.5 sm:px-3 py-1.5 sm:py-2 border border-border/60 space-y-0.5 sm:space-y-1">
+          <div className="flex items-center justify-between text-[11px] sm:text-xs text-muted-foreground">
             <span>{t("subtotal", "Subtotal")}</span>
             <span className="number font-semibold text-foreground">{formatCurrency(subtotal)}</span>
           </div>
           {discountAmt > 0 && (
-            <div className="flex items-center justify-between text-xs text-destructive">
+            <div className="flex items-center justify-between text-[11px] sm:text-xs text-destructive">
               <span>{t("discount", "Discount")}</span>
               <span className="number font-semibold">−{formatCurrency(discountAmt)}</span>
             </div>
           )}
           {taxAmt > 0 && (
-            <div className="flex items-center justify-between text-xs text-muted-foreground">
+            <div className="flex items-center justify-between text-[11px] sm:text-xs text-muted-foreground">
               <span>{t("tax", "Tax")}</span>
               <span className="number font-semibold text-foreground">{formatCurrency(taxAmt)}</span>
             </div>
           )}
-          <div className="flex items-center justify-between pt-1.5 border-t border-border/60">
-            <span className="text-sm font-bold text-foreground">{t("totalDue", "Total Due")}</span>
-            <span className="number text-lg font-black text-primary">{formatCurrency(total)}</span>
+          <div className="flex items-center justify-between pt-1 border-t border-border/60">
+            <span className="text-xs sm:text-sm font-bold text-foreground">{t("totalDue", "Total Due")}</span>
+            <span className="number text-base sm:text-lg font-black text-primary">{formatCurrency(total)}</span>
           </div>
         </div>
 
         {/* Row 3: Fast Cash Input (If Cash or Credit Selected) */}
         {(isCashType || isCreditType) && (
-          <div className="space-y-2 bg-muted/30 p-2.5 rounded-xl border border-border/80">
-            <div className="flex items-center gap-2">
-              <span className="text-sm font-bold text-foreground capitalize shrink-0 min-w-[92px]">
+          <div className="space-y-1.5 sm:space-y-2 bg-muted/30 p-2 sm:p-2.5 rounded-xl border border-border/80">
+            <div className="flex items-center gap-1.5 sm:gap-2">
+              <span className="text-xs sm:text-sm font-bold text-foreground capitalize shrink-0 min-w-[75px] sm:min-w-[90px]">
                 {isCreditType ? t("depositPaid", "Deposit Paid") : t("cashGiven", "Cash Given")}
               </span>
               <input
@@ -524,13 +524,13 @@ export function CartPanel({
                 }}
                 onChange={(e) => setCashTendered(e.target.value)}
                 placeholder={isCreditType ? "0.00" : formatCurrency(total)}
-                className="h-11 flex-1 rounded-xl border border-border/80 bg-background px-3 text-sm font-mono font-bold outline-none focus:border-primary shadow-xs min-w-0"
+                className="h-9 sm:h-10 flex-1 rounded-xl border border-border/80 bg-background px-2.5 sm:px-3 text-xs sm:text-sm font-mono font-bold outline-none focus:border-primary shadow-xs min-w-0"
               />
               {isCashType && (
                 <button
                   type="button"
                   onClick={() => setCashTendered(total.toFixed(2))}
-                  className="rounded-xl bg-primary/15 px-3 h-11 text-sm font-black text-primary hover:bg-primary/25 transition-colors shrink-0"
+                  className="rounded-xl bg-primary/15 px-2.5 sm:px-3 h-9 sm:h-10 text-xs sm:text-sm font-black text-primary hover:bg-primary/25 transition-colors shrink-0"
                 >
                   {t("exact", "Exact")}
                 </button>
@@ -539,7 +539,7 @@ export function CartPanel({
 
             {/* Quick Note Presets for Fast Tap */}
             {isCashType && total > 0 && (
-              <div className="flex flex-wrap gap-1.5 pt-0.5">
+              <div className="flex flex-wrap gap-1 sm:gap-1.5 pt-0.5">
                 {[50, 100, 200, 500, 2000]
                   .filter((note) => note >= total || [50, 100, 200, 500].includes(note))
                   .slice(0, 4)
@@ -549,7 +549,7 @@ export function CartPanel({
                       type="button"
                       onClick={() => setCashTendered(note.toString())}
                       className={cn(
-                        "flex-1 py-2 rounded-lg text-xs font-bold border transition-all shadow-2xs",
+                        "flex-1 min-w-[45px] py-1.5 sm:py-2 rounded-lg text-xs font-bold border transition-all shadow-2xs",
                         parseFloat(cashTendered) === note
                           ? "bg-primary text-primary-foreground border-primary"
                           : "bg-background border-border/80 text-foreground hover:bg-muted/50",
@@ -564,18 +564,18 @@ export function CartPanel({
 
             {/* Return Change Banner */}
             {isCashType && changeDue > 0 && (
-              <div className="flex items-center justify-between bg-success/15 border border-success/30 px-3 py-2 rounded-xl">
-                <span className="text-sm font-bold text-success">{t("returnChange", "Return Change")}</span>
-                <span className="number text-lg font-black text-success">
+              <div className="flex items-center justify-between bg-success/15 border border-success/30 px-2.5 sm:px-3 py-1.5 rounded-xl">
+                <span className="text-xs sm:text-sm font-bold text-success">{t("returnChange", "Return Change")}</span>
+                <span className="number text-base sm:text-lg font-black text-success">
                   {formatCurrency(changeDue)}
                 </span>
               </div>
             )}
 
             {isCreditType && (parseFloat(cashTendered) || 0) > 0 && (
-              <div className="flex items-center justify-between bg-warning/15 border border-warning/30 px-3 py-2 rounded-xl">
-                <span className="text-sm font-bold text-warning-foreground">{t("amountDue", "Amount Due")}</span>
-                <span className="number text-base font-black text-warning-foreground">
+              <div className="flex items-center justify-between bg-warning/15 border border-warning/30 px-2.5 sm:px-3 py-1.5 rounded-xl">
+                <span className="text-xs sm:text-sm font-bold text-warning-foreground">{t("amountDue", "Amount Due")}</span>
+                <span className="number text-sm sm:text-base font-black text-warning-foreground">
                   {formatCurrency(Math.max(0, total - (parseFloat(cashTendered) || 0)))}
                 </span>
               </div>
@@ -585,10 +585,10 @@ export function CartPanel({
 
         {/* Split Payments Inputs */}
         {payment === "split" && (
-          <div className="space-y-2 bg-muted/20 p-2 rounded-xl border border-border/70">
-            <div className="grid grid-cols-3 gap-1.5">
-              <div className="flex items-center rounded-xl border border-border/80 bg-background overflow-hidden h-10 focus-within:border-primary focus-within:ring-1 focus-within:ring-primary shadow-xs">
-                <span className="bg-muted/50 px-2 py-1 text-[10px] font-bold uppercase text-muted-foreground border-r border-border/60 shrink-0">
+          <div className="space-y-1.5 sm:space-y-2 bg-muted/20 p-2 rounded-xl border border-border/70">
+            <div className="grid grid-cols-3 gap-1 sm:gap-1.5">
+              <div className="flex items-center rounded-xl border border-border/80 bg-background overflow-hidden h-9 sm:h-10 focus-within:border-primary focus-within:ring-1 focus-within:ring-primary shadow-xs">
+                <span className="bg-muted/50 px-1.5 sm:px-2 py-1 text-[9px] sm:text-[10px] font-bold uppercase text-muted-foreground border-r border-border/60 shrink-0">
                   {t("cash", "Cash")}
                 </span>
                 <input
@@ -600,12 +600,12 @@ export function CartPanel({
                   }}
                   onChange={(e) => setSplitCash(e.target.value)}
                   placeholder="0.00"
-                  className="w-full bg-transparent px-1.5 text-sm font-mono font-bold outline-none text-foreground"
+                  className="w-full bg-transparent px-1 sm:px-1.5 text-xs sm:text-sm font-mono font-bold outline-none text-foreground min-w-0"
                 />
               </div>
 
-              <div className="flex items-center rounded-xl border border-border/80 bg-background overflow-hidden h-10 focus-within:border-primary focus-within:ring-1 focus-within:ring-primary shadow-xs">
-                <span className="bg-muted/50 px-2 py-1 text-[10px] font-bold uppercase text-muted-foreground border-r border-border/60 shrink-0">
+              <div className="flex items-center rounded-xl border border-border/80 bg-background overflow-hidden h-9 sm:h-10 focus-within:border-primary focus-within:ring-1 focus-within:ring-primary shadow-xs">
+                <span className="bg-muted/50 px-1.5 sm:px-2 py-1 text-[9px] sm:text-[10px] font-bold uppercase text-muted-foreground border-r border-border/60 shrink-0">
                   {t("card", "Card")}
                 </span>
                 <input
@@ -617,12 +617,12 @@ export function CartPanel({
                   }}
                   onChange={(e) => setSplitCard(e.target.value)}
                   placeholder="0.00"
-                  className="w-full bg-transparent px-1.5 text-sm font-mono font-bold outline-none text-foreground"
+                  className="w-full bg-transparent px-1 sm:px-1.5 text-xs sm:text-sm font-mono font-bold outline-none text-foreground min-w-0"
                 />
               </div>
 
-              <div className="flex items-center rounded-xl border border-border/80 bg-background overflow-hidden h-10 focus-within:border-primary focus-within:ring-1 focus-within:ring-primary shadow-xs">
-                <span className="bg-muted/50 px-2 py-1 text-[10px] font-bold uppercase text-muted-foreground border-r border-border/60 shrink-0">
+              <div className="flex items-center rounded-xl border border-border/80 bg-background overflow-hidden h-9 sm:h-10 focus-within:border-primary focus-within:ring-1 focus-within:ring-primary shadow-xs">
+                <span className="bg-muted/50 px-1.5 sm:px-2 py-1 text-[9px] sm:text-[10px] font-bold uppercase text-muted-foreground border-r border-border/60 shrink-0">
                   UPI
                 </span>
                 <input
@@ -634,7 +634,7 @@ export function CartPanel({
                   }}
                   onChange={(e) => setSplitUpi(e.target.value)}
                   placeholder="0.00"
-                  className="w-full bg-transparent px-1.5 text-sm font-mono font-bold outline-none text-foreground"
+                  className="w-full bg-transparent px-1 sm:px-1.5 text-xs sm:text-sm font-mono font-bold outline-none text-foreground min-w-0"
                 />
               </div>
             </div>
@@ -647,22 +647,22 @@ export function CartPanel({
                 (parseFloat(splitUpi) || 0);
               const remaining = total - paid;
               return (
-                <div className="flex items-center justify-between text-[11px] font-bold pt-1 px-1">
-                  <span className="text-muted-foreground">Split Total: {formatCurrency(paid)}</span>
+                <div className="flex items-center justify-between text-[10px] sm:text-[11px] font-bold pt-0.5 px-1">
+                  <span className="text-muted-foreground truncate">Split: {formatCurrency(paid)}</span>
                   <span
                     className={
                       Math.abs(remaining) < 0.01
-                        ? "text-success font-black"
+                        ? "text-success font-black truncate"
                         : remaining > 0
-                          ? "text-warning-foreground font-black"
-                          : "text-destructive font-black"
+                          ? "text-warning-foreground font-black truncate"
+                          : "text-destructive font-black truncate"
                     }
                   >
                     {Math.abs(remaining) < 0.01
                       ? `✓ ${t("settled", "Settled")}`
                       : remaining > 0
-                        ? `Remaining: ${formatCurrency(remaining)}`
-                        : `Overpaid: ${formatCurrency(Math.abs(remaining))}`}
+                        ? `Rem: ${formatCurrency(remaining)}`
+                        : `Over: ${formatCurrency(Math.abs(remaining))}`}
                   </span>
                 </div>
               );
@@ -671,16 +671,7 @@ export function CartPanel({
         )}
 
         {/* Row 4: Dynamic Payment Method Selector Pills (Default + Custom) */}
-        <div
-          className={cn(
-            "grid gap-1.5",
-            paymentMethods.length <= 3
-              ? `grid-cols-${paymentMethods.length}`
-              : paymentMethods.length <= 4
-                ? "grid-cols-2 sm:grid-cols-4"
-                : "grid-cols-3 sm:grid-cols-5",
-          )}
-        >
+        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-3 xl:grid-cols-4 gap-1 sm:gap-1.5">
           {paymentMethods.map((m) => {
             const Icon = getPaymentIcon(m.icon || m.id);
             return (
@@ -697,11 +688,11 @@ export function CartPanel({
         </div>
 
         {/* Row 5: Action Buttons: Quote, Pay & Print */}
-        <div className="grid grid-cols-[auto_1fr_auto] gap-2">
+        <div className="grid grid-cols-[auto_1fr_auto] gap-1.5 sm:gap-2 pt-0.5">
           <Button
             size="sm"
             variant="secondary"
-            className="h-12 rounded-xl text-xs font-bold px-3 gap-1.5"
+            className="h-11 sm:h-12 rounded-xl text-xs font-bold px-2.5 sm:px-3 gap-1"
             disabled={lines.length === 0}
             onClick={() => onCheckout?.(true)}
             title="Create Quotation"
@@ -712,7 +703,7 @@ export function CartPanel({
 
           <Button
             size="lg"
-            className="h-12 rounded-xl text-sm font-bold bg-primary text-primary-foreground shadow-card-hover"
+            className="h-11 sm:h-12 rounded-xl text-xs sm:text-sm font-bold bg-primary text-primary-foreground shadow-card-hover px-2 sm:px-4"
             disabled={lines.length === 0}
             onClick={() => {
               if (
@@ -725,9 +716,9 @@ export function CartPanel({
               setConfirmCheckout(true);
             }}
           >
-            <div className="flex items-center justify-center gap-2 w-full">
-              <span>{t("completeSale", "Complete Sale")}</span>
-              <span className="number text-sm font-black bg-primary-foreground/20 px-2 py-0.5 rounded-lg">
+            <div className="flex items-center justify-center gap-1.5 sm:gap-2 w-full truncate">
+              <span className="truncate">{t("completeSale", "Complete Sale")}</span>
+              <span className="number text-xs sm:text-sm font-black bg-primary-foreground/20 px-1.5 sm:px-2 py-0.5 rounded-lg shrink-0">
                 {formatCurrency(total)}
               </span>
             </div>
@@ -736,12 +727,12 @@ export function CartPanel({
           <Button
             size="icon"
             variant="outline"
-            className="h-12 w-12 rounded-xl shrink-0"
+            className="h-11 sm:h-12 w-11 sm:w-12 rounded-xl shrink-0"
             aria-label="Print"
             disabled={lines.length === 0}
             onClick={onPrintBill}
           >
-            <Printer className="size-5" />
+            <Printer className="size-4.5 sm:size-5" />
           </Button>
         </div>
       </div>

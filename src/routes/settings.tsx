@@ -3494,6 +3494,7 @@ function getPaymentMethodIconComponent(iconName?: string) {
 }
 
 function LocationsTab() {
+  const { t } = useLanguage();
   const queryClient = useQueryClient();
   const [showForm, setShowForm] = useState(false);
   const [editingLocation, setEditingLocation] = useState<any>(null);

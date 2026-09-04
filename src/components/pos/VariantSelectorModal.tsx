@@ -32,24 +32,24 @@ export function VariantSelectorModal({ product, onClose, onSelect }: VariantSele
   const selectedVariant = variants.find((v) => v.id === selectedVariantId);
 
   return (
-    <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
-      <div className="bg-card w-full max-w-lg rounded-2xl shadow-xl overflow-hidden border">
-        <div className="p-4 border-b flex justify-between items-center bg-muted/30">
+    <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 animate-in fade-in duration-200">
+      <div className="bg-card w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden border border-border/80 max-h-[90vh] flex flex-col">
+        <div className="p-3.5 sm:p-4 border-b border-border/80 flex justify-between items-center bg-muted/30 shrink-0">
           <div>
-            <h2 className="text-xl font-bold">{product.name}</h2>
-            <p className="text-sm text-muted-foreground">
+            <h2 className="text-base sm:text-lg font-bold">{product.name}</h2>
+            <p className="text-xs text-muted-foreground">
               {t("selectVariant") || "Select a variant"}
             </p>
           </div>
           <button
             onClick={onClose}
-            className="p-2 rounded-full hover:bg-muted text-muted-foreground"
+            className="p-1.5 rounded-full hover:bg-muted text-muted-foreground hover:text-foreground"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        <div className="p-6">
+        <div className="p-4 sm:p-6 overflow-y-auto flex-1">
           {isLoading ? (
             <div className="py-12 flex flex-col items-center justify-center text-muted-foreground">
               <Loader2 className="w-8 h-8 animate-spin mb-4" />
@@ -62,27 +62,27 @@ export function VariantSelectorModal({ product, onClose, onSelect }: VariantSele
                 : "No variants found for this product."}
             </div>
           ) : (
-            <div className="space-y-6">
+            <div className="space-y-4 sm:space-y-6">
               {/* Variant Options Grid */}
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3">
                 {variants.map((variant) => (
                   <button
                     key={variant.id}
                     onClick={() => setSelectedVariantId(variant.id)}
-                    className={`p-3 rounded-xl border text-left transition-all ${
+                    className={`p-2.5 sm:p-3 rounded-xl border text-left transition-all ${
                       selectedVariantId === variant.id
                         ? "border-primary ring-1 ring-primary bg-primary/5 shadow-sm"
                         : "hover:border-muted-foreground/30 hover:bg-muted/20"
                     }`}
                   >
-                    <div className="font-semibold text-sm truncate">{variant.name}</div>
-                    <div className="flex items-center gap-2 mt-1">
-                      <div className="text-primary font-medium">
+                    <div className="font-semibold text-xs sm:text-sm truncate">{variant.name}</div>
+                    <div className="flex items-center gap-1.5 mt-1">
+                      <div className="text-primary font-bold text-xs sm:text-sm">
                         {formatCurrency(variant.price)}
                       </div>
                       {isService && variant.duration && (
-                        <div className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
-                          {variant.duration} min
+                        <div className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
+                          {variant.duration}m
                         </div>
                       )}
                     </div>
@@ -91,10 +91,10 @@ export function VariantSelectorModal({ product, onClose, onSelect }: VariantSele
               </div>
 
               {/* Selection Summary & Action */}
-              <div className="pt-4 border-t flex items-center justify-between">
+              <div className="pt-3 border-t flex items-center justify-between gap-2">
                 <div>
-                  <div className="text-sm text-muted-foreground">Total Price</div>
-                  <div className="text-2xl font-bold">
+                  <div className="text-xs text-muted-foreground">Total Price</div>
+                  <div className="text-lg sm:text-2xl font-black text-primary">
                     {formatCurrency(selectedVariant ? selectedVariant.price : 0)}
                   </div>
                 </div>
@@ -102,9 +102,9 @@ export function VariantSelectorModal({ product, onClose, onSelect }: VariantSele
                   size="lg"
                   disabled={!selectedVariant}
                   onClick={() => selectedVariant && onSelect(selectedVariant)}
-                  className="rounded-full px-8 shadow-sm"
+                  className="rounded-xl px-5 sm:px-8 shadow-sm h-11 text-xs sm:text-sm font-bold"
                 >
-                  <ShoppingCart className="w-4 h-4 mr-2" />
+                  <ShoppingCart className="w-4 h-4 mr-1.5" />
                   {t("addToCart") || "Add to Cart"}
                 </Button>
               </div>

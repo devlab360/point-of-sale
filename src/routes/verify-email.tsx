@@ -16,6 +16,7 @@ import {
 import { useFormValidation } from "@/hooks/useFormValidation";
 import { FieldError } from "@/components/ui/field-error";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/verify-email")({
   head: () => ({ meta: [{ title: `Email Verification · ${appName} SaaS` }] }),
