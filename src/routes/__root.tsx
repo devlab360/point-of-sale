@@ -30,7 +30,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { Button } from "@/components/ui/button";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { AdminAuthProvider } from "@/contexts/AdminAuthContext";
-import { getTrialDaysLeft } from "@/lib/utils";
+import { getTrialDaysLeft, cn } from "@/lib/utils";
 import { X } from "lucide-react";
 import { LanguageProvider, useLanguage, TRANSLATIONS, type LanguageCode } from "@/contexts/LanguageContext";
 import { PreferencesProvider } from "@/contexts/PreferencesContext";
@@ -626,7 +626,12 @@ function AppLayout() {
         </aside>
         <div className="flex min-w-0 flex-1 flex-col relative">
           <AppHeader />
-          <main className="flex-1 overflow-y-auto bg-muted/20 relative bottom-nav-spacer">
+          <main
+            className={cn(
+              "flex-1 overflow-y-auto bg-muted/20 relative",
+              location.pathname !== "/pos" && "bottom-nav-spacer",
+            )}
+          >
             {isAuthenticated &&
             (isSuspended || (isTrialExpired && location.pathname !== "/settings")) ? (
               <div className="flex h-full w-full items-center justify-center opacity-10 select-none pointer-events-none">
@@ -645,7 +650,10 @@ function AppLayout() {
                 </svg>
               </div>
             ) : (
-              <div className="page-enter" key={location.pathname}>
+              <div
+                className={cn("page-enter", location.pathname === "/pos" && "h-full")}
+                key={location.pathname}
+              >
                 <ErrorBoundary key={location.pathname} scopeName="main_dashboard_outlet">
                   <Outlet />
                 </ErrorBoundary>

@@ -751,8 +751,8 @@ export function CartPanel({
 
       {/* Premium Repair Job Ticket Selector Modal */}
       <Dialog open={showRepairDialog} onOpenChange={setShowRepairDialog}>
-        <DialogContent className="sm:max-w-lg md:max-w-xl p-0 gap-0 overflow-hidden rounded-3xl border-border/80 shadow-2xl bg-card">
-          <div className="p-4 sm:p-5 border-b border-border/80 bg-muted/20 flex items-center justify-between">
+        <DialogContent className="w-[95vw] sm:max-w-lg md:max-w-xl max-h-[calc(100dvh-2rem)] flex flex-col p-0 gap-0 overflow-hidden rounded-3xl border-border/80 shadow-2xl bg-card">
+          <div className="p-4 sm:p-5 border-b border-border/80 bg-muted/20 flex items-center justify-between shrink-0">
             <div className="flex items-center gap-3">
               <div className="size-10 rounded-xl bg-primary/10 border border-primary/20 grid place-items-center text-primary shadow-xs">
                 <Wrench className="size-5" />
@@ -771,7 +771,7 @@ export function CartPanel({
             </span>
           </div>
 
-          <div className="p-4 sm:p-5 space-y-2.5 max-h-[60vh] overflow-y-auto">
+          <div className="p-4 sm:p-5 space-y-2.5 flex-1 min-h-0 overflow-y-auto">
             {openRepairs.length === 0 ? (
               <div className="text-center py-10 px-4 text-muted-foreground text-xs border border-dashed border-border/80 rounded-2xl bg-muted/10">
                 <Wrench className="size-8 mx-auto mb-2 opacity-30" />
@@ -814,7 +814,7 @@ export function CartPanel({
             )}
           </div>
 
-          <div className="p-3.5 sm:p-4 border-t border-border/80 bg-muted/20 flex items-center justify-between text-xs text-muted-foreground">
+          <div className="p-3.5 sm:p-4 border-t border-border/80 bg-muted/20 flex items-center justify-between text-xs text-muted-foreground shrink-0">
             <span>{t("selectTicketTransferDesc", "Select any ticket to transfer directly into the checkout cart.")}</span>
             <Button
               variant="outline"
@@ -830,8 +830,8 @@ export function CartPanel({
 
       {/* Premium Void Current Bill Confirmation Modal */}
       <Dialog open={showVoidConfirm} onOpenChange={setShowVoidConfirm}>
-        <DialogContent className="sm:max-w-md p-0 gap-0 overflow-hidden rounded-3xl border-border/80 shadow-2xl bg-card">
-          <div className="p-5 border-b border-border/80 bg-muted/20 flex items-center gap-3">
+        <DialogContent className="w-[95vw] sm:max-w-md max-h-[calc(100dvh-2rem)] flex flex-col p-0 gap-0 overflow-hidden rounded-3xl border-border/80 shadow-2xl bg-card">
+          <div className="p-5 border-b border-border/80 bg-muted/20 flex items-center gap-3 shrink-0">
             <div className="size-11 rounded-2xl bg-destructive/10 border border-destructive/25 grid place-items-center text-destructive shadow-xs">
               <Ban className="size-5.5" />
             </div>
@@ -845,13 +845,13 @@ export function CartPanel({
             </div>
           </div>
 
-          <div className="p-5 space-y-2">
+          <div className="p-5 space-y-2 flex-1 min-h-0 overflow-y-auto">
             <p className="text-xs text-muted-foreground leading-relaxed">
               {t("voidCartConfirmPrompt", "This will permanently clear all active items from the checkout cart and reset discounts. This action cannot be reversed.")}
             </p>
           </div>
 
-          <div className="p-4 border-t border-border/80 bg-muted/20 flex items-center justify-end gap-2">
+          <div className="p-4 border-t border-border/80 bg-muted/20 flex items-center justify-end gap-2 shrink-0">
             <Button
               variant="outline"
               onClick={() => setShowVoidConfirm(false)}
@@ -863,15 +863,11 @@ export function CartPanel({
               variant="destructive"
               onClick={() => {
                 voidCart();
-                setActiveInput(null);
-                setKeyboardOpen(false);
                 setShowVoidConfirm(false);
-                toast.success(t("cartVoided", "Active cart voided"));
               }}
-              className="rounded-xl h-10 px-4 text-xs font-bold gap-1.5"
+              className="rounded-xl h-10 px-5 text-xs font-bold shadow-md"
             >
-              <Ban className="size-3.5" />
-              {t("yesVoidCart", "Yes, Void Cart")}
+              {t("confirmVoidCart", "Void Cart")}
             </Button>
           </div>
         </DialogContent>

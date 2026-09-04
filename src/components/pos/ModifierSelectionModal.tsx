@@ -109,18 +109,18 @@ export function ModifierSelectionModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-lg p-0 gap-0 overflow-hidden rounded-3xl border-border/80 shadow-2xl bg-card">
+      <DialogContent className="w-[95vw] sm:max-w-lg max-h-[calc(100dvh-2rem)] flex flex-col p-0 gap-0 overflow-hidden rounded-3xl border-border/80 shadow-2xl bg-card">
         {/* Header */}
-        <div className="p-4 sm:p-5 border-b border-border/80 bg-muted/20 flex items-center justify-between">
-          <div className="space-y-0.5">
-            <DialogTitle className="text-base sm:text-lg font-bold text-foreground flex items-center gap-2">
+        <div className="p-4 sm:p-5 pr-14 sm:pr-16 border-b border-border/80 bg-muted/20 flex items-center justify-between shrink-0">
+          <div className="space-y-0.5 min-w-0 pr-2">
+            <DialogTitle className="text-base sm:text-lg font-bold text-foreground flex items-center gap-2 truncate">
               <span>{t("customize", "Customize")} {product.name}</span>
             </DialogTitle>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-xs text-muted-foreground truncate">
               {t("selectModifiersAddons", "Select item modifiers, variations, and add-ons")}
             </p>
           </div>
-          <div className="text-right">
+          <div className="text-right shrink-0 mr-1 sm:mr-2">
             <div className="text-[10px] font-extrabold uppercase text-muted-foreground">
               {t("basePrice", "Base Price")}
             </div>
@@ -131,12 +131,12 @@ export function ModifierSelectionModal({
         </div>
 
         {isLoading ? (
-          <div className="py-16 flex flex-col items-center justify-center text-muted-foreground">
+          <div className="py-16 flex flex-col items-center justify-center text-muted-foreground flex-1">
             <Loader2 className="w-8 h-8 animate-spin mb-3 text-primary" />
             <p className="text-xs font-semibold">{t("loadingOptions", "Loading options...")}</p>
           </div>
         ) : (
-          <div className="p-5 space-y-5 max-h-[60vh] overflow-y-auto">
+          <div className="p-4 sm:p-5 space-y-4 sm:space-y-5 flex-1 min-h-0 overflow-y-auto">
             {modifiers.map((group: any) => (
               <div
                 key={group.id}

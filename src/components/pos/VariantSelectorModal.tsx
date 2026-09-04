@@ -33,7 +33,7 @@ export function VariantSelectorModal({ product, onClose, onSelect }: VariantSele
 
   return (
     <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 animate-in fade-in duration-200">
-      <div className="bg-card w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden border border-border/80 max-h-[90vh] flex flex-col">
+      <div className="bg-card w-[95vw] sm:max-w-lg rounded-3xl shadow-2xl overflow-hidden border border-border/80 max-h-[calc(100dvh-2rem)] flex flex-col">
         <div className="p-3.5 sm:p-4 border-b border-border/80 flex justify-between items-center bg-muted/30 shrink-0">
           <div>
             <h2 className="text-base sm:text-lg font-bold">{product.name}</h2>
@@ -49,7 +49,7 @@ export function VariantSelectorModal({ product, onClose, onSelect }: VariantSele
           </button>
         </div>
 
-        <div className="p-4 sm:p-6 overflow-y-auto flex-1">
+        <div className="p-4 sm:p-6 overflow-y-auto flex-1 min-h-0">
           {isLoading ? (
             <div className="py-12 flex flex-col items-center justify-center text-muted-foreground">
               <Loader2 className="w-8 h-8 animate-spin mb-4" />
@@ -89,28 +89,30 @@ export function VariantSelectorModal({ product, onClose, onSelect }: VariantSele
                   </button>
                 ))}
               </div>
-
-              {/* Selection Summary & Action */}
-              <div className="pt-3 border-t flex items-center justify-between gap-2">
-                <div>
-                  <div className="text-xs text-muted-foreground">{t("totalPrice", "Total Price")}</div>
-                  <div className="text-lg sm:text-2xl font-black text-primary">
-                    {formatCurrency(selectedVariant ? selectedVariant.price : 0)}
-                  </div>
-                </div>
-                <Button
-                  size="lg"
-                  disabled={!selectedVariant}
-                  onClick={() => selectedVariant && onSelect(selectedVariant)}
-                  className="rounded-xl px-5 sm:px-8 shadow-sm h-11 text-xs sm:text-sm font-bold"
-                >
-                  <ShoppingCart className="w-4 h-4 mr-1.5" />
-                  {t("addToCart") || "Add to Cart"}
-                </Button>
-              </div>
             </div>
           )}
         </div>
+
+        {/* Selection Summary & Action Footer */}
+        {variants.length > 0 && !isLoading && (
+          <div className="p-3.5 sm:p-4 border-t border-border/80 bg-muted/20 flex items-center justify-between gap-2 shrink-0">
+            <div>
+              <div className="text-xs text-muted-foreground">{t("totalPrice", "Total Price")}</div>
+              <div className="text-lg sm:text-2xl font-black text-primary number">
+                {formatCurrency(selectedVariant ? selectedVariant.price : 0)}
+              </div>
+            </div>
+            <Button
+              size="lg"
+              disabled={!selectedVariant}
+              onClick={() => selectedVariant && onSelect(selectedVariant)}
+              className="rounded-xl px-5 sm:px-8 shadow-sm h-11 text-xs sm:text-sm font-bold"
+            >
+              <ShoppingCart className="w-4 h-4 mr-1.5" />
+              {t("addToCart") || "Add to Cart"}
+            </Button>
+          </div>
+        )}
       </div>
     </div>
   );

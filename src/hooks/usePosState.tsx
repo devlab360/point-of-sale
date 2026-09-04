@@ -129,21 +129,10 @@ export function usePosState() {
 
   // Customers are now fetched dynamically in PosDialogs.tsx via global search
 
-  const {
-    data: categoriesData,
-    isLoading: isCategoriesLoading,
-    isError: isCategoriesError,
-    refetch: refetchCategories,
-  } = useQuery({
-    queryKey: ["categories", orgId],
-    queryFn: async () => ((await getCategoriesFn({ data: {} })) as any)?.data || [],
-    staleTime: STALE_TIME,
-  });
-  const categories: any[] = categoriesData || [];
-
   const { data: heldInvoicesData, refetch: refetchHeld } = useQuery({
     queryKey: ["heldInvoices", orgId],
     queryFn: async () => ((await getHeldInvoicesFn({ data: {} })) as any)?.data || [],
+    staleTime: STALE_TIME,
   });
   const heldInvoices: any[] = heldInvoicesData || [];
 
@@ -160,6 +149,7 @@ export function usePosState() {
 
   const bootstrapData = bootstrapResponse?.data;
 
+  const categories: any[] = bootstrapData?.categories || [];
   const tables: any[] = bootstrapData?.tables || [];
   const openRepairs: any[] = bootstrapData?.repairs || [];
   const settings: any = bootstrapData?.settings || null;
@@ -211,8 +201,8 @@ export function usePosState() {
     [brands],
   );
 
-  const isPosLoading = isProductsLoading || isCategoriesLoading || isBootstrapLoading;
-  const isPosError = isProductsError || isCategoriesError;
+  const isPosLoading = isProductsLoading || isBootstrapLoading;
+  const isPosError = isProductsError;
 
   const refetchPos = useCallback(() => {
     refetchProducts();

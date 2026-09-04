@@ -48,11 +48,7 @@ export function ProductGrid({ state }: { state: any }) {
     settings,
   } = state;
 
-  const { data: locationsRes } = useQuery({
-    queryKey: ["locations"],
-    queryFn: () => getLocationsFn(),
-  });
-  const locations = locationsRes?.data || [];
+  const locations = state.locations || [];
 
   const [selectedVariantProduct, setSelectedVariantProduct] = useState<any>(null);
   const [selectedJewelleryProduct, setSelectedJewelleryProduct] = useState<any>(null);
@@ -382,7 +378,7 @@ export function ProductGrid({ state }: { state: any }) {
                           )}
                         >
                           {/* Thumbnail & Badges */}
-                          <div className="relative h-28 sm:h-32 md:h-36 w-full shrink-0 overflow-hidden bg-muted/40 flex items-center justify-center border-b border-border/50">
+                          <div className="relative h-24 sm:h-32 md:h-36 w-full shrink-0 overflow-hidden bg-muted/40 flex items-center justify-center border-b border-border/50">
                             {p.image && !p.image.includes("1542838132") ? (
                               <img
                                 src={p.image}

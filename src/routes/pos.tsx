@@ -45,23 +45,28 @@ export const Route = createFileRoute("/pos")({
     const orgId = PersistStore.getOrgId();
     if (!orgId) return;
 
+    const savedLocation =
+      typeof window !== "undefined"
+        ? localStorage.getItem("pos_selected_location") || ""
+        : "";
+
     // Parallel prefetch critical POS data with matching query keys
     await Promise.all([
-      queryClient.ensureQueryData({
-        queryKey: ["posItems", orgId],
-        queryFn: async () => ((await getPosItemsFn({ data: {} })) as any)?.data || [],
-      }),
-      queryClient.ensureQueryData({
+      queryClient.prefetchQuery({
         queryKey: ["posBootstrap", orgId],
         queryFn: async () => ((await getPosBootstrapFn()) as any)?.data,
+        staleTime: 5 * 60 * 1000,
       }),
-      queryClient.ensureQueryData({
-        queryKey: ["categories", orgId],
-        queryFn: async () => ((await getCategoriesFn({ data: {} })) as any)?.data || [],
+      queryClient.prefetchQuery({
+        queryKey: ["posItems", orgId, savedLocation],
+        queryFn: async () =>
+          ((await getPosItemsFn({ data: { locationId: savedLocation || null } })) as any)?.data || [],
+        staleTime: 5 * 60 * 1000,
       }),
-      queryClient.ensureQueryData({
+      queryClient.prefetchQuery({
         queryKey: ["heldInvoices", orgId],
         queryFn: async () => ((await getHeldInvoicesFn({ data: {} })) as any)?.data || [],
+        staleTime: 5 * 60 * 1000,
       }),
     ]);
   },

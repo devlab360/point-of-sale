@@ -486,18 +486,18 @@ export function PosDialogs({
     <>
       {/* Modern Redesigned Select Customer Dialog */}
       <Dialog open={showCustomerSearch} onOpenChange={setShowCustomerSearch}>
-        <DialogContent className="sm:max-w-2xl p-0 gap-0 overflow-hidden rounded-3xl border-border/80 shadow-2xl bg-card">
+        <DialogContent className="w-[95vw] sm:max-w-2xl max-h-[calc(100dvh-2rem)] flex flex-col p-0 gap-0 overflow-hidden rounded-3xl border-border/80 shadow-2xl bg-card">
           {/* Header */}
-          <div className="p-4 sm:p-5 border-b border-border/80 bg-muted/20 flex items-center justify-between">
-            <div className="flex items-center gap-2.5">
-              <div className="size-9 rounded-xl bg-primary/10 border border-primary/20 grid place-items-center text-primary shadow-xs">
+          <div className="p-4 sm:p-5 pr-14 border-b border-border/80 bg-muted/20 flex items-center justify-between shrink-0">
+            <div className="flex items-center gap-2.5 min-w-0 pr-2">
+              <div className="size-9 rounded-xl bg-primary/10 border border-primary/20 grid place-items-center text-primary shadow-xs shrink-0">
                 <Users className="size-4.5" />
               </div>
-              <div>
+              <div className="min-w-0">
                 <DialogTitle className="text-base font-bold text-foreground">
                   {t("selectCustomer", "Select Customer")}
                 </DialogTitle>
-                <p className="text-xs text-muted-foreground mt-0.5">
+                <p className="text-xs text-muted-foreground mt-0.5 hidden sm:block truncate">
                   {t("chooseCustomerDesc", "Choose a customer for billing, pricing tiers, and loyalty points")}
                 </p>
               </div>
@@ -507,7 +507,7 @@ export function PosDialogs({
               onClick={() => {
                 setShowAddCustomer(true);
               }}
-              className="h-9 gap-1.5 text-xs font-semibold rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground shadow-xs"
+              className="h-9 gap-1.5 text-xs font-semibold rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground shadow-xs shrink-0 mr-2 sm:mr-3"
             >
               <Plus className="size-3.5 stroke-[2.5]" />
               <span>{t("addCustomer", "Add Customer")}</span>
@@ -518,7 +518,7 @@ export function PosDialogs({
           </div>
 
           {/* Search & Filter Bar */}
-          <div className="p-4 border-b border-border/80 space-y-3 bg-background/50">
+          <div className="p-4 border-b border-border/80 space-y-3 bg-background/50 shrink-0">
             <div className="relative">
               <Search className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
               <Input
@@ -570,7 +570,7 @@ export function PosDialogs({
           </div>
 
           {/* Customer List Body */}
-          <div className="max-h-[380px] overflow-y-auto p-3 sm:p-4 space-y-2">
+          <div className="flex-1 min-h-0 overflow-y-auto p-3 sm:p-4 space-y-2">
             {/* Walk-in Customer Special Hero Option */}
             {(!customerQuery.trim() || "walk-in customer".includes(customerQuery.toLowerCase())) &&
               customerTypeFilter === "all" && (
@@ -788,7 +788,7 @@ export function PosDialogs({
           </div>
 
           {/* Footer */}
-          <div className="p-3.5 sm:p-4 border-t border-border/80 bg-muted/20 flex items-center justify-between text-xs text-muted-foreground">
+          <div className="p-3.5 sm:p-4 border-t border-border/80 bg-muted/20 flex items-center justify-between text-xs text-muted-foreground shrink-0">
             <span className="flex items-center gap-1.5">
               <span className="size-2 rounded-full bg-primary" />
               {t("pressF2ToAddCustomer", "Press F2 to add a new customer quickly.")}
@@ -807,12 +807,12 @@ export function PosDialogs({
 
       {/* Modern Quick Add Customer Dialog */}
       <Dialog open={showAddCustomer} onOpenChange={setShowAddCustomer}>
-        <DialogContent className="sm:max-w-2xl p-0 gap-0 overflow-hidden rounded-3xl border-border/80 shadow-2xl bg-card">
-          <div className="p-4 sm:p-5 border-b border-border/80 bg-muted/20 flex items-center gap-2.5">
-            <div className="size-9 rounded-xl bg-primary/10 border border-primary/20 grid place-items-center text-primary shadow-xs">
+        <DialogContent className="w-[95vw] sm:max-w-xl max-h-[calc(100dvh-2rem)] flex flex-col p-0 gap-0 overflow-hidden rounded-3xl border-border/80 shadow-2xl bg-card">
+          <div className="p-4 sm:p-5 pr-14 border-b border-border/80 bg-muted/20 flex items-center gap-2.5 shrink-0">
+            <div className="size-9 rounded-xl bg-primary/10 border border-primary/20 grid place-items-center text-primary shadow-xs shrink-0">
               <User className="size-4.5" />
             </div>
-            <div>
+            <div className="min-w-0">
               <DialogTitle className="text-base font-bold text-foreground">
                 {t("quickAddCustomer", "Quick Add Customer")}
               </DialogTitle>
@@ -821,72 +821,74 @@ export function PosDialogs({
               </p>
             </div>
           </div>
-          <form onSubmit={handleQuickAddCustomer} className="p-4 sm:p-5 space-y-4">
-            <div className="space-y-1.5">
-              <Label className="text-xs font-bold text-foreground">{t("fullName", "Full Name")} *</Label>
-              <Input
-                name="name"
-                placeholder={t("customerNamePlaceholder", "e.g. Rajesh Kumar")}
-                required
-                defaultValue={!/^\d+$/.test(customerQuery) ? customerQuery : ""}
-                className="h-10 rounded-xl"
-                autoFocus
-              />
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <form onSubmit={handleQuickAddCustomer} className="flex flex-col flex-1 min-h-0">
+            <div className="p-4 sm:p-5 space-y-4 flex-1 min-h-0 overflow-y-auto">
               <div className="space-y-1.5">
-                <Label className="text-xs font-bold text-foreground">{t("phoneNumber", "Phone Number")} *</Label>
-                <PhoneInput
-                  name="phone"
+                <Label className="text-xs font-bold text-foreground">{t("fullName", "Full Name")} *</Label>
+                <Input
+                  name="name"
+                  placeholder={t("customerNamePlaceholder", "e.g. Rajesh Kumar")}
                   required
-                  defaultValue={/^\d+$/.test(customerQuery) ? customerQuery : ""}
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label className="text-xs font-bold text-foreground">{t("customerType", "Customer Type")}</Label>
-                <Select name="type" defaultValue="retail">
-                  <SelectTrigger className="h-10 rounded-xl">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="retail">{t("retail", "Retail")}</SelectItem>
-                    <SelectItem value="wholesale">{t("wholesale", "Wholesale")}</SelectItem>
-                    <SelectItem value="dealer">{t("dealer", "Dealer")}</SelectItem>
-                    <SelectItem value="corporate">{t("corporate", "Corporate")}</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <Label className="text-xs font-bold text-foreground">{t("emailOptional", "Email (Optional)")}</Label>
-                <Input
-                  name="email"
-                  type="email"
-                  placeholder="customer@example.com"
+                  defaultValue={!/^\d+$/.test(customerQuery) ? customerQuery : ""}
                   className="h-10 rounded-xl"
+                  autoFocus
                 />
               </div>
-              <div className="space-y-1.5">
-                <Label className="text-xs font-bold text-foreground">{t("address", "Address")}</Label>
-                <Input
-                  name="address"
-                  placeholder={t("addressPlaceholder", "Shop / House No, Street name")}
-                  className="h-10 rounded-xl"
-                />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-bold text-foreground">{t("phoneNumber", "Phone Number")} *</Label>
+                  <PhoneInput
+                    name="phone"
+                    required
+                    defaultValue={/^\d+$/.test(customerQuery) ? customerQuery : ""}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-bold text-foreground">{t("customerType", "Customer Type")}</Label>
+                  <Select name="type" defaultValue="retail">
+                    <SelectTrigger className="h-10 rounded-xl">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="retail">{t("retail", "Retail")}</SelectItem>
+                      <SelectItem value="wholesale">{t("wholesale", "Wholesale")}</SelectItem>
+                      <SelectItem value="dealer">{t("dealer", "Dealer")}</SelectItem>
+                      <SelectItem value="corporate">{t("corporate", "Corporate")}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-bold text-foreground">{t("emailOptional", "Email (Optional)")}</Label>
+                  <Input
+                    name="email"
+                    type="email"
+                    placeholder="customer@example.com"
+                    className="h-10 rounded-xl"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-bold text-foreground">{t("address", "Address")}</Label>
+                  <Input
+                    name="address"
+                    placeholder={t("addressPlaceholder", "Shop / House No, Street name")}
+                    className="h-10 rounded-xl"
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-bold text-foreground">{t("city", "City")}</Label>
+                  <Input name="city" placeholder={t("city", "City")} className="h-10 rounded-xl" />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-bold text-foreground">{t("zipCode", "Zip Code")}</Label>
+                  <Input name="zipCode" placeholder={t("postalCode", "Postal Code")} className="h-10 rounded-xl" />
+                </div>
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <Label className="text-xs font-bold text-foreground">{t("city", "City")}</Label>
-                <Input name="city" placeholder={t("city", "City")} className="h-10 rounded-xl" />
-              </div>
-              <div className="space-y-1.5">
-                <Label className="text-xs font-bold text-foreground">{t("zipCode", "Zip Code")}</Label>
-                <Input name="zipCode" placeholder={t("postalCode", "Postal Code")} className="h-10 rounded-xl" />
-              </div>
-            </div>
-            <div className="flex items-center justify-end gap-2 pt-2 border-t border-border/80">
+            <div className="flex items-center justify-end gap-2 p-4 sm:p-5 border-t border-border/80 bg-muted/20 shrink-0">
               <Button
                 type="button"
                 variant="outline"
@@ -910,9 +912,9 @@ export function PosDialogs({
 
       {/* Quick Add Item (Product / Service) Modal */}
       <Dialog open={showAddProduct} onOpenChange={setShowAddProduct}>
-        <DialogContent className="sm:max-w-2xl md:max-w-3xl p-0 sm:p-0 gap-0 overflow-hidden rounded-3xl border-border/80 shadow-2xl bg-card flex max-h-[calc(100dvh-2rem)] flex-col">
+        <DialogContent className="w-[95vw] sm:max-w-2xl md:max-w-3xl p-0 sm:p-0 gap-0 overflow-hidden rounded-3xl border-border/80 shadow-2xl bg-card flex max-h-[calc(100dvh-2rem)] flex-col">
           {/* Header */}
-          <div className="p-4 sm:p-5 border-b border-border/80 bg-muted/20 flex items-center justify-between shrink-0">
+          <div className="p-4 sm:p-5 pr-14 border-b border-border/80 bg-muted/20 flex items-center justify-between shrink-0">
             <div className="flex items-center gap-3">
               <div className="size-10 rounded-xl bg-primary/15 border border-primary/30 grid place-items-center text-primary shadow-sm">
                 <Plus className="size-5 stroke-[2.5]" />
@@ -1244,9 +1246,9 @@ export function PosDialogs({
 
       {/* Keyboard Shortcuts Matrix Modal */}
       <Dialog open={showShortcutsHelp} onOpenChange={setShowShortcutsHelp}>
-        <DialogContent className="sm:max-w-2xl p-0 gap-0 overflow-hidden rounded-3xl border-border/80 shadow-2xl bg-card">
+        <DialogContent className="w-[95vw] sm:max-w-2xl max-h-[calc(100dvh-2rem)] flex flex-col p-0 gap-0 overflow-hidden rounded-3xl border-border/80 shadow-2xl bg-card">
           {/* Header */}
-          <div className="p-4 sm:p-5 border-b border-border/80 bg-muted/20 flex items-center justify-between">
+          <div className="p-4 sm:p-5 pr-14 border-b border-border/80 bg-muted/20 flex items-center justify-between shrink-0">
             <div className="flex items-center gap-3">
               <div className="size-10 rounded-xl bg-primary/10 border border-primary/20 grid place-items-center text-primary shadow-xs">
                 <Keyboard className="size-5" />
@@ -1264,8 +1266,8 @@ export function PosDialogs({
               {t("proMode", "Pro Mode")}
             </span>
           </div>
-
-          <div className="p-5 grid grid-cols-1 sm:grid-cols-2 gap-4 max-h-[62vh] overflow-y-auto">
+          {/* Shortcuts Matrix Body */}
+          <div className="p-4 sm:p-5 grid grid-cols-1 sm:grid-cols-2 gap-3 flex-1 min-h-0 overflow-y-auto">
             {/* Column 1: Cart & Catalog */}
             <div className="space-y-2">
               <div className="text-[11px] font-black uppercase tracking-wider text-muted-foreground px-1 pb-1">
@@ -1315,7 +1317,7 @@ export function PosDialogs({
             </div>
           </div>
 
-          <div className="p-3.5 sm:p-4 border-t border-border/80 bg-muted/30 flex items-center justify-between text-xs text-muted-foreground">
+          <div className="p-3.5 sm:p-4 border-t border-border/80 bg-muted/30 flex items-center justify-between text-xs text-muted-foreground shrink-0">
             <span>💡 {t("allShortcutsActive", "All shortcuts are active globally across the terminal.")}</span>
             <Button
               variant="outline"
@@ -1330,11 +1332,10 @@ export function PosDialogs({
       </Dialog>
 
       {/* Parked / Held Invoices Modal */}
-      {/* Parked / Held Invoices Modal */}
       <Dialog open={showHeld} onOpenChange={setShowHeld}>
-        <DialogContent className="sm:max-w-3xl p-0 gap-0 overflow-hidden rounded-3xl border-border/80 shadow-2xl bg-card">
+        <DialogContent className="w-[95vw] sm:max-w-3xl max-h-[calc(100dvh-2rem)] flex flex-col p-0 gap-0 overflow-hidden rounded-3xl border-border/80 shadow-2xl bg-card">
           {/* Fixed Header */}
-          <div className="p-4 sm:p-5 border-b border-border/80 bg-muted/20 space-y-3.5">
+          <div className="p-4 sm:p-5 pr-14 border-b border-border/80 bg-muted/20 space-y-3.5 shrink-0">
             {/* Top Row: Icon, Title & Badge */}
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
@@ -1385,7 +1386,7 @@ export function PosDialogs({
           </div>
 
           {/* List of Held Bills */}
-          <div className="p-4 sm:p-5 space-y-3 max-h-[62vh] overflow-y-auto">
+          <div className="p-4 sm:p-5 space-y-3 flex-1 min-h-0 overflow-y-auto">
             {heldInvoices.length === 0 ? (
               <div className="text-center py-12 px-4 border border-dashed border-border/80 rounded-2xl bg-muted/10">
                 <div className="size-14 rounded-2xl bg-warning/10 border border-warning/20 grid place-items-center text-warning mx-auto mb-3">
@@ -1669,9 +1670,9 @@ export function PosDialogs({
 
       {/* Coupon List & Selection Dialog */}
       <Dialog open={showCoupon} onOpenChange={setShowCoupon}>
-        <DialogContent className="sm:max-w-2xl p-0 gap-0 overflow-hidden rounded-3xl border-border/80 shadow-2xl bg-card">
+        <DialogContent className="w-[95vw] sm:max-w-2xl max-h-[calc(100dvh-2rem)] flex flex-col p-0 gap-0 overflow-hidden rounded-3xl border-border/80 shadow-2xl bg-card">
           {/* Header */}
-          <div className="p-4 sm:p-5 border-b border-border/80 bg-muted/20 flex items-center justify-between">
+          <div className="p-4 sm:p-5 pr-14 border-b border-border/80 bg-muted/20 flex items-center justify-between shrink-0">
             <div className="flex items-center gap-2.5">
               <div className="size-9 rounded-xl bg-primary/10 border border-primary/20 grid place-items-center text-primary shadow-xs">
                 <Ticket className="size-4.5" />
@@ -1705,7 +1706,7 @@ export function PosDialogs({
           </div>
 
           {/* Manual Code Input Bar & Filter Tabs */}
-          <div className="p-4 border-b border-border/80 space-y-3 bg-background/50">
+          <div className="p-4 border-b border-border/80 space-y-3 bg-background/50 shrink-0">
             {/* Manual Code Entry */}
             <div className="flex gap-2">
               <div className="relative flex-1">
@@ -1938,9 +1939,9 @@ export function PosDialogs({
           if (!isCompletingSale) setConfirmCheckout(open);
         }}
       >
-        <AlertDialogContent className="sm:max-w-md p-0 gap-0 overflow-hidden rounded-3xl border-border/80 shadow-2xl bg-card">
+        <AlertDialogContent className="w-[95vw] sm:max-w-md max-h-[calc(100dvh-2rem)] flex flex-col p-0 gap-0 overflow-hidden rounded-3xl border-border/80 shadow-2xl bg-card">
           {/* Header */}
-          <div className="p-4 sm:p-5 border-b border-border/80 bg-muted/20 flex items-center gap-3">
+          <div className="p-4 sm:p-5 pr-14 border-b border-border/80 bg-muted/20 flex items-center gap-3 shrink-0">
             <div className="size-10 rounded-2xl bg-primary/10 border border-primary/20 grid place-items-center text-primary shadow-xs">
               <Receipt className="size-5" />
             </div>
@@ -1955,7 +1956,7 @@ export function PosDialogs({
           </div>
 
           {/* Body */}
-          <div className="p-5 space-y-4 max-h-[60vh] overflow-y-auto">
+          <div className="p-5 space-y-4 flex-1 min-h-0 overflow-y-auto">
             <div className="bg-primary/10 border border-primary/20 rounded-2xl p-4 text-center">
               <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider block">
                 {t("totalBillAmount", "Total Bill Amount")}
@@ -2014,7 +2015,7 @@ export function PosDialogs({
           </div>
 
           {/* Footer */}
-          <div className="p-4 sm:p-5 border-t border-border/80 bg-muted/20 grid grid-cols-2 gap-2">
+          <div className="p-4 sm:p-5 border-t border-border/80 bg-muted/20 grid grid-cols-2 gap-2 shrink-0">
             <AlertDialogCancel
               disabled={isCompletingSale}
               className="rounded-xl text-xs font-semibold h-11"
@@ -2049,9 +2050,9 @@ export function PosDialogs({
           }
         }}
       >
-        <DialogContent className="sm:max-w-lg p-0 gap-0 overflow-hidden rounded-3xl border-border/80 shadow-2xl bg-card">
+        <DialogContent className="w-[95vw] sm:max-w-lg max-h-[calc(100dvh-2rem)] flex flex-col p-0 gap-0 overflow-hidden rounded-3xl border-border/80 shadow-2xl bg-card">
           {/* Header Banner */}
-          <div className="p-6 text-center bg-gradient-to-b from-emerald-500/10 via-emerald-500/5 to-transparent border-b border-border/80">
+          <div className="p-5 sm:p-6 text-center bg-gradient-to-b from-emerald-500/10 via-emerald-500/5 to-transparent border-b border-border/80 shrink-0">
             <div className="size-16 rounded-3xl bg-emerald-500/15 border-2 border-emerald-500/30 text-emerald-600 dark:text-emerald-400 grid place-items-center mx-auto mb-3 shadow-md">
               <Check className="size-8 stroke-[3]" />
             </div>
@@ -2093,7 +2094,7 @@ export function PosDialogs({
           </div>
 
           {/* Action Hub */}
-          <div className="p-5 space-y-3">
+          <div className="p-4 sm:p-5 space-y-3 flex-1 min-h-0 overflow-y-auto">
             <div className="grid grid-cols-2 gap-2.5">
               <Button
                 onClick={() => {
@@ -2179,8 +2180,8 @@ export function PosDialogs({
 
       {/* Open Register / Float Balance Modal */}
       <Dialog open={showOpenRegister} onOpenChange={setShowOpenRegister}>
-        <DialogContent className="sm:max-w-md p-0 gap-0 overflow-hidden rounded-3xl border-border/80 shadow-2xl bg-card">
-          <div className="p-5 border-b border-border/80 bg-muted/20 flex items-center gap-3">
+        <DialogContent className="w-[95vw] sm:max-w-md max-h-[calc(100dvh-2rem)] flex flex-col p-0 gap-0 overflow-hidden rounded-3xl border-border/80 shadow-2xl bg-card">
+          <div className="p-4 sm:p-5 pr-14 border-b border-border/80 bg-muted/20 flex items-center gap-3 shrink-0">
             <div className="size-11 rounded-2xl bg-primary/10 border border-primary/20 grid place-items-center text-primary shadow-xs">
               <Landmark className="size-5.5" />
             </div>
@@ -2194,7 +2195,7 @@ export function PosDialogs({
             </div>
           </div>
 
-          <div className="p-5 space-y-4">
+          <div className="p-4 sm:p-5 space-y-4 flex-1 min-h-0 overflow-y-auto">
             <div className="space-y-1.5">
               <Label className="text-xs font-bold text-foreground">
                 {t("startingCashFloat", "Starting Cash Float")} ({currencySymbol})
@@ -2239,7 +2240,7 @@ export function PosDialogs({
             </div>
           </div>
 
-          <div className="p-4 border-t border-border/80 bg-muted/20 flex items-center justify-end gap-2">
+          <div className="p-4 border-t border-border/80 bg-muted/20 flex items-center justify-end gap-2 shrink-0">
             <Button
               onClick={handleOpenRegister}
               className="w-full h-11 rounded-xl text-xs font-bold bg-primary text-primary-foreground shadow-md"

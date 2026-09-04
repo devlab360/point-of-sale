@@ -447,179 +447,52 @@ function RentalsPage() {
         </div>
       </div>
 
-      {/* Main Table / Mobile Feed */}
-      <div className="overflow-hidden rounded-xl border border-border/80 bg-card shadow-soft">
-        {isLoading ? (
-          viewMode === "table" ? (
+      {/* Content View */}
+      {isLoading ? (
+        viewMode === "table" ? (
+          <div className="overflow-hidden rounded-xl border border-border/80 bg-card shadow-soft">
             <TableSkeleton columns={8} rows={5} />
-          ) : (
-            <CardGridSkeleton cards={6} />
-          )
-        ) : isError ? (
-          <ErrorState onRetry={refetch} />
-        ) : viewMode === "table" ? (
-          <>
-            {/* Desktop View Table */}
-            <div className="table-desktop overflow-x-auto">
-              <Table className="min-w-[900px]">
-                <TableHeader className="bg-muted/40">
-                  <TableRow>
-                    <TableHead className="font-bold text-xs uppercase tracking-wider">
-                      {t("rentalHash", "Rental #")}
-                    </TableHead>
-                    <TableHead className="font-bold text-xs uppercase tracking-wider">
-                      {t("customer", "Customer")}
-                    </TableHead>
-                    <TableHead className="font-bold text-xs uppercase tracking-wider">
-                      {t("rentedEquipment", "Rented Equipment")}
-                    </TableHead>
-                    <TableHead className="font-bold text-xs uppercase tracking-wider">
-                      {t("startReturn", "Start & Return")}
-                    </TableHead>
-                    <TableHead className="font-bold text-xs uppercase tracking-wider text-right">
-                      {t("rateDay", "Rate / Day")}
-                    </TableHead>
-                    <TableHead className="font-bold text-xs uppercase tracking-wider text-right">
-                      {t("deposit", "Deposit")}
-                    </TableHead>
-                    <TableHead className="font-bold text-xs uppercase tracking-wider text-center">
-                      {t("status", "Status")}
-                    </TableHead>
-                    <TableHead className="font-bold text-xs uppercase tracking-wider text-right">
-                      {t("actions", "Actions")}
-                    </TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody className="divide-y divide-border/60">
-                  {paginatedRentals.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={8} className="h-64 text-center">
-                        <EmptyState
-                          icon={KeyRound}
-                          title={t("noRentalsFound", "No rentals found")}
-                          description={
-                            search
-                              ? t("noRentalsMatchQuery", "No rentals matched your search query.")
-                              : t("noRentalsYet", "You haven't dispatched any equipment rentals yet.")
-                          }
-                          actionLabel={t("newRental", "New Rental")}
-                          onAction={() => setIsAddOpen(true)}
-                          className="border-none bg-transparent my-0 py-8 shadow-none"
-                        />
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    paginatedRentals.map((r: any) => (
-                      <TableRow key={r.id} className="hover:bg-muted/30 transition-colors">
-                        <TableCell className="font-mono font-bold text-xs text-foreground whitespace-nowrap">
-                          <div className="flex items-center gap-2">
-                            <div className="grid size-8 place-items-center rounded-lg bg-primary/10 text-primary">
-                              <KeyRound className="size-4" />
-                            </div>
-                            <span>{r.rentalNo}</span>
-                          </div>
-                        </TableCell>
-                        <TableCell className="font-semibold text-foreground whitespace-nowrap">
-                          {r.customerName}
-                        </TableCell>
-                        <TableCell className="font-medium text-foreground whitespace-nowrap">
-                          {r.itemName}
-                        </TableCell>
-                        <TableCell className="text-xs text-muted-foreground whitespace-nowrap font-medium">
-                          <div>
-                            <span>
-                              {r.rentStartDate ? formatAppDate(r.rentStartDate) : "-"}
-                            </span>
-                            <span className="mx-1 text-muted-foreground/60">→</span>
-                            <span className="font-semibold text-foreground">
-                              {r.expectedReturnDate ? formatAppDate(r.expectedReturnDate) : "-"}
-                            </span>
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-right font-black text-foreground whitespace-nowrap">
-                          {formatCurrency(Number(r.dailyRate) || 0)}
-                        </TableCell>
-                        <TableCell className="text-right text-xs font-semibold text-amber-600 dark:text-amber-400 whitespace-nowrap">
-                          {formatCurrency(Number(r.securityDeposit) || 0)}
-                        </TableCell>
-                        <TableCell className="text-center whitespace-nowrap">
-                          <Badge
-                            variant="outline"
-                            className={`text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full ${
-                              r.status === "returned"
-                                ? "bg-muted text-muted-foreground border-border/60"
-                                : r.status === "overdue"
-                                  ? "bg-destructive/15 text-destructive border-destructive/25"
-                                  : "bg-emerald-500/15 text-emerald-600 border-emerald-500/25"
-                            }`}
-                          >
-                            {r.status}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-right whitespace-nowrap">
-                          <div className="flex items-center justify-end gap-1">
-                            {r.status !== "returned" && (
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                className="h-8 text-xs font-semibold text-emerald-600 border-emerald-500/30 hover:bg-emerald-500/10"
-                                onClick={() => markReturned(r.id)}
-                              >
-                                <CheckCircle2 className="size-3.5 mr-1" /> {t("markReturned", "Mark Returned")}
-                              </Button>
-                            )}
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="size-8 rounded-lg"
-                                >
-                                  <MoreVertical className="size-4 text-muted-foreground" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end" className="rounded-xl">
-                                <DropdownMenuItem
-                                  onClick={() => setDeleteId(r.id)}
-                                  className="text-xs font-semibold text-destructive cursor-pointer"
-                                >
-                                  <Trash2 className="mr-2 size-3.5" /> {t("delete", "Delete")}
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
+          </div>
+        ) : (
+          <CardGridSkeleton cards={6} />
+        )
+      ) : isError ? (
+        <ErrorState onRetry={refetch} />
+      ) : viewMode === "grid" ? (
+        /* Grid View */
+        <div className="space-y-4">
+          {filteredRentals.length === 0 ? (
+            <div className="rounded-2xl border border-border/80 bg-card shadow-soft">
+              <EmptyState
+                icon={KeyRound}
+                title={t("noRentalsFound", "No rentals found")}
+                description={
+                  search
+                    ? t("noRentalsMatchQuery", "No rentals matched your search query.")
+                    : t("noRentalsYet", "You haven't dispatched any equipment rentals yet.")
+                }
+                actionLabel={t("newRental", "New Rental")}
+                onAction={() => {
+                  clearRntAll();
+                  setIsAddOpen(true);
+                }}
+                className="border-none bg-transparent my-0 py-12 shadow-none"
+              />
             </div>
-
-            {/* Mobile Cards View */}
-            <div className="table-mobile-cards p-3 space-y-2.5">
-              {paginatedRentals.length === 0 ? (
-                <EmptyState
-                  icon={KeyRound}
-                  title={t("noRentalsFound", "No rentals found")}
-                  description={t("noRentalsYet", "You haven't dispatched any equipment rentals yet.")}
-                  actionLabel={t("newRental", "New Rental")}
-                  onAction={() => setIsAddOpen(true)}
-                  className="border-none bg-transparent my-0 py-6 shadow-none"
-                />
-              ) : (
-                paginatedRentals.map((r: any) => (
-                  <div
-                    key={r.id}
-                    className="rounded-xl border border-border/80 bg-card p-3.5 shadow-soft space-y-3"
-                  >
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {paginatedRentals.map((r: any) => (
+                <div
+                  key={r.id}
+                  className="rounded-2xl border border-border/80 bg-card p-5 shadow-soft flex flex-col justify-between space-y-4 hover:border-border transition-all group"
+                >
+                  <div className="space-y-3">
                     <div className="flex items-start justify-between">
-                      <div>
-                        <p className="font-mono text-xs font-bold text-muted-foreground">
-                          {r.rentalNo}
-                        </p>
-                        <p className="font-bold text-sm text-foreground">{r.customerName}</p>
-                        <p className="text-xs text-primary font-semibold">{r.itemName}</p>
+                      <div className="flex items-center gap-2">
+                        <div className="grid size-8 place-items-center rounded-lg bg-primary/10 text-primary">
+                          <KeyRound className="size-4" />
+                        </div>
+                        <span className="font-mono font-bold text-xs text-foreground">{r.rentalNo}</span>
                       </div>
                       <Badge
                         variant="outline"
@@ -635,7 +508,12 @@ function RentalsPage() {
                       </Badge>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-2 text-xs border-t border-border/60 pt-2 text-muted-foreground">
+                    <div className="space-y-1">
+                      <p className="font-bold text-sm text-foreground">{r.customerName}</p>
+                      <p className="text-xs text-primary font-semibold">{r.itemName}</p>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2 text-xs border-t border-border/60 pt-3 text-muted-foreground">
                       <div>
                         <span className="text-[10px] uppercase font-bold text-muted-foreground block">
                           {t("dailyRate", "Daily Rate")}
@@ -654,79 +532,158 @@ function RentalsPage() {
                       </div>
                     </div>
 
-                    <div className="flex items-center justify-end gap-2 border-t border-border/60 pt-2">
-                      {r.status !== "returned" && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="h-8 text-xs font-semibold text-emerald-600 border-emerald-500/30"
-                          onClick={() => markReturned(r.id)}
-                        >
-                          {t("markReturned", "Mark Returned")}
-                        </Button>
-                      )}
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-8 text-xs font-semibold text-destructive hover:bg-destructive/10"
-                        onClick={() => setDeleteId(r.id)}
-                      >
-                        <Trash2 className="size-3.5" />
-                      </Button>
+                    <div className="text-xs text-muted-foreground border-t border-border/60 pt-3">
+                      <span className="font-semibold text-foreground">
+                        {r.rentStartDate ? formatAppDate(r.rentStartDate) : "-"}
+                      </span>
+                      <span className="mx-1 text-muted-foreground/60">→</span>
+                      <span className="font-semibold text-foreground">
+                        {r.expectedReturnDate ? formatAppDate(r.expectedReturnDate) : "-"}
+                      </span>
                     </div>
                   </div>
-                ))
-              )}
-            </div>
 
-            {filteredRentals.length > 0 && (
-              <div className="border-t border-border/60 p-3">
-                <PaginationControls
-                  currentPage={page}
-                  totalPages={totalPages}
-                  onPageChange={setPage}
-                  pageSize={pageSize}
-                  onPageSizeChange={setPageSize}
-                  totalItems={filteredRentals.length}
-                />
-              </div>
-            )}
-          </>
-        ) : (
-          <div className="space-y-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {paginatedRentals.length === 0 ? (
-                <div className="rounded-2xl border border-border/80 bg-card shadow-soft">
-                  <EmptyState
-                    icon={KeyRound}
-                    title={t("noRentalsFound", "No rentals found")}
-                    description={
-                      search
-                        ? t("noRentalsMatchQuery", "No rentals matched your search query.")
-                        : t("noRentalsYet", "You haven't dispatched any equipment rentals yet.")
-                    }
-                    actionLabel={t("newRental", "New Rental")}
-                    onAction={() => setIsAddOpen(true)}
-                    className="border-none bg-transparent my-0 py-12 shadow-none"
-                  />
+                  <div className="flex items-center justify-end gap-2 border-t border-border/60 pt-3">
+                    {r.status !== "returned" && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-8 text-xs font-semibold text-emerald-600 border-emerald-500/30 hover:bg-emerald-500/10"
+                        onClick={() => markReturned(r.id)}
+                      >
+                        <CheckCircle2 className="size-3.5 mr-1" /> {t("markReturned", "Mark Returned")}
+                      </Button>
+                    )}
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="size-8 rounded-lg"
+                        >
+                          <MoreVertical className="size-4 text-muted-foreground" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="rounded-xl">
+                        <DropdownMenuItem
+                          onClick={() => setDeleteId(r.id)}
+                          className="text-xs font-semibold text-destructive cursor-pointer"
+                        >
+                          <Trash2 className="mr-2 size-3.5" /> {t("delete", "Delete")}
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
                 </div>
-              ) : (
-                paginatedRentals.map((r: any) => (
-                  <div
-                    key={r.id}
-                    className="rounded-2xl border border-border/80 bg-card p-5 shadow-soft flex flex-col justify-between space-y-4 hover:border-border transition-all group"
-                  >
-                    <div className="space-y-3">
-                      <div className="flex items-start justify-between">
+              ))}
+            </div>
+          )}
+          {filteredRentals.length > 0 && (
+            <div className="rounded-xl border border-border/80 bg-card p-3 shadow-soft">
+              <PaginationControls
+                currentPage={page}
+                totalPages={totalPages}
+                onPageChange={setPage}
+                pageSize={pageSize}
+                onPageSizeChange={setPageSize}
+                totalItems={filteredRentals.length}
+              />
+            </div>
+          )}
+        </div>
+      ) : (
+        /* Table View */
+        <div className="overflow-hidden rounded-xl border border-border/80 bg-card shadow-soft">
+          {/* Desktop View Table */}
+          <div className="table-desktop overflow-x-auto">
+            <Table className="min-w-[900px]">
+              <TableHeader className="bg-muted/40">
+                <TableRow>
+                  <TableHead className="font-bold text-xs uppercase tracking-wider">
+                    {t("rentalHash", "Rental #")}
+                  </TableHead>
+                  <TableHead className="font-bold text-xs uppercase tracking-wider">
+                    {t("customer", "Customer")}
+                  </TableHead>
+                  <TableHead className="font-bold text-xs uppercase tracking-wider">
+                    {t("rentedEquipment", "Rented Equipment")}
+                  </TableHead>
+                  <TableHead className="font-bold text-xs uppercase tracking-wider">
+                    {t("startReturn", "Start & Return")}
+                  </TableHead>
+                  <TableHead className="font-bold text-xs uppercase tracking-wider text-right">
+                    {t("rateDay", "Rate / Day")}
+                  </TableHead>
+                  <TableHead className="font-bold text-xs uppercase tracking-wider text-right">
+                    {t("deposit", "Deposit")}
+                  </TableHead>
+                  <TableHead className="font-bold text-xs uppercase tracking-wider text-center">
+                    {t("status", "Status")}
+                  </TableHead>
+                  <TableHead className="font-bold text-xs uppercase tracking-wider text-right">
+                    {t("actions", "Actions")}
+                  </TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody className="divide-y divide-border/60">
+                {paginatedRentals.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={8} className="h-64 text-center">
+                      <EmptyState
+                        icon={KeyRound}
+                        title={t("noRentalsFound", "No rentals found")}
+                        description={
+                          search
+                            ? t("noRentalsMatchQuery", "No rentals matched your search query.")
+                            : t("noRentalsYet", "You haven't dispatched any equipment rentals yet.")
+                        }
+                        actionLabel={t("newRental", "New Rental")}
+                        onAction={() => {
+                          clearRntAll();
+                          setIsAddOpen(true);
+                        }}
+                        className="border-none bg-transparent my-0 py-8 shadow-none"
+                      />
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  paginatedRentals.map((r: any) => (
+                    <TableRow key={r.id} className="hover:bg-muted/30 transition-colors">
+                      <TableCell className="font-mono font-bold text-xs text-foreground whitespace-nowrap">
                         <div className="flex items-center gap-2">
                           <div className="grid size-8 place-items-center rounded-lg bg-primary/10 text-primary">
                             <KeyRound className="size-4" />
                           </div>
-                          <span className="font-mono font-bold text-xs text-foreground">{r.rentalNo}</span>
+                          <span>{r.rentalNo}</span>
                         </div>
+                      </TableCell>
+                      <TableCell className="font-semibold text-foreground whitespace-nowrap">
+                        {r.customerName}
+                      </TableCell>
+                      <TableCell className="font-medium text-foreground whitespace-nowrap">
+                        {r.itemName}
+                      </TableCell>
+                      <TableCell className="text-xs text-muted-foreground whitespace-nowrap font-medium">
+                        <div>
+                          <span>
+                            {r.rentStartDate ? formatAppDate(r.rentStartDate) : "-"}
+                          </span>
+                          <span className="mx-1 text-muted-foreground/60">→</span>
+                          <span className="font-semibold text-foreground">
+                            {r.expectedReturnDate ? formatAppDate(r.expectedReturnDate) : "-"}
+                          </span>
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-right font-black text-foreground whitespace-nowrap">
+                        {formatCurrency(Number(r.dailyRate) || 0)}
+                      </TableCell>
+                      <TableCell className="text-right text-xs font-semibold text-amber-600 dark:text-amber-400 whitespace-nowrap">
+                        {formatCurrency(Number(r.securityDeposit) || 0)}
+                      </TableCell>
+                      <TableCell className="text-center whitespace-nowrap">
                         <Badge
                           variant="outline"
-                          className={`text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full ${
+                          className={`text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full ${
                             r.status === "returned"
                               ? "bg-muted text-muted-foreground border-border/60"
                               : r.status === "overdue"
@@ -736,94 +693,147 @@ function RentalsPage() {
                         >
                           {r.status}
                         </Badge>
-                      </div>
-
-                      <div className="space-y-1">
-                        <p className="font-bold text-sm text-foreground">{r.customerName}</p>
-                        <p className="text-xs text-primary font-semibold">{r.itemName}</p>
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-2 text-xs border-t border-border/60 pt-3 text-muted-foreground">
-                        <div>
-                          <span className="text-[10px] uppercase font-bold text-muted-foreground block">
-                            {t("dailyRate", "Daily Rate")}
-                          </span>
-                          <span className="font-bold text-foreground">
-                            {formatCurrency(Number(r.dailyRate) || 0)}
-                          </span>
+                      </TableCell>
+                      <TableCell className="text-right whitespace-nowrap">
+                        <div className="flex items-center justify-end gap-1">
+                          {r.status !== "returned" && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-8 text-xs font-semibold text-emerald-600 border-emerald-500/30 hover:bg-emerald-500/10"
+                              onClick={() => markReturned(r.id)}
+                            >
+                              <CheckCircle2 className="size-3.5 mr-1" /> {t("markReturned", "Mark Returned")}
+                            </Button>
+                          )}
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="size-8 rounded-lg"
+                              >
+                                <MoreVertical className="size-4 text-muted-foreground" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="rounded-xl">
+                              <DropdownMenuItem
+                                onClick={() => setDeleteId(r.id)}
+                                className="text-xs font-semibold text-destructive cursor-pointer"
+                              >
+                                <Trash2 className="mr-2 size-3.5" /> {t("delete", "Delete")}
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
                         </div>
-                        <div className="text-right">
-                          <span className="text-[10px] uppercase font-bold text-muted-foreground block">
-                            {t("depositsHeld", "Deposit Held")}
-                          </span>
-                          <span className="font-bold text-amber-600 dark:text-amber-400">
-                            {formatCurrency(Number(r.securityDeposit) || 0)}
-                          </span>
-                        </div>
-                      </div>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </div>
 
-                      <div className="text-xs text-muted-foreground border-t border-border/60 pt-3">
-                        <span className="font-semibold text-foreground">
-                          {r.rentStartDate ? formatAppDate(r.rentStartDate) : "-"}
-                        </span>
-                        <span className="mx-1 text-muted-foreground/60">→</span>
-                        <span className="font-semibold text-foreground">
-                          {r.expectedReturnDate ? formatAppDate(r.expectedReturnDate) : "-"}
-                        </span>
-                      </div>
+          {/* Mobile Cards View */}
+          <div className="table-mobile-cards p-3 space-y-2.5">
+            {paginatedRentals.length === 0 ? (
+              <EmptyState
+                icon={KeyRound}
+                title={t("noRentalsFound", "No rentals found")}
+                description={t("noRentalsYet", "You haven't dispatched any equipment rentals yet.")}
+                actionLabel={t("newRental", "New Rental")}
+                onAction={() => {
+                  clearRntAll();
+                  setIsAddOpen(true);
+                }}
+                className="border-none bg-transparent my-0 py-6 shadow-none"
+              />
+            ) : (
+              paginatedRentals.map((r: any) => (
+                <div
+                  key={r.id}
+                  className="rounded-xl border border-border/80 bg-card p-3.5 shadow-soft space-y-3"
+                >
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <p className="font-mono text-xs font-bold text-muted-foreground">
+                        {r.rentalNo}
+                      </p>
+                      <p className="font-bold text-sm text-foreground">{r.customerName}</p>
+                      <p className="text-xs text-primary font-semibold">{r.itemName}</p>
                     </div>
+                    <Badge
+                      variant="outline"
+                      className={`text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full ${
+                        r.status === "returned"
+                          ? "bg-muted text-muted-foreground border-border/60"
+                          : r.status === "overdue"
+                            ? "bg-destructive/15 text-destructive border-destructive/25"
+                            : "bg-emerald-500/15 text-emerald-600 border-emerald-500/25"
+                      }`}
+                    >
+                      {r.status}
+                    </Badge>
+                  </div>
 
-                    <div className="flex items-center justify-end gap-2 border-t border-border/60 pt-3">
-                      {r.status !== "returned" && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="h-8 text-xs font-semibold text-emerald-600 border-emerald-500/30 hover:bg-emerald-500/10"
-                          onClick={() => markReturned(r.id)}
-                        >
-                          <CheckCircle2 className="size-3.5 mr-1" /> {t("markReturned", "Mark Returned")}
-                        </Button>
-                      )}
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="size-8 rounded-lg"
-                          >
-                            <MoreVertical className="size-4 text-muted-foreground" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="rounded-xl">
-                          <DropdownMenuItem
-                            onClick={() => setDeleteId(r.id)}
-                            className="text-xs font-semibold text-destructive cursor-pointer"
-                          >
-                            <Trash2 className="mr-2 size-3.5" /> {t("delete", "Delete")}
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                  <div className="grid grid-cols-2 gap-2 text-xs border-t border-border/60 pt-2 text-muted-foreground">
+                    <div>
+                      <span className="text-[10px] uppercase font-bold text-muted-foreground block">
+                        {t("dailyRate", "Daily Rate")}
+                      </span>
+                      <span className="font-bold text-foreground">
+                        {formatCurrency(Number(r.dailyRate) || 0)}
+                      </span>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-[10px] uppercase font-bold text-muted-foreground block">
+                        {t("depositsHeld", "Deposit Held")}
+                      </span>
+                      <span className="font-bold text-amber-600 dark:text-amber-400">
+                        {formatCurrency(Number(r.securityDeposit) || 0)}
+                      </span>
                     </div>
                   </div>
-                ))
-              )}
-            </div>
 
-            {filteredRentals.length > 0 && (
-              <div className="rounded-xl border border-border/80 bg-card p-3 shadow-soft">
-                <PaginationControls
-                  currentPage={page}
-                  totalPages={totalPages}
-                  onPageChange={setPage}
-                  pageSize={pageSize}
-                  onPageSizeChange={setPageSize}
-                  totalItems={filteredRentals.length}
-                />
-              </div>
+                  <div className="flex items-center justify-end gap-2 border-t border-border/60 pt-2">
+                    {r.status !== "returned" && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-8 text-xs font-semibold text-emerald-600 border-emerald-500/30"
+                        onClick={() => markReturned(r.id)}
+                      >
+                        {t("markReturned", "Mark Returned")}
+                      </Button>
+                    )}
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 text-xs font-semibold text-destructive hover:bg-destructive/10"
+                      onClick={() => setDeleteId(r.id)}
+                    >
+                      <Trash2 className="size-3.5" />
+                    </Button>
+                  </div>
+                </div>
+              ))
             )}
           </div>
-        )}
-      </div>
+
+          {filteredRentals.length > 0 && (
+            <div className="border-t border-border/60 p-3">
+              <PaginationControls
+                currentPage={page}
+                totalPages={totalPages}
+                onPageChange={setPage}
+                pageSize={pageSize}
+                onPageSizeChange={setPageSize}
+                totalItems={filteredRentals.length}
+              />
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Dispatch Rental Drawer */}
       <Sheet open={isAddOpen} onOpenChange={setIsAddOpen}>

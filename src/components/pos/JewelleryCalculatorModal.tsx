@@ -160,32 +160,32 @@ export function JewelleryCalculatorModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-xl p-0 gap-0 overflow-hidden rounded-3xl border-border/80 shadow-2xl bg-card">
+      <DialogContent className="w-[95vw] sm:max-w-xl max-h-[calc(100dvh-2rem)] flex flex-col p-0 gap-0 overflow-hidden rounded-3xl border-border/80 shadow-2xl bg-card">
         {/* Tier 1: Header */}
-        <div className="p-5 border-b border-border/80 bg-amber-500/10 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="size-11 rounded-2xl bg-amber-500/15 border border-amber-500/30 grid place-items-center text-amber-700 dark:text-amber-400 shadow-xs">
+        <div className="p-4 sm:p-5 pr-14 sm:pr-16 border-b border-border/80 bg-amber-500/10 flex items-center justify-between shrink-0">
+          <div className="flex items-center gap-3 min-w-0 pr-2">
+            <div className="size-11 rounded-2xl bg-amber-500/15 border border-amber-500/30 grid place-items-center text-amber-700 dark:text-amber-400 shadow-xs shrink-0">
               <Gem className="size-6" />
             </div>
-            <div>
-              <DialogTitle className="text-base sm:text-lg font-bold text-foreground">
+            <div className="min-w-0">
+              <DialogTitle className="text-base sm:text-lg font-bold text-foreground truncate">
                 {t("jewelleryBullionCalc", "Jewellery Bullion Calculator")}
               </DialogTitle>
-              <DialogDescription className="text-xs text-muted-foreground mt-0.5">
+              <DialogDescription className="text-xs text-muted-foreground mt-0.5 truncate">
                 {product.name} • {t("liveRateWeightEstimation", "Live rate & weight estimation")}
               </DialogDescription>
             </div>
           </div>
           <Badge
             variant="outline"
-            className="bg-amber-500/10 text-amber-700 dark:text-amber-300 font-mono font-bold text-xs border-amber-500/30"
+            className="bg-amber-500/10 text-amber-700 dark:text-amber-300 font-mono font-bold text-xs border-amber-500/30 shrink-0 mr-1 sm:mr-2"
           >
             {purityKarat} {metalType.toUpperCase()}
           </Badge>
         </div>
 
         {/* Tier 2: Body (Scrollable) */}
-        <div className="p-5 space-y-4 max-h-[65vh] overflow-y-auto">
+        <div className="p-4 sm:p-5 space-y-4 flex-1 min-h-0 overflow-y-auto">
           {/* Karat & Live Spot Rate */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
             <div className="space-y-1.5">
@@ -385,7 +385,7 @@ export function JewelleryCalculatorModal({
         </div>
 
         {/* Tier 3: Sticky Footer */}
-        <div className="p-4 border-t border-border/80 bg-muted/20 flex items-center justify-between gap-3">
+        <div className="p-4 border-t border-border/80 bg-muted/20 flex items-center justify-between gap-3 shrink-0">
           <Button
             variant="outline"
             onClick={onClose}
