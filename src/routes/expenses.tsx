@@ -1,7 +1,8 @@
 import { useState, useMemo, useEffect } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { DataPage } from "@/components/layout/DataPage";
 import { appName } from "@/lib/env";
+import { PageHeader } from "@/components/layout/PageHeader";
+import { StatCard } from "@/components/layout/StatCard";
 import { DatePicker } from "@/components/ui/date-picker";
 import { PaginationControls } from "@/components/ui/pagination-controls";
 import { SearchableSelect } from "@/components/ui/searchable-select";
@@ -20,7 +21,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -40,19 +41,21 @@ import {
 import {
   Wallet,
   TrendingDown,
-  PieChart,
   MoreVertical,
   Edit2,
   Trash2,
   Loader2,
   Plus,
   DollarSign,
-  CheckCircle2,
-  Clock,
   Receipt,
+  Download,
+  Search,
+  Filter,
+  X,
+  Clock,
+  CheckCircle2,
 } from "lucide-react";
 import { useCurrency } from "@/lib/currency";
-import { v4 as uuidv4 } from "uuid";
 import { toast } from "sonner";
 import { PersistStore } from "@/lib/session-store";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -100,11 +103,12 @@ function ExpensesPage() {
 
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search, 300);
+
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
-
   const [filters, setFilters] = useState({ category: "", status: "" });
   const [draftFilters, setDraftFilters] = useState({ category: "", status: "" });
+  const [filterDrawerOpen, setFilterDrawerOpen] = useState(false);
   const activeFilterCount = (filters.category ? 1 : 0) + (filters.status ? 1 : 0);
 
   const handleResetFilters = () => {
@@ -112,61 +116,47 @@ function ExpensesPage() {
     setDraftFilters({ category: "", status: "" });
   };
 
+  const {
+    errors: expErrors,
+    validate: validateExp,
+    clearError: clearExpError,
+    clearAll: clearExpAll,
+  } = useFormValidation({
+    category: { required: "Expense category is required" },
+    description: { required: "Description is required" },
+    amount: {
+      required: "Amount is required",
+      positive: "Amount must be a positive number",
+    },
+    date: { required: "Expense date is required" },
+  });
+
+  const uniqueCategories = useMemo(() => {
+    const list = rawExpenses.map((e: any) => e.category).filter(Boolean);
+    const combined = Array.from(
+      new Set([...list, ...EXPENSE_CATEGORIES.map((cat: any) => cat.value || cat)]),
+    );
+    return combined.sort();
+  }, [rawExpenses]);
+
   const filteredExpenses = useMemo(() => {
-    let result = rawExpenses;
+    let list = [...rawExpenses];
     if (debouncedSearch) {
-      const lower = debouncedSearch.toLowerCase();
-      result = result.filter(
-        (e) =>
-          e.description?.toLowerCase().includes(lower) || e.category?.toLowerCase().includes(lower),
+      const q = debouncedSearch.toLowerCase();
+      list = list.filter(
+        (e: any) =>
+          e.category?.toLowerCase().includes(q) ||
+          e.description?.toLowerCase().includes(q),
       );
     }
     if (filters.category) {
-      result = result.filter((e) => e.category === filters.category);
+      list = list.filter((e: any) => e.category === filters.category);
     }
     if (filters.status) {
-      result = result.filter((e) => e.status === filters.status);
+      list = list.filter((e: any) => e.status === filters.status);
     }
-    return result;
+    return list.reverse();
   }, [rawExpenses, debouncedSearch, filters]);
-
-  const uniqueCategories = useMemo(() => {
-    const cats = new Set<string>();
-    rawExpenses.forEach((e) => {
-      if (e.category) cats.add(e.category);
-    });
-    return Array.from(cats);
-  }, [rawExpenses]);
-
-  // Metrics
-  const metrics = useMemo(() => {
-    const total = rawExpenses.reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
-    const paid = rawExpenses
-      .filter((e) => e.status === "paid")
-      .reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
-    const pending = rawExpenses
-      .filter((e) => e.status === "pending")
-      .reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
-
-    const catTotals: Record<string, number> = {};
-    rawExpenses.forEach((e) => {
-      catTotals[e.category] = (catTotals[e.category] || 0) + (Number(e.amount) || 0);
-    });
-    let maxCat = "-";
-    let maxAmt = 0;
-    Object.entries(catTotals).forEach(([cat, amt]) => {
-      if (amt > maxAmt) {
-        maxAmt = amt;
-        maxCat = cat;
-      }
-    });
-
-    return { total, paid, pending, maxCat, maxAmt };
-  }, [rawExpenses]);
-
-  useEffect(() => {
-    setPage(1);
-  }, [debouncedSearch, filters]);
 
   const totalPages = Math.max(1, Math.ceil(filteredExpenses.length / pageSize));
   const paginatedExpenses = useMemo(() => {
@@ -174,28 +164,40 @@ function ExpensesPage() {
     return filteredExpenses.slice(start, start + pageSize);
   }, [filteredExpenses, page, pageSize]);
 
-  const {
-    errors: expErrors,
-    validate: validateExp,
-    clearError: clearExpError,
-    clearAll: clearExpAll,
-  } = useFormValidation({
-    category: { required: "Category is required" },
-    description: {
-      required: "Description is required",
-      minLength: { value: 3, message: "Description must be at least 3 characters" },
-    },
-    amount: {
-      required: "Amount is required",
-      positive: "Amount must be greater than 0",
-      custom: (val) => (parseFloat(val) <= 0 ? "Amount must be greater than 0" : undefined),
-    },
-  });
+  useEffect(() => {
+    setPage(1);
+  }, [debouncedSearch, filters]);
+
+  const metrics = useMemo(() => {
+    const total = rawExpenses.reduce((acc, e) => acc + (Number(e.amount) || 0), 0);
+    const paid = rawExpenses
+      .filter((e) => e.status === "paid")
+      .reduce((acc, e) => acc + (Number(e.amount) || 0), 0);
+    const pending = rawExpenses
+      .filter((e) => e.status === "pending" || e.status === "unpaid")
+      .reduce((acc, e) => acc + (Number(e.amount) || 0), 0);
+
+    const catMap: Record<string, number> = {};
+    rawExpenses.forEach((e) => {
+      catMap[e.category] = (catMap[e.category] || 0) + (Number(e.amount) || 0);
+    });
+    let maxCat = "None";
+    let maxVal = 0;
+    Object.entries(catMap).forEach(([k, v]) => {
+      if (v > maxVal) {
+        maxVal = v;
+        maxCat = k;
+      }
+    });
+
+    return { total, paid, pending, maxCat };
+  }, [rawExpenses]);
 
   const handleOpenAdd = (item?: any) => {
+    clearExpAll();
     if (item) {
       setEditItem(item);
-      setExpenseDate(item.date ? item.date.split("T")[0] : new Date().toISOString().split("T")[0]);
+      setExpenseDate(item.date ? item.date.split("T")[0] : "");
       setExpenseStatus(item.status || "paid");
       setPaymentMethod(item.paymentMethod || "Cash");
     } else {
@@ -295,285 +297,341 @@ function ExpensesPage() {
   };
 
   return (
-    <>
-      <DataPage
+    <div className="page-container space-y-6">
+      <PageHeader
         title={t("operatingExpenses", "Operating Expenses")}
         description={t("manageExpensesDesc", "Track store rent, utility bills, employee payroll, and daily miscellaneous costs.")}
-        primaryAction={{
-          label: t("addExpense", "Add Expense"),
-          onClick: () => handleOpenAdd(),
-          icon: Plus,
-        }}
-        searchPlaceholder={t("searchExpenses", "Search by category or expense note...")}
-        searchValue={search}
-        onSearchChange={setSearch}
-        hideToolbar={false}
-        onExport={handleExport}
-        onResetFilters={handleResetFilters}
-        activeFilterCount={activeFilterCount}
-        filtersContent={({ close }) => (
-          <div className="space-y-4 flex flex-col h-full min-h-[50vh]">
-            <div className="flex-1 space-y-4">
-              <div className="space-y-2">
-                <Label>{t("category", "Category")}</Label>
-                <SearchableSelect
-                  options={[
-                    { value: "", label: t("allCategoriesCount", "All Categories") },
-                    ...uniqueCategories.map((c) => ({ value: String(c), label: String(c) })),
-                  ]}
-                  value={draftFilters.category}
-                  onChange={(val) => setDraftFilters((prev) => ({ ...prev, category: val }))}
-                  placeholder={t("filterByCategory", "Filter by Category")}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>{t("status", "Status")}</Label>
-                <SearchableSelect
-                  options={[
-                    { value: "", label: t("allStatuses", "All Statuses") },
-                    ...PAYMENT_STATUSES.map((s) => ({ value: s.value, label: s.label })),
-                  ]}
-                  value={draftFilters.status}
-                  onChange={(val) => setDraftFilters((prev) => ({ ...prev, status: val }))}
-                  placeholder={t("filterByStatus", "Filter by Status")}
-                />
-              </div>
-            </div>
-            <div className="pt-4 mt-auto">
-              <Button
-                className="w-full font-bold shadow-soft"
-                onClick={() => {
-                  setFilters(draftFilters);
-                  close();
-                }}
-              >
-                {t("applyFilters", "Apply Filters")}
-              </Button>
-            </div>
-          </div>
-        )}
-        topContent={
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
-            <div className="rounded-xl border border-border/80 bg-card p-4 shadow-soft flex flex-col gap-1 card-interactive">
-              <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
-                {t("totalExpenses", "Total Expenses")}
-              </span>
-              <span className="text-xl sm:text-2xl font-black text-foreground">
-                {formatCurrency(metrics.total)}
-              </span>
-            </div>
-
-            <div className="rounded-xl border border-border/80 bg-card p-4 shadow-soft flex flex-col gap-1 card-interactive">
-              <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
-                {t("paidOut", "Paid Out")}
-              </span>
-              <span className="text-xl sm:text-2xl font-black text-success">
-                {formatCurrency(metrics.paid)}
-              </span>
-            </div>
-
-            <div className="rounded-xl border border-border/80 bg-card p-4 shadow-soft flex flex-col gap-1 card-interactive">
-              <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
-                {t("pendingBills", "Pending Bills")}
-              </span>
-              <span className="text-xl sm:text-2xl font-black text-warning">
-                {formatCurrency(metrics.pending)}
-              </span>
-            </div>
-
-            <div className="rounded-xl border border-border/80 bg-card p-4 shadow-soft flex flex-col gap-1 card-interactive">
-              <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
-                {t("topCategory", "Top Category")}
-              </span>
-              <span className="text-lg sm:text-xl font-black text-info truncate">
-                {metrics.maxCat}
-              </span>
-            </div>
-          </div>
+        actions={
+          <>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleExport}
+              className="hidden sm:flex"
+            >
+              <Download className="size-4 mr-1.5" />
+              {t("exportCSV", "Export CSV")}
+            </Button>
+            <Button
+              size="sm"
+              onClick={() => handleOpenAdd()}
+              className="shadow-soft"
+            >
+              <Plus className="size-4 mr-1.5" />
+              {t("addExpense", "Add Expense")}
+            </Button>
+          </>
         }
-      >
+      />
+
+      {/* KPI Stats Strip */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <StatCard
+          label={t("totalExpenses", "Total Expenses")}
+          value={formatCurrency(metrics.total)}
+          icon={Wallet}
+          accent="primary"
+        />
+        <StatCard
+          label={t("paidOut", "Paid Out")}
+          value={formatCurrency(metrics.paid)}
+          icon={CheckCircle2}
+          accent="success"
+        />
+        <StatCard
+          label={t("pendingBills", "Pending Bills")}
+          value={formatCurrency(metrics.pending)}
+          icon={Clock}
+          accent="warning"
+        />
+        <StatCard
+          label={t("topCategory", "Top Category")}
+          value={metrics.maxCat}
+          icon={TrendingDown}
+          accent="info"
+        />
+      </div>
+
+      {/* Toolbar */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="relative w-full sm:w-80">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+          <Input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder={t("searchExpenses", "Search by category or expense note...")}
+            className="pl-9 h-9"
+          />
+          {search && (
+            <button
+              onClick={() => setSearch("")}
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+            >
+              <X className="size-3.5" />
+            </button>
+          )}
+        </div>
+
+        <div className="flex items-center gap-2 self-end sm:self-auto">
+          {activeFilterCount > 0 && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleResetFilters}
+              className="h-9 px-2.5 text-xs text-muted-foreground hover:text-foreground"
+            >
+              <X className="size-3.5 mr-1" />
+              {t("clearFilters", "Clear")}
+            </Button>
+          )}
+
+          <Sheet open={filterDrawerOpen} onOpenChange={setFilterDrawerOpen}>
+            <SheetTrigger asChild>
+              <Button variant="outline" size="sm" className="h-9 relative">
+                <Filter className="size-3.5 mr-1.5" />
+                {t("filters", "Filters")}
+                {activeFilterCount > 0 && (
+                  <Badge className="ml-1.5 size-5 p-0 flex items-center justify-center text-[10px] rounded-full bg-primary text-primary-foreground">
+                    {activeFilterCount}
+                  </Badge>
+                )}
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="right" className="w-full sm:max-w-md p-0 flex flex-col h-full">
+              <SheetHeader className="p-5 border-b pr-12 text-left shrink-0">
+                <SheetTitle className="text-lg font-bold">{t("filterExpenses", "Filter Expenses")}</SheetTitle>
+              </SheetHeader>
+              <div className="flex-1 overflow-y-auto p-5 space-y-4">
+                <div className="space-y-2">
+                  <Label>{t("category", "Category")}</Label>
+                  <SearchableSelect
+                    options={[
+                      { value: "", label: t("allCategoriesCount", "All Categories") },
+                      ...uniqueCategories.map((c) => ({ value: String(c), label: String(c) })),
+                    ]}
+                    value={draftFilters.category}
+                    onChange={(val) => setDraftFilters((prev) => ({ ...prev, category: val }))}
+                    placeholder={t("filterByCategory", "Filter by Category")}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>{t("status", "Status")}</Label>
+                  <SearchableSelect
+                    options={[
+                      { value: "", label: t("allStatuses", "All Statuses") },
+                      ...PAYMENT_STATUSES.map((s) => ({ value: s.value, label: s.label })),
+                    ]}
+                    value={draftFilters.status}
+                    onChange={(val) => setDraftFilters((prev) => ({ ...prev, status: val }))}
+                    placeholder={t("filterByStatus", "Filter by Status")}
+                  />
+                </div>
+              </div>
+              <div className="border-t p-4 flex gap-2">
+                <Button
+                  variant="outline"
+                  className="flex-1 font-bold text-xs"
+                  onClick={handleResetFilters}
+                >
+                  {t("reset", "Reset")}
+                </Button>
+                <Button
+                  className="flex-1 font-bold text-xs"
+                  onClick={() => {
+                    setFilters(draftFilters);
+                    setFilterDrawerOpen(false);
+                  }}
+                >
+                  {t("applyFilters", "Apply Filters")}
+                </Button>
+              </div>
+            </SheetContent>
+          </Sheet>
+        </div>
+      </div>
+
+      {/* Main Table / Mobile Card View */}
+      <div className="overflow-hidden rounded-xl border border-border/80 bg-card shadow-soft">
         {isExpensesLoading ? (
           <TableSkeleton columns={6} rows={6} showHeaderAction={false} showFilters={false} />
         ) : isExpensesError ? (
           <ErrorState onRetry={refetchExpenses} />
         ) : (
-          <div className="space-y-4">
-            <div className="overflow-hidden rounded-xl border border-border/80 bg-card shadow-soft">
-              {/* Desktop Table View */}
-              <div className="table-desktop overflow-x-auto">
-                <Table className="min-w-[750px]">
-                  <TableHeader className="bg-muted/40">
+          <>
+            {/* Desktop Table View */}
+            <div className="table-desktop overflow-x-auto">
+              <Table className="min-w-[750px]">
+                <TableHeader className="bg-muted/40">
+                  <TableRow>
+                    <TableHead className="font-bold text-xs uppercase tracking-wider">
+                      {t("date", "Date")}
+                    </TableHead>
+                    <TableHead className="font-bold text-xs uppercase tracking-wider">
+                      {t("category", "Category")}
+                    </TableHead>
+                    <TableHead className="font-bold text-xs uppercase tracking-wider">
+                      {t("expenseDescription", "Expense Description")}
+                    </TableHead>
+                    <TableHead className="font-bold text-xs uppercase tracking-wider">
+                      {t("paymentStatus", "Payment Status")}
+                    </TableHead>
+                    <TableHead className="font-bold text-xs uppercase tracking-wider text-right">
+                      {t("amount", "Amount")}
+                    </TableHead>
+                    <TableHead className="font-bold text-xs uppercase tracking-wider text-right">
+                      {t("actions", "Actions")}
+                    </TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody className="divide-y divide-border/60">
+                  {paginatedExpenses.length === 0 ? (
                     <TableRow>
-                      <TableHead className="font-bold text-xs uppercase tracking-wider">
-                        {t("date", "Date")}
-                      </TableHead>
-                      <TableHead className="font-bold text-xs uppercase tracking-wider">
-                        {t("category", "Category")}
-                      </TableHead>
-                      <TableHead className="font-bold text-xs uppercase tracking-wider">
-                        {t("expenseDescription", "Expense Description")}
-                      </TableHead>
-                      <TableHead className="font-bold text-xs uppercase tracking-wider">
-                        {t("paymentStatus", "Payment Status")}
-                      </TableHead>
-                      <TableHead className="font-bold text-xs uppercase tracking-wider text-right">
-                        {t("amount", "Amount")}
-                      </TableHead>
-                      <TableHead className="font-bold text-xs uppercase tracking-wider text-right">
-                        {t("actions", "Actions")}
-                      </TableHead>
+                      <TableCell colSpan={6} className="h-64 text-center">
+                        <EmptyState
+                          icon={Receipt}
+                          title={t("noExpensesFound", "No expenses found")}
+                          description={
+                            search
+                              ? t("adjustSearch", "Try adjusting your search or filters.")
+                              : t("noExpensesYet", "No business expenses recorded yet. Click below to add one.")
+                          }
+                          actionLabel={t("addExpense", "Add Expense")}
+                          onAction={() => handleOpenAdd()}
+                          className="border-none bg-transparent my-0 py-8 shadow-none"
+                        />
+                      </TableCell>
                     </TableRow>
-                  </TableHeader>
-                  <TableBody className="divide-y divide-border/60">
-                    {paginatedExpenses.length === 0 ? (
-                      <TableRow>
-                        <TableCell colSpan={6} className="h-64 text-center">
-                          <EmptyState
-                            icon={Receipt}
-                            title={t("noExpensesFound", "No expenses found")}
-                            description={
-                              search
-                                ? t("adjustSearch", "Try adjusting your search or filters.")
-                                : t("noExpensesYet", "No business expenses recorded yet. Click below to add one.")
-                            }
-                            actionLabel={t("addExpense", "Add Expense")}
-                            onAction={() => handleOpenAdd()}
-                            className="border-none bg-transparent my-0 py-8 shadow-none"
-                          />
+                  ) : (
+                    paginatedExpenses.map((e: any) => (
+                      <TableRow key={e.id} className="hover:bg-muted/30 transition-colors">
+                        <TableCell className="text-muted-foreground whitespace-nowrap text-xs font-medium">
+                          {formatDate(e.date)}
+                        </TableCell>
+                        <TableCell className="whitespace-nowrap">
+                          <Badge
+                            variant="outline"
+                            className="text-[10px] font-bold bg-muted/60 border-border/80"
+                          >
+                            {e.category}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="font-semibold text-sm text-foreground whitespace-nowrap">
+                          {e.description}
+                        </TableCell>
+                        <TableCell className="whitespace-nowrap">
+                          <Badge
+                            variant="outline"
+                            className={cn(
+                              "text-[10px] font-black uppercase tracking-wider",
+                              e.status === "paid"
+                                ? "bg-success/15 text-success border-success/30"
+                                : "bg-warning/15 text-warning border-warning/30",
+                            )}
+                          >
+                            {e.status}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right font-black text-foreground whitespace-nowrap text-sm">
+                          {formatCurrency(Number(e.amount) || 0)}
+                        </TableCell>
+                        <TableCell className="text-right whitespace-nowrap">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon" className="size-8 rounded-lg">
+                                <MoreVertical className="size-4 text-muted-foreground" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="rounded-xl w-36">
+                              <DropdownMenuItem
+                                onClick={() => handleOpenAdd(e)}
+                                className="text-xs font-semibold"
+                              >
+                                <Edit2 className="mr-2 size-3.5 text-primary" /> {t("edit", "Edit")}
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => setDeleteId(e.id)}
+                                className="text-xs font-semibold text-destructive focus:text-destructive"
+                              >
+                                <Trash2 className="mr-2 size-3.5" /> {t("delete", "Delete")}
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
                         </TableCell>
                       </TableRow>
-                    ) : (
-                      paginatedExpenses.map((e: any) => (
-                        <TableRow key={e.id} className="hover:bg-muted/30 transition-colors">
-                          <TableCell className="text-muted-foreground whitespace-nowrap text-xs font-medium">
-                            {formatDate(e.date)}
-                          </TableCell>
-                          <TableCell className="whitespace-nowrap">
-                            <Badge
-                              variant="outline"
-                              className="text-[10px] font-bold bg-muted/60 border-border/80"
-                            >
-                              {e.category}
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="font-semibold text-sm text-foreground whitespace-nowrap">
-                            {e.description}
-                          </TableCell>
-                          <TableCell className="whitespace-nowrap">
-                            <Badge
-                              variant="outline"
-                              className={cn(
-                                "text-[10px] font-black uppercase tracking-wider",
-                                e.status === "paid"
-                                  ? "bg-success/15 text-success border-success/30"
-                                  : "bg-warning/15 text-warning border-warning/30",
-                              )}
-                            >
-                              {e.status}
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="text-right font-black text-foreground whitespace-nowrap text-sm">
-                            {formatCurrency(Number(e.amount) || 0)}
-                          </TableCell>
-                          <TableCell className="text-right whitespace-nowrap">
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="icon" className="size-8 rounded-lg">
-                                  <MoreVertical className="size-4 text-muted-foreground" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end" className="rounded-xl w-36">
-                                <DropdownMenuItem
-                                  onClick={() => handleOpenAdd(e)}
-                                  className="text-xs font-semibold"
-                                >
-                                  <Edit2 className="mr-2 size-3.5 text-primary" /> {t("edit", "Edit")}
-                                </DropdownMenuItem>
-                                <DropdownMenuItem
-                                  onClick={() => setDeleteId(e.id)}
-                                  className="text-xs font-semibold text-destructive focus:text-destructive"
-                                >
-                                  <Trash2 className="mr-2 size-3.5" /> {t("delete", "Delete")}
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          </TableCell>
-                        </TableRow>
-                      ))
-                    )}
-                  </TableBody>
-                </Table>
-              </div>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </div>
 
-              {/* Mobile Cards */}
-              <div className="table-mobile-cards p-3 space-y-2.5">
-                {paginatedExpenses.map((e: any) => (
-                  <div
-                    key={e.id}
-                    className="flex items-center justify-between rounded-xl border border-border/80 bg-card p-3 shadow-soft"
-                  >
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2">
-                        <Badge variant="outline" className="text-[9px] font-bold bg-muted/60">
-                          {e.category}
-                        </Badge>
-                        <span className="text-[10px] text-muted-foreground">
-                          {formatDate(e.date)}
-                        </span>
-                      </div>
-                      <div className="font-bold text-xs sm:text-sm text-foreground mt-1 truncate">
-                        {e.description}
-                      </div>
-                      <div className="mt-1.5">
-                        <Badge className="text-[9px] font-bold bg-success/15 text-success border-success/30">
-                          {e.status}
-                        </Badge>
-                      </div>
+            {/* Mobile Cards View */}
+            <div className="table-mobile-cards p-3 space-y-2.5">
+              {paginatedExpenses.map((e: any) => (
+                <div
+                  key={e.id}
+                  className="flex items-center justify-between rounded-xl border border-border/80 bg-card p-3 shadow-soft"
+                >
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <Badge variant="outline" className="text-[9px] font-bold bg-muted/60">
+                        {e.category}
+                      </Badge>
+                      <span className="text-[10px] text-muted-foreground">
+                        {formatDate(e.date)}
+                      </span>
                     </div>
-
-                    <div className="text-right shrink-0 pl-2">
-                      <div className="text-sm font-black text-foreground">
-                        {formatCurrency(Number(e.amount) || 0)}
-                      </div>
-                      <div className="flex gap-1 justify-end mt-1">
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          className="size-7"
-                          onClick={() => handleOpenAdd(e)}
-                        >
-                          <Edit2 className="size-3.5" />
-                        </Button>
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          className="size-7 text-destructive"
-                          onClick={() => setDeleteId(e.id)}
-                        >
-                          <Trash2 className="size-3.5" />
-                        </Button>
-                      </div>
+                    <div className="font-bold text-xs sm:text-sm text-foreground mt-1 truncate">
+                      {e.description}
+                    </div>
+                    <div className="mt-1.5">
+                      <Badge className="text-[9px] font-bold bg-success/15 text-success border-success/30">
+                        {e.status}
+                      </Badge>
                     </div>
                   </div>
-                ))}
-              </div>
 
-              {filteredExpenses.length > 0 && (
-                <div className="border-t border-border/60 p-3">
-                  <PaginationControls
-                    currentPage={page}
-                    totalPages={totalPages}
-                    pageSize={pageSize}
-                    totalItems={filteredExpenses.length}
-                    onPageChange={setPage}
-                    onPageSizeChange={setPageSize}
-                  />
+                  <div className="text-right shrink-0 pl-2">
+                    <div className="text-sm font-black text-foreground">
+                      {formatCurrency(Number(e.amount) || 0)}
+                    </div>
+                    <div className="flex gap-1 justify-end mt-1">
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="size-7"
+                        onClick={() => handleOpenAdd(e)}
+                      >
+                        <Edit2 className="size-3.5" />
+                      </Button>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="size-7 text-destructive"
+                        onClick={() => setDeleteId(e.id)}
+                      >
+                        <Trash2 className="size-3.5" />
+                      </Button>
+                    </div>
+                  </div>
                 </div>
-              )}
+              ))}
             </div>
-          </div>
+
+            {filteredExpenses.length > 0 && (
+              <div className="border-t border-border/60 p-3">
+                <PaginationControls
+                  currentPage={page}
+                  totalPages={totalPages}
+                  pageSize={pageSize}
+                  totalItems={filteredExpenses.length}
+                  onPageChange={setPage}
+                  onPageSizeChange={setPageSize}
+                />
+              </div>
+            )}
+          </>
         )}
-      </DataPage>
+      </div>
 
       {/* Add / Edit Expense Drawer Sheet */}
       <Sheet
@@ -737,6 +795,6 @@ function ExpensesPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </>
+    </div>
   );
 }

@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { useState } from "react";
-import { Download, Filter, Plus, Search, Upload, RotateCcw } from "lucide-react";
+import { Download, Filter, Plus, Search, Upload, RotateCcw, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "./PageHeader";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
@@ -54,6 +54,7 @@ export function DataPage({
           variant="outline"
           size="sm"
           onClick={() => document.getElementById("data-page-import")?.click()}
+          className="gap-1.5 font-bold h-9"
         >
           <Upload className="size-4" /> {t("import", "Import")}
           <input
@@ -71,12 +72,12 @@ export function DataPage({
         </Button>
       )}
       {onExport && (
-        <Button variant="outline" size="sm" onClick={onExport}>
+        <Button variant="outline" size="sm" onClick={onExport} className="gap-1.5 font-bold h-9">
           <Download className="size-4" /> {t("export", "Export")}
         </Button>
       )}
       {primaryAction && (
-        <Button size="sm" onClick={primaryAction.onClick}>
+        <Button size="sm" onClick={primaryAction.onClick} className="gap-1.5 font-bold h-9">
           <Icon className="size-4" /> {primaryAction.label}
         </Button>
       )}
@@ -84,7 +85,7 @@ export function DataPage({
   );
 
   return (
-    <div className="page-container space-y-5">
+    <div className="page-container space-y-6">
       {!hideHeader && title && (
         <PageHeader title={title} description={description} actions={actionsContent} />
       )}
@@ -92,53 +93,57 @@ export function DataPage({
       {topContent}
 
       {!hideToolbar && (
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className="relative w-full sm:w-1/2 sm:max-w-md">
-            <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="relative w-full sm:w-80">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
             <input
               type="text"
               placeholder={searchPlaceholder}
-              value={searchValue}
+              value={searchValue ?? ""}
               onChange={(e) => onSearchChange?.(e.target.value)}
-              className="h-9 w-full rounded-lg border border-border bg-background pl-9 pr-3 text-sm placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/20"
+              className="h-9 w-full pl-9 pr-8 rounded-lg border border-border bg-background text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
             />
+            {searchValue && (
+              <button
+                onClick={() => onSearchChange?.("")}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-0.5 rounded-sm"
+              >
+                <X className="size-3.5" />
+              </button>
+            )}
           </div>
           <div className="flex flex-wrap items-center gap-2">
             {hideHeader && actionsContent}
             {toolbar}
-            {activeFilterCount && activeFilterCount > 0 && onResetFilters ? (
-              <Button variant="outline" size="sm" onClick={onResetFilters} className="mr-1">
-                <RotateCcw className="size-4" /> {t("reset", "Reset")}
+            {Boolean(activeFilterCount && activeFilterCount > 0 && onResetFilters) && (
+              <Button variant="outline" size="sm" onClick={onResetFilters} className="h-9 gap-1.5 font-bold">
+                <RotateCcw className="size-3.5" /> {t("reset", "Reset")}
               </Button>
-            ) : null}
+            )}
             {filtersContent ? (
               <Sheet open={isFilterOpen} onOpenChange={setIsFilterOpen}>
                 <SheetTrigger asChild>
-                  <Button variant="outline" size="sm" className="relative">
-                    <Filter className="size-4" /> {t("filters") || "Filters"}
-                    {activeFilterCount ? (
-                      <span className="absolute -top-1.5 -right-1.5 size-4 rounded-full bg-primary text-[9px] font-bold text-primary-foreground flex items-center justify-center">
+                  <Button variant="outline" size="sm" className="relative h-9 gap-1.5 font-bold">
+                    <Filter className="size-3.5" /> {t("filters") || "Filters"}
+                    {Boolean(activeFilterCount && activeFilterCount > 0) && (
+                      <span className="ml-1 size-5 rounded-full bg-primary text-[10px] font-bold text-primary-foreground inline-flex items-center justify-center">
                         {activeFilterCount}
                       </span>
-                    ) : null}
+                    )}
                   </Button>
                 </SheetTrigger>
-                <SheetContent side="right" className="w-[300px] sm:w-[400px] flex flex-col h-full">
-                  <SheetHeader>
+                <SheetContent side="right" className="w-full sm:max-w-md flex flex-col h-full p-0">
+                  <SheetHeader className="p-6 border-b border-border/60">
                     <SheetTitle>{t("filters") || "Filters"}</SheetTitle>
                   </SheetHeader>
-                  <div className="mt-6 flex-1 flex flex-col min-h-0">
+                  <div className="flex-1 overflow-y-auto p-6 space-y-5">
                     {typeof filtersContent === "function"
                       ? filtersContent({ close: () => setIsFilterOpen(false) })
                       : filtersContent}
                   </div>
                 </SheetContent>
               </Sheet>
-            ) : (
-              <Button variant="outline" size="sm" disabled>
-                <Filter className="size-4" /> {t("filters") || "Filters"}
-              </Button>
-            )}
+            ) : null}
           </div>
         </div>
       )}
@@ -147,3 +152,4 @@ export function DataPage({
     </div>
   );
 }
+

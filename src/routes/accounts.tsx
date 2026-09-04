@@ -1,7 +1,8 @@
 import { useState, useMemo, useEffect } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { DataPage } from "@/components/layout/DataPage";
 import { appName } from "@/lib/env";
+import { PageHeader } from "@/components/layout/PageHeader";
+import { StatCard } from "@/components/layout/StatCard";
 import { exportToCSV, parseCSV } from "@/lib/csv";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -16,7 +17,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SearchableSelect } from "@/components/ui/searchable-select";
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -50,12 +51,16 @@ import {
   Sparkles,
   Pencil,
   Trash2,
-  Eye,
   History,
   TrendingUp,
   TrendingDown,
   FileSpreadsheet,
   CheckCircle2,
+  Download,
+  Upload,
+  Search,
+  Filter,
+  X,
 } from "lucide-react";
 import { toast } from "sonner";
 import { PaginationControls } from "@/components/ui/pagination-controls";
@@ -98,84 +103,34 @@ function AccountsPage() {
   const [activeTab, setActiveTab] = useState<"accounts" | "vouchers">("accounts");
   const [isAddAccountOpen, setIsAddAccountOpen] = useState(false);
   const [editingAccount, setEditingAccount] = useState<any>(null);
-  const [selectedLedgerAccount, setSelectedLedgerAccount] = useState<any>(null);
   const [deletingAccount, setDeletingAccount] = useState<any>(null);
+  const [selectedLedgerAccount, setSelectedLedgerAccount] = useState<any>(null);
 
   const [isAddVoucherOpen, setIsAddVoucherOpen] = useState(false);
-  const [isSubmittingAccount, setIsSubmittingAccount] = useState(false);
-  const [isPostingVoucher, setIsPostingVoucher] = useState(false);
-  const [isSeeding, setIsSeeding] = useState(false);
-  const [accountType, setAccountType] = useState("asset");
+  const [voucherType, setVoucherType] = useState<"journal" | "payment" | "receipt" | "contra">("journal");
+  const [debitAccId, setDebitAccId] = useState("");
+  const [creditAccId, setCreditAccId] = useState("");
+  const [voucherAmount, setVoucherAmount] = useState("");
+  const [narration, setNarration] = useState("");
 
-  // Pagination & Filter State
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search, 300);
+  const [accountType, setAccountType] = useState<"asset" | "liability" | "equity" | "income" | "expense">("asset");
+  const [isSeeding, setIsSeeding] = useState(false);
+  const [isSubmittingAccount, setIsSubmittingAccount] = useState(false);
+  const [isPostingVoucher, setIsPostingVoucher] = useState(false);
+
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
-
   const [filters, setFilters] = useState({ type: "" });
   const [draftFilters, setDraftFilters] = useState({ type: "" });
+  const [filterDrawerOpen, setFilterDrawerOpen] = useState(false);
   const activeFilterCount = filters.type ? 1 : 0;
 
   const handleResetFilters = () => {
     setFilters({ type: "" });
     setDraftFilters({ type: "" });
   };
-
-  const filteredVouchers = useMemo(() => {
-    let filtered = Array.isArray(rawVouchers) ? rawVouchers : [];
-    if (debouncedSearch) {
-      const lower = debouncedSearch.toLowerCase();
-      filtered = filtered.filter(
-        (v) =>
-          v.voucherNo?.toLowerCase().includes(lower) ||
-          v.narration?.toLowerCase().includes(lower) ||
-          v.debitAccountName?.toLowerCase().includes(lower) ||
-          v.creditAccountName?.toLowerCase().includes(lower),
-      );
-    }
-    if (filters.type) {
-      filtered = filtered.filter((v) => v.type === filters.type);
-    }
-    return Array.isArray(filtered) ? [...filtered].reverse() : [];
-  }, [rawVouchers, debouncedSearch, filters.type]);
-
-  const totalPages = Math.ceil((filteredVouchers?.length || 0) / pageSize) || 1;
-  const paginatedVouchers = useMemo(() => {
-    const start = (page - 1) * pageSize;
-    return (filteredVouchers || []).slice(start, start + pageSize);
-  }, [filteredVouchers, page, pageSize]);
-
-  useEffect(() => {
-    setPage(1);
-  }, [debouncedSearch, filters]);
-
-  // Voucher Form State
-  const [voucherType, setVoucherType] = useState<"payment" | "receipt" | "journal" | "contra">(
-    "payment",
-  );
-  const [debitAccId, setDebitAccId] = useState("");
-  const [creditAccId, setCreditAccId] = useState("");
-  const [voucherAmount, setVoucherAmount] = useState("");
-  const [narration, setNarration] = useState("");
-
-  const accountsByType = useMemo(() => {
-    const list = Array.isArray(rawAccounts) ? rawAccounts : [];
-    return {
-      asset: list.filter((a) => a.type?.toLowerCase() === "asset"),
-      liability: list.filter((a) => a.type?.toLowerCase() === "liability"),
-      equity: list.filter((a) => a.type?.toLowerCase() === "equity"),
-      income: list.filter((a) => a.type?.toLowerCase() === "income"),
-      expense: list.filter((a) => a.type?.toLowerCase() === "expense"),
-    };
-  }, [rawAccounts]);
-
-  const totalAssets = accountsByType.asset.reduce((sum, a) => sum + (Number(a.balance) || 0), 0);
-  const totalLiabilities = accountsByType.liability.reduce(
-    (sum, a) => sum + (Number(a.balance) || 0),
-    0,
-  );
-  const totalEquity = accountsByType.equity.reduce((sum, a) => sum + (Number(a.balance) || 0), 0);
 
   const {
     errors: accErrors,
@@ -193,25 +148,108 @@ function AccountsPage() {
     clearError: clearVchError,
     clearAll: clearVchAll,
   } = useFormValidation({
-    debitAccId: { required: t("debitAccountRequired", "Debit account is required") },
-    creditAccId: { required: t("creditAccountRequired", "Credit account is required") },
+    debitAccId: { required: t("selectDebitAccount", "Select debit account") },
+    creditAccId: { required: t("selectCreditAccount", "Select credit account") },
     voucherAmount: {
-      required: t("voucherAmountRequired", "Voucher amount is required"),
-      positive: t("amountPositiveRequired", "Amount must be a positive number"),
+      required: t("enterValidAmount", "Enter a valid amount"),
+      positive: t("amountMustBePositive", "Amount must be greater than zero"),
     },
   });
+
+  const totalAssets = useMemo(
+    () =>
+      rawAccounts
+        .filter((a) => a.type === "asset")
+        .reduce((sum, a) => sum + (Number(a.balance) || 0), 0),
+    [rawAccounts],
+  );
+
+  const totalLiabilities = useMemo(
+    () =>
+      rawAccounts
+        .filter((a) => a.type === "liability")
+        .reduce((sum, a) => sum + (Number(a.balance) || 0), 0),
+    [rawAccounts],
+  );
+
+  const totalEquity = useMemo(
+    () =>
+      rawAccounts
+        .filter((a) => a.type === "equity")
+        .reduce((sum, a) => sum + (Number(a.balance) || 0), 0),
+    [rawAccounts],
+  );
+
+  const totalVouchersSum = useMemo(
+    () => rawVouchers.reduce((sum, v) => sum + (Number(v.amount) || 0), 0),
+    [rawVouchers],
+  );
+
+  const accountsByType = useMemo(() => {
+    const grouped: Record<string, any[]> = {
+      asset: [],
+      liability: [],
+      equity: [],
+      income: [],
+      expense: [],
+    };
+    rawAccounts.forEach((acc) => {
+      const q = debouncedSearch.toLowerCase();
+      const matchSearch =
+        !debouncedSearch ||
+        acc.name.toLowerCase().includes(q) ||
+        acc.code.toLowerCase().includes(q);
+
+      if (matchSearch) {
+        if (grouped[acc.type]) {
+          grouped[acc.type].push(acc);
+        } else {
+          grouped.asset.push(acc);
+        }
+      }
+    });
+    return grouped;
+  }, [rawAccounts, debouncedSearch]);
+
+  const filteredVouchers = useMemo(() => {
+    let list = [...rawVouchers];
+    if (debouncedSearch) {
+      const q = debouncedSearch.toLowerCase();
+      list = list.filter(
+        (v) =>
+          v.voucherNo?.toLowerCase().includes(q) ||
+          v.debitAccountName?.toLowerCase().includes(q) ||
+          v.creditAccountName?.toLowerCase().includes(q) ||
+          v.narration?.toLowerCase().includes(q),
+      );
+    }
+    if (filters.type) {
+      list = list.filter((v) => v.type === filters.type);
+    }
+    return list.reverse();
+  }, [rawVouchers, debouncedSearch, filters]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredVouchers.length / pageSize));
+  const paginatedVouchers = useMemo(() => {
+    const start = (page - 1) * pageSize;
+    return filteredVouchers.slice(start, start + pageSize);
+  }, [filteredVouchers, page, pageSize]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [debouncedSearch, filters, activeTab]);
 
   const handleSeedAccounts = async () => {
     setIsSeeding(true);
     try {
       const res = await seedDefaultAccountsFn({ data: {} });
       if (res.success) {
+        toast.success(t("chartSeededSuccess", "Standard Chart of Accounts seeded successfully!"));
         queryClient.invalidateQueries({ queryKey: ["accounts"] });
-        toast.success(t("seededAccountsSuccess", "Seeded Standard Chart of Accounts successfully!"));
       } else {
-        toast.error(t("failedToSeedAccounts", "Failed to seed standard accounts: ") + res.error);
+        toast.error(t("failedToSeedChart", "Failed to seed accounts: ") + res.error);
       }
-    } catch (err: any) {
+    } catch {
       toast.error(t("errorSeedingAccounts", "Error seeding accounts"));
     } finally {
       setIsSeeding(false);
@@ -221,9 +259,9 @@ function AccountsPage() {
   const handleSaveAccount = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
-    const code = ((formData.get("code") as string) || "").trim();
-    const name = ((formData.get("name") as string) || "").trim();
-    const type = (formData.get("type") as any) || accountType || "asset";
+    const code = (formData.get("code") as string)?.trim();
+    const name = (formData.get("name") as string)?.trim();
+    const type = (formData.get("type") as string) || accountType;
     const balance = parseFloat(formData.get("balance") as string) || 0;
 
     const isValid = validateAcc({ code, name });
@@ -241,7 +279,7 @@ function AccountsPage() {
             balance,
           },
         });
-        toast.success(t("accountUpdated", `Account "${name}" updated!`));
+        toast.success(t("accountUpdatedSuccess", `Account "${name}" updated!`));
       } else {
         await createAccountFn({
           data: {
@@ -258,7 +296,7 @@ function AccountsPage() {
       setIsAddAccountOpen(false);
       setEditingAccount(null);
       clearAccAll();
-    } catch (err) {
+    } catch {
       toast.error(t("failedToSaveAccount", "Failed to save account"));
     } finally {
       setIsSubmittingAccount(false);
@@ -275,7 +313,7 @@ function AccountsPage() {
       } else {
         toast.error(t("failedToDeleteAccount", "Failed to delete account: ") + res.error);
       }
-    } catch (err) {
+    } catch {
       toast.error(t("errorDeletingAccount", "Error deleting account"));
     } finally {
       setDeletingAccount(null);
@@ -326,7 +364,7 @@ function AccountsPage() {
       } else {
         toast.error(t("errorPrefix", "Error: ") + res.error);
       }
-    } catch (err) {
+    } catch {
       toast.error(t("failedToPostVoucher", "Failed to post voucher"));
     } finally {
       setIsPostingVoucher(false);
@@ -377,12 +415,11 @@ function AccountsPage() {
 
       queryClient.invalidateQueries({ queryKey: ["accounts"] });
       toast.success(t("importedAccountsSuccess", `Successfully imported ${count} accounts`));
-    } catch (error) {
+    } catch {
       toast.error(t("failedToParseCsv", "Failed to parse CSV file"));
     }
   };
 
-  // Account Ledger Transactions
   const ledgerTransactions = useMemo(() => {
     if (!selectedLedgerAccount) return [];
     const accId = selectedLedgerAccount.id;
@@ -417,436 +454,491 @@ function AccountsPage() {
   };
 
   return (
-    <div className="space-y-6">
-      <DataPage
+    <div className="page-container space-y-6">
+      <PageHeader
         title={t("doubleEntryAccounting", "Double-Entry Financial Accounting")}
         description={t(
           "doubleEntryAccountingDesc",
           "Manage Chart of Accounts, General Ledgers, and Double-Entry Journal Vouchers.",
         )}
-        primaryAction={{
-          label:
-            activeTab === "accounts"
-              ? t("addLedgerAccount", "Add Ledger Account")
-              : t("postNewVoucher", "Post New Voucher"),
-          onClick: () => {
-            if (activeTab === "accounts") {
-              setEditingAccount(null);
-              setAccountType("asset");
-              setIsAddAccountOpen(true);
-            } else {
-              setIsAddVoucherOpen(true);
+        actions={
+          <>
+            {activeTab === "accounts" && (
+              <>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleExport}
+                  className="hidden sm:flex"
+                >
+                  <Download className="size-4 mr-1.5" />
+                  {t("exportCSV", "Export CSV")}
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleSeedAccounts}
+                  disabled={isSeeding}
+                  className="hidden sm:flex"
+                >
+                  {isSeeding ? (
+                    <Loader2 className="size-4 mr-1.5 animate-spin" />
+                  ) : (
+                    <Sparkles className="size-4 mr-1.5" />
+                  )}
+                  {t("seedStandardAccounts", "Seed Accounts")}
+                </Button>
+              </>
+            )}
+            <Button
+              size="sm"
+              onClick={() => {
+                if (activeTab === "accounts") {
+                  setEditingAccount(null);
+                  setAccountType("asset");
+                  setIsAddAccountOpen(true);
+                } else {
+                  setIsAddVoucherOpen(true);
+                }
+              }}
+              className="shadow-soft"
+            >
+              <Plus className="size-4 mr-1.5" />
+              {activeTab === "accounts"
+                ? t("addLedgerAccount", "Add Ledger Account")
+                : t("postNewVoucher", "Post New Voucher")}
+            </Button>
+          </>
+        }
+      />
+
+      {/* KPI Stats Strip */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <StatCard
+          label={t("totalEnterpriseAssets", "Total Enterprise Assets")}
+          value={formatCurrency(totalAssets)}
+          icon={TrendingUp}
+          accent="primary"
+        />
+        <StatCard
+          label={t("totalLiabilities", "Total Liabilities")}
+          value={formatCurrency(totalLiabilities)}
+          icon={TrendingDown}
+          accent="warning"
+        />
+        <StatCard
+          label={t("ownersEquity", "Owner's Equity")}
+          value={formatCurrency(totalEquity || totalAssets - totalLiabilities)}
+          icon={CheckCircle2}
+          accent="success"
+        />
+        <StatCard
+          label={t("totalVouchers", "Journal Volume")}
+          value={formatCurrency(totalVouchersSum)}
+          icon={BookOpen}
+          accent="info"
+        />
+      </div>
+
+      {/* Navigation Tabs */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-border/80 pb-3">
+        <div className="flex gap-2">
+          <Button
+            variant={activeTab === "accounts" ? "default" : "outline"}
+            size="sm"
+            onClick={() => setActiveTab("accounts")}
+            className="gap-1.5 font-bold shadow-soft rounded-xl text-xs h-9"
+          >
+            <Layers className="size-4" /> {t("chartOfAccounts", "Chart of Accounts")} ({rawAccounts.length})
+          </Button>
+          <Button
+            variant={activeTab === "vouchers" ? "default" : "outline"}
+            size="sm"
+            onClick={() => setActiveTab("vouchers")}
+            className="gap-1.5 font-bold shadow-soft rounded-xl text-xs h-9"
+          >
+            <BookOpen className="size-4" /> {t("journalAndVouchers", "Journal & Vouchers")} ({rawVouchers.length})
+          </Button>
+        </div>
+
+        {activeTab === "accounts" && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleSeedAccounts}
+            disabled={isSeeding}
+            className="font-bold text-xs gap-1.5 rounded-xl border-primary/30 text-primary hover:bg-primary/5 h-9 sm:hidden"
+          >
+            {isSeeding ? (
+              <Loader2 className="size-3.5 animate-spin" />
+            ) : (
+              <Sparkles className="size-3.5" />
+            )}
+            {t("seedStandardAccounts", "Seed Standard Accounts")}
+          </Button>
+        )}
+      </div>
+
+      {/* Toolbar */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="relative w-full sm:w-80">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+          <Input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder={
+              activeTab === "vouchers"
+                ? t("searchVouchersPlaceholder", "Search vouchers...")
+                : t("searchAccountsPlaceholder", "Search accounts by name or code...")
             }
-          },
-        }}
-        searchPlaceholder={
-          activeTab === "vouchers"
-            ? t("searchVouchersPlaceholder", "Search vouchers...")
-            : t("searchAccountsPlaceholder", "Search accounts by name or code...")
-        }
-        searchValue={search}
-        onSearchChange={setSearch}
-        hideToolbar={activeTab === "accounts" ? rawAccounts.length === 0 : rawVouchers.length === 0}
-        onExport={activeTab === "accounts" ? handleExport : undefined}
-        onImport={activeTab === "accounts" ? handleImport : undefined}
-        onResetFilters={handleResetFilters}
-        activeFilterCount={activeFilterCount}
-        filtersContent={
-          activeTab === "vouchers"
-            ? ({ close }) => (
-                <div className="space-y-4 flex flex-col h-full min-h-[50vh]">
-                  <div className="flex-1 space-y-4">
-                    <div className="space-y-2">
-                      <Label>{t("voucherType", "Voucher Type")}</Label>
-                      <SearchableSelect
-                        options={[
-                          { value: "", label: t("allTypes", "All Types") },
-                          ...VOUCHER_TYPES.map((v) => ({
-                            value: v.value,
-                            label: v.label.split(" (")[0],
-                          })),
-                        ]}
-                        value={draftFilters.type}
-                        onChange={(val) => setDraftFilters((prev) => ({ ...prev, type: val }))}
-                        placeholder={t("filterByType", "Filter by Type")}
-                      />
-                    </div>
-                  </div>
-                  <div className="pt-4 mt-auto">
-                    <Button
-                      className="w-full font-bold shadow-soft"
-                      onClick={() => {
-                        setFilters(draftFilters);
-                        close();
-                      }}
-                    >
-                      {t("applyFilters", "Apply Filters")}
-                    </Button>
-                  </div>
-                </div>
-              )
-            : undefined
-        }
-        topContent={
-          activeTab === "accounts" ? (
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-              <div className="rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/5 to-card p-5 text-left card-interactive shadow-card">
-                <div className="flex items-center justify-between">
-                  <span className="text-[11px] font-black uppercase tracking-wider text-primary">
-                    {t("totalEnterpriseAssets", "Total Enterprise Assets")}
-                  </span>
-                  <TrendingUp className="size-4 text-primary" />
-                </div>
-                <div className="text-2xl font-black text-primary mt-2">
-                  {formatCurrency(totalAssets)}
-                </div>
-                <p className="text-[11px] text-muted-foreground mt-1">
-                  {t("assetsDescription", "Cash, Bank Accounts, Receivables & Stock")}
-                </p>
-              </div>
-
-              <div className="rounded-2xl border border-amber-500/20 bg-gradient-to-br from-amber-500/5 to-card p-5 text-left card-interactive shadow-card">
-                <div className="flex items-center justify-between">
-                  <span className="text-[11px] font-black uppercase tracking-wider text-amber-600 dark:text-amber-400">
-                    {t("totalLiabilities", "Total Liabilities")}
-                  </span>
-                  <TrendingDown className="size-4 text-amber-500" />
-                </div>
-                <div className="text-2xl font-black text-amber-600 dark:text-amber-400 mt-2">
-                  {formatCurrency(totalLiabilities)}
-                </div>
-                <p className="text-[11px] text-muted-foreground mt-1">
-                  {t("liabilitiesDescription", "Accounts Payable, Supplier Dues & Taxes")}
-                </p>
-              </div>
-
-              <div className="rounded-2xl border border-emerald-500/20 bg-gradient-to-br from-emerald-500/5 to-card p-5 text-left card-interactive shadow-card">
-                <div className="flex items-center justify-between">
-                  <span className="text-[11px] font-black uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
-                    {t("ownersEquity", "Owner's Equity")}
-                  </span>
-                  <CheckCircle2 className="size-4 text-emerald-500" />
-                </div>
-                <div className="text-2xl font-black text-emerald-600 dark:text-emerald-400 mt-2">
-                  {formatCurrency(totalEquity || totalAssets - totalLiabilities)}
-                </div>
-                <p className="text-[11px] text-muted-foreground mt-1">
-                  {t("equityDescription", "Net Capital Investment & Retained Earnings")}
-                </p>
-              </div>
-            </div>
-          ) : null
-        }
-      >
-        {/* Navigation Tabs and Quick Actions */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-border/80 pb-3">
-          <div className="flex gap-2">
-            <Button
-              variant={activeTab === "accounts" ? "default" : "outline"}
-              size="sm"
-              onClick={() => setActiveTab("accounts")}
-              className="gap-1.5 font-bold shadow-soft rounded-xl text-xs h-9"
+            className="pl-9 h-9"
+          />
+          {search && (
+            <button
+              onClick={() => setSearch("")}
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
             >
-              <Layers className="size-4" /> {t("chartOfAccounts", "Chart of Accounts")} ({rawAccounts.length})
-            </Button>
-            <Button
-              variant={activeTab === "vouchers" ? "default" : "outline"}
-              size="sm"
-              onClick={() => setActiveTab("vouchers")}
-              className="gap-1.5 font-bold shadow-soft rounded-xl text-xs h-9"
-            >
-              <BookOpen className="size-4" /> {t("journalAndVouchers", "Journal & Vouchers")} ({rawVouchers.length})
-            </Button>
-          </div>
-
-          {activeTab === "accounts" && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleSeedAccounts}
-              disabled={isSeeding}
-              className="font-bold text-xs gap-1.5 rounded-xl border-primary/30 text-primary hover:bg-primary/5 h-9"
-            >
-              {isSeeding ? (
-                <Loader2 className="size-3.5 animate-spin" />
-              ) : (
-                <Sparkles className="size-3.5" />
-              )}
-              {t("seedStandardAccounts", "Seed Standard Accounts")}
-            </Button>
+              <X className="size-3.5" />
+            </button>
           )}
         </div>
 
-        {activeTab === "accounts" ? (
-          <div className="space-y-6">
-            {/* Empty State with Fast Seed CTA */}
-            {rawAccounts.length === 0 && !isAccountsLoading ? (
-              <div className="rounded-2xl border border-dashed border-border/80 bg-card p-12 text-center shadow-soft flex flex-col items-center justify-center space-y-4">
-                <div className="size-16 rounded-3xl bg-primary/10 text-primary flex items-center justify-center shadow-soft">
-                  <Layers className="size-8" />
+        {activeTab === "vouchers" && (
+          <div className="flex items-center gap-2 self-end sm:self-auto">
+            {activeFilterCount > 0 && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleResetFilters}
+                className="h-9 px-2.5 text-xs text-muted-foreground hover:text-foreground"
+              >
+                <X className="size-3.5 mr-1" />
+                {t("clearFilters", "Clear")}
+              </Button>
+            )}
+
+            <Sheet open={filterDrawerOpen} onOpenChange={setFilterDrawerOpen}>
+              <SheetTrigger asChild>
+                <Button variant="outline" size="sm" className="h-9 relative">
+                  <Filter className="size-3.5 mr-1.5" />
+                  {t("filters", "Filters")}
+                  {activeFilterCount > 0 && (
+                    <Badge className="ml-1.5 size-5 p-0 flex items-center justify-center text-[10px] rounded-full bg-primary text-primary-foreground">
+                      {activeFilterCount}
+                    </Badge>
+                  )}
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="right" className="w-full sm:max-w-md p-0 flex flex-col h-full">
+                <SheetHeader className="p-5 border-b pr-12 text-left shrink-0">
+                  <SheetTitle className="text-lg font-bold">{t("filterVouchers", "Filter Vouchers")}</SheetTitle>
+                </SheetHeader>
+                <div className="flex-1 overflow-y-auto p-5 space-y-4">
+                  <div className="space-y-2">
+                    <Label>{t("voucherType", "Voucher Type")}</Label>
+                    <SearchableSelect
+                      options={[
+                        { value: "", label: t("allTypes", "All Types") },
+                        ...VOUCHER_TYPES.map((v) => ({
+                          value: v.value,
+                          label: v.label.split(" (")[0],
+                        })),
+                      ]}
+                      value={draftFilters.type}
+                      onChange={(val) => setDraftFilters((prev) => ({ ...prev, type: val }))}
+                      placeholder={t("filterByType", "Filter by Type")}
+                    />
+                  </div>
                 </div>
-                <div className="max-w-md space-y-1">
-                  <h3 className="text-lg font-black text-foreground">
-                    {t("noChartOfAccountsSetUp", "No Chart of Accounts Set Up")}
-                  </h3>
-                  <p className="text-xs text-muted-foreground">
-                    {t(
-                      "accountsEmptyDesc",
-                      "Set up double-entry ledger accounts for Cash, Bank, Sales, Payables, and Expenses, or initialize the standard predefined chart in one click.",
-                    )}
-                  </p>
-                </div>
-                <div className="flex flex-wrap gap-3 pt-2">
-                  <Button
-                    onClick={handleSeedAccounts}
-                    disabled={isSeeding}
-                    className="font-bold text-xs shadow-soft"
-                  >
-                    {isSeeding ? (
-                      <Loader2 className="size-4 animate-spin mr-2" />
-                    ) : (
-                      <Sparkles className="size-4 mr-2" />
-                    )}
-                    {t("initStandardAccounts", "Initialize Standard Chart of Accounts")}
-                  </Button>
+                <div className="border-t p-4 flex gap-2">
                   <Button
                     variant="outline"
-                    onClick={() => {
-                      setEditingAccount(null);
-                      setIsAddAccountOpen(true);
-                    }}
-                    className="font-bold text-xs"
+                    className="flex-1 font-bold text-xs"
+                    onClick={handleResetFilters}
                   >
-                    <Plus className="size-4 mr-1.5" /> {t("createCustomAccount", "Create Custom Account")}
+                    {t("reset", "Reset")}
+                  </Button>
+                  <Button
+                    className="flex-1 font-bold text-xs"
+                    onClick={() => {
+                      setFilters(draftFilters);
+                      setFilterDrawerOpen(false);
+                    }}
+                  >
+                    {t("applyFilters", "Apply Filters")}
                   </Button>
                 </div>
-              </div>
-            ) : (
-              /* Categorized Accounts Grid */
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-                {(["asset", "liability", "equity", "income", "expense"] as const).map((cat) => {
-                  const items = accountsByType[cat] || [];
-                  const catTotal = items.reduce((sum, a) => sum + (Number(a.balance) || 0), 0);
-                  return (
-                    <div
-                      key={cat}
-                      className="rounded-2xl border border-border/80 bg-card p-5 shadow-card space-y-3"
-                    >
-                      <div className="flex items-center justify-between border-b border-border/60 pb-3">
-                        <div className="flex items-center gap-2.5">
-                          <Badge
-                            variant="outline"
-                            className={`capitalize font-black text-xs px-2.5 py-0.5 ${categoryColor(cat)}`}
-                          >
-                            {t(`${cat}Accounts`, `${cat} Accounts`)}
-                          </Badge>
-                          <span className="text-xs text-muted-foreground font-semibold">
-                            ({items.length})
-                          </span>
-                        </div>
-                        <span className="text-xs font-mono font-black text-foreground">
-                          {t("total", "Total")}: {formatCurrency(catTotal)}
-                        </span>
-                      </div>
-
-                      <div className="space-y-2">
-                        {items.map((acc) => (
-                          <div
-                            key={acc.id}
-                            className="flex items-center justify-between rounded-xl border border-border/60 bg-muted/20 hover:bg-muted/40 p-3 text-xs transition-colors group"
-                          >
-                            <div className="flex items-center gap-3 min-w-0 pr-2">
-                              <span className="font-mono text-muted-foreground font-bold text-xs bg-muted px-2 py-0.5 rounded-md shrink-0">
-                                {acc.code}
-                              </span>
-                              <div className="truncate">
-                                <span className="font-bold text-foreground block truncate">
-                                  {acc.name}
-                                </span>
-                                {acc.isSystem && (
-                                  <span className="text-[10px] text-muted-foreground">
-                                    {t("standardSystemHead", "Standard System Head")}
-                                  </span>
-                                )}
-                              </div>
-                            </div>
-
-                            <div className="flex items-center gap-3 shrink-0">
-                              <span className="font-mono font-black text-sm text-foreground">
-                                {formatCurrency(acc.balance)}
-                              </span>
-                              <div className="flex items-center gap-1 opacity-80 group-hover:opacity-100 transition-opacity">
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  className="h-7 w-7 p-0 text-muted-foreground hover:text-primary"
-                                  title={t("viewAccountLedger", "View Account Ledger")}
-                                  onClick={() => setSelectedLedgerAccount(acc)}
-                                >
-                                  <History className="size-3.5" />
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground"
-                                  title={t("editAccount", "Edit Account")}
-                                  onClick={() => {
-                                    setEditingAccount(acc);
-                                    setAccountType(acc.type);
-                                    setIsAddAccountOpen(true);
-                                  }}
-                                >
-                                  <Pencil className="size-3.5" />
-                                </Button>
-                                {!acc.isSystem && (
-                                  <Button
-                                    size="sm"
-                                    variant="ghost"
-                                    className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-                                    title={t("deleteAccount", "Delete Account")}
-                                    onClick={() => setDeletingAccount(acc)}
-                                  >
-                                    <Trash2 className="size-3.5" />
-                                  </Button>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-        ) : (
-          /* Vouchers List Tab */
-          <div className="space-y-4">
-            <div className="overflow-hidden rounded-2xl border border-border/80 bg-card shadow-card">
-              <div className="table-desktop overflow-x-auto">
-                <Table className="min-w-[800px]">
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>{t("voucherNumber", "Voucher #")}</TableHead>
-                      <TableHead>{t("date", "Date")}</TableHead>
-                      <TableHead>{t("type", "Type")}</TableHead>
-                      <TableHead>{t("debitAccountPlus", "Debit Account (+)")}</TableHead>
-                      <TableHead>{t("creditAccountMinus", "Credit Account (-)")}</TableHead>
-                      <TableHead className="text-right">{t("amount", "Amount")}</TableHead>
-                      <TableHead>{t("narration", "Narration")}</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredVouchers.length === 0 ? (
-                      <TableRow>
-                        <TableCell
-                          colSpan={7}
-                          className="py-12 text-center text-xs text-muted-foreground"
-                        >
-                          {search || filters.type
-                            ? t("noVouchersMatchSearch", "No vouchers match your search query.")
-                            : t("noVouchersPostedYet", 'No journal vouchers posted yet. Click "Post New Voucher" to record transactions.')}
-                        </TableCell>
-                      </TableRow>
-                    ) : (
-                      paginatedVouchers.map((v) => (
-                        <TableRow key={v.id}>
-                          <TableCell className="font-mono font-bold text-primary whitespace-nowrap">
-                            {v.voucherNo}
-                          </TableCell>
-                          <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
-                            {formatDateTime(v.date)}
-                          </TableCell>
-                          <TableCell className="font-medium uppercase text-xs whitespace-nowrap">
-                            <Badge variant="outline" className="capitalize text-[10px] font-bold">
-                              {v.type}
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="font-bold text-primary whitespace-nowrap text-xs">
-                            {v.debitAccountName}
-                          </TableCell>
-                          <TableCell className="font-bold text-muted-foreground whitespace-nowrap text-xs">
-                            {v.creditAccountName}
-                          </TableCell>
-                          <TableCell className="number text-right font-black text-foreground whitespace-nowrap text-sm">
-                            {formatCurrency(v.amount)}
-                          </TableCell>
-                          <TableCell className="text-xs text-muted-foreground truncate max-w-[200px] whitespace-nowrap">
-                            {v.narration || "-"}
-                          </TableCell>
-                        </TableRow>
-                      ))
-                    )}
-                  </TableBody>
-                </Table>
-              </div>
-
-              {/* Mobile Feed */}
-              <div className="table-mobile-cards p-3 space-y-2.5">
-                {filteredVouchers.length === 0 ? (
-                  <p className="text-center py-6 text-xs text-muted-foreground">
-                    {t("noVouchersFound", "No vouchers found")}
-                  </p>
-                ) : (
-                  paginatedVouchers.map((v) => (
-                    <div
-                      key={v.id}
-                      className="rounded-xl border border-border/80 bg-card p-3.5 shadow-sm space-y-2.5"
-                    >
-                      <div className="flex items-center justify-between">
-                        <span className="font-mono text-xs font-black text-primary">
-                          {v.voucherNo}
-                        </span>
-                        <Badge variant="outline" className="text-[9px] font-bold capitalize">
-                          {v.type}
-                        </Badge>
-                      </div>
-                      <div className="grid grid-cols-2 gap-2 text-xs pt-1 border-t border-border/50">
-                        <div>
-                          <span className="text-muted-foreground block text-[10px]">
-                            {t("debitPlus", "Debit (+):")}
-                          </span>
-                          <span className="font-bold text-primary">{v.debitAccountName}</span>
-                        </div>
-                        <div>
-                          <span className="text-muted-foreground block text-[10px]">
-                            {t("creditMinus", "Credit (-):")}
-                          </span>
-                          <span className="font-bold text-muted-foreground">
-                            {v.creditAccountName}
-                          </span>
-                        </div>
-                      </div>
-                      <div className="flex items-center justify-between pt-1 border-t border-border/50">
-                        <span className="text-[10px] text-muted-foreground">
-                          {formatDateTime(v.date)}
-                        </span>
-                        <span className="number text-sm font-black text-foreground">
-                          {formatCurrency(v.amount)}
-                        </span>
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
-
-              {rawVouchers.length > 0 && (
-                <div className="border-t border-border/60 p-3">
-                  <PaginationControls
-                    currentPage={page}
-                    totalPages={totalPages}
-                    pageSize={pageSize}
-                    onPageChange={setPage}
-                    onPageSizeChange={setPageSize}
-                    totalItems={filteredVouchers.length}
-                  />
-                </div>
-              )}
-            </div>
+              </SheetContent>
+            </Sheet>
           </div>
         )}
-      </DataPage>
+      </div>
+
+      {activeTab === "accounts" ? (
+        <div className="space-y-6">
+          {rawAccounts.length === 0 && !isAccountsLoading ? (
+            <div className="rounded-2xl border border-dashed border-border/80 bg-card p-12 text-center shadow-soft flex flex-col items-center justify-center space-y-4">
+              <div className="size-16 rounded-3xl bg-primary/10 text-primary flex items-center justify-center shadow-soft">
+                <Layers className="size-8" />
+              </div>
+              <div className="max-w-md space-y-1">
+                <h3 className="text-lg font-black text-foreground">
+                  {t("noChartOfAccountsSetUp", "No Chart of Accounts Set Up")}
+                </h3>
+                <p className="text-xs text-muted-foreground">
+                  {t(
+                    "accountsEmptyDesc",
+                    "Set up double-entry ledger accounts for Cash, Bank, Sales, Payables, and Expenses, or initialize the standard predefined chart in one click.",
+                  )}
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-3 pt-2">
+                <Button
+                  onClick={handleSeedAccounts}
+                  disabled={isSeeding}
+                  className="font-bold text-xs shadow-soft"
+                >
+                  {isSeeding ? (
+                    <Loader2 className="size-4 animate-spin mr-2" />
+                  ) : (
+                    <Sparkles className="size-4 mr-2" />
+                  )}
+                  {t("initStandardAccounts", "Initialize Standard Chart of Accounts")}
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setEditingAccount(null);
+                    setIsAddAccountOpen(true);
+                  }}
+                  className="font-bold text-xs"
+                >
+                  <Plus className="size-4 mr-1.5" /> {t("createCustomAccount", "Create Custom Account")}
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+              {(["asset", "liability", "equity", "income", "expense"] as const).map((cat) => {
+                const items = accountsByType[cat] || [];
+                const catTotal = items.reduce((sum, a) => sum + (Number(a.balance) || 0), 0);
+                return (
+                  <div
+                    key={cat}
+                    className="rounded-2xl border border-border/80 bg-card p-5 shadow-card space-y-3"
+                  >
+                    <div className="flex items-center justify-between border-b border-border/60 pb-3">
+                      <div className="flex items-center gap-2.5">
+                        <Badge
+                          variant="outline"
+                          className={`capitalize font-black text-xs px-2.5 py-0.5 ${categoryColor(cat)}`}
+                        >
+                          {t(`${cat}Accounts`, `${cat} Accounts`)}
+                        </Badge>
+                        <span className="text-xs text-muted-foreground font-semibold">
+                          ({items.length})
+                        </span>
+                      </div>
+                      <span className="text-xs font-mono font-black text-foreground">
+                        {t("total", "Total")}: {formatCurrency(catTotal)}
+                      </span>
+                    </div>
+
+                    <div className="space-y-2">
+                      {items.map((acc) => (
+                        <div
+                          key={acc.id}
+                          className="flex items-center justify-between rounded-xl border border-border/60 bg-muted/20 hover:bg-muted/40 p-3 text-xs transition-colors group"
+                        >
+                          <div className="flex items-center gap-3 min-w-0 pr-2">
+                            <span className="font-mono text-muted-foreground font-bold text-xs bg-muted px-2 py-0.5 rounded-md shrink-0">
+                              {acc.code}
+                            </span>
+                            <div className="truncate">
+                              <span className="font-bold text-foreground block truncate">
+                                {acc.name}
+                              </span>
+                              {acc.isSystem && (
+                                <span className="text-[10px] text-muted-foreground">
+                                  {t("standardSystemHead", "Standard System Head")}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-3 shrink-0">
+                            <span className="font-mono font-black text-sm text-foreground">
+                              {formatCurrency(acc.balance)}
+                            </span>
+                            <div className="flex items-center gap-1 opacity-80 group-hover:opacity-100 transition-opacity">
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="h-7 w-7 p-0 text-muted-foreground hover:text-primary"
+                                title={t("viewAccountLedger", "View Account Ledger")}
+                                onClick={() => setSelectedLedgerAccount(acc)}
+                              >
+                                <History className="size-3.5" />
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground"
+                                title={t("editAccount", "Edit Account")}
+                                onClick={() => {
+                                  setEditingAccount(acc);
+                                  setAccountType(acc.type);
+                                  setIsAddAccountOpen(true);
+                                }}
+                              >
+                                <Pencil className="size-3.5" />
+                              </Button>
+                              {!acc.isSystem && (
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                                  title={t("deleteAccount", "Delete Account")}
+                                  onClick={() => setDeletingAccount(acc)}
+                                >
+                                  <Trash2 className="size-3.5" />
+                                </Button>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      ) : (
+        /* Vouchers List Tab */
+        <div className="overflow-hidden rounded-xl border border-border/80 bg-card shadow-soft">
+          <div className="table-desktop overflow-x-auto">
+            <Table className="min-w-[800px]">
+              <TableHeader className="bg-muted/40">
+                <TableRow>
+                  <TableHead className="font-bold text-xs uppercase tracking-wider">{t("voucherNumber", "Voucher #")}</TableHead>
+                  <TableHead className="font-bold text-xs uppercase tracking-wider">{t("date", "Date")}</TableHead>
+                  <TableHead className="font-bold text-xs uppercase tracking-wider">{t("type", "Type")}</TableHead>
+                  <TableHead className="font-bold text-xs uppercase tracking-wider">{t("debitAccountPlus", "Debit Account (+)")}</TableHead>
+                  <TableHead className="font-bold text-xs uppercase tracking-wider">{t("creditAccountMinus", "Credit Account (-)")}</TableHead>
+                  <TableHead className="font-bold text-xs uppercase tracking-wider text-right">{t("amount", "Amount")}</TableHead>
+                  <TableHead className="font-bold text-xs uppercase tracking-wider">{t("narration", "Narration")}</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody className="divide-y divide-border/60">
+                {filteredVouchers.length === 0 ? (
+                  <TableRow>
+                    <TableCell
+                      colSpan={7}
+                      className="py-12 text-center text-xs text-muted-foreground"
+                    >
+                      {search || filters.type
+                        ? t("noVouchersMatchSearch", "No vouchers match your search query.")
+                        : t("noVouchersPostedYet", 'No journal vouchers posted yet. Click "Post New Voucher" to record transactions.')}
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  paginatedVouchers.map((v) => (
+                    <TableRow key={v.id} className="hover:bg-muted/30 transition-colors">
+                      <TableCell className="font-mono font-bold text-primary whitespace-nowrap">
+                        {v.voucherNo}
+                      </TableCell>
+                      <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
+                        {formatDateTime(v.date)}
+                      </TableCell>
+                      <TableCell className="font-medium uppercase text-xs whitespace-nowrap">
+                        <Badge variant="outline" className="capitalize text-[10px] font-bold">
+                          {v.type}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="font-bold text-primary whitespace-nowrap text-xs">
+                        {v.debitAccountName}
+                      </TableCell>
+                      <TableCell className="font-bold text-muted-foreground whitespace-nowrap text-xs">
+                        {v.creditAccountName}
+                      </TableCell>
+                      <TableCell className="number text-right font-black text-foreground whitespace-nowrap text-sm">
+                        {formatCurrency(v.amount)}
+                      </TableCell>
+                      <TableCell className="text-xs text-muted-foreground truncate max-w-[200px] whitespace-nowrap">
+                        {v.narration || "-"}
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </div>
+
+          {/* Mobile Feed */}
+          <div className="table-mobile-cards p-3 space-y-2.5">
+            {filteredVouchers.length === 0 ? (
+              <p className="text-center py-6 text-xs text-muted-foreground">
+                {t("noVouchersFound", "No vouchers found")}
+              </p>
+            ) : (
+              paginatedVouchers.map((v) => (
+                <div
+                  key={v.id}
+                  className="rounded-xl border border-border/80 bg-card p-3.5 shadow-sm space-y-2.5"
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="font-mono text-xs font-black text-primary">
+                      {v.voucherNo}
+                    </span>
+                    <Badge variant="outline" className="text-[9px] font-bold capitalize">
+                      {v.type}
+                    </Badge>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 text-xs pt-1 border-t border-border/50">
+                    <div>
+                      <span className="text-muted-foreground block text-[10px]">
+                        {t("debitPlus", "Debit (+):")}
+                      </span>
+                      <span className="font-bold text-primary">{v.debitAccountName}</span>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground block text-[10px]">
+                        {t("creditMinus", "Credit (-):")}
+                      </span>
+                      <span className="font-bold text-muted-foreground">
+                        {v.creditAccountName}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between pt-1 border-t border-border/50">
+                    <span className="text-[10px] text-muted-foreground">
+                      {formatDateTime(v.date)}
+                    </span>
+                    <span className="number text-sm font-black text-foreground">
+                      {formatCurrency(v.amount)}
+                    </span>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+
+          {rawVouchers.length > 0 && (
+            <div className="border-t border-border/60 p-3">
+              <PaginationControls
+                currentPage={page}
+                totalPages={totalPages}
+                pageSize={pageSize}
+                onPageChange={setPage}
+                onPageSizeChange={setPageSize}
+                totalItems={filteredVouchers.length}
+              />
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Account Ledger Drawer */}
       <Sheet

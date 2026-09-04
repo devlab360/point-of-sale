@@ -111,19 +111,17 @@ function RoleSelectCards({ value, onChange }: { value: string; onChange: (v: str
             key={opt.value}
             type="button"
             onClick={() => onChange(opt.value)}
-            className={`rounded-2xl border p-4 text-left transition-all relative ${
-              active
-                ? "border-primary bg-primary/10 shadow-sm ring-1.5 ring-primary/50"
-                : "border-border/70 bg-card hover:bg-muted/30 hover:border-border"
-            }`}
+            className={`rounded-2xl border p-4 text-left transition-all relative ${active
+              ? "border-primary bg-primary/10 shadow-sm ring-1.5 ring-primary/50"
+              : "border-border/70 bg-card hover:bg-muted/30 hover:border-border"
+              }`}
           >
             <div className="flex items-center gap-3">
               <span
-                className={`grid size-9.5 place-items-center rounded-xl transition-colors shrink-0 ${
-                  active
-                    ? "bg-primary text-primary-foreground shadow-xs"
-                    : "bg-muted/70 text-muted-foreground"
-                }`}
+                className={`grid size-9.5 place-items-center rounded-xl transition-colors shrink-0 ${active
+                  ? "bg-primary text-primary-foreground shadow-xs"
+                  : "bg-muted/70 text-muted-foreground"
+                  }`}
               >
                 <Icon className="size-4.5" />
               </span>
@@ -547,11 +545,10 @@ function UsersPage() {
               <button
                 type="button"
                 onClick={() => setViewMode("table")}
-                className={`grid size-8.5 place-items-center rounded-lg transition-all ${
-                  viewMode === "table"
-                    ? "bg-card text-primary shadow-xs font-bold"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
+                className={`grid size-8.5 place-items-center rounded-lg transition-all ${viewMode === "table"
+                  ? "bg-card text-primary shadow-xs font-bold"
+                  : "text-muted-foreground hover:text-foreground"
+                  }`}
                 title="Table View"
               >
                 <TableIcon className="size-4" />
@@ -559,11 +556,10 @@ function UsersPage() {
               <button
                 type="button"
                 onClick={() => setViewMode("grid")}
-                className={`grid size-8.5 place-items-center rounded-lg transition-all ${
-                  viewMode === "grid"
-                    ? "bg-card text-primary shadow-xs font-bold"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
+                className={`grid size-8.5 place-items-center rounded-lg transition-all ${viewMode === "grid"
+                  ? "bg-card text-primary shadow-xs font-bold"
+                  : "text-muted-foreground hover:text-foreground"
+                  }`}
                 title="Grid View"
               >
                 <LayoutGrid className="size-4" />
@@ -686,17 +682,15 @@ function UsersPage() {
                     <div className="pt-3 border-t border-border/60 flex items-center justify-between gap-2">
                       <div className="flex items-center gap-1.5">
                         <span
-                          className={`size-2 rounded-full ${
-                            isActive ? "bg-emerald-500 animate-pulse" : "bg-muted-foreground"
-                          }`}
+                          className={`size-2 rounded-full ${isActive ? "bg-emerald-500 animate-pulse" : "bg-muted-foreground"
+                            }`}
                         />
                         <Badge
                           variant="outline"
-                          className={`text-[10px] font-black uppercase py-0.5 px-2 ${
-                            isActive
-                              ? "bg-success/15 text-success border-success/30"
-                              : "bg-muted text-muted-foreground border-border"
-                          }`}
+                          className={`text-[10px] font-black uppercase py-0.5 px-2 ${isActive
+                            ? "bg-success/15 text-success border-success/30"
+                            : "bg-muted text-muted-foreground border-border"
+                            }`}
                         >
                           {u.status}
                         </Badge>
@@ -748,7 +742,7 @@ function UsersPage() {
                   pageSize={pageSize}
                   totalItems={filteredUsers.length}
                   onPageChange={setPage}
-                  onPageSizeChange={() => {}}
+                  onPageSizeChange={() => { }}
                 />
               </div>
             )}
@@ -810,11 +804,10 @@ function UsersPage() {
                         <TableCell>
                           <Badge
                             variant="outline"
-                            className={`text-[10px] font-black uppercase ${
-                              isActive
-                                ? "bg-success/15 text-success border-success/30"
-                                : "bg-muted text-muted-foreground border-border"
-                            }`}
+                            className={`text-[10px] font-black uppercase ${isActive
+                              ? "bg-success/15 text-success border-success/30"
+                              : "bg-muted text-muted-foreground border-border"
+                              }`}
                           >
                             {u.status}
                           </Badge>
@@ -846,7 +839,7 @@ function UsersPage() {
                               </Button>
                             ) : (
                               <span
-                                className="size-8 rounded-xl text-muted-foreground/50"
+                                className="size-8.5 px-3 pt-2.5 rounded-xl text-muted-foreground/50"
                                 title="Owner cannot be deleted"
                               >
                                 <Trash2 className="size-3.5" />
@@ -868,7 +861,7 @@ function UsersPage() {
                   pageSize={pageSize}
                   totalItems={filteredUsers.length}
                   onPageChange={setPage}
-                  onPageSizeChange={() => {}}
+                  onPageSizeChange={() => { }}
                 />
               </div>
             )}
@@ -910,11 +903,10 @@ function UsersPage() {
                     </Badge>
                     <Badge
                       variant="outline"
-                      className={`text-xs font-black uppercase py-1 px-2.5 rounded-lg ${
-                        editStatus === "active"
-                          ? "bg-success/15 text-success border-success/30"
-                          : "bg-muted text-muted-foreground border-border"
-                      }`}
+                      className={`text-xs font-black uppercase py-1 px-2.5 rounded-lg ${editStatus === "active"
+                        ? "bg-success/15 text-success border-success/30"
+                        : "bg-muted text-muted-foreground border-border"
+                        }`}
                     >
                       {editStatus}
                     </Badge>
@@ -1067,11 +1059,10 @@ function UsersPage() {
                                   key={loc.id}
                                   type="button"
                                   onClick={() => toggleLocation(setEditLocationIds, loc.id)}
-                                  className={`flex items-center gap-2 rounded-xl border px-3 py-2 text-xs font-bold transition-all ${
-                                    active
-                                      ? "border-primary bg-primary/10 text-primary shadow-xs ring-1.5 ring-primary/50"
-                                      : "border-border/70 bg-muted/30 hover:bg-muted/50 text-muted-foreground"
-                                  }`}
+                                  className={`flex items-center gap-2 rounded-xl border px-3 py-2 text-xs font-bold transition-all ${active
+                                    ? "border-primary bg-primary/10 text-primary shadow-xs ring-1.5 ring-primary/50"
+                                    : "border-border/70 bg-muted/30 hover:bg-muted/50 text-muted-foreground"
+                                    }`}
                                 >
                                   {active && <Check className="size-3.5 shrink-0" />}
                                   {loc.name}
@@ -1183,18 +1174,16 @@ function UsersPage() {
                                     key={mod.id}
                                     type="button"
                                     onClick={() => togglePermission(mod.defaultRoute)}
-                                    className={`flex items-center gap-3 p-3 rounded-xl border text-left transition-all relative ${
-                                      isChecked
-                                        ? "bg-primary/10 border-primary text-primary shadow-xs ring-1 ring-primary/30"
-                                        : "bg-muted/20 border-border/70 text-muted-foreground hover:bg-muted/40 hover:text-foreground"
-                                    }`}
+                                    className={`flex items-center gap-3 p-3 rounded-xl border text-left transition-all relative ${isChecked
+                                      ? "bg-primary/10 border-primary text-primary shadow-xs ring-1 ring-primary/30"
+                                      : "bg-muted/20 border-border/70 text-muted-foreground hover:bg-muted/40 hover:text-foreground"
+                                      }`}
                                   >
                                     <span
-                                      className={`grid size-7.5 shrink-0 place-items-center rounded-lg transition-colors ${
-                                        isChecked
-                                          ? "bg-primary text-primary-foreground shadow-xs"
-                                          : "bg-muted text-muted-foreground"
-                                      }`}
+                                      className={`grid size-7.5 shrink-0 place-items-center rounded-lg transition-colors ${isChecked
+                                        ? "bg-primary text-primary-foreground shadow-xs"
+                                        : "bg-muted text-muted-foreground"
+                                        }`}
                                     >
                                       <Icon className="size-4" />
                                     </span>
@@ -1369,11 +1358,10 @@ function UsersPage() {
                                 key={loc.id}
                                 type="button"
                                 onClick={() => toggleLocation(setDirectLocationIds, loc.id)}
-                                className={`flex items-center gap-2 rounded-xl border px-3 py-2 text-xs font-bold transition-all ${
-                                  active
-                                    ? "border-primary bg-primary/10 text-primary shadow-xs ring-1.5 ring-primary/50"
-                                    : "border-border/70 bg-muted/30 hover:bg-muted/50 text-muted-foreground"
-                                }`}
+                                className={`flex items-center gap-2 rounded-xl border px-3 py-2 text-xs font-bold transition-all ${active
+                                  ? "border-primary bg-primary/10 text-primary shadow-xs ring-1.5 ring-primary/50"
+                                  : "border-border/70 bg-muted/30 hover:bg-muted/50 text-muted-foreground"
+                                  }`}
                               >
                                 {active && <Check className="size-3.5 shrink-0" />}
                                 {loc.name}

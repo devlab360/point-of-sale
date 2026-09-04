@@ -4,12 +4,13 @@ import { Badge } from "@/components/ui/badge";
 import { appName } from "@/lib/env";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { PageHeader } from "@/components/layout/PageHeader";
+import { StatCard } from "@/components/layout/StatCard";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetDescription, SheetFooter } from "@/components/ui/sheet";
 import { PersistStore } from "@/lib/session-store";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { getPurchasesFn, deletePurchaseFn } from "@/api/purchases";
 import { useCurrency } from "@/lib/currency";
-import { DataPage } from "@/components/layout/DataPage";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PaginationControls } from "@/components/ui/pagination-controls";
 import { SearchableSelect } from "@/components/ui/searchable-select";
@@ -34,6 +35,13 @@ import {
   MoreVertical,
   Layers,
   Printer,
+  Search,
+  Download,
+  RotateCcw,
+  Filter,
+  X,
+  TrendingDown,
+  Package,
 } from "lucide-react";
 import { useState, useMemo, useEffect } from "react";
 import {
@@ -158,282 +166,331 @@ function PurchasesPage() {
   };
 
   return (
-    <>
-      <DataPage
+    <div className="page-container space-y-6">
+      {/* Standard PageHeader */}
+      <PageHeader
         title={t("purchases", "Purchase Orders & Inbound Stock")}
         description={t("managePurchases", "Receive stock from suppliers, update inventory valuations, and track vendor bills.")}
-        primaryAction={{
-          label: t("newPurchase", "New Purchase"),
-          onClick: () => void navigate({ to: "/purchases/new" }),
-          icon: Plus,
-        }}
-        searchPlaceholder={t("searchPurchases", "Search by invoice #, PO or vendor name...")}
-        searchValue={query}
-        onSearchChange={setQuery}
-        hideToolbar={false}
-        onExport={handleExport}
-        onResetFilters={handleResetFilters}
-        activeFilterCount={activeFilterCount}
-        filtersContent={({ close }) => (
-          <div className="space-y-4 flex flex-col h-full min-h-[50vh]">
-            <div className="flex-1 space-y-4">
-              <div className="space-y-2">
-                <Label>{t("status", "Status")}</Label>
-                <SearchableSelect
-                  options={[
-                    { value: "", label: t("allStatus", "All Statuses") },
-                    ...PURCHASE_STATUSES.map((s) => ({ value: s.value, label: s.label })),
-                  ]}
-                  value={draftFilters.status}
-                  onChange={(val) => setDraftFilters((prev) => ({ ...prev, status: val }))}
-                  placeholder={t("filterByStatus", "Filter by Status")}
-                />
-              </div>
-            </div>
-            <div className="pt-4 mt-auto">
-              <Button
-                className="w-full"
-                onClick={() => {
-                  setFilters(draftFilters);
-                  close();
-                }}
-              >
-                {t("applyFilters", "Apply Filters")}
-              </Button>
-            </div>
-          </div>
-        )}
-        topContent={
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
-            <div className="rounded-xl border border-border/80 bg-card p-4 shadow-soft flex flex-col gap-1 card-interactive">
-              <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
-                {t("totalOrders", "Total Orders")}
-              </span>
-              <span className="text-xl sm:text-2xl font-black text-foreground">
-                {metrics.totalOrders}
-              </span>
-            </div>
-
-            <div className="rounded-xl border border-border/80 bg-card p-4 shadow-soft flex flex-col gap-1 card-interactive">
-              <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
-                {t("totalInvoiced", "Total Invoiced")}
-              </span>
-              <span className="text-xl sm:text-2xl font-black text-info">
-                {formatCurrency(metrics.totalSpent)}
-              </span>
-            </div>
-
-            <div className="rounded-xl border border-border/80 bg-card p-4 shadow-soft flex flex-col gap-1 card-interactive">
-              <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
-                {t("paidToVendors", "Paid to Vendors")}
-              </span>
-              <span className="text-xl sm:text-2xl font-black text-success">
-                {formatCurrency(metrics.totalPaid)}
-              </span>
-            </div>
-
-            <div className="rounded-xl border border-border/80 bg-card p-4 shadow-soft flex flex-col gap-1 card-interactive">
-              <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
-                {t("vendorKhataDue", "Vendor Khata Due")}
-              </span>
-              <span className="text-xl sm:text-2xl font-black text-destructive">
-                {formatCurrency(metrics.totalDue)}
-              </span>
-            </div>
+        actions={
+          <div className="flex flex-wrap items-center gap-2">
+            <Button variant="outline" size="sm" onClick={handleExport} className="gap-1.5">
+              <Download className="size-4" /> {t("exportCSV", "Export CSV")}
+            </Button>
+            <Button size="sm" onClick={() => void navigate({ to: "/purchases/new" })} className="gap-1.5">
+              <Plus className="size-4" /> {t("newPurchase", "New Purchase")}
+            </Button>
           </div>
         }
-      >
+      />
+
+      {/* Standard StatCard Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <StatCard
+          label={t("totalOrders", "Total Orders")}
+          value={String(metrics.totalOrders)}
+          hint={t("recordedPurchaseOrders", "Purchase records")}
+          icon={ShoppingCart}
+          accent="primary"
+        />
+        <StatCard
+          label={t("totalInvoiced", "Total Invoiced")}
+          value={formatCurrency(metrics.totalSpent)}
+          hint={t("cumulativeOrderTotal", "Cumulative vendor invoices")}
+          icon={DollarSign}
+          accent="info"
+        />
+        <StatCard
+          label={t("paidToVendors", "Paid to Vendors")}
+          value={formatCurrency(metrics.totalPaid)}
+          hint={t("settledPayments", "Settled payments")}
+          icon={CheckCircle2}
+          accent="success"
+        />
+        <StatCard
+          label={t("vendorKhataDue", "Vendor Khata Due")}
+          value={formatCurrency(metrics.totalDue)}
+          hint={t("outstandingPayables", "Outstanding payables")}
+          icon={TrendingDown}
+          accent="destructive"
+        />
+      </div>
+
+      {/* Controls Toolbar */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="relative w-full sm:w-80">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+            <Input
+              placeholder={t("searchPurchases", "Search by invoice #, PO or vendor name...")}
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              className="pl-9 h-9 text-sm rounded-lg"
+            />
+            {query && (
+              <button
+                onClick={() => setQuery("")}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+              >
+                <X className="size-3.5" />
+              </button>
+            )}
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            {activeFilterCount > 0 && (
+              <Button variant="outline" size="sm" onClick={handleResetFilters} className="h-9 gap-1.5 text-xs">
+                <RotateCcw className="size-3.5" /> {t("reset", "Reset")}
+              </Button>
+            )}
+
+            <Sheet>
+              <SheetTrigger asChild>
+                <Button variant="outline" size="sm" className="h-9 gap-1.5 text-xs relative">
+                  <Filter className="size-3.5" />
+                  <span>{t("filters", "Filters")}</span>
+                  {activeFilterCount > 0 && (
+                    <span className="size-4 rounded-full bg-primary text-[10px] font-bold text-primary-foreground grid place-items-center">
+                      {activeFilterCount}
+                    </span>
+                  )}
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="right" className="w-full sm:max-w-md p-0 flex flex-col h-full bg-background border-l border-border">
+                <SheetHeader className="bg-muted/60 p-5 border-b pr-12 text-left shrink-0">
+                  <SheetTitle className="text-lg font-bold flex items-center gap-2 text-foreground">
+                    <Filter className="size-4.5 text-primary" />
+                    <span>{t("filterPurchases", "Filter Purchases")}</span>
+                  </SheetTitle>
+                  <SheetDescription className="text-xs text-muted-foreground mt-0.5">
+                    Filter by purchase status and settlement records.
+                  </SheetDescription>
+                </SheetHeader>
+                <div className="flex-1 overflow-y-auto p-5 space-y-4">
+                  <div className="space-y-2">
+                    <Label className="text-xs font-semibold">{t("status", "Status")}</Label>
+                    <SearchableSelect
+                      options={[
+                        { value: "", label: t("allStatus", "All Statuses") },
+                        ...PURCHASE_STATUSES.map((s) => ({ value: s.value, label: s.label })),
+                      ]}
+                      value={draftFilters.status}
+                      onChange={(val) => setDraftFilters((prev) => ({ ...prev, status: val }))}
+                      placeholder={t("filterByStatus", "Filter by Status")}
+                    />
+                  </div>
+                </div>
+                <SheetFooter className="p-4 border-t bg-muted/20 flex flex-row items-center justify-end gap-2 shrink-0">
+                  <Button
+                    variant="outline"
+                    className="flex-1"
+                    onClick={() => {
+                      handleResetFilters();
+                    }}
+                  >
+                    Reset
+                  </Button>
+                  <Button
+                    className="flex-1 font-bold"
+                    onClick={() => {
+                      setFilters(draftFilters);
+                    }}
+                  >
+                    Apply Filters
+                  </Button>
+                </SheetFooter>
+              </SheetContent>
+            </Sheet>
+          </div>
+        </div>
+
+        {/* Content Table Card */}
         {isPurchasesLoading ? (
-          <TableSkeleton columns={7} rows={6} showHeaderAction={false} showFilters={false} />
+          <TableSkeleton columns={8} rows={6} />
         ) : isPurchasesError ? (
           <ErrorState onRetry={refetchPurchases} />
         ) : (
-          <div className="space-y-4">
-            <div className="overflow-hidden rounded-xl border border-border/80 bg-card shadow-soft">
-              {/* Desktop Table View */}
-              <div className="table-desktop overflow-x-auto">
-                <Table className="min-w-[750px]">
-                  <TableHeader>
+          <div className="overflow-hidden rounded-xl border border-border/80 bg-card shadow-soft">
+            {/* Desktop Table View */}
+            <div className="table-desktop overflow-x-auto">
+              <Table className="min-w-[750px]">
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="font-bold text-xs uppercase tracking-wider">
+                      {t("invoice", "Invoice")} / {t("po", "PO #")}
+                    </TableHead>
+                    <TableHead className="font-bold text-xs uppercase tracking-wider">
+                      {t("supplier", "Supplier Name")}
+                    </TableHead>
+                    <TableHead className="font-bold text-xs uppercase tracking-wider">
+                      {t("date", "Order Date")}
+                    </TableHead>
+                    <TableHead className="font-bold text-xs uppercase tracking-wider text-right">
+                      {t("items", "Items")}
+                    </TableHead>
+                    <TableHead className="font-bold text-xs uppercase tracking-wider">
+                      {t("status", "Status")}
+                    </TableHead>
+                    <TableHead className="font-bold text-xs uppercase tracking-wider text-right">
+                      {t("total", "Total")}
+                    </TableHead>
+                    <TableHead className="font-bold text-xs uppercase tracking-wider text-right">
+                      {t("payment", "Paid / Due")}
+                    </TableHead>
+                    <TableHead className="font-bold text-xs uppercase tracking-wider text-right">
+                      {t("actions", "Actions")}
+                    </TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody className="divide-y divide-border/60">
+                  {purchases.length === 0 ? (
                     <TableRow>
-                      <TableHead className="font-bold text-xs uppercase tracking-wider">
-                        {t("invoice", "Invoice")} / {t("po", "PO #")}
-                      </TableHead>
-                      <TableHead className="font-bold text-xs uppercase tracking-wider">
-                        {t("supplier", "Supplier Name")}
-                      </TableHead>
-                      <TableHead className="font-bold text-xs uppercase tracking-wider">
-                        {t("date", "Order Date")}
-                      </TableHead>
-                      <TableHead className="font-bold text-xs uppercase tracking-wider text-right">
-                        {t("items", "Items")}
-                      </TableHead>
-                      <TableHead className="font-bold text-xs uppercase tracking-wider">
-                        {t("status", "Status")}
-                      </TableHead>
-                      <TableHead className="font-bold text-xs uppercase tracking-wider text-right">
-                        {t("total", "Total")}
-                      </TableHead>
-                      <TableHead className="font-bold text-xs uppercase tracking-wider text-right">
-                        {t("payment", "Paid / Due")}
-                      </TableHead>
-                      <TableHead className="font-bold text-xs uppercase tracking-wider text-right">
-                        {t("actions", "Actions")}
-                      </TableHead>
+                      <TableCell colSpan={8} className="h-64 text-center">
+                        <EmptyState
+                          icon={ShoppingCart}
+                          title="No purchases found"
+                          description={
+                            query
+                              ? "Try adjusting your search query."
+                              : "No purchase orders recorded yet. Click below to record stock arrival."
+                          }
+                          actionLabel="New Purchase"
+                          onAction={() => void navigate({ to: "/purchases/new" })}
+                          className="border-none bg-transparent my-0 py-8 shadow-none"
+                        />
+                      </TableCell>
                     </TableRow>
-                  </TableHeader>
-                  <TableBody className="divide-y divide-border/60">
-                    {purchases.length === 0 ? (
-                      <TableRow>
-                        <TableCell colSpan={8} className="h-64 text-center">
-                          <EmptyState
-                            icon={ShoppingCart}
-                            title="No purchases found"
-                            description={
-                              query
-                                ? "Try adjusting your search query."
-                                : "No purchase orders recorded yet. Click below to record stock arrival."
-                            }
-                            actionLabel="New Purchase"
-                            onAction={() => void navigate({ to: "/purchases/new" })}
-                            className="border-none bg-transparent my-0 py-8 shadow-none"
-                          />
+                  ) : (
+                    purchases.map((p: any) => (
+                      <TableRow key={p.id} className="hover:bg-muted/30 transition-colors">
+                        <TableCell
+                          className="font-mono text-xs font-bold text-primary cursor-pointer hover:underline"
+                          onClick={() => setViewPurchase(p)}
+                        >
+                          {p.invoiceNo || `#${p.id.slice(0, 8).toUpperCase()}`}
+                        </TableCell>
+                        <TableCell className="font-semibold text-sm text-foreground">
+                          {p.supplier}
+                        </TableCell>
+                        <TableCell className="text-muted-foreground text-xs font-medium">
+                          {formatDate(p.date)}
+                        </TableCell>
+                        <TableCell className="text-right text-xs font-bold text-muted-foreground">
+                          {p.items || 1}
+                        </TableCell>
+                        <TableCell>
+                          <Badge
+                            variant="outline"
+                            className={cn(
+                              "text-[10px] font-black uppercase tracking-wider",
+                              p.status === "received"
+                                ? "bg-success/15 text-success border-success/30"
+                                : "bg-warning/15 text-warning border-warning/30",
+                            )}
+                          >
+                            {p.status}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right font-black text-foreground text-sm">
+                          {formatCurrency(Number(p.total) || 0)}
+                        </TableCell>
+                        <TableCell className="text-right text-xs">
+                          <div className="font-bold text-success">
+                            {formatCurrency(Number(p.paid) || Number(p.total) || 0)}
+                          </div>
+                          {Number(p.due) > 0 && (
+                            <div className="text-[11px] font-black text-destructive">
+                              Due: {formatCurrency(Number(p.due))}
+                            </div>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon" className="size-8 rounded-lg">
+                                <MoreVertical className="size-4 text-muted-foreground" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="rounded-xl w-44">
+                              <DropdownMenuItem
+                                onClick={() => setViewPurchase(p)}
+                                className="text-xs font-semibold"
+                              >
+                                <Eye className="size-3.5 mr-2 text-primary" /> View Order Sheet
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() =>
+                                  void navigate({ to: `/purchases/new?editId=${p.id}` as any })
+                                }
+                                className="text-xs font-semibold"
+                              >
+                                <Edit2 className="size-3.5 mr-2 text-primary" /> Edit Purchase
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => setDeleteId(p.id)}
+                                className="text-xs font-semibold text-destructive focus:text-destructive"
+                              >
+                                <Trash2 className="size-3.5 mr-2" /> Delete PO
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
                         </TableCell>
                       </TableRow>
-                    ) : (
-                      purchases.map((p: any) => (
-                        <TableRow key={p.id} className="hover:bg-muted/30 transition-colors">
-                          <TableCell
-                            className="font-mono text-xs font-bold text-primary cursor-pointer hover:underline"
-                            onClick={() => setViewPurchase(p)}
-                          >
-                            {p.invoiceNo || `#${p.id.slice(0, 8).toUpperCase()}`}
-                          </TableCell>
-                          <TableCell className="font-semibold text-sm text-foreground">
-                            {p.supplier}
-                          </TableCell>
-                          <TableCell className="text-muted-foreground text-xs font-medium">
-                            {formatDate(p.date)}
-                          </TableCell>
-                          <TableCell className="text-right text-xs font-bold text-muted-foreground">
-                            {p.items || 1}
-                          </TableCell>
-                          <TableCell>
-                            <Badge
-                              variant="outline"
-                              className={cn(
-                                "text-[10px] font-black uppercase tracking-wider",
-                                p.status === "received"
-                                  ? "bg-success/15 text-success border-success/30"
-                                  : "bg-warning/15 text-warning border-warning/30",
-                              )}
-                            >
-                              {p.status}
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="text-right font-black text-foreground text-sm">
-                            {formatCurrency(Number(p.total) || 0)}
-                          </TableCell>
-                          <TableCell className="text-right text-xs">
-                            <div className="font-bold text-success">
-                              {formatCurrency(Number(p.paid) || Number(p.total) || 0)}
-                            </div>
-                            {Number(p.due) > 0 && (
-                              <div className="text-[11px] font-black text-destructive">
-                                Due: {formatCurrency(Number(p.due))}
-                              </div>
-                            )}
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="icon" className="size-8 rounded-lg">
-                                  <MoreVertical className="size-4 text-muted-foreground" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end" className="rounded-xl w-44">
-                                <DropdownMenuItem
-                                  onClick={() => setViewPurchase(p)}
-                                  className="text-xs font-semibold"
-                                >
-                                  <Eye className="size-3.5 mr-2 text-primary" /> View Order Sheet
-                                </DropdownMenuItem>
-                                <DropdownMenuItem
-                                  onClick={() =>
-                                    void navigate({ to: `/purchases/new?editId=${p.id}` as any })
-                                  }
-                                  className="text-xs font-semibold"
-                                >
-                                  <Edit2 className="size-3.5 mr-2 text-primary" /> Edit Purchase
-                                </DropdownMenuItem>
-                                <DropdownMenuItem
-                                  onClick={() => setDeleteId(p.id)}
-                                  className="text-xs font-semibold text-destructive focus:text-destructive"
-                                >
-                                  <Trash2 className="size-3.5 mr-2" /> Delete PO
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          </TableCell>
-                        </TableRow>
-                      ))
-                    )}
-                  </TableBody>
-                </Table>
-              </div>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </div>
 
-              {/* Mobile Card View */}
-              <div className="table-mobile-cards p-3 space-y-2.5">
-                {purchases.map((p: any) => (
-                  <div
-                    key={p.id}
-                    className="flex items-center justify-between rounded-xl border border-border/80 bg-card p-3 shadow-soft card-interactive"
-                    onClick={() => setViewPurchase(p)}
-                  >
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2">
-                        <span className="font-mono text-xs font-bold text-primary">
-                          {p.invoiceNo || `#${p.id.slice(0, 8).toUpperCase()}`}
-                        </span>
-                        <span className="text-[10px] text-muted-foreground">
-                          {formatDate(p.date)}
-                        </span>
-                      </div>
-                      <div className="font-bold text-xs sm:text-sm text-foreground mt-0.5 truncate">
-                        {p.supplier}
-                      </div>
-                      <Badge className="text-[9px] font-bold mt-1.5 bg-success/15 text-success border-success/30">
-                        {p.status}
-                      </Badge>
+            {/* Mobile Card View */}
+            <div className="table-mobile-cards p-3 space-y-2.5">
+              {purchases.map((p: any) => (
+                <div
+                  key={p.id}
+                  className="flex items-center justify-between rounded-xl border border-border/80 bg-card p-3 shadow-soft card-interactive"
+                  onClick={() => setViewPurchase(p)}
+                >
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono text-xs font-bold text-primary">
+                        {p.invoiceNo || `#${p.id.slice(0, 8).toUpperCase()}`}
+                      </span>
+                      <span className="text-[10px] text-muted-foreground">
+                        {formatDate(p.date)}
+                      </span>
                     </div>
+                    <div className="font-bold text-xs sm:text-sm text-foreground mt-0.5 truncate">
+                      {p.supplier}
+                    </div>
+                    <Badge className="text-[9px] font-bold mt-1.5 bg-success/15 text-success border-success/30">
+                      {p.status}
+                    </Badge>
+                  </div>
 
-                    <div className="text-right shrink-0 pl-2">
-                      <div className="text-sm font-black text-foreground">
-                        {formatCurrency(Number(p.total) || 0)}
-                      </div>
-                      <div className="text-[10px] text-muted-foreground mt-0.5">
-                        {p.items || 1} items
-                      </div>
+                  <div className="text-right shrink-0 pl-2">
+                    <div className="text-sm font-black text-foreground">
+                      {formatCurrency(Number(p.total) || 0)}
+                    </div>
+                    <div className="text-[10px] text-muted-foreground mt-0.5">
+                      {p.items || 1} items
                     </div>
                   </div>
-                ))}
-              </div>
-
-              {purchases.length > 0 && (
-                <div className="border-t border-border/60 p-3">
-                  <PaginationControls
-                    currentPage={page}
-                    totalPages={totalPages}
-                    pageSize={pageSize}
-                    totalItems={totalCount}
-                    onPageChange={setPage}
-                    onPageSizeChange={setPageSize}
-                  />
                 </div>
-              )}
+              ))}
             </div>
+
+            {purchases.length > 0 && (
+              <div className="border-t border-border/60 p-3">
+                <PaginationControls
+                  currentPage={page}
+                  totalPages={totalPages}
+                  pageSize={pageSize}
+                  totalItems={totalCount}
+                  onPageChange={setPage}
+                  onPageSizeChange={setPageSize}
+                />
+              </div>
+            )}
           </div>
         )}
-      </DataPage>
 
       {/* View Purchase Slide-over Drawer Sheet */}
       <Sheet open={!!viewPurchase} onOpenChange={(open) => !open && setViewPurchase(null)}>
@@ -619,6 +676,6 @@ function PurchasesPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </>
+    </div>
   );
 }

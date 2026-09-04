@@ -331,7 +331,7 @@ function InventoryDashboard() {
   const dirtyCount = Object.keys(dirtyCells).length;
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-300 pb-20 max-w-[1600px] mx-auto">
+    <div className="page-container space-y-6">
       {/* Header */}
       <PageHeader
         title={t("multiBranchStockMatrix", "Multi-Branch Stock Matrix & Inventory Master")}

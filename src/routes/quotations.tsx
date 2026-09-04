@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { DataPage } from "@/components/layout/DataPage";
+import { PageHeader } from "@/components/layout/PageHeader";
+import { StatCard } from "@/components/layout/StatCard";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { appName } from "@/lib/env";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -27,13 +28,31 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetDescription, SheetFooter } from "@/components/ui/sheet";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  FileText,
+  Printer,
+  CheckCircle2,
+  MoreVertical,
+  Trash2,
+  ArrowRightLeft,
+  Loader2,
+  Plus,
+  Search,
+  Download,
+  RotateCcw,
+  Filter,
+  DollarSign,
+  Clock,
+  Send,
+  X,
+} from "lucide-react";
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -47,15 +66,6 @@ import { getProductsFn, updateProductFn } from "@/api/products";
 import { createSaleFn } from "@/api/sales";
 import { useCurrency } from "@/lib/currency";
 import { QUOTATION_STATUSES } from "@/constants";
-import {
-  FileText,
-  Printer,
-  CheckCircle2,
-  MoreVertical,
-  Trash2,
-  ArrowRightLeft,
-  Loader2,
-} from "lucide-react";
 import { v4 as uuidv4 } from "uuid";
 import { toast } from "sonner";
 import { PersistStore } from "@/lib/session-store";
@@ -370,278 +380,332 @@ function QuotationsPage() {
     URL.revokeObjectURL(url);
     toast.success("Quotations exported successfully");
   };
-
   return (
-    <>
-      <DataPage
+    <div className="page-container space-y-6">
+      {/* Standard PageHeader */}
+      <PageHeader
         title={t("quotationsEstimates", "B2B Quotations & Estimates")}
         description={t("manageQuotationsDesc", "Create proforma invoices, price quotations, and convert them to B2B invoices.")}
-        primaryAction={{ label: t("newQuotation", "Create Quotation"), onClick: () => setIsAddOpen(true) }}
-        searchPlaceholder={t("searchQuotations", "Search by quotation # or customer...")}
-        searchValue={search}
-        onSearchChange={setSearch}
-        hideToolbar={false}
-        onExport={handleExport}
-        onResetFilters={handleResetFilters}
-        activeFilterCount={activeFilterCount}
-        filtersContent={({ close }) => (
-          <div className="space-y-4 flex flex-col h-full min-h-[50vh]">
-            <div className="flex-1 space-y-4">
-              <div className="space-y-2">
-                <Label>{t("status", "Status")}</Label>
-                <SearchableSelect
-                  options={[
-                    { value: "", label: t("allStatuses", "All Statuses") },
-                    ...QUOTATION_STATUSES.map((q) => ({ value: q.value, label: q.label })),
-                  ]}
-                  value={draftFilters.status}
-                  onChange={(val) => setDraftFilters((prev) => ({ ...prev, status: val }))}
-                  placeholder={t("filterByStatus", "Filter by Status")}
-                />
-              </div>
-            </div>
-            <div className="pt-4 mt-auto">
-              <Button
-                className="w-full"
-                onClick={() => {
-                  setFilters(draftFilters);
-                  close();
-                }}
-              >
-                {t("applyFilters", "Apply Filters")}
-              </Button>
-            </div>
-          </div>
-        )}
-        topContent={
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-            <div className="rounded-xl border border-border/80 bg-card p-3 shadow-2xs">
-              <div className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
-                {t("totalQuotations", "Total Quotes")}
-              </div>
-              <div className="mt-1 text-xl sm:text-2xl font-black text-foreground">
-                {rawQuotations.length}
-              </div>
-            </div>
-            <div className="rounded-xl border border-border/80 bg-card p-3 shadow-2xs">
-              <div className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
-                {t("converted", "Converted")}
-              </div>
-              <div className="mt-1 text-xl sm:text-2xl font-black text-success">
-                {rawQuotations.filter((q) => q.status === "converted").length}
-              </div>
-            </div>
-            <div className="rounded-xl border border-border/80 bg-card p-3 shadow-2xs">
-              <div className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
-                {t("pending", "Pending / Sent")}
-              </div>
-              <div className="mt-1 text-xl sm:text-2xl font-black text-amber-500">
-                {rawQuotations.filter((q) => q.status === "sent" || q.status === "draft").length}
-              </div>
-            </div>
-            <div className="rounded-xl border border-border/80 bg-card p-3 shadow-2xs">
-              <div className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
-                {t("estimatedValue", "Estimated Value")}
-              </div>
-              <div className="mt-1 text-xl sm:text-2xl font-black text-primary truncate">
-                {formatCurrency(
-                  rawQuotations.reduce((acc, q) => acc + (parseFloat(q.total) || 0), 0),
-                )}
-              </div>
-            </div>
+        actions={
+          <div className="flex flex-wrap items-center gap-2">
+            <Button variant="outline" size="sm" onClick={handleExport} className="gap-1.5">
+              <Download className="size-4" /> {t("exportCSV", "Export CSV")}
+            </Button>
+            <Button size="sm" onClick={() => setIsAddOpen(true)} className="gap-1.5">
+              <Plus className="size-4" /> {t("newQuotation", "Create Quotation")}
+            </Button>
           </div>
         }
-      >
-        <div className="space-y-4">
-          <div className="overflow-hidden rounded-xl border border-border/80 bg-card shadow-soft">
-            {/* Desktop Table View */}
-            <div className="table-desktop overflow-x-auto">
-              <Table className="min-w-[800px]">
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>{t("quoteNumber", "Quotation #")}</TableHead>
-                    <TableHead>{t("customer", "Customer")}</TableHead>
-                    <TableHead>{t("date", "Quote Date")}</TableHead>
-                    <TableHead>{t("validUntil", "Valid Until")}</TableHead>
-                    <TableHead className="text-right">{t("total", "Estimated Total")}</TableHead>
-                    <TableHead>{t("status", "Status")}</TableHead>
-                    <TableHead className="text-right">{t("actions", "Actions")}</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {paginated.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={7} className="h-64 text-center">
-                        <EmptyState
-                          icon={FileText}
-                          title={t("noQuotationsFound", "No quotations found")}
-                          description={
-                            search
-                              ? t("adjustSearch", "Try adjusting your search query.")
-                              : t("noQuotationsYet", "Create your first B2B quotation to get started.")
-                          }
-                          actionLabel={t("newQuotation", "Create Quotation")}
-                          onAction={() => setIsAddOpen(true)}
-                          className="border-none bg-transparent my-0 py-8 shadow-none"
-                        />
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    paginated.map((q) => (
-                      <TableRow key={q.id}>
-                        <TableCell
-                          className="font-mono font-semibold text-primary whitespace-nowrap cursor-pointer hover:underline"
-                          onClick={() => setViewItem(q)}
-                        >
-                          {q.quotationNo}
-                        </TableCell>
-                        <TableCell className="font-semibold text-foreground whitespace-nowrap">
-                          {q.customerName}
-                        </TableCell>
-                        <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
-                          {formatDate(q.date)}
-                        </TableCell>
-                        <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
-                          {formatDate(q.validUntil)}
-                        </TableCell>
-                        <TableCell className="number text-right font-black text-foreground whitespace-nowrap text-sm">
-                          {formatCurrency(q.total)}
-                        </TableCell>
-                        <TableCell className="whitespace-nowrap">
-                          {q.status === "converted" ? (
-                            <Badge className="bg-success/12 text-success border-success/25 text-[10px] font-bold">
-                              {t("convertedToInvoice", "Converted to Invoice")}
-                            </Badge>
-                          ) : q.status === "sent" ? (
-                            <Badge className="bg-info/12 text-info border-info/25 text-[10px] font-bold">
-                              {t("sentToClient", "Sent to Client")}
-                            </Badge>
-                          ) : (
-                            <Badge variant="outline" className="text-[10px] font-bold capitalize">
-                              {q.status}
-                            </Badge>
-                          )}
-                        </TableCell>
-                        <TableCell className="text-right whitespace-nowrap">
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="icon" className="size-8 rounded-lg">
-                                <MoreVertical className="size-4 text-muted-foreground" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="rounded-xl">
-                              <DropdownMenuItem
-                                onClick={() => setViewItem(q)}
-                                className="text-xs font-semibold"
-                              >
-                                <FileText className="mr-2 size-3.5 text-primary" /> {t("view", "View / Print Quote")}
-                              </DropdownMenuItem>
-                              {q.status !== "converted" && (
-                                <DropdownMenuItem
-                                  onClick={() => convertToInvoice(q)}
-                                  className="text-xs font-bold text-success"
-                                >
-                                  <ArrowRightLeft className="mr-2 size-3.5" /> {t("convertToSale", "Convert to Invoice")}
-                                </DropdownMenuItem>
-                              )}
-                              <DropdownMenuItem
-                                className="text-destructive text-xs font-semibold"
-                                onClick={() => deleteQuotation(q.id)}
-                              >
-                                <Trash2 className="mr-2 size-3.5" /> {t("delete", "Delete")}
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
-            </div>
+      />
 
-            {/* Mobile Card Feed (< 768px) */}
-            <div className="table-mobile-cards p-3 space-y-2.5">
-              {paginated.length === 0 ? (
-                <EmptyState
-                  icon={FileText}
-                  title="No quotations found"
-                  description={
-                    search
-                      ? "Try adjusting your search query."
-                      : "Create your first B2B quotation to get started."
-                  }
-                  actionLabel="Create Quotation"
-                  onAction={() => setIsAddOpen(true)}
-                  className="border-none bg-transparent my-0 py-6 shadow-none"
-                />
-              ) : (
-                paginated.map((q) => (
-                  <div
-                    key={q.id}
-                    className="flex items-center justify-between rounded-xl border border-border/80 bg-card p-3 shadow-sm card-interactive"
-                    onClick={() => setViewItem(q)}
+      {/* Standard StatCard Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <StatCard
+          label={t("totalQuotations", "Total Quotes")}
+          value={String(rawQuotations.length)}
+          hint={t("estimatesGenerated", "Estimates generated")}
+          icon={FileText}
+          accent="primary"
+        />
+        <StatCard
+          label={t("converted", "Converted")}
+          value={String(rawQuotations.filter((q) => q.status === "converted").length)}
+          hint={t("convertedToInvoices", "Converted to invoices")}
+          icon={CheckCircle2}
+          accent="success"
+        />
+        <StatCard
+          label={t("pending", "Pending / Sent")}
+          value={String(rawQuotations.filter((q) => q.status === "sent" || q.status === "draft").length)}
+          hint={t("awaitingClientAcceptance", "Awaiting client review")}
+          icon={Clock}
+          accent="warning"
+        />
+        <StatCard
+          label={t("estimatedValue", "Estimated Value")}
+          value={formatCurrency(
+            rawQuotations.reduce((acc, q) => acc + (parseFloat(q.total) || 0), 0),
+          )}
+          hint={t("pipelineValuation", "Total pipeline valuation")}
+          icon={DollarSign}
+          accent="info"
+        />
+      </div>
+
+      {/* Controls Toolbar */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="relative w-full sm:w-80">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+            <Input
+              placeholder={t("searchQuotations", "Search by quotation # or customer...")}
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-9 h-9 text-sm rounded-lg"
+            />
+            {search && (
+              <button
+                onClick={() => setSearch("")}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+              >
+                <X className="size-3.5" />
+              </button>
+            )}
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            {activeFilterCount > 0 && (
+              <Button variant="outline" size="sm" onClick={handleResetFilters} className="h-9 gap-1.5 text-xs">
+                <RotateCcw className="size-3.5" /> {t("reset", "Reset")}
+              </Button>
+            )}
+
+            <Sheet>
+              <SheetTrigger asChild>
+                <Button variant="outline" size="sm" className="h-9 gap-1.5 text-xs relative">
+                  <Filter className="size-3.5" />
+                  <span>{t("filters", "Filters")}</span>
+                  {activeFilterCount > 0 && (
+                    <span className="size-4 rounded-full bg-primary text-[10px] font-bold text-primary-foreground grid place-items-center">
+                      {activeFilterCount}
+                    </span>
+                  )}
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="right" className="w-full sm:max-w-md p-0 flex flex-col h-full bg-background border-l border-border">
+                <SheetHeader className="bg-muted/60 p-5 border-b pr-12 text-left shrink-0">
+                  <SheetTitle className="text-lg font-bold flex items-center gap-2 text-foreground">
+                    <Filter className="size-4.5 text-primary" />
+                    <span>{t("filterQuotations", "Filter Quotations")}</span>
+                  </SheetTitle>
+                  <SheetDescription className="text-xs text-muted-foreground mt-0.5">
+                    Filter by status and date thresholds.
+                  </SheetDescription>
+                </SheetHeader>
+                <div className="flex-1 overflow-y-auto p-5 space-y-4">
+                  <div className="space-y-2">
+                    <Label className="text-xs font-semibold">{t("status", "Status")}</Label>
+                    <SearchableSelect
+                      options={[
+                        { value: "", label: t("allStatuses", "All Statuses") },
+                        ...QUOTATION_STATUSES.map((q) => ({ value: q.value, label: q.label })),
+                      ]}
+                      value={draftFilters.status}
+                      onChange={(val) => setDraftFilters((prev) => ({ ...prev, status: val }))}
+                      placeholder={t("filterByStatus", "Filter by Status")}
+                    />
+                  </div>
+                </div>
+                <SheetFooter className="p-4 border-t bg-muted/20 flex flex-row items-center justify-end gap-2 shrink-0">
+                  <Button
+                    variant="outline"
+                    className="flex-1"
+                    onClick={() => {
+                      handleResetFilters();
+                    }}
                   >
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2">
-                        <span className="font-mono text-xs font-bold text-primary">
-                          {q.quotationNo}
-                        </span>
-                        <span className="text-[10px] text-muted-foreground">
-                          Expires {formatDate(q.validUntil)}
-                        </span>
-                      </div>
-                      <div className="font-bold text-xs sm:text-sm text-foreground mt-0.5 truncate">
+                    Reset
+                  </Button>
+                  <Button
+                    className="flex-1 font-bold"
+                    onClick={() => {
+                      setFilters(draftFilters);
+                    }}
+                  >
+                    Apply Filters
+                  </Button>
+                </SheetFooter>
+              </SheetContent>
+            </Sheet>
+          </div>
+        </div>
+
+        {/* Content Table Card */}
+        <div className="overflow-hidden rounded-xl border border-border/80 bg-card shadow-soft">
+          <div className="table-desktop overflow-x-auto">
+            <Table className="min-w-[800px]">
+              <TableHeader>
+                <TableRow>
+                  <TableHead>{t("quoteNumber", "Quotation #")}</TableHead>
+                  <TableHead>{t("customer", "Customer")}</TableHead>
+                  <TableHead>{t("date", "Quote Date")}</TableHead>
+                  <TableHead>{t("validUntil", "Valid Until")}</TableHead>
+                  <TableHead className="text-right">{t("total", "Estimated Total")}</TableHead>
+                  <TableHead>{t("status", "Status")}</TableHead>
+                  <TableHead className="text-right">{t("actions", "Actions")}</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {paginated.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={7} className="h-64 text-center">
+                      <EmptyState
+                        icon={FileText}
+                        title={t("noQuotationsFound", "No quotations found")}
+                        description={
+                          search
+                            ? t("adjustSearch", "Try adjusting your search query.")
+                            : t("noQuotationsYet", "Create your first B2B quotation to get started.")
+                        }
+                        actionLabel={t("newQuotation", "Create Quotation")}
+                        onAction={() => setIsAddOpen(true)}
+                        className="border-none bg-transparent my-0 py-8 shadow-none"
+                      />
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  paginated.map((q) => (
+                    <TableRow key={q.id} className="hover:bg-muted/30 transition-colors">
+                      <TableCell
+                        className="font-mono font-semibold text-primary whitespace-nowrap cursor-pointer hover:underline"
+                        onClick={() => setViewItem(q)}
+                      >
+                        {q.quotationNo}
+                      </TableCell>
+                      <TableCell className="font-semibold text-foreground whitespace-nowrap">
                         {q.customerName}
-                      </div>
-                      <div className="mt-1">
+                      </TableCell>
+                      <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
+                        {formatDate(q.date)}
+                      </TableCell>
+                      <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
+                        {formatDate(q.validUntil)}
+                      </TableCell>
+                      <TableCell className="number text-right font-black text-foreground whitespace-nowrap text-sm">
+                        {formatCurrency(q.total)}
+                      </TableCell>
+                      <TableCell className="whitespace-nowrap">
                         {q.status === "converted" ? (
-                          <Badge className="bg-success/12 text-success text-[9px] font-bold py-0">
-                            Converted
+                          <Badge className="bg-success/12 text-success border-success/25 text-[10px] font-bold">
+                            {t("convertedToInvoice", "Converted to Invoice")}
+                          </Badge>
+                        ) : q.status === "sent" ? (
+                          <Badge className="bg-info/12 text-info border-info/25 text-[10px] font-bold">
+                            {t("sentToClient", "Sent to Client")}
                           </Badge>
                         ) : (
-                          <Badge variant="outline" className="text-[9px] font-bold py-0 capitalize">
+                          <Badge variant="outline" className="text-[10px] font-bold capitalize">
                             {q.status}
                           </Badge>
                         )}
-                      </div>
-                    </div>
+                      </TableCell>
+                      <TableCell className="text-right whitespace-nowrap">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="size-8 rounded-lg">
+                              <MoreVertical className="size-4 text-muted-foreground" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="rounded-xl">
+                            <DropdownMenuItem
+                              onClick={() => setViewItem(q)}
+                              className="text-xs font-semibold"
+                            >
+                              <FileText className="mr-2 size-3.5 text-primary" /> {t("view", "View / Print Quote")}
+                            </DropdownMenuItem>
+                            {q.status !== "converted" && (
+                              <DropdownMenuItem
+                                onClick={() => convertToInvoice(q)}
+                                className="text-xs font-bold text-success"
+                              >
+                                <ArrowRightLeft className="mr-2 size-3.5" /> {t("convertToSale", "Convert to Invoice")}
+                              </DropdownMenuItem>
+                            )}
+                            <DropdownMenuItem
+                              className="text-destructive text-xs font-semibold"
+                              onClick={() => deleteQuotation(q.id)}
+                            >
+                              <Trash2 className="mr-2 size-3.5" /> {t("delete", "Delete")}
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </div>
 
-                    <div className="text-right shrink-0 pl-2">
-                      <div className="number text-sm font-black text-foreground">
-                        {formatCurrency(q.total)}
-                      </div>
-                      {q.status !== "converted" ? (
-                        <Button
-                          size="sm"
-                          className="h-7 px-2 text-[11px] font-bold mt-1 shadow-soft"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            convertToInvoice(q);
-                          }}
-                        >
-                          <ArrowRightLeft className="size-3 mr-1" /> Invoice
-                        </Button>
-                      ) : null}
+          {/* Mobile Card Feed (< 768px) */}
+          <div className="table-mobile-cards p-3 space-y-2.5">
+            {paginated.length === 0 ? (
+              <EmptyState
+                icon={FileText}
+                title={t("noQuotationsFound", "No quotations found")}
+                description={
+                  search
+                    ? t("adjustSearch", "Try adjusting your search query.")
+                    : t("noQuotationsYet", "Create your first B2B quotation to get started.")
+                }
+                actionLabel={t("newQuotation", "Create Quotation")}
+                onAction={() => setIsAddOpen(true)}
+                className="border-none bg-transparent my-0 py-6 shadow-none"
+              />
+            ) : (
+              paginated.map((q) => (
+                <div
+                  key={q.id}
+                  className="flex items-center justify-between rounded-xl border border-border/80 bg-card p-3 shadow-sm card-interactive"
+                  onClick={() => setViewItem(q)}
+                >
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono text-xs font-bold text-primary">
+                        {q.quotationNo}
+                      </span>
+                      <span className="text-[10px] text-muted-foreground">
+                        Expires {formatDate(q.validUntil)}
+                      </span>
+                    </div>
+                    <div className="font-bold text-xs sm:text-sm text-foreground mt-0.5 truncate">
+                      {q.customerName}
+                    </div>
+                    <div className="mt-1">
+                      {q.status === "converted" ? (
+                        <Badge className="bg-success/12 text-success text-[9px] font-bold py-0">
+                          Converted
+                        </Badge>
+                      ) : (
+                        <Badge variant="outline" className="text-[9px] font-bold py-0 capitalize">
+                          {q.status}
+                        </Badge>
+                      )}
                     </div>
                   </div>
-                ))
-              )}
-            </div>
 
-            {filteredQuotations.length > 0 && (
-              <div className="border-t border-border/60 p-2 sm:p-3">
-                <PaginationControls
-                  currentPage={page}
-                  totalPages={totalPages}
-                  onPageChange={setPage}
-                  totalItems={filteredQuotations.length}
-                />
-              </div>
+                  <div className="text-right shrink-0 pl-2">
+                    <div className="number text-sm font-black text-foreground">
+                      {formatCurrency(q.total)}
+                    </div>
+                    {q.status !== "converted" ? (
+                      <Button
+                        size="sm"
+                        className="h-7 px-2 text-[11px] font-bold mt-1 shadow-soft"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          convertToInvoice(q);
+                        }}
+                      >
+                        <ArrowRightLeft className="size-3 mr-1" /> Invoice
+                      </Button>
+                    ) : null}
+                  </div>
+                </div>
+              ))
             )}
           </div>
+
+          {filteredQuotations.length > 0 && (
+            <div className="border-t border-border/60 p-2 sm:p-3">
+              <PaginationControls
+                currentPage={page}
+                totalPages={totalPages}
+                onPageChange={setPage}
+                totalItems={filteredQuotations.length}
+              />
+            </div>
+          )}
         </div>
-      </DataPage>
 
       {/* Create B2B Quotation Drawer */}
       <Sheet
@@ -955,6 +1019,6 @@ function QuotationsPage() {
           )}
         </SheetContent>
       </Sheet>
-    </>
+    </div>
   );
 }

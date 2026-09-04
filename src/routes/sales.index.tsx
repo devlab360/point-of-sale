@@ -16,6 +16,7 @@ import {
   SheetTitle,
   SheetDescription,
   SheetFooter,
+  SheetTrigger,
 } from "@/components/ui/sheet";
 import { useCurrency } from "@/lib/currency";
 import { cn } from "@/lib/utils";
@@ -29,7 +30,8 @@ import { hasPermissionForRoute } from "@/lib/menu-config";
 import { getSettingsFn } from "@/api/settings";
 import { useAuth } from "@/contexts/AuthContext";
 import { usePreferences } from "@/contexts/PreferencesContext";
-import { DataPage } from "@/components/layout/DataPage";
+import { PageHeader } from "@/components/layout/PageHeader";
+import { StatCard } from "@/components/layout/StatCard";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PaginationControls } from "@/components/ui/pagination-controls";
 import { SearchableSelect } from "@/components/ui/searchable-select";
@@ -37,6 +39,19 @@ import { printReceiptIframe } from "@/lib/printIframe";
 import { useDebounce } from "@/hooks/useDebounce";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+import {
+  Download,
+  Filter,
+  RotateCcw,
+  DollarSign,
+  TrendingDown,
+  Clock,
+  CheckCircle2,
+  Package,
+  X,
+  CreditCard,
+  ShoppingBag,
+} from "lucide-react";
 import {
   Table,
   TableBody,
@@ -281,164 +296,217 @@ function SalesPage() {
   const handlePrintDirect = printReceipt;
 
   return (
-    <>
-      <DataPage
-        title={t("Sales History") || "Sales History"}
-        description={t("manageSales") || "Every transaction across all your registers."}
-        primaryAction={{
-          label: t("newSale") || "New Sale",
-          onClick: () => void navigate({ to: "/pos" }),
-          icon: Plus,
-        }}
-        searchPlaceholder={t("searchSales") || "Search by Invoice No..."}
-        searchValue={query}
-        onSearchChange={setQuery}
-        hideToolbar={false}
-        onExport={handleExport}
-        onResetFilters={handleResetFilters}
-        activeFilterCount={activeFilterCount}
-        topContent={
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="rounded-xl border border-border/80 bg-card p-4 shadow-soft flex flex-col gap-1 card-interactive">
-              <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
-                {t("totalTransactions") || "Total Transactions"}
-              </span>
-              <span className="text-xl sm:text-2xl font-black text-foreground">{totalCount}</span>
-              <span className="text-xs font-semibold text-muted-foreground">
-                {completedCount} {t("completed") || "Completed"}
-              </span>
-            </div>
-            <div className="rounded-xl border border-border/80 bg-card p-4 shadow-soft flex flex-col gap-1 card-interactive">
-              <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
-                {t("totalRevenue") || "Total Revenue"}
-              </span>
-              <span className="text-xl sm:text-2xl font-black text-primary">
-                {formatCurrency(totalRevenue)}
-              </span>
-              <span className="text-xs font-semibold text-muted-foreground">
-                {formatCurrency(refundedAmount)} {t("refunded") || "Refunded"}
-              </span>
-            </div>
-            <div className="rounded-xl border border-warning/20 bg-card p-4 shadow-soft flex flex-col gap-1 card-interactive">
-              <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
-                {t("pendingOrders") || "Pending Orders"}
-              </span>
-              <span className="text-xl sm:text-2xl font-black text-warning">{pendingCount}</span>
-            </div>
-            <div className="rounded-xl border border-destructive/20 bg-card p-4 shadow-soft flex flex-col gap-1 card-interactive">
-              <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
-                {t("refundedAmount") || "Refunded Amount"}
-              </span>
-              <span className="text-xl sm:text-2xl font-black text-destructive">
-                {formatCurrency(refundedAmount)}
-              </span>
-            </div>
+    <div className="page-container space-y-6">
+      {/* Standard PageHeader */}
+      <PageHeader
+        title={t("Sales History", "Sales & POS Transactions")}
+        description={t("manageSales", "Every customer order, split tender receipt, and register settlement across all stores.")}
+        actions={
+          <div className="flex flex-wrap items-center gap-2">
+            <Button variant="outline" size="sm" onClick={handleExport} className="gap-1.5">
+              <Download className="size-4" /> {t("exportCSV", "Export CSV")}
+            </Button>
+            <Button size="sm" onClick={() => void navigate({ to: "/pos" })} className="gap-1.5">
+              <Plus className="size-4" /> {t("newSale", "New Sale")}
+            </Button>
           </div>
         }
-        filtersContent={({ close }) => (
-          <div className="space-y-4 flex flex-col h-full min-h-[50vh]">
-            <div className="flex-1 space-y-4">
-              <div className="space-y-2">
-                <Label>Status</Label>
-                <SearchableSelect
-                  options={[
-                    { value: "", label: "All Statuses" },
-                    ...ORDER_STATUSES.map((s) => ({ value: s.value, label: s.label })),
-                  ]}
-                  value={draftFilters.status}
-                  onChange={(val) => setDraftFilters((prev) => ({ ...prev, status: val }))}
-                  placeholder="Filter by Status"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Payment Method</Label>
-                <SearchableSelect
-                  options={[
-                    { value: "", label: "All Methods" },
-                    ...PAYMENT_METHOD_OPTIONS.map((m) => ({ value: m.value, label: m.label })),
-                  ]}
-                  value={draftFilters.payment}
-                  onChange={(val) => setDraftFilters((prev) => ({ ...prev, payment: val }))}
-                  placeholder="Filter by Payment"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Sync Status</Label>
-                <SearchableSelect
-                  options={[
-                    { value: "", label: "All Sync Status" },
-                    { value: "synced", label: "Synced" },
-                    { value: "pending", label: "Pending Sync" },
-                  ]}
-                  value={draftFilters.sync}
-                  onChange={(val) => setDraftFilters((prev) => ({ ...prev, sync: val }))}
-                  placeholder="Filter by Sync"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Store Branch</Label>
-                <SearchableSelect
-                  options={[
-                    { value: "", label: "All Branches" },
-                    ...locations.map((loc: any) => ({ value: loc.id, label: loc.name })),
-                  ]}
-                  value={draftFilters.location}
-                  onChange={(val) => setDraftFilters((prev) => ({ ...prev, location: val }))}
-                  placeholder="Filter by Branch"
-                />
-              </div>
-            </div>
-            <div className="pt-4 mt-auto">
-              <Button
-                className="w-full"
-                onClick={() => {
-                  setFilters(draftFilters);
-                  close();
-                }}
+      />
+
+      {/* Standard StatCard Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <StatCard
+          label={t("totalTransactions", "Total Transactions")}
+          value={String(totalCount)}
+          hint={`${completedCount} ${t("completed", "Completed")}`}
+          icon={Receipt}
+          accent="primary"
+        />
+        <StatCard
+          label={t("totalRevenue", "Total Revenue")}
+          value={formatCurrency(totalRevenue)}
+          hint={`${formatCurrency(refundedAmount)} ${t("refunded", "Refunded")}`}
+          icon={DollarSign}
+          accent="success"
+        />
+        <StatCard
+          label={t("pendingOrders", "Pending Orders")}
+          value={String(pendingCount)}
+          hint={t("awaitingSettlement", "Awaiting register payment")}
+          icon={Clock}
+          accent="warning"
+        />
+        <StatCard
+          label={t("refundedAmount", "Refunded Amount")}
+          value={formatCurrency(refundedAmount)}
+          hint={t("processedReturns", "Total returns & voided receipts")}
+          icon={TrendingDown}
+          accent="destructive"
+        />
+      </div>
+
+      {/* Controls Toolbar */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="relative w-full sm:w-80">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+            <Input
+              placeholder={t("searchSales", "Search by invoice # or customer...")}
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              className="pl-9 h-9 text-sm rounded-lg"
+            />
+            {query && (
+              <button
+                onClick={() => setQuery("")}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
               >
-                Apply Filters
-              </Button>
-            </div>
+                <X className="size-3.5" />
+              </button>
+            )}
           </div>
-        )}
-      >
+
+          <div className="flex flex-wrap items-center gap-2">
+            {activeFilterCount > 0 && (
+              <Button variant="outline" size="sm" onClick={handleResetFilters} className="h-9 gap-1.5 text-xs">
+                <RotateCcw className="size-3.5" /> {t("reset", "Reset")}
+              </Button>
+            )}
+
+            <Sheet>
+              <SheetTrigger asChild>
+                <Button variant="outline" size="sm" className="h-9 gap-1.5 text-xs relative">
+                  <Filter className="size-3.5" />
+                  <span>{t("filters", "Filters")}</span>
+                  {activeFilterCount > 0 && (
+                    <span className="size-4 rounded-full bg-primary text-[10px] font-bold text-primary-foreground grid place-items-center">
+                      {activeFilterCount}
+                    </span>
+                  )}
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="right" className="w-full sm:max-w-md p-0 flex flex-col h-full bg-background border-l border-border">
+                <SheetHeader className="bg-muted/60 p-5 border-b pr-12 text-left shrink-0">
+                  <SheetTitle className="text-lg font-bold flex items-center gap-2 text-foreground">
+                    <Filter className="size-4.5 text-primary" />
+                    <span>{t("filterTransactions", "Filter Transactions")}</span>
+                  </SheetTitle>
+                  <SheetDescription className="text-xs text-muted-foreground mt-0.5">
+                    Filter by status, payment method, branch, or sync status.
+                  </SheetDescription>
+                </SheetHeader>
+                <div className="flex-1 overflow-y-auto p-5 space-y-4">
+                  <div className="space-y-2">
+                    <Label className="text-xs font-semibold">Status</Label>
+                    <SearchableSelect
+                      options={[
+                        { value: "", label: "All Statuses" },
+                        ...ORDER_STATUSES.map((s) => ({ value: s.value, label: s.label })),
+                      ]}
+                      value={draftFilters.status}
+                      onChange={(val) => setDraftFilters((prev) => ({ ...prev, status: val }))}
+                      placeholder="Filter by Status"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-xs font-semibold">Payment Method</Label>
+                    <SearchableSelect
+                      options={[
+                        { value: "", label: "All Methods" },
+                        ...PAYMENT_METHOD_OPTIONS.map((m) => ({ value: m.value, label: m.label })),
+                      ]}
+                      value={draftFilters.payment}
+                      onChange={(val) => setDraftFilters((prev) => ({ ...prev, payment: val }))}
+                      placeholder="Filter by Payment"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-xs font-semibold">Sync Status</Label>
+                    <SearchableSelect
+                      options={[
+                        { value: "", label: "All Sync Status" },
+                        { value: "synced", label: "Synced" },
+                        { value: "pending", label: "Pending Sync" },
+                      ]}
+                      value={draftFilters.sync}
+                      onChange={(val) => setDraftFilters((prev) => ({ ...prev, sync: val }))}
+                      placeholder="Filter by Sync"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-xs font-semibold">Store Branch</Label>
+                    <SearchableSelect
+                      options={[
+                        { value: "", label: "All Branches" },
+                        ...locations.map((loc: any) => ({ value: loc.id, label: loc.name })),
+                      ]}
+                      value={draftFilters.location}
+                      onChange={(val) => setDraftFilters((prev) => ({ ...prev, location: val }))}
+                      placeholder="Filter by Branch"
+                    />
+                  </div>
+                </div>
+                <SheetFooter className="p-4 border-t bg-muted/20 flex flex-row items-center justify-end gap-2 shrink-0">
+                  <Button
+                    variant="outline"
+                    className="flex-1"
+                    onClick={() => {
+                      handleResetFilters();
+                    }}
+                  >
+                    Reset
+                  </Button>
+                  <Button
+                    className="flex-1 font-bold"
+                    onClick={() => {
+                      setFilters(draftFilters);
+                    }}
+                  >
+                    Apply Filters
+                  </Button>
+                </SheetFooter>
+              </SheetContent>
+            </Sheet>
+          </div>
+        </div>
+
+        {/* Content View */}
         {isSalesLoading ? (
-          <TableSkeleton columns={7} rows={6} showHeaderAction={false} showFilters={false} />
+          <TableSkeleton columns={8} rows={6} />
         ) : isSalesError ? (
           <ErrorState onRetry={refetchSales} />
         ) : (
           <div className="space-y-4">
             {/* Payment Summary Cards */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
-              <div className="rounded-xl border border-border/80 bg-card p-4 shadow-soft flex flex-col gap-1 card-interactive">
-                <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+              <div className="rounded-xl border border-border/80 bg-card p-3 shadow-xs flex flex-col gap-1">
+                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
                   Cash Revenue
                 </span>
-                <span className="text-xl sm:text-2xl font-black text-success">
+                <span className="text-lg font-black text-success">
                   {formatCurrency(summaries.cash)}
                 </span>
               </div>
-              <div className="rounded-xl border border-border/80 bg-card p-4 shadow-soft flex flex-col gap-1 card-interactive">
-                <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
+              <div className="rounded-xl border border-border/80 bg-card p-3 shadow-xs flex flex-col gap-1">
+                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
                   Card Revenue
                 </span>
-                <span className="text-xl sm:text-2xl font-black text-info">
+                <span className="text-lg font-black text-info">
                   {formatCurrency(summaries.card)}
                 </span>
               </div>
-              <div className="rounded-xl border border-border/80 bg-card p-4 shadow-soft flex flex-col gap-1 card-interactive">
-                <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
+              <div className="rounded-xl border border-border/80 bg-card p-3 shadow-xs flex flex-col gap-1">
+                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
                   UPI / Digital
                 </span>
-                <span className="text-xl sm:text-2xl font-black text-primary">
+                <span className="text-lg font-black text-primary">
                   {formatCurrency(summaries.upi)}
                 </span>
               </div>
-              <div className="rounded-xl border border-border/80 bg-card p-4 shadow-soft flex flex-col gap-1 card-interactive">
-                <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
+              <div className="rounded-xl border border-border/80 bg-card p-3 shadow-xs flex flex-col gap-1">
+                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
                   Credit (Due)
                 </span>
-                <span className="text-xl sm:text-2xl font-black text-warning">
+                <span className="text-lg font-black text-warning">
                   {formatCurrency(summaries.credit)}
                 </span>
               </div>
@@ -450,14 +518,14 @@ function SalesPage() {
                 <Table className="min-w-[850px]">
                   <TableHeader>
                     <TableRow>
-                      <TableHead>{t("invoice") || "Invoice"}</TableHead>
-                      <TableHead>{t("customer") || "Customer"}</TableHead>
-                      <TableHead>{t("date") || "Timestamp"}</TableHead>
-                      <TableHead className="text-right">{t("items") || "Items"}</TableHead>
-                      <TableHead>{t("payment") || "Payment"}</TableHead>
-                      <TableHead>{t("sync") || "Sync"}</TableHead>
-                      <TableHead>{t("status") || "Status"}</TableHead>
-                      <TableHead className="text-right">{t("total") || "Total"}</TableHead>
+                      <TableHead>{t("invoice", "Invoice")}</TableHead>
+                      <TableHead>{t("customer", "Customer")}</TableHead>
+                      <TableHead>{t("date", "Timestamp")}</TableHead>
+                      <TableHead className="text-right">{t("items", "Items")}</TableHead>
+                      <TableHead>{t("payment", "Payment")}</TableHead>
+                      <TableHead>{t("sync", "Sync")}</TableHead>
+                      <TableHead>{t("status", "Status")}</TableHead>
+                      <TableHead className="text-right">{t("total", "Total")}</TableHead>
                       <TableHead className="text-right">{t("common.actions", "Actions")}</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -467,11 +535,11 @@ function SalesPage() {
                         <TableCell colSpan={9} className="h-64 text-center">
                           <EmptyState
                             icon={Receipt}
-                            title={t("noSalesFound") || "No sales found"}
+                            title={t("noSalesFound", "No sales found")}
                             description={
                               debouncedQuery
-                                ? t("adjustSearch") || "Try adjusting your search query."
-                                : t("noSalesYet") || "No transactions have been recorded yet."
+                                ? t("adjustSearch", "Try adjusting your search query.")
+                                : t("noSalesYet", "No transactions have been recorded yet.")
                             }
                             actionLabel="Open POS"
                             onAction={() => void navigate({ to: "/pos" })}
@@ -481,7 +549,7 @@ function SalesPage() {
                       </TableRow>
                     ) : (
                       sales.map((s) => (
-                        <TableRow key={s.id}>
+                        <TableRow key={s.id} className="hover:bg-muted/30 transition-colors">
                           <TableCell
                             className="font-mono text-xs font-semibold text-primary cursor-pointer hover:underline"
                             onClick={() => setViewSale(s)}
@@ -646,20 +714,21 @@ function SalesPage() {
                 ))}
               </div>
 
-              <div className="border-t border-border/60 p-2 sm:p-3">
-                <PaginationControls
-                  currentPage={page}
-                  totalPages={totalPages}
-                  pageSize={pageSize}
-                  totalItems={sales.length}
-                  onPageChange={setPage}
-                  onPageSizeChange={setPageSize}
-                />
-              </div>
+              {sales.length > 0 && (
+                <div className="border-t border-border/60 p-2 sm:p-3">
+                  <PaginationControls
+                    currentPage={page}
+                    totalPages={totalPages}
+                    pageSize={pageSize}
+                    totalItems={totalCount}
+                    onPageChange={setPage}
+                    onPageSizeChange={setPageSize}
+                  />
+                </div>
+              )}
             </div>
           </div>
         )}
-      </DataPage>
 
       {/* Sale Detail Sheet */}
       <Sheet open={!!viewSale} onOpenChange={(open) => !open && setViewSale(null)}>
@@ -933,6 +1002,6 @@ function SalesPage() {
           </div>
         </DialogContent>
       </Dialog>
-    </>
+    </div>
   );
 }

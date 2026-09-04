@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { DataPage } from "@/components/layout/DataPage";
+import { PageHeader } from "@/components/layout/PageHeader";
+import { StatCard } from "@/components/layout/StatCard";
 import { appName } from "@/lib/env";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PaginationControls } from "@/components/ui/pagination-controls";
@@ -18,13 +19,30 @@ import {
 } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetDescription, SheetFooter } from "@/components/ui/sheet";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Truck,
+  Printer,
+  CheckCircle2,
+  MoreVertical,
+  Trash2,
+  ArrowRightLeft,
+  Loader2,
+  Plus,
+  Search,
+  Download,
+  RotateCcw,
+  Filter,
+  Clock,
+  Package,
+  X,
+} from "lucide-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   getDeliveryChallansFn,
@@ -39,15 +57,6 @@ import { createSaleFn } from "@/api/sales";
 import { createInventoryMovementFn } from "@/api/inventory";
 import { useCurrency } from "@/lib/currency";
 import { CHALLAN_STATUSES } from "@/constants";
-import {
-  Truck,
-  Printer,
-  CheckCircle2,
-  MoreVertical,
-  Trash2,
-  ArrowRightLeft,
-  Loader2,
-} from "lucide-react";
 import { v4 as uuidv4 } from "uuid";
 import { toast } from "sonner";
 import { PersistStore } from "@/lib/session-store";
@@ -411,271 +420,325 @@ function DeliveryChallansPage() {
   };
 
   return (
-    <>
-      <DataPage
-        title={t("deliveryChallans", "Delivery Challans")}
+    <div className="page-container space-y-6">
+      {/* Standard PageHeader */}
+      <PageHeader
+        title={t("deliveryChallans", "Delivery Challans & Dispatch")}
         description={t("deliveryChallansDesc", "Issue goods dispatch slips, track vehicle deliveries, and convert challans to invoices.")}
-        primaryAction={{ label: t("createDeliveryChallan", "Create Delivery Challan"), onClick: () => setIsAddOpen(true) }}
-        searchPlaceholder={t("searchChallans", "Search challans...")}
-        searchValue={search}
-        onSearchChange={setSearch}
-        hideToolbar={false}
-        onExport={handleExport}
-        onResetFilters={handleResetFilters}
-        activeFilterCount={activeFilterCount}
-        filtersContent={({ close }) => (
-          <div className="space-y-4 flex flex-col h-full min-h-[50vh]">
-            <div className="flex-1 space-y-4">
-              <div className="space-y-2">
-                <Label>{t("status", "Status")}</Label>
-                <SearchableSelect
-                  options={[
-                    { value: "", label: t("allStatuses", "All Statuses") },
-                    ...CHALLAN_STATUSES.map((c) => ({ value: c.value, label: c.label })),
-                  ]}
-                  value={draftFilters.status}
-                  onChange={(val) => setDraftFilters((prev) => ({ ...prev, status: val }))}
-                  placeholder={t("filterByStatus", "Filter by Status")}
-                />
-              </div>
-            </div>
-            <div className="pt-4 mt-auto">
-              <Button
-                className="w-full"
-                onClick={() => {
-                  setFilters(draftFilters);
-                  close();
-                }}
-              >
-                {t("applyFilters", "Apply Filters")}
-              </Button>
-            </div>
-          </div>
-        )}
-        topContent={
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-            <div className="rounded-xl border border-border/80 bg-card p-3 shadow-2xs">
-              <div className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
-                {t("totalChallans", "Total Challans")}
-              </div>
-              <div className="mt-1 text-xl sm:text-2xl font-black text-foreground">
-                {rawChallans.length}
-              </div>
-            </div>
-            <div className="rounded-xl border border-border/80 bg-card p-3 shadow-2xs">
-              <div className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
-                {t("invoiced", "Invoiced")}
-              </div>
-              <div className="mt-1 text-xl sm:text-2xl font-black text-success">
-                {rawChallans.filter((c) => c.status === "invoiced").length}
-              </div>
-            </div>
-            <div className="rounded-xl border border-border/80 bg-card p-3 shadow-2xs">
-              <div className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
-                {t("dispatched", "Dispatched")}
-              </div>
-              <div className="mt-1 text-xl sm:text-2xl font-black text-primary">
-                {
-                  rawChallans.filter((c) => c.status === "dispatched" || c.status === "delivered")
-                    .length
-                }
-              </div>
-            </div>
-            <div className="rounded-xl border border-border/80 bg-card p-3 shadow-2xs">
-              <div className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
-                {t("pendingConversion", "Pending Conversion")}
-              </div>
-              <div className="mt-1 text-xl sm:text-2xl font-black text-amber-500">
-                {rawChallans.filter((c) => c.status !== "invoiced").length}
-              </div>
-            </div>
+        actions={
+          <div className="flex flex-wrap items-center gap-2">
+            <Button variant="outline" size="sm" onClick={handleExport} className="gap-1.5">
+              <Download className="size-4" /> {t("exportCSV", "Export CSV")}
+            </Button>
+            <Button size="sm" onClick={() => setIsAddOpen(true)} className="gap-1.5">
+              <Plus className="size-4" /> {t("createDeliveryChallan", "Create Challan")}
+            </Button>
           </div>
         }
-      >
-        <div className="space-y-4">
-          <div className="overflow-hidden rounded-xl border border-border/80 bg-card shadow-soft">
-            {/* Desktop Table View */}
-            <div className="table-desktop overflow-x-auto">
-              <Table className="min-w-[700px]">
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>{t("challanNo", "Challan #")}</TableHead>
-                    <TableHead>{t("customerName", "Customer Name")}</TableHead>
-                    <TableHead>{t("dispatchDate", "Dispatch Date")}</TableHead>
-                    <TableHead>{t("transportVehicle", "Transport / Vehicle")}</TableHead>
-                    <TableHead>{t("status", "Status")}</TableHead>
-                    <TableHead className="text-right">{t("actions", "Actions")}</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {paginated.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={6} className="h-64 text-center">
-                        <EmptyState
-                          icon={Truck}
-                          title={t("noChallansFound", "No delivery challans found")}
-                          description={
-                            search
-                              ? t("tryAdjustingSearchQuery", "Try adjusting your search query.")
-                              : t("noChallansCreatedYet", "Create your first delivery challan to dispatch goods.")
-                          }
-                          actionLabel={t("createChallan", "Create Challan")}
-                          onAction={() => setIsAddOpen(true)}
-                          className="border-none bg-transparent my-0 py-8 shadow-none"
-                        />
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    paginated.map((c) => (
-                      <TableRow key={c.id}>
-                        <TableCell
-                          className="font-mono font-semibold text-primary whitespace-nowrap cursor-pointer hover:underline"
-                          onClick={() => setViewItem(c)}
-                        >
-                          {c.challanNo}
-                        </TableCell>
-                        <TableCell className="font-semibold text-foreground whitespace-nowrap">
-                          {c.customerName}
-                        </TableCell>
-                        <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
-                          {formatDate(c.date)}
-                        </TableCell>
-                        <TableCell className="text-xs whitespace-nowrap font-medium text-muted-foreground">
-                          {c.transportName
-                            ? `${c.transportName} (${c.vehicleNo || "N/A"})`
-                            : t("selfLocalDispatch", "Self / Local Dispatch")}
-                        </TableCell>
-                        <TableCell className="whitespace-nowrap">
-                          {c.status === "invoiced" ? (
-                            <Badge className="bg-success/12 text-success border-success/25 text-[10px] font-bold">
-                              {t("invoiced", "Invoiced")}
-                            </Badge>
-                          ) : (
-                            <Badge className="bg-warning/15 text-warning-foreground border-warning/25 text-[10px] font-bold">
-                              {t("dispatchedOut", "Dispatched / Out")}
-                            </Badge>
-                          )}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="icon" className="size-8 rounded-lg">
-                                <MoreVertical className="size-4 text-muted-foreground" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="rounded-xl">
-                              <DropdownMenuItem
-                                onClick={() => setViewItem(c)}
-                                className="text-xs font-semibold"
-                              >
-                                <Truck className="mr-2 size-3.5 text-primary" /> {t("viewPrintSlip", "View / Print Slip")}
-                              </DropdownMenuItem>
-                              {c.status !== "invoiced" && (
-                                <DropdownMenuItem
-                                  onClick={() => convertChallanToInvoice(c)}
-                                  className="text-xs font-bold text-success"
-                                >
-                                  <ArrowRightLeft className="mr-2 size-3.5" /> {t("convertToInvoice", "Convert to Invoice")}
-                                </DropdownMenuItem>
-                              )}
-                              <DropdownMenuItem
-                                className="text-destructive text-xs font-semibold"
-                                onClick={() => deleteChallan(c.id)}
-                              >
-                                <Trash2 className="mr-2 size-3.5" /> {t("delete", "Delete")}
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
-            </div>
+      />
 
-            {/* Mobile Card Feed (< 768px) */}
-            <div className="table-mobile-cards p-3 space-y-2.5">
-              {paginated.length === 0 ? (
-                <EmptyState
-                  icon={Truck}
-                  title={t("noChallansFound", "No delivery challans found")}
-                  description={
-                    search
-                      ? t("tryAdjustingSearchQuery", "Try adjusting your search query.")
-                      : t("noChallansCreatedYet", "Create your first delivery challan to dispatch goods.")
-                  }
-                  actionLabel={t("createChallan", "Create Challan")}
-                  onAction={() => setIsAddOpen(true)}
-                  className="border-none bg-transparent my-0 py-6 shadow-none"
-                />
-              ) : (
-                paginated.map((c) => (
-                  <div
-                    key={c.id}
-                    className="flex items-center justify-between rounded-xl border border-border/80 bg-card p-3 shadow-sm card-interactive"
-                    onClick={() => setViewItem(c)}
-                  >
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2">
-                        <span className="font-mono text-xs font-bold text-primary">
-                          {c.challanNo}
-                        </span>
-                        <span className="text-[10px] text-muted-foreground">
-                          {formatDate(c.date)}
-                        </span>
-                      </div>
-                      <div className="font-bold text-xs sm:text-sm text-foreground mt-0.5 truncate">
-                        {c.customerName}
-                      </div>
-                      <p className="text-[11px] text-muted-foreground mt-0.5 truncate">
-                        {c.transportName
-                          ? `${c.transportName} · ${c.vehicleNo || "N/A"}`
-                          : t("localDispatch", "Local Dispatch")}
-                      </p>
-                    </div>
+      {/* Standard StatCard Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <StatCard
+          label={t("totalChallans", "Total Challans")}
+          value={String(rawChallans.length)}
+          hint={t("allDispatchLogs", "All dispatch records")}
+          icon={Truck}
+          accent="primary"
+        />
+        <StatCard
+          label={t("invoiced", "Invoiced")}
+          value={String(rawChallans.filter((c) => c.status === "invoiced").length)}
+          hint={t("billedToCustomers", "Billed to customers")}
+          icon={CheckCircle2}
+          accent="success"
+        />
+        <StatCard
+          label={t("dispatched", "Dispatched / Out")}
+          value={String(
+            rawChallans.filter((c) => c.status === "dispatched" || c.status === "delivered").length,
+          )}
+          hint={t("goodsInTransit", "Goods in transit")}
+          icon={Clock}
+          accent="warning"
+        />
+        <StatCard
+          label={t("pendingConversion", "Pending Conversion")}
+          value={String(rawChallans.filter((c) => c.status !== "invoiced").length)}
+          hint={t("awaitingInvoiceGeneration", "Awaiting sales invoice")}
+          icon={Package}
+          accent="info"
+        />
+      </div>
 
-                    <div className="text-right shrink-0 pl-2">
-                      <Badge
-                        className={
-                          c.status === "invoiced"
-                            ? "bg-success/12 text-success text-[9px] font-bold py-0"
-                            : "bg-warning/15 text-warning-foreground text-[9px] font-bold py-0"
-                        }
-                      >
-                        {c.status === "invoiced" ? t("invoiced", "Invoiced") : t("out", "Out")}
-                      </Badge>
-                      {c.status !== "invoiced" ? (
-                        <Button
-                          size="sm"
-                          className="h-7 px-2 text-[11px] font-bold mt-1 shadow-soft flex items-center gap-1"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            convertChallanToInvoice(c);
-                          }}
-                        >
-                          <ArrowRightLeft className="size-3" /> {t("invoice", "Invoice")}
-                        </Button>
-                      ) : null}
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-
-            {filteredChallans.length > 0 && (
-              <div className="border-t border-border/60 p-2 sm:p-3">
-                <PaginationControls
-                  currentPage={page}
-                  totalPages={totalPages}
-                  onPageChange={setPage}
-                  totalItems={filteredChallans.length}
-                />
-              </div>
+      {/* Controls Toolbar */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="relative w-full sm:w-80">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+            <Input
+              placeholder={t("searchChallans", "Search by challan # or customer...")}
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-9 h-9 text-sm rounded-lg"
+            />
+            {search && (
+              <button
+                onClick={() => setSearch("")}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+              >
+                <X className="size-3.5" />
+              </button>
             )}
           </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            {activeFilterCount > 0 && (
+              <Button variant="outline" size="sm" onClick={handleResetFilters} className="h-9 gap-1.5 text-xs">
+                <RotateCcw className="size-3.5" /> {t("reset", "Reset")}
+              </Button>
+            )}
+
+            <Sheet>
+              <SheetTrigger asChild>
+                <Button variant="outline" size="sm" className="h-9 gap-1.5 text-xs relative">
+                  <Filter className="size-3.5" />
+                  <span>{t("filters", "Filters")}</span>
+                  {activeFilterCount > 0 && (
+                    <span className="size-4 rounded-full bg-primary text-[10px] font-bold text-primary-foreground grid place-items-center">
+                      {activeFilterCount}
+                    </span>
+                  )}
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="right" className="w-full sm:max-w-md p-0 flex flex-col h-full bg-background border-l border-border">
+                <SheetHeader className="bg-muted/60 p-5 border-b pr-12 text-left shrink-0">
+                  <SheetTitle className="text-lg font-bold flex items-center gap-2 text-foreground">
+                    <Filter className="size-4.5 text-primary" />
+                    <span>{t("filterChallans", "Filter Challans")}</span>
+                  </SheetTitle>
+                  <SheetDescription className="text-xs text-muted-foreground mt-0.5">
+                    Filter by status and vehicle dispatch mode.
+                  </SheetDescription>
+                </SheetHeader>
+                <div className="flex-1 overflow-y-auto p-5 space-y-4">
+                  <div className="space-y-2">
+                    <Label className="text-xs font-semibold">{t("status", "Status")}</Label>
+                    <SearchableSelect
+                      options={[
+                        { value: "", label: t("allStatuses", "All Statuses") },
+                        ...CHALLAN_STATUSES.map((c) => ({ value: c.value, label: c.label })),
+                      ]}
+                      value={draftFilters.status}
+                      onChange={(val) => setDraftFilters((prev) => ({ ...prev, status: val }))}
+                      placeholder={t("filterByStatus", "Filter by Status")}
+                    />
+                  </div>
+                </div>
+                <SheetFooter className="p-4 border-t bg-muted/20 flex flex-row items-center justify-end gap-2 shrink-0">
+                  <Button
+                    variant="outline"
+                    className="flex-1"
+                    onClick={() => {
+                      handleResetFilters();
+                    }}
+                  >
+                    Reset
+                  </Button>
+                  <Button
+                    className="flex-1 font-bold"
+                    onClick={() => {
+                      setFilters(draftFilters);
+                    }}
+                  >
+                    Apply Filters
+                  </Button>
+                </SheetFooter>
+              </SheetContent>
+            </Sheet>
+          </div>
         </div>
-      </DataPage>
+
+        {/* Content Table Card */}
+        <div className="overflow-hidden rounded-xl border border-border/80 bg-card shadow-soft">
+          <div className="table-desktop overflow-x-auto">
+            <Table className="min-w-[700px]">
+              <TableHeader>
+                <TableRow>
+                  <TableHead>{t("challanNo", "Challan #")}</TableHead>
+                  <TableHead>{t("customerName", "Customer Name")}</TableHead>
+                  <TableHead>{t("dispatchDate", "Dispatch Date")}</TableHead>
+                  <TableHead>{t("transportVehicle", "Transport / Vehicle")}</TableHead>
+                  <TableHead>{t("status", "Status")}</TableHead>
+                  <TableHead className="text-right">{t("actions", "Actions")}</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {paginated.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={6} className="h-64 text-center">
+                      <EmptyState
+                        icon={Truck}
+                        title={t("noChallansFound", "No delivery challans found")}
+                        description={
+                          search
+                            ? t("tryAdjustingSearchQuery", "Try adjusting your search query.")
+                            : t("noChallansCreatedYet", "Create your first delivery challan to dispatch goods.")
+                        }
+                        actionLabel={t("createChallan", "Create Challan")}
+                        onAction={() => setIsAddOpen(true)}
+                        className="border-none bg-transparent my-0 py-8 shadow-none"
+                      />
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  paginated.map((c) => (
+                    <TableRow key={c.id} className="hover:bg-muted/30 transition-colors">
+                      <TableCell
+                        className="font-mono font-semibold text-primary whitespace-nowrap cursor-pointer hover:underline"
+                        onClick={() => setViewItem(c)}
+                      >
+                        {c.challanNo}
+                      </TableCell>
+                      <TableCell className="font-semibold text-foreground whitespace-nowrap">
+                        {c.customerName}
+                      </TableCell>
+                      <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
+                        {formatDate(c.date)}
+                      </TableCell>
+                      <TableCell className="text-xs whitespace-nowrap font-medium text-muted-foreground">
+                        {c.transportName
+                          ? `${c.transportName} (${c.vehicleNo || "N/A"})`
+                          : t("selfLocalDispatch", "Self / Local Dispatch")}
+                      </TableCell>
+                      <TableCell className="whitespace-nowrap">
+                        {c.status === "invoiced" ? (
+                          <Badge className="bg-success/12 text-success border-success/25 text-[10px] font-bold">
+                            {t("invoiced", "Invoiced")}
+                          </Badge>
+                        ) : (
+                          <Badge className="bg-warning/15 text-warning-foreground border-warning/25 text-[10px] font-bold">
+                            {t("dispatchedOut", "Dispatched / Out")}
+                          </Badge>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="size-8 rounded-lg">
+                              <MoreVertical className="size-4 text-muted-foreground" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="rounded-xl">
+                            <DropdownMenuItem
+                              onClick={() => setViewItem(c)}
+                              className="text-xs font-semibold"
+                            >
+                              <Truck className="mr-2 size-3.5 text-primary" /> {t("viewPrintSlip", "View / Print Slip")}
+                            </DropdownMenuItem>
+                            {c.status !== "invoiced" && (
+                              <DropdownMenuItem
+                                onClick={() => convertChallanToInvoice(c)}
+                                className="text-xs font-bold text-success"
+                              >
+                                <ArrowRightLeft className="mr-2 size-3.5" /> {t("convertToInvoice", "Convert to Invoice")}
+                              </DropdownMenuItem>
+                            )}
+                            <DropdownMenuItem
+                              className="text-destructive text-xs font-semibold"
+                              onClick={() => deleteChallan(c.id)}
+                            >
+                              <Trash2 className="mr-2 size-3.5" /> {t("delete", "Delete")}
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </div>
+
+          {/* Mobile Card Feed (< 768px) */}
+          <div className="table-mobile-cards p-3 space-y-2.5">
+            {paginated.length === 0 ? (
+              <EmptyState
+                icon={Truck}
+                title={t("noChallansFound", "No delivery challans found")}
+                description={
+                  search
+                    ? t("tryAdjustingSearchQuery", "Try adjusting your search query.")
+                    : t("noChallansCreatedYet", "Create your first delivery challan to dispatch goods.")
+                }
+                actionLabel={t("createChallan", "Create Challan")}
+                onAction={() => setIsAddOpen(true)}
+                className="border-none bg-transparent my-0 py-6 shadow-none"
+              />
+            ) : (
+              paginated.map((c) => (
+                <div
+                  key={c.id}
+                  className="flex items-center justify-between rounded-xl border border-border/80 bg-card p-3 shadow-sm card-interactive"
+                  onClick={() => setViewItem(c)}
+                >
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono text-xs font-bold text-primary">
+                        {c.challanNo}
+                      </span>
+                      <span className="text-[10px] text-muted-foreground">
+                        {formatDate(c.date)}
+                      </span>
+                    </div>
+                    <div className="font-bold text-xs sm:text-sm text-foreground mt-0.5 truncate">
+                      {c.customerName}
+                    </div>
+                    <p className="text-[11px] text-muted-foreground mt-0.5 truncate">
+                      {c.transportName
+                        ? `${c.transportName} · ${c.vehicleNo || "N/A"}`
+                        : t("localDispatch", "Local Dispatch")}
+                    </p>
+                  </div>
+
+                  <div className="text-right shrink-0 pl-2">
+                    <Badge
+                      className={
+                        c.status === "invoiced"
+                          ? "bg-success/12 text-success text-[9px] font-bold py-0"
+                          : "bg-warning/15 text-warning-foreground text-[9px] font-bold py-0"
+                      }
+                    >
+                      {c.status === "invoiced" ? t("invoiced", "Invoiced") : t("out", "Out")}
+                    </Badge>
+                    {c.status !== "invoiced" ? (
+                      <Button
+                        size="sm"
+                        className="h-7 px-2 text-[11px] font-bold mt-1 shadow-soft flex items-center gap-1"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          convertChallanToInvoice(c);
+                        }}
+                      >
+                        <ArrowRightLeft className="size-3" /> {t("invoice", "Invoice")}
+                      </Button>
+                    ) : null}
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+
+          {filteredChallans.length > 0 && (
+            <div className="border-t border-border/60 p-2 sm:p-3">
+              <PaginationControls
+                currentPage={page}
+                totalPages={totalPages}
+                onPageChange={setPage}
+                totalItems={filteredChallans.length}
+              />
+            </div>
+          )}
+        </div>
 
       {/* Create Delivery Challan Drawer */}
       <Sheet
@@ -972,6 +1035,6 @@ function DeliveryChallansPage() {
           )}
         </SheetContent>
       </Sheet>
-    </>
+    </div>
   );
 }

@@ -1,7 +1,8 @@
 import { useState, useMemo, useEffect } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { DataPage } from "@/components/layout/DataPage";
 import { appName } from "@/lib/env";
+import { PageHeader } from "@/components/layout/PageHeader";
+import { StatCard } from "@/components/layout/StatCard";
 import { CardGridSkeleton } from "@/components/skeletons/CardGridSkeleton";
 import { EmptyState } from "@/components/ui/empty-state";
 import { useDebounce } from "@/hooks/useDebounce";
@@ -11,15 +12,15 @@ import {
   Loader2,
   Users,
   CheckCircle2,
-  AlertCircle,
   Clock,
   Trash2,
   BedDouble,
   DoorOpen,
   Receipt,
-  Calendar,
   CreditCard,
-  ArrowRight,
+  Search,
+  Filter,
+  X,
 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getTablesFn, createTableFn, updateTableStatusFn, deleteTableFn } from "@/api/restaurant";
@@ -36,7 +37,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import {
   Dialog,
   DialogContent,
@@ -69,13 +70,11 @@ function TablesPage() {
   const { t } = useLanguage();
   const queryClient = useQueryClient();
   const orgId = PersistStore.getOrgId() || "default";
-  const { currencySymbol, formatCurrency } = useCurrency();
+  const { currencySymbol } = useCurrency();
 
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [newTableName, setNewTableName] = useState("");
   const [newTableCapacity, setNewTableCapacity] = useState(4);
-  const [newRoomType, setNewRoomType] = useState<"table" | "room">("table");
-  const [newRoomNightRate, setNewRoomNightRate] = useState(120);
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
   // Hotel Room Folio State
@@ -91,6 +90,7 @@ function TablesPage() {
 
   const [filters, setFilters] = useState({ status: "" });
   const [draftFilters, setDraftFilters] = useState({ status: "" });
+  const [filterDrawerOpen, setFilterDrawerOpen] = useState(false);
   const activeFilterCount = filters.status ? 1 : 0;
 
   const handleResetFilters = () => {
@@ -103,326 +103,350 @@ function TablesPage() {
     queryFn: () => getTablesFn({ data: {} }),
   });
 
-  const rawTables = data?.success ? data.data : [];
+  const rawTables = Array.isArray((data as any)?.data) ? (data as any).data : [];
 
   const filteredTables = useMemo(() => {
-    let list = rawTables;
+    let list = [...rawTables];
     if (debouncedSearch) {
-      const lower = debouncedSearch.toLowerCase();
-      list = list.filter((t: any) => t.name?.toLowerCase().includes(lower));
+      const q = debouncedSearch.toLowerCase();
+      list = list.filter((t: any) => t.name?.toLowerCase().includes(q));
     }
     if (filters.status) {
       list = list.filter((t: any) => t.status === filters.status);
     }
     return list;
-  }, [rawTables, debouncedSearch, filters.status]);
+  }, [rawTables, debouncedSearch, filters]);
 
-  // KPI Metrics
   const metrics = useMemo(() => {
     const total = rawTables.length;
     const available = rawTables.filter((t: any) => t.status === "available").length;
     const occupied = rawTables.filter((t: any) => t.status === "occupied").length;
     const reserved = rawTables.filter((t: any) => t.status === "reserved").length;
-    const totalCapacity = rawTables.reduce(
-      (sum: number, t: any) => sum + (Number(t.capacity) || 0),
-      0,
-    );
-    return { total, available, occupied, reserved, totalCapacity };
+    return { total, available, occupied, reserved };
   }, [rawTables]);
 
   const createTable = useMutation({
-    mutationFn: (data: { name: string; capacity: number }) => createTableFn({ data }),
-    onSuccess: (res) => {
-      if (res.success) {
-        toast.success("Table created successfully");
+    mutationFn: ({ name, capacity }: { name: string; capacity: number }) =>
+      createTableFn({
+        data: {
+          name,
+          capacity,
+        },
+      }),
+    onSuccess: (res: any) => {
+      if (res?.success) {
+        toast.success(res.message || "Table created successfully");
+        queryClient.invalidateQueries({ queryKey: ["tables"] });
         setIsCreateOpen(false);
         setNewTableName("");
         setNewTableCapacity(4);
-        queryClient.invalidateQueries({ queryKey: ["tables"] });
       } else {
-        toast.error("Failed to create table");
+        toast.error(res?.error || "Failed to create table");
       }
     },
+    onError: (e: any) => toast.error(e?.message || "Failed to create table"),
   });
 
   const updateStatus = useMutation({
-    mutationFn: (data: { id: string; status: "available" | "occupied" | "reserved" }) =>
-      updateTableStatusFn({ data }),
-    onSuccess: (res) => {
-      if (res.success) {
-        toast.success("Table status updated");
+    mutationFn: ({ id, status }: { id: string; status: any }) =>
+      updateTableStatusFn({ data: { id, status } }),
+    onSuccess: (res: any) => {
+      if (res?.success) {
+        toast.success(res.message || "Status updated");
         queryClient.invalidateQueries({ queryKey: ["tables"] });
       } else {
-        toast.error("Failed to update status");
+        toast.error(res?.error || "Failed to update status");
       }
     },
+    onError: (e: any) => toast.error(e?.message || "Failed to update status"),
   });
 
   const deleteTable = useMutation({
     mutationFn: (id: string) => deleteTableFn({ data: { id } }),
     onSuccess: (res: any) => {
       if (res?.success) {
-        toast.success(res.message || "Table removed");
+        toast.success(res.message || "Table deleted");
         queryClient.invalidateQueries({ queryKey: ["tables"] });
         setDeleteId(null);
       } else {
-        toast.error(res?.error || "Failed to remove table");
+        toast.error(res?.error || "Failed to delete table");
       }
     },
-    onError: (e: any) => toast.error(e?.message || "Failed to remove table"),
+    onError: (e: any) => toast.error(e?.message || "Failed to delete table"),
   });
 
   const handleCreate = () => {
-    if (!newTableName.trim()) {
-      toast.error("Table name / number is required");
-      return;
-    }
-    createTable.mutate({ name: newTableName.trim(), capacity: newTableCapacity });
+    if (!newTableName.trim()) return;
+    createTable.mutate({
+      name: newTableName.trim(),
+      capacity: Number(newTableCapacity),
+    });
   };
 
   return (
-    <div className="space-y-6">
-      <DataPage
-        title={t("tablesAndFloorPlan", "Restaurant Floor Plan & Tables")}
-        description={t("tablesFloorPlanDesc", "Real-time table seating capacity, dine-in status, and reservations.")}
-        primaryAction={{ label: t("addTable", "Add Table"), onClick: () => setIsCreateOpen(true) }}
-        searchPlaceholder={t("searchTablesPlaceholder", "Search tables...")}
-        searchValue={search}
-        onSearchChange={setSearch}
-        hideToolbar={false}
-        onResetFilters={handleResetFilters}
-        activeFilterCount={activeFilterCount}
-        filtersContent={({ close }) => (
-          <div className="space-y-4 flex flex-col h-full min-h-[40vh]">
-            <div className="flex-1 space-y-4">
-              <div className="space-y-2">
-                <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                  {t("status", "Status")}
-                </Label>
-                <SearchableSelect
-                  options={[
-                    { value: "", label: t("allTables", "All Tables") },
-                    ...TABLE_STATUSES.map((s) => ({ value: s.value, label: s.label })),
-                  ]}
-                  value={draftFilters.status}
-                  onChange={(val) => setDraftFilters((prev) => ({ ...prev, status: val }))}
-                  placeholder={t("filterByStatus", "Filter by Status")}
-                />
-              </div>
-            </div>
-            <div className="pt-4 mt-auto">
-              <Button
-                className="w-full font-bold shadow-soft"
-                onClick={() => {
-                  setFilters(draftFilters);
-                  close();
-                }}
-              >
-                {t("applyFilters", "Apply Filters")}
-              </Button>
-            </div>
-          </div>
+    <div className="page-container space-y-6">
+      <PageHeader
+        title={t("restaurantTablesRooms", "Restaurant Floor Tables & Hotel Rooms")}
+        description={t(
+          "restaurantTablesRoomsDesc",
+          "Live floor plan status, occupancy tracking, and itemized hotel room folio check-in/out.",
         )}
-        topContent={
-          <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
-            <div className="rounded-xl border border-border/80 bg-card p-4 sm:p-5 shadow-soft transition-all hover:border-primary/40">
-              <div className="flex items-center justify-between">
-                <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                  {t("totalTables", "Total Tables")}
-                </p>
-                <div className="grid size-8 place-items-center rounded-lg bg-primary/10 text-primary">
-                  <Utensils className="size-4" />
-                </div>
-              </div>
-              <p className="mt-2 text-xl sm:text-2xl font-black text-foreground">
-                {metrics.total}{" "}
-                <span className="text-xs font-normal text-muted-foreground">
-                  ({metrics.totalCapacity} {t("seats", "seats")})
-                </span>
-              </p>
-            </div>
-
-            <div className="rounded-xl border border-border/80 bg-card p-4 sm:p-5 shadow-soft transition-all hover:border-success/40">
-              <div className="flex items-center justify-between">
-                <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                  {t("availableFree", "Available (Free)")}
-                </p>
-                <div className="grid size-8 place-items-center rounded-lg bg-success/15 text-success">
-                  <CheckCircle2 className="size-4" />
-                </div>
-              </div>
-              <p className="mt-2 text-xl sm:text-2xl font-black text-success">
-                {metrics.available}
-              </p>
-            </div>
-
-            <div className="rounded-xl border border-border/80 bg-card p-4 sm:p-5 shadow-soft transition-all hover:border-rose-500/40">
-              <div className="flex items-center justify-between">
-                <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                  {t("occupiedDining", "Occupied (Dining)")}
-                </p>
-                <div className="grid size-8 place-items-center rounded-lg bg-rose-500/10 text-rose-600 dark:text-rose-400">
-                  <Users className="size-4" />
-                </div>
-              </div>
-              <p className="mt-2 text-xl sm:text-2xl font-black text-rose-600 dark:text-rose-400">
-                {metrics.occupied}
-              </p>
-            </div>
-
-            <div className="rounded-xl border border-border/80 bg-card p-4 sm:p-5 shadow-soft transition-all hover:border-amber-500/40">
-              <div className="flex items-center justify-between">
-                <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                  {t("reserved", "Reserved")}
-                </p>
-                <div className="grid size-8 place-items-center rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400">
-                  <Clock className="size-4" />
-                </div>
-              </div>
-              <p className="mt-2 text-xl sm:text-2xl font-black text-amber-600 dark:text-amber-400">
-                {metrics.reserved}
-              </p>
-            </div>
-          </div>
+        actions={
+          <Button size="sm" onClick={() => setIsCreateOpen(true)} className="shadow-soft">
+            <Plus className="size-4 mr-1.5" />
+            {t("addTable", "Add Table")}
+          </Button>
         }
-      >
-        <div className="space-y-6">
-          {/* Tables Grid Layout */}
-          {isLoading ? (
-            <CardGridSkeleton cards={8} columns="grid-cols-1 sm:grid-cols-2 lg:grid-cols-4" />
-          ) : isError ? (
-            <ErrorState onRetry={refetch} />
-          ) : filteredTables.length === 0 ? (
-            <div className="rounded-xl border border-border bg-card shadow-soft p-12 text-center">
-              <EmptyState
-                icon={Utensils}
-                title={t("noTablesFound", "No tables found")}
-                description={
-                  search
-                    ? t("noTablesMatchedSearch", "No tables matched your search query.")
-                    : t("addFirstDiningTable", "Add your first dining table to manage floor seating.")
-                }
-                actionLabel={t("addTable", "Add Table")}
-                onAction={() => setIsCreateOpen(true)}
-                className="border-none bg-transparent my-0 py-4 shadow-none"
-              />
-            </div>
-          ) : (
-            <div className="grid gap-4 sm:gap-5 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-              {filteredTables.map((table: any) => {
-                const isOccupied = table.status === "occupied";
-                const isReserved = table.status === "reserved";
+      />
 
-                return (
-                  <div
-                    key={table.id}
-                    className={`relative rounded-2xl border p-5 shadow-soft flex flex-col justify-between transition-all duration-300 group ${
-                      isOccupied
-                        ? "border-rose-500/30 bg-rose-500/5 dark:bg-rose-950/20"
-                        : isReserved
-                          ? "border-amber-500/30 bg-amber-500/5 dark:bg-amber-950/20"
-                          : "border-border/80 bg-card hover:border-primary/40 hover:-translate-y-0.5"
-                    }`}
-                  >
-                    <div>
-                      <div className="flex justify-between items-start mb-3">
-                        <div className="flex items-center gap-2.5">
-                          <div
-                            className={`grid size-10 place-items-center rounded-xl font-black text-sm border ${
-                              isOccupied
-                                ? "bg-rose-500/15 text-rose-500 border-rose-500/30"
-                                : isReserved
-                                  ? "bg-amber-500/15 text-amber-500 border-amber-500/30"
-                                  : "bg-emerald-500/15 text-emerald-500 border-emerald-500/30"
-                            }`}
-                          >
-                            {table.name.replace(/[^0-9]/g, "") || "T"}
-                          </div>
-                          <div>
-                            <h3 className="font-bold text-base text-foreground group-hover:text-primary transition-colors">
-                              {table.name}
-                            </h3>
-                            <span className="text-xs text-muted-foreground font-medium flex items-center gap-1 mt-0.5">
-                              <Users className="size-3" /> {t("seats", "Seats")}: {table.capacity}
-                            </span>
-                          </div>
-                        </div>
+      {/* KPI Stats Strip */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <StatCard
+          label={t("totalCapacity", "Total Tables")}
+          value={String(metrics.total)}
+          icon={Utensils}
+          accent="primary"
+        />
+        <StatCard
+          label={t("availableFree", "Available (Free)")}
+          value={String(metrics.available)}
+          icon={CheckCircle2}
+          accent="success"
+        />
+        <StatCard
+          label={t("occupiedDining", "Occupied (Dining)")}
+          value={String(metrics.occupied)}
+          icon={Users}
+          accent="destructive"
+        />
+        <StatCard
+          label={t("reserved", "Reserved")}
+          value={String(metrics.reserved)}
+          icon={Clock}
+          accent="warning"
+        />
+      </div>
 
-                        <Badge
-                          variant="outline"
-                          className={`text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full ${
-                            isOccupied
-                              ? "bg-rose-500/15 text-rose-500 border-rose-500/25"
-                              : isReserved
-                                ? "bg-amber-500/15 text-amber-500 border-amber-500/25"
-                                : "bg-emerald-500/15 text-emerald-500 border-emerald-500/25"
-                          }`}
-                        >
-                          {t(table.status, table.status)}
-                        </Badge>
+      {/* Toolbar */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="relative w-full sm:w-80">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+          <Input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder={t("searchTablesPlaceholder", "Search tables by name...")}
+            className="pl-9 h-9"
+          />
+          {search && (
+            <button
+              onClick={() => setSearch("")}
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+            >
+              <X className="size-3.5" />
+            </button>
+          )}
+        </div>
+
+        <div className="flex items-center gap-2 self-end sm:self-auto">
+          {activeFilterCount > 0 && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleResetFilters}
+              className="h-9 px-2.5 text-xs text-muted-foreground hover:text-foreground"
+            >
+              <X className="size-3.5 mr-1" />
+              {t("clearFilters", "Clear")}
+            </Button>
+          )}
+
+          <Sheet open={filterDrawerOpen} onOpenChange={setFilterDrawerOpen}>
+            <SheetTrigger asChild>
+              <Button variant="outline" size="sm" className="h-9 relative">
+                <Filter className="size-3.5 mr-1.5" />
+                {t("filters", "Filters")}
+                {activeFilterCount > 0 && (
+                  <Badge className="ml-1.5 size-5 p-0 flex items-center justify-center text-[10px] rounded-full bg-primary text-primary-foreground">
+                    {activeFilterCount}
+                  </Badge>
+                )}
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="right" className="w-full sm:max-w-md p-0 flex flex-col h-full">
+              <SheetHeader className="p-5 border-b pr-12 text-left shrink-0">
+                <SheetTitle className="text-lg font-bold">{t("filterTables", "Filter Tables")}</SheetTitle>
+              </SheetHeader>
+              <div className="flex-1 overflow-y-auto p-5 space-y-4">
+                <div className="space-y-2">
+                  <Label>{t("status", "Status")}</Label>
+                  <SearchableSelect
+                    options={[
+                      { value: "", label: t("allTables", "All Tables") },
+                      ...TABLE_STATUSES.map((s) => ({ value: s.value, label: s.label })),
+                    ]}
+                    value={draftFilters.status}
+                    onChange={(val) => setDraftFilters((prev) => ({ ...prev, status: val }))}
+                    placeholder={t("filterByStatus", "Filter by Status")}
+                  />
+                </div>
+              </div>
+              <div className="border-t p-4 flex gap-2">
+                <Button
+                  variant="outline"
+                  className="flex-1 font-bold text-xs"
+                  onClick={handleResetFilters}
+                >
+                  {t("reset", "Reset")}
+                </Button>
+                <Button
+                  className="flex-1 font-bold text-xs"
+                  onClick={() => {
+                    setFilters(draftFilters);
+                    setFilterDrawerOpen(false);
+                  }}
+                >
+                  {t("applyFilters", "Apply Filters")}
+                </Button>
+              </div>
+            </SheetContent>
+          </Sheet>
+        </div>
+      </div>
+
+      {/* Main Grid View */}
+      {isLoading ? (
+        <CardGridSkeleton cards={8} columns="grid-cols-1 sm:grid-cols-2 lg:grid-cols-4" />
+      ) : isError ? (
+        <ErrorState onRetry={refetch} />
+      ) : filteredTables.length === 0 ? (
+        <div className="rounded-xl border border-border bg-card shadow-soft p-12 text-center">
+          <EmptyState
+            icon={Utensils}
+            title={t("noTablesFound", "No tables found")}
+            description={
+              search
+                ? t("noTablesMatchedSearch", "No tables matched your search query.")
+                : t("addFirstDiningTable", "Add your first dining table to manage floor seating.")
+            }
+            actionLabel={t("addTable", "Add Table")}
+            onAction={() => setIsCreateOpen(true)}
+            className="border-none bg-transparent my-0 py-4 shadow-none"
+          />
+        </div>
+      ) : (
+        <div className="grid gap-4 sm:gap-5 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          {filteredTables.map((table: any) => {
+            const isOccupied = table.status === "occupied";
+            const isReserved = table.status === "reserved";
+
+            return (
+              <div
+                key={table.id}
+                className={`relative rounded-2xl border p-5 shadow-soft flex flex-col justify-between transition-all duration-300 group ${
+                  isOccupied
+                    ? "border-rose-500/30 bg-rose-500/5 dark:bg-rose-950/20"
+                    : isReserved
+                      ? "border-amber-500/30 bg-amber-500/5 dark:bg-amber-950/20"
+                      : "border-border/80 bg-card hover:border-primary/40 hover:-translate-y-0.5"
+                }`}
+              >
+                <div>
+                  <div className="flex justify-between items-start mb-3">
+                    <div className="flex items-center gap-2.5">
+                      <div
+                        className={`grid size-10 place-items-center rounded-xl font-black text-sm border ${
+                          isOccupied
+                            ? "bg-rose-500/15 text-rose-500 border-rose-500/30"
+                            : isReserved
+                              ? "bg-amber-500/15 text-amber-500 border-amber-500/30"
+                              : "bg-emerald-500/15 text-emerald-500 border-emerald-500/30"
+                        }`}
+                      >
+                        {table.name.replace(/[^0-9]/g, "") || "T"}
+                      </div>
+                      <div>
+                        <h3 className="font-bold text-base text-foreground group-hover:text-primary transition-colors">
+                          {table.name}
+                        </h3>
+                        <span className="text-xs text-muted-foreground font-medium flex items-center gap-1 mt-0.5">
+                          <Users className="size-3" /> {t("seats", "Seats")}: {table.capacity}
+                        </span>
                       </div>
                     </div>
 
-                    <div className="mt-5 pt-3 border-t border-border/60 flex items-center gap-2">
-                      <Select
-                        value={table.status}
-                        onValueChange={(val: any) =>
-                          updateStatus.mutate({ id: table.id, status: val })
-                        }
-                        disabled={updateStatus.isPending}
-                      >
-                        <SelectTrigger className="h-9 text-xs flex-1 bg-background/80 rounded-xl font-bold">
-                          <SelectValue placeholder={t("changeStatus", "Change Status")} />
-                        </SelectTrigger>
-                        <SelectContent className="rounded-xl">
-                          <SelectItem
-                            value="available"
-                            className="text-xs font-bold text-emerald-500"
-                          >
-                            {t("availableFree", "Available (Free)")}
-                          </SelectItem>
-                          <SelectItem value="occupied" className="text-xs font-bold text-rose-500">
-                            {t("occupiedDining", "Occupied (Guest / Dining)")}
-                          </SelectItem>
-                          <SelectItem value="reserved" className="text-xs font-bold text-amber-500">
-                            {t("reserved", "Reserved")}
-                          </SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="h-9 px-2.5 rounded-xl text-xs font-bold gap-1 text-primary border-primary/30 hover:bg-primary/10"
-                        onClick={() => {
-                          setSelectedRoomForFolio(table);
-                          setGuestName(table.status === "occupied" ? "In-House Guest" : "");
-                          setGuestPhone("");
-                          setGuestNights(1);
-                          setGuestRoomRate(120);
-                          setGuestRoomServiceAmt(table.status === "occupied" ? 45.5 : 0);
-                        }}
-                        title={t("roomFolioAndGuestDetails", "Room Folio & Guest Details")}
-                      >
-                        <Receipt className="size-3.5" />
-                        <span className="hidden sm:inline">{t("folio", "Folio")}</span>
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="size-9 rounded-xl text-destructive hover:bg-destructive/10 shrink-0"
-                        onClick={() => setDeleteId(table.id)}
-                        title={t("deleteTable", "Delete Table")}
-                      >
-                        <Trash2 className="size-4" />
-                      </Button>
-                    </div>
+                    <Badge
+                      variant="outline"
+                      className={`text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full ${
+                        isOccupied
+                          ? "bg-rose-500/15 text-rose-500 border-rose-500/25"
+                          : isReserved
+                            ? "bg-amber-500/15 text-amber-500 border-amber-500/25"
+                            : "bg-emerald-500/15 text-emerald-500 border-emerald-500/25"
+                      }`}
+                    >
+                      {t(table.status, table.status)}
+                    </Badge>
                   </div>
-                );
-              })}
-            </div>
-          )}
+                </div>
+
+                <div className="mt-5 pt-3 border-t border-border/60 flex items-center gap-2">
+                  <Select
+                    value={table.status}
+                    onValueChange={(val: any) =>
+                      updateStatus.mutate({ id: table.id, status: val })
+                    }
+                    disabled={updateStatus.isPending}
+                  >
+                    <SelectTrigger className="h-9 text-xs flex-1 bg-background/80 rounded-xl font-bold">
+                      <SelectValue placeholder={t("changeStatus", "Change Status")} />
+                    </SelectTrigger>
+                    <SelectContent className="rounded-xl">
+                      <SelectItem
+                        value="available"
+                        className="text-xs font-bold text-emerald-500"
+                      >
+                        {t("availableFree", "Available (Free)")}
+                      </SelectItem>
+                      <SelectItem value="occupied" className="text-xs font-bold text-rose-500">
+                        {t("occupiedDining", "Occupied (Guest / Dining)")}
+                      </SelectItem>
+                      <SelectItem value="reserved" className="text-xs font-bold text-amber-500">
+                        {t("reserved", "Reserved")}
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-9 px-2.5 rounded-xl text-xs font-bold gap-1 text-primary border-primary/30 hover:bg-primary/10"
+                    onClick={() => {
+                      setSelectedRoomForFolio(table);
+                      setGuestName(table.status === "occupied" ? "In-House Guest" : "");
+                      setGuestPhone("");
+                      setGuestNights(1);
+                      setGuestRoomRate(120);
+                      setGuestRoomServiceAmt(table.status === "occupied" ? 45.5 : 0);
+                    }}
+                    title={t("roomFolioAndGuestDetails", "Room Folio & Guest Details")}
+                  >
+                    <Receipt className="size-3.5" />
+                    <span className="hidden sm:inline">{t("folio", "Folio")}</span>
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="size-9 rounded-xl text-destructive hover:bg-destructive/10 shrink-0"
+                    onClick={() => setDeleteId(table.id)}
+                    title={t("deleteTable", "Delete Table")}
+                  >
+                    <Trash2 className="size-4" />
+                  </Button>
+                </div>
+              </div>
+            );
+          })}
         </div>
-      </DataPage>
+      )}
 
       {/* Add Table Drawer */}
       <Sheet open={isCreateOpen} onOpenChange={setIsCreateOpen}>
@@ -500,7 +524,7 @@ function TablesPage() {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* 🏨 Hotel Room Folio & Check-In / Check-Out Management */}
+      {/* Hotel Room Folio & Check-In / Check-Out Management */}
       <Dialog
         open={!!selectedRoomForFolio}
         onOpenChange={(open) => !open && setSelectedRoomForFolio(null)}
@@ -534,7 +558,6 @@ function TablesPage() {
 
           <div className="p-5 space-y-4 max-h-[65vh] overflow-y-auto">
             {selectedRoomForFolio?.status === "occupied" ? (
-              /* Occupied Room Folio Breakdown */
               <div className="space-y-4">
                 <div className="rounded-2xl border border-border/80 bg-muted/20 p-4 space-y-3">
                   <div className="flex items-center justify-between border-b border-border/60 pb-2.5">
@@ -580,7 +603,6 @@ function TablesPage() {
                   </div>
                 </div>
 
-                {/* Folio Financial Ledger */}
                 <div className="rounded-2xl border border-border/80 bg-card p-4 space-y-2.5 text-xs">
                   <span className="text-xs font-bold text-foreground block border-b border-border/60 pb-2">
                     {t("itemizedFolioBreakdown", "Itemized Room Folio Breakdown")}
@@ -612,7 +634,6 @@ function TablesPage() {
                 </div>
               </div>
             ) : (
-              /* Vacant Room Guest Check-In Form */
               <div className="space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div className="space-y-1.5">

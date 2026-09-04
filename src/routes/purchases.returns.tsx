@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { DataPage } from "@/components/layout/DataPage";
 import { appName } from "@/lib/env";
+import { PageHeader } from "@/components/layout/PageHeader";
+import { StatCard } from "@/components/layout/StatCard";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,9 +16,7 @@ import {
 } from "@/components/ui/table";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { PaginationControls } from "@/components/ui/pagination-controls";
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { TableSkeleton } from "@/components/skeletons/TableSkeleton";
-import { ErrorState } from "@/components/ui/error-state";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { RETURN_STATUSES } from "@/constants";
 import { EmptyState } from "@/components/ui/empty-state";
 import {
@@ -46,7 +45,9 @@ import {
   Package,
   Clock,
   CheckCircle2,
-  Eye,
+  Search,
+  Filter,
+  X,
 } from "lucide-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -110,6 +111,7 @@ function PurchaseReturnsPage() {
 
   const [filters, setFilters] = useState({ status: "" });
   const [draftFilters, setDraftFilters] = useState({ status: "" });
+  const [filterDrawerOpen, setFilterDrawerOpen] = useState(false);
   const activeFilterCount = filters.status ? 1 : 0;
 
   const handleResetFilters = () => {
@@ -254,248 +256,292 @@ function PurchaseReturnsPage() {
   };
 
   return (
-    <>
-      <DataPage
+    <div className="page-container space-y-6">
+      <PageHeader
         title={t("purchaseReturnsTitle", "Purchase Returns (Debit Notes)")}
         description={t("purchaseReturnsDesc", "Record damaged, defective, or excess stock returned back to vendors.")}
-        primaryAction={{
-          label: t("createReturn", "Create Return"),
-          onClick: () => {
-            setReturnItems([{ productId: "", productName: "", quantity: 1, cost: 0, total: 0 }]);
-            setIsAddOpen(true);
-          },
-          icon: Plus,
-        }}
-        searchPlaceholder={t("searchReturnsPlaceholder", "Search by return ref, supplier, or reason...")}
-        searchValue={search}
-        onSearchChange={setSearch}
-        hideToolbar={false}
-        onResetFilters={handleResetFilters}
-        activeFilterCount={activeFilterCount}
-        filtersContent={({ close }) => (
-          <div className="space-y-4 flex flex-col h-full min-h-[50vh]">
-            <div className="flex-1 space-y-4">
-              <div className="space-y-2">
-                <Label>{t("status", "Status")}</Label>
-                <SearchableSelect
-                  options={[
-                    { value: "", label: t("allStatuses", "All Statuses") },
-                    ...RETURN_STATUSES.map((s) => ({ value: s.value, label: s.label })),
-                  ]}
-                  value={draftFilters.status}
-                  onChange={(val) => setDraftFilters((prev) => ({ ...prev, status: val }))}
-                  placeholder={t("filterByStatus", "Filter by Status")}
-                />
+        actions={
+          <Button
+            size="sm"
+            onClick={() => {
+              setReturnItems([{ productId: "", productName: "", quantity: 1, cost: 0, total: 0 }]);
+              setIsAddOpen(true);
+            }}
+            className="shadow-soft"
+          >
+            <Plus className="size-4 mr-1.5" />
+            {t("createReturn", "Create Return")}
+          </Button>
+        }
+      />
+
+      {/* KPI Stats */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <StatCard
+          label={t("totalReturns", "Total Returns")}
+          value={String(metrics.totalReturns)}
+          icon={RotateCcw}
+          accent="primary"
+        />
+        <StatCard
+          label={t("returnedValue", "Returned Value")}
+          value={formatCurrency(metrics.totalValue)}
+          icon={DollarSign}
+          accent="info"
+        />
+        <StatCard
+          label={t("stockRestored", "Stock Restored")}
+          value={String(metrics.processedCount)}
+          icon={CheckCircle2}
+          accent="success"
+        />
+        <StatCard
+          label={t("pendingAdjustments", "Pending Adjustments")}
+          value={String(metrics.pendingCount)}
+          icon={Clock}
+          accent="warning"
+        />
+      </div>
+
+      {/* Toolbar */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="relative w-full sm:w-80">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+          <Input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder={t("searchReturnsPlaceholder", "Search by return ref, supplier, or reason...")}
+            className="pl-9 h-9"
+          />
+          {search && (
+            <button
+              onClick={() => setSearch("")}
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+            >
+              <X className="size-3.5" />
+            </button>
+          )}
+        </div>
+
+        <div className="flex items-center gap-2 self-end sm:self-auto">
+          {activeFilterCount > 0 && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleResetFilters}
+              className="h-9 px-2.5 text-xs text-muted-foreground hover:text-foreground"
+            >
+              <X className="size-3.5 mr-1" />
+              {t("clearFilters", "Clear")}
+            </Button>
+          )}
+
+          <Sheet open={filterDrawerOpen} onOpenChange={setFilterDrawerOpen}>
+            <SheetTrigger asChild>
+              <Button variant="outline" size="sm" className="h-9 relative">
+                <Filter className="size-3.5 mr-1.5" />
+                {t("filters", "Filters")}
+                {activeFilterCount > 0 && (
+                  <Badge className="ml-1.5 size-5 p-0 flex items-center justify-center text-[10px] rounded-full bg-primary text-primary-foreground">
+                    {activeFilterCount}
+                  </Badge>
+                )}
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="right" className="w-full sm:max-w-md p-0 flex flex-col h-full">
+              <SheetHeader className="p-5 border-b pr-12 text-left shrink-0">
+                <SheetTitle className="text-lg font-bold">{t("filterReturns", "Filter Returns")}</SheetTitle>
+              </SheetHeader>
+              <div className="flex-1 overflow-y-auto p-5 space-y-4">
+                <div className="space-y-2">
+                  <Label>{t("status", "Status")}</Label>
+                  <SearchableSelect
+                    options={[
+                      { value: "", label: t("allStatuses", "All Statuses") },
+                      ...RETURN_STATUSES.map((s) => ({ value: s.value, label: s.label })),
+                    ]}
+                    value={draftFilters.status}
+                    onChange={(val) => setDraftFilters((prev) => ({ ...prev, status: val }))}
+                    placeholder={t("filterByStatus", "Filter by Status")}
+                  />
+                </div>
+              </div>
+              <div className="border-t p-4 flex gap-2">
+                <Button
+                  variant="outline"
+                  className="flex-1 font-bold text-xs"
+                  onClick={handleResetFilters}
+                >
+                  {t("reset", "Reset")}
+                </Button>
+                <Button
+                  className="flex-1 font-bold text-xs"
+                  onClick={() => {
+                    setFilters(draftFilters);
+                    setFilterDrawerOpen(false);
+                  }}
+                >
+                  {t("applyFilters", "Apply Filters")}
+                </Button>
+              </div>
+            </SheetContent>
+          </Sheet>
+        </div>
+      </div>
+
+      {/* Main Table / Mobile View */}
+      <div className="overflow-hidden rounded-xl border border-border/80 bg-card shadow-soft">
+        <div className="table-desktop overflow-x-auto">
+          <Table className="min-w-[750px]">
+            <TableHeader className="bg-muted/40">
+              <TableRow>
+                <TableHead className="font-bold text-xs uppercase tracking-wider">
+                  {t("debitNoteRef", "Debit Note Ref")}
+                </TableHead>
+                <TableHead className="font-bold text-xs uppercase tracking-wider">
+                  {t("supplier", "Supplier")}
+                </TableHead>
+                <TableHead className="font-bold text-xs uppercase tracking-wider">
+                  {t("returnDate", "Return Date")}
+                </TableHead>
+                <TableHead className="font-bold text-xs uppercase tracking-wider">
+                  {t("reason", "Reason")}
+                </TableHead>
+                <TableHead className="font-bold text-xs uppercase tracking-wider">
+                  {t("status", "Status")}
+                </TableHead>
+                <TableHead className="font-bold text-xs uppercase tracking-wider text-right">
+                  {t("totalCredit", "Total Credit")}
+                </TableHead>
+                <TableHead className="font-bold text-xs uppercase tracking-wider text-right">
+                  {t("actions", "Actions")}
+                </TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody className="divide-y divide-border/60">
+              {paginatedReturns.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={7} className="h-64 text-center">
+                    <EmptyState
+                      icon={RotateCcw}
+                      title={t("noPurchaseReturnsFound", "No purchase returns found")}
+                      description={
+                        search
+                          ? t("tryAdjustingSearchQuery", "Try adjusting your search query.")
+                          : t("noReturnsRecordedYet", "No purchase returns or debit notes recorded yet.")
+                      }
+                      actionLabel={t("createReturn", "Create Return")}
+                      onAction={() => {
+                        setReturnItems([
+                          { productId: "", productName: "", quantity: 1, cost: 0, total: 0 },
+                        ]);
+                        setIsAddOpen(true);
+                      }}
+                      className="border-none bg-transparent my-0 py-8 shadow-none"
+                    />
+                  </TableCell>
+                </TableRow>
+              ) : (
+                paginatedReturns.map((r: any) => (
+                  <TableRow key={r.id} className="hover:bg-muted/30 transition-colors">
+                    <TableCell className="font-mono text-xs font-bold text-primary">
+                      {r.ref}
+                    </TableCell>
+                    <TableCell className="font-semibold text-sm text-foreground">
+                      {r.supplier}
+                    </TableCell>
+                    <TableCell className="text-muted-foreground text-xs font-medium">
+                      {formatDate(r.date)}
+                    </TableCell>
+                    <TableCell className="text-xs text-muted-foreground max-w-[200px] truncate">
+                      {r.reason}
+                    </TableCell>
+                    <TableCell>
+                      <Badge
+                        variant="outline"
+                        className={cn(
+                          "text-[10px] font-black uppercase tracking-wider",
+                          r.status === "processed"
+                            ? "bg-success/15 text-success border-success/30"
+                            : "bg-warning/15 text-warning border-warning/30",
+                        )}
+                      >
+                        {t(r.status, r.status)}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-right font-black text-foreground text-sm">
+                      {formatCurrency(Number(r.total) || 0)}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" className="size-8 rounded-lg">
+                            <MoreVertical className="size-4 text-muted-foreground" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="rounded-xl w-36">
+                          <DropdownMenuItem
+                            onClick={() => setDeleteId(r.id)}
+                            className="text-xs font-semibold text-destructive focus:text-destructive"
+                          >
+                            <Trash2 className="size-3.5 mr-2" /> {t("deleteRecord", "Delete Record")}
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </div>
+
+        {/* Mobile Cards */}
+        <div className="table-mobile-cards p-3 space-y-2.5">
+          {paginatedReturns.map((r: any) => (
+            <div
+              key={r.id}
+              className="flex items-center justify-between rounded-xl border border-border/80 bg-card p-3 shadow-soft"
+            >
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2">
+                  <span className="font-mono text-xs font-bold text-primary">{r.ref}</span>
+                  <span className="text-[10px] text-muted-foreground">
+                    {formatDate(r.date)}
+                  </span>
+                </div>
+                <div className="font-bold text-xs sm:text-sm text-foreground mt-0.5 truncate">
+                  {r.supplier}
+                </div>
+                <div className="text-[11px] text-muted-foreground truncate mt-0.5">
+                  {r.reason}
+                </div>
+              </div>
+              <div className="text-right shrink-0 pl-2">
+                <div className="text-sm font-black text-foreground">
+                  {formatCurrency(Number(r.total) || 0)}
+                </div>
+                <Badge className="text-[9px] font-bold mt-1 bg-success/15 text-success border-success/30">
+                  {t(r.status, r.status)}
+                </Badge>
               </div>
             </div>
-            <div className="pt-4 mt-auto">
-              <Button
-                className="w-full font-bold text-xs"
-                onClick={() => {
-                  setFilters(draftFilters);
-                  close();
-                }}
-              >
-                {t("applyFilters", "Apply Filters")}
-              </Button>
-            </div>
+          ))}
+        </div>
+
+        {filteredReturns.length > 0 && (
+          <div className="border-t border-border/60 p-3">
+            <PaginationControls
+              currentPage={page}
+              totalPages={totalPages}
+              pageSize={pageSize}
+              totalItems={filteredReturns.length}
+              onPageChange={setPage}
+              onPageSizeChange={setPageSize}
+            />
           </div>
         )}
-        topContent={
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
-            <div className="rounded-xl border border-border/80 bg-card p-4 shadow-soft flex flex-col gap-1 card-interactive">
-              <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
-                {t("totalReturns", "Total Returns")}
-              </span>
-              <span className="text-xl sm:text-2xl font-black text-foreground">
-                {metrics.totalReturns}
-              </span>
-            </div>
-
-            <div className="rounded-xl border border-border/80 bg-card p-4 shadow-soft flex flex-col gap-1 card-interactive">
-              <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
-                {t("returnedValue", "Returned Value")}
-              </span>
-              <span className="text-xl sm:text-2xl font-black text-info">
-                {formatCurrency(metrics.totalValue)}
-              </span>
-            </div>
-
-            <div className="rounded-xl border border-border/80 bg-card p-4 shadow-soft flex flex-col gap-1 card-interactive">
-              <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
-                {t("stockRestored", "Stock Restored")}
-              </span>
-              <span className="text-xl sm:text-2xl font-black text-success">
-                {metrics.processedCount}
-              </span>
-            </div>
-
-            <div className="rounded-xl border border-border/80 bg-card p-4 shadow-soft flex flex-col gap-1 card-interactive">
-              <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
-                {t("pendingAdjustments", "Pending Adjustments")}
-              </span>
-              <span className="text-xl sm:text-2xl font-black text-warning">
-                {metrics.pendingCount}
-              </span>
-            </div>
-          </div>
-        }
-      >
-        <div className="space-y-4">
-          <div className="overflow-hidden rounded-xl border border-border/80 bg-card shadow-soft">
-            <div className="table-desktop overflow-x-auto">
-              <Table className="min-w-[750px]">
-                <TableHeader className="bg-muted/40">
-                  <TableRow>
-                    <TableHead className="font-bold text-xs uppercase tracking-wider">
-                      {t("debitNoteRef", "Debit Note Ref")}
-                    </TableHead>
-                    <TableHead className="font-bold text-xs uppercase tracking-wider">
-                      {t("supplier", "Supplier")}
-                    </TableHead>
-                    <TableHead className="font-bold text-xs uppercase tracking-wider">
-                      {t("returnDate", "Return Date")}
-                    </TableHead>
-                    <TableHead className="font-bold text-xs uppercase tracking-wider">
-                      {t("reason", "Reason")}
-                    </TableHead>
-                    <TableHead className="font-bold text-xs uppercase tracking-wider">
-                      {t("status", "Status")}
-                    </TableHead>
-                    <TableHead className="font-bold text-xs uppercase tracking-wider text-right">
-                      {t("totalCredit", "Total Credit")}
-                    </TableHead>
-                    <TableHead className="font-bold text-xs uppercase tracking-wider text-right">
-                      {t("actions", "Actions")}
-                    </TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody className="divide-y divide-border/60">
-                  {paginatedReturns.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={7} className="h-64 text-center">
-                        <EmptyState
-                          icon={RotateCcw}
-                          title={t("noPurchaseReturnsFound", "No purchase returns found")}
-                          description={
-                            search
-                              ? t("tryAdjustingSearchQuery", "Try adjusting your search query.")
-                              : t("noReturnsRecordedYet", "No purchase returns or debit notes recorded yet.")
-                          }
-                          actionLabel={t("createReturn", "Create Return")}
-                          onAction={() => {
-                            setReturnItems([
-                              { productId: "", productName: "", quantity: 1, cost: 0, total: 0 },
-                            ]);
-                            setIsAddOpen(true);
-                          }}
-                          className="border-none bg-transparent my-0 py-8 shadow-none"
-                        />
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    paginatedReturns.map((r: any) => (
-                      <TableRow key={r.id} className="hover:bg-muted/30 transition-colors">
-                        <TableCell className="font-mono text-xs font-bold text-primary">
-                          {r.ref}
-                        </TableCell>
-                        <TableCell className="font-semibold text-sm text-foreground">
-                          {r.supplier}
-                        </TableCell>
-                        <TableCell className="text-muted-foreground text-xs font-medium">
-                          {formatDate(r.date)}
-                        </TableCell>
-                        <TableCell className="text-xs text-muted-foreground max-w-[200px] truncate">
-                          {r.reason}
-                        </TableCell>
-                        <TableCell>
-                          <Badge
-                            variant="outline"
-                            className={cn(
-                              "text-[10px] font-black uppercase tracking-wider",
-                              r.status === "processed"
-                                ? "bg-success/15 text-success border-success/30"
-                                : "bg-warning/15 text-warning border-warning/30",
-                            )}
-                          >
-                            {t(r.status, r.status)}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-right font-black text-foreground text-sm">
-                          {formatCurrency(Number(r.total) || 0)}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="icon" className="size-8 rounded-lg">
-                                <MoreVertical className="size-4 text-muted-foreground" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="rounded-xl w-36">
-                              <DropdownMenuItem
-                                onClick={() => setDeleteId(r.id)}
-                                className="text-xs font-semibold text-destructive focus:text-destructive"
-                              >
-                                <Trash2 className="size-3.5 mr-2" /> {t("deleteRecord", "Delete Record")}
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
-            </div>
-
-            {/* Mobile Cards */}
-            <div className="table-mobile-cards p-3 space-y-2.5">
-              {paginatedReturns.map((r: any) => (
-                <div
-                  key={r.id}
-                  className="flex items-center justify-between rounded-xl border border-border/80 bg-card p-3 shadow-soft"
-                >
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2">
-                      <span className="font-mono text-xs font-bold text-primary">{r.ref}</span>
-                      <span className="text-[10px] text-muted-foreground">
-                        {formatDate(r.date)}
-                      </span>
-                    </div>
-                    <div className="font-bold text-xs sm:text-sm text-foreground mt-0.5 truncate">
-                      {r.supplier}
-                    </div>
-                    <div className="text-[11px] text-muted-foreground truncate mt-0.5">
-                      {r.reason}
-                    </div>
-                  </div>
-                  <div className="text-right shrink-0 pl-2">
-                    <div className="text-sm font-black text-foreground">
-                      {formatCurrency(Number(r.total) || 0)}
-                    </div>
-                    <Badge className="text-[9px] font-bold mt-1 bg-success/15 text-success border-success/30">
-                      {t(r.status, r.status)}
-                    </Badge>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {filteredReturns.length > 0 && (
-              <div className="border-t border-border/60 p-3">
-                <PaginationControls
-                  currentPage={page}
-                  totalPages={totalPages}
-                  pageSize={pageSize}
-                  totalItems={filteredReturns.length}
-                  onPageChange={setPage}
-                  onPageSizeChange={setPageSize}
-                />
-              </div>
-            )}
-          </div>
-        </div>
-      </DataPage>
+      </div>
 
       {/* New Return Slide-over Drawer Sheet */}
       <Sheet open={isAddOpen} onOpenChange={setIsAddOpen}>
@@ -705,6 +751,6 @@ function PurchaseReturnsPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </>
+    </div>
   );
 }

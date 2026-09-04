@@ -312,12 +312,12 @@ function NewPurchasePage() {
   };
 
   return (
-    <div className="page-container space-y-6 pb-24">
-      {/* Top Header Card */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-gradient-to-r from-card to-muted/30 p-5 rounded-2xl border border-border/80 shadow-card">
+    <div className="page-container pb-24 relative space-y-6">
+      {/* Sticky Action Bar */}
+      <div className="sticky top-0 z-20 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-background/90 backdrop-blur-xl pb-3 pt-2 border-b border-border/80 shadow-sm -mx-4 px-4 sm:-mx-6 sm:px-6">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-xl sm:text-2xl font-black tracking-tight text-foreground">
+            <h1 className="text-xl sm:text-2xl font-semibold tracking-tight text-foreground">
               {editId ? "Edit Purchase Order" : "New Inbound Purchase Order"}
             </h1>
             <Badge
@@ -327,12 +327,12 @@ function NewPurchasePage() {
               {editId ? `Editing ${existingPurchaseData?.invoiceNo || editId}` : "Stock Inflow"}
             </Badge>
           </div>
-          <p className="text-xs text-muted-foreground mt-0.5">
+          <p className="text-xs text-muted-foreground hidden sm:block">
             Receive inbound products, update warehouse valuation, and record vendor payables.
           </p>
         </div>
 
-        <div className="flex items-center gap-2.5 flex-wrap">
+        <div className="flex items-center gap-2.5 w-full sm:w-auto flex-wrap">
           <input
             type="file"
             accept="image/*"
@@ -345,7 +345,7 @@ function NewPurchasePage() {
             size="sm"
             onClick={() => fileInputRef.current?.click()}
             disabled={isAnalyzing || isSubmitting}
-            className="font-bold text-xs rounded-xl h-9 border-primary/30 text-primary hover:bg-primary/5"
+            className="font-bold text-xs rounded-xl h-10 border-primary/30 text-primary hover:bg-primary/5"
           >
             {isAnalyzing ? (
               <Loader2 className="size-3.5 mr-1.5 animate-spin" />
@@ -358,19 +358,19 @@ function NewPurchasePage() {
             variant="outline"
             size="sm"
             onClick={() => navigate({ to: "/purchases" })}
-            className="font-bold text-xs rounded-xl h-9"
+            className="flex-1 sm:flex-none h-10 rounded-xl text-xs font-semibold"
           >
-            Cancel
+            {t("discard", "Discard")}
           </Button>
           <Button
             onClick={handleSubmit}
             disabled={isSubmitting}
-            className="font-bold text-xs min-w-[140px] rounded-xl h-9 shadow-soft"
+            className="flex-1 sm:flex-none min-w-[140px] h-10 rounded-xl font-bold text-xs shadow-soft"
           >
             {isSubmitting ? (
-              <Loader2 className="size-3.5 mr-1.5 animate-spin" />
+              <Loader2 className="size-4 mr-1.5 animate-spin" />
             ) : (
-              <CheckCircle2 className="size-3.5 mr-1.5" />
+              <CheckCircle2 className="size-4 mr-1.5" />
             )}
             {editId ? "Save Changes" : "Submit Order"}
           </Button>

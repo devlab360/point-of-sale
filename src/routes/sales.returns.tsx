@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { appName } from "@/lib/env";
-import { DataPage } from "@/components/layout/DataPage";
+import { PageHeader } from "@/components/layout/PageHeader";
+import { StatCard } from "@/components/layout/StatCard";
 import { EmptyState } from "@/components/ui/empty-state";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { PaginationControls } from "@/components/ui/pagination-controls";
@@ -16,7 +17,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetDescription, SheetFooter } from "@/components/ui/sheet";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -33,7 +34,21 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { MoreVertical, Trash2, Undo2, Loader2 } from "lucide-react";
+import {
+  MoreVertical,
+  Trash2,
+  Undo2,
+  Loader2,
+  Plus,
+  Search,
+  CheckCircle2,
+  Package,
+  DollarSign,
+  TrendingDown,
+  RotateCcw,
+  Filter,
+  X,
+} from "lucide-react";
 import { PersistStore } from "@/lib/session-store";
 import { useCurrency } from "@/lib/currency";
 import { v4 as uuidv4 } from "uuid";
@@ -280,188 +295,237 @@ function SalesReturnsPage() {
   );
 
   return (
-    <>
-      <DataPage
-        title={t("salesReturns") || "Sales Returns"}
-        description={t("manageReturns") || "Refunds and exchanges issued to customers."}
-        primaryAction={{
-          label: t("processReturn") || "Process Return",
-          onClick: () => setIsAddOpen(true),
-        }}
-        searchPlaceholder={t("searchReturns") || "Search by ref or customer..."}
-        searchValue={search}
-        onSearchChange={setSearch}
-        hideToolbar={false}
-        onResetFilters={handleResetFilters}
-        activeFilterCount={activeFilterCount}
-        filtersContent={({ close }) => (
-          <div className="space-y-4 flex flex-col h-full min-h-[50vh]">
-            <div className="flex-1 space-y-4">
-              <div className="space-y-2">
-                <Label>Status</Label>
-                <SearchableSelect
-                  options={[
-                    { value: "", label: "All Statuses" },
-                    ...RETURN_STATUSES.map((s) => ({ value: s.value, label: s.label })),
-                  ]}
-                  value={draftFilters.status}
-                  onChange={(val) => setDraftFilters((prev) => ({ ...prev, status: val }))}
-                  placeholder="Filter by Status"
-                />
-              </div>
-            </div>
-            <div className="pt-4 mt-auto">
-              <Button
-                className="w-full"
-                onClick={() => {
-                  setFilters(draftFilters);
-                  close();
-                }}
-              >
-                Apply Filters
-              </Button>
-            </div>
-          </div>
-        )}
-        topContent={
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-            <div className="rounded-xl border border-border/80 bg-card p-3 shadow-2xs">
-              <div className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
-                Total Returns
-              </div>
-              <div className="mt-1 text-xl sm:text-2xl font-black text-foreground">
-                {rawReturns.length}
-              </div>
-            </div>
-            <div className="rounded-xl border border-border/80 bg-card p-3 shadow-2xs">
-              <div className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
-                Approved / Refunded
-              </div>
-              <div className="mt-1 text-xl sm:text-2xl font-black text-success">
-                {rawReturns.filter((r) => r.status === "approved").length}
-              </div>
-            </div>
-            <div className="rounded-xl border border-border/80 bg-card p-3 shadow-2xs">
-              <div className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
-                Stock Restored
-              </div>
-              <div className="mt-1 text-xl sm:text-2xl font-black text-primary">
-                {rawReturns.filter((r) => r.stockRestored).length}
-              </div>
-            </div>
-            <div className="rounded-xl border border-border/80 bg-card p-3 shadow-2xs">
-              <div className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
-                Total Refund Amount
-              </div>
-              <div className="mt-1 text-xl sm:text-2xl font-black text-destructive truncate">
-                {formatCurrency(totalRefundAmount)}
-              </div>
-            </div>
-          </div>
+    <div className="page-container space-y-6">
+      {/* Standard PageHeader */}
+      <PageHeader
+        title={t("salesReturns", "Sales Returns & RMA")}
+        description={t("manageReturns", "Customer returns, credit notes, defect RMA tracking, and automated inventory restorations.")}
+        actions={
+          <Button size="sm" onClick={() => setIsAddOpen(true)} className="gap-1.5">
+            <Plus className="size-4" /> {t("processReturn", "Process Return")}
+          </Button>
         }
-      >
-        <div className="space-y-4">
-          <div className="overflow-hidden rounded-xl border border-border/80 bg-card shadow-soft">
-            <div className="overflow-x-auto">
-              <Table className="min-w-[700px]">
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>{t("ref") || "Ref"}</TableHead>
-                    <TableHead>{t("invoice") || "Invoice"}</TableHead>
-                    <TableHead>{t("customer") || "Customer"}</TableHead>
-                    <TableHead>{t("reason") || "Reason"}</TableHead>
-                    <TableHead>{t("date") || "Date"}</TableHead>
-                    <TableHead>{t("status") || "Status"}</TableHead>
-                    <TableHead className="text-right">{t("refund") || "Refund"}</TableHead>
-                    <TableHead className="text-right whitespace-nowrap">{t("common.actions", "Actions")}</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {paginatedReturns.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={8} className="h-64 text-center">
-                        <EmptyState
-                          icon={Undo2}
-                          title={t("noReturnsFound") || "No returns found"}
-                          description={
-                            search
-                              ? t("adjustSearch") || "Try adjusting your search."
-                              : t("noReturnsYet") || "No sales returns have been recorded yet."
-                          }
-                          className="border-none bg-transparent my-0 py-8 shadow-none"
-                        />
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    paginatedReturns.map((r) => (
-                      <TableRow key={r.id}>
-                        <TableCell className="font-mono text-xs font-semibold whitespace-nowrap">
-                          {r.ref}
-                        </TableCell>
-                        <TableCell className="font-mono text-xs text-muted-foreground whitespace-nowrap">
-                          {r.saleId.slice(0, 8).toUpperCase()}
-                        </TableCell>
-                        <TableCell className="font-semibold whitespace-nowrap">
-                          {r.customerName}
-                        </TableCell>
-                        <TableCell className="text-muted-foreground whitespace-nowrap">
-                          {r.reason}
-                        </TableCell>
-                        <TableCell className="text-muted-foreground whitespace-nowrap">
-                          {formatDate(r.date)}
-                        </TableCell>
-                        <TableCell className="whitespace-nowrap">
-                          <Badge
-                            className={cn(
-                              r.status === "approved" &&
-                                "bg-success/10 text-success hover:bg-success/15",
-                              r.status === "pending" && "bg-warning/15 text-warning-foreground",
-                            )}
-                          >
-                            {r.status}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-right font-semibold whitespace-nowrap">
-                          {formatCurrency(r.total)}
-                        </TableCell>
-                        <TableCell className="text-right whitespace-nowrap">
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="icon" className="size-8 rounded-lg">
-                                <MoreVertical className="size-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="rounded-xl">
-                              <DropdownMenuItem
-                                className="text-destructive text-xs font-semibold"
-                                onClick={() => setDeleteId(r.id)}
-                              >
-                                <Trash2 className="size-4 mr-2" /> Delete
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
-            </div>
-            {filteredReturns.length > 0 && (
-              <div className="border-t border-border/60 p-2 sm:p-3">
-                <PaginationControls
-                  currentPage={page}
-                  totalPages={totalPages}
-                  pageSize={pageSize}
-                  onPageChange={setPage}
-                  onPageSizeChange={setPageSize}
-                  totalItems={filteredReturns.length}
-                />
-              </div>
+      />
+
+      {/* Standard StatCard Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <StatCard
+          label={t("totalReturns", "Total Returns")}
+          value={String(rawReturns.length)}
+          hint={t("recordedReturnLogs", "Recorded return requests")}
+          icon={Undo2}
+          accent="primary"
+        />
+        <StatCard
+          label={t("approvedRefunded", "Approved & Refunded")}
+          value={String(rawReturns.filter((r) => r.status === "approved").length)}
+          hint={t("closedReturnCases", "Closed return cases")}
+          icon={CheckCircle2}
+          accent="success"
+        />
+        <StatCard
+          label={t("stockRestored", "Stock Restored")}
+          value={`${rawReturns.filter((r) => r.stockRestored).length} items`}
+          hint={t("returnedToInventory", "Returned to warehouse")}
+          icon={Package}
+          accent="info"
+        />
+        <StatCard
+          label={t("totalRefundAmount", "Total Refunded")}
+          value={formatCurrency(totalRefundAmount)}
+          hint={t("creditedToCustomers", "Credited to customers")}
+          icon={TrendingDown}
+          accent="destructive"
+        />
+      </div>
+
+      {/* Controls Toolbar */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="relative w-full sm:w-80">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+            <Input
+              placeholder={t("searchReturns", "Search by ref, invoice, or customer...")}
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-9 h-9 text-sm rounded-lg"
+            />
+            {search && (
+              <button
+                onClick={() => setSearch("")}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+              >
+                <X className="size-3.5" />
+              </button>
             )}
           </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            {activeFilterCount > 0 && (
+              <Button variant="outline" size="sm" onClick={handleResetFilters} className="h-9 gap-1.5 text-xs">
+                <RotateCcw className="size-3.5" /> {t("reset", "Reset")}
+              </Button>
+            )}
+
+            <Sheet>
+              <SheetTrigger asChild>
+                <Button variant="outline" size="sm" className="h-9 gap-1.5 text-xs relative">
+                  <Filter className="size-3.5" />
+                  <span>{t("filters", "Filters")}</span>
+                  {activeFilterCount > 0 && (
+                    <span className="size-4 rounded-full bg-primary text-[10px] font-bold text-primary-foreground grid place-items-center">
+                      {activeFilterCount}
+                    </span>
+                  )}
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="right" className="w-full sm:max-w-md p-0 flex flex-col h-full bg-background border-l border-border">
+                <SheetHeader className="bg-muted/60 p-5 border-b pr-12 text-left shrink-0">
+                  <SheetTitle className="text-lg font-bold flex items-center gap-2 text-foreground">
+                    <Filter className="size-4.5 text-primary" />
+                    <span>{t("filterReturns", "Filter Returns")}</span>
+                  </SheetTitle>
+                  <SheetDescription className="text-xs text-muted-foreground mt-0.5">
+                    Filter by status and settlement method.
+                  </SheetDescription>
+                </SheetHeader>
+                <div className="flex-1 overflow-y-auto p-5 space-y-4">
+                  <div className="space-y-2">
+                    <Label className="text-xs font-semibold">Status</Label>
+                    <SearchableSelect
+                      options={[
+                        { value: "", label: "All Statuses" },
+                        ...RETURN_STATUSES.map((s) => ({ value: s.value, label: s.label })),
+                      ]}
+                      value={draftFilters.status}
+                      onChange={(val) => setDraftFilters((prev) => ({ ...prev, status: val }))}
+                      placeholder="Filter by Status"
+                    />
+                  </div>
+                </div>
+                <SheetFooter className="p-4 border-t bg-muted/20 flex flex-row items-center justify-end gap-2 shrink-0">
+                  <Button
+                    variant="outline"
+                    className="flex-1"
+                    onClick={() => {
+                      handleResetFilters();
+                    }}
+                  >
+                    Reset
+                  </Button>
+                  <Button
+                    className="flex-1 font-bold"
+                    onClick={() => {
+                      setFilters(draftFilters);
+                    }}
+                  >
+                    Apply Filters
+                  </Button>
+                </SheetFooter>
+              </SheetContent>
+            </Sheet>
+          </div>
         </div>
-      </DataPage>
+
+        {/* Content Table Card */}
+        <div className="overflow-hidden rounded-xl border border-border/80 bg-card shadow-soft">
+          <div className="table-desktop overflow-x-auto">
+            <Table className="min-w-[700px]">
+              <TableHeader>
+                <TableRow>
+                  <TableHead>{t("ref", "Ref")}</TableHead>
+                  <TableHead>{t("invoice", "Invoice")}</TableHead>
+                  <TableHead>{t("customer", "Customer")}</TableHead>
+                  <TableHead>{t("reason", "Reason")}</TableHead>
+                  <TableHead>{t("date", "Date")}</TableHead>
+                  <TableHead>{t("status", "Status")}</TableHead>
+                  <TableHead className="text-right">{t("refund", "Refund")}</TableHead>
+                  <TableHead className="text-right whitespace-nowrap">{t("common.actions", "Actions")}</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {paginatedReturns.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={8} className="h-64 text-center">
+                      <EmptyState
+                        icon={Undo2}
+                        title={t("noReturnsFound", "No returns found")}
+                        description={
+                          search
+                            ? t("adjustSearch", "Try adjusting your search.")
+                            : t("noReturnsYet", "No sales returns have been recorded yet.")
+                        }
+                        className="border-none bg-transparent my-0 py-8 shadow-none"
+                      />
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  paginatedReturns.map((r) => (
+                    <TableRow key={r.id} className="hover:bg-muted/30 transition-colors">
+                      <TableCell className="font-mono text-xs font-semibold whitespace-nowrap text-primary">
+                        {r.ref}
+                      </TableCell>
+                      <TableCell className="font-mono text-xs text-muted-foreground whitespace-nowrap">
+                        {r.saleId ? r.saleId.slice(0, 8).toUpperCase() : "-"}
+                      </TableCell>
+                      <TableCell className="font-semibold whitespace-nowrap text-foreground">
+                        {r.customerName}
+                      </TableCell>
+                      <TableCell className="text-muted-foreground whitespace-nowrap text-xs">
+                        {r.reason}
+                      </TableCell>
+                      <TableCell className="text-muted-foreground whitespace-nowrap text-xs">
+                        {formatDate(r.date)}
+                      </TableCell>
+                      <TableCell className="whitespace-nowrap">
+                        <Badge
+                          className={cn(
+                            "text-[10px] font-bold",
+                            r.status === "approved" && "bg-success/10 text-success hover:bg-success/15",
+                            r.status === "pending" && "bg-warning/15 text-warning-foreground",
+                          )}
+                        >
+                          {r.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right font-bold whitespace-nowrap text-foreground">
+                        {formatCurrency(r.total)}
+                      </TableCell>
+                      <TableCell className="text-right whitespace-nowrap">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="size-8 rounded-lg">
+                              <MoreVertical className="size-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="rounded-xl">
+                            <DropdownMenuItem
+                              className="text-destructive text-xs font-semibold"
+                              onClick={() => setDeleteId(r.id)}
+                            >
+                              <Trash2 className="size-4 mr-2" /> Delete
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </div>
+          {filteredReturns.length > 0 && (
+            <div className="border-t border-border/60 p-2 sm:p-3">
+              <PaginationControls
+                currentPage={page}
+                totalPages={totalPages}
+                pageSize={pageSize}
+                totalItems={filteredReturns.length}
+                onPageChange={setPage}
+                onPageSizeChange={setPageSize}
+              />
+            </div>
+          )}
+        </div>
 
       {/* Process Return Drawer */}
       <Sheet open={isAddOpen} onOpenChange={setIsAddOpen}>
@@ -586,6 +650,6 @@ function SalesReturnsPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </>
+    </div>
   );
 }

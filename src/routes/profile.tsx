@@ -120,7 +120,7 @@ function ProfilePage() {
 
   if (isProfileLoading) {
     return (
-      <div className="p-4 md:p-6 lg:p-8">
+      <div className="page-container">
         <ProfileSkeleton />
       </div>
     );
@@ -128,7 +128,7 @@ function ProfilePage() {
 
   if (isProfileError && !dbProfile) {
     return (
-      <div className="p-4 md:p-6 lg:p-8">
+      <div className="page-container">
         <ErrorState
           onRetry={refetchProfile}
           title="Failed to load profile"
@@ -139,7 +139,7 @@ function ProfilePage() {
   }
 
   return (
-    <div className="page-container space-y-5">
+    <div className="page-container space-y-6">
       <PageHeader
         title={t("profile") || "Your Profile"}
         description="Personal details and preferences."

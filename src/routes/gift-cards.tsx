@@ -1,7 +1,8 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { DataPage } from "@/components/layout/DataPage";
 import { appName } from "@/lib/env";
+import { PageHeader } from "@/components/layout/PageHeader";
+import { StatCard } from "@/components/layout/StatCard";
 import { exportToCSV, parseCSV } from "@/lib/csv";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PaginationControls } from "@/components/ui/pagination-controls";
@@ -21,7 +22,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -44,7 +45,7 @@ import {
   Trash2,
   Edit2,
   Search,
-  Calendar,
+  Filter,
   CreditCard,
   CheckCircle2,
   DollarSign,
@@ -52,13 +53,15 @@ import {
   MoreVertical,
   RefreshCw,
   Sparkles,
+  Download,
+  Upload,
+  X,
 } from "lucide-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   getGiftCardsFn,
   createGiftCardFn,
   updateGiftCardFn,
-  updateGiftCardStatusFn,
   addGiftCardBalanceFn,
   deleteGiftCardFn,
 } from "@/api/gift-cards";
@@ -84,6 +87,7 @@ function GiftCardsPage() {
   const { formatCurrency, currencySymbol } = useCurrency();
   const orgId = PersistStore.getOrgId() || "default";
   const queryClient = useQueryClient();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const {
     data: giftCardsData,
@@ -94,75 +98,48 @@ function GiftCardsPage() {
     queryKey: ["giftCards", orgId],
     queryFn: async () => ((await getGiftCardsFn({ data: {} })) as any)?.data || [],
   });
-  const giftCards = giftCardsData || [];
+  const giftCards: any[] = giftCardsData || [];
 
   const { data: customersData } = useQuery({
     queryKey: ["customers", orgId],
-    queryFn: async () => ((await getCustomersFn({ data: {} })) as any)?.data || [],
+    queryFn: async () => ((await getCustomersFn({ data: { page: 1, pageSize: 500 } })) as any)?.data || [],
   });
-  const customers = customersData || [];
+  const customers: any[] = customersData || [];
 
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [editItem, setEditItem] = useState<any | null>(null);
-  const [topUpItem, setTopUpItem] = useState<any | null>(null);
-  const [topUpAmount, setTopUpAmount] = useState("");
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
-  const [isTopUpLoading, setIsTopUpLoading] = useState(false);
-  const [selectedCustomerId, setSelectedCustomerId] = useState("");
-  const [expiresDate, setExpiresDate] = useState<string>("");
-
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search, 300);
+
+  const [topUpItem, setTopUpItem] = useState<any | null>(null);
+  const [topUpAmount, setTopUpAmount] = useState("");
+  const [isTopUpLoading, setIsTopUpLoading] = useState(false);
+
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
-
   const [filters, setFilters] = useState({ status: "" });
   const [draftFilters, setDraftFilters] = useState({ status: "" });
+  const [filterDrawerOpen, setFilterDrawerOpen] = useState(false);
   const activeFilterCount = filters.status ? 1 : 0;
+
+  const [selectedCustomerId, setSelectedCustomerId] = useState("");
+  const [expiresDate, setExpiresDate] = useState<string>("");
 
   const handleResetFilters = () => {
     setFilters({ status: "" });
     setDraftFilters({ status: "" });
   };
 
-  const filteredCards = useMemo(() => {
-    let list = giftCards;
-    if (debouncedSearch) {
-      const lower = debouncedSearch.toLowerCase();
-      list = list.filter(
-        (c) => c.code?.toLowerCase().includes(lower) || c.customer?.toLowerCase().includes(lower),
-      );
+  const generateCardCode = () => {
+    const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+    let code = "GC-";
+    for (let i = 0; i < 8; i++) {
+      code += chars.charAt(Math.floor(Math.random() * chars.length));
     }
-    if (filters.status) {
-      list = list.filter((c) => c.status === filters.status);
-    }
-    return list;
-  }, [giftCards, debouncedSearch, filters.status]);
-
-  useEffect(() => {
-    setPage(1);
-  }, [debouncedSearch, filters]);
-
-  useEffect(() => {
-    const maxPage = Math.max(1, Math.ceil(filteredCards.length / pageSize));
-    if (page > maxPage) setPage(maxPage);
-  }, [filteredCards.length, page, pageSize]);
-
-  const totalPages = Math.ceil(filteredCards.length / pageSize);
-  const paginatedCards = filteredCards.slice((page - 1) * pageSize, page * pageSize);
-
-  // Summary Metrics
-  const metrics = useMemo(() => {
-    const totalCount = giftCards.length;
-    const activeCount = giftCards.filter((c) => c.status === "active").length;
-    const totalIssued = giftCards.reduce(
-      (acc, c) => acc + (Number(c.initialBalance) || Number(c.balance) || 0),
-      0,
-    );
-    const totalBalance = giftCards.reduce((acc, c) => acc + (Number(c.balance) || 0), 0);
-    return { totalCount, activeCount, totalIssued, totalBalance };
-  }, [giftCards]);
+    return code;
+  };
 
   const {
     errors: giftErrors,
@@ -170,26 +147,25 @@ function GiftCardsPage() {
     clearError: clearGiftError,
     clearAll: clearGiftAll,
   } = useFormValidation({
-    code: { required: "Card code is required" },
-    initialBalance: {
-      required: "Initial balance is required",
-      positive: "Balance must be positive",
+    code: {
+      required: t("cardCodeRequired", "Card code is required"),
+      minLength: { value: 4, message: t("cardCodeMinLen", "Code must be at least 4 characters") },
     },
-    expires: { required: "Expiry date is required" },
+    initialBalance: {
+      required: t("initialBalanceRequired", "Initial balance is required"),
+      positive: t("balanceMustBePositive", "Balance must be a positive number"),
+    },
+    expires: {
+      required: t("expiryDateRequired", "Expiry date is required"),
+    },
   });
-
-  const generateCardCode = () => {
-    const p1 = Math.floor(1000 + Math.random() * 9000);
-    const p2 = Math.floor(1000 + Math.random() * 9000);
-    return `GC-${p1}-${p2}`;
-  };
 
   const handleOpenAdd = () => {
     setEditItem(null);
     setSelectedCustomerId("");
-    const oneYearLater = new Date();
-    oneYearLater.setFullYear(oneYearLater.getFullYear() + 1);
-    setExpiresDate(oneYearLater.toISOString().split("T")[0]);
+    const defaultExpiry = new Date();
+    defaultExpiry.setFullYear(defaultExpiry.getFullYear() + 1);
+    setExpiresDate(defaultExpiry.toISOString().split("T")[0]);
     clearGiftAll();
     setIsAddOpen(true);
   };
@@ -202,38 +178,70 @@ function GiftCardsPage() {
     setIsAddOpen(true);
   };
 
+  const filteredCards = useMemo(() => {
+    let list = [...giftCards];
+    if (debouncedSearch) {
+      const q = debouncedSearch.toLowerCase();
+      list = list.filter(
+        (c) =>
+          c.code?.toLowerCase().includes(q) ||
+          c.customer?.toLowerCase().includes(q),
+      );
+    }
+    if (filters.status) {
+      list = list.filter((c) => c.status === filters.status);
+    }
+    return list;
+  }, [giftCards, debouncedSearch, filters]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredCards.length / pageSize));
+  const paginatedCards = useMemo(() => {
+    const start = (page - 1) * pageSize;
+    return filteredCards.slice(start, start + pageSize);
+  }, [filteredCards, page, pageSize]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [debouncedSearch, filters]);
+
+  const metrics = useMemo(() => {
+    const totalCount = giftCards.length;
+    const activeCount = giftCards.filter((c) => c.status === "active").length;
+    const totalBalance = giftCards.reduce((sum, c) => sum + (parseFloat(c.balance) || 0), 0);
+    const totalIssued = giftCards.reduce(
+      (sum, c) => sum + (parseFloat(c.initialBalance || c.balance) || 0),
+      0,
+    );
+    return { totalCount, activeCount, totalBalance, totalIssued };
+  }, [giftCards]);
+
   const handleSave = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
+    const code = (formData.get("code") as string)?.trim().toUpperCase();
+    const initialBalance = parseFloat(formData.get("initialBalance") as string);
+    const status = (formData.get("status") as any) || "active";
+
+    const isValid = validateGift({
+      code,
+      initialBalance: String(initialBalance || ""),
+      expires: expiresDate,
+    });
+    if (!isValid) {
+      const firstError = Object.values(giftErrors)[0];
+      if (firstError) toast.error(firstError);
+      return;
+    }
+
     setIsSaving(true);
     try {
-      const code = (formData.get("code") as string)?.trim();
-      const customer =
-        selectedCustomerId || (formData.get("customer") as string) || "Walk-in Customer";
-      const initialBalanceStr = (formData.get("initialBalance") as string)?.trim();
-      const status = (formData.get("status") as string) || "active";
-
-      const isValid = validateGift({
-        code,
-        initialBalance: initialBalanceStr,
-        expires: expiresDate,
-      });
-      if (!isValid) {
-        setIsSaving(false);
-        return;
-      }
-
-      const initialBalance = parseFloat(initialBalanceStr);
-
       if (editItem) {
         await updateGiftCardFn({
           data: {
-            card: {
-              id: editItem.id,
+            id: editItem.id,
+            updates: {
               code,
-              customer,
-              balance: initialBalance.toFixed(2),
-              initialBalance: initialBalance.toFixed(2),
+              customer: selectedCustomerId || "Walk-in",
               status,
               expires: expiresDate,
             },
@@ -246,7 +254,7 @@ function GiftCardsPage() {
           data: {
             card: {
               code,
-              customer,
+              customer: selectedCustomerId || "Walk-in",
               balance: initialBalance.toFixed(2),
               initialBalance: initialBalance.toFixed(2),
               status,
@@ -286,7 +294,7 @@ function GiftCardsPage() {
       toast.success(`Successfully added ${formatCurrency(parseFloat(topUpAmount))} to card`);
       setTopUpItem(null);
       setTopUpAmount("");
-    } catch (error) {
+    } catch {
       toast.error("Failed to add balance");
     } finally {
       setIsTopUpLoading(false);
@@ -349,7 +357,7 @@ function GiftCardsPage() {
 
       queryClient.invalidateQueries({ queryKey: ["giftCards"] });
       toast.success(`Successfully imported ${count} gift cards`);
-    } catch (error) {
+    } catch {
       toast.error("Failed to parse CSV file");
     }
   };
@@ -361,297 +369,257 @@ function GiftCardsPage() {
         queryClient.invalidateQueries({ queryKey: ["giftCards"] });
         toast.success("Gift Card deleted");
         setDeleteId(null);
-      } catch (error) {
+      } catch {
         toast.error("Failed to delete gift card");
       }
     }
   };
 
   return (
-    <div className="space-y-6">
-      <DataPage
+    <div className="page-container space-y-6">
+      <input
+        type="file"
+        ref={fileInputRef}
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          if (file) handleImport(file);
+        }}
+        accept=".csv"
+        className="hidden"
+      />
+
+      <PageHeader
         title={t("giftCardsVouchers", "Gift Cards & Vouchers")}
         description={t("giftCardsDesc", "Issue stored-value customer gift cards, track live balances, top-ups, and expirations.")}
-        primaryAction={{ label: t("issueGiftCard", "Issue Gift Card"), onClick: handleOpenAdd }}
-        searchPlaceholder={t("searchGiftCardsPlaceholder", "Search by card code or recipient...")}
-        searchValue={search}
-        onSearchChange={setSearch}
-        hideToolbar={false}
-        onExport={handleExport}
-        onImport={handleImport}
-        onResetFilters={handleResetFilters}
-        activeFilterCount={activeFilterCount}
-        filtersContent={({ close }) => (
-          <div className="space-y-4 flex flex-col h-full min-h-[40vh]">
-            <div className="flex-1 space-y-4">
-              <div className="space-y-2">
-                <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                  {t("cardStatus", "Card Status")}
-                </Label>
-                <SearchableSelect
-                  options={[
-                    { value: "", label: t("allStatuses", "All Statuses") },
-                    ...GIFT_CARD_STATUSES.map((g) => ({ value: g.value, label: g.label })),
-                  ]}
-                  value={draftFilters.status}
-                  onChange={(val) => setDraftFilters((prev) => ({ ...prev, status: val }))}
-                  placeholder={t("filterByStatus", "Filter by Status")}
-                />
-              </div>
-            </div>
-            <div className="pt-4 mt-auto">
-              <Button
-                className="w-full font-bold shadow-soft"
-                onClick={() => {
-                  setFilters(draftFilters);
-                  close();
-                }}
-              >
-                {t("applyFilters", "Apply Filters")}
-              </Button>
-            </div>
-          </div>
-        )}
-        topContent={
-          <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
-            <div className="rounded-xl border border-border/80 bg-card p-4 sm:p-5 shadow-soft transition-all hover:border-primary/40">
-              <div className="flex items-center justify-between">
-                <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                  {t("totalIssued", "Total Issued")}
-                </p>
-                <div className="grid size-8 place-items-center rounded-lg bg-primary/10 text-primary">
-                  <Gift className="size-4" />
-                </div>
-              </div>
-              <p className="mt-2 text-xl sm:text-2xl font-black text-foreground">
-                {metrics.totalCount}
-              </p>
-            </div>
-
-            <div className="rounded-xl border border-border/80 bg-card p-4 sm:p-5 shadow-soft transition-all hover:border-success/40">
-              <div className="flex items-center justify-between">
-                <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                  {t("activeCards", "Active Cards")}
-                </p>
-                <div className="grid size-8 place-items-center rounded-lg bg-success/15 text-success">
-                  <CheckCircle2 className="size-4" />
-                </div>
-              </div>
-              <p className="mt-2 text-xl sm:text-2xl font-black text-success">
-                {metrics.activeCount}
-              </p>
-            </div>
-
-            <div className="rounded-xl border border-border/80 bg-card p-4 sm:p-5 shadow-soft transition-all hover:border-blue-500/40">
-              <div className="flex items-center justify-between">
-                <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                  {t("totalIssuedValue", "Total Issued Value")}
-                </p>
-                <div className="grid size-8 place-items-center rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400">
-                  <CreditCard className="size-4" />
-                </div>
-              </div>
-              <p className="mt-2 text-xl sm:text-2xl font-black text-foreground">
-                {formatCurrency(metrics.totalIssued)}
-              </p>
-            </div>
-
-            <div className="rounded-xl border border-border/80 bg-card p-4 sm:p-5 shadow-soft transition-all hover:border-primary/40">
-              <div className="flex items-center justify-between">
-                <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                  {t("availableBalance", "Available Balance")}
-                </p>
-                <div className="grid size-8 place-items-center rounded-lg bg-primary/10 text-primary">
-                  <DollarSign className="size-4" />
-                </div>
-              </div>
-              <p className="mt-2 text-xl sm:text-2xl font-black text-primary">
-                {formatCurrency(metrics.totalBalance)}
-              </p>
-            </div>
-          </div>
+        actions={
+          <>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleExport}
+              className="hidden sm:flex"
+            >
+              <Download className="size-4 mr-1.5" />
+              {t("exportCSV", "Export CSV")}
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => fileInputRef.current?.click()}
+              className="hidden sm:flex"
+            >
+              <Upload className="size-4 mr-1.5" />
+              {t("importCSV", "Import CSV")}
+            </Button>
+            <Button size="sm" onClick={handleOpenAdd} className="shadow-soft">
+              <Plus className="size-4 mr-1.5" />
+              {t("issueGiftCard", "Issue Gift Card")}
+            </Button>
+          </>
         }
-      >
-        <div className="space-y-6">
-          {/* Table / Card Container */}
-          <div className="rounded-xl border border-border bg-card shadow-soft overflow-hidden">
-            {isGiftCardsLoading ? (
-              <TableSkeleton columns={7} rows={5} />
-            ) : isGiftCardsError ? (
-              <ErrorState onRetry={refetchGiftCards} />
-            ) : (
-              <>
-                {/* Desktop View Table */}
-                <div className="hidden md:block overflow-x-auto">
-                  <Table>
-                    <TableHeader className="bg-muted/50">
-                      <TableRow>
-                        <TableHead className="font-bold text-xs uppercase tracking-wider">
-                          {t("cardCode", "Card Code")}
-                        </TableHead>
-                        <TableHead className="font-bold text-xs uppercase tracking-wider">
-                          {t("recipientCustomer", "Recipient / Customer")}
-                        </TableHead>
-                        <TableHead className="font-bold text-xs uppercase tracking-wider">
-                          {t("issuedDate", "Issued Date")}
-                        </TableHead>
-                        <TableHead className="font-bold text-xs uppercase tracking-wider">
-                          {t("expiryDate", "Expiry Date")}
-                        </TableHead>
-                        <TableHead className="font-bold text-xs uppercase tracking-wider text-right">
-                          {t("initialValue", "Initial Value")}
-                        </TableHead>
-                        <TableHead className="font-bold text-xs uppercase tracking-wider text-right">
-                          {t("currentBalance", "Current Balance")}
-                        </TableHead>
-                        <TableHead className="font-bold text-xs uppercase tracking-wider text-center">
-                          {t("status", "Status")}
-                        </TableHead>
-                        <TableHead className="font-bold text-xs uppercase tracking-wider text-right">
-                          {t("actions", "Actions")}
-                        </TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody className="divide-y divide-border/60">
-                      {paginatedCards.length === 0 ? (
-                        <TableRow>
-                          <TableCell colSpan={8} className="h-64 text-center">
-                            <EmptyState
-                              icon={Gift}
-                              title={t("noGiftCardsFound", "No gift cards found")}
-                              description={
-                                search
-                                  ? t("noGiftCardsMatchQuery", "No gift cards matched your search query.")
-                                  : t("noGiftCardsYet", "You haven't issued any gift cards yet.")
-                              }
-                              actionLabel={t("issueGiftCard", "Issue Gift Card")}
-                              onAction={handleOpenAdd}
-                              className="border-none bg-transparent my-0 py-8 shadow-none"
-                            />
-                          </TableCell>
-                        </TableRow>
-                      ) : (
-                        paginatedCards.map((g) => (
-                          <TableRow key={g.id} className="hover:bg-muted/40 transition-colors">
-                            <TableCell className="font-mono font-bold text-sm text-foreground whitespace-nowrap">
-                              <div className="flex items-center gap-2">
-                                <div className="grid size-8 place-items-center rounded-lg bg-primary/10 text-primary">
-                                  <Gift className="size-4" />
-                                </div>
-                                <span>{g.code}</span>
-                              </div>
-                            </TableCell>
-                            <TableCell className="font-semibold text-foreground whitespace-nowrap">
-                              {g.customer || t("walkInCustomer", "Walk-in Customer")}
-                            </TableCell>
-                            <TableCell className="text-xs text-muted-foreground whitespace-nowrap font-medium">
-                              {g.issued ? formatDate(g.issued) : "—"}
-                            </TableCell>
-                            <TableCell className="text-xs text-muted-foreground whitespace-nowrap font-medium">
-                              {g.expires ? formatDate(g.expires) : t("never", "Never")}
-                            </TableCell>
-                            <TableCell className="text-right text-xs font-semibold text-muted-foreground whitespace-nowrap">
-                              {formatCurrency(Number(g.initialBalance) || Number(g.balance) || 0)}
-                            </TableCell>
-                            <TableCell className="text-right font-black text-sm text-primary whitespace-nowrap">
-                              {formatCurrency(Number(g.balance) || 0)}
-                            </TableCell>
-                            <TableCell className="text-center whitespace-nowrap">
-                              <Badge
-                                variant="outline"
-                                className={`text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full ${
-                                  g.status === "active"
-                                    ? "bg-success/15 text-success border-success/25"
-                                    : g.status === "expired"
-                                      ? "bg-destructive/15 text-destructive border-destructive/25"
-                                      : "bg-muted text-muted-foreground border-border/60"
-                                }`}
-                              >
-                                {g.status}
-                              </Badge>
-                            </TableCell>
-                            <TableCell className="text-right whitespace-nowrap">
-                              <div className="flex items-center justify-end gap-1">
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className="h-8 px-2 text-xs font-semibold text-primary hover:bg-primary/10"
-                                  onClick={() => {
-                                    setTopUpItem(g);
-                                    setTopUpAmount("");
-                                  }}
-                                  title={t("topUp", "Top-up")}
-                                >
-                                  <RefreshCw className="mr-1 size-3.5" /> {t("topUp", "Top-up")}
-                                </Button>
-                                <DropdownMenu>
-                                  <DropdownMenuTrigger asChild>
-                                    <Button
-                                      variant="ghost"
-                                      size="icon"
-                                      className="size-8 rounded-lg"
-                                    >
-                                      <MoreVertical className="size-4 text-muted-foreground" />
-                                    </Button>
-                                  </DropdownMenuTrigger>
-                                  <DropdownMenuContent align="end" className="rounded-xl">
-                                    <DropdownMenuItem
-                                      onClick={() => handleOpenEdit(g)}
-                                      className="text-xs font-semibold cursor-pointer"
-                                    >
-                                      <Edit2 className="mr-2 size-3.5" /> {t("editCard", "Edit Card")}
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem
-                                      className="text-destructive text-xs font-semibold cursor-pointer"
-                                      onClick={() => setDeleteId(g.id)}
-                                    >
-                                      <Trash2 className="mr-2 size-3.5" /> {t("delete", "Delete")}
-                                    </DropdownMenuItem>
-                                  </DropdownMenuContent>
-                                </DropdownMenu>
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                        ))
-                      )}
-                    </TableBody>
-                  </Table>
-                </div>
+      />
 
-                {/* Mobile Cards View (< 768px) */}
-                <div className="block md:hidden p-3 space-y-3">
+      {/* KPI Stats Strip */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <StatCard
+          label={t("totalIssued", "Total Issued")}
+          value={String(metrics.totalCount)}
+          icon={Gift}
+          accent="primary"
+        />
+        <StatCard
+          label={t("activeCards", "Active Cards")}
+          value={String(metrics.activeCount)}
+          icon={CheckCircle2}
+          accent="success"
+        />
+        <StatCard
+          label={t("totalIssuedValue", "Total Issued Value")}
+          value={formatCurrency(metrics.totalIssued)}
+          icon={CreditCard}
+          accent="info"
+        />
+        <StatCard
+          label={t("availableBalance", "Available Balance")}
+          value={formatCurrency(metrics.totalBalance)}
+          icon={DollarSign}
+          accent="warning"
+        />
+      </div>
+
+      {/* Toolbar */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="relative w-full sm:w-80">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+          <Input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder={t("searchGiftCardsPlaceholder", "Search by card code or recipient...")}
+            className="pl-9 h-9"
+          />
+          {search && (
+            <button
+              onClick={() => setSearch("")}
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+            >
+              <X className="size-3.5" />
+            </button>
+          )}
+        </div>
+
+        <div className="flex items-center gap-2 self-end sm:self-auto">
+          {activeFilterCount > 0 && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleResetFilters}
+              className="h-9 px-2.5 text-xs text-muted-foreground hover:text-foreground"
+            >
+              <X className="size-3.5 mr-1" />
+              {t("clearFilters", "Clear")}
+            </Button>
+          )}
+
+          <Sheet open={filterDrawerOpen} onOpenChange={setFilterDrawerOpen}>
+            <SheetTrigger asChild>
+              <Button variant="outline" size="sm" className="h-9 relative">
+                <Filter className="size-3.5 mr-1.5" />
+                {t("filters", "Filters")}
+                {activeFilterCount > 0 && (
+                  <Badge className="ml-1.5 size-5 p-0 flex items-center justify-center text-[10px] rounded-full bg-primary text-primary-foreground">
+                    {activeFilterCount}
+                  </Badge>
+                )}
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="right" className="w-full sm:max-w-md p-0 flex flex-col h-full">
+              <SheetHeader className="p-5 border-b pr-12 text-left shrink-0">
+                <SheetTitle className="text-lg font-bold">{t("filterGiftCards", "Filter Gift Cards")}</SheetTitle>
+              </SheetHeader>
+              <div className="flex-1 overflow-y-auto p-5 space-y-4">
+                <div className="space-y-2">
+                  <Label>{t("cardStatus", "Card Status")}</Label>
+                  <SearchableSelect
+                    options={[
+                      { value: "", label: t("allStatuses", "All Statuses") },
+                      ...GIFT_CARD_STATUSES.map((g) => ({ value: g.value, label: g.label })),
+                    ]}
+                    value={draftFilters.status}
+                    onChange={(val) => setDraftFilters((prev) => ({ ...prev, status: val }))}
+                    placeholder={t("filterByStatus", "Filter by Status")}
+                  />
+                </div>
+              </div>
+              <div className="border-t p-4 flex gap-2">
+                <Button
+                  variant="outline"
+                  className="flex-1 font-bold text-xs"
+                  onClick={handleResetFilters}
+                >
+                  {t("reset", "Reset")}
+                </Button>
+                <Button
+                  className="flex-1 font-bold text-xs"
+                  onClick={() => {
+                    setFilters(draftFilters);
+                    setFilterDrawerOpen(false);
+                  }}
+                >
+                  {t("applyFilters", "Apply Filters")}
+                </Button>
+              </div>
+            </SheetContent>
+          </Sheet>
+        </div>
+      </div>
+
+      {/* Main Table / Mobile Card View */}
+      <div className="overflow-hidden rounded-xl border border-border/80 bg-card shadow-soft">
+        {isGiftCardsLoading ? (
+          <TableSkeleton columns={8} rows={5} />
+        ) : isGiftCardsError ? (
+          <ErrorState onRetry={refetchGiftCards} />
+        ) : (
+          <>
+            {/* Desktop Table View */}
+            <div className="table-desktop overflow-x-auto">
+              <Table className="min-w-[900px]">
+                <TableHeader className="bg-muted/40">
+                  <TableRow>
+                    <TableHead className="font-bold text-xs uppercase tracking-wider">
+                      {t("cardCode", "Card Code")}
+                    </TableHead>
+                    <TableHead className="font-bold text-xs uppercase tracking-wider">
+                      {t("recipientCustomer", "Recipient / Customer")}
+                    </TableHead>
+                    <TableHead className="font-bold text-xs uppercase tracking-wider">
+                      {t("issuedDate", "Issued Date")}
+                    </TableHead>
+                    <TableHead className="font-bold text-xs uppercase tracking-wider">
+                      {t("expiryDate", "Expiry Date")}
+                    </TableHead>
+                    <TableHead className="font-bold text-xs uppercase tracking-wider text-right">
+                      {t("initialValue", "Initial Value")}
+                    </TableHead>
+                    <TableHead className="font-bold text-xs uppercase tracking-wider text-right">
+                      {t("currentBalance", "Current Balance")}
+                    </TableHead>
+                    <TableHead className="font-bold text-xs uppercase tracking-wider text-center">
+                      {t("status", "Status")}
+                    </TableHead>
+                    <TableHead className="font-bold text-xs uppercase tracking-wider text-right">
+                      {t("actions", "Actions")}
+                    </TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody className="divide-y divide-border/60">
                   {paginatedCards.length === 0 ? (
-                    <EmptyState
-                      icon={Gift}
-                      title={t("noGiftCardsFound", "No gift cards found")}
-                      description={t("noGiftCardsYet", "You haven't issued any gift cards yet.")}
-                      actionLabel={t("issueGiftCard", "Issue Gift Card")}
-                      onAction={handleOpenAdd}
-                      className="border-none bg-transparent my-0 py-6 shadow-none"
-                    />
+                    <TableRow>
+                      <TableCell colSpan={8} className="h-64 text-center">
+                        <EmptyState
+                          icon={Gift}
+                          title={t("noGiftCardsFound", "No gift cards found")}
+                          description={
+                            search
+                              ? t("noGiftCardsMatchQuery", "No gift cards matched your search query.")
+                              : t("noGiftCardsYet", "You haven't issued any gift cards yet.")
+                          }
+                          actionLabel={t("issueGiftCard", "Issue Gift Card")}
+                          onAction={handleOpenAdd}
+                          className="border-none bg-transparent my-0 py-8 shadow-none"
+                        />
+                      </TableCell>
+                    </TableRow>
                   ) : (
                     paginatedCards.map((g) => (
-                      <div
-                        key={g.id}
-                        className="relative rounded-xl border border-border/80 bg-card p-4 shadow-soft space-y-3"
-                      >
-                        <div className="flex items-start justify-between">
+                      <TableRow key={g.id} className="hover:bg-muted/30 transition-colors">
+                        <TableCell className="font-mono font-bold text-sm text-foreground whitespace-nowrap">
                           <div className="flex items-center gap-2">
-                            <div className="grid size-9 place-items-center rounded-lg bg-primary/10 text-primary">
+                            <div className="grid size-8 place-items-center rounded-lg bg-primary/10 text-primary">
                               <Gift className="size-4" />
                             </div>
-                            <div>
-                              <p className="font-mono font-bold text-sm text-foreground">
-                                {g.code}
-                              </p>
-                              <p className="text-xs text-muted-foreground">
-                                {g.customer || t("walkInCustomer", "Walk-in Customer")}
-                              </p>
-                            </div>
+                            <span>{g.code}</span>
                           </div>
+                        </TableCell>
+                        <TableCell className="font-semibold text-foreground whitespace-nowrap">
+                          {g.customer || t("walkInCustomer", "Walk-in Customer")}
+                        </TableCell>
+                        <TableCell className="text-xs text-muted-foreground whitespace-nowrap font-medium">
+                          {g.issued ? formatDate(g.issued) : "—"}
+                        </TableCell>
+                        <TableCell className="text-xs text-muted-foreground whitespace-nowrap font-medium">
+                          {g.expires ? formatDate(g.expires) : t("never", "Never")}
+                        </TableCell>
+                        <TableCell className="text-right text-xs font-semibold text-muted-foreground whitespace-nowrap">
+                          {formatCurrency(Number(g.initialBalance) || Number(g.balance) || 0)}
+                        </TableCell>
+                        <TableCell className="text-right font-black text-sm text-primary whitespace-nowrap">
+                          {formatCurrency(Number(g.balance) || 0)}
+                        </TableCell>
+                        <TableCell className="text-center whitespace-nowrap">
                           <Badge
                             variant="outline"
-                            className={`text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full ${
+                            className={`text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full ${
                               g.status === "active"
                                 ? "bg-success/15 text-success border-success/25"
                                 : g.status === "expired"
@@ -661,79 +629,168 @@ function GiftCardsPage() {
                           >
                             {g.status}
                           </Badge>
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-2 pt-2 border-t border-border/60 text-xs">
-                          <div>
-                            <span className="text-[10px] uppercase font-bold text-muted-foreground block">
-                              {t("balance", "Balance")}
-                            </span>
-                            <span className="text-base font-black text-primary">
-                              {formatCurrency(Number(g.balance) || 0)}
-                            </span>
+                        </TableCell>
+                        <TableCell className="text-right whitespace-nowrap">
+                          <div className="flex items-center justify-end gap-1">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-8 px-2 text-xs font-semibold text-primary hover:bg-primary/10"
+                              onClick={() => {
+                                setTopUpItem(g);
+                                setTopUpAmount("");
+                              }}
+                              title={t("topUp", "Top-up")}
+                            >
+                              <RefreshCw className="mr-1 size-3.5" /> {t("topUp", "Top-up")}
+                            </Button>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="size-8 rounded-lg"
+                                >
+                                  <MoreVertical className="size-4 text-muted-foreground" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end" className="rounded-xl">
+                                <DropdownMenuItem
+                                  onClick={() => handleOpenEdit(g)}
+                                  className="text-xs font-semibold cursor-pointer"
+                                >
+                                  <Edit2 className="mr-2 size-3.5" /> {t("editCard", "Edit Card")}
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  className="text-destructive text-xs font-semibold cursor-pointer"
+                                  onClick={() => setDeleteId(g.id)}
+                                >
+                                  <Trash2 className="mr-2 size-3.5" /> {t("delete", "Delete")}
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
                           </div>
-                          <div className="text-right">
-                            <span className="text-[10px] uppercase font-bold text-muted-foreground block">
-                              {t("expires", "Expires")}
-                            </span>
-                            <span className="font-medium text-foreground">
-                              {g.expires ? formatDate(g.expires) : t("never", "Never")}
-                            </span>
-                          </div>
-                        </div>
-
-                        <div className="flex items-center justify-end gap-2 pt-2 border-t border-border/60">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="h-8 text-xs font-semibold"
-                            onClick={() => {
-                              setTopUpItem(g);
-                              setTopUpAmount("");
-                            }}
-                          >
-                            <RefreshCw className="mr-1 size-3.5" /> {t("topUp", "Top-up")}
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="h-8 text-xs font-semibold"
-                            onClick={() => handleOpenEdit(g)}
-                          >
-                            <Edit2 className="mr-1 size-3.5" /> {t("edit", "Edit")}
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-8 text-xs font-semibold text-destructive hover:bg-destructive/10"
-                            onClick={() => setDeleteId(g.id)}
-                          >
-                            <Trash2 className="size-3.5" />
-                          </Button>
-                        </div>
-                      </div>
+                        </TableCell>
+                      </TableRow>
                     ))
                   )}
-                </div>
+                </TableBody>
+              </Table>
+            </div>
 
-                {/* Pagination Controls */}
-                {filteredCards.length > 0 && (
-                  <div className="border-t border-border p-3 sm:p-4">
-                    <PaginationControls
-                      currentPage={page}
-                      totalPages={totalPages}
-                      onPageChange={setPage}
-                      pageSize={pageSize}
-                      onPageSizeChange={setPageSize}
-                      totalItems={filteredCards.length}
-                    />
+            {/* Mobile Cards View */}
+            <div className="table-mobile-cards p-3 space-y-2.5">
+              {paginatedCards.length === 0 ? (
+                <EmptyState
+                  icon={Gift}
+                  title={t("noGiftCardsFound", "No gift cards found")}
+                  description={t("noGiftCardsYet", "You haven't issued any gift cards yet.")}
+                  actionLabel={t("issueGiftCard", "Issue Gift Card")}
+                  onAction={handleOpenAdd}
+                  className="border-none bg-transparent my-0 py-6 shadow-none"
+                />
+              ) : (
+                paginatedCards.map((g) => (
+                  <div
+                    key={g.id}
+                    className="relative rounded-xl border border-border/80 bg-card p-3.5 shadow-soft space-y-3"
+                  >
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-center gap-2">
+                        <div className="grid size-9 place-items-center rounded-lg bg-primary/10 text-primary">
+                          <Gift className="size-4" />
+                        </div>
+                        <div>
+                          <p className="font-mono font-bold text-sm text-foreground">
+                            {g.code}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {g.customer || t("walkInCustomer", "Walk-in Customer")}
+                          </p>
+                        </div>
+                      </div>
+                      <Badge
+                        variant="outline"
+                        className={`text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full ${
+                          g.status === "active"
+                            ? "bg-success/15 text-success border-success/25"
+                            : g.status === "expired"
+                              ? "bg-destructive/15 text-destructive border-destructive/25"
+                              : "bg-muted text-muted-foreground border-border/60"
+                        }`}
+                      >
+                        {g.status}
+                      </Badge>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2 pt-2 border-t border-border/60 text-xs">
+                      <div>
+                        <span className="text-[10px] uppercase font-bold text-muted-foreground block">
+                          {t("balance", "Balance")}
+                        </span>
+                        <span className="text-base font-black text-primary">
+                          {formatCurrency(Number(g.balance) || 0)}
+                        </span>
+                      </div>
+                      <div className="text-right">
+                        <span className="text-[10px] uppercase font-bold text-muted-foreground block">
+                          {t("expires", "Expires")}
+                        </span>
+                        <span className="font-medium text-foreground">
+                          {g.expires ? formatDate(g.expires) : t("never", "Never")}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-end gap-2 pt-2 border-t border-border/60">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-8 text-xs font-semibold"
+                        onClick={() => {
+                          setTopUpItem(g);
+                          setTopUpAmount("");
+                        }}
+                      >
+                        <RefreshCw className="mr-1 size-3.5" /> {t("topUp", "Top-up")}
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-8 text-xs font-semibold"
+                        onClick={() => handleOpenEdit(g)}
+                      >
+                        <Edit2 className="mr-1 size-3.5" /> {t("edit", "Edit")}
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 text-xs font-semibold text-destructive hover:bg-destructive/10"
+                        onClick={() => setDeleteId(g.id)}
+                      >
+                        <Trash2 className="size-3.5" />
+                      </Button>
+                    </div>
                   </div>
-                )}
-              </>
+                ))
+              )}
+            </div>
+
+            {filteredCards.length > 0 && (
+              <div className="border-t border-border/60 p-3">
+                <PaginationControls
+                  currentPage={page}
+                  totalPages={totalPages}
+                  onPageChange={setPage}
+                  pageSize={pageSize}
+                  onPageSizeChange={setPageSize}
+                  totalItems={filteredCards.length}
+                />
+              </div>
             )}
-          </div>
-        </div>
-      </DataPage>
+          </>
+        )}
+      </div>
 
       {/* Issue / Edit Gift Card Drawer */}
       <Sheet
@@ -795,7 +852,7 @@ function GiftCardsPage() {
               <div className="space-y-1.5">
                 <Label htmlFor="customer">{t("customerRecipient", "Customer / Recipient")}</Label>
                 <SearchableSelect
-                  options={customers.map((c) => ({ value: c.name, label: c.name }))}
+                  options={customers.map((c: any) => ({ value: c.name, label: c.name }))}
                   value={selectedCustomerId}
                   onChange={(val) => setSelectedCustomerId(val)}
                   placeholder={t("selectCustomerWalkIn", "Select customer or leave blank for Walk-in...")}
