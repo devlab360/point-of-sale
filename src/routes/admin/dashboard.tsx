@@ -180,7 +180,7 @@ function SuperAdminDashboardPage() {
   });
 
   const rejectPaymentMutation = useMutation({
-    mutationFn: (paymentId: string) => rejectPaymentFn({ data: { paymentId, notes: "Admin rejected" } }),
+    mutationFn: (paymentId: string) => rejectPaymentFn({ data: { paymentId } }),
     onSuccess: (res) => {
       if (res.success) {
         toast.success(t("admin.paymentRejected", "Payment rejected"));
@@ -775,8 +775,8 @@ function SuperAdminDashboardPage() {
                             <Button
                               size="sm"
                               className="h-7 text-xs font-bold gap-1 bg-emerald-600 hover:bg-emerald-700 text-white"
-                              disabled={approveMutation.isPending}
-                              onClick={() => approveMutation.mutate(p.id)}
+                              disabled={approvePaymentMutation.isPending}
+                              onClick={() => approvePaymentMutation.mutate(p.id)}
                             >
                               <Check className="size-3" /> {t("approve", "Approve")}
                             </Button>
@@ -784,8 +784,8 @@ function SuperAdminDashboardPage() {
                               size="sm"
                               variant="outline"
                               className="h-7 text-xs text-destructive hover:bg-destructive/10"
-                              disabled={rejectMutation.isPending}
-                              onClick={() => rejectMutation.mutate(p.id)}
+                              disabled={rejectPaymentMutation.isPending}
+                              onClick={() => rejectPaymentMutation.mutate(p.id)}
                             >
                               <XCircle className="size-3" /> {t("reject", "Reject")}
                             </Button>

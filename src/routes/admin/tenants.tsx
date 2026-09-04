@@ -35,6 +35,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Switch } from "@/components/ui/switch";
 import {
   getAllOrganizationsFn,
   updateOrganizationFn,
@@ -483,8 +484,13 @@ function SuperAdminTenantsPage() {
                                 <span>{org.name}</span>
                               </div>
                               <div className="text-xs text-muted-foreground">{org.ownerEmail}</div>
-                              <div className="text-[10px] text-muted-foreground/70 font-mono">
-                                ID: {org.id}
+                              <div className="text-[10px] text-muted-foreground/70 font-mono flex items-center gap-1.5 mt-0.5">
+                                {org.code ? (
+                                  <span className="font-semibold px-1 py-0.2 rounded bg-primary/10 text-primary">
+                                    {org.code}
+                                  </span>
+                                ) : null}
+                                <span>ID: {org.id.length > 12 ? `${org.id.slice(0, 10)}…` : org.id}</span>
                               </div>
                             </div>
                           </div>
@@ -658,6 +664,48 @@ function SuperAdminTenantsPage() {
                             }
                           />
                         </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="space-y-1.5">
+                          <Label htmlFor="edit-org-code">{t("admin.orgCode", "Organization Code")}</Label>
+                          <Input
+                            id="edit-org-code"
+                            placeholder="e.g. ORG-1001"
+                            value={editingTenant.code || ""}
+                            onChange={(e) =>
+                              setEditingTenant({ ...editingTenant, code: e.target.value })
+                            }
+                          />
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label htmlFor="edit-industry-type">{t("admin.industryType", "Industry Vertical / Type")}</Label>
+                          <Input
+                            id="edit-industry-type"
+                            placeholder="e.g. RETAIL, PHARMACY, RESTAURANT"
+                            value={editingTenant.industryType || ""}
+                            onChange={(e) =>
+                              setEditingTenant({ ...editingTenant, industryType: e.target.value })
+                            }
+                          />
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between p-3.5 rounded-xl border bg-muted/20">
+                        <div className="space-y-0.5">
+                          <Label className="text-xs font-bold text-foreground cursor-pointer">
+                            {t("admin.branchPricingEnabled", "Branch-Specific Price Overrides")}
+                          </Label>
+                          <p className="text-[11px] text-muted-foreground">
+                            {t("admin.branchPricingDesc", "Allow outlet managers to configure customized prices per branch.")}
+                          </p>
+                        </div>
+                        <Switch
+                          checked={Boolean(editingTenant.branchPricingEnabled)}
+                          onCheckedChange={(checked) =>
+                            setEditingTenant({ ...editingTenant, branchPricingEnabled: checked })
+                          }
+                        />
                       </div>
 
                       <div className="p-3.5 rounded-xl border bg-muted/20 space-y-2 text-xs">

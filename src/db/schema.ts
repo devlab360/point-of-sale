@@ -34,7 +34,6 @@ export const organizations = pgTable("organizations", {
   extraUsersQuota: integer("extra_users_quota").default(0), // additional paid user seats
   planExpiryDate: timestamp("plan_expiry_date", { mode: "string" }),
   syncKey: text("sync_key").notNull().default("default-sync-key"), // To authenticate devices
-  isOnline: boolean("is_online").notNull().default(true),
   industryType: text("industry_type"), // business vertical (e.g. "Saloon & Spa", "Grocery Shop")
   branchPricingEnabled: boolean("branch_pricing_enabled").notNull().default(false), // per-branch price overrides toggle
   ...timestamps,

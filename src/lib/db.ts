@@ -347,7 +347,6 @@ export interface LocalOrganization {
   currentPlanId: string;
   planExpiryDate: string;
   syncKey?: string;
-  isOnline: boolean;
   synced?: boolean;
   syncRetryCount?: number;
 }

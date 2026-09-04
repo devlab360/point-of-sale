@@ -355,7 +355,7 @@ export function AiCopilotDrawer() {
   const isPos = pathname === "/pos" || pathname.startsWith("/pos/");
 
   const { formatCurrency, currencySymbol } = useCurrency();
-  const { language } = useLanguage();
+  const { language, t } = useLanguage();
   const { formatAppDate } = useAppFormatter();
   const [isOpen, setIsOpen] = useState(false);
   const [inputQuery, setInputQuery] = useState("");

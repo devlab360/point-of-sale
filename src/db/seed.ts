@@ -1793,15 +1793,18 @@ export async function seedDatabase() {
       .limit(1);
 
     if (!existingOrg.length) {
+      const orgCode = `ORG-${acc.orgId.replace(/[^a-zA-Z0-9]/g, "").slice(-4).toUpperCase() || Math.floor(1000 + Math.random() * 9000)}`;
       await db.insert(schema.organizations).values({
         id: acc.orgId,
+        code: orgCode,
         name: acc.storeName,
         ownerEmail: acc.ownerEmail,
         status: "active",
         currentPlanId: "enterprise",
+        industryType: acc.businessType,
+        branchPricingEnabled: true,
         planExpiryDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
         syncKey: `${acc.orgId}-sync-key`,
-        isOnline: true,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       });
@@ -1813,6 +1816,8 @@ export async function seedDatabase() {
           name: acc.storeName,
           status: "active",
           currentPlanId: "enterprise",
+          industryType: acc.businessType,
+          branchPricingEnabled: true,
           updatedAt: new Date().toISOString(),
         })
         .where(eq(schema.organizations.id, acc.orgId));

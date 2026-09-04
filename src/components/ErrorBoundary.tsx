@@ -22,6 +22,8 @@ interface State {
   showDetails: boolean;
 }
 
+const t = (k: string, fallback: string) => fallback;
+
 export class ErrorBoundary extends Component<Props, State> {
   public state: State = {
     hasError: false,

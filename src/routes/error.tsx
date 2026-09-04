@@ -13,6 +13,7 @@ export const Route = createFileRoute("/error")({
 });
 
 function ErrorPage() {
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const search = Route.useSearch();
   const code = search.code || 500;

@@ -160,14 +160,18 @@ export class AdminService {
     const trialDays = 7;
     const expiryDate = new Date(Date.now() + trialDays * 24 * 60 * 60 * 1000);
 
+    const orgCode = `ORG-${Math.floor(1000 + Math.random() * 9000)}`;
+
     await db.transaction(async (tx) => {
       await tx.insert(schema.organizations).values({
         id: orgId,
+        code: orgCode,
         name: dto.storeName,
         ownerEmail: email,
         status: "trial",
         currentPlanId: dto.planId,
         planExpiryDate: expiryDate.toISOString(),
+        syncKey: `sync_${crypto.randomUUID().replace(/-/g, "").substring(0, 16)}`,
       });
 
       await tx.insert(schema.users).values({

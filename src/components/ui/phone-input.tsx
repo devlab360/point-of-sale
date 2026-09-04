@@ -6,6 +6,8 @@ import { COUNTRIES, getCountryByPhoneCode, CountryInfo } from "@/lib/countries";
 import { Popover, PopoverContent, PopoverTrigger } from "./popover";
 import { ChevronDown, Search, Check } from "lucide-react";
 
+const t = (k: string, fallback: string) => fallback;
+
 export type PhoneInputProps = Omit<React.ComponentProps<"input">, "value" | "defaultValue"> & {
   defaultValue?: string;
   value?: string;

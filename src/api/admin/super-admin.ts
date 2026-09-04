@@ -27,10 +27,13 @@ export const updateOrganizationFn = createServerFn({ method: "POST" })
   .validator(
     z.object({
       orgId: z.string(),
+      code: z.string().optional(),
       name: z.string().optional(),
       ownerEmail: z.string().email().optional(),
       status: z.string().optional(),
       currentPlanId: z.string().optional(),
+      industryType: z.string().optional(),
+      branchPricingEnabled: z.boolean().optional(),
       extraUsersQuota: z.number().optional(),
       planExpiryDate: z.string().optional(),
     }),

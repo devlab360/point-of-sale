@@ -143,14 +143,18 @@ export class AuthService {
 
     const hashedPin = await bcrypt.hash(data.password, 10);
 
+    const orgCode = `ORG-${Math.floor(1000 + Math.random() * 9000)}`;
+
     await db.transaction(async (tx) => {
       await tx.insert(schema.organizations).values({
         id: data.orgId,
+        code: orgCode,
         name: data.companyName,
         ownerEmail: email,
         status: "trial",
         currentPlanId: data.assignedPlanId,
         planExpiryDate: new Date(data.trialEndsAt).toISOString(),
+        syncKey: `sync_${crypto.randomUUID().replace(/-/g, "").substring(0, 16)}`,
       });
 
       await tx.insert(schema.users).values({

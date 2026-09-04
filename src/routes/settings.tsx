@@ -55,8 +55,8 @@ import {
   updateTaxMasterFn,
   deleteTaxMasterFn,
   loadCountryTaxTemplateFn,
-  COUNTRY_TAX_TEMPLATES,
 } from "@/api/tax-master";
+import { COUNTRY_TAX_TEMPLATES } from "@/lib/tax-templates";
 import { getOrgDataFn } from "@/api/auth";
 import { getMyOrganizationsFn } from "@/api/organizations";
 import { useDebounce } from "@/hooks/useDebounce";
