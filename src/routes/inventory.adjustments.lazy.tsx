@@ -309,19 +309,20 @@ function AdjustmentsPage() {
           ) : (
             <TableSkeleton columns={4} rows={6} />
           )
-        ) : filtered.length === 0 ? (
-          <EmptyState
-            icon={ClipboardList}
-            title={t("noAdjustmentRecordsFound", "No adjustment records found")}
-            description={
-              search
-                ? t("noAdjustmentSearchDesc", "Try adjusting your search criteria.")
-                : t("noAdjustmentDefaultDesc", "No manual inventory adjustments have been recorded yet.")
-            }
-            actionLabel={t("newAdjustment", "New Adjustment")}
-            onAction={() => setOpen(true)}
-          />
         ) : viewMode === "grid" ? (
+          filtered.length === 0 ? (
+            <EmptyState
+              icon={ClipboardList}
+              title={t("noAdjustmentRecordsFound", "No adjustment records found")}
+              description={
+                search
+                  ? t("noAdjustmentSearchDesc", "Try adjusting your search criteria.")
+                  : t("noAdjustmentDefaultDesc", "No manual inventory adjustments have been recorded yet.")
+              }
+              actionLabel={t("newAdjustment", "New Adjustment")}
+              onAction={() => setOpen(true)}
+            />
+          ) : (
           /* Grid View */
           <div className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
@@ -383,6 +384,7 @@ function AdjustmentsPage() {
               </div>
             )}
           </div>
+          )
         ) : (
           /* Table View */
           <div className="overflow-hidden rounded-xl border border-border/80 bg-card shadow-soft">
@@ -397,7 +399,25 @@ function AdjustmentsPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {paginatedAdjustments.map((a: any) => {
+                  {filtered.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={4} className="h-64 text-center">
+                        <EmptyState
+                          icon={ClipboardList}
+                          title={t("noAdjustmentRecordsFound", "No adjustment records found")}
+                          description={
+                            search
+                              ? t("noAdjustmentSearchDesc", "Try adjusting your search criteria.")
+                              : t("noAdjustmentDefaultDesc", "No manual inventory adjustments have been recorded yet.")
+                          }
+                          actionLabel={t("newAdjustment", "New Adjustment")}
+                          onAction={() => setOpen(true)}
+                          className="border-none bg-transparent my-0 py-8 shadow-none"
+                        />
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    paginatedAdjustments.map((a: any) => {
                     const isPos = (a.net || 0) > 0;
 
                     return (
@@ -425,7 +445,7 @@ function AdjustmentsPage() {
                         </TableCell>
                       </TableRow>
                     );
-                  })}
+                  }))}
                 </TableBody>
               </Table>
             </div>

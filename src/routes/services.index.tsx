@@ -304,19 +304,20 @@ function ServicesPage() {
           )
         ) : isError ? (
           <ErrorState onRetry={refetch} />
-        ) : filtered.length === 0 ? (
-          <EmptyState
-            icon={Wrench}
-            title={t("noServicesFound", "No services found")}
-            description={
-              search
-                ? t("tryAdjustingSearch", "Try adjusting your search criteria.")
-                : t("noServicesCreatedYet", "You haven't created any service items yet.")
-            }
-            actionLabel={t("addService", "Add Service")}
-            onAction={() => navigate({ to: "/services/new" })}
-          />
         ) : viewMode === "grid" ? (
+          filtered.length === 0 ? (
+            <EmptyState
+              icon={Wrench}
+              title={t("noServicesFound", "No services found")}
+              description={
+                search
+                  ? t("tryAdjustingSearch", "Try adjusting your search criteria.")
+                  : t("noServicesCreatedYet", "You haven't created any service items yet.")
+              }
+              actionLabel={t("addService", "Add Service")}
+              onAction={() => navigate({ to: "/services/new" })}
+            />
+          ) : (
           /* Grid View */
           <div className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
@@ -420,6 +421,7 @@ function ServicesPage() {
               </div>
             )}
           </div>
+          )
         ) : (
           /* Table View */
           <div className="overflow-hidden rounded-xl border border-border/80 bg-card shadow-soft">
@@ -435,7 +437,25 @@ function ServicesPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {paginatedServices.map((s: any) => {
+                  {filtered.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={5} className="h-64 text-center">
+                        <EmptyState
+                          icon={Wrench}
+                          title={t("noServicesFound", "No services found")}
+                          description={
+                            search
+                              ? t("tryAdjustingSearch", "Try adjusting your search criteria.")
+                              : t("noServicesCreatedYet", "You haven't created any service items yet.")
+                          }
+                          actionLabel={t("addService", "Add Service")}
+                          onAction={() => navigate({ to: "/services/new" })}
+                          className="border-none bg-transparent my-0 py-8 shadow-none"
+                        />
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    paginatedServices.map((s: any) => {
                     const catObj = categories.find((c: any) => c.id === s.category);
 
                     return (
@@ -494,7 +514,7 @@ function ServicesPage() {
                         </TableCell>
                       </TableRow>
                     );
-                  })}
+                  }))}
                 </TableBody>
               </Table>
             </div>

@@ -421,22 +421,23 @@ function SubscriptionsPage() {
           )
         ) : isSubsError ? (
           <ErrorState onRetry={refetchSubs} />
-        ) : filteredSubs.length === 0 ? (
-          <EmptyState
-            icon={Repeat}
-            title={t("noSubscriptionsFound", "No subscriptions found")}
-            description={
-              search
-                ? t("adjustSearchCriteria", "Try adjusting your search criteria.")
-                : t("noSubscriptionsYet", "You haven't enrolled any recurring customer subscriptions yet.")
-            }
-            actionLabel={t("addSubscription", "Add Subscription")}
-            onAction={() => {
-              clearSubAll();
-              setIsAddOpen(true);
-            }}
-          />
         ) : viewMode === "grid" ? (
+          filteredSubs.length === 0 ? (
+            <EmptyState
+              icon={Repeat}
+              title={t("noSubscriptionsFound", "No subscriptions found")}
+              description={
+                search
+                  ? t("adjustSearchCriteria", "Try adjusting your search criteria.")
+                  : t("noSubscriptionsYet", "You haven't enrolled any recurring customer subscriptions yet.")
+              }
+              actionLabel={t("addSubscription", "Add Subscription")}
+              onAction={() => {
+                clearSubAll();
+                setIsAddOpen(true);
+              }}
+            />
+          ) : (
           /* Grid View */
           <div className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
@@ -528,6 +529,7 @@ function SubscriptionsPage() {
               </div>
             )}
           </div>
+          )
         ) : (
           /* Table View */
           <div className="overflow-hidden rounded-xl border border-border/80 bg-card shadow-soft">
@@ -545,7 +547,28 @@ function SubscriptionsPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {paginatedSubs.map((s: any) => {
+                  {filteredSubs.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={7} className="h-64 text-center">
+                        <EmptyState
+                          icon={Repeat}
+                          title={t("noSubscriptionsFound", "No subscriptions found")}
+                          description={
+                            search
+                              ? t("adjustSearchCriteria", "Try adjusting your search criteria.")
+                              : t("noSubscriptionsYet", "You haven't enrolled any recurring customer subscriptions yet.")
+                          }
+                          actionLabel={t("addSubscription", "Add Subscription")}
+                          onAction={() => {
+                            clearSubAll();
+                            setIsAddOpen(true);
+                          }}
+                          className="border-none bg-transparent my-0 py-8 shadow-none"
+                        />
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    paginatedSubs.map((s: any) => {
                     const isActive = s.status === "active";
 
                     return (
@@ -600,7 +623,7 @@ function SubscriptionsPage() {
                         </TableCell>
                       </TableRow>
                     );
-                  })}
+                  }))}
                 </TableBody>
               </Table>
             </div>

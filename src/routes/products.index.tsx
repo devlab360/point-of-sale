@@ -389,19 +389,20 @@ function ProductsPage() {
           )
         ) : isProductsError ? (
           <ErrorState onRetry={refetchProducts} />
-        ) : products.length === 0 ? (
-          <EmptyState
-            icon={PackageSearch}
-            title={t("noProductsFound", "No products found")}
-            description={
-              search
-                ? t("adjustSearch", "Try adjusting your search criteria.")
-                : t("noProductsYet", "You haven't added any products to your catalog yet.")
-            }
-            actionLabel={t("addProduct", "Add Product")}
-            onAction={openNew}
-          />
         ) : view === "grid" ? (
+          products.length === 0 ? (
+            <EmptyState
+              icon={PackageSearch}
+              title={t("noProductsFound", "No products found")}
+              description={
+                search
+                  ? t("adjustSearch", "Try adjusting your search criteria.")
+                  : t("noProductsYet", "You haven't added any products to your catalog yet.")
+              }
+              actionLabel={t("addProduct", "Add Product")}
+              onAction={openNew}
+            />
+          ) : (
           /* Grid View */
           <div className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
@@ -515,6 +516,7 @@ function ProductsPage() {
               </div>
             )}
           </div>
+          )
         ) : (
           /* Table View */
           <div className="overflow-hidden rounded-xl border border-border/80 bg-card shadow-soft">
@@ -531,7 +533,25 @@ function ProductsPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {products.map((p: any) => {
+                  {products.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={6} className="h-64 text-center">
+                        <EmptyState
+                          icon={PackageSearch}
+                          title={t("noProductsFound", "No products found")}
+                          description={
+                            search
+                              ? t("adjustSearch", "Try adjusting your search criteria.")
+                              : t("noProductsYet", "You haven't added any products to your catalog yet.")
+                          }
+                          actionLabel={t("addProduct", "Add Product")}
+                          onAction={openNew}
+                          className="border-none bg-transparent my-0 py-8 shadow-none"
+                        />
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    products.map((p: any) => {
                     const catObj = categories.find((c: any) => c.id === p.category);
                     const isLow = Number(p.stock) <= Number(p.reorderLevel || 0);
 
@@ -606,7 +626,7 @@ function ProductsPage() {
                         </TableCell>
                       </TableRow>
                     );
-                  })}
+                  }))}
                 </TableBody>
               </Table>
             </div>

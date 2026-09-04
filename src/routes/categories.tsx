@@ -376,19 +376,20 @@ function CategoriesPage() {
           )
         ) : isCategoriesError ? (
           <ErrorState onRetry={refetchCategories} />
-        ) : filteredCategories.length === 0 ? (
-          <EmptyState
-            icon={Tag}
-            title={t("noCategoriesFound", "No categories found")}
-            description={
-              search
-                ? t("adjustSearch", "Try adjusting your search criteria.")
-                : t("noCategoriesYet", "You haven't created any product categories yet.")
-            }
-            actionLabel={t("addCategory", "Add Category")}
-            onAction={openNew}
-          />
         ) : viewMode === "grid" ? (
+          filteredCategories.length === 0 ? (
+            <EmptyState
+              icon={Tag}
+              title={t("noCategoriesFound", "No categories found")}
+              description={
+                search
+                  ? t("adjustSearch", "Try adjusting your search criteria.")
+                  : t("noCategoriesYet", "You haven't created any product categories yet.")
+              }
+              actionLabel={t("addCategory", "Add Category")}
+              onAction={openNew}
+            />
+          ) : (
           /* Grid View */
           <div className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
@@ -463,6 +464,7 @@ function CategoriesPage() {
               </div>
             )}
           </div>
+          )
         ) : (
           /* Table View */
           <div className="overflow-hidden rounded-xl border border-border/80 bg-card shadow-soft">
@@ -477,7 +479,25 @@ function CategoriesPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {paginatedCategories.map((c: any) => {
+                  {filteredCategories.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={4} className="h-64 text-center">
+                        <EmptyState
+                          icon={Tag}
+                          title={t("noCategoriesFound", "No categories found")}
+                          description={
+                            search
+                              ? t("adjustSearch", "Try adjusting your search criteria.")
+                              : t("noCategoriesYet", "You haven't created any product categories yet.")
+                          }
+                          actionLabel={t("addCategory", "Add Category")}
+                          onAction={openNew}
+                          className="border-none bg-transparent my-0 py-8 shadow-none"
+                        />
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    paginatedCategories.map((c: any) => {
                     const catIcon = c.icon || "";
 
                     return (
@@ -538,7 +558,7 @@ function CategoriesPage() {
                         </TableCell>
                       </TableRow>
                     );
-                  })}
+                  }))}
                 </TableBody>
               </Table>
             </div>

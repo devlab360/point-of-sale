@@ -346,19 +346,20 @@ function UnitsPage() {
           )
         ) : isUnitsError ? (
           <ErrorState onRetry={refetchUnits} />
-        ) : filteredUnits.length === 0 ? (
-          <EmptyState
-            icon={Scale}
-            title={t("noUnitsFound", "No units found")}
-            description={
-              search
-                ? t("adjustSearch", "Try adjusting your search criteria.")
-                : t("noUnitsYet", "You haven't created any measurement units yet.")
-            }
-            actionLabel={t("addUnit", "Add Unit")}
-            onAction={openNew}
-          />
         ) : viewMode === "grid" ? (
+          filteredUnits.length === 0 ? (
+            <EmptyState
+              icon={Scale}
+              title={t("noUnitsFound", "No units found")}
+              description={
+                search
+                  ? t("adjustSearch", "Try adjusting your search criteria.")
+                  : t("noUnitsYet", "You haven't created any measurement units yet.")
+              }
+              actionLabel={t("addUnit", "Add Unit")}
+              onAction={openNew}
+            />
+          ) : (
           /* Grid View */
           <div className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
@@ -423,6 +424,7 @@ function UnitsPage() {
               </div>
             )}
           </div>
+          )
         ) : (
           /* Table View */
           <div className="overflow-hidden rounded-xl border border-border/80 bg-card shadow-soft">
@@ -437,7 +439,25 @@ function UnitsPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {paginatedUnits.map((u: any) => (
+                  {filteredUnits.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={4} className="h-64 text-center">
+                        <EmptyState
+                          icon={Scale}
+                          title={t("noUnitsFound", "No units found")}
+                          description={
+                            search
+                              ? t("adjustSearch", "Try adjusting your search criteria.")
+                              : t("noUnitsYet", "You haven't created any measurement units yet.")
+                          }
+                          actionLabel={t("addUnit", "Add Unit")}
+                          onAction={openNew}
+                          className="border-none bg-transparent my-0 py-8 shadow-none"
+                        />
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    paginatedUnits.map((u: any) => (
                     <TableRow key={u.id} className="hover:bg-muted/30 transition-colors">
                       <TableCell>
                         <span className="font-semibold text-foreground">{u.name}</span>
@@ -473,7 +493,7 @@ function UnitsPage() {
                         </div>
                       </TableCell>
                     </TableRow>
-                  ))}
+                  )))}
                 </TableBody>
               </Table>
             </div>

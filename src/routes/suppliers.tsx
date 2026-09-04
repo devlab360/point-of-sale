@@ -610,18 +610,6 @@ function SuppliersPage() {
           )
         ) : isSuppliersError ? (
           <ErrorState onRetry={refetchSuppliers} />
-        ) : suppliers.length === 0 ? (
-          <EmptyState
-            icon={Truck}
-            title={t("noSuppliersFound", "No suppliers found")}
-            description={
-              search
-                ? t("adjustSearch", "Try adjusting your search criteria.")
-                : t("noSuppliersYet", "You haven't registered any suppliers yet.")
-            }
-            actionLabel={t("addSupplier", "Add Supplier")}
-            onAction={openAddDrawer}
-          />
         ) : viewMode === "table" ? (
           /* Table View */
           <div className="overflow-hidden rounded-xl border border-border/80 bg-card shadow-soft">
@@ -639,7 +627,25 @@ function SuppliersPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {paginatedSuppliers.map((s: any) => {
+                  {suppliers.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={7} className="h-64 text-center">
+                        <EmptyState
+                          icon={Truck}
+                          title={t("noSuppliersFound", "No suppliers found")}
+                          description={
+                            search
+                              ? t("adjustSearch", "Try adjusting your search criteria.")
+                              : t("noSuppliersYet", "You haven't registered any suppliers yet.")
+                          }
+                          actionLabel={t("addSupplier", "Add Supplier")}
+                          onAction={openAddDrawer}
+                          className="border-none bg-transparent my-0 py-8 shadow-none"
+                        />
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    paginatedSuppliers.map((s: any) => {
                     const hasDue = Number(s.balance) > 0;
                     return (
                       <TableRow key={s.id} className="hover:bg-muted/30 transition-colors">
@@ -730,7 +736,7 @@ function SuppliersPage() {
                         </TableCell>
                       </TableRow>
                     );
-                  })}
+                  }))}
                 </TableBody>
               </Table>
             </div>
@@ -749,6 +755,19 @@ function SuppliersPage() {
           </div>
         ) : (
           /* Card Grid View */
+          suppliers.length === 0 ? (
+            <EmptyState
+              icon={Truck}
+              title={t("noSuppliersFound", "No suppliers found")}
+              description={
+                search
+                  ? t("adjustSearch", "Try adjusting your search criteria.")
+                  : t("noSuppliersYet", "You haven't registered any suppliers yet.")
+              }
+              actionLabel={t("addSupplier", "Add Supplier")}
+              onAction={openAddDrawer}
+            />
+          ) : (
           <div className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {paginatedSuppliers.map((s: any) => {
@@ -883,6 +902,7 @@ function SuppliersPage() {
               </div>
             )}
           </div>
+          )
         )}
       </div>
 

@@ -382,19 +382,20 @@ function TransfersPage() {
           ) : (
             <TableSkeleton columns={5} rows={6} />
           )
-        ) : filtered.length === 0 ? (
-          <EmptyState
-            icon={Truck}
-            title={t("noTransfersFound", "No transfers found")}
-            description={
-              search
-                ? t("noTransfersSearchDesc", "Try adjusting your search criteria.")
-                : t("noTransfersDefaultDesc", "You haven't recorded any inventory transfers yet.")
-            }
-            actionLabel={t("newTransfer", "New Transfer")}
-            onAction={() => setOpen(true)}
-          />
         ) : viewMode === "grid" ? (
+          filtered.length === 0 ? (
+            <EmptyState
+              icon={Truck}
+              title={t("noTransfersFound", "No transfers found")}
+              description={
+                search
+                  ? t("noTransfersSearchDesc", "Try adjusting your search criteria.")
+                  : t("noTransfersDefaultDesc", "You haven't recorded any inventory transfers yet.")
+              }
+              actionLabel={t("newTransfer", "New Transfer")}
+              onAction={() => setOpen(true)}
+            />
+          ) : (
           /* Grid View */
           <div className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
@@ -454,6 +455,7 @@ function TransfersPage() {
               </div>
             )}
           </div>
+          )
         ) : (
           /* Table View */
           <div className="overflow-hidden rounded-xl border border-border/80 bg-card shadow-soft">
@@ -469,7 +471,25 @@ function TransfersPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {paginatedTransfers.map((tItem: any) => (
+                  {filtered.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={5} className="h-64 text-center">
+                        <EmptyState
+                          icon={Truck}
+                          title={t("noTransfersFound", "No transfers found")}
+                          description={
+                            search
+                              ? t("noTransfersSearchDesc", "Try adjusting your search criteria.")
+                              : t("noTransfersDefaultDesc", "You haven't recorded any inventory transfers yet.")
+                          }
+                          actionLabel={t("newTransfer", "New Transfer")}
+                          onAction={() => setOpen(true)}
+                          className="border-none bg-transparent my-0 py-8 shadow-none"
+                        />
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    paginatedTransfers.map((tItem: any) => (
                     <TableRow key={tItem.id} className="hover:bg-muted/30 transition-colors">
                       <TableCell>
                         <span className="font-semibold text-foreground">{tItem.productName}</span>
@@ -493,7 +513,7 @@ function TransfersPage() {
                         {formatAppDate(tItem.date)}
                       </TableCell>
                     </TableRow>
-                  ))}
+                  )))}
                 </TableBody>
               </Table>
             </div>

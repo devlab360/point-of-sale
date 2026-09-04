@@ -410,23 +410,24 @@ function PromotionsPage() {
           )
         ) : isPromotionsError ? (
           <ErrorState onRetry={refetchPromotions} />
-        ) : filteredPromotions.length === 0 ? (
-          <EmptyState
-            icon={Megaphone}
-            title={t("noPromotionsFound", "No promotions found")}
-            description={
-              search
-                ? t("adjustSearchCriteria", "Try adjusting your search criteria.")
-                : t("noCampaignsYet", "You haven't launched any promotional campaigns yet.")
-            }
-            actionLabel={t("createPromotion", "Create Promotion")}
-            onAction={() => {
-              setEditItem(null);
-              clearPromoAll();
-              setIsAddOpen(true);
-            }}
-          />
         ) : viewMode === "grid" ? (
+          filteredPromotions.length === 0 ? (
+            <EmptyState
+              icon={Megaphone}
+              title={t("noPromotionsFound", "No promotions found")}
+              description={
+                search
+                  ? t("adjustSearchCriteria", "Try adjusting your search criteria.")
+                  : t("noCampaignsYet", "You haven't launched any promotional campaigns yet.")
+              }
+              actionLabel={t("createPromotion", "Create Promotion")}
+              onAction={() => {
+                setEditItem(null);
+                clearPromoAll();
+                setIsAddOpen(true);
+              }}
+            />
+          ) : (
           /* Grid View */
           <div className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
@@ -526,6 +527,7 @@ function PromotionsPage() {
               </div>
             )}
           </div>
+          )
         ) : (
           /* Table View */
           <div className="overflow-hidden rounded-xl border border-border/80 bg-card shadow-soft">
@@ -542,7 +544,29 @@ function PromotionsPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {paginatedPromotions.map((p: any) => {
+                  {filteredPromotions.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={6} className="h-64 text-center">
+                        <EmptyState
+                          icon={Megaphone}
+                          title={t("noPromotionsFound", "No promotions found")}
+                          description={
+                            search
+                              ? t("adjustSearchCriteria", "Try adjusting your search criteria.")
+                              : t("noCampaignsYet", "You haven't launched any promotional campaigns yet.")
+                          }
+                          actionLabel={t("createPromotion", "Create Promotion")}
+                          onAction={() => {
+                            setEditItem(null);
+                            clearPromoAll();
+                            setIsAddOpen(true);
+                          }}
+                          className="border-none bg-transparent my-0 py-8 shadow-none"
+                        />
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    paginatedPromotions.map((p: any) => {
                     const isActive = p.status === "active";
                     const isPercent = p.type === "percentage" || p.type === "storewide";
 
@@ -603,7 +627,7 @@ function PromotionsPage() {
                         </TableCell>
                       </TableRow>
                     );
-                  })}
+                  }))}
                 </TableBody>
               </Table>
             </div>

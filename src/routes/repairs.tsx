@@ -470,22 +470,23 @@ function RepairsPage() {
           )
         ) : isRepairsError ? (
           <ErrorState onRetry={refetchRepairs} />
-        ) : filteredRepairs.length === 0 ? (
-          <EmptyState
-            icon={Wrench}
-            title={t("noRepairsFound", "No repair job sheets found")}
-            description={
-              search
-                ? t("adjustSearchCriteria", "Try adjusting your search criteria.")
-                : t("noRepairsYet", "You haven't logged any repair or service intake tickets yet.")
-            }
-            actionLabel={t("newRepairTicket", "New Repair Ticket")}
-            onAction={() => {
-              clearRepAll();
-              setIsAddOpen(true);
-            }}
-          />
         ) : viewMode === "grid" ? (
+          filteredRepairs.length === 0 ? (
+            <EmptyState
+              icon={Wrench}
+              title={t("noRepairsFound", "No repair job sheets found")}
+              description={
+                search
+                  ? t("adjustSearchCriteria", "Try adjusting your search criteria.")
+                  : t("noRepairsYet", "You haven't logged any repair or service intake tickets yet.")
+              }
+              actionLabel={t("newRepairTicket", "New Repair Ticket")}
+              onAction={() => {
+                clearRepAll();
+                setIsAddOpen(true);
+              }}
+            />
+          ) : (
           /* Grid View */
           <div className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
@@ -591,6 +592,7 @@ function RepairsPage() {
               </div>
             )}
           </div>
+          )
         ) : (
           /* Table View */
           <div className="overflow-hidden rounded-xl border border-border/80 bg-card shadow-soft">
@@ -608,7 +610,28 @@ function RepairsPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {paginatedRepairs.map((r: any) => {
+                  {filteredRepairs.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={7} className="h-64 text-center">
+                        <EmptyState
+                          icon={Wrench}
+                          title={t("noRepairsFound", "No repair job sheets found")}
+                          description={
+                            search
+                              ? t("adjustSearchCriteria", "Try adjusting your search criteria.")
+                              : t("noRepairsYet", "You haven't logged any repair or service intake tickets yet.")
+                          }
+                          actionLabel={t("newRepairTicket", "New Repair Ticket")}
+                          onAction={() => {
+                            clearRepAll();
+                            setIsAddOpen(true);
+                          }}
+                          className="border-none bg-transparent my-0 py-8 shadow-none"
+                        />
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    paginatedRepairs.map((r: any) => {
                     const badgeInfo = getStatusBadge(r.status, t);
 
                     return (
@@ -675,7 +698,7 @@ function RepairsPage() {
                         </TableCell>
                       </TableRow>
                     );
-                  })}
+                  }))}
                 </TableBody>
               </Table>
             </div>

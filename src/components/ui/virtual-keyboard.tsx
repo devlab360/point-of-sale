@@ -1,4 +1,5 @@
 import React, { useRef, useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import Keyboard from "react-simple-keyboard";
 import "react-simple-keyboard/build/css/index.css";
 import {
@@ -138,7 +139,7 @@ export function VirtualKeyboard({
         .trim()
     : "Keypad";
 
-  return (
+  return createPortal(
     <div
       className="fixed inset-0 z-[120] bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 animate-in fade-in duration-150"
       onClick={(e) => {
@@ -444,6 +445,7 @@ export function VirtualKeyboard({
           }
         `}</style>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

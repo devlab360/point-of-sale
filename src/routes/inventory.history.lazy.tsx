@@ -242,17 +242,18 @@ function HistoryPage() {
           ) : (
             <CardGridSkeleton cards={8} />
           )
-        ) : filtered.length === 0 ? (
-          <EmptyState
-            icon={History}
-            title={t("noInventoryMovementLogsFound", "No inventory movement logs found")}
-            description={
-              search
-                ? t("noMovementLogsSearchDesc", "Try adjusting your search criteria.")
-                : t("noMovementLogsDefaultDesc", "Movement audit entries will automatically appear as POS sales and stock changes occur.")
-            }
-          />
         ) : viewMode === "table" ? (
+          filtered.length === 0 ? (
+            <EmptyState
+              icon={History}
+              title={t("noInventoryMovementLogsFound", "No inventory movement logs found")}
+              description={
+                search
+                  ? t("noMovementLogsSearchDesc", "Try adjusting your search criteria.")
+                  : t("noMovementLogsDefaultDesc", "Movement audit entries will automatically appear as POS sales and stock changes occur.")
+              }
+            />
+          ) : (
           /* Table View */
           <div className="overflow-hidden rounded-xl border border-border/80 bg-card shadow-soft">
             <div className="table-desktop overflow-x-auto">
@@ -267,7 +268,23 @@ function HistoryPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {paginatedMovements.map((m: any) => {
+                  {filtered.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={5} className="h-64 text-center">
+                        <EmptyState
+                          icon={History}
+                          title={t("noInventoryMovementLogsFound", "No inventory movement logs found")}
+                          description={
+                            search
+                              ? t("noMovementLogsSearchDesc", "Try adjusting your search criteria.")
+                              : t("noMovementLogsDefaultDesc", "Movement audit entries will automatically appear as POS sales and stock changes occur.")
+                          }
+                          className="border-none bg-transparent my-0 py-8 shadow-none"
+                        />
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    paginatedMovements.map((m: any) => {
                     const visuals = getActionVisuals(m.action, t);
                     const isPositive = (m.quantity || 0) > 0;
 
@@ -301,7 +318,7 @@ function HistoryPage() {
                         </TableCell>
                       </TableRow>
                     );
-                  })}
+                  }))}
                 </TableBody>
               </Table>
             </div>
@@ -318,6 +335,7 @@ function HistoryPage() {
               </div>
             )}
           </div>
+          )
         ) : (
           /* Card View */
           <div className="space-y-4">

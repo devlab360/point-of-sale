@@ -336,19 +336,20 @@ function BrandsPage() {
           )
         ) : isBrandsError ? (
           <ErrorState onRetry={refetchBrands} />
-        ) : filteredBrands.length === 0 ? (
-          <EmptyState
-            icon={Tag}
-            title={t("noBrandsFound", "No brands found")}
-            description={
-              search
-                ? t("adjustSearch", "Try adjusting your search criteria.")
-                : t("noBrandsYet", "You haven't created any product brands yet.")
-            }
-            actionLabel={t("addBrand", "Add Brand")}
-            onAction={openNew}
-          />
         ) : viewMode === "grid" ? (
+          filteredBrands.length === 0 ? (
+            <EmptyState
+              icon={Tag}
+              title={t("noBrandsFound", "No brands found")}
+              description={
+                search
+                  ? t("adjustSearch", "Try adjusting your search criteria.")
+                  : t("noBrandsYet", "You haven't created any product brands yet.")
+              }
+              actionLabel={t("addBrand", "Add Brand")}
+              onAction={openNew}
+            />
+          ) : (
           /* Grid View */
           <div className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
@@ -411,6 +412,7 @@ function BrandsPage() {
               </div>
             )}
           </div>
+          )
         ) : (
           /* Table View */
           <div className="overflow-hidden rounded-xl border border-border/80 bg-card shadow-soft">
@@ -424,7 +426,25 @@ function BrandsPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {paginatedBrands.map((b: any) => (
+                  {filteredBrands.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={3} className="h-64 text-center">
+                        <EmptyState
+                          icon={Tag}
+                          title={t("noBrandsFound", "No brands found")}
+                          description={
+                            search
+                              ? t("adjustSearch", "Try adjusting your search criteria.")
+                              : t("noBrandsYet", "You haven't created any product brands yet.")
+                          }
+                          actionLabel={t("addBrand", "Add Brand")}
+                          onAction={openNew}
+                          className="border-none bg-transparent my-0 py-8 shadow-none"
+                        />
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    paginatedBrands.map((b: any) => (
                     <TableRow key={b.id} className="hover:bg-muted/30 transition-colors">
                       <TableCell>
                         <div className="flex items-center gap-2.5">
@@ -460,7 +480,7 @@ function BrandsPage() {
                         </div>
                       </TableCell>
                     </TableRow>
-                  ))}
+                  )))}
                 </TableBody>
               </Table>
             </div>

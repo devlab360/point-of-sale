@@ -392,22 +392,23 @@ function CouponsPage() {
           )
         ) : isCouponsError ? (
           <ErrorState onRetry={refetchCoupons} />
-        ) : filteredCoupons.length === 0 ? (
-          <EmptyState
-            icon={Ticket}
-            title={t("noCouponsFound", "No promo codes found")}
-            description={
-              search
-                ? t("adjustSearchCriteria", "Try adjusting your search criteria.")
-                : t("noCouponsYet", "You haven't generated any discount promo codes yet.")
-            }
-            actionLabel={t("createPromoCode", "Create Promo Code")}
-            onAction={() => {
-              clearCouponAll();
-              setIsAddOpen(true);
-            }}
-          />
         ) : viewMode === "grid" ? (
+          filteredCoupons.length === 0 ? (
+            <EmptyState
+              icon={Ticket}
+              title={t("noCouponsFound", "No promo codes found")}
+              description={
+                search
+                  ? t("adjustSearchCriteria", "Try adjusting your search criteria.")
+                  : t("noCouponsYet", "You haven't generated any discount promo codes yet.")
+              }
+              actionLabel={t("createPromoCode", "Create Promo Code")}
+              onAction={() => {
+                clearCouponAll();
+                setIsAddOpen(true);
+              }}
+            />
+          ) : (
           /* Grid View */
           <div className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
@@ -524,6 +525,7 @@ function CouponsPage() {
               </div>
             )}
           </div>
+          )
         ) : (
           /* Table View */
           <div className="overflow-hidden rounded-xl border border-border/80 bg-card shadow-soft">
@@ -541,7 +543,28 @@ function CouponsPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {paginatedCoupons.map((c: any) => {
+                  {paginatedCoupons.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={7} className="h-64 text-center">
+                        <EmptyState
+                          icon={Ticket}
+                          title={t("noCouponsFound", "No promo codes found")}
+                          description={
+                            search
+                              ? t("adjustSearchCriteria", "Try adjusting your search criteria.")
+                              : t("noCouponsYet", "You haven't generated any discount promo codes yet.")
+                          }
+                          actionLabel={t("createPromoCode", "Create Promo Code")}
+                          onAction={() => {
+                            clearCouponAll();
+                            setIsAddOpen(true);
+                          }}
+                          className="border-none bg-transparent my-0 py-8 shadow-none"
+                        />
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    paginatedCoupons.map((c: any) => {
                     const isExpired = c.expiresAt && new Date(c.expiresAt).getTime() < Date.now();
                     const isActive = c.status === "active" && !isExpired;
                     const isPercent = c.type === "percentage";
@@ -610,7 +633,7 @@ function CouponsPage() {
                         </TableCell>
                       </TableRow>
                     );
-                  })}
+                  }))}
                 </TableBody>
               </Table>
             </div>

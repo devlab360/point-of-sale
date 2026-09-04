@@ -577,17 +577,18 @@ function UsersPage() {
           )
         ) : isUsersError ? (
           <ErrorState onRetry={refetchUsers} />
-        ) : filteredUsers.length === 0 ? (
-          <EmptyState
-            icon={Users}
-            title={t("noStaffMembersFound", "No staff members found")}
-            description={
-              search ? "Try adjusting your search criteria." : "No employee accounts found."
-            }
-            actionLabel="Add Employee"
-            onAction={() => setIsDirectAddOpen(true)}
-          />
         ) : viewMode === "grid" ? (
+          filteredUsers.length === 0 ? (
+            <EmptyState
+              icon={Users}
+              title={t("noStaffMembersFound", "No staff members found")}
+              description={
+                search ? "Try adjusting your search criteria." : "No employee accounts found."
+              }
+              actionLabel="Add Employee"
+              onAction={() => setIsDirectAddOpen(true)}
+            />
+          ) : (
           /* Grid View — 3 Columns for Balanced Layout */
           <div className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
@@ -734,7 +735,7 @@ function UsersPage() {
                 );
               })}
             </div>
-            {filteredUsers.length > pageSize && (
+            {filteredUsers.length > 0 && (
               <div className="rounded-2xl border border-border/80 bg-card p-3 shadow-card">
                 <PaginationControls
                   currentPage={page}
@@ -747,6 +748,7 @@ function UsersPage() {
               </div>
             )}
           </div>
+          )
         ) : (
           /* Table View */
           <div className="overflow-hidden rounded-2xl border border-border/80 bg-card shadow-card">
@@ -764,7 +766,23 @@ function UsersPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody className="divide-y divide-border/60">
-                  {paginatedUsers.map((u: any) => {
+                  {filteredUsers.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={7} className="h-64 text-center">
+                        <EmptyState
+                          icon={Users}
+                          title={t("noStaffMembersFound", "No staff members found")}
+                          description={
+                            search ? "Try adjusting your search criteria." : "No employee accounts found."
+                          }
+                          actionLabel="Add Employee"
+                          onAction={() => setIsDirectAddOpen(true)}
+                          className="border-none bg-transparent my-0 py-8 shadow-none"
+                        />
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    paginatedUsers.map((u: any) => {
                     const roleVisuals = getRoleVisuals(u.role);
                     const isActive = u.status === "active";
                     const permsCount = Array.isArray(u.permissions) ? u.permissions.length : 0;
@@ -849,11 +867,11 @@ function UsersPage() {
                         </TableCell>
                       </TableRow>
                     );
-                  })}
+                  }))}
                 </TableBody>
               </Table>
             </div>
-            {filteredUsers.length > pageSize && (
+            {filteredUsers.length > 0 && (
               <div className="border-t border-border/60 p-3">
                 <PaginationControls
                   currentPage={page}
